@@ -25,5 +25,5 @@ USER appuser
 ENV PORT=8000
 EXPOSE 8000
 
-# Apply migrations, then serve with gunicorn managing uvicorn workers.
-CMD ["sh", "-c", "alembic upgrade head && gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT}"]
+# Apply migrations (with retries + clear errors), then serve with gunicorn.
+CMD ["sh", "-c", "python scripts/migrate.py && gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT}"]

@@ -44,5 +44,6 @@ USER appuser
 ENV PORT=8000
 EXPOSE 8000
 
-# Inject runtime frontend config, run migrations, then serve API + SPA.
-CMD ["sh", "-c", "python scripts/write_env_js.py && alembic upgrade head && gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT}"]
+# Inject runtime frontend config, run migrations (with retries + clear errors),
+# then serve API + SPA.
+CMD ["sh", "-c", "python scripts/write_env_js.py && python scripts/migrate.py && gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT}"]
