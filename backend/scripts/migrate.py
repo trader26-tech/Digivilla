@@ -10,8 +10,13 @@ Replaces a bare `alembic upgrade head` in the container CMD so that:
 import subprocess
 import sys
 import time
+from pathlib import Path
 
-from app.core.config import settings
+# Ensure the backend root (which contains the `app` package) is importable,
+# regardless of the current working directory or PYTHONPATH.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app.core.config import settings  # noqa: E402
 
 _LOCALHOST_DEFAULT = "@localhost:"
 _MAX_ATTEMPTS = 6
