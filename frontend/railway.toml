@@ -1,0 +1,12 @@
+# Railway service config for the frontend.
+# Point a Railway service's root directory at /frontend, and it will use this.
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
