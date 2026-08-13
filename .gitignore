@@ -12,6 +12,9 @@ node_modules/
 dist/
 .angular/
 
+# Locally-copied frontend build (created inside the Docker build, not committed)
+backend/app/static/
+
 # --- Env & secrets ---
 .env
 .env.*

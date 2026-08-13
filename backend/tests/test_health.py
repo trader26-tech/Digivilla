@@ -11,7 +11,7 @@ def test_health():
     assert resp.json() == {"status": "ok"}
 
 
-def test_root():
+def test_root_serves_spa_or_api_only():
+    """/ serves the SPA when a frontend is bundled, else 404 (API-only)."""
     resp = client.get("/")
-    assert resp.status_code == 200
-    assert "service" in resp.json()
+    assert resp.status_code in (200, 404)

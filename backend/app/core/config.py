@@ -1,8 +1,8 @@
 from functools import lru_cache
-from typing import List
+from typing import Annotated, List
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -41,7 +41,9 @@ class Settings(BaseSettings):
 
     # --- CORS ---
     # Comma-separated list of allowed origins, e.g. "http://localhost:4200,https://app.example.com"
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:4200"]
+    # NoDecode disables pydantic-settings' JSON pre-parse so a plain comma string
+    # is accepted (not just a JSON array); the validator below splits it.
+    BACKEND_CORS_ORIGINS: Annotated[List[str], NoDecode] = ["http://localhost:4200"]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod

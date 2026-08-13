@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.session import engine
+from app.static import mount_spa
 
 
 @asynccontextmanager
@@ -34,7 +35,6 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
-
-@app.get("/", tags=["root"])
-async def root() -> dict[str, str]:
-    return {"service": settings.PROJECT_NAME, "docs": "/docs"}
+# Serve the built Angular SPA (single-image deploy). Registered last so it only
+# handles routes the API router didn't claim. No-op if no frontend is bundled.
+mount_spa(app, api_prefix=settings.API_V1_PREFIX)

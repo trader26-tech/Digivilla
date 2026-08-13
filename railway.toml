@@ -1,0 +1,12 @@
+# Single-service deploy. Railway builds the root Dockerfile (frontend + backend
+# in one image). No Root Directory setting required — deploy the repo as-is.
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

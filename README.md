@@ -55,19 +55,13 @@ npm start   # http://localhost:4200
 
 ## Deploying to Railway
 
-Deploy the two apps as **two separate Railway services** from this one repo:
-
-1. **Backend service** — set root directory to `backend/`. Railway picks up
-   `backend/railway.toml` + `Dockerfile`. Set variables: `DATABASE_URL`,
-   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `SUPABASE_JWT_SECRET`, `BACKEND_CORS_ORIGINS` (the frontend's public URL),
-   `ENVIRONMENT=production`. Migrations run automatically on boot.
-2. **Frontend service** — set root directory to `frontend/`. Set variables:
-   `API_URL` (the backend service's public URL + `/api/v1`), `SUPABASE_URL`,
-   `SUPABASE_ANON_KEY`.
-
-Railway injects `$PORT` into both services; the Dockerfiles honor it.
+Deploy as **one service** — the root `Dockerfile` builds the Angular app and
+serves it from FastAPI (SPA at `/`, API at `/api/v1`). Deploy the repo from
+GitHub, add the Supabase variables, done. Full steps in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 > Use the Supabase **transaction pooler** connection string (port 6543) for
 > `DATABASE_URL` in production — the backend auto-disables prepared-statement
 > caching for pooled connections.
+
+Each app also keeps its own `Dockerfile` if you later want to split them into two
+independently scaled services (see DEPLOYMENT.md).
