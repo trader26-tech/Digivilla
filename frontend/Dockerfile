@@ -13,6 +13,8 @@ RUN npm run build
 FROM nginx:1.27-alpine
 
 # SPA nginx config (templated so it can read $PORT at runtime).
+# Restrict envsubst to ${PORT} only, so nginx variables like $uri survive.
+ENV NGINX_ENVSUBST_FILTER="PORT"
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Built static assets.

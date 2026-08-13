@@ -1,18 +1,26 @@
 @use '@angular/material' as mat;
 
+// Material 18 Material-3 theming API: define-theme() + all-component-themes().
+$app-theme: mat.define-theme(
+  (
+    color: (
+      theme-type: light,
+      primary: mat.$blue-palette,
+      tertiary: mat.$cyan-palette,
+    ),
+    typography: (
+      brand-family: 'Roboto',
+    ),
+    density: (
+      scale: 0,
+    ),
+  )
+);
+
 html {
-  color-scheme: light dark;
-  @include mat.theme(
-    (
-      color: (
-        theme-type: color-scheme,
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
+  color-scheme: light;
+  @include mat.core();
+  @include mat.all-component-themes($app-theme);
 }
 
 html,
