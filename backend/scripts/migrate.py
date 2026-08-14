@@ -55,6 +55,19 @@ def _guard_database_url() -> None:
             "@aws-0-<region>.pooler.supabase.com:6543/postgres\n"
         )
 
+    # Guard against pasting the template placeholders verbatim (contains <...>).
+    if "<" in url or ">" in url:
+        sys.exit(
+            "FATAL: DATABASE_URL still contains template placeholders "
+            "(e.g. <ref>, <region>, <password>): " + _mask(url) + "\n"
+            "Replace them with your real Supabase values. Get the exact string\n"
+            "from Supabase > Settings > Database > Connection string >\n"
+            "Transaction pooler, then change the prefix to 'postgresql+asyncpg://'.\n"
+            "It should look like:\n"
+            "  postgresql+asyncpg://postgres.abcdefgh:YOURPASSWORD"
+            "@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
+        )
+
     # Guard against the common mistake of using a sync scheme with our async app.
     if url.startswith("postgresql://") or url.startswith("postgres://"):
         sys.exit(
