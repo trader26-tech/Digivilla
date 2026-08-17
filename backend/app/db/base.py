@@ -20,4 +20,5 @@ class TimestampMixin:
 
 
 # Import models here so Alembic's autogenerate can discover them via Base.metadata.
+from app.models import mutual_fund  # noqa: E402,F401
 from app.models import user  # noqa: E402,F401

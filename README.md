@@ -11,6 +11,24 @@ retirement/
 
 Everything else lives inside `backend/` or `frontend/` — the root stays clean.
 
+## Mutual Fund data platform
+
+The app ships a mutual-fund explorer for **every Indian scheme**:
+
+- **Sources** (free, legitimate): [AMFI](https://www.amfiindia.com) NAVAll feed for
+  the full scheme catalog + daily NAV, and [mfapi.in](https://www.mfapi.in) for
+  per-scheme NAV history. No paywalled scraping.
+- **Computed analytics**: trailing returns (1M/3M/6M/1Y), 3Y/5Y CAGR, CAGR since
+  inception, annualized volatility, and max drawdown — all derived from NAV history.
+- **Ingestion**: on first boot the catalog seeds from AMFI (~14k schemes); a
+  scheduler refreshes daily. Per-scheme history is backfilled on demand and cached
+  in Postgres. See `app/services/mf_ingest.py`, `mf_analytics.py`, `mf_scheduler.py`.
+- **API**: `GET /api/v1/funds` (search/filter/sort/paginate), `/funds/{code}`
+  (detail + metrics), `/funds/{code}/nav` (history), `/funds/facets`, `/funds/stats`,
+  `POST /funds/refresh`.
+- **UI**: dashboard overview, searchable explorer, and a scheme detail page with an
+  inline-SVG NAV chart (no chart library — small bundle, CSP-safe).
+
 ## Architecture
 
 - **Auth**: Supabase Auth issues JWTs. The frontend signs in via `@supabase/supabase-js`

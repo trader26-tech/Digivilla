@@ -1,0 +1,106 @@
+<section class="hero">
+  <h1>Mutual Fund Explorer</h1>
+  <p>Every Indian mutual fund scheme, live NAVs from AMFI, with computed returns & risk.</p>
+</section>
+
+<div class="controls">
+  <div class="search">
+    <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 5 1.5-1.5-5-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"
+      />
+    </svg>
+    <input
+      type="text"
+      placeholder="Search 14,000+ schemes or fund houses…"
+      [(ngModel)]="q"
+      (ngModelChange)="onSearch()"
+      aria-label="Search schemes"
+    />
+  </div>
+
+  <div class="filters">
+    <select [(ngModel)]="fundHouse" (ngModelChange)="onFilter()" aria-label="Fund house">
+      <option value="">All fund houses</option>
+      @for (h of facets().fund_houses; track h) {
+        <option [value]="h">{{ h }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="category" (ngModelChange)="onFilter()" aria-label="Category">
+      <option value="">All categories</option>
+      @for (c of facets().categories; track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="plan" (ngModelChange)="onFilter()" aria-label="Plan">
+      <option value="">Any plan</option>
+      <option value="DIRECT">Direct</option>
+      <option value="REGULAR">Regular</option>
+    </select>
+
+    <select [(ngModel)]="sort" (ngModelChange)="onFilter()" aria-label="Sort">
+      <option value="name">Sort: Name</option>
+      <option value="nav">Sort: NAV (high→low)</option>
+      <option value="nav_date">Sort: Latest NAV date</option>
+    </select>
+
+    <button class="ghost" (click)="clearFilters()">Clear</button>
+  </div>
+</div>
+
+<div class="result-bar">
+  <span>{{ pageInfo }}</span>
+  @if (loading()) {
+    <span class="loading-dot">Loading…</span>
+  }
+</div>
+
+@if (loading() && items().length === 0) {
+  <div class="grid">
+    @for (i of [1,2,3,4,5,6]; track i) {
+      <div class="card skeleton"></div>
+    }
+  </div>
+} @else {
+  <div class="grid">
+    @for (s of items(); track s.scheme_code) {
+      <button class="card" (click)="open(s.scheme_code)">
+        <div class="card-top">
+          <span class="house">{{ s.fund_house }}</span>
+          @if (s.plan) {
+            <span class="badge" [class.direct]="s.plan === 'DIRECT'">{{ s.plan }}</span>
+          }
+        </div>
+        <h3 class="name">{{ s.scheme_name }}</h3>
+        <span class="cat">{{ s.scheme_category }}</span>
+        <div class="card-bottom">
+          <div class="nav">
+            <span class="nav-label">NAV</span>
+            <span class="nav-value">₹{{ s.latest_nav?.toFixed(2) ?? '—' }}</span>
+          </div>
+          <span class="nav-date">{{ s.latest_nav_date }}</span>
+        </div>
+      </button>
+    } @empty {
+      <div class="empty-state">
+        <p>No schemes match your filters.</p>
+        <button class="ghost" (click)="clearFilters()">Reset filters</button>
+      </div>
+    }
+  </div>
+
+  <div class="pager">
+    <button class="ghost" (click)="prevPage()" [disabled]="offset === 0">← Prev</button>
+    <span>{{ pageInfo }}</span>
+    <button
+      class="ghost"
+      (click)="nextPage()"
+      [disabled]="offset + limit >= total()"
+    >
+      Next →
+    </button>
+  </div>
+}

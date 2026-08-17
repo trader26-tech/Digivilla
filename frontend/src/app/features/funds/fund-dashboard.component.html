@@ -1,0 +1,71 @@
+<section class="hero">
+  <h1>Mutual Fund Intelligence</h1>
+  <p>
+    Live data for every Indian mutual fund scheme — sourced from AMFI, with
+    returns and risk we compute ourselves from full NAV history.
+  </p>
+  <a routerLink="/funds" class="cta">Explore all funds →</a>
+</section>
+
+@if (stats(); as s) {
+  <section class="stat-row">
+    <div class="stat">
+      <span class="s-value">{{ s.total_schemes.toLocaleString() }}</span>
+      <span class="s-label">Schemes tracked</span>
+    </div>
+    <div class="stat">
+      <span class="s-value">{{ s.total_fund_houses }}</span>
+      <span class="s-label">Fund houses</span>
+    </div>
+    <div class="stat">
+      <span class="s-value">{{ s.total_categories }}</span>
+      <span class="s-label">Categories</span>
+    </div>
+    <div class="stat">
+      <span class="s-value">{{ s.nav_history_points.toLocaleString() }}</span>
+      <span class="s-label">NAV data points</span>
+    </div>
+    <div class="stat wide">
+      <span class="s-value">{{ s.latest_nav_date ?? '—' }}</span>
+      <span class="s-label">Latest NAV date</span>
+    </div>
+  </section>
+} @else {
+  <section class="stat-row">
+    @for (i of [1,2,3,4]; track i) {
+      <div class="stat skeleton"></div>
+    }
+  </section>
+  <p class="seeding-note">
+    If the numbers are empty, the catalog is seeding from AMFI in the background —
+    refresh in a moment.
+  </p>
+}
+
+<section class="cat-section">
+  <h2>Browse by category</h2>
+  <div class="chips">
+    @for (c of facets().categories; track c) {
+      <button class="chip" (click)="browseCategory(c)">{{ c }}</button>
+    }
+  </div>
+</section>
+
+<section class="cat-section">
+  <h2>Fund houses</h2>
+  <div class="chips">
+    @for (h of facets().fund_houses; track h) {
+      <span class="chip static">{{ h }}</span>
+    }
+  </div>
+</section>
+
+<section class="source-note">
+  <h3>About the data</h3>
+  <p>
+    NAVs come from <strong>AMFI</strong> (the official industry body) and history
+    from <strong>mfapi.in</strong>, both free and legitimate. Returns, CAGR,
+    annualized volatility and max drawdown are computed here from that NAV
+    history — not scraped from any paywalled site.
+  </p>
+</section>

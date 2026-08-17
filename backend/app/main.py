@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,14 +7,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.session import engine
+from app.services import mf_scheduler
 from app.static import mount_spa
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic (warm connections, etc.) can go here.
+    # Seed the MF catalog in the background so startup isn't blocked by the
+    # AMFI fetch, then start the daily refresh scheduler.
+    asyncio.create_task(mf_scheduler.seed_if_empty())
+    mf_scheduler.start_scheduler()
     yield
-    # Graceful shutdown: dispose the connection pool.
+    # Graceful shutdown.
+    mf_scheduler.shutdown_scheduler()
     await engine.dispose()
 
 
