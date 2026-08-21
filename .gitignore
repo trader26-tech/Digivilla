@@ -1,27 +1,13 @@
-# --- Python / backend ---
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# --- Node / frontend ---
-node_modules/
-dist/
-.angular/
-
-# Locally-copied frontend build (created inside the Docker build, not committed)
-backend/app/static/
-
-# --- Env & secrets ---
-.env
-.env.*
-!.env.example
-
-# --- Editors / OS ---
 .DS_Store
-.idea/
-.vscode/
 *.log
+
+# Backend
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/

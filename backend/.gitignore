@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Built Angular SPA copied in by the Dockerfile / local combined-build test
+static/

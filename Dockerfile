@@ -1,50 +1,33 @@
-# Single-image deployment: build the Angular frontend, then serve it from the
-# FastAPI backend. One Railway service, one deploy, no Root Directory setting.
-#
-#   /            -> Angular SPA
-#   /api/v1/...  -> FastAPI
-#   /docs        -> API docs
-
-# --- Stage 1: build the Angular app ---
-FROM node:20-alpine AS frontend
-
+# ---------- Stage 1: build the Angular frontend ----------
+FROM node:22-alpine AS frontend
 WORKDIR /fe
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci || npm install
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
 COPY frontend/ ./
-RUN npm run build
-# Build output: /fe/dist/retirement-frontend/browser
+# In the combined deploy the API is same-origin, so apiUrl = ''.
+RUN printf 'window.__env = { apiUrl: "" };\n' > public/assets/env.js
+RUN npm run build -- --configuration production
 
-# --- Stage 2: Python runtime that also serves the built frontend ---
-FROM python:3.12-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=/app
-
+# ---------- Stage 2: FastAPI backend serving the SPA ----------
+FROM python:3.11-slim AS runtime
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
 
-COPY backend/requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Backend source.
-COPY backend/ .
+COPY backend/ ./
 
-# Drop the built Angular app where app/static.py looks for it.
-COPY --from=frontend /fe/dist/retirement-frontend/browser ./app/static/browser
+# Copy the built Angular app to where static_spa.py expects it: backend/static
+COPY --from=frontend /fe/dist/frontend/browser ./static
 
-RUN adduser --disabled-password --gecos "" appuser \
-    && chown -R appuser:appuser /app
-USER appuser
-
+# Railway provides $PORT at runtime.
 ENV PORT=8000
 EXPOSE 8000
-
-# Inject runtime frontend config, run migrations (with retries + clear errors),
-# then serve API + SPA.
-CMD ["sh", "-c", "python scripts/write_env_js.py && python scripts/migrate.py && gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

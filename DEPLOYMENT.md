@@ -1,49 +1,39 @@
 # Deploying to Railway
 
-This repo deploys as **one Railway service**. The root `Dockerfile` builds the
-Angular frontend and serves it from the FastAPI backend in a single image:
+This app deploys as a **single combined service**: the `Dockerfile` builds the
+Angular frontend, then serves it as static files from the FastAPI backend. The
+API and UI share one origin and one URL — no CORS or second service needed.
 
+## One-time setup
+
+1. Push this repo to GitHub (already the `origin` remote).
+2. In Railway: **New Project → Deploy from GitHub repo →** select this repo.
+3. Railway detects the root `Dockerfile` and `railway.toml` automatically.
+4. (Optional) Add environment variables under the service's **Variables** tab:
+   - `SUPABASE_URL` — your Supabase project URL
+   - `SUPABASE_SERVICE_KEY` — the service-role key
+   - Without these, the planner uses the built-in fund universe (`app/funds.py`).
+   - `PORT` is provided by Railway automatically — do not set it.
+5. Railway builds the image and gives you a public URL like
+   `https://<name>.up.railway.app`. Open it — the planner loads and the API is
+   on the same origin.
+
+## How auto-deploy works
+
+Railway's GitHub integration watches the `main` branch. **Every push to `main`
+triggers a new build + deploy.** No extra CI config is needed.
+
+## Health check
+
+`railway.toml` points the health check at `/health`, which returns
+`{"status":"ok"}`.
+
+## Local combined test (optional)
+
+To run exactly what Railway runs:
+
+```bash
+docker build -t goal-planner .
+docker run -p 8000:8000 -e PORT=8000 goal-planner
+# open http://localhost:8000
 ```
-/            -> Angular SPA
-/api/v1/...  -> FastAPI
-/docs        -> API docs
-```
-
-No monorepo Root Directory setting is needed — Railway builds the repo root.
-
-## Steps
-
-1. **New → Deploy from GitHub repo → `trader26-tech/retirement`.**
-   Railway reads the root `railway.toml` and builds the root `Dockerfile`.
-2. **Add environment variables** (service → Variables):
-   ```
-   ENVIRONMENT=production
-   DATABASE_URL=postgresql+asyncpg://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
-   SUPABASE_URL=https://<project-ref>.supabase.co
-   SUPABASE_ANON_KEY=<anon-key>
-   SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-   SUPABASE_JWT_SECRET=<jwt-secret>
-   ```
-   You do **not** need `API_URL` (the frontend calls the same origin at `/api/v1`)
-   or `BACKEND_CORS_ORIGINS` (frontend and API share an origin).
-3. **Deploy.** On boot the container: writes runtime frontend config
-   (`assets/env.js` from `SUPABASE_URL` / `SUPABASE_ANON_KEY`), runs
-   `alembic upgrade head`, then serves everything on `$PORT`.
-
-That's it — open the service URL and the app loads; the API is under `/api/v1`.
-
-## Notes
-
-- **Port**: Railway injects `$PORT`; the Dockerfile honors it. Do not set `PORT`.
-- **Database**: use the Supabase **transaction pooler** string (port `6543`) for
-  `DATABASE_URL`; the backend auto-disables prepared-statement caching for it.
-- **Runtime config**: Supabase values are injected at container start into
-  `assets/env.js`, so one built image works across environments without a rebuild.
-- **Healthcheck**: `/api/v1/health` (configured in `railway.toml`).
-
-## Scaling to two services later
-
-If you later want the frontend and backend to scale independently, they still have
-their own `frontend/Dockerfile` and `backend/Dockerfile`. Create two services and
-set each service's **Root Directory** to `frontend` / `backend`. The single-image
-setup above is the recommended default and needs none of that.

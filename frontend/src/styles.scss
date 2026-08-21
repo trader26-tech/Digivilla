@@ -1,73 +1,9 @@
-@use '@angular/material' as mat;
-
-// Material 18 Material-3 theming API: define-theme() + all-component-themes().
-$app-theme: mat.define-theme(
-  (
-    color: (
-      theme-type: light,
-      primary: mat.$blue-palette,
-      tertiary: mat.$cyan-palette,
-    ),
-    typography: (
-      brand-family: 'Roboto',
-    ),
-    density: (
-      scale: 0,
-    ),
-  )
-);
-
-html {
-  color-scheme: light;
-  @include mat.core();
-  @include mat.all-component-themes($app-theme);
-}
-
-// --- App design tokens (light) ---
-:root {
-  --bg: #f6f7fb;
-  --surface: #ffffff;
-  --surface-2: #f0f2f8;
-  --border: #e3e6ef;
-  --text: #1a1c22;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --accent-2: #06b6d4;
-  --pos: #16a34a;
-  --neg: #dc2626;
-  --shadow: 0 1px 3px rgba(20, 24, 40, 0.08), 0 8px 24px rgba(20, 24, 40, 0.06);
-  --radius: 14px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e1117;
-    --surface: #171b24;
-    --surface-2: #1e232e;
-    --border: #2a303c;
-    --text: #e8eaf0;
-    --muted: #9aa3b2;
-    --accent: #60a5fa;
-    --accent-2: #22d3ee;
-    --pos: #4ade80;
-    --neg: #f87171;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
-  }
-}
-
-html,
-body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  font-family:
-    'Inter', Roboto, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-
 * {
   box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f1420;
 }

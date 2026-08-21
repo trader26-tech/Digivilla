@@ -1,17 +1,18 @@
-# Root build context (single-image Dockerfile).
-**/__pycache__/
-**/*.py[cod]
-**/.venv/
-**/venv/
-**/.pytest_cache/
-**/.mypy_cache/
-**/.ruff_cache/
-**/node_modules/
-**/dist/
-**/.angular/
-backend/app/static/
-.git/
+# Node
+frontend/node_modules
+frontend/dist
+frontend/.angular
+
+# Python
+backend/.venv
+**/__pycache__
+*.pyc
+backend/static
+
+# Env / secrets
 **/.env
-**/.env.*
-!**/.env.example
-**/.DS_Store
+
+# Git / misc
+.git
+.gitignore
+*.md

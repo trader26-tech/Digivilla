@@ -1,9 +1,3 @@
-// Development placeholder. On Railway this file is regenerated at container
-// start from environment variables by docker-entrypoint.sh. For local
-// `ng serve`, values come from src/environments/environment.development.ts,
-// so leaving this empty is fine.
-window.__env = {
-  apiUrl: '',
-  supabaseUrl: '',
-  supabaseAnonKey: '',
-};
+// Runtime configuration. Overwritten at container startup on deploy.
+// In local dev this file is a no-op and environment.ts falls back to :8000.
+window.__env = window.__env || {};
