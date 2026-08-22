@@ -39,29 +39,28 @@
       <circle cx="60" cy="60" r="40" fill="url(#rupi-rim)" />
       <circle cx="60" cy="60" r="33" fill="url(#rupi-face)" />
       <!-- engraved ring, like a real coin -->
-      <circle cx="60" cy="60" r="33" fill="none" stroke="#c8880f" stroke-width="1.4" opacity="0.35" />
+      <circle cx="60" cy="60" r="33" fill="none" stroke="#c8880f" stroke-width="1.4" opacity="0.3" />
     </g>
 
-    <!-- ₹ emblem badge — makes it unmistakably a rupee coin -->
-    <g class="emblem">
-      <circle cx="60" cy="82" r="12" fill="#fff" opacity="0.9" />
-      <text x="60" y="83" text-anchor="middle" dominant-baseline="central"
-            font-family="'Inter', system-ui, sans-serif" font-size="16" font-weight="800"
-            fill="#e19a1c">₹</text>
-    </g>
-
-    <!-- FACE (sits in the upper part, above the ₹ badge) -->
+    <!-- FACE: eyes + smile in the upper half of the coin -->
     <g class="face">
       <g class="eyes" fill="#3a2a08">
-        <circle class="eye eye-l" cx="51" cy="52" r="3.8" />
-        <circle class="eye eye-r" cx="69" cy="52" r="3.8" />
+        <circle class="eye eye-l" cx="50" cy="47" r="4" />
+        <circle class="eye eye-r" cx="70" cy="47" r="4" />
       </g>
-      <path class="mouth" d="M52 62 Q60 70 68 62" stroke="#3a2a08" stroke-width="3.2" stroke-linecap="round" fill="none" />
+      <path class="mouth" d="M52 55 Q60 62 68 55" stroke="#3a2a08" stroke-width="3.2" stroke-linecap="round" fill="none" />
       <!-- blink lids -->
       <g class="lids" fill="url(#rupi-face)">
-        <rect class="lid lid-l" x="46" y="47" width="10" height="6" rx="3" />
-        <rect class="lid lid-r" x="64" y="47" width="10" height="6" rx="3" />
+        <rect class="lid lid-l" x="45" y="42" width="10" height="6" rx="3" />
+        <rect class="lid lid-r" x="65" y="42" width="10" height="6" rx="3" />
       </g>
+    </g>
+
+    <!-- ₹ engraved into the LOWER coin, clearly separated from the smile,
+         with an emboss highlight so it reads as stamped metal (not a sticker) -->
+    <g class="emblem" font-family="'Inter', system-ui, sans-serif" font-weight="800" text-anchor="middle" dominant-baseline="central">
+      <text x="60" y="78.5" font-size="22" fill="#fff" opacity="0.45">₹</text>
+      <text x="60" y="77" font-size="22" fill="#c8880f" opacity="0.6">₹</text>
     </g>
   </svg>
 </div>
