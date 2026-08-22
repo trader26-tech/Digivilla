@@ -173,30 +173,31 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     window.removeEventListener('pointerup', this.upH);
   }
 
-  /** Convert a pointer position on the dial into an amount. */
+  /** Convert a pointer position on the dial into an amount.
+   *
+   *  The arch is wide and shallow, so the intuitive mapping is simply the
+   *  pointer's HORIZONTAL position: drag right -> value up, drag left -> value
+   *  down, one-to-one, no inversion. We map the finger's x across the arc's
+   *  visible horizontal span (its left end .. right end) to the 0..1 fraction.
+   */
   private applyPointer(e: PointerEvent): void {
     const el = this.dialRef?.nativeElement;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
+    if (!rect.width) return;
 
-    // Map the screen point into viewBox (320x220) coords. The SVG uses
-    // preserveAspectRatio="xMidYMin slice": it scales by max(sx, sy) and
-    // centres horizontally, top-aligned.
+    // Horizontal span of the arch's endpoints, as a fraction of element width.
+    // pointAt(0).x and pointAt(1).x live in the 320-wide viewBox; convert to
+    // the same 0..1 space the pointer uses across the element.
     const VW = 320;
-    const VH = 220;
-    const scale = Math.max(rect.width / VW, rect.height / VH);
-    const offsetX = (rect.width - VW * scale) / 2; // xMid
-    const offsetY = 0; // YMin (top-aligned)
-    const vx = (e.clientX - rect.left - offsetX) / scale;
-    const vy = (e.clientY - rect.top - offsetY) / scale;
+    const scale = Math.max(rect.width / VW, rect.height / 220);
+    const offsetX = (rect.width - VW * scale) / 2;
+    const leftX = offsetX + this.pointAt(0).x * scale;
+    const rightX = offsetX + this.pointAt(1).x * scale;
 
-    // Angle of the pointer around the dome centre, 0 = straight up, +cw.
-    const deg = (Math.atan2(vy - this.CY, vx - this.CX) * 180) / Math.PI + 90;
-
-    // Clamp to the usable window and convert to a fraction.
-    const clamped = Math.max(-this.HALF, Math.min(this.HALF, deg));
-    const frac = (clamped + this.HALF) / (2 * this.HALF);
+    const x = e.clientX - rect.left;
+    let frac = (x - leftX) / (rightX - leftX || 1);
+    frac = Math.max(0, Math.min(1, frac));
 
     const raw = this.min + frac * (this.max - this.min);
     this.setAmount(raw);
@@ -328,9 +329,24 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     this.back.emit();
   }
 
+  /** Motivating hand-off: on Next we show a brief encouraging card, then
+   *  continue. `cheer` drives the overlay; the message adapts to the goal. */
+  cheering = false;
+
+  get cheerTitle(): string {
+    return 'Great goal!';
+  }
+  get cheerBody(): string {
+    const label = (this.goal?.label || 'this goal').toLowerCase();
+    return `Reaching ${label} is more within reach than it looks. With a steady monthly plan, we'll help you get there — one step at a time.`;
+  }
+
   confirm(): void {
+    if (this.cheering) return;
     if (navigator.vibrate && !this.reduceMotion) navigator.vibrate([10, 30, 10]);
-    this.amountChosen.emit(Math.round(this.amount));
+    this.cheering = true;
+    const wait = this.reduceMotion ? 350 : 1700;
+    window.setTimeout(() => this.amountChosen.emit(Math.round(this.amount)), wait);
   }
 
   // ---------- "nice number" helpers ----------

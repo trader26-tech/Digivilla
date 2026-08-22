@@ -42,12 +42,6 @@
             <ng-container *ngTemplateOutlet="scene; context: { $implicit: g.key }"></ng-container>
           </span>
           <span class="veil" aria-hidden="true"></span>
-
-          <span class="badge" *ngIf="g.liquid" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-            Liquid
-          </span>
-
           <span class="name">{{ g.label }}</span>
           <span class="go" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -191,6 +185,37 @@
       <!-- paper plane in the sky -->
       <path d="M64 28l16 6-14 5-1-6z" fill="#fff" opacity=".92" />
       <circle cx="82" cy="22" r="7" fill="#fff" opacity=".8" />
+    </svg>
+
+    <!-- Health — calm care / heartbeat over a soft dawn -->
+    <svg *ngSwitchCase="'health'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="hea-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5fd6c0" /><stop offset="1" stop-color="#cdeee6" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#hea-sky)" />
+      <rect y="70" width="100" height="30" fill="#2f9c86" />
+      <circle cx="50" cy="46" r="20" fill="#fff" opacity=".9" />
+      <!-- heartbeat line -->
+      <path d="M34 46h7l3-7 5 14 3-7h8" stroke="#e05a6e" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M18 78c8-3 14-3 20 1M62 80c8-4 14-2 20 1" stroke="#fff" stroke-width="1.2" opacity=".4" fill="none" />
+    </svg>
+
+    <!-- Big Purchase — laptop / device on a desk -->
+    <svg *ngSwitchCase="'gadget'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="gad-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a9cff" /><stop offset="1" stop-color="#d6ddff" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#gad-sky)" />
+      <rect y="72" width="100" height="28" fill="#4b53b8" />
+      <!-- laptop -->
+      <rect x="30" y="40" width="40" height="26" rx="2" fill="#2c2f52" />
+      <rect x="33" y="43" width="34" height="20" rx="1" fill="#8fd0ff" />
+      <path d="M24 66h52l4 6H20z" fill="#3a3f70" />
+      <circle cx="78" cy="26" r="8" fill="#fff" opacity=".7" />
     </svg>
 
     <!-- Fallback -->

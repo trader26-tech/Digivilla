@@ -198,63 +198,29 @@
 /* Base track — faint hairline arc, the full sweep. */
 .track {
   fill: none;
-  stroke: hsl(var(--hue) 40% 88%);
-  stroke-width: 7;
+  stroke: hsl(var(--hue) 35% 90%);
+  stroke-width: 6;
   stroke-linecap: round;
 }
-/* Coloured filled arc (stroke set inline to the gradient). Thick + glowing.
-   `pathLength` normalises so we can draw it on entry regardless of real length. */
+/* Coloured filled arc (stroke set inline to the gradient). Clean, no glow. */
 .progress {
   fill: none;
-  stroke-width: 7;
+  stroke-width: 6;
   stroke-linecap: round;
 }
-/* The whole screen fades in via .reveal already; the coloured fill just draws
-   with the dome. (Kept simple — the live fraction updates keep it responsive.) */
 
-/* A bright sheen that drifts along the filled arc — constant subtle motion. */
-.sheen {
-  fill: none;
-  stroke-width: 7;
-  stroke-linecap: round;
-  stroke-dasharray: 18 82;
-  animation: sheenMove 2.6s linear infinite;
-  opacity: 0.9;
-}
-@keyframes sheenMove {
-  from { stroke-dashoffset: 100; }
-  to { stroke-dashoffset: -100; }
-}
-
-/* Handle: a soft pulsing coloured glow, a halo, a coloured ring, white core. */
-.handle-glow {
-  opacity: 0.28;
-  transition: cx 0.06s linear, cy 0.06s linear, opacity 0.25s ease;
-  animation: pulse 2.2s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 0.20; }
-  50% { opacity: 0.42; }
-}
-.handle-halo {
-  opacity: 0.18;
-  transition: cx 0.06s linear, cy 0.06s linear, opacity 0.25s ease;
-}
+/* Handle: one clean dot with a thin white ring — calm, no pulse or trail. */
 .handle-ring {
   fill: #fff;
   stroke-width: 3;
-  transition: cx 0.06s linear, cy 0.06s linear;
-  filter: drop-shadow(0 2px 5px hsl(var(--hue) 60% 40% / 0.35));
+  transition: cx 0.05s linear, cy 0.05s linear, r 0.15s ease;
+  filter: drop-shadow(0 2px 4px hsl(var(--hue) 50% 40% / 0.28));
 }
 .handle {
-  fill: var(--accent);
-  transition: cx 0.06s linear, cy 0.06s linear;
+  transition: cx 0.05s linear, cy 0.05s linear;
 }
-/* While dragging: glow swells, motion stops jittering. */
-.dial.dragging .handle-glow { opacity: 0.55; animation: none; }
-.dial.dragging .handle-halo { opacity: 0.34; }
+/* While dragging, the handle grows just slightly for feedback — nothing more. */
+.dial.dragging .handle-ring { r: 11; }
 
 /* suggestion chips floating on the dome */
 .chips {
@@ -395,10 +361,110 @@
   &:active { transform: scale(0.99); }
 }
 
+/* ---------- motivating hand-off ---------- */
+.amount-screen > .cheer {
+  /* absolute (not fixed) so it isn't trapped by the transformed pre-login
+     wrapper, and !important to beat the `.amount-screen > *` reset above. */
+  position: absolute;
+  inset: 0;
+  z-index: 40 !important;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: hsl(var(--hue) 70% 97%);
+  animation: cheerIn 0.4s ease both;
+}
+@keyframes cheerIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.cheer-card {
+  max-width: 22rem;
+  text-align: center;
+  animation: cheerCard 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes cheerCard {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.cheer-ring {
+  display: grid;
+  place-items: center;
+  margin-bottom: 1.1rem;
+  svg { overflow: visible; }
+  .cr-track { fill: none; stroke: hsl(var(--hue) 40% 88%); stroke-width: 4; }
+  .cr-fill {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 145;
+    stroke-dashoffset: 145;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    animation: ringDraw 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+  }
+  .cr-check {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: checkDraw 0.4s ease 0.55s forwards;
+  }
+}
+@keyframes ringDraw { to { stroke-dashoffset: 0; } }
+@keyframes checkDraw { to { stroke-dashoffset: 0; } }
+
+.cheer-amount {
+  font-size: clamp(1.9rem, 8vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg,
+    hsl(var(--hue) 82% 46%), hsl(calc(var(--hue) + 22) 84% 54%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.5rem;
+}
+.cheer-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+}
+.cheer-body {
+  color: var(--ink-2);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  margin: 0 0 1.4rem;
+}
+.cheer-dots {
+  display: inline-flex;
+  gap: 0.4rem;
+  span {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: hsl(var(--hue) 70% 55%);
+    opacity: 0.35;
+    animation: dotPulse 1.1s ease-in-out infinite;
+  }
+  span:nth-child(2) { animation-delay: 0.18s; }
+  span:nth-child(3) { animation-delay: 0.36s; }
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .amount-screen, .readout .big, .dialer { animation: none !important; }
-  .handle, .handle-halo, .handle-glow, .sheen { animation: none !important; }
-  .handle, .handle-halo, .handle-ring, .handle-glow { transition: none !important; }
+  .handle, .handle-ring { transition: none !important; }
   .dialer { transform: none; }
+  .cheer-card, .cheer, .cr-fill, .cr-check, .cheer-dots span { animation: none !important; }
+  .cr-fill, .cr-check { stroke-dashoffset: 0 !important; }
 }

@@ -129,18 +129,18 @@ export class GoalPickerComponent implements OnInit {
 const SECTION_META: Omit<GoalSection, 'goals'>[] = [
   {
     category: 'protect',
-    title: 'Protect',
-    subtitle: 'Your safety net — build this first',
+    title: 'Be ready for anything',
+    subtitle: 'Peace of mind, first',
   },
   {
     category: 'short',
-    title: 'Short-term',
-    subtitle: 'Within a few years · kept in liquid funds',
+    title: 'Coming up soon',
+    subtitle: 'The next few years',
   },
   {
     category: 'long',
-    title: 'Long-term',
-    subtitle: 'Big life goals that grow over time',
+    title: 'The big dreams',
+    subtitle: 'Where life is heading',
   },
 ];
 
@@ -154,6 +154,8 @@ const ICON_KEYS: Record<string, string> = {
   emergency: 'emergency',
   wedding: 'wedding',
   vacation: 'vacation',
+  health: 'health',
+  gadget: 'gadget',
 };
 
 /** Per-goal accent hue so the grid reads as a colourful, coherent system. */
@@ -166,6 +168,8 @@ const HUE_OF: Record<string, number> = {
   emergency: 356, // red — safety
   wedding: 330, // pink
   vacation: 205, // sky blue
+  health: 168, // teal-green — care/wellbeing
+  gadget: 245, // indigo — tech
 };
 
 /** Offline fallback mirroring backend/app/presets.py. */
@@ -234,8 +238,32 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     suggested_amounts: [300_000, 600_000, 1_000_000, 1_500_000],
     default_years: 2,
     default_risk: 'conservative',
-    blurb: 'A safety net of 6-12 months of expenses, kept low-risk and liquid.',
+    blurb: 'A safety net of 6-12 months of expenses for the unexpected.',
     category: 'protect',
+    liquid: true,
+  },
+  {
+    key: 'health',
+    label: 'Health Cushion',
+    icon: '🩺',
+    default_amount: 1_000_000,
+    suggested_amounts: [500_000, 1_000_000, 2_000_000, 3_000_000],
+    default_years: 3,
+    default_risk: 'conservative',
+    blurb: 'Money set aside for medical needs so a health surprise never derails you.',
+    category: 'protect',
+    liquid: true,
+  },
+  {
+    key: 'gadget',
+    label: 'Big Purchase',
+    icon: '💻',
+    default_amount: 200_000,
+    suggested_amounts: [80_000, 150_000, 300_000, 600_000],
+    default_years: 2,
+    default_risk: 'conservative',
+    blurb: 'A phone, laptop, or appliance you want to buy soon — planned, not on EMI.',
+    category: 'short',
     liquid: true,
   },
   {

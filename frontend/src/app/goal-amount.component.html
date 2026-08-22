@@ -42,42 +42,27 @@
       <defs>
         <!-- Colour gradient for the filled arc, in the goal's hue. -->
         <linearGradient id="arcFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   [attr.stop-color]="'hsl(' + hue + ' 90% 62%)'" />
-          <stop offset="100%" [attr.stop-color]="'hsl(' + (hue + 26) + ' 88% 52%)'" />
-        </linearGradient>
-        <!-- A drifting sheen overlaid on the fill so the arc always shimmers. -->
-        <linearGradient id="arcSheen" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"  stop-color="#fff" stop-opacity="0" />
-          <stop offset="50%" stop-color="#fff" stop-opacity="0.55" />
-          <stop offset="100%" stop-color="#fff" stop-opacity="0" />
+          <stop offset="0%"   [attr.stop-color]="'hsl(' + hue + ' 82% 58%)'" />
+          <stop offset="100%" [attr.stop-color]="'hsl(' + (hue + 20) + ' 80% 50%)'" />
         </linearGradient>
         <radialGradient id="domeGlow" cx="50%" cy="18%" r="80%">
-          <stop offset="0%"  [attr.stop-color]="'hsl(' + hue + ' 85% 92%)'" />
-          <stop offset="100%" [attr.stop-color]="'hsl(' + hue + ' 60% 98%)'" />
+          <stop offset="0%"  [attr.stop-color]="'hsl(' + hue + ' 70% 95%)'" />
+          <stop offset="100%" [attr.stop-color]="'hsl(' + hue + ' 55% 99%)'" />
         </radialGradient>
-        <filter id="arcGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="4" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
       </defs>
 
-      <!-- The dome fill: a soft tinted wash instead of flat ash. -->
+      <!-- The dome fill: a soft tinted wash. -->
       <circle class="dome" cx="160" cy="320" r="300" fill="url(#domeGlow)" />
 
-      <!-- Base track (faint, full arc) -->
+      <!-- Base track (faint, full arc) + coloured progress up to the handle. -->
       <path class="track" [attr.d]="arcPath(1)" />
-      <!-- Coloured progress + a drifting sheen clipped to the same path -->
-      <path class="progress" [attr.d]="arcPath(fraction)" pathLength="100" stroke="url(#arcFill)" filter="url(#arcGlow)" />
-      <path class="sheen" [attr.d]="arcPath(fraction)" pathLength="100" stroke="url(#arcSheen)" />
+      <path class="progress" [attr.d]="arcPath(fraction)" stroke="url(#arcFill)" />
 
-      <!-- Handle: pulsing coloured glow + halo + solid knob -->
-      <circle class="handle-glow" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="22"
-              [attr.fill]="'hsl(' + hue + ' 90% 60%)'" />
-      <circle class="handle-halo" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="15"
-              [attr.fill]="'hsl(' + hue + ' 90% 60%)'" />
+      <!-- Handle: one clean dot with a thin coloured ring. -->
       <circle class="handle-ring" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="9"
-              [attr.stroke]="'hsl(' + hue + ' 85% 48%)'" />
-      <circle class="handle" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="6" />
+              [attr.stroke]="'hsl(' + hue + ' 80% 50%)'" />
+      <circle class="handle" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="6"
+              [attr.fill]="'hsl(' + hue + ' 80% 50%)'" />
     </svg>
 
     <!-- Suggestion chips float over the dome -->
@@ -93,7 +78,25 @@
   </div>
 
   <!-- Next -->
-  <button class="next reveal" (click)="confirm()">Next</button>
+  <button class="next reveal" (click)="confirm()" [disabled]="cheering">Next</button>
+
+  <!-- ===================== Motivating hand-off ===================== -->
+  <div class="cheer" *ngIf="cheering">
+    <div class="cheer-card">
+      <div class="cheer-ring">
+        <svg viewBox="0 0 52 52" width="56" height="56">
+          <circle class="cr-track" cx="26" cy="26" r="23" />
+          <circle class="cr-fill" cx="26" cy="26" r="23"
+                  [attr.stroke]="'hsl(' + hue + ' 80% 50%)'" />
+          <path class="cr-check" d="M17 27l6 6 12-13" [attr.stroke]="'hsl(' + hue + ' 80% 45%)'" />
+        </svg>
+      </div>
+      <div class="cheer-amount">{{ full }}</div>
+      <h2 class="cheer-title">{{ cheerTitle }}</h2>
+      <p class="cheer-body">{{ cheerBody }}</p>
+      <div class="cheer-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
 
   <!-- ===================== Numeric dialer overlay ===================== -->
   <div class="dialer-backdrop" *ngIf="dialerOpen" (click)="closeDialer(false)"></div>
