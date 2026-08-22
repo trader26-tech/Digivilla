@@ -7,82 +7,75 @@
 >
   <svg viewBox="0 0 140 140" fill="none" aria-hidden="true">
     <defs>
-      <radialGradient id="rupi-face" cx="38%" cy="28%" r="82%">
-        <stop offset="0" stop-color="#ffeeb0" />
-        <stop offset="50%" stop-color="#f7c94e" />
-        <stop offset="100%" stop-color="#dd9316" />
+      <radialGradient id="rupi-face" cx="36%" cy="26%" r="85%">
+        <stop offset="0" stop-color="#ffe9a3" />
+        <stop offset="48%" stop-color="#f8c948" />
+        <stop offset="100%" stop-color="#e0971a" />
       </radialGradient>
-      <linearGradient id="rupi-rim" x1="0.2" y1="0" x2="0.6" y2="1">
-        <stop offset="0" stop-color="#ffe07a" />
-        <stop offset="55%" stop-color="#eab028" />
-        <stop offset="100%" stop-color="#b9760c" />
-      </linearGradient>
-      <linearGradient id="rupi-glass" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#eafcff" stop-opacity="0.9" />
-        <stop offset="100%" stop-color="#bfe9ff" stop-opacity="0.55" />
+      <linearGradient id="rupi-rim" x1="0.2" y1="0" x2="0.7" y2="1">
+        <stop offset="0" stop-color="#ffe483" />
+        <stop offset="50%" stop-color="#edb02c" />
+        <stop offset="100%" stop-color="#b6740b" />
       </linearGradient>
       <filter id="rupi-drop" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#b5730b" flood-opacity="0.38" />
+        <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#b0710a" flood-opacity="0.4" />
       </filter>
     </defs>
 
     <!-- soft ground shadow -->
-    <ellipse class="ground" cx="70" cy="130" rx="28" ry="5" fill="#000" opacity="0.11" />
+    <ellipse class="ground" cx="70" cy="131" rx="27" ry="5" fill="#000" opacity="0.11" />
 
-    <!-- ARMS (behind body) — forearm + hand, so they can gesture -->
+    <!-- ARMS (behind body): forearm + rounded hand -->
     <g class="arm arm-l">
-      <path class="forearm" d="M40 84 Q24 82 18 68" stroke="#dd9316" stroke-width="7" stroke-linecap="round" fill="none" />
-      <circle class="hand" cx="17" cy="66" r="7" fill="#f7c94e" />
+      <path class="forearm" d="M40 86 Q23 84 17 70" stroke="#e0971a" stroke-width="7.5" stroke-linecap="round" fill="none" />
+      <circle class="hand" cx="16" cy="68" r="7.5" fill="#f8c948" />
     </g>
     <g class="arm arm-r">
-      <path class="forearm" d="M100 84 Q116 82 122 68" stroke="#dd9316" stroke-width="7" stroke-linecap="round" fill="none" />
-      <circle class="hand" cx="123" cy="66" r="7" fill="#f7c94e" />
+      <path class="forearm" d="M100 86 Q117 84 123 70" stroke="#e0971a" stroke-width="7.5" stroke-linecap="round" fill="none" />
+      <circle class="hand" cx="124" cy="68" r="7.5" fill="#f8c948" />
     </g>
 
-    <!-- COIN body: rim + inner face + engraved ring for real depth -->
+    <!-- COIN body -->
     <g class="body" filter="url(#rupi-drop)">
-      <circle cx="70" cy="70" r="46" fill="url(#rupi-rim)" />
-      <circle cx="70" cy="70" r="38" fill="url(#rupi-face)" />
-      <circle cx="70" cy="70" r="38" fill="none" stroke="#c8880f" stroke-width="1.5" opacity="0.28" />
-      <!-- top sheen -->
-      <ellipse cx="58" cy="48" rx="18" ry="10" fill="#fff" opacity="0.22" />
+      <circle cx="70" cy="70" r="47" fill="url(#rupi-rim)" />
+      <circle cx="70" cy="70" r="39" fill="url(#rupi-face)" />
+      <!-- soft top sheen for a warm matte-metal feel -->
+      <ellipse class="sheen" cx="57" cy="47" rx="20" ry="11" fill="#fff" opacity="0.25" />
     </g>
-
-    <!-- ₹ mint-mark: small, engraved near the lower rim like a real coin's mark,
-         so the rupee identity is there without crowding the face -->
-    <text class="mint" x="70" y="98" text-anchor="middle" dominant-baseline="central"
-          font-family="'Inter', system-ui, sans-serif" font-size="13" font-weight="800"
-          fill="#b9790a" opacity="0.45">₹</text>
 
     <!-- FACE -->
     <g class="face">
-      <!-- eyebrows: expressive, drive the 'mastermind' look -->
-      <g class="brows" stroke="#3a2a08" stroke-width="3" stroke-linecap="round">
-        <path class="brow brow-l" d="M50 50 Q57 47 63 49" />
-        <path class="brow brow-r" d="M77 49 Q83 47 90 50" />
+      <!-- eyebrows: clean, expressive -->
+      <g class="brows" stroke="#4a3208" stroke-width="3.4" stroke-linecap="round" fill="none">
+        <path class="brow brow-l" d="M50 55 Q58 51 65 54" />
+        <path class="brow brow-r" d="M75 54 Q82 51 90 55" />
       </g>
 
-      <!-- sleek investor glasses -->
-      <g class="glasses">
-        <rect x="46" y="56" width="20" height="15" rx="6" fill="url(#rupi-glass)" stroke="#3a2a08" stroke-width="2.6" />
-        <rect x="74" y="56" width="20" height="15" rx="6" fill="url(#rupi-glass)" stroke="#3a2a08" stroke-width="2.6" />
-        <path d="M66 62 Q70 60 74 62" stroke="#3a2a08" stroke-width="2.6" fill="none" stroke-linecap="round" />
-        <path d="M46 60 L40 57M94 60 L100 57" stroke="#3a2a08" stroke-width="2.4" stroke-linecap="round" />
+      <!-- eyes: big, glossy, alive -->
+      <g class="eyes">
+        <g class="eye eye-l">
+          <ellipse class="ball" cx="57" cy="66" rx="6.2" ry="7" fill="#3a2a08" />
+          <circle class="spark" cx="59" cy="63.5" r="2.1" fill="#fff" />
+          <circle class="spark2" cx="55.6" cy="67.5" r="1" fill="#fff" opacity="0.7" />
+        </g>
+        <g class="eye eye-r">
+          <ellipse class="ball" cx="83" cy="66" rx="6.2" ry="7" fill="#3a2a08" />
+          <circle class="spark" cx="85" cy="63.5" r="2.1" fill="#fff" />
+          <circle class="spark2" cx="81.6" cy="67.5" r="1" fill="#fff" opacity="0.7" />
+        </g>
+        <!-- blink lids -->
+        <g class="lids" fill="url(#rupi-face)">
+          <rect class="lid lid-l" x="50" y="58" width="14" height="9" rx="4.5" />
+          <rect class="lid lid-r" x="76" y="58" width="14" height="9" rx="4.5" />
+        </g>
       </g>
 
-      <!-- eyes behind the glasses -->
-      <g class="eyes" fill="#3a2a08">
-        <circle class="eye eye-l" cx="56" cy="64" r="3.4" />
-        <circle class="eye eye-r" cx="84" cy="64" r="3.4" />
-      </g>
-      <!-- blink lids -->
-      <g class="lids" fill="url(#rupi-face)">
-        <rect class="lid lid-l" x="51" y="59" width="10" height="6" rx="3" />
-        <rect class="lid lid-r" x="79" y="59" width="10" height="6" rx="3" />
-      </g>
+      <!-- small friendly nose -->
+      <ellipse class="nose" cx="70" cy="76" rx="3" ry="2.4" fill="#c8880f" opacity="0.6" />
 
-      <!-- mouth -->
-      <path class="mouth" d="M60 80 Q70 89 80 80" stroke="#3a2a08" stroke-width="3.4" stroke-linecap="round" fill="none" />
+      <!-- mouth: warm open smile with a subtle tongue for charm -->
+      <path class="mouth" d="M58 82 Q70 95 82 82 Q70 88 58 82 Z" fill="#5a3a10" />
+      <path class="tongue" d="M64 87 Q70 92 76 87 Q70 90 64 87 Z" fill="#ff8f7a" />
     </g>
   </svg>
 </div>

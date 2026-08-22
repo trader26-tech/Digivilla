@@ -6,21 +6,37 @@
 .rupi svg { width: 100%; height: 100%; overflow: visible; }
 
 /* ---------------------------------------------------------- idle motion */
-.rupi.animated svg {
-  animation: bob 3.4s ease-in-out infinite;
-  transform-origin: 70px 118px;
+/* a lively bob with a hint of rotation, plus a gentle squash at the bottom */
+.rupi.animated .body,
+.rupi.animated .face {
+  animation: bob 3.2s ease-in-out infinite;
+  transform-origin: 70px 100px;
+  transform-box: view-box;
 }
 @keyframes bob {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-5px) rotate(-1.5deg); }
+  50% { transform: translateY(-6px) rotate(-2deg); }
 }
+/* arms sway slightly out of phase for life */
+.rupi.animated .arm {
+  animation: armSway 3.2s ease-in-out infinite;
+  transform-box: fill-box;
+}
+.arm-l { transform-origin: 88% 42%; }
+.arm-r { transform-origin: 12% 42%; }
+@keyframes armSway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(4deg); }
+}
+.rupi.animated .arm-r { animation-direction: reverse; }
+
 .rupi.animated .ground {
-  animation: groundPulse 3.4s ease-in-out infinite;
-  transform-origin: 70px 130px;
+  animation: groundPulse 3.2s ease-in-out infinite;
+  transform-origin: 70px 131px;
 }
 @keyframes groundPulse {
-  0%, 100% { transform: scale(1); opacity: 0.11; }
-  50% { transform: scale(0.84); opacity: 0.08; }
+  0%, 100% { transform: scaleX(1); opacity: 0.11; }
+  50% { transform: scaleX(0.82); opacity: 0.08; }
 }
 
 /* blink */
@@ -29,67 +45,64 @@
   transform-origin: center;
   transform-box: fill-box;
 }
-.rupi.animated .lid { animation: blink 4.8s ease-in-out infinite; }
+.rupi.animated .lid { animation: blink 4.6s ease-in-out infinite; }
 .rupi.animated .lid-r { animation-delay: 0.03s; }
 @keyframes blink {
-  0%, 92%, 100% { transform: scaleY(0); }
-  95%, 97% { transform: scaleY(1.15); }
+  0%, 91%, 100% { transform: scaleY(0); }
+  94%, 96% { transform: scaleY(1.2); }
 }
 
-/* smooth transitions between poses so gestures feel deliberate */
-.arm, .brow, .mouth {
-  transition: transform 0.4s cubic-bezier(0.34, 1.4, 0.5, 1), d 0.4s ease;
+/* eye sparkle drifts, giving the eyes life */
+.rupi.animated .spark { animation: sparkle 3.2s ease-in-out infinite; }
+@keyframes sparkle {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-0.6px, 0.8px); }
 }
-.arm { transform-box: fill-box; }
-.arm-l { transform-origin: 88% 40%; }
-.arm-r { transform-origin: 12% 40%; }
+
+/* smooth, springy pose transitions */
+.arm, .brow, .mouth, .tongue { transition: transform 0.42s cubic-bezier(0.34, 1.5, 0.5, 1), d 0.42s ease; }
 .brow { transform-box: fill-box; transform-origin: center; }
 
 /* =============================================================== poses */
 
-/* WAVE — matches "Hi, I'm Rupi": left hand raised, waggling; brows up, big smile */
-.rupi[data-pose='wave'] .arm-l { transform: rotate(-46deg); }
+/* WAVE — "Hi!": left hand up + waggle, brows lifted, big smile */
+.rupi[data-pose='wave'] .arm-l { transform: rotate(-48deg); }
 .rupi[data-pose='wave'] .brow-l,
-.rupi[data-pose='wave'] .brow-r { transform: translateY(-2px); }
-.rupi.animated[data-pose='wave'] .arm-l { animation: wave 1s ease-in-out infinite; }
+.rupi[data-pose='wave'] .brow-r { transform: translateY(-2.5px); }
+.rupi.animated[data-pose='wave'] .arm-l { animation: wave 0.95s ease-in-out infinite; }
 @keyframes wave {
-  0%, 100% { transform: rotate(-38deg); }
-  50% { transform: rotate(-60deg); }
+  0%, 100% { transform: rotate(-40deg); }
+  50% { transform: rotate(-62deg); }
 }
 
-/* HAPPY — resting, warm (default). Slight open, friendly. */
-.rupi[data-pose='happy'] .mouth { d: path("M59 79 Q70 90 81 79"); }
+/* HAPPY — resting, warm (default) */
 
-/* POINT — matches "I'll turn it into a plan": right hand points up/out, one brow
-   raised (the knowing, mastermind look) */
-.rupi[data-pose='point'] .arm-r { transform: rotate(-52deg); }
-.rupi[data-pose='point'] .brow-r { transform: translateY(-3px) rotate(-8deg); }
-.rupi[data-pose='point'] .mouth { d: path("M60 80 Q70 87 80 80"); }
+/* THINK — hand to chin, brows drawn in, small closed mouth */
+.rupi[data-pose='think'] .arm-r { transform: rotate(54deg) translate(-16px, 2px); }
+.rupi[data-pose='think'] .brow-l { transform: translateY(1.5px) rotate(7deg); }
+.rupi[data-pose='think'] .brow-r { transform: translateY(1.5px) rotate(-7deg); }
+.rupi[data-pose='think'] .mouth { transform: scaleY(0.4); transform-origin: 70px 84px; }
+.rupi[data-pose='think'] .tongue { opacity: 0; }
 
-/* THINK — right hand to chin, both brows drawn in, small considering mouth */
-.rupi[data-pose='think'] .arm-r { transform: rotate(52deg) translate(-14px, 2px); }
-.rupi[data-pose='think'] .brow-l { transform: translateY(1px) rotate(6deg); }
-.rupi[data-pose='think'] .brow-r { transform: translateY(1px) rotate(-6deg); }
-.rupi[data-pose='think'] .mouth { d: path("M62 82 Q70 85 78 82"); }
+/* POINT — right hand points up/out, one brow raised (the confident look) */
+.rupi[data-pose='point'] .arm-r { transform: rotate(-54deg); }
+.rupi[data-pose='point'] .brow-r { transform: translateY(-3.5px) rotate(-9deg); }
 
-/* CHEER — matches "Let's go!": both hands up, brows up, bounce */
-.rupi[data-pose='cheer'] .arm-l { transform: rotate(-48deg); }
-.rupi[data-pose='cheer'] .arm-r { transform: rotate(48deg); }
+/* CHEER — both hands up, brows up, extra bounce */
+.rupi[data-pose='cheer'] .arm-l { transform: rotate(-50deg); }
+.rupi[data-pose='cheer'] .arm-r { transform: rotate(50deg); }
 .rupi[data-pose='cheer'] .brow-l,
-.rupi[data-pose='cheer'] .brow-r { transform: translateY(-3px); }
-.rupi[data-pose='cheer'] .mouth { d: path("M58 79 Q70 92 82 79"); }
-.rupi.animated[data-pose='cheer'] svg { animation: cheerBob 0.85s ease-in-out infinite; }
+.rupi[data-pose='cheer'] .brow-r { transform: translateY(-3.5px); }
+.rupi.animated[data-pose='cheer'] .body,
+.rupi.animated[data-pose='cheer'] .face { animation: cheerBob 0.8s ease-in-out infinite; }
 @keyframes cheerBob {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-9px); }
+  50% { transform: translateY(-10px); }
 }
 
 /* ------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .rupi.animated svg,
-  .rupi.animated .lid,
-  .rupi.animated .ground,
-  .rupi.animated .arm-l { animation: none; }
-  .arm, .brow, .mouth { transition: none; }
+  .rupi.animated * { animation: none !important; }
+  .arm, .brow, .mouth, .tongue { transition: none; }
   .lid { transform: scaleY(0); }
 }

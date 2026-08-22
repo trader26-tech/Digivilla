@@ -26,17 +26,17 @@
   animation: screenIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* A soft colour aura up top so the screen isn't flat white. */
+/* A very soft colour aura up top so the screen isn't flat white. */
 .amount-screen::before {
   content: '';
   position: absolute;
-  top: -30%;
+  top: -35%;
   left: 50%;
-  width: 140%;
-  height: 70%;
+  width: 130%;
+  height: 60%;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse 50% 60% at 50% 40%,
-    hsl(var(--hue) 90% 90% / 0.55), transparent 70%);
+  background: radial-gradient(ellipse 45% 55% at 50% 40%,
+    hsl(var(--hue) 90% 92% / 0.28), transparent 70%);
   pointer-events: none;
   z-index: 0;
   opacity: 0;
@@ -153,14 +153,6 @@
   background: hsl(var(--hue) 80% 50%);
   cursor: pointer;
 }
-.readout .compact-unused {
-  margin-top: 0.4rem;
-  color: var(--ink-2);
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---------- typing input (native number keyboard) ---------- */
 .type-wrap {
   display: inline-flex;
@@ -190,30 +182,6 @@
   color: hsl(var(--hue) 80% 44%);
   font-variant-numeric: tabular-nums;
   caret-color: hsl(var(--hue) 80% 50%);
-}
-
-/* ---------- enter amount pill ---------- */
-.enter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 1rem 0 0;
-  border: 1px solid hsl(var(--hue) 60% 85%);
-  background: var(--accent-soft);
-  color: hsl(var(--hue) 70% 38%);
-  font-weight: 650;
-  font-size: 0.9rem;
-  padding: 0.55rem 1.05rem;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.14s ease, background 0.14s, box-shadow 0.14s;
-  &:hover { box-shadow: 0 4px 12px -4px hsl(var(--hue) 70% 50% / 0.4); }
-  &:active { transform: scale(0.97); }
-  &.done {
-    background: hsl(var(--hue) 80% 50%);
-    color: #fff;
-    border-color: hsl(var(--hue) 80% 50%);
-  }
 }
 
 /* ---------- the arch dial ---------- */
