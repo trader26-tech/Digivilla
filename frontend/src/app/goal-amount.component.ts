@@ -277,10 +277,6 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   get cheerTitle(): string {
     return 'Great goal!';
   }
-  get cheerBody(): string {
-    const label = this.goal?.label || 'This goal';
-    return `${label} is more within reach than it looks. With a steady monthly plan, we'll help you get there — one confident step at a time.`;
-  }
   confirm(): void {
     if (this.cheering) return;
     if (navigator.vibrate && !this.reduceMotion) navigator.vibrate([10, 30, 10]);

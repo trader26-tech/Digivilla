@@ -5,38 +5,47 @@
 .rupi { display: inline-block; }
 .rupi svg { width: 100%; height: 100%; overflow: visible; }
 
+/* transform-box so every part rotates/scales around its own geometry */
+.head, .arm, .brow, .mouth, .foot, .torso, .legs, .ground { transform-box: view-box; }
+.arm { transform-box: fill-box; }
+.brow { transform-box: fill-box; transform-origin: center; }
+
 /* ---------------------------------------------------------- idle motion */
-/* a lively bob with a hint of rotation, plus a gentle squash at the bottom */
-.rupi.animated .body,
-.rupi.animated .face {
-  animation: bob 3.2s ease-in-out infinite;
-  transform-origin: 70px 100px;
-  transform-box: view-box;
+/* whole body breathes; head bobs a touch more for life */
+.rupi.animated .head {
+  animation: headBob 3s ease-in-out infinite;
+  transform-origin: 80px 96px;
 }
-@keyframes bob {
+@keyframes headBob {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(-2deg); }
+  50% { transform: translateY(-4px) rotate(-2deg); }
 }
-/* arms sway slightly out of phase for life */
-.rupi.animated .arm {
-  animation: armSway 3.2s ease-in-out infinite;
-  transform-box: fill-box;
+.rupi.animated .torso,
+.rupi.animated .legs {
+  animation: bodyBreath 3s ease-in-out infinite;
+  transform-origin: 80px 120px;
 }
-.arm-l { transform-origin: 88% 42%; }
-.arm-r { transform-origin: 12% 42%; }
+@keyframes bodyBreath {
+  0%, 100% { transform: translateY(0) scaleX(1); }
+  50% { transform: translateY(-1.5px) scaleX(1.02); }
+}
+/* arms sway gently, out of phase */
+.rupi.animated .arm { animation: armSway 3s ease-in-out infinite; }
+.arm-l { transform-origin: 92% 30%; }
+.arm-r { transform-origin: 8% 30%; }
 @keyframes armSway {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(4deg); }
+  50% { transform: rotate(5deg); }
 }
 .rupi.animated .arm-r { animation-direction: reverse; }
 
 .rupi.animated .ground {
-  animation: groundPulse 3.2s ease-in-out infinite;
-  transform-origin: 70px 131px;
+  animation: groundPulse 3s ease-in-out infinite;
+  transform-origin: 80px 160px;
 }
 @keyframes groundPulse {
-  0%, 100% { transform: scaleX(1); opacity: 0.11; }
-  50% { transform: scaleX(0.82); opacity: 0.08; }
+  0%, 100% { transform: scaleX(1); opacity: 0.12; }
+  50% { transform: scaleX(0.85); opacity: 0.09; }
 }
 
 /* blink */
@@ -48,54 +57,47 @@
 .rupi.animated .lid { animation: blink 4.6s ease-in-out infinite; }
 .rupi.animated .lid-r { animation-delay: 0.03s; }
 @keyframes blink {
-  0%, 91%, 100% { transform: scaleY(0); }
-  94%, 96% { transform: scaleY(1.2); }
+  0%, 92%, 100% { transform: scaleY(0); }
+  95%, 97% { transform: scaleY(1.2); }
 }
 
-/* eye sparkle drifts, giving the eyes life */
-.rupi.animated .spark { animation: sparkle 3.2s ease-in-out infinite; }
-@keyframes sparkle {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-0.6px, 0.8px); }
-}
-
-/* smooth, gentle pose transitions */
-.arm, .brow, .mouth { transition: transform 0.42s cubic-bezier(0.34, 1.3, 0.55, 1), d 0.42s ease; }
-.brow { transform-box: fill-box; transform-origin: center; }
+/* springy pose transitions */
+.arm, .brow, .mouth { transition: transform 0.42s cubic-bezier(0.34, 1.5, 0.5, 1), d 0.42s ease; }
 
 /* =============================================================== poses */
 
-/* WAVE — "Hi!": left hand up + waggle, brows gently lifted */
-.rupi[data-pose='wave'] .arm-l { transform: rotate(-48deg); }
+/* WAVE — left hand up, waggle */
+.rupi[data-pose='wave'] .arm-l { transform: rotate(-52deg); }
 .rupi[data-pose='wave'] .brow-l,
 .rupi[data-pose='wave'] .brow-r { transform: translateY(-1.5px); }
 .rupi.animated[data-pose='wave'] .arm-l { animation: wave 0.95s ease-in-out infinite; }
 @keyframes wave {
-  0%, 100% { transform: rotate(-40deg); }
-  50% { transform: rotate(-62deg); }
+  0%, 100% { transform: rotate(-44deg); }
+  50% { transform: rotate(-66deg); }
 }
 
-/* HAPPY — resting, warm (default) */
+/* HAPPY — resting (default) */
 
-/* THINK — hand to chin, brows gently lowered evenly, calmer mouth */
-.rupi[data-pose='think'] .arm-r { transform: rotate(54deg) translate(-16px, 2px); }
+/* THINK — right hand toward chin, brows gently lowered evenly */
+.rupi[data-pose='think'] .arm-r { transform: rotate(48deg) translate(-18px, -4px); }
 .rupi[data-pose='think'] .brow-l,
 .rupi[data-pose='think'] .brow-r { transform: translateY(1.5px); }
-.rupi[data-pose='think'] .mouth { transform: scaleY(0.55); transform-origin: 70px 82px; }
+.rupi[data-pose='think'] .mouth { transform: scaleY(0.55); transform-origin: 80px 70px; }
 
-/* POINT — right hand points up/out; brows stay calm & level */
-.rupi[data-pose='point'] .arm-r { transform: rotate(-54deg); }
+/* POINT — right hand up/out */
+.rupi[data-pose='point'] .arm-r { transform: rotate(-56deg); }
 
-/* CHEER — both hands up, brows up, extra bounce */
-.rupi[data-pose='cheer'] .arm-l { transform: rotate(-50deg); }
-.rupi[data-pose='cheer'] .arm-r { transform: rotate(50deg); }
+/* CHEER — both hands up + happy bounce */
+.rupi[data-pose='cheer'] .arm-l { transform: rotate(-54deg); }
+.rupi[data-pose='cheer'] .arm-r { transform: rotate(54deg); }
 .rupi[data-pose='cheer'] .brow-l,
 .rupi[data-pose='cheer'] .brow-r { transform: translateY(-2px); }
-.rupi.animated[data-pose='cheer'] .body,
-.rupi.animated[data-pose='cheer'] .face { animation: cheerBob 0.8s ease-in-out infinite; }
-@keyframes cheerBob {
+.rupi.animated[data-pose='cheer'] .head,
+.rupi.animated[data-pose='cheer'] .torso,
+.rupi.animated[data-pose='cheer'] .legs { animation: cheerBounce 0.8s ease-in-out infinite; }
+@keyframes cheerBounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-9px); }
 }
 
 /* ------------------------------------------------------- reduced motion */

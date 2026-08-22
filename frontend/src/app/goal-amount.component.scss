@@ -223,10 +223,14 @@
 }
 @keyframes cheerIn { from { opacity: 0; } to { opacity: 1; } }
 .cheer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   max-width: 22rem;
   text-align: center;
   animation: cheerCard 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.cheer-ring { order: 1; }
 @keyframes cheerCard {
   from { opacity: 0; transform: translateY(16px) scale(0.97); }
   to { opacity: 1; transform: none; }
@@ -259,20 +263,25 @@
 }
 @keyframes ringDraw { to { stroke-dashoffset: 0; } }
 @keyframes checkDraw { to { stroke-dashoffset: 0; } }
-.cheer-amount {
-  font-size: clamp(1.9rem, 8vw, 2.6rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-dk);
-  margin-bottom: 0.5rem;
-}
 .cheer-title {
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 1rem 0 0.35rem;
+  color: var(--accent-dk);
+  opacity: 0.85;
+  order: 2;
+}
+.cheer-amount {
+  font-size: clamp(2.4rem, 11vw, 3.4rem);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
   color: var(--text);
+  margin: 0;
+  order: 3;
 }
 .cheer-body {
   color: var(--muted);
