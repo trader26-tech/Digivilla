@@ -60,4 +60,3 @@ meets the target rather than only the lucky one. The Monte Carlo pass then shows
 the p10 / p50 / p90 range and the probability of hitting the goal.
 
 > Projections use simulated long-run category assumptions. Not investment advice.
-
