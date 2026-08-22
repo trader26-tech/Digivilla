@@ -5,90 +5,36 @@
   [style.width.px]="size"
   [style.height.px]="size"
 >
-  <svg viewBox="0 0 160 170" fill="none" aria-hidden="true">
+  <svg viewBox="0 0 140 140" fill="none" aria-hidden="true">
     <defs>
-      <radialGradient id="rupi-head" cx="38%" cy="28%" r="80%">
-        <stop offset="0" stop-color="#ffe7a0" />
-        <stop offset="52%" stop-color="#f4c64c" />
-        <stop offset="100%" stop-color="#dc9a20" />
+      <radialGradient id="rupi-face" cx="36%" cy="30%" r="80%">
+        <stop offset="0" stop-color="#ffe08a" />
+        <stop offset="100%" stop-color="#f0b429" />
       </radialGradient>
-      <linearGradient id="rupi-headrim" x1="0.2" y1="0" x2="0.7" y2="1">
-        <stop offset="0" stop-color="#ffdf78" />
-        <stop offset="55%" stop-color="#e6ab2f" />
-        <stop offset="100%" stop-color="#b57a10" />
-      </linearGradient>
-      <linearGradient id="rupi-body" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#4a86ff" />
-        <stop offset="100%" stop-color="#2f63d8" />
-      </linearGradient>
-      <filter id="rupi-soft" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1c3a7a" flood-opacity="0.28" />
+      <filter id="rupi-shadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#c98a12" flood-opacity="0.3" />
       </filter>
     </defs>
 
     <!-- ground shadow -->
-    <ellipse class="ground" cx="80" cy="160" rx="30" ry="5.5" fill="#000" opacity="0.12" />
+    <ellipse class="ground" cx="70" cy="126" rx="26" ry="4.5" fill="#000" opacity="0.1" />
 
-    <!-- LEGS + feet -->
-    <g class="legs">
-      <rect x="66" y="132" width="8" height="16" rx="4" fill="#2f63d8" />
-      <rect x="86" y="132" width="8" height="16" rx="4" fill="#2f63d8" />
-      <ellipse class="foot foot-l" cx="66" cy="150" rx="9" ry="5" fill="#25457f" />
-      <ellipse class="foot foot-r" cx="94" cy="150" rx="9" ry="5" fill="#25457f" />
-    </g>
+    <!-- hands: two simple rounded mitts, just clear of the coin -->
+    <circle class="hand hand-l" cx="22" cy="80" r="10" fill="#eaa81f" />
+    <circle class="hand hand-r" cx="118" cy="80" r="10" fill="#eaa81f" />
 
-    <!-- ARMS (behind body): upper + hand, connected at the shoulder -->
-    <g class="arm arm-l">
-      <path class="limb" d="M52 100 Q34 104 27 92" stroke="#3d74ec" stroke-width="9" stroke-linecap="round" fill="none" />
-      <circle class="hand" cx="25" cy="90" r="8" fill="#4a86ff" />
-    </g>
-    <g class="arm arm-r">
-      <path class="limb" d="M108 100 Q126 104 133 92" stroke="#3d74ec" stroke-width="9" stroke-linecap="round" fill="none" />
-      <circle class="hand" cx="135" cy="90" r="8" fill="#4a86ff" />
-    </g>
+    <!-- coin -->
+    <circle class="coin" cx="70" cy="62" r="46" fill="url(#rupi-face)" filter="url(#rupi-shadow)" />
 
-    <!-- BODY: a rounded blue torso the coin-head sits on -->
-    <g class="torso" filter="url(#rupi-soft)">
-      <path d="M50 108 Q50 92 80 92 Q110 92 110 108 L110 122 Q110 138 80 138 Q50 138 50 122 Z" fill="url(#rupi-body)" />
-      <!-- little belly highlight -->
-      <ellipse cx="70" cy="106" rx="10" ry="6" fill="#fff" opacity="0.12" />
-    </g>
-
-    <!-- HEAD: the ₹ coin -->
-    <g class="head">
-      <g filter="url(#rupi-soft)">
-        <circle cx="80" cy="56" r="42" fill="url(#rupi-headrim)" />
-        <circle cx="80" cy="56" r="35" fill="url(#rupi-head)" />
-        <ellipse class="sheen" cx="67" cy="38" rx="16" ry="9" fill="#fff" opacity="0.22" />
-      </g>
-
-      <!-- FACE -->
-      <g class="face">
-        <!-- brows: soft, level, friendly -->
-        <g class="brows" stroke="#6b4d18" stroke-width="3" stroke-linecap="round" fill="none">
-          <path class="brow brow-l" d="M62 44 Q69 42 75 44" />
-          <path class="brow brow-r" d="M85 44 Q91 42 98 44" />
-        </g>
-        <!-- big cute eyes -->
-        <g class="eyes">
-          <g class="eye eye-l">
-            <ellipse class="ball" cx="68" cy="56" rx="6" ry="7" fill="#3a2a08" />
-            <circle class="spark" cx="70" cy="53" r="2.2" fill="#fff" />
-          </g>
-          <g class="eye eye-r">
-            <ellipse class="ball" cx="92" cy="56" rx="6" ry="7" fill="#3a2a08" />
-            <circle class="spark" cx="94" cy="53" r="2.2" fill="#fff" />
-          </g>
-          <g class="lids" fill="url(#rupi-head)">
-            <rect class="lid lid-l" x="61" y="48" width="14" height="9" rx="4.5" />
-            <rect class="lid lid-r" x="85" y="48" width="14" height="9" rx="4.5" />
-          </g>
-        </g>
-        <!-- rosy cheeks for cuteness -->
-        <ellipse class="cheek" cx="60" cy="66" rx="4.5" ry="3" fill="#ff9a6a" opacity="0.4" />
-        <ellipse class="cheek" cx="100" cy="66" rx="4.5" ry="3" fill="#ff9a6a" opacity="0.4" />
-        <!-- warm smile -->
-        <path class="mouth" d="M71 68 Q80 76 89 68" stroke="#5a3f10" stroke-width="3.4" stroke-linecap="round" fill="none" />
+    <!-- face: eyes + smile only -->
+    <g class="face" fill="#3a2a08">
+      <circle class="eye eye-l" cx="56" cy="58" r="5" />
+      <circle class="eye eye-r" cx="84" cy="58" r="5" />
+      <path class="mouth" d="M56 74 Q70 86 84 74" stroke="#3a2a08" stroke-width="4" stroke-linecap="round" fill="none" />
+      <!-- blink lids -->
+      <g class="lids" fill="url(#rupi-face)">
+        <rect class="lid lid-l" x="50" y="52" width="12" height="7" rx="3.5" />
+        <rect class="lid lid-r" x="78" y="52" width="12" height="7" rx="3.5" />
       </g>
     </g>
   </svg>
