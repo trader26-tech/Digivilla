@@ -18,6 +18,7 @@ import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
 import { AuthResponse, GoalPreset } from './models';
 import { PlannerPanelComponent } from './planner-panel.component';
+import { StoryComponent } from './story.component';
 
 type Tab = 'home' | 'invest';
 
@@ -34,6 +35,7 @@ type Tab = 'home' | 'invest';
     GoalAmountComponent,
     GoalTimingComponent,
     IntroComponent,
+    StoryComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -69,6 +71,10 @@ export class AppComponent {
   /** Cinematic welcome shown on every launch, before anything else. */
   intro = true;
 
+  /** The playful "why invest / why us" story shown after the intro, before the
+   *  goal picker. Flows into the picker when finished or skipped. */
+  story = true;
+
   /** First-screen flow, all pre-login:
    *    goal-picker -> goal-amount (knob) -> goal-timing (horizon) -> landing/auth
    *  chosenGoal is set by the picker; chosenAmount by the knob; chosenYears by
@@ -102,9 +108,14 @@ export class AppComponent {
     this.authed = true;
   }
 
-  /** The welcome animation finished -> reveal the goal picker. */
+  /** The welcome animation finished -> reveal the "why invest" story. */
   onIntroDone(): void {
     this.intro = false;
+  }
+
+  /** The story finished (or was skipped) -> reveal the goal picker. */
+  onStoryDone(): void {
+    this.story = false;
   }
 
   /** User tapped Continue on a goal in the picker -> show the amount knob. */

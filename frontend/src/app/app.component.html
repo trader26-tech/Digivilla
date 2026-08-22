@@ -1,9 +1,12 @@
 <!-- Cinematic welcome, every launch, before everything -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
+<!-- Playful "why invest / why us" story, after the intro, before the picker -->
+<app-story *ngIf="!intro && story && !authed" (done)="onStoryDone()"></app-story>
+
 <!-- Pre-login flow. Wrapped so the steps slide between each other as one
      continuous journey (forward = slide left, back = slide right). -->
-<div class="pre-login" *ngIf="!intro && !authed" [@stepAnim]="preStep">
+<div class="pre-login" *ngIf="!intro && !story && !authed" [@stepAnim]="preStep">
   <!-- Step 1: no-login goal picker -->
   <app-goal-picker
     *ngIf="!pickedGoal && !chosenGoal"

@@ -5,6 +5,7 @@ import {
   HostListener,
   Output,
 } from '@angular/core';
+import { animate, style, transition, trigger } from '@angular/animations';
 
 /** One swipeable story card. `scene` names the CSS/SVG illustration. */
 export interface StoryCard {
@@ -29,6 +30,16 @@ export interface StoryCard {
   imports: [CommonModule],
   templateUrl: './story.component.html',
   styleUrl: './story.component.scss',
+  animations: [
+    // Re-runs whenever `index` changes: the new card slides in from the side
+    // the user is heading (dir drives the CSS class, this drives the motion).
+    trigger('cardSwap', [
+      transition('* => *', [
+        style({ opacity: 0, transform: 'translateX({{enter}}) scale(0.98)' }),
+        animate('460ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateX(0) scale(1)' })),
+      ], { params: { enter: '34px' } }),
+    ]),
+  ],
 })
 export class StoryComponent {
   /** Emitted when the user finishes (or skips) the story -> show goal picker. */

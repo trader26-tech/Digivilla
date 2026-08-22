@@ -29,13 +29,11 @@
     <button class="skip" (click)="skip()" type="button">Skip</button>
   </header>
 
-  <!-- the card, keyed so Angular re-runs the enter animation each change -->
+  <!-- the card; @cardSwap replays the slide each time `index` changes -->
   <div class="stage">
     <article
       class="card"
-      [class.fwd]="dir === 1"
-      [class.back]="dir === -1"
-      [attr.data-i]="index"
+      [@cardSwap]="{ value: index, params: { enter: dir === 1 ? '34px' : '-34px' } }"
     >
       <div class="art" aria-hidden="true">
         <ng-container [ngSwitch]="card.scene">
