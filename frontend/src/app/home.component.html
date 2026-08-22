@@ -1,0 +1,90 @@
+<section class="home">
+  <div class="head">
+    <h1>Goals</h1>
+    <button class="primary" (click)="planNew.emit()">＋ New goal</button>
+  </div>
+
+  <div class="loading-block" *ngIf="loading">Loading…</div>
+
+  <!-- Portfolio summary -->
+  <div class="summary" *ngIf="!loading && goals.length">
+    <div class="sum-card">
+      <span class="sl">Goals</span>
+      <b>{{ goals.length }}</b>
+    </div>
+    <div class="sum-card">
+      <span class="sl">Monthly SIP</span>
+      <b>{{ fmt(totalMonthly) }}</b>
+    </div>
+    <div class="sum-card">
+      <span class="sl">Invested</span>
+      <b>{{ fmt(totalInvested) }}</b>
+    </div>
+    <div class="sum-card">
+      <span class="sl">Projected</span>
+      <b class="pos">{{ fmt(totalOnTrack) }}</b>
+    </div>
+    <div class="sum-card wide">
+      <span class="sl">Target</span>
+      <b>{{ fmt(totalTarget) }}</b>
+    </div>
+  </div>
+
+  <!-- Goal cards -->
+  <div class="goal-list" *ngIf="!loading && goals.length">
+    <article class="goal-card" *ngFor="let g of goals">
+      <header class="gc-head">
+        <span class="gc-icon">{{ goalIcon(g.goal) }}</span>
+        <div class="gc-title">
+          <h3>{{ g.label }}</h3>
+          <span class="gc-sub">{{ fmt(g.target_amount) }} in {{ g.horizon_years }} years · {{ g.resolved_risk }}</span>
+        </div>
+        <span class="status" [class]="'st-' + statusTone(g.progress.status)">{{ statusLabel(g.progress.status) }}</span>
+        <button class="del" (click)="remove(g, $event)" title="Remove goal">✕</button>
+      </header>
+
+      <!-- progress bar: invested vs on-track vs target -->
+      <div class="progress">
+        <div class="bar">
+          <div class="fill invested" [style.width.%]="clampPct(g.progress.progress_percent)"></div>
+          <div class="marker ontrack" [style.left.%]="clampPct(g.progress.on_track_percent)" title="Projected value now"></div>
+        </div>
+        <div class="bar-legend">
+          <span><i class="dot invested"></i>{{ fmt(g.progress.invested_so_far) }}</span>
+          <span><i class="dot ontrack"></i>{{ fmt(g.progress.on_track_value) }}</span>
+          <span class="target-lbl">{{ fmt(g.target_amount) }}</span>
+        </div>
+      </div>
+
+      <!-- key numbers -->
+      <div class="gc-metrics">
+        <div><span>Monthly</span><b>{{ fmt(g.monthly_investment) }}</b></div>
+        <div><span>Elapsed</span><b>{{ g.progress.months_elapsed }}/{{ g.progress.months_total }} mo</b></div>
+        <div><span>Median</span><b>{{ fmt(g.projected_p50) }}</b></div>
+        <div><span>Success</span><b class="pos">{{ pct(g.success_rate * 100) }}</b></div>
+      </div>
+
+      <!-- allocation -->
+      <div class="gc-alloc" *ngIf="g.recommendations?.length">
+        <div class="alloc-bar">
+          <span
+            *ngFor="let r of g.recommendations"
+            [style.width.%]="r.weight * 100"
+            [style.background]="assetColor(r.asset_class)"
+            [title]="r.name + ' ' + pct(r.weight * 100)"
+          ></span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- empty state -->
+  <div class="empty" *ngIf="!loading && !goals.length">
+    <div class="empty-icon">🎯</div>
+    <h2>No goals yet</h2>
+    <div class="empty-actions">
+      <button class="primary" (click)="planNew.emit()">Plan a goal</button>
+      <button class="ghost" (click)="exploreFunds.emit()">Explore funds</button>
+    </div>
+  </div>
+</section>

@@ -1,9 +1,22 @@
 # Goal Planner
 
-A goal-based financial planner. A decision-tree chatbot listens to your goal
-(retirement, house, child's education, …), the target amount, and the timeline,
-then computes the **monthly SIP you need**, runs a **Monte Carlo simulation** of
-likely outcomes, and **recommends specific mutual funds with a rationale**.
+A **goal-based mutual-fund investment app**, built by a mutual fund distributor
+and distributed as a **PWA** (shared via a YouTube link — tap the link, the app
+opens instantly, installable to the home screen).
+
+**The product vision.** The app is goal-first. When someone opens the link, the
+**very first screen has no login** — it is a beautiful goal picker: a grid of the
+life goals a person invests for (retirement, a house, a child's education, a car,
+a wedding, a dream vacation, wealth, an emergency fund), each with its own icon
+and subtle, lively animation. The user picks the goal that matches their dream
+before we ask anything else. Only later — when they want to *save* a plan — does
+auth come in. Everything downstream (amount, timeline, SIP math, Monte Carlo,
+fund recommendations) hangs off that first goal choice.
+
+The engine behind it: a decision-tree flow listens to your goal, the target
+amount, and the timeline, then computes the **monthly SIP you need**, runs a
+**Monte Carlo simulation** of likely outcomes, and **recommends specific mutual
+funds with a rationale**.
 
 - **Backend** — FastAPI. Planning math, Monte Carlo engine, fund selection.
   Optionally reads the fund universe from Supabase; falls back to a curated

@@ -1,0 +1,67 @@
+<header class="bp-head">
+  <div class="brand"><span class="logo">🧺</span><span>Basket</span></div>
+  <button class="icon-btn" (click)="closePanel.emit()">✕</button>
+</header>
+
+<div class="bp-body">
+  <!-- link to goal -->
+  <div class="link-row">
+    <label>Link to goal</label>
+    <select [ngModel]="store.linkedGoal()?.id || ''" (ngModelChange)="linkGoal($event)">
+      <option value="">No goal</option>
+      <option *ngFor="let g of goals" [value]="g.id">{{ g.label }}</option>
+    </select>
+  </div>
+
+  <!-- suggest from a goal's risk -->
+  <div class="suggest" *ngIf="goals.length">
+    <p class="hint">Let the system build a basket from a goal's risk profile:</p>
+    <div class="suggest-chips">
+      <button *ngFor="let g of goals" [disabled]="suggesting" (click)="suggestFor(g)">
+        Suggest for {{ g.label }}
+      </button>
+    </div>
+  </div>
+  <p class="suggesting" *ngIf="suggesting">Building a suggestion…</p>
+
+  <!-- empty -->
+  <div class="bp-empty" *ngIf="!items.length && !suggesting">
+    <p>Your basket is empty.</p>
+    <button class="ghost" (click)="goExplore.emit()">Explore funds →</button>
+    <span class="or" *ngIf="goals.length">or use “Suggest” above</span>
+  </div>
+
+  <!-- items -->
+  <div class="items" *ngIf="items.length">
+    <div class="alloc-bar">
+      <span *ngFor="let i of items" [style.width.%]="i.weight * 100" [style.background]="assetColor(i.asset_class)" [title]="i.name"></span>
+    </div>
+
+    <div class="item" *ngFor="let i of items">
+      <div class="i-top">
+        <span class="i-dot" [style.background]="assetColor(i.asset_class)"></span>
+        <span class="i-name">{{ i.name }}<small>{{ i.bucket }} · {{ i.rating }}★</small></span>
+        <button class="i-del" (click)="remove(i.scheme_code)">✕</button>
+      </div>
+      <div class="i-ctrl">
+        <input type="range" min="0" max="100" [value]="(i.weight * 100).toFixed(0)"
+          (input)="setWeight(i.scheme_code, $any($event.target).value)" />
+        <span class="i-wt">{{ pct(i.weight) }}</span>
+        <span class="i-amt" *ngIf="store.linkedGoal()">{{ fmt(monthlyFor(i)) }}/mo</span>
+      </div>
+    </div>
+
+    <div class="weight-note" [class.bad]="totalWeight > 1.005 || totalWeight < 0.995">
+      Total {{ pct(totalWeight) }}
+      <button class="mini" (click)="balance()">Equal</button>
+      <button class="mini" (click)="normalize()">Normalize</button>
+    </div>
+  </div>
+</div>
+
+<footer class="bp-foot" *ngIf="items.length">
+  <div class="saved-msg" *ngIf="savedMsg">✓ {{ savedMsg }}</div>
+  <button class="primary" [disabled]="saving" (click)="save()">
+    {{ saving ? 'Saving…' : 'Save basket & start investing' }}
+  </button>
+</footer>

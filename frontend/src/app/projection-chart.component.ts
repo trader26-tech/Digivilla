@@ -74,9 +74,9 @@ interface Pt {
       </svg>
 
       <div class="legend">
-        <span class="key"><i class="sw band"></i> Likely range (p10–p90)</span>
-        <span class="key"><i class="sw median"></i> Median outcome</span>
-        <span class="key"><i class="sw target"></i> Your target</span>
+        <span class="key"><i class="sw band"></i> Range</span>
+        <span class="key"><i class="sw median"></i> Median</span>
+        <span class="key"><i class="sw target"></i> Target</span>
       </div>
     </div>
   `,

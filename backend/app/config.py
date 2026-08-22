@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     supabase_url: Optional[str] = None
     supabase_service_key: Optional[str] = None
+    # Secret used to sign auth tokens. Override in production via env; the
+    # dev default keeps the app working out of the box.
+    auth_secret: str = "dev-insecure-change-me"
     # Default to both localhost and 127.0.0.1 so the Angular dev server works
     # regardless of which host name the browser uses.
     cors_origins: str = (

@@ -1,183 +1,87 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component } from '@angular/core';
 
-import { inr, inrFull } from './format';
-import { GoalPreset, PlanResponse } from './models';
-import { PlannerService } from './planner.service';
-import { ProjectionChartComponent } from './projection-chart.component';
+import { BasketLabComponent } from './basket-lab.component';
+import { GoalPickerComponent } from './goal-picker.component';
+import { HomeComponent } from './home.component';
+import { LandingComponent } from './landing.component';
+import { AuthResponse, GoalPreset } from './models';
+import { PlannerPanelComponent } from './planner-panel.component';
 
-type Step = 'goal' | 'amount' | 'timing' | 'generating' | 'result';
-
-interface ChatBubble {
-  who: 'bot' | 'user';
-  text: string;
-}
+type Tab = 'home' | 'invest';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProjectionChartComponent],
+  imports: [
+    CommonModule,
+    HomeComponent,
+    BasketLabComponent,
+    PlannerPanelComponent,
+    LandingComponent,
+    GoalPickerComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit {
-  step: Step = 'goal';
-  presets: GoalPreset[] = [];
-  loadError: string | null = null;
+export class AppComponent {
+  tab: Tab = 'home';
+  plannerOpen = false;
+  goalsVersion = 0;
 
-  // selections
-  goal: GoalPreset | null = null;
-  amount = 0;
-  years = 0;
-  risk: string | null = null;
+  /** The app's very first screen is the no-login goal picker. Once the user
+   *  picks a goal (or has already been here), we move on to the rest of the
+   *  flow. Persisted so returning PWA users don't see it every launch. */
+  pickedGoal = false;
+  chosenGoal: GoalPreset | null = null;
 
-  // slider bounds derived from the chosen goal
-  amountMin = 0;
-  amountMax = 0;
+  authed = !!localStorage.getItem('wp_token');
+  userName = localStorage.getItem('wp_name') || '';
 
-  yearOptions = [2, 3, 5, 8, 10, 15, 20, 25, 30];
-
-  chat: ChatBubble[] = [];
-  plan: PlanResponse | null = null;
-  generating = false;
-
-  readonly riskChoices = [
-    { key: 'conservative', label: 'Play it safe', desc: 'Lower risk, steadier growth' },
-    { key: 'balanced', label: 'Balanced', desc: 'A mix of growth and stability' },
-    { key: 'aggressive', label: 'Go for growth', desc: 'Higher risk, higher potential' },
-  ];
-
-  constructor(private planner: PlannerService) {}
-
-  ngOnInit(): void {
-    this.planner.presets().subscribe({
-      next: (p) => {
-        this.presets = p;
-        this.pushBot("Hi! I'm your goal planner. What are you saving for?");
-      },
-      error: () => {
-        this.loadError = "Couldn't reach the planner service. Is the API running on :8000?";
-      },
-    });
+  /** Called when the landing page completes sign-in. Persists the session
+   *  token and the server-issued owner id so goals belong to this user
+   *  (PlannerService.owner reads wp_owner). */
+  onAuthed(res: AuthResponse): void {
+    localStorage.setItem('wp_token', res.token);
+    localStorage.setItem('wp_owner', res.user.owner);
+    localStorage.setItem('wp_name', res.user.name || res.user.email.split('@')[0]);
+    this.userName = localStorage.getItem('wp_name') || '';
+    this.authed = true;
   }
 
-  // --- chat helpers -------------------------------------------------------
-  private pushBot(text: string) {
-    this.chat.push({ who: 'bot', text });
-  }
-  private pushUser(text: string) {
-    this.chat.push({ who: 'user', text });
-  }
-
-  // --- step 1: goal -------------------------------------------------------
-  selectGoal(g: GoalPreset) {
-    this.goal = g;
-    this.risk = g.default_risk;
-    this.amount = g.default_amount;
-    this.years = g.default_years;
-    // slider bounds: from half the smallest suggestion to 1.5x the largest
-    const lo = Math.min(...g.suggested_amounts);
-    const hi = Math.max(...g.suggested_amounts);
-    this.amountMin = Math.round(lo / 2);
-    this.amountMax = Math.round(hi * 1.5);
-    this.pushUser(`${g.icon} ${g.label}`);
-    this.pushBot(`Great choice. How much do you need for your ${g.label.toLowerCase()} goal?`);
-    this.step = 'amount';
+  /** User tapped Continue on a goal in the first-screen picker. We remember
+   *  the choice; the downstream flow (planner prefill / auth) is wired later. */
+  onGoalChosen(goal: GoalPreset): void {
+    this.chosenGoal = goal;
+    this.pickedGoal = true;
   }
 
-  // --- step 2: amount -----------------------------------------------------
-  pickAmount(v: number) {
-    this.amount = v;
-  }
-  onAmountInput(v: string) {
-    const n = Number(v.replace(/[^0-9]/g, ''));
-    if (!Number.isNaN(n)) {
-      this.amount = n;
-    }
-  }
-  confirmAmount() {
-    if (this.amount <= 0) return;
-    this.pushUser(inrFull(this.amount));
-    this.pushBot('When do you want to reach this goal?');
-    this.step = 'timing';
+  signOut(): void {
+    localStorage.removeItem('wp_token');
+    localStorage.removeItem('wp_owner');
+    this.authed = false;
+    this.tab = 'home';
+    this.plannerOpen = false;
   }
 
-  // --- step 3: timing -----------------------------------------------------
-  pickYears(y: number) {
-    this.years = y;
-  }
-  confirmTiming() {
-    if (this.years <= 0) return;
-    this.pushUser(`In ${this.years} years`);
-    this.generate();
+  setTab(t: Tab): void {
+    this.tab = t;
   }
 
-  // --- generate -----------------------------------------------------------
-  generate() {
-    if (!this.goal) return;
-    this.step = 'generating';
-    this.generating = true;
-    this.pushBot('Crunching 5,000 Monte Carlo simulations and picking your funds…');
-    this.planner
-      .plan({
-        goal: this.goal.key,
-        target_amount: this.amount,
-        horizon_years: this.years,
-        risk: this.risk ?? undefined,
-      })
-      .subscribe({
-        next: (res) => {
-          this.plan = res;
-          this.generating = false;
-          this.step = 'result';
-          this.pushBot(res.summary);
-        },
-        error: () => {
-          this.generating = false;
-          this.step = 'timing';
-          this.pushBot('Something went wrong generating the plan. Please try again.');
-        },
-      });
+  togglePlanner(): void {
+    this.plannerOpen = !this.plannerOpen;
+  }
+  closePlanner(): void {
+    this.plannerOpen = false;
   }
 
-  restart() {
-    this.step = 'goal';
-    this.goal = null;
-    this.plan = null;
-    this.amount = 0;
-    this.years = 0;
-    this.risk = null;
-    this.chat = [];
-    this.pushBot("Let's plan another goal. What are you saving for?");
+  onGoalSaved(): void {
+    this.goalsVersion++;
+    this.tab = 'home';
+    this.plannerOpen = false;
   }
-
-  // --- formatting helpers for the template --------------------------------
-  fmt = inr;
-  fmtFull = inrFull;
-
-  pct(v: number): string {
-    return `${Math.round(v * 100)}%`;
-  }
-  pct1(v: number): string {
-    return `${(v * 100).toFixed(1)}%`;
-  }
-
-  assetColor(assetClass: string): string {
-    return (
-      {
-        equity: 'var(--eq)',
-        hybrid: 'var(--hy)',
-        debt: 'var(--dt)',
-        gold: 'var(--gd)',
-      }[assetClass] ?? 'var(--accent)'
-    );
-  }
-
-  get successTone(): string {
-    const s = this.plan?.success_rate ?? 0;
-    if (s >= 0.6) return 'good';
-    if (s >= 0.45) return 'ok';
-    return 'low';
+  onBasketSaved(): void {
+    this.goalsVersion++;
+    this.tab = 'home';
   }
 }

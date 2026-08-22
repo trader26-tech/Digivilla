@@ -1,0 +1,158 @@
+<section class="picker" [class.has-selection]="selected">
+  <!-- ambient animated background -->
+  <div class="aurora" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+    <div class="grid-lines"></div>
+  </div>
+
+  <header class="intro">
+    <span class="eyebrow">
+      <i class="spark"></i> Goal-based investing
+    </span>
+    <h1>What are you<br /><em>investing for?</em></h1>
+    <p class="lede">
+      Pick the dream you're saving toward. We'll build the plan — the funds, the
+      SIP, the timeline — around it. No sign-up needed to start.
+    </p>
+  </header>
+
+  <!-- skeleton while presets load -->
+  <div class="grid" *ngIf="loading">
+    <div class="skeleton" *ngFor="let s of [1,2,3,4,5,6,7,8]"></div>
+  </div>
+
+  <!-- goal grid -->
+  <div class="grid" *ngIf="!loading">
+    <button
+      class="goal"
+      *ngFor="let g of goals; let i = index; trackBy: trackByKey"
+      [class.active]="selected?.key === g.key"
+      [class.dim]="selected && selected.key !== g.key"
+      [style.--hue]="hueOf(g.key)"
+      [style.--i]="i"
+      (click)="select(g)"
+      type="button"
+    >
+      <span class="glow" aria-hidden="true"></span>
+      <span class="ico" aria-hidden="true">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: iconOf(g.key) }"></ng-container>
+      </span>
+      <span class="label">{{ g.label }}</span>
+      <span class="hint">{{ g.default_years }}+ yrs</span>
+      <span class="check" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </span>
+    </button>
+  </div>
+
+  <p class="disclaimer" *ngIf="!loading">
+    Mutual fund investments are subject to market risks. Not investment advice.
+  </p>
+</section>
+
+<!-- detail sheet: slides up when a goal is selected -->
+<div class="sheet-backdrop" *ngIf="selected" (click)="clearSelection()"></div>
+<aside class="sheet" *ngIf="selected" [style.--hue]="hueOf(selected.key)">
+  <button class="sheet-close" (click)="clearSelection()" aria-label="Close">✕</button>
+  <div class="sheet-head">
+    <span class="sheet-ico" aria-hidden="true">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: iconOf(selected.key) }"></ng-container>
+    </span>
+    <div>
+      <span class="sheet-eyebrow">Your goal</span>
+      <h2>{{ selected.label }}</h2>
+    </div>
+  </div>
+  <p class="sheet-blurb">{{ selected.blurb }}</p>
+
+  <div class="sheet-facts">
+    <div class="fact">
+      <span class="fl">Typical target</span>
+      <b>{{ compactInr(selected.default_amount) }}</b>
+    </div>
+    <div class="fact">
+      <span class="fl">Timeline</span>
+      <b>{{ selected.default_years }} years</b>
+    </div>
+    <div class="fact">
+      <span class="fl">Style</span>
+      <b>{{ riskLabel(selected.default_risk) }}</b>
+    </div>
+  </div>
+
+  <div class="sheet-amounts">
+    <span class="al">Popular targets</span>
+    <div class="chips">
+      <span class="chip" *ngFor="let a of selected.suggested_amounts">{{ compactInr(a) }}</span>
+    </div>
+  </div>
+
+  <button class="cta" (click)="continue()">
+    Continue with {{ selected.label }}
+    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  </button>
+</aside>
+
+<!-- Shared goal glyphs — reused by both the grid cards and the detail sheet.
+     `let-key` is the icon id from iconOf(); currentColor is inherited so the
+     surrounding .ico / .sheet-ico controls the tint. -->
+<ng-template #icon let-key>
+  <ng-container [ngSwitch]="key">
+    <!-- Retirement — sun over horizon -->
+    <svg *ngSwitchCase="'retirement'" viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="21" r="8" stroke="currentColor" stroke-width="2.2" />
+      <path d="M24 4v3M24 35v3M8 21H5M43 21h-3M12.7 9.7l-2 -2M37.3 9.7l2 -2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      <path d="M4 40h40" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+      <path d="M10 40c3-2 5-2 8 0M30 40c3-2 5-2 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".6" />
+    </svg>
+    <!-- Education — graduation cap -->
+    <svg *ngSwitchCase="'education'" viewBox="0 0 48 48" fill="none">
+      <path d="M24 10 4 19l20 9 20-9-20-9Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <path d="M13 23v9c0 2.5 5 5 11 5s11-2.5 11-5v-9" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <path d="M44 19v10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+    </svg>
+    <!-- House -->
+    <svg *ngSwitchCase="'house'" viewBox="0 0 48 48" fill="none">
+      <path d="M6 22 24 8l18 14" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+      <path d="M10 20v18h28V20" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <path d="M20 38V27h8v11" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+    </svg>
+    <!-- Car -->
+    <svg *ngSwitchCase="'car'" viewBox="0 0 48 48" fill="none">
+      <path d="M6 30l3-9c.7-2 2.4-3 4.4-3h21.2c2 0 3.7 1 4.4 3l3 9" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <path d="M5 30h38v6a2 2 0 0 1-2 2h-3v-8M10 38v-8H7a2 2 0 0 0-2 2v4" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <circle cx="14" cy="34" r="3" fill="currentColor" />
+      <circle cx="34" cy="34" r="3" fill="currentColor" />
+    </svg>
+    <!-- Wealth — rising chart -->
+    <svg *ngSwitchCase="'wealth'" viewBox="0 0 48 48" fill="none">
+      <path d="M7 41V9M7 41h34" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      <path d="M13 33l8-9 6 5 12-15" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+      <path d="M31 14h8v8" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+    </svg>
+    <!-- Emergency — shield -->
+    <svg *ngSwitchCase="'emergency'" viewBox="0 0 48 48" fill="none">
+      <path d="M24 5 8 11v11c0 10 7 16 16 21 9-5 16-11 16-21V11L24 5Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <path d="M17 24l5 5 9-11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    <!-- Wedding — rings -->
+    <svg *ngSwitchCase="'wedding'" viewBox="0 0 48 48" fill="none">
+      <circle cx="18" cy="29" r="10" stroke="currentColor" stroke-width="2.2" />
+      <circle cx="31" cy="29" r="10" stroke="currentColor" stroke-width="2.2" />
+      <path d="M14 12l4 5 4-5M14 12l4-4 4 4-4 5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+    </svg>
+    <!-- Vacation — plane -->
+    <svg *ngSwitchCase="'vacation'" viewBox="0 0 48 48" fill="none">
+      <path d="M6 27l36-13c2-.7 3.6 1.4 2.4 3.2L23 41l-4-11-13-3Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      <path d="M19 30l6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+    </svg>
+    <!-- Fallback — target -->
+    <svg *ngSwitchDefault viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2.2" />
+      <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="2.2" />
+      <circle cx="24" cy="24" r="3" fill="currentColor" />
+    </svg>
+  </ng-container>
+</ng-template>

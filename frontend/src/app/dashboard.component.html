@@ -1,0 +1,155 @@
+<section class="research">
+  <div class="r-head" *ngIf="!embedded">
+    <h1>Research</h1>
+    <button class="basket-btn" (click)="openBasket.emit()">
+      🧺 Basket <span class="badge" *ngIf="store.count()">{{ store.count() }}</span>
+    </button>
+  </div>
+
+  <div class="filters">
+    <div class="searchbar">
+      <span class="s-icon">⌕</span>
+      <input type="text" placeholder="Search fund or AMC" [(ngModel)]="query" (ngModelChange)="onFilterChange()" />
+      <button *ngIf="query" class="s-clear" (click)="query=''; onFilterChange()">✕</button>
+    </div>
+    <select [(ngModel)]="bucket" (ngModelChange)="loadList()">
+      <option value="">All categories</option>
+      <option *ngFor="let b of buckets" [value]="b">{{ b }}</option>
+    </select>
+    <select [(ngModel)]="assetClass" (ngModelChange)="loadList()">
+      <option value="">All assets</option>
+      <option value="equity">Equity</option>
+      <option value="hybrid">Hybrid</option>
+      <option value="debt">Debt</option>
+      <option value="gold">Gold</option>
+    </select>
+    <button class="reset" (click)="resetFilters()">Reset</button>
+  </div>
+
+  <p class="load-error" *ngIf="loadError">{{ loadError }}</p>
+  <div class="loading-block" *ngIf="loading">Loading…</div>
+
+  <div class="list-wrap" *ngIf="!loading">
+    <div class="list-count">{{ total }} funds<span *ngIf="loadingList"> · loading…</span></div>
+    <table class="fund-table">
+      <thead>
+        <tr>
+          <th class="c-name">Fund</th>
+          <th class="c-rating sortable" (click)="setSort('rating')">Rating</th>
+          <th class="c-num sortable" (click)="setSort('return_1y')">1Y</th>
+          <th class="c-num sortable" (click)="setSort('return_3y')">3Y</th>
+          <th class="c-num sortable" (click)="setSort('return_5y')">5Y</th>
+          <th class="c-num sortable" (click)="setSort('volatility')">Risk</th>
+          <th class="c-act"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of funds" (click)="openFund(f)" class="frow">
+          <td class="c-name">
+            <span class="dot" [style.background]="assetColor(f.asset_class)"></span>
+            <span class="nm">{{ f.name }}<small>{{ f.bucket }} · {{ f.fund_house }}</small></span>
+          </td>
+          <td class="c-rating"><span class="rating sm" [class]="ratingClass(f.rating)">{{ f.rating }}★</span></td>
+          <td class="c-num" [class]="retClass(f.return_1y)">{{ fmtPct(f.return_1y) }}</td>
+          <td class="c-num" [class]="retClass(f.return_3y)">{{ fmtPct(f.return_3y) }}</td>
+          <td class="c-num" [class]="retClass(f.return_5y)">{{ fmtPct(f.return_5y) }}</td>
+          <td class="c-num muted">{{ f.volatility !== null ? f.volatility.toFixed(0) + '%' : '—' }}</td>
+          <td class="c-act">
+            <button class="add-btn" [class.added]="inBasket(f.scheme_code)" (click)="toggleBasket(f, $event)"
+              [title]="inBasket(f.scheme_code) ? 'Remove' : 'Add to basket'">
+              {{ inBasket(f.scheme_code) ? '✓' : '＋' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p *ngIf="!loadingList && funds.length === 0" class="empty">No funds match your filters.</p>
+  </div>
+</section>
+
+<!-- FUND DETAIL -->
+<div class="overlay" *ngIf="selectedFund || loadingDetail" (click)="closeFund()">
+  <div class="sheet detail" (click)="$event.stopPropagation()">
+    <div class="loading-block" *ngIf="loadingDetail">Loading…</div>
+    <ng-container *ngIf="selectedFund as f">
+      <header class="sheet-head">
+        <div>
+          <span class="d-bucket">{{ f.bucket }} · {{ f.fund_house }}</span>
+          <h2>{{ f.name }}</h2>
+          <div class="d-tags">
+            <span class="rating" [class]="ratingClass(f.rating)">{{ stars(f.rating) }}</span>
+            <span class="tag">{{ f.plan }}</span>
+            <span class="tag">{{ f.asset_class }}</span>
+          </div>
+        </div>
+        <button class="icon-btn" (click)="closeFund()">✕</button>
+      </header>
+
+      <!-- Beginner explainer -->
+      <div class="explainer" *ngIf="info as inf">
+        <p class="ex-summary">{{ inf.summary }}</p>
+        <div class="ex-rows">
+          <div class="ex-row"><span>Where it invests</span><p>{{ inf.invests_in }}</p></div>
+          <div class="ex-row"><span>Best for</span><p>{{ inf.who_for }}</p></div>
+        </div>
+      </div>
+
+      <!-- What it invests in: composition -->
+      <div class="d-card" *ngIf="info as inf">
+        <h3>What it invests in <small class="note">typical for this category</small></h3>
+        <div class="comp-block">
+          <span class="comp-label">Asset mix</span>
+          <app-composition-bar [slices]="inf.composition"></app-composition-bar>
+        </div>
+        <div class="comp-block" *ngIf="inf.cap_tilt?.length">
+          <span class="comp-label">Company size tilt</span>
+          <app-composition-bar [slices]="inf.cap_tilt!"></app-composition-bar>
+        </div>
+      </div>
+
+      <div class="verdict" [class]="'v-' + f.verdict_tone">
+        <span class="v-icon">{{ f.verdict_tone === 'good' ? '✓' : f.verdict_tone === 'caution' ? '!' : 'ℹ' }}</span>
+        <p>{{ f.verdict }}</p>
+      </div>
+
+      <div class="d-card">
+        <div class="d-card-head">
+          <h3>NAV history</h3>
+          <span class="d-nav">{{ fmtNav(f.nav) }} <small>{{ f.nav_date }}</small></span>
+        </div>
+        <app-nav-history-chart [history]="nav" [loading]="loadingNav" [color]="assetColor(f.asset_class)"></app-nav-history-chart>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric"><span>1Y</span><b [class]="retClass(f.return_1y)">{{ fmtPct(f.return_1y) }}</b></div>
+        <div class="metric"><span>3Y CAGR</span><b [class]="retClass(f.return_3y)">{{ fmtPct(f.return_3y) }}</b></div>
+        <div class="metric"><span>5Y CAGR</span><b [class]="retClass(f.return_5y)">{{ fmtPct(f.return_5y) }}</b></div>
+        <div class="metric"><span>Since incep.</span><b [class]="retClass(f.cagr_since_inception)">{{ fmtPct(f.cagr_since_inception) }}</b></div>
+        <div class="metric"><span>Volatility</span><b>{{ f.volatility !== null ? f.volatility.toFixed(1) + '%' : '—' }}</b></div>
+        <div class="metric"><span>Max drawdown</span><b class="neg">{{ fmtPct(f.max_drawdown) }}</b></div>
+        <div class="metric"><span>NAV points</span><b>{{ f.history_points }}</b></div>
+        <div class="metric"><span>Inception</span><b class="sm-val">{{ f.inception_date || '—' }}</b></div>
+        <div class="metric"><span>ISIN</span><b class="sm-val">{{ f.isin || '—' }}</b></div>
+      </div>
+
+      <div class="signals" *ngIf="f.signals?.length">
+        <span class="sig" *ngFor="let s of f.signals">{{ s }}</span>
+      </div>
+
+      <button class="basket-cta" [class.added]="inBasket(f.scheme_code)" (click)="toggleBasket(f)">
+        {{ inBasket(f.scheme_code) ? '✓ In basket — remove' : '＋ Add to basket' }}
+      </button>
+
+      <div class="d-card" *ngIf="f.peers?.length">
+        <h3>Peers</h3>
+        <button class="peer-row" *ngFor="let p of f.peers" (click)="openFund(p)">
+          <span class="rating sm" [class]="ratingClass(p.rating)">{{ p.rating }}★</span>
+          <span class="peer-name">{{ p.name }}</span>
+          <span [class]="retClass(p.return_3y)">{{ fmtPct(p.return_3y) }} <small>3Y</small></span>
+        </button>
+      </div>
+
+      <p class="disclaimer">Metrics from historical NAV (AMFI/mfapi). Not investment advice.</p>
+    </ng-container>
+  </div>
+</div>

@@ -1,0 +1,193 @@
+<div class="lab">
+  <div class="lab-head">
+    <h1>Ready-made baskets</h1>
+    <p>Pick a bucket to see exactly how ₹10,000 would have grown, its worst fall, and how it might grow ahead.</p>
+  </div>
+
+  <!-- 3 BUCKET CARDS -->
+  <div class="buckets">
+    <button class="bucket" *ngFor="let m of models" [class]="'k-' + m.key" (click)="toggle(m.key)">
+      <div class="bk-ring" [class]="'k-' + m.key">🧺</div>
+      <span class="bk-name">{{ m.name }}</span>
+      <div class="bk-stats" *ngIf="metricsByKey[m.key] as mx">
+        <div><b class="pos">{{ plain(mx.expected_return) }}</b><span>return</span></div>
+        <div><b class="neg">{{ plain(mx.max_drawdown) }}</b><span>max fall</span></div>
+      </div>
+      <span class="bk-min" *ngIf="metricsByKey[m.key] as mx">min {{ fmt(mx.min_investment || 500) }}</span>
+      <span class="bk-open">View details →</span>
+    </button>
+  </div>
+
+  <div class="under-buckets">
+    <p class="planner-hint">Want it tailored to your goal? Tap <b>Plan a goal</b> and the planner builds one for you.</p>
+    <button class="cmp-toggle" (click)="toggleBasketCompare()">
+      {{ showBasketCompare ? '▲ Hide basket comparison' : '⇄ Compare these baskets' }}
+    </button>
+  </div>
+
+  <!-- HIDDEN: BASKET COMPARISON -->
+  <section class="basket-compare" *ngIf="showBasketCompare">
+    <div class="bc-pick">
+      <span>Comparing:</span>
+      <button *ngFor="let m of models" class="pick" [class.on]="basketCompareKeys.includes(m.key)" (click)="toggleBasketInCompare(m.key)">
+        {{ m.name }}
+      </button>
+    </div>
+    <div class="bc-table-wrap" *ngIf="comparedBaskets.length">
+      <table class="bc-table">
+        <thead>
+          <tr><th>Metric</th><th *ngFor="let m of comparedBaskets">{{ m.name }}</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Expected return</td><td *ngFor="let m of comparedBaskets" class="pos">{{ plain(metricsByKey[m.key].expected_return) }}</td></tr>
+          <tr><td>Max fall</td><td *ngFor="let m of comparedBaskets" class="neg">{{ plain(metricsByKey[m.key].max_drawdown) }}</td></tr>
+          <tr><td>Volatility</td><td *ngFor="let m of comparedBaskets">{{ plain(metricsByKey[m.key].volatility) }}</td></tr>
+          <tr><td>3Y return</td><td *ngFor="let m of comparedBaskets" [class]="retClass(metricsByKey[m.key].return_3y)">{{ sign(metricsByKey[m.key].return_3y) }}</td></tr>
+          <tr><td>5Y return</td><td *ngFor="let m of comparedBaskets" [class]="retClass(metricsByKey[m.key].return_5y)">{{ sign(metricsByKey[m.key].return_5y) }}</td></tr>
+          <tr><td>Diversification</td><td *ngFor="let m of comparedBaskets">{{ metricsByKey[m.key].diversification_label }}</td></tr>
+          <tr><td>Min. investment</td><td *ngFor="let m of comparedBaskets">{{ fmt(metricsByKey[m.key].min_investment || 500) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SEARCH & COMPARE FUNDS -->
+  <section class="compare-section">
+    <div class="rs-divider"><span>Search &amp; compare funds</span></div>
+    <div class="cmp-search">
+      <span class="cs-icon">⌕</span>
+      <input type="text" placeholder="Search a fund to compare (add up to 4)" [(ngModel)]="query" (ngModelChange)="onSearch()" />
+      <div class="cs-results" *ngIf="results.length">
+        <button *ngFor="let f of results" (click)="addCompare(f)">
+          <span class="csr-name">{{ f.name }}<small>{{ f.bucket }} · {{ f.rating }}★</small></span>
+          <span>＋</span>
+        </button>
+      </div>
+    </div>
+    <div class="cmp-empty" *ngIf="!compare.length">Add 2–4 funds to compare side by side.</div>
+    <div class="cmp-table-wrap" *ngIf="compare.length">
+      <table class="cmp-table">
+        <thead>
+          <tr><th>Fund</th><th *ngFor="let f of compare">{{ f.name }}<button class="th-del" (click)="removeCompare(f.scheme_code)">✕</button></th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Rating</td><td *ngFor="let f of compare"><span class="rating" [class]="ratingClass(f.rating)">{{ f.rating }}★</span></td></tr>
+          <tr><td>1Y</td><td *ngFor="let f of compare" [class]="retClass(f.return_1y)">{{ sign(f.return_1y) }}</td></tr>
+          <tr><td>3Y CAGR</td><td *ngFor="let f of compare" [class]="retClass(f.return_3y)">{{ sign(f.return_3y) }}</td></tr>
+          <tr><td>5Y CAGR</td><td *ngFor="let f of compare" [class]="retClass(f.return_5y)">{{ sign(f.return_5y) }}</td></tr>
+          <tr><td>Max drawdown</td><td *ngFor="let f of compare" class="neg">{{ plain(f.max_drawdown) }}</td></tr>
+          <tr><td>Volatility</td><td *ngFor="let f of compare">{{ plain(f.volatility) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ALL FUNDS -->
+  <section class="research-section">
+    <div class="rs-divider"><span>All funds</span></div>
+    <app-dashboard [embedded]="true"></app-dashboard>
+  </section>
+</div>
+
+<!-- ===== BASKET DETAIL OVERLAY ===== -->
+<div class="overlay" *ngIf="expanded" (click)="toggle(expanded)">
+  <div class="sheet" (click)="$event.stopPropagation()" *ngIf="modelOf(expanded) as m">
+    <header class="sheet-head">
+      <div>
+        <span class="sh-tag" [class]="'k-' + m.key">{{ m.name }} basket</span>
+        <p class="sh-desc">{{ m.description }}</p>
+      </div>
+      <button class="icon-btn" (click)="toggle(expanded)">✕</button>
+    </header>
+
+    <!-- headline row: min + key numbers -->
+    <div class="head-row" *ngIf="metricsByKey[m.key] as mx">
+      <div class="hr"><span>Min. investment</span><b>{{ fmt(mx.min_investment || 500) }}</b></div>
+      <div class="hr"><span>Expected return</span><b class="pos">{{ plain(mx.expected_return) }}/yr</b></div>
+      <div class="hr"><span>Max fall</span><b class="neg">{{ plain(mx.max_drawdown) }}</b></div>
+      <div class="hr"><span>Diversification</span><b>{{ mx.diversification_label }}</b></div>
+    </div>
+
+    <!-- why + allocation -->
+    <div class="alloc-note">
+      <app-composition-bar [slices]="allocSlices(m)"></app-composition-bar>
+      <p class="why">{{ m.note }}</p>
+    </div>
+
+    <!-- VISUAL EVIDENCE + PROJECTION -->
+    <div class="loading-charts" *ngIf="loadingSeries === m.key">Building charts from real NAV history…</div>
+    <app-basket-charts *ngIf="seriesByKey[m.key] as s" [metrics]="s" [color]="assetColor(m.items[0].asset_class)"></app-basket-charts>
+
+    <!-- funds — click for asset detail -->
+    <h3 class="funds-h">Funds in this basket <small>tap a fund to see what it invests in</small></h3>
+    <div class="b-funds">
+      <button class="bf" *ngFor="let i of m.items" (click)="openFund(i.scheme_code)">
+        <div class="bf-top">
+          <span class="bf-dot" [style.background]="assetColor(i.asset_class)"></span>
+          <span class="bf-name">{{ i.name }}</span>
+          <span class="bf-wt">{{ pct(i.weight) }}</span>
+          <span class="bf-chev">›</span>
+        </div>
+        <p class="bf-reason">{{ i.rationale }}</p>
+      </button>
+    </div>
+
+    <!-- use it -->
+    <div class="b-actions">
+      <select #goalSel class="b-goal">
+        <option value="">Link a goal (optional)…</option>
+        <option *ngFor="let g of goals" [value]="g.id">{{ g.label }}</option>
+      </select>
+      <button class="b-use" [disabled]="savingKey === m.key" (click)="useBasket(m, goalSel.value)">
+        {{ savingKey === m.key ? 'Saving…' : (savedKey === m.key ? '✓ Saved' : 'Use this basket') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FUND (ASSET) DETAIL OVERLAY ===== -->
+<div class="overlay" *ngIf="fund || loadingFund" (click)="closeFund()">
+  <div class="sheet" (click)="$event.stopPropagation()">
+    <div class="loading-charts" *ngIf="loadingFund">Loading fund…</div>
+    <ng-container *ngIf="fund as f">
+      <header class="sheet-head">
+        <div>
+          <span class="sh-tag">{{ f.bucket }} · {{ f.fund_house }}</span>
+          <h2 class="sh-title">{{ f.name }}</h2>
+          <div class="d-tags"><span class="rating" [class]="ratingClass(f.rating)">{{ stars(f.rating) }}</span><span class="tag">{{ f.plan }}</span></div>
+        </div>
+        <button class="icon-btn" (click)="closeFund()">✕</button>
+      </header>
+
+      <div class="explainer" *ngIf="fundInfo as inf">
+        <p class="ex-summary">{{ inf.summary }}</p>
+        <div class="ex-row"><span>Where it invests</span><p>{{ inf.invests_in }}</p></div>
+        <div class="ex-row"><span>Best for</span><p>{{ inf.who_for }}</p></div>
+      </div>
+
+      <div class="d-card" *ngIf="fundInfo as inf">
+        <h3>What it invests in <small>typical for this category</small></h3>
+        <span class="comp-label">Asset mix</span>
+        <app-composition-bar [slices]="inf.composition"></app-composition-bar>
+        <ng-container *ngIf="inf.cap_tilt?.length">
+          <span class="comp-label">Company size</span>
+          <app-composition-bar [slices]="inf.cap_tilt!"></app-composition-bar>
+        </ng-container>
+      </div>
+
+      <div class="d-card">
+        <h3>NAV history</h3>
+        <app-nav-history-chart [history]="fundNav" [loading]="loadingFundNav" [color]="assetColor(f.asset_class)"></app-nav-history-chart>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric"><span>1Y</span><b [class]="retClass(f.return_1y)">{{ sign(f.return_1y) }}</b></div>
+        <div class="metric"><span>3Y CAGR</span><b [class]="retClass(f.return_3y)">{{ sign(f.return_3y) }}</b></div>
+        <div class="metric"><span>5Y CAGR</span><b [class]="retClass(f.return_5y)">{{ sign(f.return_5y) }}</b></div>
+        <div class="metric"><span>Max drawdown</span><b class="neg">{{ plain(f.max_drawdown) }}</b></div>
+        <div class="metric"><span>Volatility</span><b>{{ plain(f.volatility) }}</b></div>
+        <div class="metric"><span>Since incep.</span><b [class]="retClass(f.cagr_since_inception)">{{ sign(f.cagr_since_inception) }}</b></div>
+      </div>
+    </ng-container>
+  </div>
+</div>

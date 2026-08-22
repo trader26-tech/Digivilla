@@ -38,3 +38,18 @@ on conflict (code) do update set
   volatility = excluded.volatility,
   expense_ratio = excluded.expense_ratio,
   description = excluded.description;
+
+
+-- Users for WealthPath auth. The backend falls back to a local JSON file when
+-- Supabase is not configured, so this is optional for local development.
+create table if not exists public.users (
+    id text primary key,
+    owner text unique not null,         -- stable id that keys goals/baskets
+    email text unique not null,
+    name text default '',
+    salt text not null,
+    password_hash text not null,
+    created_at timestamptz default now()
+);
+
+alter table public.users enable row level security;

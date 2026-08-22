@@ -1,0 +1,79 @@
+<div class="charts" *ngIf="g.length > 1; else nodata">
+  <!-- GROWTH: how the return happened -->
+  <div class="chart-block">
+    <div class="cb-head">
+      <span class="cb-title">Growth of {{ fmt(base) }}</span>
+      <span class="cb-val">→ <b class="pos">{{ fmt(finalValue) }}</b> in {{ metrics?.history_years }}y</span>
+    </div>
+    <div class="svg-hover-wrap">
+      <svg #growthSvg [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none" class="svg growth"
+        (mousemove)="onHover($event, $any(growthSvg))" (mouseleave)="clearHover()">
+        <defs>
+          <linearGradient id="bg-grow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" [attr.stop-color]="color" stop-opacity="0.22" />
+            <stop offset="100%" [attr.stop-color]="color" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path [attr.d]="growthArea" fill="url(#bg-grow)" />
+        <path [attr.d]="growthLine" fill="none" [attr.stroke]="color" stroke-width="2" vector-effect="non-scaling-stroke" />
+        <line *ngIf="hover" [attr.x1]="hoverX" [attr.y1]="0" [attr.x2]="hoverX" [attr.y2]="H" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" />
+      </svg>
+      <div class="hovertip" *ngIf="hover" [style.left.%]="(hoverX / W) * 100">
+        <b>{{ fmtDate(hover.date) }}</b>
+        <span>{{ fmt(hover.value) }}</span>
+        <span [class]="hover.move >= 0 ? 'pos' : 'neg'">{{ hover.move > 0 ? '+' : '' }}{{ hover.move }}% that month</span>
+        <em *ngIf="hover.driver">mostly {{ hover.driver }} ({{ hover.driver_pct! > 0 ? '+' : '' }}{{ hover.driver_pct }}%)</em>
+      </div>
+    </div>
+    <p class="cb-note">Hover to see any month — and which asset (equity/debt/gold) drove that move.</p>
+  </div>
+
+  <!-- DRAWDOWN: how the max fall happened -->
+  <div class="chart-block">
+    <div class="cb-head">
+      <span class="cb-title">Drops from peak (drawdown)</span>
+      <span class="cb-val">worst <b class="neg">{{ metrics?.max_drawdown?.toFixed(1) }}%</b> · {{ metrics?.worst_drawdown_date ? fmtDate(metrics!.worst_drawdown_date!) : '' }}</span>
+    </div>
+    <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none" class="svg dd">
+      <path [attr.d]="ddArea" fill="color-mix(in srgb, var(--low) 22%, transparent)" [attr.stroke]="'var(--low)'" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+      <line *ngIf="worstX !== null" [attr.x1]="worstX" [attr.y1]="0" [attr.x2]="worstX" [attr.y2]="worstY" stroke="var(--low)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" />
+      <circle *ngIf="worstX !== null" [attr.cx]="worstX" [attr.cy]="worstY" r="3.5" fill="var(--low)" />
+    </svg>
+    <p class="cb-note">Every dip below the previous high. The deepest is the worst-case fall you'd have lived through.</p>
+  </div>
+
+  <!-- YEARLY BARS: consistency & swing -->
+  <div class="chart-block">
+    <div class="cb-head"><span class="cb-title">Year-by-year returns</span></div>
+    <div class="year-bars">
+      <div class="yb" *ngFor="let y of years">
+        <div class="yb-col">
+          <div class="yb-bar" [class.neg]="y.ret < 0" [style.height.px]="yearBarH(y.ret)"
+            [style.background]="y.ret >= 0 ? 'var(--good)' : 'var(--low)'"></div>
+        </div>
+        <span class="yb-val" [class]="y.ret >= 0 ? 'pos' : 'neg'">{{ y.ret > 0 ? '+' : '' }}{{ y.ret }}%</span>
+        <span class="yb-year">{{ y.year }}</span>
+      </div>
+    </div>
+    <p class="cb-note">Good years and bad years — how bumpy the ride was. The spread is the “swing” ({{ metrics?.volatility?.toFixed(0) }}%).</p>
+  </div>
+
+  <!-- PROJECTION: how it might grow (Monte Carlo) -->
+  <div class="chart-block proj" *ngIf="projection as p">
+    <div class="cb-head">
+      <span class="cb-title">If you invest {{ fmt(p.base) }} today</span>
+      <span class="cb-val">in {{ p.years }}y, typically <b class="pos">{{ fmt(p.final_p50) }}</b></span>
+    </div>
+    <svg viewBox="0 0 560 130" preserveAspectRatio="none" class="svg proj-svg">
+      <path [attr.d]="projBand" fill="color-mix(in srgb, var(--accent) 15%, transparent)" />
+      <path [attr.d]="projLine" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke" />
+    </svg>
+    <div class="proj-legend">
+      <span>Pessimistic <b>{{ fmt(p.final_p10) }}</b></span>
+      <span>Likely <b class="pos">{{ fmt(p.final_p50) }}</b></span>
+      <span>Optimistic <b>{{ fmt(p.final_p90) }}</b></span>
+    </div>
+    <p class="cb-note">A 4,000-run Monte Carlo simulation using this basket's real return &amp; volatility. A projection, not a promise.</p>
+  </div>
+</div>
+<ng-template #nodata><p class="nd">Not enough shared history to chart this mix.</p></ng-template>
