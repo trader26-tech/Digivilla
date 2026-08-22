@@ -2,22 +2,10 @@
   display: inline-block;
   line-height: 0;
 }
-
-.rupi {
-  display: inline-block;
-}
-.rupi svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
+.rupi { display: inline-block; }
+.rupi svg { width: 100%; height: 100%; overflow: visible; }
 
 /* ---------------------------------------------------------- idle motion */
-.rupi.animated .face,
-.rupi.animated > svg > g[filter],
-.rupi.animated .arm {
-  /* the whole coin gently bobs */
-}
 .rupi.animated svg {
   animation: bob 3.4s ease-in-out infinite;
   transform-origin: 60px 100px;
@@ -28,71 +16,62 @@
 }
 .rupi.animated .ground {
   animation: groundPulse 3.4s ease-in-out infinite;
-  transform-origin: 60px 112px;
+  transform-origin: 60px 110px;
 }
 @keyframes groundPulse {
-  0%, 100% { transform: scale(1); opacity: 0.12; }
-  50% { transform: scale(0.85); opacity: 0.08; }
+  0%, 100% { transform: scale(1); opacity: 0.1; }
+  50% { transform: scale(0.85); opacity: 0.07; }
 }
 
-/* blink: lids drop occasionally */
+/* blink */
 .lid {
   transform: scaleY(0);
   transform-origin: center;
   transform-box: fill-box;
 }
-.rupi.animated .lid {
-  animation: blink 4.5s ease-in-out infinite;
-}
-.rupi.animated .lid-r { animation-delay: 0.04s; }
+.rupi.animated .lid { animation: blink 4.5s ease-in-out infinite; }
 @keyframes blink {
   0%, 92%, 100% { transform: scaleY(0); }
-  95%, 97% { transform: scaleY(1.15); }
+  95%, 97% { transform: scaleY(1.1); }
 }
 
 /* ------------------------------------------------------------- poses */
+/* arms pivot from the shoulder for each pose */
+.arm { transform-box: fill-box; }
+.arm-l { transform-origin: right center; }
+.arm-r { transform-origin: left center; }
 
-/* wave: left hand up near the face, small waggle */
-.rupi[data-pose='wave'] .arm-l { transform-box: fill-box; transform-origin: 28px 66px; }
-.rupi[data-pose='wave'] .arm-l path { d: path("M30 66 Q22 44 30 30"); }
-.rupi[data-pose='wave'] .arm-l circle { cx: 30px; cy: 28px; }
-.rupi.animated[data-pose='wave'] .arm-l {
-  animation: wave 1.1s ease-in-out infinite;
-}
+/* wave: left arm up, gentle waggle */
+.rupi[data-pose='wave'] .arm-l { transform: rotate(-55deg); }
+.rupi.animated[data-pose='wave'] .arm-l { animation: wave 1.1s ease-in-out infinite; }
 @keyframes wave {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-16deg); }
+  0%, 100% { transform: rotate(-45deg); }
+  50% { transform: rotate(-68deg); }
 }
 
-/* point: right hand extended forward/up toward content */
-.rupi[data-pose='point'] .arm-r path { d: path("M92 64 Q112 56 118 40"); }
-.rupi[data-pose='point'] .arm-r circle { cx: 118px; cy: 39px; }
+/* point: right arm up toward content */
+.rupi[data-pose='point'] .arm-r { transform: rotate(-40deg); }
 
-/* think: a hand up to the chin, mouth a small 'o' */
-.rupi[data-pose='think'] .arm-r path { d: path("M92 66 Q84 74 72 74"); }
-.rupi[data-pose='think'] .arm-r circle { cx: 71px; cy: 74px; r: 5px; }
-.rupi[data-pose='think'] .mouth { d: path("M56 71 Q60 74 64 71"); }
+/* think: right arm tucked toward the face; mouth a small curve */
+.rupi[data-pose='think'] .arm-r { transform: rotate(28deg) translateX(-8px); }
+.rupi[data-pose='think'] .mouth { d: path("M55 71 Q60 74 65 71"); }
 
-/* cheer: both hands up */
-.rupi[data-pose='cheer'] .arm-l path { d: path("M30 66 Q18 46 24 30"); }
-.rupi[data-pose='cheer'] .arm-l circle { cx: 24px; cy: 28px; }
-.rupi[data-pose='cheer'] .arm-r path { d: path("M90 66 Q102 46 96 30"); }
-.rupi[data-pose='cheer'] .arm-r circle { cx: 96px; cy: 28px; }
+/* cheer: both arms up + a bouncier bob */
+.rupi[data-pose='cheer'] .arm-l { transform: rotate(-50deg); }
+.rupi[data-pose='cheer'] .arm-r { transform: rotate(50deg); }
 .rupi.animated[data-pose='cheer'] svg { animation: cheerBob 0.9s ease-in-out infinite; }
 @keyframes cheerBob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
 
-/* happy is the default resting pose (no overrides) */
+/* happy is the resting pose (no overrides) */
 
 /* ------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .rupi.animated svg,
   .rupi.animated .lid,
   .rupi.animated .ground,
-  .rupi.animated .arm-l {
-    animation: none;
-  }
+  .rupi.animated .arm-l { animation: none; }
   .lid { transform: scaleY(0); }
 }
