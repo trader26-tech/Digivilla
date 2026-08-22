@@ -30,6 +30,8 @@ import { GoalPreset } from './models';
 })
 export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   @Input({ required: true }) goal!: GoalPreset;
+  /** Starting amount from the goal-intro calculator; overrides default_amount. */
+  @Input() preset = 0;
   @Output() amountChosen = new EventEmitter<number>();
   @Output() back = new EventEmitter<void>();
 
@@ -103,19 +105,24 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  /** Derive a friendly [min,max,step] range from the goal's suggestions. */
+  /** Derive a friendly [min,max,step] range from the goal's suggestions. The
+   *  preset (from the goal-intro calculator) becomes the starting value and,
+   *  if it sits outside the suggested band, widens the range to include it. */
   private setupRange(): void {
+    const start = this.preset > 0 ? this.preset : this.goal.default_amount;
     const sugg = (this.goal.suggested_amounts || []).filter((n) => n > 0);
-    const lo = sugg.length ? Math.min(...sugg) : this.goal.default_amount * 0.25;
-    const hi = sugg.length ? Math.max(...sugg) : this.goal.default_amount * 2;
-    // Pad the range a little so the default sits comfortably inside it and the
-    // user can go both below and above the suggested band. The minimum is never
-    // zero — the dial always starts on a real, meaningful amount.
+    let lo = sugg.length ? Math.min(...sugg) : start * 0.25;
+    let hi = sugg.length ? Math.max(...sugg) : start * 2;
+    // Make sure the starting amount is comfortably inside the band.
+    lo = Math.min(lo, start);
+    hi = Math.max(hi, start);
+    // Pad the range a little so the start sits inside it and the user can go
+    // both below and above. The minimum is never zero.
     this.min = Math.max(this.niceFloor(lo * 0.5), this.niceStep(lo * 0.1));
     this.max = this.niceCeil(hi * 1.5);
     // ~200 steps across the dial keeps dragging smooth but snappy.
     this.step = this.niceStep((this.max - this.min) / 200);
-    this.amount = this.clampSnap(this.goal.default_amount || (this.min + this.max) / 2);
+    this.amount = this.clampSnap(start || (this.min + this.max) / 2);
     this.lastTickAmount = this.amount;
   }
 

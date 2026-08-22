@@ -13,15 +13,24 @@
     (goalChosen)="onGoalChosen($event)"
   ></app-goal-picker>
 
-  <!-- Step 2: choose the goal amount with the circular knob -->
-  <app-goal-amount
-    *ngIf="!pickedGoal && chosenGoal && !amountDone"
+  <!-- Step 2: per-goal intro — educate + a mini-calculator that presets amount -->
+  <app-goal-intro
+    *ngIf="!pickedGoal && chosenGoal && !introDone"
     [goal]="chosenGoal"
+    (amountReady)="onIntroAmount($event)"
+    (back)="onIntroBack()"
+  ></app-goal-intro>
+
+  <!-- Step 3: fine-tune the amount on the circular knob (preset from intro) -->
+  <app-goal-amount
+    *ngIf="!pickedGoal && chosenGoal && introDone && !amountDone"
+    [goal]="chosenGoal"
+    [preset]="presetAmount"
     (amountChosen)="onAmountChosen($event)"
     (back)="onAmountBack()"
   ></app-goal-amount>
 
-  <!-- Step 3: choose how long to invest (horizon -> live target date) -->
+  <!-- Step 4: choose how long to invest (horizon -> live target date) -->
   <app-goal-timing
     *ngIf="!pickedGoal && amountDone && chosenGoal"
     [goal]="chosenGoal"
@@ -30,7 +39,7 @@
     (back)="onTimingBack()"
   ></app-goal-timing>
 
-  <!-- Step 4: once goal + amount + timing are set, fall through to auth -->
+  <!-- Step 5: once goal + amount + timing are set, fall through to auth -->
   <app-landing *ngIf="pickedGoal" (authed)="onAuthed($event)"></app-landing>
 </div>
 
