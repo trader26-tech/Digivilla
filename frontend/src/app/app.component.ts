@@ -12,6 +12,7 @@ import {
 import { BasketLabComponent } from './basket-lab.component';
 import { GoalAmountComponent } from './goal-amount.component';
 import { GoalPickerComponent } from './goal-picker.component';
+import { GoalTimingComponent } from './goal-timing.component';
 import { HomeComponent } from './home.component';
 import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
@@ -31,6 +32,7 @@ type Tab = 'home' | 'invest';
     LandingComponent,
     GoalPickerComponent,
     GoalAmountComponent,
+    GoalTimingComponent,
     IntroComponent,
   ],
   templateUrl: './app.component.html',
@@ -68,12 +70,14 @@ export class AppComponent {
   intro = true;
 
   /** First-screen flow, all pre-login:
-   *    goal-picker  ->  goal-amount (circular knob)  ->  landing/auth
-   *  chosenGoal is set by the picker; chosenAmount by the knob screen.
-   *  pickedGoal flips true only once the amount is confirmed. */
+   *    goal-picker -> goal-amount (knob) -> goal-timing (horizon) -> landing/auth
+   *  chosenGoal is set by the picker; chosenAmount by the knob; chosenYears by
+   *  the timing screen. pickedGoal flips true only once timing is confirmed. */
   pickedGoal = false;
   chosenGoal: GoalPreset | null = null;
   chosenAmount = 0;
+  amountDone = false; // amount confirmed -> show timing screen
+  chosenYears = 0;
 
   authed = !!localStorage.getItem('wp_token');
   userName = localStorage.getItem('wp_name') || '';
@@ -82,8 +86,9 @@ export class AppComponent {
    *  tell forward (:increment) from back (:decrement). */
   get preStep(): number {
     if (!this.pickedGoal && !this.chosenGoal) return 0; // picker
-    if (!this.pickedGoal && this.chosenGoal) return 1; // amount knob
-    return 2; // landing / auth
+    if (!this.pickedGoal && this.chosenGoal && !this.amountDone) return 1; // amount knob
+    if (!this.pickedGoal && this.amountDone) return 2; // timing
+    return 3; // landing / auth
   }
 
   /** Called when the landing page completes sign-in. Persists the session
@@ -107,15 +112,26 @@ export class AppComponent {
     this.chosenGoal = goal;
   }
 
-  /** User confirmed an amount on the circular-knob screen -> move to auth. */
+  /** User confirmed an amount on the knob screen -> move to the timing screen. */
   onAmountChosen(amount: number): void {
     this.chosenAmount = amount;
-    this.pickedGoal = true;
+    this.amountDone = true;
   }
 
   /** Back from the amount screen returns to the goal picker. */
   onAmountBack(): void {
     this.chosenGoal = null;
+  }
+
+  /** User confirmed a horizon on the timing screen -> move to auth. */
+  onTimingChosen(years: number): void {
+    this.chosenYears = years;
+    this.pickedGoal = true;
+  }
+
+  /** Back from the timing screen returns to the amount knob. */
+  onTimingBack(): void {
+    this.amountDone = false;
   }
 
   signOut(): void {

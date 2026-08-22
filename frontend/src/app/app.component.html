@@ -12,13 +12,22 @@
 
   <!-- Step 2: choose the goal amount with the circular knob -->
   <app-goal-amount
-    *ngIf="!pickedGoal && chosenGoal"
+    *ngIf="!pickedGoal && chosenGoal && !amountDone"
     [goal]="chosenGoal"
     (amountChosen)="onAmountChosen($event)"
     (back)="onAmountBack()"
   ></app-goal-amount>
 
-  <!-- Step 3: once goal + amount are set, fall through to auth -->
+  <!-- Step 3: choose how long to invest (horizon -> live target date) -->
+  <app-goal-timing
+    *ngIf="!pickedGoal && amountDone && chosenGoal"
+    [goal]="chosenGoal"
+    [amount]="chosenAmount"
+    (timingChosen)="onTimingChosen($event)"
+    (back)="onTimingBack()"
+  ></app-goal-timing>
+
+  <!-- Step 4: once goal + amount + timing are set, fall through to auth -->
   <app-landing *ngIf="pickedGoal" (authed)="onAuthed($event)"></app-landing>
 </div>
 
