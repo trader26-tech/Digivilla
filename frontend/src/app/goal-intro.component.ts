@@ -14,10 +14,10 @@ import { RupiComponent, RupiPose } from './rupi.component';
 /**
  * The screen shown right after a goal is picked, before the amount knob.
  *
- * Rupi (the ₹ mascot) greets the user and explains — in one short line — why
- * this goal matters, so there's almost no text to read. A tiny per-goal
- * "calculator" turns ONE simple input (monthly expenses, home price, guests…)
- * into a recommended amount, which is emitted as the preset for the knob screen.
+ * Deliberately minimal — mirrors the timing screen: one question, one focal
+ * card, one CTA. A tiny per-goal "calculator" turns ONE simple input (monthly
+ * expenses, home price, guests…) into a recommended amount, which is emitted as
+ * the preset for the knob screen.
  */
 @Component({
   selector: 'app-goal-intro',
@@ -44,6 +44,12 @@ export class GoalIntroComponent implements OnInit {
 
   get hue(): number {
     return this.cfg.hue;
+  }
+
+  /** The goal name for the question heading, e.g. "your Emergency Fund". */
+  get questionLabel(): string {
+    const label = this.goal?.label || 'this goal';
+    return /fund|cushion/i.test(label) ? `your ${label}` : `your ${label}`;
   }
 
   /** Live recommended amount from the current input. Never zero. */
@@ -89,6 +95,7 @@ export class GoalIntroComponent implements OnInit {
     this.back.emit();
   }
 
+  /** Continue -> commit the recommended amount and advance to the knob. */
   continue(): void {
     if (navigator.vibrate) navigator.vibrate(8);
     this.amountReady.emit(this.recommended);

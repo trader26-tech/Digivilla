@@ -44,9 +44,11 @@ export class StoryComponent {
 
   /** Rupi speaks these in order — a natural welcome, not a lecture. */
   readonly beats: RupiBeat[] = [
+    // gesture is matched to the words: wave on hello, ponder on "dream",
+    // point when presenting the plan, cheer on "let's go".
     { pose: 'wave', line: 'Hi, I’m Rupi — your money guide.', hue: 28 },
-    { pose: 'happy', line: 'Tell me a dream. A home, a trip, retiring easy.', hue: 262 },
-    { pose: 'think', line: 'I’ll turn it into a simple monthly plan.', hue: 205 },
+    { pose: 'think', line: 'Tell me a dream — a home, a trip, an easy retirement.', hue: 262 },
+    { pose: 'point', line: 'I’ll turn it into a smart monthly plan.', hue: 205 },
     { pose: 'cheer', line: 'Ready? Let’s pick your first goal.', hue: 150 },
   ];
 

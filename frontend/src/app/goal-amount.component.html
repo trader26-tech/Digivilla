@@ -7,12 +7,9 @@
     </button>
   </header>
 
-  <div class="head reveal">
-    <span class="eyebrow"><span class="dot"></span>{{ goal.label }}</span>
-    <h1 class="prompt">How much do you want to save?</h1>
-  </div>
+  <h1 class="prompt reveal">How much for<br />{{ goalPhrase }}?</h1>
 
-  <!-- Big amount. Tapping it (or the pill) opens the phone's number keyboard. -->
+  <!-- Big amount. Tapping it opens the phone's number keyboard. -->
   <div class="readout reveal">
     <!-- When typing, a real numeric input takes over so the OS keypad shows. -->
     <div class="type-wrap" *ngIf="typing">
@@ -29,22 +26,16 @@
         aria-label="Enter goal amount"
       />
     </div>
-    <div
+    <button
       *ngIf="!typing"
       class="big"
       [class.pop]="popKey % 2 === 0"
       [class.pop2]="popKey % 2 === 1"
       (click)="startTyping()"
-    >{{ full }}</div>
-    <div class="compact" *ngIf="!typing">{{ compact }}</div>
+    >{{ full }}</button>
+    <span class="tap-hint" *ngIf="!typing">tap to type</span>
+    <button class="done-btn" *ngIf="typing" (click)="commitTyped()">Done</button>
   </div>
-
-  <!-- Enter amount pill -->
-  <button class="enter-btn reveal" *ngIf="!typing" (click)="startTyping()">
-    <svg viewBox="0 0 24 24" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-    Enter amount
-  </button>
-  <button class="enter-btn done reveal" *ngIf="typing" (click)="commitTyped()">Done</button>
 
   <!-- ===================== The arch dial ===================== -->
   <div

@@ -39,6 +39,11 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   @ViewChild('dial') dialRef!: ElementRef<HTMLElement>;
   @ViewChild('amountInput') amountInputRef?: ElementRef<HTMLInputElement>;
 
+  /** Goal name for the heading, e.g. "your Emergency Fund". */
+  get goalPhrase(): string {
+    return `your ${this.goal?.label || 'goal'}`;
+  }
+
   /**
    * Arch geometry, in the SVG's 320x220 viewBox. The dial is a big circle
    * centred well below the band, so only its top cap shows as a dome. The user

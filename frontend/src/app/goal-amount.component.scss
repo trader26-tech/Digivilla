@@ -60,9 +60,8 @@
     transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .entered .reveal { opacity: 1; transform: none; }
-.entered .head { transition-delay: 0.05s; }
+.entered .prompt { transition-delay: 0.05s; }
 .entered .readout { transition-delay: 0.12s; }
-.entered .enter-btn { transition-delay: 0.20s; }
 .entered .chips { transition-delay: 0.42s; }
 .entered .next { transition-delay: 0.30s; }
 
