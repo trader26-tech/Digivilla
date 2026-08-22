@@ -91,14 +91,28 @@ export class GoalIntroComponent implements OnInit {
     return this.cfg.rupiPose ?? 'point';
   }
 
+  /** Celebration pop-up shown when Continue is tapped, before advancing. */
+  celebrating = false;
+
   goBack(): void {
     this.back.emit();
   }
 
-  /** Continue -> commit the recommended amount and advance to the knob. */
+  /** Continue -> pop the celebration overlay (animated tick), don't advance yet. */
   continue(): void {
+    if (navigator.vibrate) navigator.vibrate([12, 40, 12]);
+    this.celebrating = true;
+  }
+
+  /** Next inside the pop-up -> commit the amount and advance to the knob. */
+  proceed(): void {
     if (navigator.vibrate) navigator.vibrate(8);
     this.amountReady.emit(this.recommended);
+  }
+
+  /** One short celebratory line, goal-aware. */
+  get celebrateLine(): string {
+    return `${this.goal.label} goal set!`;
   }
 }
 

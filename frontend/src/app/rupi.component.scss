@@ -77,10 +77,10 @@
 
 /* HAPPY — resting, warm (default) */
 
-/* THINK — hand to chin, brows slightly drawn in, calmer mouth */
+/* THINK — hand to chin, brows gently lowered evenly, calmer mouth */
 .rupi[data-pose='think'] .arm-r { transform: rotate(54deg) translate(-16px, 2px); }
-.rupi[data-pose='think'] .brow-l { transform: translateY(1px) rotate(5deg); }
-.rupi[data-pose='think'] .brow-r { transform: translateY(1px) rotate(-5deg); }
+.rupi[data-pose='think'] .brow-l,
+.rupi[data-pose='think'] .brow-r { transform: translateY(1.5px); }
 .rupi[data-pose='think'] .mouth { transform: scaleY(0.55); transform-origin: 70px 82px; }
 
 /* POINT — right hand points up/out; brows stay calm & level */
