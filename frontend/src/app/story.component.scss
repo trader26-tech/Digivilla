@@ -1,0 +1,242 @@
+:host {
+  --hue: 28;
+  display: block;
+  min-height: 100dvh;
+}
+
+.story {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  isolation: isolate;
+  outline: none;
+  padding: calc(1rem + env(safe-area-inset-top)) 1.1rem calc(1.2rem + env(safe-area-inset-bottom));
+}
+
+/* ---------------------------------------------------- ambient background */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: radial-gradient(130% 90% at 50% -10%, hsl(var(--hue) 90% 96%) 0%, var(--bg) 62%);
+  transition: background 0.6s ease;
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  transition: background 0.6s ease;
+}
+.b1 {
+  width: 48vw; height: 48vw; top: -12vw; left: -10vw;
+  background: radial-gradient(circle, hsl(var(--hue) 90% 72%), transparent 70%);
+  animation: drift1 22s ease-in-out infinite;
+}
+.b2 {
+  width: 42vw; height: 42vw; bottom: -14vw; right: -12vw;
+  background: radial-gradient(circle, hsl(calc(var(--hue) + 40) 85% 74%), transparent 70%);
+  animation: drift2 27s ease-in-out infinite;
+}
+@keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(5vw,4vh)} }
+@keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-4vw,-5vh)} }
+
+/* ------------------------------------------------------------- top bar */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+.dots {
+  display: flex;
+  gap: 0.4rem;
+  flex: 1;
+}
+.dot {
+  height: 4px;
+  flex: 1;
+  border: none;
+  padding: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
+  cursor: pointer;
+  transition: background 0.3s ease;
+  overflow: hidden;
+}
+.dot.past { background: hsl(var(--hue) 70% 55%); }
+.dot.on {
+  background: color-mix(in srgb, var(--muted) 24%, transparent);
+  position: relative;
+}
+/* the active dot fills like a progress bar */
+.dot.on::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: hsl(var(--hue) 72% 52%);
+  transform-origin: left;
+  animation: fillDot 0.5s ease forwards;
+}
+@keyframes fillDot { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.skip {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.2rem;
+  transition: color 0.2s;
+}
+.skip:hover { color: var(--text); }
+
+/* ------------------------------------------------------------- stage */
+.stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+.card {
+  width: 100%;
+  max-width: 460px;
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+/* replayed on each index change via [data-i] key swap */
+.card.fwd { animation: slideInR 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.card.back { animation: slideInL 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes slideInR {
+  from { opacity: 0; transform: translateX(34px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInL {
+  from { opacity: 0; transform: translateX(-34px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* illustration */
+.art {
+  width: clamp(150px, 44vw, 210px);
+  aspect-ratio: 1;
+  margin: 0 auto 1.4rem;
+  filter: drop-shadow(0 14px 30px hsl(var(--hue) 60% 50% / 0.25));
+  animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+.art svg { width: 100%; height: 100%; display: block; }
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.7) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.kicker {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--hue) 55% 42%);
+  background: hsl(var(--hue) 85% 94%);
+  border: 1px solid hsl(var(--hue) 70% 86%);
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.9rem;
+  animation: rise 0.5s ease 0.12s both;
+}
+.headline {
+  margin: 0 0 0.7rem;
+  font-size: clamp(1.5rem, 5.5vw, 2.1rem);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  animation: rise 0.5s ease 0.18s both;
+}
+.body {
+  margin: 0 auto;
+  max-width: 400px;
+  color: var(--muted);
+  font-size: clamp(0.95rem, 2.7vw, 1.05rem);
+  line-height: 1.6;
+  animation: rise 0.5s ease 0.26s both;
+}
+
+.stat {
+  margin: 1.3rem auto 0;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid hsl(var(--hue) 70% 88%);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-sm);
+  animation: rise 0.5s ease 0.34s both;
+}
+.stat-val {
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: hsl(var(--hue) 62% 42%);
+  line-height: 1;
+}
+.stat-lbl {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------- footer */
+.foot {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  text-align: center;
+}
+.cta {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.4rem;
+  border: none;
+  border-radius: 18px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(120deg, hsl(var(--hue) 72% 52%), hsl(var(--hue) 72% 42%));
+  box-shadow: 0 12px 26px -10px hsl(var(--hue) 72% 45% / 0.7);
+  transition: transform 0.2s ease, filter 0.2s, background 0.5s ease;
+}
+.cta svg { width: 21px; height: 21px; transition: transform 0.25s ease; }
+.cta:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.cta:hover svg { transform: translateX(4px); }
+.cta:active { transform: translateY(0) scale(0.99); }
+
+.disclaimer {
+  margin: 0.9rem 0 0;
+  font-size: 0.7rem;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .blob, .card, .art, .kicker, .headline, .body, .stat, .dot.on::after { animation: none; }
+  .cta { transition: none; }
+}
