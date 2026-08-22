@@ -1,0 +1,119 @@
+<section
+  class="story"
+  [style.--hue]="card.hue"
+  (touchstart)="onTouchStart($event)"
+  (touchend)="onTouchEnd($event)"
+  tabindex="0"
+>
+  <!-- ambient tinted background, shifts with each card's hue -->
+  <div class="ambient" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+  </div>
+
+  <!-- top bar: progress dots + skip -->
+  <header class="bar">
+    <div class="dots" role="tablist" aria-label="Story progress">
+      <button
+        *ngFor="let c of cards; let i = index"
+        class="dot"
+        [class.on]="i === index"
+        [class.past]="i < index"
+        (click)="goTo(i)"
+        [attr.aria-label]="'Go to card ' + (i + 1)"
+        [attr.aria-selected]="i === index"
+        role="tab"
+        type="button"
+      ></button>
+    </div>
+    <button class="skip" (click)="skip()" type="button">Skip</button>
+  </header>
+
+  <!-- the card, keyed so Angular re-runs the enter animation each change -->
+  <div class="stage">
+    <article
+      class="card"
+      [class.fwd]="dir === 1"
+      [class.back]="dir === -1"
+      [attr.data-i]="index"
+    >
+      <div class="art" aria-hidden="true">
+        <ng-container [ngSwitch]="card.scene">
+
+          <!-- Coffee -> compounding -->
+          <svg *ngSwitchCase="'coffee'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="st-coffee" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffe6b8" /><stop offset="1" stop-color="#ffb877" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="46" fill="url(#st-coffee)" opacity=".35" />
+            <!-- cup -->
+            <path d="M30 44h34v12a14 14 0 0 1-14 14h-6a14 14 0 0 1-14-14z" fill="#6b3b2e" />
+            <path d="M64 47h6a6 6 0 0 1 0 12h-4" fill="none" stroke="#6b3b2e" stroke-width="3" />
+            <ellipse cx="47" cy="44" rx="17" ry="4" fill="#8a5140" />
+            <!-- steam rising into coins (growth) -->
+            <path d="M40 36c-3-4 3-6 0-10M50 34c-3-4 3-6 0-10" stroke="#c98a5a" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".6" />
+            <circle cx="70" cy="26" r="7" fill="#f4b942" stroke="#d99022" stroke-width="1.5" />
+            <circle cx="80" cy="16" r="5" fill="#f4b942" stroke="#d99022" stroke-width="1.5" />
+            <text x="70" y="29" text-anchor="middle" font-size="8" fill="#8a5a10" font-weight="700">₹</text>
+          </svg>
+
+          <!-- Umbrella -> safety buffer -->
+          <svg *ngSwitchCase="'umbrella'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="st-umb" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#bfe3ff" /><stop offset="1" stop-color="#7fb6ff" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="46" fill="url(#st-umb)" opacity=".4" />
+            <!-- rain -->
+            <path d="M28 24l-3 7M40 20l-3 7M60 20l-3 7M72 24l-3 7" stroke="#5a8fd6" stroke-width="2.2" stroke-linecap="round" opacity=".6" />
+            <!-- umbrella canopy -->
+            <path d="M22 52a28 28 0 0 1 56 0c-8-5-13-5-19 0-5-5-13-5-18 0-5-5-11-5-19 0z" fill="#2f6bff" />
+            <!-- pole + person shelter dot -->
+            <path d="M50 52v22" stroke="#25406e" stroke-width="2.6" stroke-linecap="round" />
+            <path d="M50 74c0 3 4 4 6 2" stroke="#25406e" stroke-width="2.6" fill="none" stroke-linecap="round" />
+            <circle cx="50" cy="46" r="2.4" fill="#fff" />
+          </svg>
+
+          <!-- Compass -> trustworthy guidance -->
+          <svg *ngSwitchCase="'compass'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="st-comp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#b6f0d4" /><stop offset="1" stop-color="#5fd6a0" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="46" fill="url(#st-comp)" opacity=".4" />
+            <circle cx="50" cy="50" r="30" fill="#fff" stroke="#1f9c6e" stroke-width="2.5" />
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#1f9c6e" stroke-width="0.8" opacity=".4" stroke-dasharray="1 5" />
+            <!-- needle pointing up-right (toward the goal) -->
+            <path d="M50 50l12-16-4 20z" fill="#12a150" />
+            <path d="M50 50l-12 16 4-20z" fill="#cbd5e1" />
+            <circle cx="50" cy="50" r="3.4" fill="#0f7d57" />
+          </svg>
+
+          <svg *ngSwitchDefault viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#7f8cff" /></svg>
+        </ng-container>
+      </div>
+
+      <span class="kicker">{{ card.kicker }}</span>
+      <h1 class="headline">{{ card.title }}</h1>
+      <p class="body">{{ card.body }}</p>
+
+      <div class="stat" *ngIf="card.stat">
+        <b class="stat-val">{{ card.stat.value }}</b>
+        <span class="stat-lbl">{{ card.stat.label }}</span>
+      </div>
+    </article>
+  </div>
+
+  <!-- bottom CTA -->
+  <footer class="foot">
+    <button class="cta" (click)="next()" type="button">
+      <span>{{ isLast ? 'Choose my goal' : 'Next' }}</span>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+    <p class="disclaimer">Mutual funds are subject to market risks. Illustrative, not investment advice.</p>
+  </footer>
+</section>
