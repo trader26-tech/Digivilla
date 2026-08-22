@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
 import { BasketLabComponent } from './basket-lab.component';
+import { GoalAmountComponent } from './goal-amount.component';
 import { GoalPickerComponent } from './goal-picker.component';
 import { HomeComponent } from './home.component';
 import { LandingComponent } from './landing.component';
@@ -20,6 +21,7 @@ type Tab = 'home' | 'invest';
     PlannerPanelComponent,
     LandingComponent,
     GoalPickerComponent,
+    GoalAmountComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -29,11 +31,13 @@ export class AppComponent {
   plannerOpen = false;
   goalsVersion = 0;
 
-  /** The app's very first screen is the no-login goal picker. Once the user
-   *  picks a goal (or has already been here), we move on to the rest of the
-   *  flow. Persisted so returning PWA users don't see it every launch. */
+  /** First-screen flow, all pre-login:
+   *    goal-picker  ->  goal-amount (circular knob)  ->  landing/auth
+   *  chosenGoal is set by the picker; chosenAmount by the knob screen.
+   *  pickedGoal flips true only once the amount is confirmed. */
   pickedGoal = false;
   chosenGoal: GoalPreset | null = null;
+  chosenAmount = 0;
 
   authed = !!localStorage.getItem('wp_token');
   userName = localStorage.getItem('wp_name') || '';
@@ -49,11 +53,20 @@ export class AppComponent {
     this.authed = true;
   }
 
-  /** User tapped Continue on a goal in the first-screen picker. We remember
-   *  the choice; the downstream flow (planner prefill / auth) is wired later. */
+  /** User tapped Continue on a goal in the picker -> show the amount knob. */
   onGoalChosen(goal: GoalPreset): void {
     this.chosenGoal = goal;
+  }
+
+  /** User confirmed an amount on the circular-knob screen -> move to auth. */
+  onAmountChosen(amount: number): void {
+    this.chosenAmount = amount;
     this.pickedGoal = true;
+  }
+
+  /** Back from the amount screen returns to the goal picker. */
+  onAmountBack(): void {
+    this.chosenGoal = null;
   }
 
   signOut(): void {

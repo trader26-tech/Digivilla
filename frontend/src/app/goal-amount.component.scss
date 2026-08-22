@@ -1,0 +1,404 @@
+:host {
+  display: block;
+}
+
+.amount-screen {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 1.25rem 2rem;
+  box-sizing: border-box;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+  animation: screenIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- background ---------- */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  .halo {
+    position: absolute;
+    top: -18vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    max-width: 620px;
+    height: 620px;
+    background: radial-gradient(circle at 50% 40%,
+      color-mix(in srgb, var(--accent) 32%, transparent),
+      transparent 62%);
+    filter: blur(30px);
+    opacity: 0.7;
+    animation: pulse 7s ease-in-out infinite;
+  }
+}
+@keyframes pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.6; }
+  50% { transform: translateX(-50%) scale(1.08); opacity: 0.8; }
+}
+
+/* ---------- top bar ---------- */
+.top {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
+  &:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  &:active { transform: scale(0.94); }
+}
+.goal-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  .g-emoji { font-size: 1.1rem; }
+  .g-label { font-weight: 650; font-size: 0.92rem; }
+}
+
+/* ---------- headings ---------- */
+.prompt {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(1.35rem, 5vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin: 0.8rem 0 0.35rem;
+}
+.sub {
+  position: relative;
+  z-index: 2;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-align: center;
+  max-width: 26rem;
+  margin: 0 0 0.5rem;
+}
+
+/* ---------- knob ---------- */
+.knob-wrap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.6rem;
+}
+.dial {
+  position: relative;
+  width: min(78vw, 320px);
+  height: min(78vw, 320px);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  &:active { cursor: grabbing; }
+}
+.dial-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+}
+.ticks line {
+  stroke: color-mix(in srgb, var(--muted) 45%, transparent);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+}
+.track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 22%, transparent);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.arc {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.08s linear;
+}
+.handle-halo {
+  fill: color-mix(in srgb, var(--accent) 26%, transparent);
+  transition: cx 0.08s linear, cy 0.08s linear;
+}
+.handle {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 2;
+  transition: cx 0.08s linear, cy 0.08s linear;
+  filter: drop-shadow(0 2px 4px rgba(16, 24, 40, 0.25));
+}
+.dial:active .handle-halo { fill: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* center readout */
+.readout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.readout .big {
+  font-size: clamp(2rem, 9vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+  animation: popNum 0.18s ease;
+}
+@keyframes popNum {
+  0% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.readout .full {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* nudge row */
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+  button {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s;
+    &:hover { box-shadow: var(--shadow-sm); }
+    &:active { transform: scale(0.9); }
+  }
+  .range-hint {
+    color: var(--muted);
+    font-size: 0.8rem;
+    min-width: 8.5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ---------- suggestion chips ---------- */
+.chips {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.3rem 0 0;
+  max-width: 400px;
+}
+.chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.86rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s, border-color 0.14s, background 0.14s, color 0.14s;
+  &:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  &.active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    color: var(--accent-2);
+  }
+}
+
+/* ---------- actions ---------- */
+.actions {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 400px;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.enter-btn {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s, border-color 0.14s;
+  &:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+}
+.continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.95rem 1.4rem;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--accent) 75%, transparent);
+  transition: transform 0.16s ease, box-shadow 0.2s ease;
+  font-variant-numeric: tabular-nums;
+  &:hover { transform: translateY(-2px); box-shadow: 0 18px 32px -14px color-mix(in srgb, var(--accent) 80%, transparent); }
+  &:active { transform: translateY(0) scale(0.99); }
+}
+
+/* ---------- numeric dialer ---------- */
+.dialer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(16, 24, 40, 0.35);
+  backdrop-filter: blur(3px);
+  animation: fade 0.2s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.dialer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  margin: 0 auto;
+  max-width: 460px;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--shadow-lg);
+  padding: 0.75rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes sheetUp { to { transform: translateY(0); } }
+
+.dialer-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 650;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  .spacer { width: 40px; }
+  span:not(.spacer) { flex: 1; text-align: center; }
+}
+.dialer-display {
+  text-align: center;
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  padding: 0.6rem 0 1rem;
+  .cur { color: var(--muted); margin-right: 0.15rem; font-weight: 700; }
+}
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  button {
+    height: 58px;
+    border: none;
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.12s;
+    display: grid;
+    place-items: center;
+    &:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); }
+    &:active { transform: scale(0.93); background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); }
+    &.wide { font-size: 1.1rem; }
+    &.back { color: var(--muted); }
+  }
+}
+.dialer-done {
+  width: 100%;
+  margin-top: 0.75rem;
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.9rem;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--accent) 75%, transparent);
+  transition: transform 0.16s ease;
+  &:active { transform: scale(0.99); }
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .amount-screen, .halo, .readout .big, .dialer { animation: none !important; }
+  .arc, .handle, .handle-halo { transition: none !important; }
+  .dialer { transform: none; }
+}
+
+/* short viewports: tighten vertical rhythm */
+@media (max-height: 720px) {
+  .sub { display: none; }
+  .prompt { margin-top: 0.4rem; }
+  .dial { width: min(62vw, 260px); height: min(62vw, 260px); }
+}

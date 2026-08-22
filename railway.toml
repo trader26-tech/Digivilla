@@ -3,7 +3,9 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"
+# No startCommand here: Railway would pass it straight to the container without
+# a shell, so ${PORT} wouldn't expand. The Dockerfile CMD wraps it in `sh -c`,
+# which expands $PORT correctly, so we let that run instead.
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure"
