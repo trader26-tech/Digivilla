@@ -78,11 +78,14 @@ export class AppComponent {
   story = true;
 
   /** First-screen flow, all pre-login:
-   *    goal-picker -> goal-amount (knob) -> goal-timing (horizon) -> landing/auth
-   *  chosenGoal is set by the picker; chosenAmount by the knob; chosenYears by
-   *  the timing screen. pickedGoal flips true only once timing is confirmed. */
+   *    picker -> goal-intro (educate + calc) -> amount (knob) -> timing -> landing
+   *  chosenGoal is set by the picker; the intro presets presetAmount; the knob
+   *  confirms chosenAmount; timing confirms chosenYears. pickedGoal flips true
+   *  only once timing is confirmed. */
   pickedGoal = false;
   chosenGoal: GoalPreset | null = null;
+  introDone = false; // goal-intro confirmed -> show the knob
+  presetAmount = 0; // recommended amount from the intro calculator
   chosenAmount = 0;
   amountDone = false; // amount confirmed -> show timing screen
   chosenYears = 0;
@@ -94,9 +97,10 @@ export class AppComponent {
    *  tell forward (:increment) from back (:decrement). */
   get preStep(): number {
     if (!this.pickedGoal && !this.chosenGoal) return 0; // picker
-    if (!this.pickedGoal && this.chosenGoal && !this.amountDone) return 1; // amount knob
-    if (!this.pickedGoal && this.amountDone) return 2; // timing
-    return 3; // landing / auth
+    if (!this.pickedGoal && this.chosenGoal && !this.introDone) return 1; // goal intro
+    if (!this.pickedGoal && this.introDone && !this.amountDone) return 2; // amount knob
+    if (!this.pickedGoal && this.amountDone) return 3; // timing
+    return 4; // landing / auth
   }
 
   /** Called when the landing page completes sign-in. Persists the session
@@ -120,9 +124,21 @@ export class AppComponent {
     this.story = false;
   }
 
-  /** User tapped Continue on a goal in the picker -> show the amount knob. */
+  /** User tapped Continue on a goal in the picker -> show the goal intro. */
   onGoalChosen(goal: GoalPreset): void {
     this.chosenGoal = goal;
+    this.introDone = false;
+  }
+
+  /** Goal intro finished -> its recommended amount presets the knob. */
+  onIntroAmount(amount: number): void {
+    this.presetAmount = amount;
+    this.introDone = true;
+  }
+
+  /** Back from the intro returns to the goal picker. */
+  onIntroBack(): void {
+    this.chosenGoal = null;
   }
 
   /** User confirmed an amount on the knob screen -> move to the timing screen. */
@@ -131,9 +147,9 @@ export class AppComponent {
     this.amountDone = true;
   }
 
-  /** Back from the amount screen returns to the goal picker. */
+  /** Back from the amount screen returns to the goal intro. */
   onAmountBack(): void {
-    this.chosenGoal = null;
+    this.introDone = false;
   }
 
   /** User confirmed a horizon on the timing screen -> move to auth. */
