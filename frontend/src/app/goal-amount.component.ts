@@ -39,12 +39,6 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   @ViewChild('dial') dialRef!: ElementRef<HTMLElement>;
   @ViewChild('amountInput') amountInputRef?: ElementRef<HTMLInputElement>;
 
-  /** The goal name woven into the heading, e.g. "your Emergency Fund". */
-  get goalPhrase(): string {
-    const label = this.goal?.label || 'this goal';
-    return /fund|cushion/i.test(label) ? `your ${label}` : `your ${label} goal`;
-  }
-
   /**
    * Arch geometry, in the SVG's 320x220 viewBox. The dial is a big circle
    * centred well below the band, so only its top cap shows as a dome. The user
@@ -403,12 +397,14 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
 /** Per-goal accent hue — kept in sync with goal-picker's HUE_OF so a goal's
  *  colour carries through from the picker into the amount screen. */
 const HUE_OF: Record<string, number> = {
-  retirement: 28,
-  child_education: 262,
-  house: 222,
-  car: 190,
-  wealth: 150,
-  emergency: 356,
+  emergency: 190, // calm teal — a safety net, never alarming red
+  health: 356,
+  car: 205,
   wedding: 330,
-  vacation: 205,
+  vacation: 25,
+  gadget: 262,
+  house: 222,
+  child_education: 268,
+  retirement: 28,
+  wealth: 150,
 };

@@ -9,20 +9,20 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { GoalPreset } from './models';
+import { RupiComponent, RupiPose } from './rupi.component';
 
 /**
  * The screen shown right after a goal is picked, before the amount knob.
  *
- * It is deliberately DIFFERENT per goal: each goal has its own colour, its own
- * one-liner (what it is / why it matters — no jargon), its own signature hero
- * illustration, and its own tiny "calculator" that turns ONE simple input
- * (monthly expenses, home price, guests, …) into a recommended amount. That
- * recommended amount is emitted and becomes the preset on the knob screen.
+ * Rupi (the ₹ mascot) greets the user and explains — in one short line — why
+ * this goal matters, so there's almost no text to read. A tiny per-goal
+ * "calculator" turns ONE simple input (monthly expenses, home price, guests…)
+ * into a recommended amount, which is emitted as the preset for the knob screen.
  */
 @Component({
   selector: 'app-goal-intro',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RupiComponent],
   templateUrl: './goal-intro.component.html',
   styleUrl: './goal-intro.component.scss',
 })
@@ -77,6 +77,14 @@ export class GoalIntroComponent implements OnInit {
     return `₹${Math.round(v).toLocaleString('en-IN')}`;
   }
 
+  /** What Rupi "says" — short, warm, goal-specific. */
+  get rupiSays(): string {
+    return this.cfg.rupiSays;
+  }
+  get rupiPose(): RupiPose {
+    return this.cfg.rupiPose ?? 'point';
+  }
+
   goBack(): void {
     this.back.emit();
   }
@@ -90,7 +98,9 @@ export class GoalIntroComponent implements OnInit {
 interface IntroConfig {
   hue: number;
   tagline: string; // one-liner: what it is
-  why: string; // one-liner: why it matters
+  why: string; // one-liner: why it matters (legacy — no longer shown)
+  rupiSays: string; // Rupi's short spoken line (replaces the paragraph)
+  rupiPose?: RupiPose;
   hero: string; // svg id rendered by the template switch
   inputLabel: string; // e.g. "Your monthly expenses"
   inputPrefix: string; // "₹" or "" (for counts)
@@ -108,6 +118,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 190,
     tagline: 'Your safety net for life’s surprises.',
     why: 'Job loss, repairs, a medical bill — this keeps them from becoming a crisis.',
+    rupiSays: "Life throws curveballs — this keeps a bad day from becoming a bad year.",
+    rupiPose: 'point',
     hero: 'shield',
     inputLabel: 'Your monthly expenses',
     inputPrefix: '₹',
@@ -122,6 +134,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 356,
     tagline: 'A cushion for medical surprises.',
     why: 'So a hospital bill is never a financial shock on top of a health one.',
+    rupiSays: "A hospital bill shouldn't hurt twice. Let's keep a cushion ready.",
+    rupiPose: 'think',
     hero: 'heart',
     inputLabel: 'People in your family',
     inputPrefix: '',
@@ -136,6 +150,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 205,
     tagline: 'The car you’ve been picturing.',
     why: 'Save for it instead of carrying an expensive EMI for years.',
+    rupiSays: "Save up and skip the EMI — the car's nicer when it's fully yours!",
+    rupiPose: 'happy',
     hero: 'car',
     inputLabel: 'The car’s on-road price',
     inputPrefix: '₹',
@@ -150,6 +166,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 330,
     tagline: 'A celebration, not a debt.',
     why: 'Plan the big day so it doesn’t derail your other goals.',
+    rupiSays: "Big day, zero debt hangover. Let's plan it right.",
+    rupiPose: 'cheer',
     hero: 'rings',
     inputLabel: 'Number of guests',
     inputPrefix: '',
@@ -164,6 +182,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 25,
     tagline: 'The trip you keep talking about.',
     why: 'A little set aside each month turns “someday” into a date.',
+    rupiSays: "“Someday” becomes a date once you start setting aside a little.",
+    rupiPose: 'happy',
     hero: 'plane',
     inputLabel: 'Travellers',
     inputPrefix: '',
@@ -178,6 +198,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 262,
     tagline: 'That thing you want — planned, not on EMI.',
     why: 'Buy it outright and skip the interest.',
+    rupiSays: "Buy it outright, skip the interest. Smart move!",
+    rupiPose: 'happy',
     hero: 'sparkle',
     inputLabel: 'Its price',
     inputPrefix: '₹',
@@ -192,6 +214,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 222,
     tagline: 'The keys to your own place.',
     why: 'Aim for a 20% down payment — the rest is your home loan.',
+    rupiSays: "Aim for the 20% down payment — the loan covers the rest.",
+    rupiPose: 'point',
     hero: 'house',
     inputLabel: 'The home’s price',
     inputPrefix: '₹',
@@ -206,6 +230,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 268,
     tagline: 'Their future, funded on time.',
     why: 'Start early so college never means a last-minute loan.',
+    rupiSays: "Start early and college never means a last-minute loan.",
+    rupiPose: 'think',
     hero: 'grad',
     inputLabel: 'Course cost today',
     inputPrefix: '₹',
@@ -220,6 +246,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 28,
     tagline: 'The freedom to stop working.',
     why: 'Build a corpus that pays your bills when your salary stops.',
+    rupiSays: "Build a corpus that pays your bills after the salary stops.",
+    rupiPose: 'point',
     hero: 'palm',
     inputLabel: 'Monthly expenses you’ll want',
     inputPrefix: '₹',
@@ -234,6 +262,8 @@ const INTRO: Record<string, IntroConfig> = {
     hue: 150,
     tagline: 'Money that grows while you live.',
     why: 'No fixed deadline — just steady, long-term compounding.',
+    rupiSays: "No deadline here — just steady compounding doing its magic.",
+    rupiPose: 'cheer',
     hero: 'growth',
     inputLabel: 'Monthly you can invest',
     inputPrefix: '₹',
@@ -251,6 +281,8 @@ function fallbackConfig(goal: GoalPreset): IntroConfig {
     hue: 222,
     tagline: goal.blurb || 'A goal worth planning for.',
     why: 'A steady monthly plan gets you there.',
+    rupiSays: "A little each month and we'll get you there — I'll help!",
+    rupiPose: 'happy',
     hero: 'sparkle',
     inputLabel: 'Target amount',
     inputPrefix: '₹',

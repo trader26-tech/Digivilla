@@ -16,11 +16,11 @@
 }
 .rupi.animated .ground {
   animation: groundPulse 3.4s ease-in-out infinite;
-  transform-origin: 60px 110px;
+  transform-origin: 60px 111px;
 }
 @keyframes groundPulse {
-  0%, 100% { transform: scale(1); opacity: 0.1; }
-  50% { transform: scale(0.85); opacity: 0.07; }
+  0%, 100% { transform: scale(1); opacity: 0.11; }
+  50% { transform: scale(0.85); opacity: 0.08; }
 }
 
 /* blink */
@@ -30,35 +30,36 @@
   transform-box: fill-box;
 }
 .rupi.animated .lid { animation: blink 4.5s ease-in-out infinite; }
+.rupi.animated .lid-r { animation-delay: 0.03s; }
 @keyframes blink {
   0%, 92%, 100% { transform: scaleY(0); }
   95%, 97% { transform: scaleY(1.1); }
 }
 
 /* ------------------------------------------------------------- poses */
-/* arms pivot from the shoulder for each pose */
+/* arms pivot from the shoulder (where they meet the body) */
 .arm { transform-box: fill-box; }
-.arm-l { transform-origin: right center; }
-.arm-r { transform-origin: left center; }
+.arm-l { transform-origin: 90% 30%; }
+.arm-r { transform-origin: 10% 30%; }
 
-/* wave: left arm up, gentle waggle */
-.rupi[data-pose='wave'] .arm-l { transform: rotate(-55deg); }
+/* wave: left arm raised, gentle waggle */
+.rupi[data-pose='wave'] .arm-l { transform: rotate(-42deg); }
 .rupi.animated[data-pose='wave'] .arm-l { animation: wave 1.1s ease-in-out infinite; }
 @keyframes wave {
-  0%, 100% { transform: rotate(-45deg); }
-  50% { transform: rotate(-68deg); }
+  0%, 100% { transform: rotate(-34deg); }
+  50% { transform: rotate(-58deg); }
 }
 
-/* point: right arm up toward content */
-.rupi[data-pose='point'] .arm-r { transform: rotate(-40deg); }
+/* point: right arm raised toward content */
+.rupi[data-pose='point'] .arm-r { transform: rotate(-46deg); }
 
-/* think: right arm tucked toward the face; mouth a small curve */
-.rupi[data-pose='think'] .arm-r { transform: rotate(28deg) translateX(-8px); }
-.rupi[data-pose='think'] .mouth { d: path("M55 71 Q60 74 65 71"); }
+/* think: right hand tucked toward the chin; softer mouth */
+.rupi[data-pose='think'] .arm-r { transform: rotate(46deg) translate(-10px, -2px); }
+.rupi[data-pose='think'] .mouth { d: path("M55 70 Q60 73 65 70"); }
 
-/* cheer: both arms up + a bouncier bob */
-.rupi[data-pose='cheer'] .arm-l { transform: rotate(-50deg); }
-.rupi[data-pose='cheer'] .arm-r { transform: rotate(50deg); }
+/* cheer: both arms up + bouncier bob */
+.rupi[data-pose='cheer'] .arm-l { transform: rotate(-40deg); }
+.rupi[data-pose='cheer'] .arm-r { transform: rotate(40deg); }
 .rupi.animated[data-pose='cheer'] svg { animation: cheerBob 0.9s ease-in-out infinite; }
 @keyframes cheerBob {
   0%, 100% { transform: translateY(0); }

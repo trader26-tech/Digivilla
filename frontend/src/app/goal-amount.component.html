@@ -7,10 +7,10 @@
     </button>
   </header>
 
-  <h1 class="prompt reveal">
-    How much do you want to save for<br />
-    <span class="prompt-goal">{{ goalPhrase }}</span>?
-  </h1>
+  <div class="head reveal">
+    <span class="eyebrow"><span class="dot"></span>{{ goal.label }}</span>
+    <h1 class="prompt">How much do you want to save?</h1>
+  </div>
 
   <!-- Big amount. Tapping it (or the pill) opens the phone's number keyboard. -->
   <div class="readout reveal">

@@ -7,32 +7,56 @@
 >
   <svg viewBox="0 0 120 120" fill="none" aria-hidden="true">
     <defs>
-      <linearGradient id="rupi-body" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ffd35e" />
-        <stop offset="100%" stop-color="#f0a91e" />
+      <radialGradient id="rupi-face" cx="38%" cy="30%" r="80%">
+        <stop offset="0" stop-color="#ffe7a0" />
+        <stop offset="55%" stop-color="#f6c34a" />
+        <stop offset="100%" stop-color="#e19a1c" />
+      </radialGradient>
+      <linearGradient id="rupi-rim" x1="0" y1="0" x2="0.4" y2="1">
+        <stop offset="0" stop-color="#ffd45f" />
+        <stop offset="100%" stop-color="#cf8912" />
       </linearGradient>
+      <filter id="rupi-drop" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#bf7d0e" flood-opacity="0.35" />
+      </filter>
     </defs>
 
     <!-- soft ground shadow -->
-    <ellipse class="ground" cx="60" cy="110" rx="24" ry="4.5" fill="#000" opacity="0.1" />
+    <ellipse class="ground" cx="60" cy="111" rx="25" ry="4.5" fill="#000" opacity="0.11" />
 
-    <!-- arms: simple rounded stubs -->
-    <g class="arm arm-l"><rect x="20" y="60" width="14" height="7" rx="3.5" fill="#f0a91e" /></g>
-    <g class="arm arm-r"><rect x="86" y="60" width="14" height="7" rx="3.5" fill="#f0a91e" /></g>
-
-    <!-- coin body: one clean circle -->
-    <circle cx="60" cy="60" r="38" fill="url(#rupi-body)" />
-
-    <!-- face -->
-    <g class="face" fill="#3a2a08">
-      <circle class="eye eye-l" cx="49" cy="55" r="4" />
-      <circle class="eye eye-r" cx="71" cy="55" r="4" />
-      <path class="mouth" d="M50 68 Q60 77 70 68" stroke="#3a2a08" stroke-width="3.4" stroke-linecap="round" fill="none" />
+    <!-- ARMS (behind body) -->
+    <g class="arm arm-l" stroke="#e19a1c" stroke-width="6" stroke-linecap="round">
+      <path d="M30 68 Q16 64 13 52" />
+      <circle class="hand" cx="12" cy="51" r="6" fill="#f6c34a" stroke="none" />
     </g>
-    <!-- blink lids -->
-    <g class="lids">
-      <rect class="lid lid-l" x="44" y="50" width="10" height="6" rx="3" fill="url(#rupi-body)" />
-      <rect class="lid lid-r" x="66" y="50" width="10" height="6" rx="3" fill="url(#rupi-body)" />
+    <g class="arm arm-r" stroke="#e19a1c" stroke-width="6" stroke-linecap="round">
+      <path d="M90 68 Q104 64 107 52" />
+      <circle class="hand" cx="108" cy="51" r="6" fill="#f6c34a" stroke="none" />
+    </g>
+
+    <!-- COIN body: rim + inner face for depth -->
+    <g filter="url(#rupi-drop)">
+      <circle cx="60" cy="60" r="40" fill="url(#rupi-rim)" />
+      <circle cx="60" cy="60" r="33" fill="url(#rupi-face)" />
+    </g>
+
+    <!-- big ₹ that IS the coin's identity, sitting behind the face features -->
+    <text class="rupee-mark" x="60" y="60" text-anchor="middle" dominant-baseline="central"
+          font-family="'Inter', system-ui, sans-serif" font-size="46" font-weight="800"
+          fill="#e19a1c" opacity="0.28">₹</text>
+
+    <!-- FACE -->
+    <g class="face">
+      <g class="eyes" fill="#3a2a08">
+        <circle class="eye eye-l" cx="50" cy="55" r="4" />
+        <circle class="eye eye-r" cx="70" cy="55" r="4" />
+      </g>
+      <path class="mouth" d="M51 67 Q60 76 69 67" stroke="#3a2a08" stroke-width="3.4" stroke-linecap="round" fill="none" />
+      <!-- blink lids -->
+      <g class="lids" fill="url(#rupi-face)">
+        <rect class="lid lid-l" x="45" y="50" width="10" height="6" rx="3" />
+        <rect class="lid lid-r" x="65" y="50" width="10" height="6" rx="3" />
+      </g>
     </g>
   </svg>
 </div>

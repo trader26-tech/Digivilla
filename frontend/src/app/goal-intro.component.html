@@ -10,6 +10,14 @@
     <span class="spacer"></span>
   </header>
 
+  <!-- ===== Rupi greets + explains (replaces the paragraph) ===== -->
+  <div class="rupi-row reveal">
+    <app-rupi [pose]="rupiPose" [size]="72"></app-rupi>
+    <div class="bubble">
+      <p>{{ rupiSays }}</p>
+    </div>
+  </div>
+
   <!-- ===== signature hero, unique per goal ===== -->
   <div class="hero" [attr.data-hero]="cfg.hero">
     <div class="hero-disc">
@@ -75,9 +83,8 @@
     <span class="hero-emoji">{{ goal.icon }}</span>
   </div>
 
-  <!-- ===== minimal copy ===== -->
+  <!-- ===== one-line tagline (no paragraph) ===== -->
   <h1 class="tagline">{{ cfg.tagline }}</h1>
-  <p class="why">{{ cfg.why }}</p>
 
   <!-- ===== the mini-calculator ===== -->
   <div class="calc">
@@ -103,9 +110,11 @@
     </div>
 
     <div class="result">
-      <span class="r-label">We suggest starting at</span>
-      <div class="r-amount">{{ compactInr(recommended) }}</div>
-      <span class="r-full">₹{{ recommended | number:'1.0-0' }}</span>
+      <app-rupi pose="cheer" [size]="34" [animated]="false"></app-rupi>
+      <div class="r-text">
+        <span class="r-label">Rupi suggests</span>
+        <div class="r-amount">{{ compactInr(recommended) }}</div>
+      </div>
     </div>
   </div>
 
