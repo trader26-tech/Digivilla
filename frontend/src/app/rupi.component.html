@@ -38,24 +38,29 @@
     <g filter="url(#rupi-drop)">
       <circle cx="60" cy="60" r="40" fill="url(#rupi-rim)" />
       <circle cx="60" cy="60" r="33" fill="url(#rupi-face)" />
+      <!-- engraved ring, like a real coin -->
+      <circle cx="60" cy="60" r="33" fill="none" stroke="#c8880f" stroke-width="1.4" opacity="0.35" />
     </g>
 
-    <!-- big ₹ that IS the coin's identity, sitting behind the face features -->
-    <text class="rupee-mark" x="60" y="60" text-anchor="middle" dominant-baseline="central"
-          font-family="'Inter', system-ui, sans-serif" font-size="46" font-weight="800"
-          fill="#e19a1c" opacity="0.28">₹</text>
+    <!-- ₹ emblem badge — makes it unmistakably a rupee coin -->
+    <g class="emblem">
+      <circle cx="60" cy="82" r="12" fill="#fff" opacity="0.9" />
+      <text x="60" y="83" text-anchor="middle" dominant-baseline="central"
+            font-family="'Inter', system-ui, sans-serif" font-size="16" font-weight="800"
+            fill="#e19a1c">₹</text>
+    </g>
 
-    <!-- FACE -->
+    <!-- FACE (sits in the upper part, above the ₹ badge) -->
     <g class="face">
       <g class="eyes" fill="#3a2a08">
-        <circle class="eye eye-l" cx="50" cy="55" r="4" />
-        <circle class="eye eye-r" cx="70" cy="55" r="4" />
+        <circle class="eye eye-l" cx="51" cy="52" r="3.8" />
+        <circle class="eye eye-r" cx="69" cy="52" r="3.8" />
       </g>
-      <path class="mouth" d="M51 67 Q60 76 69 67" stroke="#3a2a08" stroke-width="3.4" stroke-linecap="round" fill="none" />
+      <path class="mouth" d="M52 62 Q60 70 68 62" stroke="#3a2a08" stroke-width="3.2" stroke-linecap="round" fill="none" />
       <!-- blink lids -->
       <g class="lids" fill="url(#rupi-face)">
-        <rect class="lid lid-l" x="45" y="50" width="10" height="6" rx="3" />
-        <rect class="lid lid-r" x="65" y="50" width="10" height="6" rx="3" />
+        <rect class="lid lid-l" x="46" y="47" width="10" height="6" rx="3" />
+        <rect class="lid lid-r" x="64" y="47" width="10" height="6" rx="3" />
       </g>
     </g>
   </svg>

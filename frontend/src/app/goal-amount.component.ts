@@ -128,6 +128,26 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     this.lastTickAmount = this.amount;
   }
 
+  /** Suggestion chips centred on the recommended (preset) amount, so they never
+   *  contradict it. Falls back to the goal's static suggestions when no preset.
+   *  E.g. a ₹20 L recommendation yields 10 / 15 / 20 / 30 L, not a stray ₹2 L. */
+  get chipAmounts(): number[] {
+    const base = this.preset > 0 ? this.preset : this.goal.default_amount;
+    if (!base) return (this.goal.suggested_amounts || []).filter((n) => n > 0);
+    const raw = [base * 0.5, base * 0.75, base, base * 1.5];
+    // Snap each to a clean number and de-dup, keeping order.
+    const seen = new Set<number>();
+    const out: number[] = [];
+    for (const v of raw) {
+      const s = this.clampSnap(v);
+      if (s > 0 && !seen.has(s)) {
+        seen.add(s);
+        out.push(s);
+      }
+    }
+    return out;
+  }
+
   // ---------- arch math ----------
 
   /** Fraction 0..1 of the RENDERED (tweened) amount within [min,max].

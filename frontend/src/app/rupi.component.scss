@@ -55,7 +55,7 @@
 
 /* think: right hand tucked toward the chin; softer mouth */
 .rupi[data-pose='think'] .arm-r { transform: rotate(46deg) translate(-10px, -2px); }
-.rupi[data-pose='think'] .mouth { d: path("M55 70 Q60 73 65 70"); }
+.rupi[data-pose='think'] .mouth { d: path("M56 64 Q60 67 64 64"); }
 
 /* cheer: both arms up + bouncier bob */
 .rupi[data-pose='cheer'] .arm-l { transform: rotate(-40deg); }

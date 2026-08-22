@@ -90,7 +90,7 @@
     <!-- Suggestion chips float over the dome -->
     <div class="chips reveal">
       <button
-        *ngFor="let s of goal.suggested_amounts"
+        *ngFor="let s of chipAmounts"
         class="chip"
         [class.active]="amount === s"
         (click)="pickSuggested(s); $event.stopPropagation()"
