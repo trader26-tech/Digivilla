@@ -46,13 +46,21 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   readonly CY = 320;
   readonly R = 300;
   readonly HALF = 28; // degrees either side of top -> a wide arc that fits the band
-  readonly tickCount = 41;
-  readonly tickArr = Array.from({ length: 41 });
+
+  /** Accent hue for this goal — same map as the colourful goal picker, so the
+   *  amount screen inherits the goal's colour (house=blue, wealth=green, …). */
+  get hue(): number {
+    return HUE_OF[this.goal?.key] ?? 222;
+  }
 
   min = 0;
   max = 0;
   step = 0;
-  amount = 0;
+  amount = 0;        // committed target value
+  displayAmount = 0; // what the UI renders — tweens toward `amount`
+
+  entered = false;   // drives the entry animation classes
+  popKey = 0;        // bumped on each step so the number can re-trigger its pop
 
   dialerOpen = false;
   dialerValue = ''; // digits typed in the numeric dialer
@@ -60,6 +68,7 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   private dragging = false;
   private lastTickAmount = 0;
   private reduceMotion = false;
+  private tweenRAF = 0;
 
   // Bound handlers so we can add/remove the same references.
   private moveH = (e: PointerEvent) => this.onPointerMove(e);
@@ -68,11 +77,30 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.reduceMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.setupRange();
+    this.runEntry();
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('pointermove', this.moveH);
     window.removeEventListener('pointerup', this.upH);
+    cancelAnimationFrame(this.tweenRAF);
+  }
+
+  /** Entry choreography: count the number up to its start value and let the
+   *  dome/ticks animate in (CSS handles those via the `entered` class). */
+  private runEntry(): void {
+    if (this.reduceMotion) {
+      this.displayAmount = this.amount;
+      this.entered = true;
+      return;
+    }
+    // Start the number lower (never at zero) and count up to the real value.
+    this.displayAmount = this.min + (this.amount - this.min) * 0.55;
+    // Next frame, flip `entered` so CSS transitions kick in, and tween up.
+    requestAnimationFrame(() => {
+      this.entered = true;
+      this.tweenTo(this.amount, 900);
+    });
   }
 
   /** Derive a friendly [min,max,step] range from the goal's suggestions. */
@@ -93,9 +121,10 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
 
   // ---------- arch math ----------
 
-  /** Fraction 0..1 of the current amount within [min,max]. */
+  /** Fraction 0..1 of the RENDERED (tweened) amount within [min,max].
+   *  Handle + arc follow this so they glide with chip taps / entry. */
   get fraction(): number {
-    const f = (this.amount - this.min) / (this.max - this.min || 1);
+    const f = (this.displayAmount - this.min) / (this.max - this.min || 1);
     return Math.max(0, Math.min(1, f));
   }
 
@@ -111,10 +140,9 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     return this.pointAt(this.fraction);
   }
 
-  /** Tick angle (deg, for an SVG rotate about the centre) for tick index i. */
-  tickAngle(i: number): number {
-    const frac = i / (this.tickCount - 1);
-    return -this.HALF + frac * (2 * this.HALF);
+  /** True for the public template so it can add a `.dragging` class. */
+  get isDragging(): boolean {
+    return this.dragging;
   }
 
   /** SVG path for the arc from the left edge up to `frac` along the top edge. */
@@ -176,20 +204,51 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
 
   // ---------- amount setters + feedback ----------
 
-  setAmount(raw: number): void {
+  /** Set the amount. During a drag this tracks 1:1 (no tween) so the handle
+   *  stays under the finger; otherwise the display glides to the new value. */
+  setAmount(raw: number, animate = false): void {
     const snapped = this.clampSnap(raw);
-    if (snapped !== this.amount) {
-      this.amount = snapped;
-      this.tickFeedback();
+    if (snapped === this.amount) return;
+    this.amount = snapped;
+    this.popKey++;
+    this.tickFeedback();
+    if (animate && !this.reduceMotion) {
+      this.tweenTo(snapped, 420);
+    } else {
+      cancelAnimationFrame(this.tweenRAF);
+      this.displayAmount = snapped;
     }
   }
 
+  /** Smoothly animate `displayAmount` toward a target over `dur` ms. */
+  private tweenTo(target: number, dur: number): void {
+    cancelAnimationFrame(this.tweenRAF);
+    const from = this.displayAmount;
+    const delta = target - from;
+    if (Math.abs(delta) < 1) {
+      this.displayAmount = target;
+      return;
+    }
+    const t0 = performance.now();
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const frame = (now: number) => {
+      const t = Math.min(1, (now - t0) / dur);
+      this.displayAmount = from + delta * ease(t);
+      if (t < 1) {
+        this.tweenRAF = requestAnimationFrame(frame);
+      } else {
+        this.displayAmount = target;
+      }
+    };
+    this.tweenRAF = requestAnimationFrame(frame);
+  }
+
   nudge(dir: number): void {
-    this.setAmount(this.amount + dir * this.step);
+    this.setAmount(this.amount + dir * this.step, true);
   }
 
   pickSuggested(v: number): void {
-    this.setAmount(v);
+    this.setAmount(v, true); // handle glides along the arch to the chosen value
   }
 
   private clampSnap(v: number): number {
@@ -217,7 +276,7 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   closeDialer(commit: boolean): void {
     if (commit) {
       const v = parseInt(this.dialerValue || '0', 10);
-      if (v > 0) this.setAmount(v);
+      if (v > 0) this.setAmount(v, true); // value flows back onto the arch
     }
     this.dialerOpen = false;
   }
@@ -240,15 +299,17 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   }
 
   // ---------- formatting + emit ----------
+  // These render `displayAmount` (the tweened value) so the number visibly
+  // counts during entry, chip taps and dialer commits.
 
   /** Big compact label, e.g. ₹2 Cr, ₹50 L. */
   get compact(): string {
-    return this.compactInr(this.amount);
+    return this.compactInr(this.displayAmount);
   }
 
-  /** Full grouped figure under the compact label, e.g. ₹2,00,00,000. */
+  /** Full grouped figure — the headline number. */
   get full(): string {
-    return '₹' + Math.round(this.amount).toLocaleString('en-IN');
+    return '₹' + Math.round(this.displayAmount).toLocaleString('en-IN');
   }
 
   compactInr(v: number): string {
@@ -289,3 +350,16 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     return Math.ceil(x / pow) * pow;
   }
 }
+
+/** Per-goal accent hue — kept in sync with goal-picker's HUE_OF so a goal's
+ *  colour carries through from the picker into the amount screen. */
+const HUE_OF: Record<string, number> = {
+  retirement: 28,
+  child_education: 262,
+  house: 222,
+  car: 190,
+  wealth: 150,
+  emergency: 356,
+  wedding: 330,
+  vacation: 205,
+};

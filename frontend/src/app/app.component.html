@@ -1,22 +1,26 @@
 <!-- Cinematic welcome, every launch, before everything -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
-<!-- Step 1: no-login goal picker -->
-<app-goal-picker
-  *ngIf="!intro && !pickedGoal && !chosenGoal"
-  (goalChosen)="onGoalChosen($event)"
-></app-goal-picker>
+<!-- Pre-login flow. Wrapped so the steps slide between each other as one
+     continuous journey (forward = slide left, back = slide right). -->
+<div class="pre-login" *ngIf="!intro && !authed" [@stepAnim]="preStep">
+  <!-- Step 1: no-login goal picker -->
+  <app-goal-picker
+    *ngIf="!pickedGoal && !chosenGoal"
+    (goalChosen)="onGoalChosen($event)"
+  ></app-goal-picker>
 
-<!-- Step 2: choose the goal amount with the circular knob -->
-<app-goal-amount
-  *ngIf="!pickedGoal && chosenGoal"
-  [goal]="chosenGoal"
-  (amountChosen)="onAmountChosen($event)"
-  (back)="onAmountBack()"
-></app-goal-amount>
+  <!-- Step 2: choose the goal amount with the circular knob -->
+  <app-goal-amount
+    *ngIf="!pickedGoal && chosenGoal"
+    [goal]="chosenGoal"
+    (amountChosen)="onAmountChosen($event)"
+    (back)="onAmountBack()"
+  ></app-goal-amount>
 
-<!-- Step 3: once goal + amount are set, fall through to auth / the app -->
-<app-landing *ngIf="pickedGoal && !authed" (authed)="onAuthed($event)"></app-landing>
+  <!-- Step 3: once goal + amount are set, fall through to auth -->
+  <app-landing *ngIf="pickedGoal" (authed)="onAuthed($event)"></app-landing>
+</div>
 
 <ng-container *ngIf="pickedGoal && authed">
 <div class="shell" [class.dock-open]="plannerOpen">

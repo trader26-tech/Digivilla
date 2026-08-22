@@ -2,13 +2,15 @@
   display: block;
 }
 
-/* Pure white, truly monochrome. Local greyscale tokens only — no brand color. */
+/* White base, but coloured by the chosen goal's hue (--hue, set inline).
+   Everything accent-y derives from that one hue so each goal feels distinct. */
 .amount-screen {
-  --ink: #0a0a0a;      /* near-black text / arc / button */
-  --ink-2: #6b6b6b;    /* secondary grey */
-  --ink-3: #9a9a9a;    /* faint grey (ticks, hints) */
-  --line: #e6e6e6;     /* hairlines */
-  --dome: #f4f4f4;     /* the dome fill — a whisper off-white, still no hue */
+  --hue: 222; /* fallback; overwritten inline per goal */
+  --ink: #0f172a;     /* near-black text */
+  --ink-2: #64748b;   /* secondary grey-blue */
+  --line: #e8ebf1;    /* hairlines */
+  --accent: hsl(var(--hue) 85% 52%);
+  --accent-soft: hsl(var(--hue) 90% 96%);
 
   position: relative;
   min-height: 100vh;
@@ -23,10 +25,46 @@
   overflow: hidden;
   animation: screenIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* A soft colour aura up top so the screen isn't flat white. */
+.amount-screen::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: 50%;
+  width: 140%;
+  height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 50% 60% at 50% 40%,
+    hsl(var(--hue) 90% 90% / 0.55), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.amount-screen.entered::before { opacity: 1; }
+.amount-screen > * { position: relative; z-index: 1; }
 @keyframes screenIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ---------- entry reveal system ----------
+   Elements marked .reveal start shifted + faded, then settle once the root
+   gains .entered. A shared stagger via nth-of-type keeps it choreographed. */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.entered .reveal { opacity: 1; transform: none; }
+.entered .prompt { transition-delay: 0.05s; }
+.entered .readout { transition-delay: 0.12s; }
+.entered .enter-btn { transition-delay: 0.20s; }
+.entered .chips { transition-delay: 0.42s; }
+.entered .next { transition-delay: 0.30s; }
 
 /* ---------- top bar ---------- */
 .top {
@@ -59,7 +97,7 @@
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 999px;
-  .g-emoji { font-size: 1.05rem; filter: grayscale(1); }
+  .g-emoji { font-size: 1.05rem; }
   .g-label { font-weight: 650; font-size: 0.9rem; }
 }
 
@@ -82,16 +120,28 @@
   letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
-  animation: popNum 0.16s ease;
+  transform-origin: center;
+  /* Coloured gradient number in the goal's hue. */
+  background: linear-gradient(135deg,
+    hsl(var(--hue) 82% 46%), hsl(calc(var(--hue) + 24) 84% 54%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
+/* Two classes alternate each step so the pop re-triggers every change. */
+.readout .big.pop { animation: popNum 0.18s ease; }
+.readout .big.pop2 { animation: popNum2 0.18s ease; }
 @keyframes popNum {
-  0% { transform: scale(1.035); }
+  0% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+@keyframes popNum2 {
+  0% { transform: scale(1.045); }
   100% { transform: scale(1); }
 }
 .readout .compact {
   margin-top: 0.4rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-size: 0.9rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -103,16 +153,16 @@
   align-items: center;
   gap: 0.4rem;
   margin: 1rem 0 0;
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--ink);
-  font-weight: 600;
+  border: 1px solid hsl(var(--hue) 60% 85%);
+  background: var(--accent-soft);
+  color: hsl(var(--hue) 70% 38%);
+  font-weight: 650;
   font-size: 0.9rem;
   padding: 0.55rem 1.05rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 0.14s ease, background 0.14s;
-  &:hover { background: #fafafa; }
+  transition: transform 0.14s ease, background 0.14s, box-shadow 0.14s;
+  &:hover { box-shadow: 0 4px 12px -4px hsl(var(--hue) 70% 50% / 0.4); }
   &:active { transform: scale(0.97); }
 }
 
@@ -138,37 +188,73 @@
   overflow: visible;
 }
 .dome {
-  fill: var(--dome);
+  /* fill set inline (url(#domeGlow)). Rises up from below on entry. */
+  transform: translateY(46px);
+  opacity: 0;
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
 }
-.ticks line {
-  stroke: var(--ink-3);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
+.entered .dome { transform: none; opacity: 1; }
+
+/* Base track — faint hairline arc, the full sweep. */
 .track {
   fill: none;
-  stroke: var(--line);
-  stroke-width: 3;
+  stroke: hsl(var(--hue) 40% 88%);
+  stroke-width: 7;
   stroke-linecap: round;
 }
+/* Coloured filled arc (stroke set inline to the gradient). Thick + glowing.
+   `pathLength` normalises so we can draw it on entry regardless of real length. */
 .progress {
   fill: none;
-  stroke: var(--ink);
-  stroke-width: 3;
+  stroke-width: 7;
   stroke-linecap: round;
-  transition: none;
+}
+/* The whole screen fades in via .reveal already; the coloured fill just draws
+   with the dome. (Kept simple — the live fraction updates keep it responsive.) */
+
+/* A bright sheen that drifts along the filled arc — constant subtle motion. */
+.sheen {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 18 82;
+  animation: sheenMove 2.6s linear infinite;
+  opacity: 0.9;
+}
+@keyframes sheenMove {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: -100; }
+}
+
+/* Handle: a soft pulsing coloured glow, a halo, a coloured ring, white core. */
+.handle-glow {
+  opacity: 0.28;
+  transition: cx 0.06s linear, cy 0.06s linear, opacity 0.25s ease;
+  animation: pulse 2.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.20; }
+  50% { opacity: 0.42; }
 }
 .handle-halo {
-  fill: rgba(10, 10, 10, 0.08);
-  transition: cx 0.06s linear, cy 0.06s linear;
+  opacity: 0.18;
+  transition: cx 0.06s linear, cy 0.06s linear, opacity 0.25s ease;
 }
-.handle {
-  fill: var(--ink);
-  stroke: #fff;
+.handle-ring {
+  fill: #fff;
   stroke-width: 3;
   transition: cx 0.06s linear, cy 0.06s linear;
+  filter: drop-shadow(0 2px 5px hsl(var(--hue) 60% 40% / 0.35));
 }
-.dial:active .handle-halo { fill: rgba(10, 10, 10, 0.14); }
+.handle {
+  fill: var(--accent);
+  transition: cx 0.06s linear, cy 0.06s linear;
+}
+/* While dragging: glow swells, motion stops jittering. */
+.dial.dragging .handle-glow { opacity: 0.55; animation: none; }
+.dial.dragging .handle-halo { opacity: 0.34; }
 
 /* suggestion chips floating on the dome */
 .chips {
@@ -195,9 +281,10 @@
   &:hover { background: #fafafa; }
   &:active { transform: scale(0.96); }
   &.active {
-    background: var(--ink);
-    border-color: var(--ink);
+    background: var(--accent);
+    border-color: var(--accent);
     color: #fff;
+    box-shadow: 0 6px 16px -6px hsl(var(--hue) 80% 45% / 0.5);
   }
 }
 
@@ -206,17 +293,19 @@
   width: 100%;
   max-width: 460px;
   margin-top: 1rem;
-  border: 1.5px solid var(--ink);
-  background: #fff;
-  color: var(--ink);
+  border: none;
+  color: #fff;
   font-weight: 700;
-  font-size: 1.02rem;
-  padding: 1rem;
+  font-size: 1.05rem;
+  padding: 1.05rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 0.16s ease, background 0.16s, color 0.16s;
-  &:hover { background: var(--ink); color: #fff; }
-  &:active { transform: scale(0.99); }
+  background: linear-gradient(135deg,
+    hsl(var(--hue) 82% 54%), hsl(calc(var(--hue) + 22) 80% 46%));
+  box-shadow: 0 14px 30px -12px hsl(var(--hue) 80% 45% / 0.6);
+  transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.16s;
+  &:hover { transform: translateY(-2px); filter: brightness(1.05); }
+  &:active { transform: translateY(0) scale(0.99); }
 }
 
 /* ---------- numeric dialer ---------- */
@@ -299,7 +388,9 @@
   padding: 0.9rem;
   border-radius: 14px;
   cursor: pointer;
-  background: var(--ink);
+  background: linear-gradient(135deg,
+    hsl(var(--hue) 82% 54%), hsl(calc(var(--hue) + 22) 80% 46%));
+  box-shadow: 0 10px 22px -12px hsl(var(--hue) 80% 45% / 0.6);
   transition: transform 0.16s ease;
   &:active { transform: scale(0.99); }
 }
@@ -307,6 +398,7 @@
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .amount-screen, .readout .big, .dialer { animation: none !important; }
-  .handle, .handle-halo { transition: none !important; }
+  .handle, .handle-halo, .handle-glow, .sheen { animation: none !important; }
+  .handle, .handle-halo, .handle-ring, .handle-glow { transition: none !important; }
   .dialer { transform: none; }
 }

@@ -1,4 +1,4 @@
-<section class="picker" [class.has-selection]="selected">
+<section class="picker">
   <!-- ambient background -->
   <div class="aurora" aria-hidden="true">
     <span class="blob b1"></span>
@@ -12,71 +12,51 @@
     <div class="skeleton" *ngFor="let s of [1,2,3,4,5,6,7,8]"></div>
   </div>
 
-  <!-- goal grid: photographic tiles, name only -->
-  <div class="grid" *ngIf="!loading">
-    <button
-      class="tile"
-      *ngFor="let g of goals; let i = index; trackBy: trackByKey"
-      [class.active]="selected?.key === g.key"
-      [class.dim]="selected && selected.key !== g.key"
-      [style.--hue]="hueOf(g.key)"
-      [style.--i]="i"
-      (click)="select(g)"
-      type="button"
+  <!-- grouped sections: Protect / Short-term / Long-term -->
+  <div class="sections" *ngIf="!loading">
+    <section
+      class="section"
+      *ngFor="let sec of sections; let si = index; trackBy: trackBySection"
     >
-      <!-- real photo if present (public/goals/<key>.jpg), else CSS scene -->
-      <span
-        class="photo"
-        [style.background-image]="'url(goals/' + g.key + '.jpg)'"
-        aria-hidden="true"
-      ></span>
-      <span class="scene" [attr.data-goal]="g.key" aria-hidden="true">
-        <ng-container *ngTemplateOutlet="scene; context: { $implicit: g.key }"></ng-container>
-      </span>
-      <span class="veil" aria-hidden="true"></span>
-      <span class="name">{{ g.label }}</span>
-      <span class="check" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      </span>
-    </button>
+      <header class="sec-head">
+        <h2>{{ sec.title }}</h2>
+        <span class="sec-sub">{{ sec.subtitle }}</span>
+      </header>
+
+      <div class="grid">
+        <button
+          class="tile"
+          *ngFor="let g of sec.goals; let gi = index; trackBy: trackByKey"
+          [style.--hue]="hueOf(g.key)"
+          [style.--i]="cardIndex(si, gi)"
+          (click)="choose(g)"
+          type="button"
+        >
+          <!-- real photo if present (public/goals/<key>.jpg), else CSS scene -->
+          <span
+            class="photo"
+            [style.background-image]="'url(goals/' + g.key + '.jpg)'"
+            aria-hidden="true"
+          ></span>
+          <span class="scene" [attr.data-goal]="g.key" aria-hidden="true">
+            <ng-container *ngTemplateOutlet="scene; context: { $implicit: g.key }"></ng-container>
+          </span>
+          <span class="veil" aria-hidden="true"></span>
+
+          <span class="badge" *ngIf="g.liquid" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            Liquid
+          </span>
+
+          <span class="name">{{ g.label }}</span>
+          <span class="go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+        </button>
+      </div>
+    </section>
   </div>
 </section>
-
-<!-- detail sheet: slides up when a goal is selected -->
-<div class="sheet-backdrop" *ngIf="selected" (click)="clearSelection()"></div>
-<aside class="sheet" *ngIf="selected" [style.--hue]="hueOf(selected.key)">
-  <button class="sheet-close" (click)="clearSelection()" aria-label="Close">✕</button>
-  <span class="sheet-hero" [attr.data-goal]="selected.key" aria-hidden="true">
-    <span
-      class="photo"
-      [style.background-image]="'url(goals/' + selected.key + '.jpg)'"
-    ></span>
-    <span class="scene">
-      <ng-container *ngTemplateOutlet="scene; context: { $implicit: selected.key }"></ng-container>
-    </span>
-    <span class="hero-name">{{ selected.label }}</span>
-  </span>
-
-  <div class="sheet-facts">
-    <div class="fact">
-      <span class="fl">Target</span>
-      <b>{{ compactInr(selected.default_amount) }}</b>
-    </div>
-    <div class="fact">
-      <span class="fl">Time</span>
-      <b>{{ selected.default_years }} yrs</b>
-    </div>
-    <div class="fact">
-      <span class="fl">Style</span>
-      <b>{{ riskLabel(selected.default_risk) }}</b>
-    </div>
-  </div>
-
-  <button class="cta" (click)="continue()">
-    Continue
-    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
-  </button>
-</aside>
 
 <!-- ================================================================= -->
 <!-- Per-goal photographic CSS/SVG scenes. Self-contained, offline-safe.

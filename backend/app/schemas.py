@@ -13,6 +13,10 @@ class GoalPreset(BaseModel):
     default_years: int
     default_risk: str
     blurb: str
+    # Grouping for the picker UI: "long" | "short" | "protect".
+    category: str = "long"
+    # Short-term goals are parked in liquid funds (stable, always accessible).
+    liquid: bool = False
 
 
 # --- Plan request ---------------------------------------------------------

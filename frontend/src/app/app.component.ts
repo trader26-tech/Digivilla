@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import {
+  animate,
+  group,
+  query,
+  style,
+  transition,
+  trigger,
+} from '@angular/animations';
 
 import { BasketLabComponent } from './basket-lab.component';
 import { GoalAmountComponent } from './goal-amount.component';
@@ -27,6 +35,29 @@ type Tab = 'home' | 'invest';
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
+  animations: [
+    // Advancing flow: the new screen slides in from the right while the old
+    // one slides out to the left; going back reverses it. Both are absolutely
+    // positioned during the transition so they overlap cleanly.
+    trigger('stepAnim', [
+      transition(':increment', [
+        query(':enter, :leave', style({ position: 'absolute', inset: 0 }), { optional: true }),
+        query(':enter', style({ transform: 'translateX(40px)', opacity: 0 }), { optional: true }),
+        group([
+          query(':leave', [animate('380ms cubic-bezier(0.22,1,0.36,1)', style({ transform: 'translateX(-40px)', opacity: 0 }))], { optional: true }),
+          query(':enter', [animate('380ms cubic-bezier(0.22,1,0.36,1)', style({ transform: 'translateX(0)', opacity: 1 }))], { optional: true }),
+        ]),
+      ]),
+      transition(':decrement', [
+        query(':enter, :leave', style({ position: 'absolute', inset: 0 }), { optional: true }),
+        query(':enter', style({ transform: 'translateX(-40px)', opacity: 0 }), { optional: true }),
+        group([
+          query(':leave', [animate('380ms cubic-bezier(0.22,1,0.36,1)', style({ transform: 'translateX(40px)', opacity: 0 }))], { optional: true }),
+          query(':enter', [animate('380ms cubic-bezier(0.22,1,0.36,1)', style({ transform: 'translateX(0)', opacity: 1 }))], { optional: true }),
+        ]),
+      ]),
+    ]),
+  ],
 })
 export class AppComponent {
   tab: Tab = 'home';
@@ -46,6 +77,14 @@ export class AppComponent {
 
   authed = !!localStorage.getItem('wp_token');
   userName = localStorage.getItem('wp_name') || '';
+
+  /** Numeric index of the current pre-login screen, so the stepAnim trigger can
+   *  tell forward (:increment) from back (:decrement). */
+  get preStep(): number {
+    if (!this.pickedGoal && !this.chosenGoal) return 0; // picker
+    if (!this.pickedGoal && this.chosenGoal) return 1; // amount knob
+    return 2; // landing / auth
+  }
 
   /** Called when the landing page completes sign-in. Persists the session
    *  token and the server-issued owner id so goals belong to this user

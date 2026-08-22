@@ -9,13 +9,21 @@ import {
 import { GoalPreset } from './models';
 import { PlannerService } from './planner.service';
 
+/** A titled group of goals rendered as one section in the picker. */
+export interface GoalSection {
+  category: string; // long | short | protect
+  title: string;
+  subtitle: string;
+  goals: GoalPreset[];
+}
+
 /**
  * The app's true first screen — shown before any login.
  *
- * A grid of life goals the user can invest for. Tapping a goal selects it and
- * reveals a detail panel (blurb + suggested amounts + horizon) with a Continue
- * CTA. What Continue does downstream is wired up separately; this component's
- * job is a lively, no-login goal-selection experience for the PWA.
+ * A grid of life goals, split into meaningful sections (Protect / Short-term /
+ * Long-term). Tapping a goal card goes STRAIGHT to the "choose amount" screen —
+ * no intermediate detail sheet. Short-term goals are parked in liquid funds,
+ * which the card notes so the intent is clear.
  */
 @Component({
   selector: 'app-goal-picker',
@@ -25,13 +33,12 @@ import { PlannerService } from './planner.service';
   styleUrl: './goal-picker.component.scss',
 })
 export class GoalPickerComponent implements OnInit {
-  /** Emitted when the user taps Continue on a chosen goal. */
+  /** Emitted the moment a goal card is tapped -> advance to the amount screen. */
   @Output() goalChosen = new EventEmitter<GoalPreset>();
 
   goals: GoalPreset[] = [];
   loading = true;
   errored = false;
-  selected: GoalPreset | null = null;
 
   constructor(private api: PlannerService) {}
 
@@ -51,21 +58,32 @@ export class GoalPickerComponent implements OnInit {
     });
   }
 
-  select(g: GoalPreset): void {
-    this.selected = this.selected?.key === g.key ? null : g;
+  /** Goals grouped into ordered sections; empty sections are dropped. */
+  get sections(): GoalSection[] {
+    return SECTION_META.map((m) => ({
+      ...m,
+      goals: this.goals.filter((g) => (g.category || 'long') === m.category),
+    })).filter((s) => s.goals.length > 0);
   }
 
-  clearSelection(): void {
-    this.selected = null;
+  /** Tapping a card immediately advances to the amount screen. */
+  choose(g: GoalPreset): void {
+    this.goalChosen.emit(g);
   }
 
-  continue(): void {
-    if (this.selected) this.goalChosen.emit(this.selected);
+  /** Running index across all sections so entrance stagger stays continuous. */
+  cardIndex(sectionIdx: number, goalIdx: number): number {
+    let n = goalIdx;
+    for (let i = 0; i < sectionIdx; i++) n += this.sections[i].goals.length;
+    return n;
   }
 
   /** trackBy so re-renders don't restart card entrance animations. */
   trackByKey(_: number, g: GoalPreset): string {
     return g.key;
+  }
+  trackBySection(_: number, s: GoalSection): string {
+    return s.category;
   }
 
   /** Compact INR label for a suggested amount, e.g. ₹2 Cr, ₹50 L. */
@@ -106,6 +124,26 @@ export class GoalPickerComponent implements OnInit {
   }
 }
 
+/** Ordered section definitions. Protect first (the safety net comes before
+ *  everything), then near-term goals, then the long-horizon pillars. */
+const SECTION_META: Omit<GoalSection, 'goals'>[] = [
+  {
+    category: 'protect',
+    title: 'Protect',
+    subtitle: 'Your safety net — build this first',
+  },
+  {
+    category: 'short',
+    title: 'Short-term',
+    subtitle: 'Within a few years · kept in liquid funds',
+  },
+  {
+    category: 'long',
+    title: 'Long-term',
+    subtitle: 'Big life goals that grow over time',
+  },
+];
+
 /** Map preset key -> icon id rendered by the template's <ng-container> switch. */
 const ICON_KEYS: Record<string, string> = {
   retirement: 'retirement',
@@ -141,6 +179,7 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 25,
     default_risk: 'aggressive',
     blurb: 'Build a corpus that funds your lifestyle after you stop working.',
+    category: 'long',
   },
   {
     key: 'child_education',
@@ -151,6 +190,7 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 15,
     default_risk: 'balanced',
     blurb: 'Fund school, college or higher education without last-minute loans.',
+    category: 'long',
   },
   {
     key: 'house',
@@ -161,6 +201,7 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 8,
     default_risk: 'balanced',
     blurb: 'Save for a down payment or the full value of a home.',
+    category: 'long',
   },
   {
     key: 'car',
@@ -171,6 +212,8 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 4,
     default_risk: 'conservative',
     blurb: 'Plan a big-ticket purchase over the next few years.',
+    category: 'short',
+    liquid: true,
   },
   {
     key: 'wealth',
@@ -181,6 +224,7 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 15,
     default_risk: 'aggressive',
     blurb: 'Long-term wealth creation with no single fixed target date.',
+    category: 'long',
   },
   {
     key: 'emergency',
@@ -191,6 +235,8 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 2,
     default_risk: 'conservative',
     blurb: 'A safety net of 6-12 months of expenses, kept low-risk and liquid.',
+    category: 'protect',
+    liquid: true,
   },
   {
     key: 'wedding',
@@ -201,6 +247,8 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 5,
     default_risk: 'balanced',
     blurb: 'Plan for wedding expenses without derailing other goals.',
+    category: 'short',
+    liquid: true,
   },
   {
     key: 'vacation',
@@ -211,5 +259,7 @@ const FALLBACK_PRESETS: GoalPreset[] = [
     default_years: 3,
     default_risk: 'conservative',
     blurb: 'Save up for a once-in-a-lifetime trip.',
+    category: 'short',
+    liquid: true,
   },
 ];

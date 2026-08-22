@@ -7,6 +7,8 @@ export interface GoalPreset {
   default_years: number;
   default_risk: string;
   blurb: string;
+  category?: string; // "long" | "short" | "protect"
+  liquid?: boolean; // short-term goals parked in liquid funds
 }
 
 export interface PlanRequest {

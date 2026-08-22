@@ -6,6 +6,15 @@
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* Pre-login flow wrapper: positioning context so the step transition can
+   absolutely-position the outgoing/incoming screens as they cross-slide. */
+.pre-login {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
 .shell {
   display: flex;
   min-height: 100vh;

@@ -40,9 +40,10 @@
   animation: sunRise 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @keyframes sunRise {
-  0% { transform: translate(-50%, 60%) scale(0.6); opacity: 0; }
+  0% { transform: translate(-50%, 75%) scale(0.6); opacity: 0; }
   40% { opacity: 1; }
-  100% { transform: translate(-50%, 8%) scale(1); opacity: 1; }
+  /* settle at the horizon (lower third) so it never sits under the wordmark */
+  100% { transform: translate(-50%, 34%) scale(1); opacity: 1; }
 }
 
 .glow {
@@ -131,7 +132,21 @@
   text-align: center;
   color: #fff;
   padding: 0 1.5rem;
-  transform: translateY(-4vh);
+  /* lift above the horizon so the sun rises behind/below, never under the text */
+  transform: translateY(-16vh);
+}
+/* soft dark scrim behind the wordmark so text stays legible over the bright sky */
+.mark::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  height: 260%;
+  z-index: -1;
+  background: radial-gradient(60% 55% at 50% 50%, rgba(14, 11, 36, 0.55) 0%, rgba(14, 11, 36, 0.28) 45%, transparent 72%);
+  pointer-events: none;
 }
 .kicker {
   display: block;
@@ -149,6 +164,7 @@
   letter-spacing: -0.02em;
   line-height: 0.98;
   font-size: clamp(2.6rem, 12vw, 6rem);
+  text-shadow: 0 4px 30px rgba(14, 11, 36, 0.55), 0 2px 8px rgba(14, 11, 36, 0.5);
 }
 .freedom .w {
   display: block;
@@ -165,6 +181,9 @@
   -webkit-text-fill-color: transparent;
   animation-delay: 0.9s;
 }
+/* The gradient word can't use text-shadow (transparent fill), and wordIn
+   animates `filter`, so its glow is baked into the wordInEm end-frame. */
+.freedom .w.em { animation-name: wordInEm; }
 .rule {
   display: block;
   width: 0;
@@ -176,6 +195,15 @@
 
 @keyframes wordIn {
   to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+/* same motion as wordIn but ends with a soft glow that persists (forwards) */
+@keyframes wordInEm {
+  from { opacity: 0; transform: translateY(0.5em); filter: blur(10px); }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0) drop-shadow(0 3px 16px rgba(14, 11, 36, 0.55));
+  }
 }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
