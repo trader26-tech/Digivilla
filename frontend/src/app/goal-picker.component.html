@@ -1,32 +1,21 @@
 <section class="picker" [class.has-selection]="selected">
-  <!-- ambient animated background -->
+  <!-- ambient background -->
   <div class="aurora" aria-hidden="true">
     <span class="blob b1"></span>
     <span class="blob b2"></span>
-    <span class="blob b3"></span>
-    <div class="grid-lines"></div>
   </div>
 
-  <header class="intro">
-    <span class="eyebrow">
-      <i class="spark"></i> Goal-based investing
-    </span>
-    <h1>What are you<br /><em>investing for?</em></h1>
-    <p class="lede">
-      Pick the dream you're saving toward. We'll build the plan — the funds, the
-      SIP, the timeline — around it. No sign-up needed to start.
-    </p>
-  </header>
+  <h1 class="title">Choose a goal</h1>
 
   <!-- skeleton while presets load -->
   <div class="grid" *ngIf="loading">
     <div class="skeleton" *ngFor="let s of [1,2,3,4,5,6,7,8]"></div>
   </div>
 
-  <!-- goal grid -->
+  <!-- goal grid: photographic tiles, name only -->
   <div class="grid" *ngIf="!loading">
     <button
-      class="goal"
+      class="tile"
       *ngFor="let g of goals; let i = index; trackBy: trackByKey"
       [class.active]="selected?.key === g.key"
       [class.dim]="selected && selected.key !== g.key"
@@ -35,46 +24,47 @@
       (click)="select(g)"
       type="button"
     >
-      <span class="glow" aria-hidden="true"></span>
-      <span class="ico" aria-hidden="true">
-        <ng-container *ngTemplateOutlet="icon; context: { $implicit: iconOf(g.key) }"></ng-container>
+      <!-- real photo if present (public/goals/<key>.jpg), else CSS scene -->
+      <span
+        class="photo"
+        [style.background-image]="'url(goals/' + g.key + '.jpg)'"
+        aria-hidden="true"
+      ></span>
+      <span class="scene" [attr.data-goal]="g.key" aria-hidden="true">
+        <ng-container *ngTemplateOutlet="scene; context: { $implicit: g.key }"></ng-container>
       </span>
-      <span class="label">{{ g.label }}</span>
-      <span class="hint">{{ g.default_years }}+ yrs</span>
+      <span class="veil" aria-hidden="true"></span>
+      <span class="name">{{ g.label }}</span>
       <span class="check" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </span>
     </button>
   </div>
-
-  <p class="disclaimer" *ngIf="!loading">
-    Mutual fund investments are subject to market risks. Not investment advice.
-  </p>
 </section>
 
 <!-- detail sheet: slides up when a goal is selected -->
 <div class="sheet-backdrop" *ngIf="selected" (click)="clearSelection()"></div>
 <aside class="sheet" *ngIf="selected" [style.--hue]="hueOf(selected.key)">
   <button class="sheet-close" (click)="clearSelection()" aria-label="Close">✕</button>
-  <div class="sheet-head">
-    <span class="sheet-ico" aria-hidden="true">
-      <ng-container *ngTemplateOutlet="icon; context: { $implicit: iconOf(selected.key) }"></ng-container>
+  <span class="sheet-hero" [attr.data-goal]="selected.key" aria-hidden="true">
+    <span
+      class="photo"
+      [style.background-image]="'url(goals/' + selected.key + '.jpg)'"
+    ></span>
+    <span class="scene">
+      <ng-container *ngTemplateOutlet="scene; context: { $implicit: selected.key }"></ng-container>
     </span>
-    <div>
-      <span class="sheet-eyebrow">Your goal</span>
-      <h2>{{ selected.label }}</h2>
-    </div>
-  </div>
-  <p class="sheet-blurb">{{ selected.blurb }}</p>
+    <span class="hero-name">{{ selected.label }}</span>
+  </span>
 
   <div class="sheet-facts">
     <div class="fact">
-      <span class="fl">Typical target</span>
+      <span class="fl">Target</span>
       <b>{{ compactInr(selected.default_amount) }}</b>
     </div>
     <div class="fact">
-      <span class="fl">Timeline</span>
-      <b>{{ selected.default_years }} years</b>
+      <span class="fl">Time</span>
+      <b>{{ selected.default_years }} yrs</b>
     </div>
     <div class="fact">
       <span class="fl">Style</span>
@@ -82,77 +72,153 @@
     </div>
   </div>
 
-  <div class="sheet-amounts">
-    <span class="al">Popular targets</span>
-    <div class="chips">
-      <span class="chip" *ngFor="let a of selected.suggested_amounts">{{ compactInr(a) }}</span>
-    </div>
-  </div>
-
   <button class="cta" (click)="continue()">
-    Continue with {{ selected.label }}
-    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    Continue
+    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
   </button>
 </aside>
 
-<!-- Shared goal glyphs — reused by both the grid cards and the detail sheet.
-     `let-key` is the icon id from iconOf(); currentColor is inherited so the
-     surrounding .ico / .sheet-ico controls the tint. -->
-<ng-template #icon let-key>
+<!-- ================================================================= -->
+<!-- Per-goal photographic CSS/SVG scenes. Self-contained, offline-safe.
+     Each is a layered gradient landscape evoking the goal. currentColor
+     is not used; each scene carries its own palette. -->
+<!-- ================================================================= -->
+<ng-template #scene let-key>
   <ng-container [ngSwitch]="key">
-    <!-- Retirement — sun over horizon -->
-    <svg *ngSwitchCase="'retirement'" viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="21" r="8" stroke="currentColor" stroke-width="2.2" />
-      <path d="M24 4v3M24 35v3M8 21H5M43 21h-3M12.7 9.7l-2 -2M37.3 9.7l2 -2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
-      <path d="M4 40h40" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
-      <path d="M10 40c3-2 5-2 8 0M30 40c3-2 5-2 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".6" />
+
+    <!-- Retirement — beach sunset -->
+    <svg *ngSwitchCase="'retirement'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="ret-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd27a" /><stop offset=".45" stop-color="#ff9e6d" /><stop offset="1" stop-color="#ff6f91" />
+        </linearGradient>
+        <linearGradient id="ret-sea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffb37a" /><stop offset="1" stop-color="#c96a86" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#ret-sky)" />
+      <circle cx="50" cy="52" r="18" fill="#fff3d6" opacity=".95" />
+      <rect y="62" width="100" height="38" fill="url(#ret-sea)" />
+      <ellipse cx="50" cy="63" rx="26" ry="3" fill="#fff3d6" opacity=".5" />
+      <path d="M22 62c8 3 20 3 30 0" stroke="#fff" stroke-width="1" opacity=".3" fill="none" />
+      <!-- beach parasol -->
+      <path d="M76 76V52" stroke="#6b3b52" stroke-width="1.8" stroke-linecap="round" />
+      <path d="M62 52a14 8 0 0 1 28 0z" fill="#e05a6e" />
+      <path d="M62 52h28" stroke="#b8425a" stroke-width="0.8" opacity=".6" />
     </svg>
-    <!-- Education — graduation cap -->
-    <svg *ngSwitchCase="'education'" viewBox="0 0 48 48" fill="none">
-      <path d="M24 10 4 19l20 9 20-9-20-9Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <path d="M13 23v9c0 2.5 5 5 11 5s11-2.5 11-5v-9" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <path d="M44 19v10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+
+    <!-- Education — campus / books at dawn -->
+    <svg *ngSwitchCase="'child_education'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="edu-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a9b8ff" /><stop offset="1" stop-color="#e7d3ff" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#edu-sky)" />
+      <circle cx="76" cy="26" r="12" fill="#fff" opacity=".7" />
+      <rect y="70" width="100" height="30" fill="#5b46a8" />
+      <rect x="20" y="48" width="60" height="24" fill="#6f57c4" />
+      <polygon points="50,36 20,50 80,50" fill="#8a72e0" />
+      <rect x="46" y="54" width="8" height="18" fill="#4a3890" />
+      <rect x="30" y="56" width="6" height="8" fill="#cbb8ff" /><rect x="64" y="56" width="6" height="8" fill="#cbb8ff" />
     </svg>
-    <!-- House -->
-    <svg *ngSwitchCase="'house'" viewBox="0 0 48 48" fill="none">
-      <path d="M6 22 24 8l18 14" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
-      <path d="M10 20v18h28V20" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <path d="M20 38V27h8v11" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+
+    <!-- House — home with warm windows -->
+    <svg *ngSwitchCase="'house'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="hou-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7fb6ff" /><stop offset="1" stop-color="#cfe6ff" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#hou-sky)" />
+      <rect y="72" width="100" height="28" fill="#6fae5a" />
+      <polygon points="50,30 18,56 82,56" fill="#c2453f" />
+      <rect x="26" y="56" width="48" height="28" fill="#f2e6d0" />
+      <rect x="44" y="66" width="12" height="18" fill="#8a5a3c" />
+      <rect x="32" y="62" width="8" height="8" fill="#ffd27a" /><rect x="60" y="62" width="8" height="8" fill="#ffd27a" />
     </svg>
-    <!-- Car -->
-    <svg *ngSwitchCase="'car'" viewBox="0 0 48 48" fill="none">
-      <path d="M6 30l3-9c.7-2 2.4-3 4.4-3h21.2c2 0 3.7 1 4.4 3l3 9" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <path d="M5 30h38v6a2 2 0 0 1-2 2h-3v-8M10 38v-8H7a2 2 0 0 0-2 2v4" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <circle cx="14" cy="34" r="3" fill="currentColor" />
-      <circle cx="34" cy="34" r="3" fill="currentColor" />
+
+    <!-- Car — open road -->
+    <svg *ngSwitchCase="'car'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="car-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#5ad2d2" /><stop offset="1" stop-color="#bff2ec" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#car-sky)" />
+      <rect y="58" width="100" height="42" fill="#3a4a55" />
+      <polygon points="40,58 60,58 78,100 22,100" fill="#4c5f6c" />
+      <rect x="47" y="62" width="6" height="8" fill="#ffe27a" /><rect x="45" y="76" width="10" height="10" fill="#ffe27a" /><rect x="42" y="90" width="16" height="10" fill="#ffe27a" />
+      <circle cx="80" cy="24" r="9" fill="#fff" opacity=".7" />
     </svg>
-    <!-- Wealth — rising chart -->
-    <svg *ngSwitchCase="'wealth'" viewBox="0 0 48 48" fill="none">
-      <path d="M7 41V9M7 41h34" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
-      <path d="M13 33l8-9 6 5 12-15" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
-      <path d="M31 14h8v8" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+
+    <!-- Wealth — city skyline uptrend -->
+    <svg *ngSwitchCase="'wealth'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="wea-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1db07a" /><stop offset="1" stop-color="#a8f0cf" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#wea-sky)" />
+      <rect x="10" y="60" width="14" height="40" fill="#0f7d57" />
+      <rect x="28" y="48" width="14" height="52" fill="#0c6a49" />
+      <rect x="46" y="54" width="14" height="46" fill="#0f7d57" />
+      <rect x="64" y="36" width="14" height="64" fill="#0c6a49" />
+      <rect x="82" y="26" width="14" height="74" fill="#0f7d57" />
+      <path d="M8 74l20-14 16 8 22-22 26-16" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
-    <!-- Emergency — shield -->
-    <svg *ngSwitchCase="'emergency'" viewBox="0 0 48 48" fill="none">
-      <path d="M24 5 8 11v11c0 10 7 16 16 21 9-5 16-11 16-21V11L24 5Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <path d="M17 24l5 5 9-11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Emergency — calm harbor / shield safety -->
+    <svg *ngSwitchCase="'emergency'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="eme-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff8f8f" /><stop offset="1" stop-color="#ffd0c4" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#eme-sky)" />
+      <rect y="66" width="100" height="34" fill="#c94b52" />
+      <path d="M50 30l22 8v16c0 16-11 24-22 30-11-6-22-14-22-30V38z" fill="#fff" opacity=".92" />
+      <path d="M40 54l7 7 13-15" stroke="#e5484d" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
-    <!-- Wedding — rings -->
-    <svg *ngSwitchCase="'wedding'" viewBox="0 0 48 48" fill="none">
-      <circle cx="18" cy="29" r="10" stroke="currentColor" stroke-width="2.2" />
-      <circle cx="31" cy="29" r="10" stroke="currentColor" stroke-width="2.2" />
-      <path d="M14 12l4 5 4-5M14 12l4-4 4 4-4 5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- Wedding — soft romantic dusk -->
+    <svg *ngSwitchCase="'wedding'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="wed-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff9ec4" /><stop offset="1" stop-color="#ffe0ef" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#wed-sky)" />
+      <circle cx="50" cy="44" r="16" fill="#fff5fa" opacity=".85" />
+      <circle cx="42" cy="58" r="12" fill="none" stroke="#e56aa0" stroke-width="3" />
+      <circle cx="58" cy="58" r="12" fill="none" stroke="#e56aa0" stroke-width="3" />
+      <path d="M20 84c8-2 12-2 16 2M64 86c8-4 12-2 16 0" stroke="#fff" stroke-width="1.4" opacity=".5" fill="none" />
     </svg>
-    <!-- Vacation — plane -->
-    <svg *ngSwitchCase="'vacation'" viewBox="0 0 48 48" fill="none">
-      <path d="M6 27l36-13c2-.7 3.6 1.4 2.4 3.2L23 41l-4-11-13-3Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-      <path d="M19 30l6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+
+    <!-- Vacation — tropical getaway -->
+    <svg *ngSwitchCase="'vacation'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="vac-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4fb4ff" /><stop offset="1" stop-color="#bfe8ff" />
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#vac-sky)" />
+      <rect y="70" width="100" height="30" fill="#2f7fd6" />
+      <rect y="82" width="100" height="18" fill="#f2dfa8" />
+      <!-- palm tree -->
+      <path d="M26 84C25 70 25 58 27 50" stroke="#8a5a34" stroke-width="2.6" fill="none" stroke-linecap="round" />
+      <path d="M27 50c-10-6-20-3-24 2 8-3 15-1 20 3M27 50c10-6 20-3 24 2-8-3-15-1-20 3M27 50c-4-11 0-20 5-24-1 8 0 14 3 20M27 50c4-11 0-20-5-24 1 8 0 14-3 20" fill="#2f7d4a" opacity=".95" />
+      <!-- paper plane in the sky -->
+      <path d="M64 28l16 6-14 5-1-6z" fill="#fff" opacity=".92" />
+      <circle cx="82" cy="22" r="7" fill="#fff" opacity=".8" />
     </svg>
-    <!-- Fallback — target -->
-    <svg *ngSwitchDefault viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2.2" />
-      <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="2.2" />
-      <circle cx="24" cy="24" r="3" fill="currentColor" />
+
+    <!-- Fallback -->
+    <svg *ngSwitchDefault viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100" height="100" fill="#6f8bff" />
+      <circle cx="50" cy="50" r="26" fill="none" stroke="#fff" stroke-width="4" opacity=".8" />
+      <circle cx="50" cy="50" r="6" fill="#fff" />
     </svg>
+
   </ng-container>
 </ng-template>

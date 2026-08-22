@@ -1,109 +1,77 @@
 <div class="amount-screen">
-  <!-- Ambient background -->
-  <div class="bg" aria-hidden="true">
-    <span class="halo"></span>
-  </div>
-
   <!-- Top bar -->
   <header class="top">
-    <button class="icon-btn" (click)="goBack()" aria-label="Back">
-      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
     <div class="goal-chip">
       <span class="g-emoji">{{ goal.icon }}</span>
       <span class="g-label">{{ goal.label }}</span>
     </div>
-    <button class="icon-btn" (click)="toggleMute()" [attr.aria-label]="muted ? 'Unmute' : 'Mute'">
-      <svg *ngIf="!muted" viewBox="0 0 24 24" width="20" height="20"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8a4 4 0 0 1 0 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <svg *ngIf="muted" viewBox="0 0 24 24" width="20" height="20"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9l4 6M21 9l-4 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <button class="icon-btn" (click)="goBack()" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
   </header>
 
   <h1 class="prompt">Please choose a goal amount</h1>
-  <p class="sub">Drag the dial, or tap a suggestion. You can fine-tune the exact figure any time.</p>
 
-  <!-- ===================== The circular knob ===================== -->
-  <div class="knob-wrap" [class.dragging]="false">
-    <div
-      class="dial"
-      #dial
-      (pointerdown)="startDrag($event)"
-      role="slider"
-      [attr.aria-valuemin]="min"
-      [attr.aria-valuemax]="max"
-      [attr.aria-valuenow]="amount"
-      [attr.aria-label]="'Goal amount for ' + goal.label"
-    >
-      <svg viewBox="0 0 100 100" class="dial-svg">
-        <defs>
-          <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="var(--accent)"/>
-            <stop offset="100%" stop-color="var(--hy)"/>
-          </linearGradient>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.4" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
+  <!-- Big amount -->
+  <div class="readout">
+    <div class="big">{{ full }}</div>
+    <div class="compact">{{ compact }}</div>
+  </div>
 
-        <!-- Tick marks around the gauge -->
-        <g class="ticks">
-          <line *ngFor="let t of [].constructor(28); let i = index"
-                [attr.transform]="'rotate(' + (START + i * (SWEEP / 27)) + ' 50 50)'"
-                x1="50" y1="6" x2="50" y2="10" />
-        </g>
+  <!-- Enter amount pill -->
+  <button class="enter-btn" (click)="openDialer()">
+    <svg viewBox="0 0 24 24" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    Enter amount
+  </button>
 
-        <!-- Track -->
-        <circle class="track" cx="50" cy="50" r="42"
-                [attr.transform]="'rotate(' + (START - 90) + ' 50 50)'"
-                stroke-dasharray="197.9 65.9" />
-        <!-- Progress arc -->
-        <circle class="arc" cx="50" cy="50" r="42"
-                [attr.transform]="'rotate(' + (START - 90) + ' 50 50)'"
-                [attr.stroke-dasharray]="dashArray"
-                stroke="url(#arcGrad)" filter="url(#glow)" />
+  <!-- ===================== The arch dial ===================== -->
+  <div
+    class="dial"
+    #dial
+    (pointerdown)="startDrag($event)"
+    role="slider"
+    [attr.aria-valuemin]="min"
+    [attr.aria-valuemax]="max"
+    [attr.aria-valuenow]="amount"
+    [attr.aria-label]="'Goal amount for ' + goal.label"
+  >
+    <!-- viewBox is a wide, short band; the dial is a big circle whose TOP edge
+         arcs across it. r=150, centre pushed well below the band so only the
+         top cap shows as a dome. -->
+    <svg viewBox="0 0 320 220" class="dial-svg" preserveAspectRatio="xMidYMin slice">
+      <!-- The dome fill -->
+      <circle class="dome" cx="160" cy="320" r="300" />
 
-        <!-- Handle -->
-        <circle class="handle-halo" [attr.cx]="handle.x" [attr.cy]="handle.y" r="7" />
-        <circle class="handle" [attr.cx]="handle.x" [attr.cy]="handle.y" r="4.2" />
-      </svg>
+      <!-- Tick marks arced along the top edge of the dome -->
+      <g class="ticks">
+        <line *ngFor="let t of tickArr; let i = index"
+              [attr.transform]="'rotate(' + tickAngle(i) + ' 160 320)'"
+              x1="160" y1="20" x2="160" y2="30" />
+      </g>
 
-      <!-- Center readout -->
-      <div class="readout">
-        <div class="big" [class.pop]="true">{{ compact }}</div>
-        <div class="full">{{ full }}</div>
-      </div>
-    </div>
+      <!-- Progress: the filled portion of the arc, from the left up to handle -->
+      <path class="track" [attr.d]="arcPath(1)" />
+      <path class="progress" [attr.d]="arcPath(fraction)" />
 
-    <!-- Fine nudge controls -->
-    <div class="nudge">
-      <button (click)="nudge(-1)" aria-label="Decrease">−</button>
-      <span class="range-hint">{{ compactInr(min) }} — {{ compactInr(max) }}</span>
-      <button (click)="nudge(1)" aria-label="Increase">+</button>
+      <!-- Handle -->
+      <circle class="handle-halo" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="14" />
+      <circle class="handle" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="7" />
+    </svg>
+
+    <!-- Suggestion chips float over the dome -->
+    <div class="chips">
+      <button
+        *ngFor="let s of goal.suggested_amounts"
+        class="chip"
+        [class.active]="amount === s"
+        (click)="pickSuggested(s); $event.stopPropagation()"
+        (pointerdown)="$event.stopPropagation()"
+      >{{ compactInr(s) }}</button>
     </div>
   </div>
 
-  <!-- Suggested amount chips -->
-  <div class="chips">
-    <button
-      *ngFor="let s of goal.suggested_amounts"
-      class="chip"
-      [class.active]="amount === s"
-      (click)="pickSuggested(s)"
-    >{{ compactInr(s) }}</button>
-  </div>
-
-  <!-- Actions -->
-  <div class="actions">
-    <button class="enter-btn" (click)="openDialer()">
-      <svg viewBox="0 0 24 24" width="16" height="16"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      Enter amount
-    </button>
-    <button class="continue" (click)="confirm()">
-      Continue with {{ compact }}
-      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-  </div>
+  <!-- Next -->
+  <button class="next" (click)="confirm()">Next</button>
 
   <!-- ===================== Numeric dialer overlay ===================== -->
   <div class="dialer-backdrop" *ngIf="dialerOpen" (click)="closeDialer(false)"></div>

@@ -16,10 +16,10 @@ import { GoalPreset } from './models';
  * Second screen of the no-login flow: "Choose your goal amount".
  *
  * The amount is set with a circular knob the user drags around a dial — the big
- * number in the centre animates as it changes, with optional haptic + audio
- * tick feedback. An "Enter amount" button flips to a numeric dialer for typing
- * an exact figure; its Back button flips back to the knob. Either path feeds the
- * same `amount`, and Continue emits it.
+ * number in the centre animates as it changes, with a light haptic tick on
+ * capable devices (no sound). An "Enter amount" button flips to a numeric dialer
+ * for typing an exact figure; its Back button flips back to the knob. Either
+ * path feeds the same `amount`, and Continue emits it.
  */
 @Component({
   selector: 'app-goal-amount',
@@ -35,9 +35,19 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('dial') dialRef!: ElementRef<HTMLElement>;
 
-  /** Knob geometry. Angle sweeps from -135deg to +135deg (a 270deg gauge). */
-  readonly START = -135;
-  readonly SWEEP = 270;
+  /**
+   * Arch geometry, in the SVG's 320x220 viewBox. The dial is a big circle
+   * centred well below the band, so only its top cap shows as a dome. The user
+   * drags along that top edge. Angles are measured from the centre, 0deg =
+   * straight up, positive = clockwise (to the right). The usable arc is a
+   * symmetric window HALF either side of vertical.
+   */
+  readonly CX = 160;
+  readonly CY = 320;
+  readonly R = 300;
+  readonly HALF = 28; // degrees either side of top -> a wide arc that fits the band
+  readonly tickCount = 41;
+  readonly tickArr = Array.from({ length: 41 });
 
   min = 0;
   max = 0;
@@ -46,10 +56,8 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
 
   dialerOpen = false;
   dialerValue = ''; // digits typed in the numeric dialer
-  muted = false;
 
   private dragging = false;
-  private audioCtx: AudioContext | null = null;
   private lastTickAmount = 0;
   private reduceMotion = false;
 
@@ -59,14 +67,12 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.reduceMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    this.muted = localStorage.getItem('wp_knob_muted') === '1';
     this.setupRange();
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('pointermove', this.moveH);
     window.removeEventListener('pointerup', this.upH);
-    this.audioCtx?.close().catch(() => {});
   }
 
   /** Derive a friendly [min,max,step] range from the goal's suggestions. */
@@ -75,8 +81,9 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     const lo = sugg.length ? Math.min(...sugg) : this.goal.default_amount * 0.25;
     const hi = sugg.length ? Math.max(...sugg) : this.goal.default_amount * 2;
     // Pad the range a little so the default sits comfortably inside it and the
-    // user can go both below and above the suggested band.
-    this.min = this.niceFloor(lo * 0.5);
+    // user can go both below and above the suggested band. The minimum is never
+    // zero — the dial always starts on a real, meaningful amount.
+    this.min = Math.max(this.niceFloor(lo * 0.5), this.niceStep(lo * 0.1));
     this.max = this.niceCeil(hi * 1.5);
     // ~200 steps across the dial keeps dragging smooth but snappy.
     this.step = this.niceStep((this.max - this.min) / 200);
@@ -84,7 +91,7 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     this.lastTickAmount = this.amount;
   }
 
-  // ---------- knob math ----------
+  // ---------- arch math ----------
 
   /** Fraction 0..1 of the current amount within [min,max]. */
   get fraction(): number {
@@ -92,24 +99,30 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     return Math.max(0, Math.min(1, f));
   }
 
-  /** Handle angle in degrees for the current amount. */
-  get angle(): number {
-    return this.START + this.fraction * this.SWEEP;
+  /** A point on the dome's top edge for a given fraction (0 = left, 1 = right). */
+  private pointAt(frac: number): { x: number; y: number } {
+    const deg = -this.HALF + frac * (2 * this.HALF); // -HALF..+HALF, 0 = top
+    const rad = ((deg - 90) * Math.PI) / 180; // -90 shifts 0deg to straight up
+    return { x: this.CX + this.R * Math.cos(rad), y: this.CY + this.R * Math.sin(rad) };
   }
 
-  /** SVG arc dash length for the progress ring (circumference * sweep frac). */
-  get dashArray(): string {
-    const circumference = 2 * Math.PI * 42; // r = 42 in the 100x100 viewBox
-    const arcFrac = this.SWEEP / 360;
-    const filled = circumference * arcFrac * this.fraction;
-    const rest = circumference - filled;
-    return `${filled} ${rest}`;
+  /** The draggable handle position for the current amount. */
+  get handlePt(): { x: number; y: number } {
+    return this.pointAt(this.fraction);
   }
 
-  /** Position (in the 100x100 viewBox) of the draggable handle. */
-  get handle(): { x: number; y: number } {
-    const rad = ((this.angle - 90) * Math.PI) / 180;
-    return { x: 50 + 42 * Math.cos(rad), y: 50 + 42 * Math.sin(rad) };
+  /** Tick angle (deg, for an SVG rotate about the centre) for tick index i. */
+  tickAngle(i: number): number {
+    const frac = i / (this.tickCount - 1);
+    return -this.HALF + frac * (2 * this.HALF);
+  }
+
+  /** SVG path for the arc from the left edge up to `frac` along the top edge. */
+  arcPath(frac: number): string {
+    const a = this.pointAt(0);
+    const b = this.pointAt(Math.max(0.0001, frac));
+    // Small arc, sweep clockwise (1) since we go left -> right over the top.
+    return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} A ${this.R} ${this.R} 0 0 1 ${b.x.toFixed(2)} ${b.y.toFixed(2)}`;
   }
 
   // ---------- pointer handling ----------
@@ -117,7 +130,6 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   startDrag(e: PointerEvent): void {
     e.preventDefault();
     this.dragging = true;
-    this.ensureAudio();
     window.addEventListener('pointermove', this.moveH);
     window.addEventListener('pointerup', this.upH);
     this.applyPointer(e); // let a tap on the ring jump straight to that value
@@ -138,21 +150,25 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     const el = this.dialRef?.nativeElement;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
+    if (!rect.width || !rect.height) return;
 
-    // Angle measured from 12 o'clock, clockwise, in degrees.
-    let deg = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-    if (deg > 180) deg -= 360;
+    // Map the screen point into viewBox (320x220) coords. The SVG uses
+    // preserveAspectRatio="xMidYMin slice": it scales by max(sx, sy) and
+    // centres horizontally, top-aligned.
+    const VW = 320;
+    const VH = 220;
+    const scale = Math.max(rect.width / VW, rect.height / VH);
+    const offsetX = (rect.width - VW * scale) / 2; // xMid
+    const offsetY = 0; // YMin (top-aligned)
+    const vx = (e.clientX - rect.left - offsetX) / scale;
+    const vy = (e.clientY - rect.top - offsetY) / scale;
 
-    // Map into the -135..+135 gauge; ignore the dead zone at the bottom.
-    let frac: number;
-    if (deg < this.START) frac = deg < -180 - this.START ? 1 : 0; // nearest edge
-    else if (deg > this.START + this.SWEEP) frac = 1;
-    else frac = (deg - this.START) / this.SWEEP;
-    frac = Math.max(0, Math.min(1, frac));
+    // Angle of the pointer around the dome centre, 0 = straight up, +cw.
+    const deg = (Math.atan2(vy - this.CY, vx - this.CX) * 180) / Math.PI + 90;
+
+    // Clamp to the usable window and convert to a fraction.
+    const clamped = Math.max(-this.HALF, Math.min(this.HALF, deg));
+    const frac = (clamped + this.HALF) / (2 * this.HALF);
 
     const raw = this.min + frac * (this.max - this.min);
     this.setAmount(raw);
@@ -169,12 +185,10 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   }
 
   nudge(dir: number): void {
-    this.ensureAudio();
     this.setAmount(this.amount + dir * this.step);
   }
 
   pickSuggested(v: number): void {
-    this.ensureAudio();
     this.setAmount(v);
   }
 
@@ -183,47 +197,14 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     return Math.max(this.min, Math.min(this.max, snapped));
   }
 
-  /** Haptic + audio + a "beat" the template can animate against. */
+  /** Light haptic tick on each step (no sound). Silently skipped on devices
+   *  without a vibration motor (all desktops, iOS Safari). */
   private tickFeedback(): void {
     const delta = Math.abs(this.amount - this.lastTickAmount);
-    // Only fire discrete feedback every few steps so fast drags don't machine-gun.
     if (delta >= this.step * 0.99) {
       this.lastTickAmount = this.amount;
-      if (!this.muted) this.playTick();
       if (navigator.vibrate && !this.reduceMotion) navigator.vibrate(6);
     }
-  }
-
-  private ensureAudio(): void {
-    if (this.muted) return;
-    if (!this.audioCtx) {
-      const Ctx =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (Ctx) this.audioCtx = new Ctx();
-    }
-    if (this.audioCtx?.state === 'suspended') this.audioCtx.resume().catch(() => {});
-  }
-
-  private playTick(): void {
-    const ctx = this.audioCtx;
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    // Pitch rises slightly with the value for a satisfying "climbing" feel.
-    osc.frequency.value = 320 + this.fraction * 520;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.005);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.07);
-  }
-
-  toggleMute(): void {
-    this.muted = !this.muted;
-    localStorage.setItem('wp_knob_muted', this.muted ? '1' : '0');
-    if (!this.muted) this.ensureAudio();
   }
 
   // ---------- numeric dialer ----------
@@ -242,8 +223,6 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   }
 
   pressKey(k: string): void {
-    this.ensureAudio();
-    if (!this.muted) this.playTick();
     if (navigator.vibrate && !this.reduceMotion) navigator.vibrate(6);
     if (k === 'back') {
       this.dialerValue = this.dialerValue.slice(0, -1);
@@ -289,24 +268,6 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   }
 
   confirm(): void {
-    if (!this.muted) {
-      this.ensureAudio();
-      // A brighter confirmation chirp.
-      const ctx = this.audioCtx;
-      if (ctx) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(660, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(990, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.19);
-      }
-    }
     if (navigator.vibrate && !this.reduceMotion) navigator.vibrate([10, 30, 10]);
     this.amountChosen.emit(Math.round(this.amount));
   }

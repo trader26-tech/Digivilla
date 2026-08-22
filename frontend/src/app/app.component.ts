@@ -5,6 +5,7 @@ import { BasketLabComponent } from './basket-lab.component';
 import { GoalAmountComponent } from './goal-amount.component';
 import { GoalPickerComponent } from './goal-picker.component';
 import { HomeComponent } from './home.component';
+import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
 import { AuthResponse, GoalPreset } from './models';
 import { PlannerPanelComponent } from './planner-panel.component';
@@ -22,6 +23,7 @@ type Tab = 'home' | 'invest';
     LandingComponent,
     GoalPickerComponent,
     GoalAmountComponent,
+    IntroComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -30,6 +32,9 @@ export class AppComponent {
   tab: Tab = 'home';
   plannerOpen = false;
   goalsVersion = 0;
+
+  /** Cinematic welcome shown on every launch, before anything else. */
+  intro = true;
 
   /** First-screen flow, all pre-login:
    *    goal-picker  ->  goal-amount (circular knob)  ->  landing/auth
@@ -51,6 +56,11 @@ export class AppComponent {
     localStorage.setItem('wp_name', res.user.name || res.user.email.split('@')[0]);
     this.userName = localStorage.getItem('wp_name') || '';
     this.authed = true;
+  }
+
+  /** The welcome animation finished -> reveal the goal picker. */
+  onIntroDone(): void {
+    this.intro = false;
   }
 
   /** User tapped Continue on a goal in the picker -> show the amount knob. */

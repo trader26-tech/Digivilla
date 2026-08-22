@@ -1,6 +1,9 @@
+<!-- Cinematic welcome, every launch, before everything -->
+<app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
+
 <!-- Step 1: no-login goal picker -->
 <app-goal-picker
-  *ngIf="!pickedGoal && !chosenGoal"
+  *ngIf="!intro && !pickedGoal && !chosenGoal"
   (goalChosen)="onGoalChosen($event)"
 ></app-goal-picker>
 

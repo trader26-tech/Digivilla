@@ -1,0 +1,199 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.intro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(140% 120% at 50% 118%, #ff9a5a 0%, #ff6f61 18%, #7a3ea8 46%, #241a4a 74%, #0e0b24 100%);
+  transition: opacity 0.6s ease, filter 0.6s ease;
+}
+.intro.leave {
+  opacity: 0;
+  filter: blur(6px);
+}
+
+/* ---------------------------------------------------------------- scene */
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* the rising sun */
+.sun {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  width: min(46vw, 340px);
+  aspect-ratio: 1;
+  transform: translate(-50%, 60%) scale(0.6);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #fff6e0 0%, #ffd27a 40%, #ff9a4a 70%, rgba(255, 138, 74, 0) 72%);
+  filter: blur(1px);
+  animation: sunRise 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes sunRise {
+  0% { transform: translate(-50%, 60%) scale(0.6); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translate(-50%, 8%) scale(1); opacity: 1; }
+}
+
+.glow {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  width: 120vw;
+  aspect-ratio: 1;
+  transform: translate(-50%, 50%);
+  background: radial-gradient(circle, rgba(255, 190, 120, 0.35) 0%, rgba(255, 150, 90, 0) 55%);
+  animation: fadeIn 2s ease forwards;
+}
+
+/* light rays sweeping up */
+.ray {
+  position: absolute;
+  left: 50%;
+  bottom: 32%;
+  width: 3px;
+  height: 60vh;
+  transform-origin: bottom center;
+  background: linear-gradient(to top, rgba(255, 220, 170, 0.5), transparent 70%);
+  opacity: 0;
+  animation: rayIn 2.4s ease forwards;
+}
+.r1 { transform: translateX(-50%) rotate(-26deg); animation-delay: 0.5s; }
+.r2 { transform: translateX(-50%) rotate(0deg); animation-delay: 0.65s; }
+.r3 { transform: translateX(-50%) rotate(26deg); animation-delay: 0.8s; }
+@keyframes rayIn {
+  0% { opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.35; }
+}
+
+/* layered silhouetted hills for depth */
+.hills {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 42%;
+}
+.hill {
+  position: absolute;
+  bottom: 0;
+  left: -10%;
+  right: -10%;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  transform: translateY(100%);
+  animation: hillUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.h1 {
+  height: 70%;
+  background: linear-gradient(#3a2668, #241a4a);
+  animation-delay: 0.7s;
+}
+.h2 {
+  height: 52%;
+  left: -20%;
+  right: 30%;
+  background: linear-gradient(#4a2d72, #2c1f52);
+  animation-delay: 0.9s;
+}
+.h3 {
+  height: 44%;
+  left: 35%;
+  right: -20%;
+  background: linear-gradient(#5a3580, #341f5c);
+  animation-delay: 1.05s;
+}
+@keyframes hillUp {
+  to { transform: translateY(30%); }
+}
+
+/* subtle film grain for a photographic feel */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --------------------------------------------------------------- wordmark */
+.mark {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #fff;
+  padding: 0 1.5rem;
+  transform: translateY(-4vh);
+}
+.kicker {
+  display: block;
+  font-size: clamp(0.85rem, 3vw, 1.05rem);
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  opacity: 0;
+  animation: fadeUp 0.8s ease 0.3s forwards;
+}
+.freedom {
+  margin: 0.5rem 0 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+  font-size: clamp(2.6rem, 12vw, 6rem);
+}
+.freedom .w {
+  display: block;
+  opacity: 0;
+  transform: translateY(0.5em);
+  filter: blur(10px);
+  animation: wordIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.freedom .w:nth-child(1) { animation-delay: 0.55s; }
+.freedom .w.em {
+  background: linear-gradient(100deg, #ffe7b0 0%, #ffb36b 45%, #ff8a9b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation-delay: 0.9s;
+}
+.rule {
+  display: block;
+  width: 0;
+  height: 2px;
+  margin: 1.3rem auto 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 220, 180, 0.9), transparent);
+  animation: ruleGrow 1s ease 1.5s forwards;
+}
+
+@keyframes wordIn {
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes ruleGrow { to { width: min(220px, 60vw); } }
+
+/* --------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sun, .glow, .ray, .hill, .kicker, .freedom .w, .rule {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .sun { transform: translate(-50%, 8%) !important; }
+  .hill { transform: translateY(30%) !important; }
+  .rule { width: min(220px, 60vw) !important; }
+}
