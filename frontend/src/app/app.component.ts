@@ -11,6 +11,7 @@ import {
 
 import { BasketLabComponent } from './basket-lab.component';
 import { GoalAmountComponent } from './goal-amount.component';
+import { GoalIntroComponent } from './goal-intro.component';
 import { GoalPickerComponent } from './goal-picker.component';
 import { GoalTimingComponent } from './goal-timing.component';
 import { HomeComponent } from './home.component';
@@ -32,6 +33,7 @@ type Tab = 'home' | 'invest';
     PlannerPanelComponent,
     LandingComponent,
     GoalPickerComponent,
+    GoalIntroComponent,
     GoalAmountComponent,
     GoalTimingComponent,
     IntroComponent,

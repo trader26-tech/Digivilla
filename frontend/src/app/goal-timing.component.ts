@@ -64,13 +64,13 @@ export class GoalTimingComponent implements OnInit {
     return this.months % 12;
   }
 
-  /** "9 years", "6 months", "9 years 6 months". */
+  /** Short duration: "9y", "6mo", "9y 6mo". */
   get durationLabel(): string {
     const y = this.years;
     const m = this.remMonths;
-    const yp = y ? `${y} year${y > 1 ? 's' : ''}` : '';
-    const mp = m ? `${m} month${m > 1 ? 's' : ''}` : '';
-    return [yp, mp].filter(Boolean).join(' ') || '0 months';
+    const yp = y ? `${y}y` : '';
+    const mp = m ? `${m}mo` : '';
+    return [yp, mp].filter(Boolean).join(' ') || '0mo';
   }
 
   /** The target date, computed from today + horizon. Updates live. */
@@ -82,6 +82,9 @@ export class GoalTimingComponent implements OnInit {
   get targetMonthName(): string {
     return this.targetDate.toLocaleString('en-US', { month: 'long' });
   }
+  get targetMonthShort(): string {
+    return this.targetDate.toLocaleString('en-US', { month: 'short' });
+  }
   get targetYear(): number {
     return this.targetDate.getFullYear();
   }
@@ -91,7 +94,6 @@ export class GoalTimingComponent implements OnInit {
     { label: '3y', months: 36 },
     { label: '5y', months: 60 },
     { label: '10y', months: 120 },
-    { label: '15y', months: 180 },
     { label: '20y', months: 240 },
     { label: '30y', months: 360 },
   ];

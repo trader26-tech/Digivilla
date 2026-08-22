@@ -1,20 +1,19 @@
 <div class="screen" [class.entered]="entered" [style.--hue]="hue">
   <button class="back" (click)="goBack()" aria-label="Back">←</button>
 
-  <div class="top">
-    <span class="eyebrow">{{ goal.label }}</span>
-    <h1>When do you want to reach it?</h1>
-    <p class="sub">Slide to set how long you'll invest — we'll show the date you'll get there.</p>
-  </div>
+  <h1 class="title">When do you want<br />to reach it?</h1>
 
-  <!-- Live target date -->
-  <div class="date-hero">
-    <span class="by">By</span>
-    <div class="date">
-      <span class="month">{{ targetMonthName }}</span>
-      <span class="year">{{ targetYear }}</span>
+  <!-- Calendar-style date card -->
+  <div class="cal">
+    <div class="cal-top">
+      <span class="cal-dot"></span><span class="cal-dot"></span>
+      <span class="cal-label">Target date</span>
     </div>
-    <span class="dur">that's <b>{{ durationLabel }}</b> from today</span>
+    <div class="cal-body">
+      <span class="cal-month">{{ targetMonthShort }}</span>
+      <span class="cal-year">{{ targetYear }}</span>
+    </div>
+    <div class="cal-foot">{{ durationLabel }} from now</div>
   </div>
 
   <!-- Slider -->
@@ -29,18 +28,10 @@
       (input)="onSlide($any($event.target).value)"
       [style.--frac]="frac"
     />
-    <div class="ends">
-      <span>6 months</span>
-      <span>40 years</span>
+    <div class="ticks">
+      <span *ngFor="let p of presets" class="tick" [class.on]="isActive(p.months)" (click)="pick(p.months)">{{ p.label }}</span>
     </div>
   </div>
 
-  <!-- Quick presets -->
-  <div class="chips">
-    <button *ngFor="let p of presets" class="chip" [class.on]="isActive(p.months)" (click)="pick(p.months)">
-      {{ p.label }}
-    </button>
-  </div>
-
-  <button class="cta" (click)="confirm()">Continue</button>
+  <button class="cta" (click)="confirm()">Continue →</button>
 </div>

@@ -7,13 +7,11 @@ import {
 } from '@angular/core';
 import { animate, style, transition, trigger } from '@angular/animations';
 
-/** One swipeable story card. `scene` names the CSS/SVG illustration. */
+/** One swipeable story card — a single big idea, no paragraphs. */
 export interface StoryCard {
   scene: string;
-  kicker: string;
-  title: string;
-  body: string;
-  stat?: { value: string; label: string };
+  step: string; // tiny step marker, e.g. "Step 1"
+  title: string; // ONE line only
   hue: number;
 }
 
@@ -51,28 +49,22 @@ export class StoryComponent {
 
   readonly cards: StoryCard[] = [
     {
-      scene: 'coffee',
-      kicker: 'A small habit',
-      title: 'Skip one coffee a day. Retire richer.',
-      body: 'Meera set aside what she spent on her daily ₹150 coffee — into mutual funds instead of the café. Thirty years on, that little habit had quietly grown into over ₹1 crore. She never felt the pinch; time did the heavy lifting.',
-      stat: { value: '₹1 Cr+', label: 'from ₹150 a day, over 30 years' },
-      hue: 28,
-    },
-    {
       scene: 'umbrella',
-      kicker: 'When life happens',
-      title: 'The rainy day that didn’t sink him.',
-      body: 'When Arjun’s job vanished overnight, he didn’t panic. A safety cushion — a few months of expenses kept aside — carried the family calmly until he found his footing. A buffer isn’t about fear. It’s the freedom to breathe.',
-      stat: { value: '6–12 months', label: 'of calm, whatever comes' },
+      step: 'Step 1',
+      title: 'First, a safety net for tough days.',
       hue: 205,
     },
     {
-      scene: 'compass',
-      kicker: 'Why us',
-      title: 'Advice that’s only ever on your side.',
-      body: 'We earn nothing from pushing the “right” fund, so we never do. Every recommendation is researched on returns, risk and cost — then stress-tested across thousands of market scenarios, so you see the real odds of reaching your goal, not a rosy line.',
-      stat: { value: '0', label: 'commissions clouding our advice' },
+      scene: 'sprout',
+      step: 'Step 2',
+      title: 'Then grow your money with mutual funds.',
       hue: 150,
+    },
+    {
+      scene: 'compass',
+      step: 'Step 3',
+      title: 'We build the plan. You just pick a goal.',
+      hue: 28,
     },
   ];
 

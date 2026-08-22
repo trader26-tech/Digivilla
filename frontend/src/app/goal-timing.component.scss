@@ -4,17 +4,19 @@
 }
 .screen {
   --accent-h: hsl(var(--hue, 222), 85%, 55%);
-  --accent-soft: hsl(var(--hue, 222), 85%, 55%, 0.12);
-  max-width: 520px;
+  --accent-dk: hsl(var(--hue, 222), 80%, 46%);
+  --accent-soft: hsl(var(--hue, 222), 85%, 55%, 0.1);
+  max-width: 440px;
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 2rem;
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateY(12px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
 }
 .screen.entered {
   opacity: 1;
@@ -23,83 +25,112 @@
 
 .back {
   align-self: flex-start;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 .back:hover {
   border-color: var(--accent-h);
 }
 
-.top .eyebrow {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--accent-h);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.top h1 {
-  font-size: 1.7rem;
-  margin: 0.3rem 0 0.4rem;
-  letter-spacing: -0.5px;
-}
-.top .sub {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.5;
+/* big, minimal title */
+.title {
+  font-size: 2.1rem;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  text-align: center;
+  margin: 0.5rem 0 0;
 }
 
-/* live date */
-.date-hero {
-  text-align: center;
-  padding: 1.75rem 1rem;
-  border-radius: 20px;
-  background: linear-gradient(160deg, var(--accent-soft), transparent);
+/* calendar card — a tear-off calendar page */
+.cal {
+  width: 220px;
+  border-radius: 22px;
+  background: var(--surface);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform: rotate(-1.5deg);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.date-hero .by {
-  font-size: 0.9rem;
-  color: var(--muted);
+.screen.entered .cal {
+  transform: rotate(-1.5deg) translateY(0);
 }
-.date {
+.cal:hover {
+  transform: rotate(0deg);
+}
+.cal-top {
+  position: relative;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  margin: 0.3rem 0;
+  gap: 6px;
+  height: 42px;
+  background: linear-gradient(180deg, var(--accent-h), var(--accent-dk));
 }
-.date .month {
-  font-size: 2.4rem;
+.cal-dot {
+  width: 8px;
+  height: 12px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.cal-label {
+  position: absolute;
+  bottom: 5px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  transform: translateY(14px);
+  display: none; /* dots are the binding; label shown in foot instead */
+}
+.cal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem 1.2rem;
+}
+.cal-month {
+  font-size: 2.6rem;
   font-weight: 800;
-  letter-spacing: -1px;
+  line-height: 1;
   color: var(--accent-h);
-}
-.date .year {
-  font-size: 2.4rem;
-  font-weight: 800;
+  text-transform: uppercase;
   letter-spacing: -1px;
 }
-.dur {
-  font-size: 0.9rem;
-  color: var(--muted);
+.cal-year {
+  font-size: 3.4rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-top: 0.2rem;
 }
-.dur b {
-  color: var(--text);
+.cal-foot {
+  border-top: 1px dashed var(--border);
+  padding: 0.65rem;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 /* slider */
 .slider-wrap {
-  padding: 0 0.25rem;
+  width: 100%;
 }
 .slider {
   --frac: 0.3;
   width: 100%;
-  height: 10px;
+  height: 14px;
   -webkit-appearance: none;
   appearance: none;
   border-radius: 999px;
@@ -115,73 +146,64 @@
 }
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #fff;
-  border: 3px solid var(--accent-h);
+  border: 4px solid var(--accent-h);
   box-shadow: var(--shadow-md);
   cursor: grab;
+  transition: transform 0.12s ease;
 }
 .slider::-webkit-slider-thumb:active {
   cursor: grabbing;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 .slider::-moz-range-thumb {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #fff;
-  border: 3px solid var(--accent-h);
+  border: 4px solid var(--accent-h);
   box-shadow: var(--shadow-md);
   cursor: grab;
 }
-.ends {
+
+/* preset ticks */
+.ticks {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
+  margin-top: 1rem;
+}
+.tick {
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--muted);
-}
-
-/* chips */
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-}
-.chip {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  border-radius: 999px;
-  padding: 0.5rem 1.1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
   cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
   transition: 0.15s;
 }
-.chip:hover {
-  border-color: var(--accent-h);
+.tick:hover {
+  color: var(--text);
 }
-.chip.on {
-  background: var(--accent-h);
-  border-color: var(--accent-h);
-  color: #fff;
+.tick.on {
+  color: var(--accent-h);
+  background: var(--accent-soft);
 }
 
 .cta {
   margin-top: auto;
+  width: 100%;
   border: none;
-  border-radius: 14px;
-  padding: 1rem;
-  font-size: 1.05rem;
-  font-weight: 700;
+  border-radius: 16px;
+  padding: 1.05rem;
+  font-size: 1.1rem;
+  font-weight: 750;
   color: #fff;
-  background: var(--accent-h);
+  background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 12px 28px -12px var(--accent-h);
   transition: transform 0.15s ease, filter 0.15s;
 }
 .cta:hover {
