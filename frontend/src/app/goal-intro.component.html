@@ -37,18 +37,4 @@
   </div>
 
   <button class="cta" (click)="continue()">Continue →</button>
-
-  <!-- Celebration pop-up: animated tick + one line + Next -->
-  <div class="celebrate" *ngIf="celebrating">
-    <div class="cel-card">
-      <div class="cel-tick">
-        <svg viewBox="0 0 52 52" width="86" height="86">
-          <circle class="ct-ring" cx="26" cy="26" r="24" />
-          <path class="ct-check" d="M15 27l7 7 15-16" />
-        </svg>
-      </div>
-      <p class="cel-line">{{ celebrateLine }}</p>
-      <button class="cel-next" (click)="proceed()">Next →</button>
-    </div>
-  </div>
 </div>

@@ -32,14 +32,24 @@
 
   <!-- Step 4: choose how long to invest (horizon -> live target date) -->
   <app-goal-timing
-    *ngIf="!pickedGoal && amountDone && chosenGoal"
+    *ngIf="!pickedGoal && amountDone && !timingDone && chosenGoal"
     [goal]="chosenGoal"
     [amount]="chosenAmount"
     (timingChosen)="onTimingChosen($event)"
     (back)="onTimingBack()"
   ></app-goal-timing>
 
-  <!-- Step 5: once goal + amount + timing are set, fall through to auth -->
+  <!-- Step 5: results — monthly SIP + expected mutual-fund returns (placeholder) -->
+  <app-goal-result
+    *ngIf="!pickedGoal && timingDone && chosenGoal"
+    [goal]="chosenGoal"
+    [amount]="chosenAmount"
+    [years]="chosenYears"
+    (continued)="onResultContinue()"
+    (back)="onResultBack()"
+  ></app-goal-result>
+
+  <!-- Step 6: once the plan is reviewed, fall through to auth -->
   <app-landing *ngIf="pickedGoal" (authed)="onAuthed($event)"></app-landing>
 </div>
 

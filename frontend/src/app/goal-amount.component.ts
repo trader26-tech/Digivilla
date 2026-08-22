@@ -272,17 +272,11 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     this.back.emit();
   }
 
-  // ---- motivating hand-off ----
-  cheering = false;
-  get cheerTitle(): string {
-    return 'Great goal!';
-  }
+  /** Continue -> carry the chosen amount to the timing screen. Nothing is saved
+   *  here; that only happens at the very end of the flow. */
   confirm(): void {
-    if (this.cheering) return;
-    if (navigator.vibrate && !this.reduceMotion) navigator.vibrate([10, 30, 10]);
-    this.cheering = true;
-    const wait = this.reduceMotion ? 350 : 1700;
-    window.setTimeout(() => this.amountChosen.emit(Math.round(this.amount)), wait);
+    if (navigator.vibrate && !this.reduceMotion) navigator.vibrate(8);
+    this.amountChosen.emit(Math.round(this.amount));
   }
 
   // ---- "nice number" helpers ----

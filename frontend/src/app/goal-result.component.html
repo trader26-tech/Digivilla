@@ -1,0 +1,44 @@
+<div class="result-screen" [class.entered]="entered" [style.--hue]="hue">
+  <button class="back" (click)="goBack()" aria-label="Back">←</button>
+
+  <header class="head">
+    <span class="eyebrow">YOUR PLAN FOR {{ goal.label | uppercase }}</span>
+    <h1 class="title">Invest just</h1>
+    <div class="sip">{{ compactInr(monthlySip) }}<span class="per">/mo</span></div>
+    <p class="sip-sub">for {{ horizonLabel }} to reach {{ compactInr(amount) }}</p>
+  </header>
+
+  <!-- You invest vs the market grows -->
+  <div class="split-card">
+    <div class="split-bar">
+      <span class="seg invested" [style.width.%]="investedPct"></span>
+      <span class="seg growth" [style.width.%]="growthPct"></span>
+    </div>
+    <div class="legend">
+      <div class="leg">
+        <span class="dot invested"></span>
+        <div class="leg-text">
+          <span class="leg-label">You invest</span>
+          <span class="leg-val">{{ compactInr(totalInvested) }}</span>
+        </div>
+      </div>
+      <div class="leg">
+        <span class="dot growth"></span>
+        <div class="leg-text">
+          <span class="leg-label">Mutual funds add</span>
+          <span class="leg-val">{{ compactInr(growth) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="rate">Expected returns · <b>{{ returnLabel }}</b></div>
+  </div>
+
+  <!-- Target reached -->
+  <div class="target">
+    <span class="t-label">You reach your goal of</span>
+    <div class="t-amount">{{ compactInr(amount) }}</div>
+  </div>
+
+  <button class="cta" (click)="proceed()">See my funds →</button>
+  <p class="foot-note">Sign in next to save this plan — nothing is saved yet.</p>
+</div>

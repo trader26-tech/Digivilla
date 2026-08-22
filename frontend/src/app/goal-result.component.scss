@@ -1,0 +1,193 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.result-screen {
+  --accent-h: hsl(var(--hue, 222), 85%, 55%);
+  --accent-dk: hsl(var(--hue, 222), 80%, 46%);
+  --soft: hsl(var(--hue, 222), 90%, 96%);
+  position: relative;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.result-screen.entered { opacity: 1; transform: none; }
+
+.back {
+  align-self: flex-start;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  &:hover { border-color: var(--accent-h); }
+}
+
+/* ---- header: the headline SIP ---- */
+.head {
+  text-align: center;
+  margin-top: auto;
+}
+.eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-dk);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+.title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+.sip {
+  font-size: clamp(3.4rem, 16vw, 4.6rem);
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--accent-dk);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.2rem;
+  .per {
+    font-size: 0.35em;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0;
+  }
+}
+.sip-sub {
+  margin: 0.5rem 0 0;
+  font-size: 0.98rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ---- you invest vs market grows ---- */
+.split-card {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.2rem 1.2rem 1rem;
+  box-shadow: var(--shadow-md);
+}
+.split-bar {
+  display: flex;
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.seg {
+  height: 100%;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  &.invested { background: hsl(var(--hue, 222), 45%, 72%); }
+  &.growth { background: linear-gradient(90deg, var(--accent-h), var(--accent-dk)); }
+}
+.legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.leg {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-top: 0.25rem;
+  flex: none;
+  &.invested { background: hsl(var(--hue, 222), 45%, 72%); }
+  &.growth { background: var(--accent-dk); }
+}
+.leg-text { display: flex; flex-direction: column; }
+.leg-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.leg-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.rate {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--border);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  b { color: var(--accent-dk); }
+}
+
+/* ---- target reached ---- */
+.target {
+  margin-top: 1.6rem;
+  text-align: center;
+  .t-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+  }
+  .t-amount {
+    font-size: 2rem;
+    font-weight: 850;
+    letter-spacing: -1px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.cta {
+  margin-top: auto;
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 1.05rem;
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
+  cursor: pointer;
+  box-shadow: 0 12px 28px -12px var(--accent-h);
+  transition: transform 0.15s ease, filter 0.15s;
+  &:hover { transform: translateY(-2px); filter: brightness(1.05); }
+}
+.foot-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-screen { transition: none; }
+  .seg { transition: none; }
+}

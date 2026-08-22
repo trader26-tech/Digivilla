@@ -13,6 +13,7 @@ import { BasketLabComponent } from './basket-lab.component';
 import { GoalAmountComponent } from './goal-amount.component';
 import { GoalIntroComponent } from './goal-intro.component';
 import { GoalPickerComponent } from './goal-picker.component';
+import { GoalResultComponent } from './goal-result.component';
 import { GoalTimingComponent } from './goal-timing.component';
 import { HomeComponent } from './home.component';
 import { IntroComponent } from './intro.component';
@@ -36,6 +37,7 @@ type Tab = 'home' | 'invest';
     GoalIntroComponent,
     GoalAmountComponent,
     GoalTimingComponent,
+    GoalResultComponent,
     IntroComponent,
     StoryComponent,
   ],
@@ -89,6 +91,7 @@ export class AppComponent {
   chosenAmount = 0;
   amountDone = false; // amount confirmed -> show timing screen
   chosenYears = 0;
+  timingDone = false; // timing confirmed -> show the results screen
 
   authed = !!localStorage.getItem('wp_token');
   userName = localStorage.getItem('wp_name') || '';
@@ -99,8 +102,9 @@ export class AppComponent {
     if (!this.pickedGoal && !this.chosenGoal) return 0; // picker
     if (!this.pickedGoal && this.chosenGoal && !this.introDone) return 1; // goal intro
     if (!this.pickedGoal && this.introDone && !this.amountDone) return 2; // amount knob
-    if (!this.pickedGoal && this.amountDone) return 3; // timing
-    return 4; // landing / auth
+    if (!this.pickedGoal && this.amountDone && !this.timingDone) return 3; // timing
+    if (!this.pickedGoal && this.timingDone) return 4; // results
+    return 5; // landing / auth
   }
 
   /** Called when the landing page completes sign-in. Persists the session
@@ -152,15 +156,25 @@ export class AppComponent {
     this.introDone = false;
   }
 
-  /** User confirmed a horizon on the timing screen -> move to auth. */
+  /** User confirmed a horizon on the timing screen -> show the results screen. */
   onTimingChosen(years: number): void {
     this.chosenYears = years;
-    this.pickedGoal = true;
+    this.timingDone = true;
   }
 
   /** Back from the timing screen returns to the amount knob. */
   onTimingBack(): void {
     this.amountDone = false;
+  }
+
+  /** Results screen confirmed -> proceed to auth (the goal is saved after login). */
+  onResultContinue(): void {
+    this.pickedGoal = true;
+  }
+
+  /** Back from the results screen returns to the timing screen. */
+  onResultBack(): void {
+    this.timingDone = false;
   }
 
   signOut(): void {

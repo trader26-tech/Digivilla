@@ -52,21 +52,5 @@
     </div>
   </div>
 
-  <button class="cta" (click)="confirm()" [disabled]="cheering">Continue →</button>
-
-  <!-- ===================== Motivating hand-off ===================== -->
-  <div class="cheer" *ngIf="cheering">
-    <div class="cheer-card">
-      <div class="cheer-ring">
-        <svg viewBox="0 0 52 52" width="56" height="56">
-          <circle class="cr-track" cx="26" cy="26" r="23" />
-          <circle class="cr-fill" cx="26" cy="26" r="23"
-                  [attr.stroke]="'hsl(' + hue + ' 80% 50%)'" />
-          <path class="cr-check" d="M17 27l6 6 12-13" [attr.stroke]="'hsl(' + hue + ' 80% 45%)'" />
-        </svg>
-      </div>
-      <div class="cheer-amount">{{ full }}</div>
-      <h2 class="cheer-title">{{ cheerTitle }}</h2>
-    </div>
-  </div>
+  <button class="cta" (click)="confirm()">Continue →</button>
 </div>

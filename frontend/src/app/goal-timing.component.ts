@@ -172,15 +172,17 @@ export class GoalTimingComponent implements OnInit {
   }
 }
 
+/** Per-goal accent hue — kept in sync with the picker/intro/amount screens so
+ *  a goal's colour carries through the whole flow (emergency = calm teal, …). */
 const HUE_OF: Record<string, number> = {
-  retirement: 28,
-  child_education: 262,
-  house: 222,
-  car: 190,
-  wealth: 150,
-  emergency: 356,
+  emergency: 190,
+  health: 356,
+  car: 205,
   wedding: 330,
-  vacation: 205,
-  health: 168,
-  gadget: 245,
+  vacation: 25,
+  gadget: 262,
+  house: 222,
+  child_education: 268,
+  retirement: 28,
+  wealth: 150,
 };
