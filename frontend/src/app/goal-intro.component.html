@@ -1,27 +1,39 @@
 <div class="intro" [class.entered]="entered" [style.--hue]="hue">
   <button class="back" (click)="goBack()" aria-label="Back">←</button>
 
-  <h1 class="title">How much for<br />{{ questionLabel }}?</h1>
+  <!-- Header: goal name + one-line what/why. Uses the space, no 4-line wrap. -->
+  <header class="head">
+    <div class="badge">{{ goal.icon }}</div>
+    <h1 class="name">{{ goal.label }}</h1>
+    <p class="tag">{{ cfg.tagline }}</p>
+  </header>
 
-  <!-- ONE focal card: type the input, see the resulting amount. -->
-  <div class="card">
-    <span class="card-label">{{ cfg.inputLabel }}</span>
-    <div class="input-row">
-      <span class="pfx" *ngIf="cfg.inputPrefix">{{ cfg.inputPrefix }}</span>
-      <input
-        class="input"
-        inputmode="numeric"
-        [value]="inputDisplay"
-        (input)="onInputText($any($event.target).value)"
-        [attr.aria-label]="cfg.inputLabel"
-      />
-      <span class="sfx" *ngIf="cfg.inputSuffix">{{ cfg.inputSuffix }}</span>
+  <!-- The input: adjust with − / + or type. -->
+  <div class="calc">
+    <span class="calc-label">{{ cfg.inputLabel }}</span>
+    <div class="stepper">
+      <button class="step" (click)="stepInput(-1)" [disabled]="input <= 0" aria-label="Decrease">−</button>
+      <div class="value">
+        <span class="pfx" *ngIf="cfg.inputPrefix">{{ cfg.inputPrefix }}</span>
+        <input
+          class="value-input"
+          inputmode="numeric"
+          [value]="inputDisplay"
+          (input)="onInputText($any($event.target).value)"
+          [attr.aria-label]="cfg.inputLabel"
+        />
+        <span class="sfx" *ngIf="cfg.inputSuffix">{{ cfg.inputSuffix }}</span>
+      </div>
+      <button class="step" (click)="stepInput(1)" aria-label="Increase">+</button>
     </div>
+    <span class="rule">{{ cfg.ruleText }}</span>
+  </div>
 
-    <div class="result">
-      <span class="r-label">You’ll want to save</span>
-      <div class="r-amount">{{ compactInr(recommended) }}</div>
-    </div>
+  <!-- The result: how much they need to save. -->
+  <div class="result">
+    <span class="r-label">You'll need to save</span>
+    <div class="r-amount">{{ compactInr(recommended) }}</div>
+    <span class="r-full">₹{{ recommended | number:'1.0-0' }}</span>
   </div>
 
   <button class="cta" (click)="continue()">Continue →</button>

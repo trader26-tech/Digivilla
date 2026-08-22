@@ -3,19 +3,21 @@
   min-height: 100vh;
 }
 
-/* Mirrors the timing screen exactly: one question, one focal card, one CTA. */
+/* Comprehensive but tidy: header (what/why) → stepper input → result → CTA.
+   Spaced with justify-content so nothing floats in a huge gap. */
 .intro {
   --accent-h: hsl(var(--hue, 222), 85%, 55%);
   --accent-dk: hsl(var(--hue, 222), 80%, 46%);
+  --soft: hsl(var(--hue, 222), 90%, 96%);
+  position: relative;
   max-width: 440px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  padding: 1.5rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
   box-sizing: border-box;
   opacity: 0;
   transform: translateY(12px);
@@ -40,90 +42,141 @@
   &:hover { border-color: var(--accent-h); }
 }
 
-/* big, minimal question */
-.title {
+/* ---- header: icon badge + goal name + one-line tagline ---- */
+.head {
+  text-align: center;
+  margin-top: auto; /* balance the top gap against the CTA's bottom gap */
+}
+.badge {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 0.9rem;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
   font-size: 2rem;
-  line-height: 1.15;
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px hsl(var(--hue, 222), 60%, 88%);
+}
+.name {
+  font-size: 1.7rem;
   font-weight: 800;
-  letter-spacing: -0.6px;
-  text-align: center;
-  margin: 0.5rem 0 0;
-  max-width: 15rem;
+  letter-spacing: -0.5px;
+  margin: 0 0 0.4rem;
+  color: var(--text);
 }
-
-/* the single focal card */
-.card {
-  width: 280px;
-  border-radius: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  padding: 1.5rem 1.4rem 0;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  &:hover { transform: translateY(-2px); }
-}
-.card-label {
-  display: block;
-  text-align: center;
-  font-size: 0.8rem;
-  font-weight: 650;
+.tag {
+  margin: 0 auto;
+  max-width: 20rem;
+  font-size: 0.98rem;
+  line-height: 1.4;
   color: var(--muted);
-  margin-bottom: 0.7rem;
 }
 
-.input-row {
+/* ---- stepper input (− value +) ---- */
+.calc {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+.calc-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+}
+.step {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent-dk);
+  font-size: 1.7rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.14s, border-color 0.14s;
+  &:hover:not(:disabled) { background: var(--soft); border-color: hsl(var(--hue, 222), 60%, 82%); }
+  &:active:not(:disabled) { transform: scale(0.92); }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+.value {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 0.2rem;
-  padding-bottom: 1.3rem;
-  .pfx, .sfx {
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 1.5rem;
-  }
-  .input {
-    width: 100%;
-    max-width: 7ch;
-    border: none;
-    outline: none;
-    background: transparent;
-    text-align: center;
-    font-family: inherit;
-    font-size: 2.6rem;
-    font-weight: 850;
-    letter-spacing: -1.5px;
-    line-height: 1;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-    caret-color: var(--accent-h);
-  }
+  gap: 0.12rem;
+  min-width: 6.5rem;
+  .pfx, .sfx { color: var(--muted); font-weight: 700; font-size: 1.3rem; }
+}
+.value-input {
+  width: 100%;
+  max-width: 7ch;
+  border: none;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  font-family: inherit;
+  font-size: 2.4rem;
+  font-weight: 850;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--accent-h);
+}
+.rule {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
+/* ---- result ---- */
 .result {
-  border-top: 1px dashed var(--border);
-  margin: 0 -1.4rem;
-  padding: 1rem 1rem 1.3rem;
+  margin-top: 2.2rem;
+  width: 100%;
+  max-width: 340px;
+  padding: 1.2rem 1rem;
+  border-radius: 20px;
   text-align: center;
-  background: hsl(var(--hue, 222), 90%, 97%);
+  background: var(--soft);
   .r-label {
     display: block;
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--muted);
-    margin-bottom: 0.2rem;
+    color: var(--accent-dk);
+    opacity: 0.8;
+    margin-bottom: 0.25rem;
   }
   .r-amount {
-    font-size: 2.6rem;
+    font-size: 3rem;
     font-weight: 850;
     line-height: 1;
     letter-spacing: -1.5px;
     color: var(--accent-dk);
     font-variant-numeric: tabular-nums;
     animation: pop 0.25s ease;
+  }
+  .r-full {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
   }
 }
 @keyframes pop {
