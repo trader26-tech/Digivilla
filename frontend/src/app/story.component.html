@@ -1,108 +1,51 @@
 <section
   class="story"
-  [style.--hue]="card.hue"
+  [style.--hue]="beat.hue"
+  (click)="next()"
   (touchstart)="onTouchStart($event)"
   (touchend)="onTouchEnd($event)"
   tabindex="0"
 >
-  <!-- ambient tinted background, shifts with each card's hue -->
+  <!-- ambient tinted background, shifts with each beat's hue -->
   <div class="ambient" aria-hidden="true">
     <span class="blob b1"></span>
     <span class="blob b2"></span>
   </div>
 
-  <!-- top bar: progress dots + skip -->
-  <header class="bar">
-    <div class="dots" role="tablist" aria-label="Story progress">
-      <button
-        *ngFor="let c of cards; let i = index"
+  <!-- top bar: progress + skip -->
+  <header class="bar" (click)="$event.stopPropagation()">
+    <div class="dots" role="tablist" aria-label="Intro progress">
+      <span
+        *ngFor="let b of beats; let i = index"
         class="dot"
         [class.on]="i === index"
         [class.past]="i < index"
-        (click)="goTo(i)"
-        [attr.aria-label]="'Go to card ' + (i + 1)"
-        [attr.aria-selected]="i === index"
-        role="tab"
-        type="button"
-      ></button>
+      ></span>
     </div>
     <button class="skip" (click)="skip()" type="button">Skip</button>
   </header>
 
-  <!-- the card; @cardSwap replays the slide each time `index` changes -->
+  <!-- Rupi + her speech bubble -->
   <div class="stage">
-    <article
-      class="card"
-      [@cardSwap]="{ value: index, params: { enter: dir === 1 ? '34px' : '-34px' } }"
-    >
-      <div class="art" aria-hidden="true">
-        <ng-container [ngSwitch]="card.scene">
-
-          <!-- Sprout -> money growing -->
-          <svg *ngSwitchCase="'sprout'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="st-sprout" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#b6f0d4" /><stop offset="1" stop-color="#5fd6a0" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="46" fill="url(#st-sprout)" opacity=".4" />
-            <!-- coin at the base -->
-            <ellipse cx="50" cy="72" rx="20" ry="6" fill="#0f7d57" opacity=".25" />
-            <circle cx="50" cy="66" r="12" fill="#f4b942" stroke="#d99022" stroke-width="1.6" />
-            <text x="50" y="70" text-anchor="middle" font-size="11" fill="#8a5a10" font-weight="700">₹</text>
-            <!-- sprout stem + leaves growing up -->
-            <path d="M50 66c0-10 0-18 0-26" stroke="#1f9c6e" stroke-width="3" stroke-linecap="round" />
-            <path d="M50 48c-9 0-15-5-16-12 9-1 15 4 16 12M50 44c8 0 14-5 15-11-8-1-14 3-15 11" fill="#2fbd85" />
-          </svg>
-
-          <!-- Umbrella -> safety buffer -->
-          <svg *ngSwitchCase="'umbrella'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="st-umb" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#bfe3ff" /><stop offset="1" stop-color="#7fb6ff" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="46" fill="url(#st-umb)" opacity=".4" />
-            <!-- rain -->
-            <path d="M28 24l-3 7M40 20l-3 7M60 20l-3 7M72 24l-3 7" stroke="#5a8fd6" stroke-width="2.2" stroke-linecap="round" opacity=".6" />
-            <!-- umbrella canopy -->
-            <path d="M22 52a28 28 0 0 1 56 0c-8-5-13-5-19 0-5-5-13-5-18 0-5-5-11-5-19 0z" fill="#2f6bff" />
-            <!-- pole + person shelter dot -->
-            <path d="M50 52v22" stroke="#25406e" stroke-width="2.6" stroke-linecap="round" />
-            <path d="M50 74c0 3 4 4 6 2" stroke="#25406e" stroke-width="2.6" fill="none" stroke-linecap="round" />
-            <circle cx="50" cy="46" r="2.4" fill="#fff" />
-          </svg>
-
-          <!-- Compass -> trustworthy guidance -->
-          <svg *ngSwitchCase="'compass'" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="st-comp" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#b6f0d4" /><stop offset="1" stop-color="#5fd6a0" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="46" fill="url(#st-comp)" opacity=".4" />
-            <circle cx="50" cy="50" r="30" fill="#fff" stroke="#1f9c6e" stroke-width="2.5" />
-            <circle cx="50" cy="50" r="30" fill="none" stroke="#1f9c6e" stroke-width="0.8" opacity=".4" stroke-dasharray="1 5" />
-            <!-- needle pointing up-right (toward the goal) -->
-            <path d="M50 50l12-16-4 20z" fill="#12a150" />
-            <path d="M50 50l-12 16 4-20z" fill="#cbd5e1" />
-            <circle cx="50" cy="50" r="3.4" fill="#0f7d57" />
-          </svg>
-
-          <svg *ngSwitchDefault viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#7f8cff" /></svg>
-        </ng-container>
+    <div class="bubble-wrap">
+      <div
+        class="bubble"
+        [@bubbleSwap]="index"
+      >
+        {{ beat.line }}
+        <span class="tail" aria-hidden="true"></span>
       </div>
+    </div>
 
-      <span class="step">{{ card.step }}</span>
-      <h1 class="headline">{{ card.title }}</h1>
-    </article>
+    <app-rupi class="mascot" [pose]="beat.pose" [size]="180"></app-rupi>
   </div>
 
   <!-- bottom CTA -->
-  <footer class="foot">
+  <footer class="foot" (click)="$event.stopPropagation()">
     <button class="cta" (click)="next()" type="button">
       <span>{{ isLast ? 'Choose my goal' : 'Next' }}</span>
       <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
+    <span class="hint">Tap anywhere to continue</span>
   </footer>
 </section>

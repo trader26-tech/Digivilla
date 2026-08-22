@@ -7,72 +7,54 @@ import {
 } from '@angular/core';
 import { animate, style, transition, trigger } from '@angular/animations';
 
-/** One swipeable story card — a single big idea, no paragraphs. */
-export interface StoryCard {
-  scene: string;
-  step: string; // tiny step marker, e.g. "Step 1"
-  title: string; // ONE line only
+import { RupiComponent, RupiPose } from './rupi.component';
+
+/** One beat of Rupi's welcome: a pose + a single spoken line. */
+export interface RupiBeat {
+  pose: RupiPose;
+  line: string; // ONE short line, spoken by Rupi
   hue: number;
 }
 
 /**
- * The first real content a visitor sees (after the welcome animation): a short,
- * playful set of swipeable story cards that make investing feel relatable and
- * build trust in the platform — then it flows into the goal picker.
- *
- * Relatable > technical: each card tells a tiny human story, not a lecture.
+ * The app's warm opening: Rupi, the guide mascot, introduces herself and
+ * explains how the app works — one friendly line at a time — then hands off to
+ * the goal picker. No walls of text, no jargon: Rupi just talks to you.
  */
 @Component({
   selector: 'app-story',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RupiComponent],
   templateUrl: './story.component.html',
   styleUrl: './story.component.scss',
   animations: [
-    // Re-runs whenever `index` changes: the new card slides in from the side
-    // the user is heading (dir drives the CSS class, this drives the motion).
-    trigger('cardSwap', [
+    trigger('bubbleSwap', [
       transition('* => *', [
-        style({ opacity: 0, transform: 'translateX({{enter}}) scale(0.98)' }),
-        animate('460ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateX(0) scale(1)' })),
-      ], { params: { enter: '34px' } }),
+        style({ opacity: 0, transform: 'translateY(10px) scale(0.96)' }),
+        animate('360ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0) scale(1)' })),
+      ]),
     ]),
   ],
 })
 export class StoryComponent {
-  /** Emitted when the user finishes (or skips) the story -> show goal picker. */
+  /** Emitted when Rupi's intro finishes (or is skipped) -> show goal picker. */
   @Output() done = new EventEmitter<void>();
 
   index = 0;
-  /** Slide direction for the enter/leave animation: 1 forward, -1 back. */
-  dir = 1;
 
-  readonly cards: StoryCard[] = [
-    {
-      scene: 'umbrella',
-      step: 'Step 1',
-      title: 'First, a safety net for tough days.',
-      hue: 205,
-    },
-    {
-      scene: 'sprout',
-      step: 'Step 2',
-      title: 'Then grow your money with mutual funds.',
-      hue: 150,
-    },
-    {
-      scene: 'compass',
-      step: 'Step 3',
-      title: 'We build the plan. You just pick a goal.',
-      hue: 28,
-    },
+  /** Rupi speaks these in order — a natural welcome, not a lecture. */
+  readonly beats: RupiBeat[] = [
+    { pose: 'wave', line: 'Hi, I’m Rupi — your money guide.', hue: 28 },
+    { pose: 'happy', line: 'Tell me a dream. A home, a trip, retiring easy.', hue: 262 },
+    { pose: 'think', line: 'I’ll turn it into a simple monthly plan.', hue: 205 },
+    { pose: 'cheer', line: 'Ready? Let’s pick your first goal.', hue: 150 },
   ];
 
-  get card(): StoryCard {
-    return this.cards[this.index];
+  get beat(): RupiBeat {
+    return this.beats[this.index];
   }
   get isLast(): boolean {
-    return this.index === this.cards.length - 1;
+    return this.index === this.beats.length - 1;
   }
 
   next(): void {
@@ -80,22 +62,11 @@ export class StoryComponent {
       this.done.emit();
       return;
     }
-    this.dir = 1;
     this.index++;
   }
-
   prev(): void {
-    if (this.index === 0) return;
-    this.dir = -1;
-    this.index--;
+    if (this.index > 0) this.index--;
   }
-
-  goTo(i: number): void {
-    if (i === this.index) return;
-    this.dir = i > this.index ? 1 : -1;
-    this.index = i;
-  }
-
   skip(): void {
     this.done.emit();
   }
@@ -103,8 +74,12 @@ export class StoryComponent {
   // ---- keyboard + touch swipe ---------------------------------------------
   @HostListener('keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
-    if (e.key === 'ArrowRight' || e.key === 'Enter') this.next();
-    else if (e.key === 'ArrowLeft') this.prev();
+    if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.next();
+    } else if (e.key === 'ArrowLeft') {
+      this.prev();
+    }
   }
 
   private touchX: number | null = null;

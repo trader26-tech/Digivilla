@@ -7,29 +7,37 @@
   <div class="cal">
     <div class="cal-top">
       <span class="cal-dot"></span><span class="cal-dot"></span>
-      <span class="cal-label">Target date</span>
     </div>
     <div class="cal-body">
-      <span class="cal-month">{{ targetMonthShort }}</span>
-      <span class="cal-year">{{ targetYear }}</span>
+      <ng-container *ngFor="let k of [pulseKey]; trackBy: trackPulse">
+        <span class="cal-month">{{ targetMonthShort }}</span>
+        <span class="cal-year" *ngIf="!showDay">{{ targetYear }}</span>
+        <span class="cal-day" *ngIf="showDay">{{ targetDay }}</span>
+        <span class="cal-sub" *ngIf="showDay">{{ targetYear }}</span>
+      </ng-container>
     </div>
-    <div class="cal-foot">{{ durationLabel }} from now</div>
+    <div class="cal-foot">
+      <b>{{ bigUnit.value }}</b> {{ bigUnit.unit | lowercase }} from now
+    </div>
   </div>
 
-  <!-- Slider -->
+  <!-- Non-linear slider: weeks at the left, decades at the right -->
   <div class="slider-wrap">
     <input
       type="range"
       class="slider"
-      [min]="minMonths"
-      [max]="maxMonths"
+      min="0"
+      [max]="TRACK"
       step="1"
-      [value]="months"
+      [value]="pos"
       (input)="onSlide($any($event.target).value)"
       [style.--frac]="frac"
     />
+    <div class="scale">
+      <span>weeks</span><span>months</span><span>years</span><span>decades</span>
+    </div>
     <div class="ticks">
-      <span *ngFor="let p of presets" class="tick" [class.on]="isActive(p.months)" (click)="pick(p.months)">{{ p.label }}</span>
+      <span *ngFor="let p of presets" class="tick" [class.on]="isActive(p.days)" (click)="pick(p.days)">{{ p.label }}</span>
     </div>
   </div>
 

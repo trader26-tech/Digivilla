@@ -1,21 +1,16 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnInit,
-  Output,
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { GoalPreset } from './models';
 
 /**
- * Third screen of the no-login flow: "How long will you invest for this goal?"
+ * Third screen of the no-login flow: "When do you want to reach it?"
  *
- * A horizontal slider sets the horizon in months. As it moves, the target DATE
- * updates live ("By August 2035") along with a friendly years-and-months label,
- * so the user feels time changing rather than reading an abstract number. The
- * goal's accent hue carries through from the picker/amount screens.
+ * The slider position (0..1) maps NON-LINEARLY onto a horizon in days, so the
+ * short end (a week, a month, three months) gets fine control and the long end
+ * (decades) compresses. As the slider moves, an accurate target DATE animates on
+ * a calendar-style card. The label adapts to the scale: days -> weeks -> months
+ * -> years, so a user can plan for two weeks or thirty years on the same track.
  */
 @Component({
   selector: 'app-goal-timing',
@@ -27,19 +22,23 @@ import { GoalPreset } from './models';
 export class GoalTimingComponent implements OnInit {
   @Input({ required: true }) goal!: GoalPreset;
   @Input() amount = 0;
-  /** Emits the chosen horizon in YEARS (decimal ok, e.g. 7.5). */
+  /** Emits the chosen horizon in YEARS (decimal ok, e.g. 0.04 for 2 weeks). */
   @Output() timingChosen = new EventEmitter<number>();
   @Output() back = new EventEmitter<void>();
 
-  readonly minMonths = 6;
-  readonly maxMonths = 480; // 40 years
-  months = 120;
+  // The slider is a plain 0..1000 track; days are derived non-linearly from it.
+  readonly TRACK = 1000;
+  pos = 500; // slider position 0..TRACK
+
+  // Horizon bounds in days: 7 days (a week) to ~40 years.
+  private readonly MIN_DAYS = 7;
+  private readonly MAX_DAYS = 365 * 40;
 
   entered = false;
 
   ngOnInit(): void {
-    const defYears = this.goal?.default_years || 10;
-    this.months = Math.min(this.maxMonths, Math.max(this.minMonths, Math.round(defYears * 12)));
+    const defDays = Math.round((this.goal?.default_years || 10) * 365);
+    this.pos = this.daysToPos(defDays);
     requestAnimationFrame(() => (this.entered = true));
   }
 
@@ -47,62 +46,121 @@ export class GoalTimingComponent implements OnInit {
     return HUE_OF[this.goal?.key] ?? 222;
   }
 
+  // ---- non-linear mapping (exponential) ----
+  /** slider position (0..TRACK) -> days, exponentially. */
+  private posToDays(pos: number): number {
+    const t = Math.max(0, Math.min(1, pos / this.TRACK));
+    const days = this.MIN_DAYS * Math.pow(this.MAX_DAYS / this.MIN_DAYS, t);
+    return Math.round(days);
+  }
+  /** days -> slider position (inverse of the above). */
+  private daysToPos(days: number): number {
+    const d = Math.max(this.MIN_DAYS, Math.min(this.MAX_DAYS, days));
+    const t = Math.log(d / this.MIN_DAYS) / Math.log(this.MAX_DAYS / this.MIN_DAYS);
+    return Math.round(t * this.TRACK);
+  }
+
+  get days(): number {
+    return this.posToDays(this.pos);
+  }
+  /** Convenience: horizon expressed in whole months (>= 0). */
+  get monthsTotal(): number {
+    return Math.max(0, Math.round(this.days / 30.4375));
+  }
+
+  /** Bumped whenever the big unit's VALUE changes, to retrigger the pop pulse. */
+  pulseKey = 0;
+  private lastUnitValue = -1;
+
   onSlide(v: string): void {
-    this.months = Number(v);
-    if (navigator.vibrate) navigator.vibrate(4);
+    this.pos = Number(v);
+    if (navigator.vibrate) navigator.vibrate(3);
+    const val = this.bigUnit.value;
+    if (val !== this.lastUnitValue) {
+      this.lastUnitValue = val;
+      this.pulseKey++;
+    }
   }
 
-  /** 0..1 position of the slider, for tinting the filled track. */
+  /** 0..1 fill fraction for the track tint (= normalized position). */
   get frac(): number {
-    return (this.months - this.minMonths) / (this.maxMonths - this.minMonths);
+    return this.pos / this.TRACK;
   }
 
-  get years(): number {
-    return Math.floor(this.months / 12);
-  }
-  get remMonths(): number {
-    return this.months % 12;
-  }
-
-  /** Short duration: "9y", "6mo", "9y 6mo". */
+  // ---- adaptive human label ----
+  /** e.g. "2 weeks", "5 months", "9 years 6 months", "18 months". */
   get durationLabel(): string {
-    const y = this.years;
-    const m = this.remMonths;
-    const yp = y ? `${y}y` : '';
-    const mp = m ? `${m}mo` : '';
-    return [yp, mp].filter(Boolean).join(' ') || '0mo';
+    const d = this.days;
+    if (d < 14) return `${d} days`;
+    if (d < 60) return `${Math.round(d / 7)} weeks`;
+    if (d < 365 + 60) {
+      const m = Math.round(d / 30.4375);
+      return `${m} month${m > 1 ? 's' : ''}`;
+    }
+    const y = Math.floor(d / 365);
+    const remM = Math.round((d % 365) / 30.4375);
+    const yp = `${y} year${y > 1 ? 's' : ''}`;
+    return remM ? `${yp} ${remM} mo` : yp;
   }
 
-  /** The target date, computed from today + horizon. Updates live. */
+  /** A compact unit shown big under the calendar ("2 WEEKS", "5 MONTHS", "9 YRS"). */
+  get bigUnit(): { value: number; unit: string } {
+    const d = this.days;
+    if (d < 14) return { value: d, unit: d === 1 ? 'DAY' : 'DAYS' };
+    if (d < 60) {
+      const w = Math.round(d / 7);
+      return { value: w, unit: w === 1 ? 'WEEK' : 'WEEKS' };
+    }
+    if (d < 365 + 60) {
+      const m = Math.round(d / 30.4375);
+      return { value: m, unit: m === 1 ? 'MONTH' : 'MONTHS' };
+    }
+    const y = Math.round(d / 365);
+    return { value: y, unit: y === 1 ? 'YEAR' : 'YEARS' };
+  }
+
+  // ---- live target date ----
   get targetDate(): Date {
     const d = new Date();
-    d.setMonth(d.getMonth() + this.months);
+    d.setDate(d.getDate() + this.days);
     return d;
-  }
-  get targetMonthName(): string {
-    return this.targetDate.toLocaleString('en-US', { month: 'long' });
   }
   get targetMonthShort(): string {
     return this.targetDate.toLocaleString('en-US', { month: 'short' });
   }
+  get targetDay(): number {
+    return this.targetDate.getDate();
+  }
   get targetYear(): number {
     return this.targetDate.getFullYear();
   }
+  /** Show the day only for short horizons (a precise date matters for weeks). */
+  get showDay(): boolean {
+    return this.days < 365 + 60;
+  }
 
-  /** A few quick presets for common horizons. */
+  // ---- adaptive presets (labels change with the range) ----
   readonly presets = [
-    { label: '3y', months: 36 },
-    { label: '5y', months: 60 },
-    { label: '10y', months: 120 },
-    { label: '20y', months: 240 },
-    { label: '30y', months: 360 },
+    { label: '2w', days: 14 },
+    { label: '3mo', days: 91 },
+    { label: '1y', days: 365 },
+    { label: '5y', days: 365 * 5 },
+    { label: '15y', days: 365 * 15 },
+    { label: '30y', days: 365 * 30 },
   ];
-  pick(m: number): void {
-    this.months = m;
+  pick(days: number): void {
+    this.pos = this.daysToPos(days);
     if (navigator.vibrate) navigator.vibrate(8);
   }
-  isActive(m: number): boolean {
-    return this.months === m;
+  isActive(days: number): boolean {
+    // active if the slider lands within ~2% of this preset's position
+    return Math.abs(this.pos - this.daysToPos(days)) <= this.TRACK * 0.02;
+  }
+
+  /** trackBy keyed on the value itself, so the *ngFor recreates the calendar
+   *  value node each time the number changes — replaying the pop animation. */
+  trackPulse(_: number, k: number): number {
+    return k;
   }
 
   goBack(): void {
@@ -110,7 +168,7 @@ export class GoalTimingComponent implements OnInit {
   }
   confirm(): void {
     if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-    this.timingChosen.emit(+(this.months / 12).toFixed(2));
+    this.timingChosen.emit(+(this.days / 365).toFixed(3));
   }
 }
 

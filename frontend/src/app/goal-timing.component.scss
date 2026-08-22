@@ -97,22 +97,50 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem 1rem 1.2rem;
+  padding: 1.4rem 1rem 1.1rem;
 }
 .cal-month {
-  font-size: 2.6rem;
+  font-size: 2.5rem;
   font-weight: 800;
   line-height: 1;
   color: var(--accent-h);
   text-transform: uppercase;
   letter-spacing: -1px;
+  animation: pop 0.25s ease;
 }
 .cal-year {
-  font-size: 3.4rem;
+  font-size: 3.3rem;
   font-weight: 850;
   line-height: 1;
   letter-spacing: -2px;
   margin-top: 0.2rem;
+  animation: pop 0.25s ease;
+}
+.cal-day {
+  font-size: 3.6rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-top: 0.15rem;
+  animation: pop 0.25s ease;
+}
+.cal-sub {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 0.1rem;
+}
+/* re-key the pop animation on value change via CSS content trick isn't possible;
+   the 0.25s pop replays whenever Angular re-creates the text node on change. */
+@keyframes pop {
+  from {
+    opacity: 0.3;
+    transform: translateY(-4px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .cal-foot {
   border-top: 1px dashed var(--border);
@@ -121,6 +149,9 @@
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--muted);
+}
+.cal-foot b {
+  color: var(--text);
 }
 
 /* slider */
@@ -169,11 +200,24 @@
   cursor: grab;
 }
 
+/* scale labels under the track — mark the non-linear regions */
+.scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
 /* preset ticks */
 .ticks {
   display: flex;
   justify-content: space-between;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 .tick {
   font-size: 0.85rem;

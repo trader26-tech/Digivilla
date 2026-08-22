@@ -74,6 +74,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
+  .spacer { width: 40px; }
 }
 .icon-btn {
   display: grid;
@@ -89,27 +90,20 @@
   &:hover { background: #fafafa; }
   &:active { transform: scale(0.94); }
 }
-.goal-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.9rem;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  .g-emoji { font-size: 1.05rem; }
-  .g-label { font-weight: 650; font-size: 0.9rem; }
-}
 
 /* ---------- headings + amount ---------- */
 .prompt {
-  font-size: clamp(1.25rem, 4.8vw, 1.55rem);
+  font-size: clamp(1.3rem, 5vw, 1.6rem);
   font-weight: 750;
   letter-spacing: -0.02em;
   text-align: center;
-  margin: 1.4rem 0 1.2rem;
-  max-width: 16rem;
-  line-height: 1.2;
+  margin: 1rem 0 1.1rem;
+  max-width: 20rem;
+  line-height: 1.28;
+}
+.prompt-goal {
+  color: hsl(var(--hue) 72% 46%);
+  font-weight: 800;
 }
 .readout {
   text-align: center;
@@ -139,12 +133,44 @@
   0% { transform: scale(1.045); }
   100% { transform: scale(1); }
 }
+.readout .big { cursor: pointer; }
 .readout .compact {
   margin-top: 0.4rem;
   color: var(--ink-2);
   font-size: 0.9rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- typing input (native number keyboard) ---------- */
+.type-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.1rem;
+  border-bottom: 3px solid hsl(var(--hue) 75% 55%);
+  padding: 0 0.2rem 0.2rem;
+}
+.type-cur {
+  font-size: clamp(1.6rem, 7vw, 2.2rem);
+  font-weight: 800;
+  color: hsl(var(--hue) 72% 46%);
+}
+.type-input {
+  width: 7.5ch;
+  max-width: 60vw;
+  border: none;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  font-family: inherit;
+  font-size: clamp(2.4rem, 11vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: hsl(var(--hue) 80% 44%);
+  font-variant-numeric: tabular-nums;
+  caret-color: hsl(var(--hue) 80% 50%);
 }
 
 /* ---------- enter amount pill ---------- */
@@ -164,6 +190,11 @@
   transition: transform 0.14s ease, background 0.14s, box-shadow 0.14s;
   &:hover { box-shadow: 0 4px 12px -4px hsl(var(--hue) 70% 50% / 0.4); }
   &:active { transform: scale(0.97); }
+  &.done {
+    background: hsl(var(--hue) 80% 50%);
+    color: #fff;
+    border-color: hsl(var(--hue) 80% 50%);
+  }
 }
 
 /* ---------- the arch dial ---------- */
@@ -274,92 +305,6 @@
   &:active { transform: translateY(0) scale(0.99); }
 }
 
-/* ---------- numeric dialer ---------- */
-.dialer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: rgba(10, 10, 10, 0.28);
-  animation: fade 0.2s ease;
-}
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-
-.dialer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 31;
-  margin: 0 auto;
-  max-width: 460px;
-  background: #fff;
-  border-radius: 24px 24px 0 0;
-  border-top: 1px solid var(--line);
-  box-shadow: 0 -20px 48px -24px rgba(10, 10, 10, 0.3);
-  padding: 0.75rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
-  transform: translateY(100%);
-  animation: sheetUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes sheetUp { to { transform: translateY(0); } }
-
-.dialer-head {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-weight: 650;
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
-  .spacer { width: 40px; }
-  span:not(.spacer) { flex: 1; text-align: center; }
-}
-.dialer-display {
-  text-align: center;
-  font-size: clamp(2rem, 9vw, 2.8rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  padding: 0.6rem 0 1rem;
-  color: var(--ink);
-  .cur { color: var(--ink-3); margin-right: 0.15rem; font-weight: 700; }
-}
-.keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  button {
-    height: 58px;
-    border: none;
-    background: #f4f4f4;
-    color: var(--ink);
-    font-size: 1.4rem;
-    font-weight: 600;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: transform 0.08s ease, background 0.12s;
-    display: grid;
-    place-items: center;
-    &:hover { background: #ececec; }
-    &:active { transform: scale(0.93); background: #e2e2e2; }
-    &.wide { font-size: 1.1rem; }
-    &.back { color: var(--ink-2); }
-  }
-}
-.dialer-done {
-  width: 100%;
-  margin-top: 0.75rem;
-  border: none;
-  color: #fff;
-  font-weight: 700;
-  font-size: 1rem;
-  padding: 0.9rem;
-  border-radius: 14px;
-  cursor: pointer;
-  background: linear-gradient(135deg,
-    hsl(var(--hue) 82% 54%), hsl(calc(var(--hue) + 22) 80% 46%));
-  box-shadow: 0 10px 22px -12px hsl(var(--hue) 80% 45% / 0.6);
-  transition: transform 0.16s ease;
-  &:active { transform: scale(0.99); }
-}
 
 /* ---------- motivating hand-off ---------- */
 .amount-screen > .cheer {
@@ -462,9 +407,8 @@
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .amount-screen, .readout .big, .dialer { animation: none !important; }
+  .amount-screen, .readout .big { animation: none !important; }
   .handle, .handle-ring { transition: none !important; }
-  .dialer { transform: none; }
   .cheer-card, .cheer, .cr-fill, .cr-check, .cheer-dots span { animation: none !important; }
   .cr-fill, .cr-check { stroke-dashoffset: 0 !important; }
 }

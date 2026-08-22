@@ -9,6 +9,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { GoalPreset } from './models';
 
@@ -17,14 +18,14 @@ import { GoalPreset } from './models';
  *
  * The amount is set with a circular knob the user drags around a dial — the big
  * number in the centre animates as it changes, with a light haptic tick on
- * capable devices (no sound). An "Enter amount" button flips to a numeric dialer
- * for typing an exact figure; its Back button flips back to the knob. Either
- * path feeds the same `amount`, and Continue emits it.
+ * capable devices (no sound). Tapping the amount (or "Enter amount") focuses a
+ * real numeric <input>, so the phone's native number keyboard opens; typing
+ * feeds the same `amount`. Continue emits it.
  */
 @Component({
   selector: 'app-goal-amount',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './goal-amount.component.html',
   styleUrl: './goal-amount.component.scss',
 })
@@ -36,6 +37,13 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   @Output() back = new EventEmitter<void>();
 
   @ViewChild('dial') dialRef!: ElementRef<HTMLElement>;
+  @ViewChild('amountInput') amountInputRef?: ElementRef<HTMLInputElement>;
+
+  /** The goal name woven into the heading, e.g. "your Emergency Fund". */
+  get goalPhrase(): string {
+    const label = this.goal?.label || 'this goal';
+    return /fund|cushion/i.test(label) ? `your ${label}` : `your ${label} goal`;
+  }
 
   /**
    * Arch geometry, in the SVG's 320x220 viewBox. The dial is a big circle
@@ -64,8 +72,8 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
   entered = false;   // drives the entry animation classes
   popKey = 0;        // bumped on each step so the number can re-trigger its pop
 
-  dialerOpen = false;
-  dialerValue = ''; // digits typed in the numeric dialer
+  typing = false;      // true while the native-keyboard input is showing
+  typedDisplay = '';   // grouped digits shown in the typing input
 
   private dragging = false;
   private lastTickAmount = 0;
@@ -274,36 +282,54 @@ export class GoalAmountComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  // ---------- numeric dialer ----------
+  // ---------- native numeric keyboard ----------
 
-  openDialer(): void {
-    this.dialerValue = String(Math.round(this.amount));
-    this.dialerOpen = true;
+  /** Show the real <input> and focus it so the phone's number pad opens. */
+  startTyping(): void {
+    this.typedDisplay = Math.round(this.amount).toLocaleString('en-IN');
+    this.typing = true;
+    // Focus after the input is in the DOM. A direct focus() inside the same
+    // user-gesture tick is what lets mobile browsers open the keyboard.
+    setTimeout(() => {
+      const el = this.amountInputRef?.nativeElement;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        try { el.setSelectionRange(len, len); } catch {}
+      }
+    });
   }
 
-  closeDialer(commit: boolean): void {
-    if (commit) {
-      const v = parseInt(this.dialerValue || '0', 10);
-      if (v > 0) this.setAmount(v, true); // value flows back onto the arch
+  /** Keep only digits, update the live amount, and re-group for display. */
+  onTyped(v: string): void {
+    const digits = (v || '').replace(/[^0-9]/g, '').slice(0, 12);
+    const n = digits ? parseInt(digits, 10) : 0;
+    this.typedDisplay = n ? n.toLocaleString('en-IN') : '';
+    if (n > 0) {
+      this.ensureInRange(n); // let the dial cover a typed value beyond its band
+      this.setAmount(n, false);
     }
-    this.dialerOpen = false;
   }
 
-  pressKey(k: string): void {
-    if (navigator.vibrate && !this.reduceMotion) navigator.vibrate(6);
-    if (k === 'back') {
-      this.dialerValue = this.dialerValue.slice(0, -1);
-    } else if (k === '000') {
-      if (this.dialerValue && this.dialerValue !== '0') this.dialerValue += '000';
-    } else {
-      if (this.dialerValue === '0') this.dialerValue = '';
-      if (this.dialerValue.length < 12) this.dialerValue += k;
+  /** Finish typing: commit and hide the input. */
+  commitTyped(): void {
+    if (!this.typing) return;
+    const n = parseInt((this.typedDisplay || '0').replace(/[^0-9]/g, ''), 10);
+    if (n > 0) {
+      this.ensureInRange(n);
+      this.setAmount(n, true);
     }
+    this.typing = false;
+    this.amountInputRef?.nativeElement.blur();
   }
 
-  get dialerDisplay(): string {
-    const v = parseInt(this.dialerValue || '0', 10);
-    return v > 0 ? v.toLocaleString('en-IN') : '0';
+  /** If a typed value falls outside [min,max], grow the dial's range so the
+   *  arc/handle can still represent it (a typed figure is never rejected). */
+  private ensureInRange(v: number): void {
+    let changed = false;
+    if (v < this.min) { this.min = this.niceFloor(v * 0.5) || 0; changed = true; }
+    if (v > this.max) { this.max = this.niceCeil(v * 1.25); changed = true; }
+    if (changed) this.step = this.niceStep((this.max - this.min) / 200);
   }
 
   // ---------- formatting + emit ----------

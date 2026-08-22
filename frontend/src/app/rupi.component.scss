@@ -1,0 +1,98 @@
+:host {
+  display: inline-block;
+  line-height: 0;
+}
+
+.rupi {
+  display: inline-block;
+}
+.rupi svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---------------------------------------------------------- idle motion */
+.rupi.animated .face,
+.rupi.animated > svg > g[filter],
+.rupi.animated .arm {
+  /* the whole coin gently bobs */
+}
+.rupi.animated svg {
+  animation: bob 3.4s ease-in-out infinite;
+  transform-origin: 60px 100px;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(-1.5deg); }
+}
+.rupi.animated .ground {
+  animation: groundPulse 3.4s ease-in-out infinite;
+  transform-origin: 60px 112px;
+}
+@keyframes groundPulse {
+  0%, 100% { transform: scale(1); opacity: 0.12; }
+  50% { transform: scale(0.85); opacity: 0.08; }
+}
+
+/* blink: lids drop occasionally */
+.lid {
+  transform: scaleY(0);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.rupi.animated .lid {
+  animation: blink 4.5s ease-in-out infinite;
+}
+.rupi.animated .lid-r { animation-delay: 0.04s; }
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(0); }
+  95%, 97% { transform: scaleY(1.15); }
+}
+
+/* ------------------------------------------------------------- poses */
+
+/* wave: left hand up near the face, small waggle */
+.rupi[data-pose='wave'] .arm-l { transform-box: fill-box; transform-origin: 28px 66px; }
+.rupi[data-pose='wave'] .arm-l path { d: path("M30 66 Q22 44 30 30"); }
+.rupi[data-pose='wave'] .arm-l circle { cx: 30px; cy: 28px; }
+.rupi.animated[data-pose='wave'] .arm-l {
+  animation: wave 1.1s ease-in-out infinite;
+}
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-16deg); }
+}
+
+/* point: right hand extended forward/up toward content */
+.rupi[data-pose='point'] .arm-r path { d: path("M92 64 Q112 56 118 40"); }
+.rupi[data-pose='point'] .arm-r circle { cx: 118px; cy: 39px; }
+
+/* think: a hand up to the chin, mouth a small 'o' */
+.rupi[data-pose='think'] .arm-r path { d: path("M92 66 Q84 74 72 74"); }
+.rupi[data-pose='think'] .arm-r circle { cx: 71px; cy: 74px; r: 5px; }
+.rupi[data-pose='think'] .mouth { d: path("M56 71 Q60 74 64 71"); }
+
+/* cheer: both hands up */
+.rupi[data-pose='cheer'] .arm-l path { d: path("M30 66 Q18 46 24 30"); }
+.rupi[data-pose='cheer'] .arm-l circle { cx: 24px; cy: 28px; }
+.rupi[data-pose='cheer'] .arm-r path { d: path("M90 66 Q102 46 96 30"); }
+.rupi[data-pose='cheer'] .arm-r circle { cx: 96px; cy: 28px; }
+.rupi.animated[data-pose='cheer'] svg { animation: cheerBob 0.9s ease-in-out infinite; }
+@keyframes cheerBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* happy is the default resting pose (no overrides) */
+
+/* ------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .rupi.animated svg,
+  .rupi.animated .lid,
+  .rupi.animated .ground,
+  .rupi.animated .arm-l {
+    animation: none;
+  }
+  .lid { transform: scaleY(0); }
+}

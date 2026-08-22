@@ -1,28 +1,50 @@
 <div class="amount-screen" [class.entered]="entered" [style.--hue]="hue">
-  <!-- Top bar -->
+  <!-- Top bar: just a close button now; the goal name lives in the heading. -->
   <header class="top">
-    <div class="goal-chip">
-      <span class="g-emoji">{{ goal.icon }}</span>
-      <span class="g-label">{{ goal.label }}</span>
-    </div>
+    <span class="spacer"></span>
     <button class="icon-btn" (click)="goBack()" aria-label="Close">
       <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
   </header>
 
-  <h1 class="prompt reveal">Please choose a goal amount</h1>
+  <h1 class="prompt reveal">
+    How much do you want to save for<br />
+    <span class="prompt-goal">{{ goalPhrase }}</span>?
+  </h1>
 
-  <!-- Big amount -->
+  <!-- Big amount. Tapping it (or the pill) opens the phone's number keyboard. -->
   <div class="readout reveal">
-    <div class="big" [class.pop]="popKey % 2 === 0" [class.pop2]="popKey % 2 === 1">{{ full }}</div>
-    <div class="compact">{{ compact }}</div>
+    <!-- When typing, a real numeric input takes over so the OS keypad shows. -->
+    <div class="type-wrap" *ngIf="typing">
+      <span class="type-cur">₹</span>
+      <input
+        #amountInput
+        class="type-input"
+        type="text"
+        inputmode="numeric"
+        [ngModel]="typedDisplay"
+        (ngModelChange)="onTyped($event)"
+        (blur)="commitTyped()"
+        (keydown.enter)="commitTyped()"
+        aria-label="Enter goal amount"
+      />
+    </div>
+    <div
+      *ngIf="!typing"
+      class="big"
+      [class.pop]="popKey % 2 === 0"
+      [class.pop2]="popKey % 2 === 1"
+      (click)="startTyping()"
+    >{{ full }}</div>
+    <div class="compact" *ngIf="!typing">{{ compact }}</div>
   </div>
 
   <!-- Enter amount pill -->
-  <button class="enter-btn reveal" (click)="openDialer()">
+  <button class="enter-btn reveal" *ngIf="!typing" (click)="startTyping()">
     <svg viewBox="0 0 24 24" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
     Enter amount
   </button>
+  <button class="enter-btn done reveal" *ngIf="typing" (click)="commitTyped()">Done</button>
 
   <!-- ===================== The arch dial ===================== -->
   <div
@@ -98,30 +120,4 @@
     </div>
   </div>
 
-  <!-- ===================== Numeric dialer overlay ===================== -->
-  <div class="dialer-backdrop" *ngIf="dialerOpen" (click)="closeDialer(false)"></div>
-  <div class="dialer" [class.open]="dialerOpen" *ngIf="dialerOpen">
-    <div class="dialer-head">
-      <button class="icon-btn" (click)="closeDialer(false)" aria-label="Back to dial">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <span>Enter exact amount</span>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="dialer-display">
-      <span class="cur">₹</span>{{ dialerDisplay }}
-    </div>
-
-    <div class="keypad">
-      <button *ngFor="let k of ['1','2','3','4','5','6','7','8','9']" (click)="pressKey(k)">{{ k }}</button>
-      <button (click)="pressKey('000')" class="wide">000</button>
-      <button (click)="pressKey('0')">0</button>
-      <button (click)="pressKey('back')" class="back" aria-label="Delete">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 6h11v12H9l-6-6 6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 10l4 4M16 10l-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-
-    <button class="dialer-done" (click)="closeDialer(true)">Set amount</button>
-  </div>
 </div>
