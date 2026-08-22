@@ -59,16 +59,16 @@
   50% { transform: translate(-0.6px, 0.8px); }
 }
 
-/* smooth, springy pose transitions */
-.arm, .brow, .mouth, .tongue { transition: transform 0.42s cubic-bezier(0.34, 1.5, 0.5, 1), d 0.42s ease; }
+/* smooth, gentle pose transitions */
+.arm, .brow, .mouth { transition: transform 0.42s cubic-bezier(0.34, 1.3, 0.55, 1), d 0.42s ease; }
 .brow { transform-box: fill-box; transform-origin: center; }
 
 /* =============================================================== poses */
 
-/* WAVE — "Hi!": left hand up + waggle, brows lifted, big smile */
+/* WAVE — "Hi!": left hand up + waggle, brows gently lifted */
 .rupi[data-pose='wave'] .arm-l { transform: rotate(-48deg); }
 .rupi[data-pose='wave'] .brow-l,
-.rupi[data-pose='wave'] .brow-r { transform: translateY(-2.5px); }
+.rupi[data-pose='wave'] .brow-r { transform: translateY(-1.5px); }
 .rupi.animated[data-pose='wave'] .arm-l { animation: wave 0.95s ease-in-out infinite; }
 @keyframes wave {
   0%, 100% { transform: rotate(-40deg); }
@@ -77,22 +77,20 @@
 
 /* HAPPY — resting, warm (default) */
 
-/* THINK — hand to chin, brows drawn in, small closed mouth */
+/* THINK — hand to chin, brows slightly drawn in, calmer mouth */
 .rupi[data-pose='think'] .arm-r { transform: rotate(54deg) translate(-16px, 2px); }
-.rupi[data-pose='think'] .brow-l { transform: translateY(1.5px) rotate(7deg); }
-.rupi[data-pose='think'] .brow-r { transform: translateY(1.5px) rotate(-7deg); }
-.rupi[data-pose='think'] .mouth { transform: scaleY(0.4); transform-origin: 70px 84px; }
-.rupi[data-pose='think'] .tongue { opacity: 0; }
+.rupi[data-pose='think'] .brow-l { transform: translateY(1px) rotate(5deg); }
+.rupi[data-pose='think'] .brow-r { transform: translateY(1px) rotate(-5deg); }
+.rupi[data-pose='think'] .mouth { transform: scaleY(0.55); transform-origin: 70px 82px; }
 
-/* POINT — right hand points up/out, one brow raised (the confident look) */
+/* POINT — right hand points up/out; brows stay calm & level */
 .rupi[data-pose='point'] .arm-r { transform: rotate(-54deg); }
-.rupi[data-pose='point'] .brow-r { transform: translateY(-3.5px) rotate(-9deg); }
 
 /* CHEER — both hands up, brows up, extra bounce */
 .rupi[data-pose='cheer'] .arm-l { transform: rotate(-50deg); }
 .rupi[data-pose='cheer'] .arm-r { transform: rotate(50deg); }
 .rupi[data-pose='cheer'] .brow-l,
-.rupi[data-pose='cheer'] .brow-r { transform: translateY(-3.5px); }
+.rupi[data-pose='cheer'] .brow-r { transform: translateY(-2px); }
 .rupi.animated[data-pose='cheer'] .body,
 .rupi.animated[data-pose='cheer'] .face { animation: cheerBob 0.8s ease-in-out infinite; }
 @keyframes cheerBob {
@@ -103,6 +101,6 @@
 /* ------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .rupi.animated * { animation: none !important; }
-  .arm, .brow, .mouth, .tongue { transition: none; }
+  .arm, .brow, .mouth { transition: none; }
   .lid { transform: scaleY(0); }
 }

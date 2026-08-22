@@ -7,18 +7,18 @@
 >
   <svg viewBox="0 0 140 140" fill="none" aria-hidden="true">
     <defs>
-      <radialGradient id="rupi-face" cx="36%" cy="26%" r="85%">
-        <stop offset="0" stop-color="#ffe9a3" />
-        <stop offset="48%" stop-color="#f8c948" />
-        <stop offset="100%" stop-color="#e0971a" />
+      <radialGradient id="rupi-face" cx="38%" cy="30%" r="82%">
+        <stop offset="0" stop-color="#f6d492" />
+        <stop offset="52%" stop-color="#e6b855" />
+        <stop offset="100%" stop-color="#c8951f" />
       </radialGradient>
       <linearGradient id="rupi-rim" x1="0.2" y1="0" x2="0.7" y2="1">
-        <stop offset="0" stop-color="#ffe483" />
-        <stop offset="50%" stop-color="#edb02c" />
-        <stop offset="100%" stop-color="#b6740b" />
+        <stop offset="0" stop-color="#eecb6f" />
+        <stop offset="50%" stop-color="#d3a238" />
+        <stop offset="100%" stop-color="#a67813" />
       </linearGradient>
       <filter id="rupi-drop" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#b0710a" flood-opacity="0.4" />
+        <feDropShadow dx="0" dy="5" stdDeviation="5.5" flood-color="#9c6d0e" flood-opacity="0.32" />
       </filter>
     </defs>
 
@@ -39,43 +39,37 @@
     <g class="body" filter="url(#rupi-drop)">
       <circle cx="70" cy="70" r="47" fill="url(#rupi-rim)" />
       <circle cx="70" cy="70" r="39" fill="url(#rupi-face)" />
-      <!-- soft top sheen for a warm matte-metal feel -->
-      <ellipse class="sheen" cx="57" cy="47" rx="20" ry="11" fill="#fff" opacity="0.25" />
+      <!-- gentle top sheen, mellow -->
+      <ellipse class="sheen" cx="58" cy="49" rx="18" ry="9" fill="#fff" opacity="0.14" />
     </g>
 
     <!-- FACE -->
     <g class="face">
-      <!-- eyebrows: clean, expressive -->
-      <g class="brows" stroke="#4a3208" stroke-width="3.4" stroke-linecap="round" fill="none">
-        <path class="brow brow-l" d="M50 55 Q58 51 65 54" />
-        <path class="brow brow-r" d="M75 54 Q82 51 90 55" />
+      <!-- eyebrows: calm, gentle, level — friendly & smart, not cocky -->
+      <g class="brows" stroke="#5a3f10" stroke-width="3" stroke-linecap="round" fill="none">
+        <path class="brow brow-l" d="M51 55 Q58 53 64 55" />
+        <path class="brow brow-r" d="M76 55 Q82 53 89 55" />
       </g>
 
-      <!-- eyes: big, glossy, alive -->
+      <!-- eyes: calm, one soft highlight -->
       <g class="eyes">
         <g class="eye eye-l">
-          <ellipse class="ball" cx="57" cy="66" rx="6.2" ry="7" fill="#3a2a08" />
-          <circle class="spark" cx="59" cy="63.5" r="2.1" fill="#fff" />
-          <circle class="spark2" cx="55.6" cy="67.5" r="1" fill="#fff" opacity="0.7" />
+          <ellipse class="ball" cx="57" cy="66" rx="5.4" ry="6.2" fill="#4a3410" />
+          <circle class="spark" cx="58.8" cy="64" r="1.7" fill="#fff" opacity="0.85" />
         </g>
         <g class="eye eye-r">
-          <ellipse class="ball" cx="83" cy="66" rx="6.2" ry="7" fill="#3a2a08" />
-          <circle class="spark" cx="85" cy="63.5" r="2.1" fill="#fff" />
-          <circle class="spark2" cx="81.6" cy="67.5" r="1" fill="#fff" opacity="0.7" />
+          <ellipse class="ball" cx="83" cy="66" rx="5.4" ry="6.2" fill="#4a3410" />
+          <circle class="spark" cx="84.8" cy="64" r="1.7" fill="#fff" opacity="0.85" />
         </g>
         <!-- blink lids -->
         <g class="lids" fill="url(#rupi-face)">
-          <rect class="lid lid-l" x="50" y="58" width="14" height="9" rx="4.5" />
-          <rect class="lid lid-r" x="76" y="58" width="14" height="9" rx="4.5" />
+          <rect class="lid lid-l" x="50" y="59" width="14" height="8" rx="4" />
+          <rect class="lid lid-r" x="76" y="59" width="14" height="8" rx="4" />
         </g>
       </g>
 
-      <!-- small friendly nose -->
-      <ellipse class="nose" cx="70" cy="76" rx="3" ry="2.4" fill="#c8880f" opacity="0.6" />
-
-      <!-- mouth: warm open smile with a subtle tongue for charm -->
-      <path class="mouth" d="M58 82 Q70 95 82 82 Q70 88 58 82 Z" fill="#5a3a10" />
-      <path class="tongue" d="M64 87 Q70 92 76 87 Q70 90 64 87 Z" fill="#ff8f7a" />
+      <!-- mouth: a calm, warm smile -->
+      <path class="mouth" d="M59 80 Q70 89 81 80" stroke="#5a3f10" stroke-width="3.4" stroke-linecap="round" fill="none" />
     </g>
   </svg>
 </div>

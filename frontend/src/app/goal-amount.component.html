@@ -1,17 +1,10 @@
-<div class="amount-screen" [class.entered]="entered" [style.--hue]="hue">
-  <!-- Top bar: just a close button now; the goal name lives in the heading. -->
-  <header class="top">
-    <span class="spacer"></span>
-    <button class="icon-btn" (click)="goBack()" aria-label="Close">
-      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
-  </header>
+<div class="screen" [class.entered]="entered" [style.--hue]="hue">
+  <button class="back" (click)="goBack()" aria-label="Back">←</button>
 
-  <h1 class="prompt reveal">How much for<br />{{ goalPhrase }}?</h1>
+  <h1 class="title">How much for<br />{{ goalPhrase }}?</h1>
 
-  <!-- Big amount. Tapping it opens the phone's number keyboard. -->
-  <div class="readout reveal">
-    <!-- When typing, a real numeric input takes over so the OS keypad shows. -->
+  <!-- Big live amount. Tapping it opens the phone's number keyboard (optional). -->
+  <div class="amount-box">
     <div class="type-wrap" *ngIf="typing">
       <span class="type-cur">₹</span>
       <input
@@ -33,65 +26,33 @@
       [class.pop2]="popKey % 2 === 1"
       (click)="startTyping()"
     >{{ full }}</button>
-    <span class="tap-hint" *ngIf="!typing">tap to type</span>
+    <span class="sub" *ngIf="!typing">{{ compact }} · tap to type</span>
     <button class="done-btn" *ngIf="typing" (click)="commitTyped()">Done</button>
   </div>
 
-  <!-- ===================== The arch dial ===================== -->
-  <div
-    class="dial"
-    [class.dragging]="isDragging"
-    #dial
-    (pointerdown)="startDrag($event)"
-    role="slider"
-    [attr.aria-valuemin]="min"
-    [attr.aria-valuemax]="max"
-    [attr.aria-valuenow]="amount"
-    [attr.aria-label]="'Goal amount for ' + goal.label"
-  >
-    <!-- viewBox is a wide, short band; the dial is a big circle whose TOP edge
-         arcs across it, centre pushed below the band so only the top cap shows. -->
-    <svg viewBox="0 0 320 220" class="dial-svg" preserveAspectRatio="xMidYMin slice">
-      <defs>
-        <!-- Colour gradient for the filled arc, in the goal's hue. -->
-        <linearGradient id="arcFill" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   [attr.stop-color]="'hsl(' + hue + ' 82% 58%)'" />
-          <stop offset="100%" [attr.stop-color]="'hsl(' + (hue + 20) + ' 80% 50%)'" />
-        </linearGradient>
-        <radialGradient id="domeGlow" cx="50%" cy="12%" r="70%">
-          <stop offset="0%"  [attr.stop-color]="'hsl(' + hue + ' 80% 97.5%)'" />
-          <stop offset="100%" stop-color="#ffffff" />
-        </radialGradient>
-      </defs>
-
-      <!-- The dome fill: a soft tinted wash. -->
-      <circle class="dome" cx="160" cy="320" r="300" fill="url(#domeGlow)" />
-
-      <!-- Base track (faint, full arc) + coloured progress up to the handle. -->
-      <path class="track" [attr.d]="arcPath(1)" />
-      <path class="progress" [attr.d]="arcPath(fraction)" stroke="url(#arcFill)" />
-
-      <!-- Handle: one clean dot with a thin coloured ring. -->
-      <circle class="handle-ring" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="9"
-              [attr.stroke]="'hsl(' + hue + ' 80% 50%)'" />
-      <circle class="handle" [attr.cx]="handlePt.x" [attr.cy]="handlePt.y" r="6"
-              [attr.fill]="'hsl(' + hue + ' 80% 50%)'" />
-    </svg>
-
-    <!-- Suggestion chips float over the dome -->
-    <div class="chips reveal">
-      <button
-        *ngFor="let s of chipAmounts"
-        class="chip"
-        [class.active]="amount === s"
-        (click)="pickSuggested(s); $event.stopPropagation()"
-        (pointerdown)="$event.stopPropagation()"
-      >{{ compactInr(s) }}</button>
+  <!-- Slider — the primary control, matched to the timing screen. -->
+  <div class="slider-wrap">
+    <input
+      type="range"
+      class="slider"
+      min="0"
+      [max]="TRACK"
+      step="1"
+      [value]="pos"
+      (input)="onSlide($any($event.target).value)"
+      [style.--frac]="sliderFrac"
+    />
+    <div class="ticks">
+      <span
+        *ngFor="let p of presetChips"
+        class="tick"
+        [class.on]="isTickActive(p)"
+        (click)="pickAmount(p)"
+      >{{ compactInr(p) }}</span>
     </div>
   </div>
 
-  <!-- Next -->
-  <button class="next reveal" (click)="confirm()" [disabled]="cheering">Next</button>
+  <button class="cta" (click)="confirm()" [disabled]="cheering">Continue →</button>
 
   <!-- ===================== Motivating hand-off ===================== -->
   <div class="cheer" *ngIf="cheering">
@@ -110,5 +71,4 @@
       <div class="cheer-dots"><span></span><span></span><span></span></div>
     </div>
   </div>
-
 </div>
