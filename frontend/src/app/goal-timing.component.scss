@@ -3,9 +3,10 @@
   min-height: 100vh;
 }
 .screen {
-  --accent-h: hsl(var(--hue, 222), 85%, 62%);
-  --accent-dk: hsl(var(--hue, 222), 80%, 55%);
-  --accent-soft: hsl(var(--hue, 222), 85%, 60%, 0.16);
+  /* Fixed brand theme — always purple, never per-goal blue/cyan. */
+  --accent-h: #a370ff;
+  --accent-dk: #7a3ea8;
+  --accent-soft: rgba(163, 112, 255, 0.16);
   max-width: 440px;
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
@@ -69,7 +70,7 @@
 }
 .cal:hover {
   transform: rotate(0deg) translateY(-2px);
-  box-shadow: 0 24px 48px -20px hsl(var(--hue, 222) 60% 40% / 0.35);
+  box-shadow: 0 24px 48px -20px rgba(122, 62, 168, 0.5);
 }
 .cal:active {
   transform: rotate(0deg) scale(0.98);
