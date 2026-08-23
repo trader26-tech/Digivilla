@@ -355,7 +355,109 @@
 .d-cta.invest { background: linear-gradient(135deg, var(--purple), var(--purple-dk)); }
 .d-cta.returns { background: linear-gradient(135deg, var(--orange), var(--orange-dk)); }
 
+/* ============ "How it grows" graph screen ============ */
+.g-hero {
+  width: 100%;
+  text-align: center;
+  margin: 0.4rem 0 1.3rem;
+}
+.g-cap {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.g-amt {
+  display: block;
+  font-size: clamp(2.2rem, 9vw, 2.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--text);
+  margin: 0.15rem 0;
+}
+.g-amt small { font-size: 0.4em; font-weight: 700; color: var(--muted); }
+.g-sub { display: block; font-size: 0.85rem; color: var(--muted); }
+
+/* chart card */
+.chart-card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.9rem 0.9rem 0.6rem;
+  box-shadow: var(--shadow-sm);
+}
+.growth-chart {
+  width: 100%;
+  aspect-ratio: 320 / 200;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.tick { font-size: 9px; fill: var(--muted); font-weight: 600; }
+
+/* draw-in animation: the value line & fill sweep up */
+.area-value, .area-inv { opacity: 0; animation: areaIn 0.7s ease 0.5s forwards; }
+.area-inv { animation-delay: 0.62s; }
+@keyframes areaIn { to { opacity: 1; } }
+
+.line-value, .line-inv {
+  stroke-dasharray: 620;
+  stroke-dashoffset: 620;
+  animation: drawLine 1.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+}
+.line-inv { animation-delay: 0.25s; }
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+.dot-value, .dot-inv { opacity: 0; animation: dotIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 1.35s forwards; }
+@keyframes dotIn { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+.dot-value, .dot-inv { transform-box: fill-box; transform-origin: center; }
+
+/* legend row */
+.chart-legend {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.lg-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
+.lg-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.lg-item.value .lg-dot { background: var(--purple); }
+.lg-item.inv .lg-dot { background: #8aa0c4; }
+.lg-txt { color: var(--muted); }
+.lg-val { color: var(--text); font-weight: 750; }
+
+/* the compounding punchline */
+.g-split { width: 100%; margin-top: 1.3rem; }
+.gs-track {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.gs-inv { background: #8aa0c4; }
+.gs-ret {
+  background: linear-gradient(90deg, var(--purple), var(--purple-dk));
+  transition: width 0.6s ease;
+}
+.gs-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+.gs-note b { color: var(--text); font-weight: 750; }
+.gs-note b.up { color: var(--purple-dk); }
+
 @media (prefers-reduced-motion: reduce) {
   .plan, .detail { transition: none; animation: none; }
   .rim { transition: none; }
+  .area-value, .area-inv, .dot-value, .dot-inv { opacity: 1; animation: none; }
+  .line-value, .line-inv { stroke-dashoffset: 0; animation: none; }
 }

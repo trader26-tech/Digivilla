@@ -17,6 +17,7 @@
   <app-goal-intro
     *ngIf="!pickedGoal && chosenGoal && !amountDone"
     [goal]="chosenGoal"
+    [shortTerm]="isShortTerm"
     (amountReady)="onAmountChosen($event)"
     (back)="onAmountBack()"
   ></app-goal-intro>
