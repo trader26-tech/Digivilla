@@ -150,7 +150,7 @@
 
   <!-- Live readout — updates as you scrub the chart -->
   <div class="rd">
-    <span class="rd-time">{{ scrubTimeLabel }}</span>
+    <span class="rd-time">{{ scrubTimeLabel }} · at {{ returnLabel }}</span>
     <span class="rd-total">{{ fullInr(scrubValue) }}</span>
     <div class="rd-split">
       <span class="rd-chip inv"><i></i>Invested {{ compactInr(scrubInvested) }}</span>
@@ -158,47 +158,73 @@
     </div>
   </div>
 
-  <!-- The chart is the hero. Drag anywhere on it to scrub. -->
-  <div #chart class="grow-chart" [class.drawn]="perfEntered"
-       (pointerdown)="scrubbing = true; onScrub($event, chart)"
-       (pointermove)="scrubbing && onScrub($event, chart)"
-       (pointerup)="scrubbing = false" (pointercancel)="scrubbing = false"
-       (pointerleave)="scrubbing = false">
-    <svg viewBox="0 0 320 160" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="invFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#a370ff" stop-opacity="0.55" />
-          <stop offset="100%" stop-color="#a370ff" stop-opacity="0.05" />
-        </linearGradient>
-        <linearGradient id="retFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ff9a4a" stop-opacity="0.5" />
-          <stop offset="100%" stop-color="#ff6f61" stop-opacity="0.08" />
-        </linearGradient>
-      </defs>
-      <!-- returns band (between invested and total) -->
-      <path class="g-ret-area" [attr.d]="returnsArea" fill="url(#retFill)" />
-      <!-- invested area (their own money) -->
-      <path class="g-inv-area" [attr.d]="investedArea2" fill="url(#invFill)" />
-      <!-- the two lines -->
-      <path class="g-inv-line" [attr.d]="investedLine" fill="none" />
-      <path class="g-val-line" [attr.d]="valueLine" fill="none" />
-      <!-- scrub head -->
-      <line class="g-scrub" [attr.x1]="scrubX" [attr.x2]="scrubX" y1="4" y2="156" />
-      <circle class="g-dot inv" [attr.cx]="scrubX" [attr.cy]="scrubInvY" r="4" />
-      <circle class="g-dot val" [attr.cx]="scrubX" [attr.cy]="scrubValY" r="5" />
-    </svg>
+  <!-- Labelled, scrubbable chart. Y = value, X = time. Drag to read any point. -->
+  <div class="plot">
+    <!-- Y-axis money labels -->
+    <div class="y-axis">
+      <span class="y-tick" *ngFor="let t of yAxisTicks" [style.top.%]="t.topPct">{{ t.label }}</span>
+      <span class="y-tick base">₹0</span>
+    </div>
+
+    <div #chart class="grow-chart" [class.drawn]="perfEntered"
+         (pointerdown)="scrubbing = true; onScrub($event, chart)"
+         (pointermove)="scrubbing && onScrub($event, chart)"
+         (pointerup)="scrubbing = false" (pointercancel)="scrubbing = false"
+         (pointerleave)="scrubbing = false">
+      <svg viewBox="0 0 320 160" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="invFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#a370ff" stop-opacity="0.55" />
+            <stop offset="100%" stop-color="#a370ff" stop-opacity="0.05" />
+          </linearGradient>
+          <linearGradient id="retFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff9a4a" stop-opacity="0.5" />
+            <stop offset="100%" stop-color="#ff6f61" stop-opacity="0.08" />
+          </linearGradient>
+        </defs>
+        <!-- horizontal gridlines at each money tick -->
+        <line class="g-grid" *ngFor="let t of yAxisTicks" x1="0" [attr.y1]="t.y" x2="320" [attr.y2]="t.y" />
+        <!-- returns band (between invested and total) -->
+        <path class="g-ret-area" [attr.d]="returnsArea" fill="url(#retFill)" />
+        <!-- invested area (their own money) -->
+        <path class="g-inv-area" [attr.d]="investedArea2" fill="url(#invFill)" />
+        <!-- the two lines -->
+        <path class="g-inv-line" [attr.d]="investedLine" fill="none" />
+        <path class="g-val-line" [attr.d]="valueLine" fill="none" />
+        <!-- scrub head -->
+        <line class="g-scrub" [attr.x1]="scrubX" [attr.x2]="scrubX" y1="0" y2="160" />
+        <circle class="g-dot inv" [attr.cx]="scrubX" [attr.cy]="scrubInvY" r="4" />
+        <circle class="g-dot val" [attr.cx]="scrubX" [attr.cy]="scrubValY" r="5" />
+      </svg>
+    </div>
+
+    <!-- X-axis time labels -->
+    <div class="x-axis">
+      <span class="x-tick" *ngFor="let t of xAxisTicks" [style.left.%]="t.leftPct">{{ t.label }}</span>
+    </div>
   </div>
 
-  <!-- Where the money sits — one compact visual bar, no list -->
-  <div class="alloc-block" *ngIf="allocSlices.length">
-    <div class="alloc-bar">
-      <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
+  <!-- The funds doing the work -->
+  <div class="funds-block">
+    <div class="fb-head">
+      <span class="fb-title">The funds working for you</span>
+      <span class="fb-ret">{{ returnLabel }} <small>expected</small></span>
     </div>
-    <div class="alloc-legend">
-      <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
+
+    <div class="loading" *ngIf="loadingFunds && !funds.length">Loading funds…</div>
+
+    <div class="fund-list" *ngIf="funds.length">
+      <div class="fund" *ngFor="let f of funds">
+        <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
+        <div class="f-main">
+          <span class="f-name">{{ f.name }}</span>
+          <span class="f-meta">{{ f.bucket }} · {{ stars(f.rating) }}</span>
+        </div>
+        <span class="f-ret">{{ sign(f.return_3y) }} <small>3Y</small></span>
+        <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
+      </div>
     </div>
   </div>
 
-  <div class="spacer"></div>
   <button class="d-cta returns" (click)="closeDetail()">Got it</button>
 </div>

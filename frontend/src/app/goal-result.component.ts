@@ -24,7 +24,7 @@ export class GoalResultComponent implements OnInit {
   @Input() amount = 0; // target corpus
   @Input() years = 0;  // horizon in years
 
-  @Output() continued = new EventEmitter<void>();
+  @Output() continued = new EventEmitter<number>(); // emits the monthly SIP
   @Output() back = new EventEmitter<void>();
 
   private api = inject(PlannerService);
@@ -538,7 +538,7 @@ export class GoalResultComponent implements OnInit {
     if (navigator.vibrate) navigator.vibrate([12, 40, 12, 40, 60]);
     this.celebrating = true;
     // Let the spin + "Goal added!" play, then hand off to the home screen.
-    setTimeout(() => this.continued.emit(), 1900);
+    setTimeout(() => this.continued.emit(this.monthlySip), 1900);
   }
 
   // ---- slide-to-confirm ----

@@ -12,6 +12,7 @@ import {
 import { BasketLabComponent } from './basket-lab.component';
 import { GoalIntroComponent } from './goal-intro.component';
 import { GoalPickerComponent } from './goal-picker.component';
+import { GoalHomeComponent } from './goal-home.component';
 import { GoalResultComponent } from './goal-result.component';
 import { GoalTimingComponent } from './goal-timing.component';
 import { HomeComponent } from './home.component';
@@ -36,6 +37,7 @@ type Tab = 'home' | 'invest';
     GoalIntroComponent,
     GoalTimingComponent,
     GoalResultComponent,
+    GoalHomeComponent,
     IntroComponent,
     RefreshButtonComponent,
   ],
@@ -83,6 +85,7 @@ export class AppComponent {
   amountDone = false; // combined intro+amount confirmed -> show timing
   chosenAmount = 0;
   chosenYears = 0;
+  chosenMonthly = 0;  // monthly SIP, from the results screen
   timingDone = false; // timing confirmed -> show the results screen
 
   authed = !!localStorage.getItem('wp_token');
@@ -142,14 +145,26 @@ export class AppComponent {
     this.amountDone = false;
   }
 
-  /** Results screen confirmed -> proceed to auth (the goal is saved after login). */
-  onResultContinue(): void {
+  /** Results screen confirmed (goal added) -> show the dummy home + login sheet. */
+  onResultContinue(monthly: number): void {
+    this.chosenMonthly = monthly;
     this.pickedGoal = true;
   }
 
   /** Back from the results screen returns to the timing screen. */
   onResultBack(): void {
     this.timingDone = false;
+  }
+
+  /** Quick-login from the home sheet -> enter the app. Stores a lightweight
+   *  session so the authed shell renders (real OTP verification comes later). */
+  onQuickLogin(phone: string): void {
+    const owner = 'usr_' + phone;
+    localStorage.setItem('wp_token', 'quick_' + phone);
+    localStorage.setItem('wp_owner', owner);
+    localStorage.setItem('wp_name', '');
+    this.userName = '';
+    this.authed = true;
   }
 
   signOut(): void {

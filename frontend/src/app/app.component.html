@@ -33,12 +33,19 @@
     [goal]="chosenGoal"
     [amount]="chosenAmount"
     [years]="chosenYears"
-    (continued)="onResultContinue()"
+    (continued)="onResultContinue($event)"
     (back)="onResultBack()"
   ></app-goal-result>
 
-  <!-- Step 6: once the plan is reviewed, fall through to auth -->
-  <app-landing *ngIf="pickedGoal" (authed)="onAuthed($event)"></app-landing>
+  <!-- Step 6: goal added -> dummy home + quick-login bottom sheet -->
+  <app-goal-home
+    *ngIf="pickedGoal && chosenGoal"
+    [goal]="chosenGoal"
+    [amount]="chosenAmount"
+    [monthly]="chosenMonthly"
+    [years]="chosenYears"
+    (loggedIn)="onQuickLogin($event)"
+  ></app-goal-home>
 </div>
 
 <ng-container *ngIf="pickedGoal && authed">

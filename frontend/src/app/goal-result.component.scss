@@ -461,7 +461,6 @@
   text-align: center;
 }
 .d-cta {
-  margin-top: auto;
   width: 100%;
   border: none;
   border-radius: 16px;
@@ -472,6 +471,9 @@
   cursor: pointer;
   margin-top: 1.4rem;
 }
+/* the invest ("How it grows") page centers its chart, so its CTA sits at
+   the natural bottom; the returns page flows top-down, so pin its CTA down. */
+.returns-page .d-cta { margin-top: auto; }
 .d-cta.invest { background: linear-gradient(135deg, var(--purple), var(--purple-dk)); }
 .d-cta.returns { background: linear-gradient(135deg, var(--orange), var(--orange-dk)); }
 
@@ -540,15 +542,66 @@
 .rd-chip.inv { color: #c9adff; i { background: linear-gradient(135deg, #b088ff, #7a3ea8); } }
 .rd-chip.ret { color: #ffb98a; i { background: linear-gradient(135deg, #ffb36b, #ff6f61); } }
 
+/* ---- labelled plot: y-axis column | chart | x-axis row ---- */
+.plot {
+  width: 100%;
+  margin-top: 1.3rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.5rem;
+}
+/* Y-axis money labels, positioned to line up with the gridlines */
+.y-axis {
+  position: relative;
+  width: 3rem;
+  height: 190px;
+  grid-column: 1;
+  grid-row: 1;
+}
+.y-tick {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.y-tick.base { top: 100%; }
+
 /* the scrubbable chart — the hero */
 .grow-chart {
+  grid-column: 2;
+  grid-row: 1;
   width: 100%;
-  margin-top: 1.6rem;
   touch-action: none;
   cursor: crosshair;
   user-select: none;
 }
 .grow-chart svg { width: 100%; height: 190px; display: block; overflow: visible; }
+
+/* X-axis time labels, aligned under the chart column */
+.x-axis {
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  height: 1.2rem;
+  margin-top: 0.35rem;
+}
+.x-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.x-tick:first-child { transform: none; }               /* pin "Now" to the left edge */
+.x-tick:last-child { transform: translateX(-100%); }   /* pin the final tick to the right edge */
+
+.g-grid { stroke: var(--border); stroke-width: 1; opacity: 0.55; }
 
 .g-inv-area { opacity: 0; transition: opacity 0.5s ease 0.4s; }
 .g-ret-area { opacity: 0; transition: opacity 0.5s ease 0.6s; }
@@ -582,6 +635,24 @@
 .g-dot { stroke: var(--bg); stroke-width: 2.5; }
 .g-dot.inv { fill: #a370ff; }
 .g-dot.val { fill: #ff9a4a; filter: drop-shadow(0 0 6px rgba(255, 140, 90, 0.6)); }
+
+/* ---- the funds working for you ---- */
+.funds-block { width: 100%; margin-top: 1.5rem; }
+.fb-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+.fb-title { font-size: 0.92rem; font-weight: 750; color: var(--text); }
+.fb-ret {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #ff9a4a;
+  font-variant-numeric: tabular-nums;
+  small { font-size: 0.66rem; font-weight: 600; color: var(--muted); margin-left: 0.15rem; }
+}
+.loading { font-size: 0.82rem; color: var(--muted); padding: 0.4rem 0; }
 
 .alloc-block { width: 100%; margin-top: 1.6rem; }
 
