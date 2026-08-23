@@ -204,6 +204,19 @@
     </div>
   </div>
 
+  <!-- Risk selector — tune how aggressive the fund mix is -->
+  <div class="risk">
+    <span class="risk-cap">Choose your style</span>
+    <div class="risk-seg">
+      <button *ngFor="let r of riskOptions"
+              class="risk-opt" [class.on]="activeRisk === r.key"
+              (click)="setRisk(r.key)">
+        <b>{{ r.label }}</b>
+        <small>{{ r.blurb }}</small>
+      </button>
+    </div>
+  </div>
+
   <!-- The funds doing the work -->
   <div class="funds-block">
     <div class="fb-head">

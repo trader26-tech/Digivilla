@@ -198,7 +198,11 @@ export class GoalResultComponent implements OnInit {
       const totalY = Math.round(yrs);
       const step = totalY <= 6 ? 1 : totalY <= 12 ? 2 : 5;
       for (let y = 0; y <= totalY; y += step) pushMonth(y * 12);
-      if (out[out.length - 1].x < this.px(n) - 1) pushMonth(n);
+      // Add a final "end" tick only if it's far enough from the last stepped one
+      // to not collide (labels are ~10% of the width wide).
+      const last = out[out.length - 1];
+      const endX = this.px(n);
+      if ((endX - last.x) / this.PW > 0.1) pushMonth(n);
     }
     return out;
   }
@@ -206,7 +210,10 @@ export class GoalResultComponent implements OnInit {
     if (m === 0) return 'Now';
     if (m < 12) return `${m}mo`;
     const y = m / 12;
-    return `${Number.isInteger(y) ? y : y.toFixed(1)}y`;
+    // whole years read cleaner; only show a decimal when it's genuinely mid-year
+    if (Number.isInteger(y)) return `${y}y`;
+    const rounded = Math.round(y);
+    return Math.abs(y - rounded) < 0.15 ? `${rounded}y` : `${y.toFixed(1)}y`;
   }
 
   /** Handle a pointer move over the chart -> snap the scrub head to the nearest month. */
@@ -234,9 +241,34 @@ export class GoalResultComponent implements OnInit {
     return HUE_OF[this.goal?.key] ?? 222;
   }
 
-  /** The model basket matching this goal's risk (conservative/balanced/aggressive). */
+  /** User-chosen risk. null = use the goal's default. Lets them make the plan
+   *  more/less aggressive right on the returns screen. */
+  riskOverride: 'conservative' | 'balanced' | 'aggressive' | null = null;
+
+  readonly riskOptions: { key: 'conservative' | 'balanced' | 'aggressive'; label: string; blurb: string }[] = [
+    { key: 'conservative', label: 'Safe', blurb: 'Steadier, lower risk' },
+    { key: 'balanced', label: 'Balanced', blurb: 'A healthy mix' },
+    { key: 'aggressive', label: 'Aggressive', blurb: 'Higher risk & reward' },
+  ];
+
+  /** The model basket matching the active risk (override or the goal default). */
   private get riskKey(): string {
-    return this.goal?.default_risk || 'balanced';
+    return this.riskOverride || this.goal?.default_risk || 'balanced';
+  }
+
+  /** User taps a risk chip -> re-derive returns and reload that basket's mix. */
+  setRisk(key: 'conservative' | 'balanced' | 'aggressive'): void {
+    if (this.riskOverride === key) return;
+    this.riskOverride = key;
+    if (navigator.vibrate) navigator.vibrate(8);
+    // keep the scrub head at the end so the total re-lands on the goal
+    this.scrubIdx = this.sipSeries.length - 1;
+    // re-fetch the matching model basket for the allocation bar
+    this.basket = null;
+    this.loadFunds();
+    // redraw the line
+    this.perfEntered = false;
+    setTimeout(() => (this.perfEntered = true), 60);
   }
 
   get funds(): BasketItem[] {
@@ -265,10 +297,15 @@ export class GoalResultComponent implements OnInit {
     return '★'.repeat(n) + '☆'.repeat(5 - n);
   }
 
-  /** Expected annualised return, from the goal's risk profile. */
+  /** Expected annualised return, from the active risk profile (override or default). */
   private get annualReturn(): number {
-    const risk = this.goal?.default_risk || 'balanced';
+    const risk = this.riskOverride || this.goal?.default_risk || 'balanced';
     return risk === 'aggressive' ? 0.12 : risk === 'conservative' ? 0.07 : 0.10;
+  }
+
+  /** The currently-active risk key (for highlighting the chosen chip). */
+  get activeRisk(): string {
+    return this.riskOverride || this.goal?.default_risk || 'balanced';
   }
 
   get months(): number {
