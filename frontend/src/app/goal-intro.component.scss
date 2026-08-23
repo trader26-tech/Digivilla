@@ -3,7 +3,6 @@
   min-height: 100vh;
 }
 
-/* One screen: animated "why" line → stepper input → result → CTA. */
 .intro {
   --accent-h: hsl(var(--hue, 222), 85%, 55%);
   --accent-dk: hsl(var(--hue, 222), 80%, 46%);
@@ -22,10 +21,7 @@
   transform: translateY(10px);
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
-.intro.entered {
-  opacity: 1;
-  transform: none;
-}
+.intro.entered { opacity: 1; transform: none; }
 
 .back {
   align-self: flex-start;
@@ -38,19 +34,25 @@
   font-size: 1.25rem;
   cursor: pointer;
   transition: border-color 0.15s;
+  z-index: 2;
   &:hover { border-color: var(--accent-h); }
 }
 
-/* ---- animated "why" line: words fade+rise in one by one ---- */
+/* ---- the "why" line ---- */
 .why {
-  margin-top: auto; /* with .cta's margin-top:auto, centres the content group */
-  max-width: 21rem;
+  max-width: 22rem;
   text-align: center;
-  font-size: 1.5rem;
-  font-weight: 750;
-  line-height: 1.3;
-  letter-spacing: -0.4px;
   color: var(--text);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  /* Phase 1: big & vertically centred (auto margins push it to the middle). */
+  margin: auto 0;
+  font-size: clamp(1.7rem, 7vw, 2.2rem);
+  line-height: 1.28;
+  transition:
+    font-size 0.55s cubic-bezier(0.6, 0, 0.2, 1),
+    margin 0.55s cubic-bezier(0.6, 0, 0.2, 1),
+    color 0.4s ease;
 }
 .why .w {
   display: inline-block;
@@ -60,13 +62,37 @@
 }
 .why.show .w { opacity: 1; transform: none; }
 
-/* ---- stepper input ---- */
-.calc {
-  margin-top: 2.4rem;
+/* Phase 2: shrink the text and pin it near the top. */
+.calc-phase .why {
+  margin: 0.5rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  font-weight: 650;
+  color: var(--muted);
+  max-width: 24rem;
+}
+
+/* ---- calculator panel (revealed in phase 2) ---- */
+.panel {
   width: 100%;
   max-width: 340px;
+  margin-top: 2rem;
   text-align: center;
+  /* Hidden and non-interactive during phase 1, fades up in phase 2. */
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.45s ease 0.15s, transform 0.5s cubic-bezier(0.22,1,0.36,1) 0.15s;
 }
+.calc-phase .panel {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  max-height: 500px;
+}
+
 .calc-label {
   display: block;
   font-size: 0.82rem;
@@ -79,16 +105,17 @@
   align-items: center;
   justify-content: center;
   gap: 0.9rem;
+  margin-bottom: 1.3rem;
 }
 .step {
   flex: none;
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--accent-dk);
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
@@ -103,7 +130,7 @@
   justify-content: center;
   gap: 0.12rem;
   min-width: 6.5rem;
-  .pfx, .sfx { color: var(--muted); font-weight: 700; font-size: 1.3rem; }
+  .pfx, .sfx { color: var(--muted); font-weight: 700; font-size: 1.25rem; }
 }
 .value-input {
   width: 100%;
@@ -113,7 +140,7 @@
   background: transparent;
   text-align: center;
   font-family: inherit;
-  font-size: 2.4rem;
+  font-size: 2.3rem;
   font-weight: 850;
   letter-spacing: -1.5px;
   line-height: 1;
@@ -121,9 +148,50 @@
   font-variant-numeric: tabular-nums;
   caret-color: var(--accent-h);
 }
+
+/* ---- slider (the one the user liked) ---- */
+.slider {
+  --frac: 0.3;
+  width: 100%;
+  height: 14px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent-h) 0%,
+    var(--accent-h) calc(var(--frac) * 100%),
+    var(--surface-2) calc(var(--frac) * 100%),
+    var(--surface-2) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid var(--accent-h);
+  box-shadow: var(--shadow-md);
+  cursor: grab;
+  transition: transform 0.12s ease;
+}
+.slider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
+.slider::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid var(--accent-h);
+  box-shadow: var(--shadow-md);
+  cursor: grab;
+}
+
 .rule {
   display: block;
-  margin-top: 0.75rem;
+  margin-top: 0.9rem;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--muted);
@@ -131,12 +199,9 @@
 
 /* ---- result ---- */
 .result {
-  margin-top: 2rem;
-  width: 100%;
-  max-width: 340px;
-  padding: 1.2rem 1rem;
-  border-radius: 20px;
-  text-align: center;
+  margin-top: 1.6rem;
+  padding: 1rem;
+  border-radius: 18px;
   background: var(--soft);
   .r-label {
     display: block;
@@ -146,10 +211,10 @@
     letter-spacing: 0.06em;
     color: var(--accent-dk);
     opacity: 0.8;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
   }
   .r-amount {
-    font-size: 3rem;
+    font-size: 2.6rem;
     font-weight: 850;
     line-height: 1;
     letter-spacing: -1.5px;
@@ -159,18 +224,11 @@
   }
   .r-amount.pop { animation: pop 0.2s ease; }
   .r-amount.pop2 { animation: pop2 0.2s ease; }
-  .r-full {
-    display: block;
-    margin-top: 0.35rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
 }
 @keyframes pop { 0% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes pop2 { 0% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
+/* ---- CTA — hidden in phase 1, shown in phase 2 ---- */
 .cta {
   margin-top: auto;
   width: 100%;
@@ -183,12 +241,22 @@
   background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
   cursor: pointer;
   box-shadow: 0 12px 28px -12px var(--accent-h);
-  transition: transform 0.15s ease, filter 0.15s;
+  transition: transform 0.15s ease, filter 0.15s, opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
   &:hover { transform: translateY(-2px); filter: brightness(1.05); }
 }
+.calc-phase .cta {
+  opacity: 1;
+  pointer-events: auto;
+  transition: transform 0.15s ease, filter 0.15s, opacity 0.4s ease 0.3s;
+}
+
+/* A subtle hint to tap during phase 1 */
+.intro:not(.calc-phase) { cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
-  .intro { transition: none; }
+  .intro, .why, .panel, .cta { transition: none !important; }
   .why .w { transition: none; opacity: 1; transform: none; }
   .r-amount { animation: none !important; }
 }
