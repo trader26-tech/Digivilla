@@ -81,6 +81,7 @@ export class GoalResultComponent implements OnInit {
 
   perfEntered = false; // flips true a beat after open -> the line draws in
   scrubIdx = 0;        // which month the scrub head is on
+  scrubbing = false;   // true while the user is dragging on the chart
 
   /** Per-month projection of their actual SIP toward their goal. */
   get sipSeries(): { month: number; invested: number; value: number }[] {

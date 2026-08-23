@@ -148,7 +148,10 @@
 
   <!-- The chart is the hero. Drag anywhere on it to scrub. -->
   <div #chart class="grow-chart" [class.drawn]="perfEntered"
-       (pointerdown)="onScrub($event, chart)" (pointermove)="$event.buttons && onScrub($event, chart)">
+       (pointerdown)="scrubbing = true; onScrub($event, chart)"
+       (pointermove)="scrubbing && onScrub($event, chart)"
+       (pointerup)="scrubbing = false" (pointercancel)="scrubbing = false"
+       (pointerleave)="scrubbing = false">
     <svg viewBox="0 0 320 160" preserveAspectRatio="none">
       <defs>
         <linearGradient id="invFill" x1="0" y1="0" x2="0" y2="1">
