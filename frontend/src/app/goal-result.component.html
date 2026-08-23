@@ -156,6 +156,7 @@
       <span class="rd-chip inv"><i></i>Invested {{ compactInr(scrubInvested) }}</span>
       <span class="rd-chip ret"><i></i>Returns +{{ compactInr(scrubReturns) }}</span>
     </div>
+    <span class="rd-goal" [class.beat]="goalBeaten" [class.short]="goalShort">{{ goalDeltaLabel }}</span>
   </div>
 
   <!-- Labelled, scrubbable chart. Y = value, X = time. Drag to read any point. -->
@@ -184,6 +185,8 @@
         </defs>
         <!-- horizontal gridlines at each money tick -->
         <line class="g-grid" *ngFor="let t of yAxisTicks" x1="0" [attr.y1]="t.y" x2="320" [attr.y2]="t.y" />
+        <!-- the goal target line — value lands above it (aggressive) or below (safe) -->
+        <line class="g-goal" x1="0" [attr.y1]="goalLineY" x2="320" [attr.y2]="goalLineY" />
         <!-- returns band (between invested and total) -->
         <path class="g-ret-area" [attr.d]="returnsArea" fill="url(#retFill)" />
         <!-- invested area (their own money) -->
@@ -229,12 +232,11 @@
     <div class="fund-list" *ngIf="funds.length">
       <div class="fund" *ngFor="let f of funds">
         <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
-        <div class="f-main">
-          <span class="f-name">{{ f.name }}</span>
-          <span class="f-meta">{{ f.bucket }} · {{ stars(f.rating) }}</span>
-        </div>
-        <span class="f-ret">{{ sign(f.return_3y) }} <small>3Y</small></span>
-        <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
+        <span class="f-name">{{ f.name }}</span>
+        <span class="f-conc">
+          <span class="f-bar"><i [style.width.%]="f.weight * 100" [style.background]="assetColor(f.asset_class)"></i></span>
+          <b>{{ (f.weight * 100).toFixed(0) }}%</b>
+        </span>
       </div>
     </div>
   </div>

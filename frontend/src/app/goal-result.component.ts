@@ -83,10 +83,24 @@ export class GoalResultComponent implements OnInit {
   scrubIdx = 0;        // which month the scrub head is on
   scrubbing = false;   // true while the user is dragging on the chart
 
-  /** Per-month projection of their actual SIP toward their goal. */
+  /** The monthly amount they commit — LOCKED across risk styles. Solved once
+   *  from the goal's default risk so switching risk keeps ₹/mo fixed and lets
+   *  the FINAL value move instead (aggressive ends higher, safe ends lower). */
+  get baselineSip(): number {
+    const defRisk = this.goal?.default_risk || 'balanced';
+    const rate = defRisk === 'aggressive' ? 0.12 : defRisk === 'conservative' ? 0.07 : 0.10;
+    const i = rate / 12;
+    const n = this.months;
+    if (i <= 0) return Math.round(this.amount / n);
+    const factor = ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+    return Math.max(0, Math.round(this.amount / factor));
+  }
+
+  /** Per-month projection: FIXED monthly SIP, grown at the ACTIVE risk's rate.
+   *  Invested line is identical across risks; the value line diverges by risk. */
   get sipSeries(): { month: number; invested: number; value: number }[] {
-    const i = this.annualReturn / 12;
-    const p = this.monthlySip;
+    const i = this.annualReturn / 12; // active risk rate
+    const p = this.baselineSip;       // fixed monthly amount
     const n = this.months;
     const out: { month: number; invested: number; value: number }[] = [];
     for (let m = 0; m <= n; m++) {
@@ -96,6 +110,24 @@ export class GoalResultComponent implements OnInit {
     }
     return out;
   }
+
+  /** Final projected value at the active risk (moves with the risk choice). */
+  get projectedFinal(): number {
+    const s = this.sipSeries;
+    return s.length ? s[s.length - 1].value : this.amount;
+  }
+
+  /** How the projected final compares to the goal — drives the "beats/misses" note. */
+  get goalDelta(): number { return this.projectedFinal - this.amount; }
+  get goalDeltaLabel(): string {
+    const d = Math.round(this.goalDelta);
+    if (Math.abs(d) < this.amount * 0.02) return `Right on your ${this.compactInr(this.amount)} goal`;
+    return d > 0
+      ? `${this.compactInr(d)} above your goal 🎉`
+      : `${this.compactInr(-d)} short of your goal`;
+  }
+  get goalBeaten(): boolean { return this.goalDelta > this.amount * 0.02; }
+  get goalShort(): boolean { return this.goalDelta < -this.amount * 0.02; }
 
   /** The point currently under the scrub head. */
   get scrubPt(): { month: number; invested: number; value: number } {
@@ -122,9 +154,14 @@ export class GoalResultComponent implements OnInit {
   private readonly PH = 160;
   private readonly PPAD = 8;
 
+  /** Y-axis ceiling — FIXED to the most-aggressive outcome so the scale does NOT
+   *  rescale when risk changes. Safe visibly falls short; aggressive fills the top. */
   private get sipMax(): number {
-    const s = this.sipSeries;
-    return s.length ? Math.max(...s.map((p) => p.value)) : 1;
+    const p = this.baselineSip;
+    const n = this.months;
+    const i = 0.12 / 12; // aggressive rate = the tallest possible line
+    const top = i <= 0 ? p * n : p * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+    return Math.max(1, Math.round(top));
   }
   px(idx: number): number {
     const n = this.sipSeries.length - 1 || 1;
@@ -135,6 +172,10 @@ export class GoalResultComponent implements OnInit {
     const t = v / hi;
     return this.PH - this.PPAD - t * (this.PH - 2 * this.PPAD);
   }
+
+  /** Y of the goal target line — fixed reference; the value line lands above it
+   *  (aggressive) or below it (safe), making the risk difference obvious. */
+  get goalLineY(): number { return this.pyVal(this.amount); }
 
   private path(key: 'value' | 'invested'): string {
     const s = this.sipSeries;
