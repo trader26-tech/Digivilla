@@ -6,9 +6,9 @@
 /* Matched pair with the timing screen: one number, one slider, one CTA. */
 .screen {
   --hue: 222;
-  --accent-h: hsl(var(--hue), 85%, 55%);
-  --accent-dk: hsl(var(--hue), 80%, 46%);
-  --accent-soft: hsl(var(--hue), 85%, 55%, 0.1);
+  --accent-h: hsl(var(--hue), 85%, 62%);
+  --accent-dk: hsl(var(--hue), 80%, 55%);
+  --accent-soft: hsl(var(--hue), 85%, 60%, 0.16);
   position: relative;
   max-width: 440px;
   margin: 0 auto;
