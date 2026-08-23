@@ -10,7 +10,8 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000',
+      // Register quickly so update checks start soon after load.
+      registrationStrategy: 'registerWhenStable:5000',
     }),
   ],
 };

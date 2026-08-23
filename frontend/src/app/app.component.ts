@@ -19,6 +19,7 @@ import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
 import { AuthResponse, GoalPreset } from './models';
 import { PlannerPanelComponent } from './planner-panel.component';
+import { RefreshButtonComponent } from './refresh-button.component';
 import { StoryComponent } from './story.component';
 
 type Tab = 'home' | 'invest';
@@ -38,6 +39,7 @@ type Tab = 'home' | 'invest';
     GoalResultComponent,
     IntroComponent,
     StoryComponent,
+    RefreshButtonComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
