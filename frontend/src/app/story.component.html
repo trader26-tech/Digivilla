@@ -1,58 +1,62 @@
-<section class="hero" [class.go]="revealed">
-  <!-- ambient background: soft light only, no grid -->
-  <div class="ambient" aria-hidden="true">
-    <span class="blob b1"></span>
-    <span class="blob b2"></span>
+<section class="hero" [attr.data-phase]="phase">
+  <!-- cinematic dusk backdrop -->
+  <div class="sky" aria-hidden="true">
+    <span class="glow-core"></span>
+    <span class="ray r1"></span><span class="ray r2"></span><span class="ray r3"></span>
+    <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span>
+    <span class="spark s4"></span><span class="spark s5"></span><span class="spark s6"></span>
   </div>
 
   <div class="inner">
-    <h1 class="headline">Your money,<br /><span class="accent">working harder.</span></h1>
-    <p class="sub">The same ₹10,000 a month, over 20 years.</p>
+    <p class="lead">You invest <b class="chip">₹10,000</b> a month.</p>
 
-    <!-- THE GAP — one integrated chart; the amounts live ON the lines -->
-    <div class="chart">
-      <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Invested with us grows to 91 lakh versus 24 lakh left in savings">
+    <!-- the glowing growth curve behind the number -->
+    <div class="viz" aria-hidden="true">
+      <svg viewBox="0 0 420 240" preserveAspectRatio="xMidYMid meet">
         <defs>
-          <linearGradient id="inv-line" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stop-color="#12a150" /><stop offset="1" stop-color="#19cf85" />
+          <linearGradient id="curve" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#0f9c62" /><stop offset="1" stop-color="#2effb0" />
           </linearGradient>
-          <linearGradient id="inv-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#19cf85" stop-opacity="0.22" />
-            <stop offset="1" stop-color="#19cf85" stop-opacity="0" />
+          <linearGradient id="curve-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#25e39c" stop-opacity="0.35" />
+            <stop offset="1" stop-color="#25e39c" stop-opacity="0" />
           </linearGradient>
-          <radialGradient id="inv-coin" cx="36%" cy="30%" r="75%">
-            <stop offset="0" stop-color="#ffe08a" /><stop offset="1" stop-color="#f0b429" />
+          <radialGradient id="coinG" cx="36%" cy="30%" r="75%">
+            <stop offset="0" stop-color="#fff0c0" /><stop offset="1" stop-color="#f7b81f" />
           </radialGradient>
+          <filter id="lineGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="6" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
         </defs>
 
-        <!-- invested: soaring area + line (ends at x=300 so labels have room) -->
-        <path class="inv-area" d="M28 214 C130 206 220 168 300 66 L300 214 Z" fill="url(#inv-area)" />
-        <path class="inv-line" d="M28 214 C130 206 220 168 300 66" fill="none" stroke="url(#inv-line)" stroke-width="6" stroke-linecap="round" />
+        <path class="curve-fill" d="M24 210 C170 202 280 150 396 34 L396 210 Z" fill="url(#curve-fill)" />
+        <path class="curve-glow" d="M24 210 C170 202 280 150 396 34" fill="none" stroke="url(#curve)" stroke-width="7" stroke-linecap="round" filter="url(#lineGlow)" />
+        <path class="curve" d="M24 210 C170 202 280 150 396 34" fill="none" stroke="url(#curve)" stroke-width="5" stroke-linecap="round" />
 
-        <!-- invested end amount, to the RIGHT of the coin (left-aligned) -->
+        <!-- idle savings — faint, flat -->
+        <path class="save" d="M24 210 C170 209 280 206 396 202" fill="none" stroke="#7d88a3" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9" opacity="0.55" />
+
+        <!-- coin bursting at the peak -->
         <g class="coin">
-          <circle cx="300" cy="66" r="13" fill="url(#inv-coin)" />
-          <text x="300" y="67" text-anchor="middle" dominant-baseline="central" class="coin-r">₹</text>
-        </g>
-        <g class="inv-label">
-          <text x="320" y="60" text-anchor="start" class="lbl-val invested">₹{{ (invested/100000) | number:'1.0-0' }}L</text>
-          <text x="320" y="75" text-anchor="start" class="lbl-cap invested">Invested with us</text>
-        </g>
-
-        <!-- savings: nearly flat, muted; amount to the RIGHT of its end dot -->
-        <path class="save-line" d="M28 214 C130 213 220 210 300 206" fill="none" stroke="#aab6cc" stroke-width="4" stroke-linecap="round" />
-        <circle class="save-dot" cx="300" cy="206" r="5.5" fill="#aab6cc" />
-        <g class="save-label">
-          <text x="320" y="203" text-anchor="start" class="lbl-val saved">₹{{ (saved/100000) | number:'1.0-0' }}L</text>
-          <text x="320" y="217" text-anchor="start" class="lbl-cap saved">Left in savings</text>
+          <circle class="coin-halo" cx="396" cy="34" r="26" fill="#ffd873" opacity="0.35" />
+          <circle cx="396" cy="34" r="14" fill="url(#coinG)" />
+          <text x="396" y="35" text-anchor="middle" dominant-baseline="central" class="coin-r">₹</text>
         </g>
       </svg>
     </div>
 
-    <p class="punch"><b class="mult">{{ multiple }}× more</b> — just for starting.</p>
+    <!-- the hero: a big number that counts up -->
+    <div class="result">
+      <span class="r-eyebrow">In 20 years, that becomes</span>
+      <div class="r-amount">
+        <span class="cur">₹</span><span class="num">{{ grouped(invested) }}</span>
+      </div>
+      <span class="r-compare">vs just <b>{{ compact(saved) }}</b> sitting in savings — <b class="mult">{{ multiple }}× more.</b></span>
+    </div>
 
     <button class="cta" (click)="start()" type="button">
-      Start growing
+      Make it yours
       <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
     <span class="fineprint">Illustrative long-run assumptions. Not investment advice.</span>
