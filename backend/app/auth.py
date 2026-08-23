@@ -1,4 +1,4 @@
-"""Minimal, real authentication for WealthPath.
+"""Minimal, real authentication for MyLakshyas.
 
 This is intentionally lightweight — the app is primarily a goal planner, not an
 auth product — but it works under the hood: passwords are salted + hashed with
