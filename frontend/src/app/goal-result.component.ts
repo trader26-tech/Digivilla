@@ -259,10 +259,11 @@ export class GoalResultComponent implements OnInit {
 
   // ---- Fund allocation pie (donut) — how the money splits across funds ----
 
-  /** Distinct on-brand slice colours (purple → orange), one per fund. */
+  /** Distinct slice colours for the allocation pie — a cool green→teal→blue
+   *  ramp (deliberately not orange/yellow), one per fund. */
   private readonly PIE_COLORS = [
-    '#a05cff', '#b878ff', '#8b3dff', '#c9a0ff', '#7a3ea8',
-    '#ff8a3d', '#ffab5e', '#ff6a3d', '#ffc069', '#e0714f',
+    '#34d399', '#10b981', '#2dd4bf', '#22c55e', '#14b8a6',
+    '#4ade80', '#06b6d4', '#3bb78f', '#0ea5a5', '#5eead4',
   ];
   private readonly PIE_R = 42;              // donut radius in the 120×120 viewBox
   get pieCirc(): number { return 2 * Math.PI * this.PIE_R; }
@@ -641,16 +642,29 @@ export class GoalResultComponent implements OnInit {
     this.back.emit();
   }
 
-  /** Celebration: the ring spins on itself, then "Goal added!", then we
-   *  advance to the home screen. Triggered by slide-to-invest or "later". */
+  /** Celebration: a full-screen moment. The ring builds + spins into a tick,
+   *  the plan facts count up, then (after ~3.5s) a "Continue" button appears.
+   *  We do NOT auto-advance — the user taps Continue. Triggered by
+   *  slide-to-invest or "I'll do this later". */
   celebrating = false;
+  celebrationReady = false; // flips true after the animation -> reveal Continue
 
   proceed(): void {
     if (this.celebrating) return;
     if (navigator.vibrate) navigator.vibrate([12, 40, 12, 40, 60]);
     this.celebrating = true;
-    // Let the spin + "Goal added!" play, then hand off to the home screen.
-    setTimeout(() => this.continued.emit(this.monthlySip), 1900);
+    this.celebrationReady = false;
+    // Let the whole sequence play (~3.5s), THEN reveal the Continue button.
+    setTimeout(() => {
+      this.celebrationReady = true;
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 3400);
+  }
+
+  /** User tapped Continue on the celebration -> hand off to the home screen. */
+  finishCelebration(): void {
+    if (navigator.vibrate) navigator.vibrate(10);
+    this.continued.emit(this.monthlySip);
   }
 
   // ---- slide-to-confirm ----

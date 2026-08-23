@@ -1,5 +1,50 @@
+<!-- ============ CELEBRATION: full-screen "goal is ready" moment ============ -->
+<div class="celebrate" *ngIf="celebrating" [class.ready]="celebrationReady">
+  <!-- confetti sparks -->
+  <span class="spark" *ngFor="let s of sparks; let i = index"
+        [style.--sx]="s.x" [style.--sy]="s.y" [style.--sc]="s.c" [style.--sd.ms]="s.d"></span>
+
+  <div class="cel-ring">
+    <svg viewBox="0 0 120 120">
+      <defs>
+        <linearGradient id="celGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#c9a0ff" />
+          <stop offset="55%" stop-color="#a05cff" />
+          <stop offset="100%" stop-color="#ff7a3d" />
+        </linearGradient>
+      </defs>
+      <circle class="cel-track" cx="60" cy="60" r="52" />
+      <circle class="cel-arc" cx="60" cy="60" r="52" transform="rotate(-90 60 60)" />
+    </svg>
+    <!-- the tick that draws itself once the ring closes -->
+    <svg class="cel-tick" viewBox="0 0 52 52">
+      <path d="M14 27 L23 36 L39 18" />
+    </svg>
+  </div>
+
+  <div class="cel-copy">
+    <h2 class="cel-title">Your goal is ready! 🎉</h2>
+    <p class="cel-sub">{{ goal?.name || 'Your goal' }} · <b>{{ fullInr(amount) }}</b> in {{ reachValue }} {{ reachUnit }}</p>
+  </div>
+
+  <div class="cel-facts">
+    <div class="cel-fact">
+      <span class="cf-val">{{ compactInr(monthlySip) }}<small>/mo</small></span>
+      <span class="cf-lbl">You invest</span>
+    </div>
+    <div class="cel-fact">
+      <span class="cf-val up">+{{ compactInr(growth) }}</span>
+      <span class="cf-lbl">Market adds</span>
+    </div>
+  </div>
+
+  <button class="cel-cta" [class.show]="celebrationReady" (click)="finishCelebration()">
+    Continue →
+  </button>
+</div>
+
 <!-- ============ MAIN PLAN PAGE ============ -->
-<div class="plan" [class.entered]="entered" [class.celebrating]="celebrating" *ngIf="!detailPage">
+<div class="plan" [class.entered]="entered" *ngIf="!detailPage && !celebrating">
   <header class="top">
     <button class="back" (click)="goBack()" aria-label="Back">←</button>
     <h1>Here's your plan</h1>
@@ -8,7 +53,7 @@
   <p class="goal-amt">Goal Amount · <b>{{ fullInr(amount) }}</b></p>
 
   <!-- Clean segmented donut -->
-  <div class="donut" [class.spin]="celebrating">
+  <div class="donut">
     <svg viewBox="0 0 120 120">
       <defs>
         <linearGradient id="gInvest" x1="0" y1="0" x2="1" y2="1">
@@ -27,14 +72,10 @@
       <circle cx="60" cy="60" [attr.r]="ringR" class="rim returns"
         [attr.stroke-dasharray]="growthDash" [attr.stroke-dashoffset]="growthOffset" transform="rotate(-90 60 60)" />
     </svg>
-    <div class="donut-center" *ngIf="!celebrating">
+    <div class="donut-center">
       <span class="dc-cap">Goal reached in</span>
       <span class="dc-amt">{{ reachValue }}</span>
       <span class="dc-sub">{{ reachUnit }}</span>
-    </div>
-    <div class="donut-center added" *ngIf="celebrating">
-      <span class="added-check">✓</span>
-      <span class="added-txt">Goal added!</span>
     </div>
   </div>
 
@@ -148,66 +189,7 @@
     <span class="faq-spacer"></span>
   </header>
 
-  <!-- Live readout — updates as you scrub the chart -->
-  <div class="rd">
-    <span class="rd-time">{{ scrubTimeLabel }} · at {{ returnLabel }}</span>
-    <span class="rd-total">{{ fullInr(scrubValue) }}</span>
-    <div class="rd-split">
-      <span class="rd-chip inv"><i></i>Invested {{ compactInr(scrubInvested) }}</span>
-      <span class="rd-chip ret"><i></i>Returns +{{ compactInr(scrubReturns) }}</span>
-    </div>
-    <span class="rd-goal" [class.beat]="goalBeaten" [class.short]="goalShort">{{ goalDeltaLabel }}</span>
-  </div>
-
-  <!-- Labelled, scrubbable chart. Y = value, X = time. Drag to read any point. -->
-  <div class="plot">
-    <!-- Y-axis money labels -->
-    <div class="y-axis">
-      <span class="y-tick" *ngFor="let t of yAxisTicks" [style.top.%]="t.topPct">{{ t.label }}</span>
-      <span class="y-tick base">₹0</span>
-    </div>
-
-    <div #chart class="grow-chart" [class.drawn]="perfEntered"
-         (pointerdown)="scrubbing = true; onScrub($event, chart)"
-         (pointermove)="scrubbing && onScrub($event, chart)"
-         (pointerup)="scrubbing = false" (pointercancel)="scrubbing = false"
-         (pointerleave)="scrubbing = false">
-      <svg viewBox="0 0 320 160" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="invFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#a370ff" stop-opacity="0.55" />
-            <stop offset="100%" stop-color="#a370ff" stop-opacity="0.05" />
-          </linearGradient>
-          <linearGradient id="retFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ff9a4a" stop-opacity="0.5" />
-            <stop offset="100%" stop-color="#ff6f61" stop-opacity="0.08" />
-          </linearGradient>
-        </defs>
-        <!-- horizontal gridlines at each money tick -->
-        <line class="g-grid" *ngFor="let t of yAxisTicks" x1="0" [attr.y1]="t.y" x2="320" [attr.y2]="t.y" />
-        <!-- the goal target line — value lands above it (aggressive) or below (safe) -->
-        <line class="g-goal" x1="0" [attr.y1]="goalLineY" x2="320" [attr.y2]="goalLineY" />
-        <!-- returns band (between invested and total) -->
-        <path class="g-ret-area" [attr.d]="returnsArea" fill="url(#retFill)" />
-        <!-- invested area (their own money) -->
-        <path class="g-inv-area" [attr.d]="investedArea2" fill="url(#invFill)" />
-        <!-- the two lines -->
-        <path class="g-inv-line" [attr.d]="investedLine" fill="none" />
-        <path class="g-val-line" [attr.d]="valueLine" fill="none" />
-        <!-- scrub head -->
-        <line class="g-scrub" [attr.x1]="scrubX" [attr.x2]="scrubX" y1="0" y2="160" />
-        <circle class="g-dot inv" [attr.cx]="scrubX" [attr.cy]="scrubInvY" r="4" />
-        <circle class="g-dot val" [attr.cx]="scrubX" [attr.cy]="scrubValY" r="5" />
-      </svg>
-    </div>
-
-    <!-- X-axis time labels -->
-    <div class="x-axis">
-      <span class="x-tick" *ngFor="let t of xAxisTicks" [style.left.%]="t.leftPct">{{ t.label }}</span>
-    </div>
-  </div>
-
-  <!-- Risk selector — tune how aggressive the fund mix is -->
+  <!-- Choose your style — the basket we pick for this goal -->
   <div class="risk">
     <span class="risk-cap">Choose your style</span>
     <div class="risk-seg">
@@ -218,18 +200,15 @@
         <small>{{ r.blurb }}</small>
       </button>
     </div>
+    <span class="risk-ret">Expected <b>{{ returnLabel }}</b></span>
   </div>
 
-  <!-- How the money splits across funds — donut + plain text legend -->
-  <div class="funds-block">
-    <div class="fb-head">
-      <span class="fb-title">Where your money goes</span>
-      <span class="fb-ret">{{ returnLabel }} <small>expected</small></span>
-    </div>
+  <div class="loading" *ngIf="loadingFunds && !funds.length">Loading funds…</div>
 
-    <div class="loading" *ngIf="loadingFunds && !funds.length">Loading funds…</div>
-
-    <div class="pie-wrap" *ngIf="fundPie.length">
+  <!-- The distribution pie — how this basket splits the money -->
+  <div class="dist" *ngIf="fundPie.length">
+    <span class="dist-cap">How your money is invested</span>
+    <div class="dist-pie">
       <svg class="pie" viewBox="0 0 120 120" [class.drawn]="perfEntered">
         <circle class="pie-track" cx="60" cy="60" [attr.r]="42" />
         <circle *ngFor="let s of fundPie; let i = index"
@@ -242,14 +221,18 @@
         <text class="pie-mid-n" x="60" y="55">{{ funds.length }}</text>
         <text class="pie-mid-l" x="60" y="70">funds</text>
       </svg>
+    </div>
+  </div>
 
-      <ul class="pie-legend">
-        <li *ngFor="let s of fundPie">
-          <span class="pl-dot" [style.background]="s.color"></span>
-          <span class="pl-name">{{ s.name }}</span>
-          <span class="pl-pct">{{ s.pct }}%</span>
-        </li>
-      </ul>
+  <!-- All the funds in this basket, with each one's expected return -->
+  <div class="fund-list" *ngIf="fundPie.length">
+    <div class="fund" *ngFor="let s of fundPie; let i = index">
+      <span class="f-dot" [style.background]="s.color"></span>
+      <div class="f-main">
+        <span class="f-name">{{ s.name }}</span>
+        <span class="f-sub">{{ s.pct }}% of your money</span>
+      </div>
+      <span class="f-ret">{{ sign(funds[i].return_3y) }} <small>3Y return</small></span>
     </div>
   </div>
 
