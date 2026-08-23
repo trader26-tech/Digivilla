@@ -6,9 +6,10 @@
 /* Matched pair with the timing screen: one number, one slider, one CTA. */
 .screen {
   --hue: 222;
-  --accent-h: hsl(var(--hue), 85%, 62%);
-  --accent-dk: hsl(var(--hue), 80%, 55%);
-  --accent-soft: hsl(var(--hue), 85%, 60%, 0.16);
+  /* Fixed brand theme — always purple, never per-goal blue/cyan. */
+  --accent-h: #a370ff;
+  --accent-dk: #7a3ea8;
+  --accent-soft: rgba(163, 112, 255, 0.16);
   position: relative;
   max-width: 440px;
   margin: 0 auto;
