@@ -42,11 +42,16 @@ body {
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  /* the dusk backdrop — a subtle warm-to-indigo wash, fixed behind everything */
+  /* the dusk backdrop — the SAME warm gold → coral → purple → indigo wash as the
+     intro/story screens, so every page shares that signature look (not flat dark). */
   background: var(--bg);
   background-image:
-    radial-gradient(120% 90% at 50% 115%, rgba(255, 122, 89, 0.14) 0%, rgba(122, 62, 168, 0.12) 34%, rgba(18, 16, 42, 0) 62%),
-    radial-gradient(100% 80% at 50% -10%, rgba(122, 62, 168, 0.18) 0%, rgba(18, 16, 42, 0) 55%);
+    /* warm gold + coral bloom rising from the bottom (the intro's signature glow) */
+    radial-gradient(135% 95% at 50% 122%, rgba(255, 154, 90, 0.22) 0%, rgba(255, 111, 97, 0.16) 20%, rgba(122, 62, 168, 0.16) 46%, rgba(18, 16, 42, 0) 70%),
+    /* purple haze from the top */
+    radial-gradient(110% 80% at 50% -12%, rgba(122, 62, 168, 0.26) 0%, rgba(18, 16, 42, 0) 58%),
+    /* a soft coral kiss off to one side for depth */
+    radial-gradient(70% 55% at 88% 8%, rgba(255, 111, 97, 0.10) 0%, rgba(18, 16, 42, 0) 60%);
   background-attachment: fixed;
   min-height: 100vh;
 }

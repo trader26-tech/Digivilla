@@ -46,9 +46,13 @@
   display: grid;
   place-items: center;
   padding: 2rem 1.6rem calc(2rem + env(safe-area-inset-bottom));
+  /* Blends with the dark dusk background: a soft, low-opacity glow in the goal's
+     own hue (not a bright white blob), fading into the app background. */
   background:
-    radial-gradient(ellipse 75% 50% at 50% 42%, hsl(var(--hue, 222) 90% 90% / 0.8), transparent 72%),
-    var(--bg, #f5f7fb);
+    radial-gradient(ellipse 90% 55% at 50% 40%,
+      hsl(var(--hue, 222) 70% 40% / 0.22),
+      transparent 70%),
+    var(--bg, #12102a);
   opacity: 1;
   transition: opacity 0.45s ease;
 }
