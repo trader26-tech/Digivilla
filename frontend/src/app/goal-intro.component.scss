@@ -38,41 +38,78 @@
   &:hover { border-color: var(--accent-h); }
 }
 
-/* ================= the "why" overlay (brief, then gone) ================= */
-.why-overlay {
+/* ============ the "why" welcome — user taps to enter ============ */
+.welcome {
   position: absolute;
   inset: 0;
   z-index: 5;
   display: grid;
   place-items: center;
-  padding: 2rem 1.5rem;
-  cursor: pointer;
-  /* A calm full-screen wash in the goal's colour behind the words. */
+  padding: 2rem 1.6rem calc(2rem + env(safe-area-inset-bottom));
   background:
-    radial-gradient(ellipse 70% 45% at 50% 45%, hsl(var(--hue, 222) 90% 90% / 0.7), transparent 72%),
+    radial-gradient(ellipse 75% 50% at 50% 42%, hsl(var(--hue, 222) 90% 90% / 0.8), transparent 72%),
     var(--bg, #f5f7fb);
   opacity: 1;
   transition: opacity 0.45s ease;
 }
-.why-overlay.leaving { opacity: 0; }
-
-.why {
+.welcome.leaving { opacity: 0; }
+.welcome-inner {
   max-width: 22rem;
   text-align: center;
+}
+
+/* the hook line — words fade in */
+.hook {
   color: var(--text);
   font-weight: 800;
   letter-spacing: -0.5px;
-  font-size: clamp(1.8rem, 7.5vw, 2.3rem);
-  line-height: 1.28;
+  font-size: clamp(1.7rem, 7vw, 2.15rem);
+  line-height: 1.3;
   margin: 0;
 }
-.why .w {
+.hook .w {
   display: inline-block;
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
-.why.show .w { opacity: 1; transform: none; }
+.hook.show .w { opacity: 1; transform: none; }
+
+/* the reassurance line, fades in after the hook */
+.reassure {
+  margin: 1.1rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  font-weight: 600;
+  color: hsl(var(--hue, 222) 45% 38%);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reassure.show { opacity: 1; transform: none; }
+
+/* the button the user taps to enter */
+.welcome-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.8rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.95rem 1.6rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
+  cursor: pointer;
+  box-shadow: 0 12px 28px -12px var(--accent-h);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1), filter 0.15s;
+  &.show { opacity: 1; transform: none; }
+  &:hover { filter: brightness(1.05); }
+  &:active { transform: scale(0.97); }
+}
 
 /* ---- calculator panel — the real screen, centred, always laid out ---- */
 .panel {
@@ -159,12 +196,34 @@
   cursor: grab;
 }
 
-.rule {
-  display: block;
+.rule-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
   margin-top: 0.9rem;
+}
+.rule {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--muted);
+}
+.why-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: none;
+  background: none;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-dk);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.14s;
+  &:hover { background: var(--soft); }
+  svg { opacity: 0.85; }
 }
 
 /* ---- result ---- */
@@ -222,8 +281,94 @@
   transition: transform 0.15s ease, filter 0.15s, opacity 0.4s ease 0.3s;
 }
 
+/* ============ "Why this fund?" detail sheet ============ */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(16, 24, 40, 0.35);
+  backdrop-filter: blur(3px);
+  animation: fade 0.2s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  margin: 0 auto;
+  max-width: 460px;
+  background: var(--surface);
+  border-radius: 26px 26px 0 0;
+  padding: 0.75rem 1.4rem calc(1.6rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -20px 48px -24px rgba(16, 24, 40, 0.4);
+  transform: translateY(100%);
+  animation: sheetUp 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes sheetUp { to { transform: translateY(0); } }
+.sheet-grip {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 0 auto 1rem;
+}
+.sheet-title {
+  margin: 0 0 1.2rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  text-align: center;
+}
+.sheet-points {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.pt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+.pt-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: var(--accent-dk);
+  background: var(--soft);
+}
+.pt-text {
+  font-size: 0.98rem;
+  line-height: 1.45;
+  font-weight: 550;
+  color: var(--text);
+  padding-top: 0.35rem;
+}
+.sheet-done {
+  width: 100%;
+  margin-top: 1.4rem;
+  border: none;
+  border-radius: 14px;
+  padding: 0.95rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
+  cursor: pointer;
+  box-shadow: 0 10px 24px -12px var(--accent-h);
+  transition: transform 0.15s ease;
+  &:active { transform: scale(0.99); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .intro, .why, .panel, .cta, .why-overlay { transition: none !important; }
-  .why .w { transition: none; opacity: 1; transform: none; }
+  .intro, .hook, .reassure, .welcome-cta, .panel, .cta, .welcome { transition: none !important; }
+  .hook .w { transition: none; opacity: 1; transform: none; }
   .r-amount { animation: none !important; }
+  .sheet { transform: none; animation: none; }
 }

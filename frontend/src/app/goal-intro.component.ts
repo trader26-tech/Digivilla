@@ -259,6 +259,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   health: {
     hue: 356,
+    hook: "A health scare is hard enough — the bills shouldn't be too.",
+    reassure: "Don't worry, we've got you. Let's set aside a cushion just in case.",
+    detail: {
+      title: "Why a health cushion?",
+      points: [
+        { icon: 'shield', text: "Covers big medical bills your insurance may not fully cover." },
+        { icon: 'water', text: "Kept liquid so it's ready the moment you need it." },
+        { icon: 'calm', text: "Peace of mind — one less thing to worry about in a crisis." },
+      ],
+    },
     tagline: 'A cushion for medical surprises.',
     why: "A health scare is stressful enough. We'll help you keep money set aside so the bills never add to the worry.",
     rupiSays: "A hospital bill shouldn't hurt twice. Let's keep a cushion ready.",
@@ -275,6 +285,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   car: {
     hue: 205,
+    hook: "Dreaming of your own car?",
+    reassure: "We've got you. Save up and skip the years of heavy EMIs.",
+    detail: {
+      title: "Why save for a car?",
+      points: [
+        { icon: 'coins', text: "Paying upfront avoids interest — the car costs you less overall." },
+        { icon: 'clock', text: "A 3–4 year plan makes a big purchase feel easy." },
+        { icon: 'growth', text: "Your money grows while you save, instead of sitting idle." },
+      ],
+    },
     tagline: 'The car you’ve been picturing.',
     why: "Dreaming of your own car? We'll help you save up so it's fully yours — no years of heavy EMIs.",
     rupiSays: "Save up and skip the EMI — the car's nicer when it's fully yours!",
@@ -291,6 +311,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   wedding: {
     hue: 330,
+    hook: "Planning the big day?",
+    reassure: "Don't worry, we've got you. Let's fund it calmly — no debt hangover.",
+    detail: {
+      title: "Why plan for a wedding?",
+      points: [
+        { icon: 'coins', text: "A clear budget keeps the celebration from becoming a loan." },
+        { icon: 'clock', text: "Saving over a few years beats a last-minute scramble." },
+        { icon: 'growth', text: "Invested savings grow, so you need to set aside less each month." },
+      ],
+    },
     tagline: 'A celebration, not a debt.',
     why: "Planning the big day? We'll help you save for it calmly, so the celebration never becomes a debt.",
     rupiSays: "Big day, zero debt hangover. Let's plan it right.",
@@ -307,6 +337,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   vacation: {
     hue: 25,
+    hook: "That trip you keep dreaming about?",
+    reassure: "We've got you. A little each month turns “someday” into a date.",
+    detail: {
+      title: "Why plan for the trip?",
+      points: [
+        { icon: 'target', text: "A set target makes the dream trip actually happen." },
+        { icon: 'clock', text: "Short, steady saving beats putting it on a credit card." },
+        { icon: 'growth', text: "Your travel fund grows quietly in the background." },
+      ],
+    },
     tagline: 'The trip you keep talking about.',
     why: "That trip you keep dreaming of? We'll help you set a little aside each month and turn “someday” into a date.",
     rupiSays: "“Someday” becomes a date once you start setting aside a little.",
@@ -323,6 +363,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   gadget: {
     hue: 262,
+    hook: "Got your eye on something?",
+    reassure: "We've got you. Save up and buy it outright — no EMI, no interest.",
+    detail: {
+      title: "Why save for it?",
+      points: [
+        { icon: 'coins', text: "Buying outright skips the interest an EMI would add." },
+        { icon: 'clock', text: "A short savings plan makes it painless." },
+        { icon: 'growth', text: "Money set aside earns a little on the way there." },
+      ],
+    },
     tagline: 'That thing you want — planned, not on EMI.',
     why: "Got your eye on something? We'll help you save up and buy it outright — no interest, no EMI.",
     rupiSays: "Buy it outright, skip the interest. Smart move!",
@@ -339,6 +389,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   house: {
     hue: 222,
+    hook: "Ready for a place of your own?",
+    reassure: "Don't worry, we've got you. Let's build the down payment, step by step.",
+    detail: {
+      title: "Why save the down payment?",
+      points: [
+        { icon: 'target', text: "20% down means a smaller loan and lower EMIs later." },
+        { icon: 'clock', text: "A multi-year plan makes a big number feel reachable." },
+        { icon: 'growth', text: "Invested savings grow, so you reach the goal faster." },
+      ],
+    },
     tagline: 'The keys to your own place.',
     why: "Ready for your own place? We'll help you save the down payment, one comfortable step at a time.",
     rupiSays: "Aim for the 20% down payment — the loan covers the rest.",
@@ -355,6 +415,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   child_education: {
     hue: 268,
+    hook: "Their future matters to you.",
+    reassure: "We've got you. Start early and fund it fully — no last-minute loans.",
+    detail: {
+      title: "Why start early?",
+      points: [
+        { icon: 'clock', text: "Starting early means small amounts grow into a lot." },
+        { icon: 'growth', text: "Compounding does the heavy lifting over 10+ years." },
+        { icon: 'target', text: "We plan for future inflation, so the amount is realistic." },
+      ],
+    },
     tagline: 'Their future, funded on time.',
     why: "Their future matters. Start early and we'll help you fund it fully — no last-minute loans.",
     rupiSays: "Start early and college never means a last-minute loan.",
@@ -371,6 +441,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   retirement: {
     hue: 28,
+    hook: "Picture life after work.",
+    reassure: "We've got you. Let's build a corpus that keeps paying your bills.",
+    detail: {
+      title: "Why plan for retirement?",
+      points: [
+        { icon: 'clock', text: "The earlier you start, the less you need to save monthly." },
+        { icon: 'growth', text: "Decades of compounding turn steady savings into a large corpus." },
+        { icon: 'target', text: "We size it to fund ~25 years of your living costs." },
+      ],
+    },
     tagline: 'The freedom to stop working.',
     why: "Picture life after work. We'll help you build a corpus that keeps paying your bills, long after your salary stops.",
     rupiSays: "Build a corpus that pays your bills after the salary stops.",
@@ -387,6 +467,16 @@ const INTRO: Record<string, IntroConfig> = {
   },
   wealth: {
     hue: 150,
+    hook: "No deadline, no pressure.",
+    reassure: "We've got you. Let's grow your money quietly in the background.",
+    detail: {
+      title: "Why grow wealth?",
+      points: [
+        { icon: 'growth', text: "Long-term investing beats letting cash lose value to inflation." },
+        { icon: 'clock', text: "Time in the market matters more than timing it." },
+        { icon: 'coins', text: "Small, regular investments add up to serious wealth." },
+      ],
+    },
     tagline: 'Money that grows while you live.',
     why: "No deadline, no pressure. We'll help your money grow quietly in the background, year after year.",
     rupiSays: "No deadline here — just steady compounding doing its magic.",

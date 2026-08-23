@@ -3,10 +3,11 @@
 
   <h1 class="title">When do you want<br />to reach it?</h1>
 
-  <!-- Calendar-style date card -->
-  <div class="cal">
+  <!-- Calendar-style date card — tap to pick an exact date -->
+  <button class="cal" (click)="openDatePicker()" aria-label="Pick a target date">
     <div class="cal-top">
       <span class="cal-dot"></span><span class="cal-dot"></span>
+      <span class="cal-tap">tap to set date</span>
     </div>
     <div class="cal-body">
       <ng-container *ngFor="let k of [pulseKey]; trackBy: trackPulse">
@@ -19,7 +20,20 @@
     <div class="cal-foot">
       <b>{{ bigUnit.value }}</b> {{ bigUnit.unit | lowercase }} from now
     </div>
-  </div>
+  </button>
+
+  <!-- Hidden native date input, triggered by tapping the card above -->
+  <input
+    #dateInput
+    type="date"
+    class="date-hidden"
+    [min]="minDate"
+    [max]="maxDate"
+    [value]="currentISO"
+    (change)="onDatePicked($any($event.target).value)"
+    aria-hidden="true"
+    tabindex="-1"
+  />
 
   <!-- Non-linear slider: weeks at the left, decades at the right -->
   <div class="slider-wrap">
