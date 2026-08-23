@@ -3,21 +3,11 @@
   [class.entered]="entered"
   [class.calc-phase]="phase === 'calc'"
   [style.--hue]="hue"
-  (click)="reveal()"
 >
-  <button class="back" (click)="goBack(); $event.stopPropagation()" aria-label="Back">←</button>
+  <button class="back" (click)="goBack()" aria-label="Back">←</button>
 
-  <!-- The "why" line. Phase 1: big & centred. Phase 2: shrinks + rises to top. -->
-  <p class="why" [class.show]="entered">
-    <span
-      class="w"
-      *ngFor="let w of whyWords; let i = index"
-      [style.transition-delay.ms]="phase === 'why' ? (120 + i * 55) : 0"
-    >{{ w }}&nbsp;</span>
-  </p>
-
-  <!-- The calculator — revealed in phase 2. ONE control: the slider. -->
-  <div class="panel" (click)="$event.stopPropagation()">
+  <!-- The calculator — the real screen. ONE control: the slider. -->
+  <div class="panel">
     <span class="calc-label">{{ cfg.inputLabel }}</span>
 
     <!-- Big value (tap to type an exact figure) -->
@@ -53,5 +43,17 @@
     </div>
   </div>
 
-  <button class="cta" (click)="continue(); $event.stopPropagation()">Continue →</button>
+  <button class="cta" (click)="continue()">Continue →</button>
+
+  <!-- The "why" moment: a full-screen overlay that fades in, then out entirely,
+       revealing the calculator underneath. It leaves no trace on the screen. -->
+  <div class="why-overlay" *ngIf="phase === 'why'" [class.leaving]="whyLeaving" (click)="reveal()">
+    <p class="why" [class.show]="whyShown">
+      <span
+        class="w"
+        *ngFor="let w of whyWords; let i = index"
+        [style.transition-delay.ms]="120 + i * 55"
+      >{{ w }}&nbsp;</span>
+    </p>
+  </div>
 </div>

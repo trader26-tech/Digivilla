@@ -35,9 +35,13 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
   entered = false;
   popKey = 0; // bumped on each change so the result number can re-pop
 
-  /** Two-phase reveal: 'why' shows the big centred text, then 'calc' shrinks it
-   *  up and reveals the slider + input. Auto-advances once words finish. */
+  /** The "why" overlay plays as a brief full-screen moment, then fades out
+   *  entirely — leaving ONLY the calculator. `phase` is 'why' while the overlay
+   *  exists, 'calc' once it's gone. whyShown fades the words in; whyLeaving
+   *  fades the whole overlay out. */
   phase: 'why' | 'calc' = 'why';
+  whyShown = false;
+  whyLeaving = false;
 
   // slider track for the input value
   readonly TRACK = 1000;
@@ -45,28 +49,30 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
   inMin = 0;
   inMax = 0;
 
-  private timer?: ReturnType<typeof setTimeout>;
+  private timers: ReturnType<typeof setTimeout>[] = [];
 
   ngOnInit(): void {
     this.cfg = INTRO[this.goal.key] ?? fallbackConfig(this.goal);
     this.input = this.cfg.defaultInput;
     this.setupInputRange();
-    setTimeout(() => (this.entered = true), 20);
-    // After the words have faded in, glide into the calculator phase.
+    this.timers.push(setTimeout(() => (this.entered = true), 20));
+    // Fade the words in, then hold, then dismiss the overlay for good.
+    this.timers.push(setTimeout(() => (this.whyShown = true), 60));
     const wordCount = this.whyWords.length;
-    const hold = 120 + wordCount * 55 + 900; // last word delay + read beat
-    this.timer = setTimeout(() => this.reveal(), hold);
+    const hold = 120 + wordCount * 55 + 1100; // last word delay + read beat
+    this.timers.push(setTimeout(() => this.reveal(), hold));
   }
 
   ngOnDestroy(): void {
-    if (this.timer) clearTimeout(this.timer);
+    this.timers.forEach((t) => clearTimeout(t));
   }
 
-  /** Skip the hold and reveal the calculator immediately (tap anywhere). */
+  /** Dismiss the "why" overlay: fade it out, then remove it, leaving the
+   *  calculator alone. Tapping the overlay skips the hold. */
   reveal(): void {
-    if (this.phase === 'calc') return;
-    if (this.timer) clearTimeout(this.timer);
-    this.phase = 'calc';
+    if (this.phase === 'calc' || this.whyLeaving) return;
+    this.whyLeaving = true;
+    this.timers.push(setTimeout(() => (this.phase = 'calc'), 450));
   }
 
   get hue(): number {
