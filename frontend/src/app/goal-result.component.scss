@@ -86,6 +86,65 @@
   to { opacity: 1; transform: none; }
 }
 .donut svg { width: 100%; height: 100%; }
+
+/* ---- celebration: the ring spins on itself, then settles with a glow ---- */
+.donut.spin svg {
+  animation: ringSpin 1.5s cubic-bezier(0.5, 0, 0.15, 1) forwards;
+  transform-origin: 60px 60px;
+}
+@keyframes ringSpin {
+  0%   { transform: rotate(0deg) scale(1); }
+  70%  { transform: rotate(1080deg) scale(1.06); }  /* 3 fast turns */
+  100% { transform: rotate(1080deg) scale(1); }
+}
+.donut.spin {
+  animation: donutGlow 1.5s ease forwards;
+}
+@keyframes donutGlow {
+  0%, 60% { filter: none; }
+  100% { filter: drop-shadow(0 0 26px rgba(160, 92, 255, 0.6)); }
+}
+
+/* the "Goal added!" that appears in the centre after the spin */
+.donut-center.added { gap: 0.3rem; }
+.added-check {
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a05cff, #ff8a3d);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  opacity: 0;
+  transform: scale(0.3);
+  animation: addPop 0.5s cubic-bezier(0.34, 1.7, 0.5, 1) 0.85s forwards;
+}
+.added-txt {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: addRise 0.4s ease 1.15s forwards;
+}
+@keyframes addPop { to { opacity: 1; transform: scale(1); } }
+@keyframes addRise { to { opacity: 1; transform: none; } }
+
+/* fade the rest of the page's content out during the celebration so the ring
+   is the hero moment */
+.plan.celebrating .goal-amt,
+.plan.celebrating .legend,
+.plan.celebrating .note,
+.plan.celebrating .pills,
+.plan.celebrating .slide,
+.plan.celebrating .later,
+.plan.celebrating .top {
+  animation: fadeAway 0.4s ease forwards;
+  pointer-events: none;
+}
+@keyframes fadeAway { to { opacity: 0; transform: translateY(8px); } }
+
 .rim-base { fill: none; stroke: var(--surface-2); stroke-width: 14; }
 .rim {
   fill: none;
@@ -415,6 +474,22 @@
 }
 .d-cta.invest { background: linear-gradient(135deg, var(--purple), var(--purple-dk)); }
 .d-cta.returns { background: linear-gradient(135deg, var(--orange), var(--orange-dk)); }
+
+/* one-line plan explanation under the growth bars */
+.grow-note {
+  width: 100%;
+  margin: 1.4rem 0 0;
+  padding: 0.95rem 1.1rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-align: center;
+  b { color: var(--text); font-weight: 800; }
+  b.up { color: var(--good); }
+}
 
 
 /* ============ RETURNS: personalized, scrubbable SIP projection ============ */

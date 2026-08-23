@@ -1,5 +1,5 @@
 <!-- ============ MAIN PLAN PAGE ============ -->
-<div class="plan" [class.entered]="entered" *ngIf="!detailPage">
+<div class="plan" [class.entered]="entered" [class.celebrating]="celebrating" *ngIf="!detailPage">
   <header class="top">
     <button class="back" (click)="goBack()" aria-label="Back">←</button>
     <h1>Here's your plan</h1>
@@ -8,7 +8,7 @@
   <p class="goal-amt">Goal Amount · <b>{{ fullInr(amount) }}</b></p>
 
   <!-- Clean segmented donut -->
-  <div class="donut">
+  <div class="donut" [class.spin]="celebrating">
     <svg viewBox="0 0 120 120">
       <defs>
         <linearGradient id="gInvest" x1="0" y1="0" x2="1" y2="1">
@@ -27,10 +27,14 @@
       <circle cx="60" cy="60" [attr.r]="ringR" class="rim returns"
         [attr.stroke-dasharray]="growthDash" [attr.stroke-dashoffset]="growthOffset" transform="rotate(-90 60 60)" />
     </svg>
-    <div class="donut-center">
+    <div class="donut-center" *ngIf="!celebrating">
       <span class="dc-cap">Goal reached in</span>
       <span class="dc-amt">{{ reachValue }}</span>
       <span class="dc-sub">{{ reachUnit }}</span>
+    </div>
+    <div class="donut-center added" *ngIf="celebrating">
+      <span class="added-check">✓</span>
+      <span class="added-txt">Goal added!</span>
     </div>
   </div>
 
@@ -125,6 +129,13 @@
       </div>
     </div>
   </div>
+
+  <!-- one-line explanation of the plan behind these bars -->
+  <p class="grow-note">
+    Put in <b>{{ compactInr(monthlySip) }}</b> every month for <b>{{ horizonLabel }}</b>
+    — that grows to <b>{{ compactInr(amount) }}</b>, with <b class="up">+{{ compactInr(growth) }}</b>
+    added by the market at {{ returnLabel }}.
+  </p>
 
   <button class="d-cta invest" (click)="closeDetail()">Got it</button>
 </div>

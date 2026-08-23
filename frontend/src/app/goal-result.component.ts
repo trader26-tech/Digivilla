@@ -168,6 +168,47 @@ export class GoalResultComponent implements OnInit {
   get scrubValY(): number { return this.pyVal(this.scrubValue); }
   get scrubInvY(): number { return this.pyVal(this.scrubInvested); }
 
+  /** Y-axis money ticks (top→bottom): value label + its y position as a % of chart height. */
+  get yAxisTicks(): { label: string; topPct: number; y: number }[] {
+    const hi = this.sipMax || 1;
+    const steps = 4; // 4 gridlines: full, ¾, ½, ¼ (baseline handled separately)
+    const out: { label: string; topPct: number; y: number }[] = [];
+    for (let k = steps; k >= 1; k--) {
+      const v = (hi * k) / steps;
+      const y = this.pyVal(v);
+      out.push({ label: this.compactInr(v), topPct: (y / this.PH) * 100, y });
+    }
+    return out;
+  }
+
+  /** X-axis time ticks: friendly label + x position as a % of chart width. */
+  get xAxisTicks(): { label: string; leftPct: number; x: number }[] {
+    const n = this.months;
+    const yrs = n / 12;
+    const out: { label: string; leftPct: number; x: number }[] = [];
+    const pushMonth = (m: number) => {
+      const idx = Math.max(0, Math.min(m, n));
+      const x = this.px(idx);
+      out.push({ label: this.axisTime(idx), leftPct: (x / this.PW) * 100, x });
+    };
+    if (n <= 12) {
+      // short goal → mark start, mid, end in months
+      [0, Math.round(n / 2), n].forEach(pushMonth);
+    } else {
+      const totalY = Math.round(yrs);
+      const step = totalY <= 6 ? 1 : totalY <= 12 ? 2 : 5;
+      for (let y = 0; y <= totalY; y += step) pushMonth(y * 12);
+      if (out[out.length - 1].x < this.px(n) - 1) pushMonth(n);
+    }
+    return out;
+  }
+  private axisTime(m: number): string {
+    if (m === 0) return 'Now';
+    if (m < 12) return `${m}mo`;
+    const y = m / 12;
+    return `${Number.isInteger(y) ? y : y.toFixed(1)}y`;
+  }
+
   /** Handle a pointer move over the chart -> snap the scrub head to the nearest month. */
   onScrub(ev: PointerEvent, el: HTMLElement): void {
     const rect = el.getBoundingClientRect();
@@ -487,9 +528,17 @@ export class GoalResultComponent implements OnInit {
   goBack(): void {
     this.back.emit();
   }
+
+  /** Celebration: the ring spins on itself, then "Goal added!", then we
+   *  advance to the home screen. Triggered by slide-to-invest or "later". */
+  celebrating = false;
+
   proceed(): void {
-    if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-    this.continued.emit();
+    if (this.celebrating) return;
+    if (navigator.vibrate) navigator.vibrate([12, 40, 12, 40, 60]);
+    this.celebrating = true;
+    // Let the spin + "Goal added!" play, then hand off to the home screen.
+    setTimeout(() => this.continued.emit(), 1900);
   }
 
   // ---- slide-to-confirm ----
