@@ -30,14 +30,18 @@ import { Injectable } from '@angular/core';
  */
 
 /** Flip to true once firebaseConfig below is filled in and `firebase` is installed. */
-const ENABLED = false;
+const ENABLED = true;
 
-/** Paste your Firebase web config here (Project settings → Web app). */
+/** Firebase web config (Project settings → Web app). The apiKey here is a
+ *  public client identifier, not a secret — safe to ship in the bundle. */
 const firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  appId: '',
+  apiKey: 'AIzaSyBtUWNbC4OB8sjJ3VXYyRb8AMzCPayzE48',
+  authDomain: 'mylakshayas.firebaseapp.com',
+  projectId: 'mylakshayas',
+  storageBucket: 'mylakshayas.firebasestorage.app',
+  messagingSenderId: '572488679925',
+  appId: '1:572488679925:web:945d9047aa80946b0a60bc',
+  measurementId: 'G-41V00XP3GC',
 };
 
 export interface PhoneUser {
