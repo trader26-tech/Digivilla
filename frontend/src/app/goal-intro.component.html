@@ -16,27 +16,24 @@
     >{{ w }}&nbsp;</span>
   </p>
 
-  <!-- The calculator — revealed in phase 2 (slider + steppers + result). -->
+  <!-- The calculator — revealed in phase 2. ONE control: the slider. -->
   <div class="panel" (click)="$event.stopPropagation()">
     <span class="calc-label">{{ cfg.inputLabel }}</span>
 
-    <div class="stepper">
-      <button class="step" (click)="stepInput(-1)" [disabled]="input <= inMin" aria-label="Decrease">−</button>
-      <div class="value">
-        <span class="pfx" *ngIf="cfg.inputPrefix">{{ cfg.inputPrefix }}</span>
-        <input
-          class="value-input"
-          inputmode="numeric"
-          [value]="inputDisplay"
-          (input)="onInputText($any($event.target).value)"
-          [attr.aria-label]="cfg.inputLabel"
-        />
-        <span class="sfx" *ngIf="cfg.inputSuffix">{{ cfg.inputSuffix }}</span>
-      </div>
-      <button class="step" (click)="stepInput(1)" aria-label="Increase">+</button>
+    <!-- Big value (tap to type an exact figure) -->
+    <div class="value">
+      <span class="pfx" *ngIf="cfg.inputPrefix">{{ cfg.inputPrefix }}</span>
+      <input
+        class="value-input"
+        inputmode="numeric"
+        [value]="inputDisplay"
+        (input)="onInputText($any($event.target).value)"
+        [attr.aria-label]="cfg.inputLabel"
+      />
+      <span class="sfx" *ngIf="cfg.inputSuffix">{{ cfg.inputSuffix }}</span>
     </div>
 
-    <!-- The slider the user liked -->
+    <!-- The slider: the single way to adjust -->
     <input
       type="range"
       class="slider"

@@ -188,7 +188,7 @@ const INTRO: Record<string, IntroConfig> = {
   emergency: {
     hue: 190,
     tagline: 'Your safety net for life’s surprises.',
-    why: 'Job loss or a big bill can hit anytime. Six months of expenses keeps a rough patch from becoming a crisis.',
+    why: "Life happens — a surprise bill, a job change. Don't worry, we'll help you build a cushion so you're always ready.",
     rupiSays: "Life throws curveballs — this keeps a bad day from becoming a bad year.",
     rupiPose: 'point',
     hero: 'shield',
@@ -204,7 +204,7 @@ const INTRO: Record<string, IntroConfig> = {
   health: {
     hue: 356,
     tagline: 'A cushion for medical surprises.',
-    why: 'So a hospital bill is never a financial shock on top of a health one.',
+    why: "A health scare is stressful enough. We'll help you keep money set aside so the bills never add to the worry.",
     rupiSays: "A hospital bill shouldn't hurt twice. Let's keep a cushion ready.",
     rupiPose: 'think',
     hero: 'heart',
@@ -220,7 +220,7 @@ const INTRO: Record<string, IntroConfig> = {
   car: {
     hue: 205,
     tagline: 'The car you’ve been picturing.',
-    why: 'Save for it instead of carrying an expensive EMI for years.',
+    why: "Dreaming of your own car? We'll help you save up so it's fully yours — no years of heavy EMIs.",
     rupiSays: "Save up and skip the EMI — the car's nicer when it's fully yours!",
     rupiPose: 'happy',
     hero: 'car',
@@ -236,7 +236,7 @@ const INTRO: Record<string, IntroConfig> = {
   wedding: {
     hue: 330,
     tagline: 'A celebration, not a debt.',
-    why: 'Plan the big day so it doesn’t derail your other goals.',
+    why: "Planning the big day? We'll help you save for it calmly, so the celebration never becomes a debt.",
     rupiSays: "Big day, zero debt hangover. Let's plan it right.",
     rupiPose: 'cheer',
     hero: 'rings',
@@ -252,7 +252,7 @@ const INTRO: Record<string, IntroConfig> = {
   vacation: {
     hue: 25,
     tagline: 'The trip you keep talking about.',
-    why: 'A little set aside each month turns “someday” into a date.',
+    why: "That trip you keep dreaming of? We'll help you set a little aside each month and turn “someday” into a date.",
     rupiSays: "“Someday” becomes a date once you start setting aside a little.",
     rupiPose: 'happy',
     hero: 'plane',
@@ -268,7 +268,7 @@ const INTRO: Record<string, IntroConfig> = {
   gadget: {
     hue: 262,
     tagline: 'That thing you want — planned, not on EMI.',
-    why: 'Buy it outright and skip the interest.',
+    why: "Got your eye on something? We'll help you save up and buy it outright — no interest, no EMI.",
     rupiSays: "Buy it outright, skip the interest. Smart move!",
     rupiPose: 'happy',
     hero: 'sparkle',
@@ -284,7 +284,7 @@ const INTRO: Record<string, IntroConfig> = {
   house: {
     hue: 222,
     tagline: 'The keys to your own place.',
-    why: 'Aim for a 20% down payment — the rest is your home loan.',
+    why: "Ready for your own place? We'll help you save the down payment, one comfortable step at a time.",
     rupiSays: "Aim for the 20% down payment — the loan covers the rest.",
     rupiPose: 'point',
     hero: 'house',
@@ -300,7 +300,7 @@ const INTRO: Record<string, IntroConfig> = {
   child_education: {
     hue: 268,
     tagline: 'Their future, funded on time.',
-    why: 'Start early so college never means a last-minute loan.',
+    why: "Their future matters. Start early and we'll help you fund it fully — no last-minute loans.",
     rupiSays: "Start early and college never means a last-minute loan.",
     rupiPose: 'think',
     hero: 'grad',
@@ -316,7 +316,7 @@ const INTRO: Record<string, IntroConfig> = {
   retirement: {
     hue: 28,
     tagline: 'The freedom to stop working.',
-    why: 'Build a corpus that pays your bills when your salary stops.',
+    why: "Picture life after work. We'll help you build a corpus that keeps paying your bills, long after your salary stops.",
     rupiSays: "Build a corpus that pays your bills after the salary stops.",
     rupiPose: 'point',
     hero: 'palm',
@@ -332,7 +332,7 @@ const INTRO: Record<string, IntroConfig> = {
   wealth: {
     hue: 150,
     tagline: 'Money that grows while you live.',
-    why: 'No fixed deadline — just steady, long-term compounding.',
+    why: "No deadline, no pressure. We'll help your money grow quietly in the background, year after year.",
     rupiSays: "No deadline here — just steady compounding doing its magic.",
     rupiPose: 'cheer',
     hero: 'growth',
@@ -351,7 +351,7 @@ function fallbackConfig(goal: GoalPreset): IntroConfig {
   return {
     hue: 222,
     tagline: goal.blurb || 'A goal worth planning for.',
-    why: 'A steady monthly plan gets you there.',
+    why: "Whatever the goal, we'll help you get there with a steady, stress-free monthly plan.",
     rupiSays: "A little each month and we'll get you there — I'll help!",
     rupiPose: 'happy',
     hero: 'sparkle',
