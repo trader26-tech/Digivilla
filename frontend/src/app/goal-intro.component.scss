@@ -96,9 +96,9 @@
   width: 46px;
   height: 46px;
   border-radius: 13px;
-  color: var(--accent-dk);
-  background: hsl(var(--hue, 222) 90% 93%);
-  box-shadow: inset 0 0 0 1px hsl(var(--hue, 222) 60% 85%);
+  color: hsl(var(--hue, 222) 90% 78%);
+  background: hsl(var(--hue, 222) 55% 22% / 0.55);
+  box-shadow: inset 0 0 0 1px hsl(var(--hue, 222) 60% 45% / 0.4);
 }
 .wpt-text {
   font-size: 1rem;
@@ -421,8 +421,8 @@
   height: 60px;
   margin: 0 auto 0.9rem;
   border-radius: 50%;
-  color: var(--accent-dk);
-  background: hsl(var(--hue, 222) 90% 93%);
+  color: hsl(var(--hue, 222) 90% 78%);
+  background: hsl(var(--hue, 222) 55% 22% / 0.55);
   animation: boltPop 0.5s ease 0.1s both;
 }
 @keyframes boltPop {

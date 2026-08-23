@@ -5,11 +5,6 @@
 
 .plan,
 .detail {
-  --purple: #7c5cff;
-  --purple-dk: #6035ff;
-  --orange: #ff9f0a;
-  --orange-dk: #f08800;
-
   max-width: 440px;
   margin: 0 auto;
   padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
@@ -19,7 +14,7 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  background: var(--bg);
+  background: transparent;
 }
 .plan {
   opacity: 0;

@@ -1,26 +1,35 @@
-/* Global design tokens — dark theme, shared across all components.
-   Every screen reads these vars, so the whole app inherits the palette. */
+/* Global design tokens — "dusk" theme (from the intro/story screens):
+   deep indigo base, warm-gold + purple accents. Shared by every component. */
 :root {
-  --bg: #0b0d12;            /* deep near-black base */
-  --surface: #14171f;      /* cards / raised panels */
-  --surface-2: #1c202b;    /* insets, tracks, chips */
-  --border: #272c38;       /* hairlines on dark */
-  --text: #eef1f7;         /* primary text */
-  --muted: #97a0b2;        /* secondary text */
-  --accent: #5b8cff;       /* brighter blue so it pops on dark */
-  --accent-2: #3f6fe0;
-  --warn: #f5a623;
-  --good: #34d399;         /* lighter green reads better on dark */
-  --ok: #f5a623;
-  --low: #ff5c62;
-  --eq: #5b8cff;
-  --hy: #a78bfa;
-  --dt: #34d399;
-  --gd: #f5a623;
-  /* On dark, shadows read as depth/glow — deeper, softer. */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 24px 56px -24px rgba(0, 0, 0, 0.75);
+  --bg: #12102a;           /* deep indigo base (not flat black) */
+  --surface: #1c1940;      /* raised cards, tinted purple */
+  --surface-2: #262151;    /* insets, tracks, chips */
+  --border: #342d63;       /* hairlines with a purple cast */
+  --text: #f2eefc;         /* soft warm-white text */
+  --muted: #a99fce;        /* muted lavender for secondary text */
+
+  /* Signature accents from the dusk gradient */
+  --accent: #a370ff;       /* purple — primary accent */
+  --accent-2: #7a3ea8;     /* deeper purple */
+  --purple: #a370ff;
+  --purple-dk: #7a3ea8;
+  --orange: #ff9a4a;       /* warm gold/coral */
+  --orange-dk: #ff6f61;
+
+  --warn: #ffb84d;
+  --good: #4be3a1;
+  --ok: #ffb84d;
+  --low: #ff6f7d;
+
+  /* asset-class colors, tuned for the dusk palette */
+  --eq: #a370ff;           /* equity = purple */
+  --hy: #c58bff;           /* hybrid = lighter purple */
+  --dt: #4be3a1;           /* debt = mint */
+  --gd: #ff9a4a;           /* gold = warm orange */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(10, 6, 30, 0.4);
+  --shadow-md: 0 8px 22px -8px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(10, 6, 30, 0.45);
+  --shadow-lg: 0 26px 60px -26px rgba(0, 0, 0, 0.75);
 }
 
 * {
@@ -30,8 +39,14 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* the dusk backdrop — a subtle warm-to-indigo wash, fixed behind everything */
+  background: var(--bg);
+  background-image:
+    radial-gradient(120% 90% at 50% 115%, rgba(255, 122, 89, 0.14) 0%, rgba(122, 62, 168, 0.12) 34%, rgba(18, 16, 42, 0) 62%),
+    radial-gradient(100% 80% at 50% -10%, rgba(122, 62, 168, 0.18) 0%, rgba(18, 16, 42, 0) 55%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }

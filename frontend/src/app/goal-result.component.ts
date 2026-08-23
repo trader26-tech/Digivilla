@@ -41,12 +41,18 @@ export class GoalResultComponent implements OnInit {
   openDetail(which: 'invest' | 'returns'): void {
     this.detailPage = which;
     if (navigator.vibrate) navigator.vibrate(6);
+    if (which === 'invest') {
+      // Let the page paint at height 0, then grow the bars in.
+      this.barsEntered = false;
+      setTimeout(() => (this.barsEntered = true), 80);
+    }
     if (which === 'returns' && !this.basket && !this.loadingFunds) {
       this.loadFunds();
     }
   }
   closeDetail(): void {
     this.detailPage = null;
+    this.barsEntered = false;
   }
 
   private loadFunds(): void {
@@ -166,6 +172,52 @@ export class GoalResultComponent implements OnInit {
       pts.push({ year: y, invested: Math.round(invested), value: Math.round(value) });
     }
     return pts;
+  }
+
+  // ============================================================
+  //  Bar chart: one bar per milestone year, stacked
+  //  (what you invested at the bottom + the extra returns on top).
+  // ============================================================
+
+  /** Flips true a beat after entry so the bars grow up with a stagger. */
+  barsEntered = false;
+
+  /** A handful of milestone years so the bars stay readable (not one per year
+   *  for a 30-year plan). Each bar carries the invested + returns split, sized
+   *  as a % of the final corpus so heights are comparable across bars. */
+  get barSeries(): {
+    year: number;
+    invPct: number; // invested height, % of tallest bar
+    retPct: number; // extra-return height stacked on top, % of tallest bar
+    invested: number;
+    returns: number;
+    total: number;
+  }[] {
+    const s = this.growthSeries;
+    const totalYears = s.length - 1;
+    if (totalYears <= 0) return [];
+
+    // Pick up to 6 evenly-spaced milestone years, always including the last.
+    const wanted = Math.min(6, totalYears);
+    const picks = new Set<number>();
+    for (let k = 1; k <= wanted; k++) {
+      picks.add(Math.max(1, Math.round((k / wanted) * totalYears)));
+    }
+    const years = [...picks].sort((a, b) => a - b);
+
+    const maxVal = Math.max(1, s[totalYears].value);
+    return years.map((y) => {
+      const pt = s[y];
+      const returns = Math.max(0, pt.value - pt.invested);
+      return {
+        year: y,
+        invPct: (pt.invested / maxVal) * 100,
+        retPct: (returns / maxVal) * 100,
+        invested: pt.invested,
+        returns,
+        total: pt.value,
+      };
+    });
   }
 
   /** Chart geometry in a 320×200 viewBox (plot area inset for labels). */

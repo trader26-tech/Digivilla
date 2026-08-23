@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
@@ -150,7 +150,7 @@
 .dock-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(16, 24, 40, 0.35);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 55;
   animation: fade 0.2s ease;
 }
