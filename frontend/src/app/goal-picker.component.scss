@@ -50,16 +50,13 @@
 @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(5vw,4vh)} }
 @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-4vw,-5vh)} }
 
-/* main title — brand purple→orange gradient */
+/* main title — flat brand purple, no gradient */
 .title {
   margin: 0 0 clamp(1.4rem, 3vh, 2rem);
   font-size: clamp(1.7rem, 5vw, 2.3rem);
-  font-weight: 800;
+  font-weight: 750;
   letter-spacing: -0.03em;
-  background: linear-gradient(100deg, #c9b0ff 0%, #a370ff 45%, #ff9a4a 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #b79bff;
   animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -80,29 +77,28 @@
   gap: 0.6rem;
   margin: 0 0 0.85rem;
   flex-wrap: wrap;
-  /* a small purple→orange accent bar leads each section title */
+  /* a thin flat purple accent bar leads each section title */
   &::before {
     content: '';
     align-self: center;
-    width: 4px;
-    height: 1.1rem;
+    width: 3px;
+    height: 1rem;
     border-radius: 999px;
-    background: linear-gradient(180deg, #a370ff, #ff9a4a);
-    box-shadow: 0 0 12px -2px rgba(163, 112, 255, 0.6);
+    background: #a370ff;
   }
 }
 .sec-head h2 {
   margin: 0;
   font-size: clamp(1.05rem, 2.8vw, 1.25rem);
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--text);
+  color: #d8c9ff; /* soft purple instead of stark white */
 }
 .sec-sub {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #b79bff; /* soft purple, warmer than plain muted grey */
+  color: #ff9a4a; /* warm orange subtitle — the second brand colour */
 }
 
 /* ============================================================= grid */
