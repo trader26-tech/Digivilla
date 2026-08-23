@@ -220,24 +220,36 @@
     </div>
   </div>
 
-  <!-- The funds doing the work -->
+  <!-- How the money splits across funds — donut + plain text legend -->
   <div class="funds-block">
     <div class="fb-head">
-      <span class="fb-title">The funds working for you</span>
+      <span class="fb-title">Where your money goes</span>
       <span class="fb-ret">{{ returnLabel }} <small>expected</small></span>
     </div>
 
     <div class="loading" *ngIf="loadingFunds && !funds.length">Loading funds…</div>
 
-    <div class="fund-list" *ngIf="funds.length">
-      <div class="fund" *ngFor="let f of funds">
-        <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
-        <span class="f-name">{{ f.name }}</span>
-        <span class="f-conc">
-          <span class="f-bar"><i [style.width.%]="f.weight * 100" [style.background]="assetColor(f.asset_class)"></i></span>
-          <b>{{ (f.weight * 100).toFixed(0) }}%</b>
-        </span>
-      </div>
+    <div class="pie-wrap" *ngIf="fundPie.length">
+      <svg class="pie" viewBox="0 0 120 120" [class.drawn]="perfEntered">
+        <circle class="pie-track" cx="60" cy="60" [attr.r]="42" />
+        <circle *ngFor="let s of fundPie; let i = index"
+                class="pie-seg" cx="60" cy="60" [attr.r]="42"
+                [attr.stroke]="s.color"
+                [attr.stroke-dasharray]="s.dash"
+                [attr.stroke-dashoffset]="s.offset"
+                [style.--i]="i"
+                transform="rotate(-90 60 60)" />
+        <text class="pie-mid-n" x="60" y="55">{{ funds.length }}</text>
+        <text class="pie-mid-l" x="60" y="70">funds</text>
+      </svg>
+
+      <ul class="pie-legend">
+        <li *ngFor="let s of fundPie">
+          <span class="pl-dot" [style.background]="s.color"></span>
+          <span class="pl-name">{{ s.name }}</span>
+          <span class="pl-pct">{{ s.pct }}%</span>
+        </li>
+      </ul>
     </div>
   </div>
 

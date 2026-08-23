@@ -430,43 +430,76 @@
   text-transform: capitalize;
 }
 .alloc-legend i { width: 9px; height: 9px; border-radius: 2px; }
-/* minimal fund rows: just the name + a concentration bar with its % */
-.fund-list { width: 100%; display: flex; flex-direction: column; gap: 0.45rem; }
-.fund {
+/* ---- allocation donut + plain text legend ---- */
+.pie-wrap {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.7rem 0.85rem;
+  gap: 1.1rem;
 }
-.f-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.f-name {
+.pie {
+  width: 132px;
+  height: 132px;
+  flex: none;
+}
+.pie-track { fill: none; stroke: var(--surface-2); stroke-width: 13; }
+.pie-seg {
+  fill: none;
+  stroke-width: 13;
+  stroke-linecap: butt;
+  /* each slice fades in, staggered around the ring (rotate attr sets position,
+     so we animate opacity only — a CSS transform would override that attr) */
+  opacity: 0;
+  transition: opacity 0.4s ease calc(var(--i, 0) * 80ms);
+}
+.pie.drawn .pie-seg { opacity: 1; }
+.pie-mid-n {
+  fill: var(--text);
+  font-size: 21px;
+  font-weight: 850;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+.pie-mid-l {
+  fill: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* plain text legend — fund name + its % only, no cards */
+.pie-legend {
   flex: 1;
   min-width: 0;
-  font-weight: 650;
-  font-size: 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.pie-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pl-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.pl-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* concentration = a slim proportional bar + the % value */
-.f-conc { display: flex; align-items: center; gap: 0.5rem; flex: none; }
-.f-bar {
-  width: 46px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  overflow: hidden;
-}
-.f-bar i { display: block; height: 100%; border-radius: 999px; }
-.f-conc b {
-  font-size: 0.9rem;
+.pl-pct {
+  flex: none;
+  font-size: 0.85rem;
   font-weight: 800;
-  min-width: 2.2rem;
-  text-align: right;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }

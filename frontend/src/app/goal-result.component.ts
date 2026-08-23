@@ -257,6 +257,40 @@ export class GoalResultComponent implements OnInit {
     return Math.abs(y - rounded) < 0.15 ? `${rounded}y` : `${y.toFixed(1)}y`;
   }
 
+  // ---- Fund allocation pie (donut) — how the money splits across funds ----
+
+  /** Distinct on-brand slice colours (purple → orange), one per fund. */
+  private readonly PIE_COLORS = [
+    '#a05cff', '#b878ff', '#8b3dff', '#c9a0ff', '#7a3ea8',
+    '#ff8a3d', '#ffab5e', '#ff6a3d', '#ffc069', '#e0714f',
+  ];
+  private readonly PIE_R = 42;              // donut radius in the 120×120 viewBox
+  get pieCirc(): number { return 2 * Math.PI * this.PIE_R; }
+
+  /** Each fund as a donut segment: colour, dash geometry, name + %. */
+  get fundPie(): {
+    name: string; color: string; pct: number; dash: string; offset: number;
+  }[] {
+    const items = this.funds;
+    if (!items.length) return [];
+    const total = items.reduce((s, f) => s + (f.weight || 0), 0) || 1;
+    const C = this.pieCirc;
+    let acc = 0;
+    return items.map((f, idx) => {
+      const frac = (f.weight || 0) / total;
+      const seg = frac * C;
+      const offset = -acc * C; // where this slice starts around the ring
+      acc += frac;
+      return {
+        name: f.name,
+        color: this.PIE_COLORS[idx % this.PIE_COLORS.length],
+        pct: Math.round(frac * 100),
+        dash: `${seg} ${C - seg}`,
+        offset,
+      };
+    });
+  }
+
   /** Handle a pointer move over the chart -> snap the scrub head to the nearest month. */
   onScrub(ev: PointerEvent, el: HTMLElement): void {
     const rect = el.getBoundingClientRect();
