@@ -1,20 +1,27 @@
-<div class="intro" [class.entered]="entered" [style.--hue]="hue">
-  <button class="back" (click)="goBack()" aria-label="Back">←</button>
+<div
+  class="intro"
+  [class.entered]="entered"
+  [class.calc-phase]="phase === 'calc'"
+  [style.--hue]="hue"
+  (click)="reveal()"
+>
+  <button class="back" (click)="goBack(); $event.stopPropagation()" aria-label="Back">←</button>
 
-  <!-- Animated "why" line — words fade in one by one, no emoji. -->
+  <!-- The "why" line. Phase 1: big & centred. Phase 2: shrinks + rises to top. -->
   <p class="why" [class.show]="entered">
     <span
       class="w"
       *ngFor="let w of whyWords; let i = index"
-      [style.transition-delay.ms]="120 + i * 55"
+      [style.transition-delay.ms]="phase === 'why' ? (120 + i * 55) : 0"
     >{{ w }}&nbsp;</span>
   </p>
 
-  <!-- The calculator: adjust the input, watch the amount. -->
-  <div class="calc">
+  <!-- The calculator — revealed in phase 2 (slider + steppers + result). -->
+  <div class="panel" (click)="$event.stopPropagation()">
     <span class="calc-label">{{ cfg.inputLabel }}</span>
+
     <div class="stepper">
-      <button class="step" (click)="stepInput(-1)" [disabled]="input <= 0" aria-label="Decrease">−</button>
+      <button class="step" (click)="stepInput(-1)" [disabled]="input <= inMin" aria-label="Decrease">−</button>
       <div class="value">
         <span class="pfx" *ngIf="cfg.inputPrefix">{{ cfg.inputPrefix }}</span>
         <input
@@ -28,15 +35,26 @@
       </div>
       <button class="step" (click)="stepInput(1)" aria-label="Increase">+</button>
     </div>
+
+    <!-- The slider the user liked -->
+    <input
+      type="range"
+      class="slider"
+      min="0"
+      [max]="TRACK"
+      step="1"
+      [value]="sliderPos"
+      (input)="onSlide($any($event.target).value)"
+      [style.--frac]="sliderFrac"
+    />
+
     <span class="rule">{{ cfg.ruleText }}</span>
+
+    <div class="result">
+      <span class="r-label">You'll aim to save</span>
+      <div class="r-amount" [class.pop]="popKey % 2 === 0" [class.pop2]="popKey % 2 === 1">{{ compactInr(recommended) }}</div>
+    </div>
   </div>
 
-  <!-- The result. -->
-  <div class="result">
-    <span class="r-label">You'll aim to save</span>
-    <div class="r-amount" [class.pop]="popKey % 2 === 0" [class.pop2]="popKey % 2 === 1">{{ compactInr(recommended) }}</div>
-    <span class="r-full">₹{{ recommended | number:'1.0-0' }}</span>
-  </div>
-
-  <button class="cta" (click)="continue()">Continue →</button>
+  <button class="cta" (click)="continue(); $event.stopPropagation()">Continue →</button>
 </div>

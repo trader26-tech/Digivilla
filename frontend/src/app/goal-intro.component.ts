@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnDestroy,
   OnInit,
   Output,
 } from '@angular/core';
@@ -23,7 +24,7 @@ import { GoalPreset } from './models';
   templateUrl: './goal-intro.component.html',
   styleUrl: './goal-intro.component.scss',
 })
-export class GoalIntroComponent implements OnInit {
+export class GoalIntroComponent implements OnInit, OnDestroy {
   @Input({ required: true }) goal!: GoalPreset;
   /** Emits the chosen amount to carry to the timing screen. */
   @Output() amountReady = new EventEmitter<number>();
@@ -34,10 +35,38 @@ export class GoalIntroComponent implements OnInit {
   entered = false;
   popKey = 0; // bumped on each change so the result number can re-pop
 
+  /** Two-phase reveal: 'why' shows the big centred text, then 'calc' shrinks it
+   *  up and reveals the slider + input. Auto-advances once words finish. */
+  phase: 'why' | 'calc' = 'why';
+
+  // slider track for the input value
+  readonly TRACK = 1000;
+  sliderPos = 500;
+  inMin = 0;
+  inMax = 0;
+
+  private timer?: ReturnType<typeof setTimeout>;
+
   ngOnInit(): void {
     this.cfg = INTRO[this.goal.key] ?? fallbackConfig(this.goal);
     this.input = this.cfg.defaultInput;
+    this.setupInputRange();
     setTimeout(() => (this.entered = true), 20);
+    // After the words have faded in, glide into the calculator phase.
+    const wordCount = this.whyWords.length;
+    const hold = 120 + wordCount * 55 + 900; // last word delay + read beat
+    this.timer = setTimeout(() => this.reveal(), hold);
+  }
+
+  ngOnDestroy(): void {
+    if (this.timer) clearTimeout(this.timer);
+  }
+
+  /** Skip the hold and reveal the calculator immediately (tap anywhere). */
+  reveal(): void {
+    if (this.phase === 'calc') return;
+    if (this.timer) clearTimeout(this.timer);
+    this.phase = 'calc';
   }
 
   get hue(): number {
@@ -55,8 +84,47 @@ export class GoalIntroComponent implements OnInit {
     return Math.max(this.cfg.floor, Math.round(raw));
   }
 
+  // ---- input range + slider (exponential, like the timing screen) ----
+  private setupInputRange(): void {
+    const d = this.cfg.defaultInput || 1;
+    // Counts (guests/people/travellers) use a small linear-ish band; money uses
+    // a wide exponential band so both ends are easy to reach.
+    if (this.cfg.inputPrefix) {
+      this.inMin = Math.max(this.cfg.inputStep, Math.round(d * 0.2));
+      this.inMax = Math.round(d * 4);
+    } else {
+      this.inMin = 1;
+      this.inMax = Math.max(10, d * 4);
+    }
+    this.sliderPos = this.inputToPos(this.input);
+  }
+  private posToInput(pos: number): number {
+    const t = Math.max(0, Math.min(1, pos / this.TRACK));
+    const raw = this.inMin * Math.pow(this.inMax / this.inMin, t);
+    return this.snap(raw);
+  }
+  private inputToPos(v: number): number {
+    const a = Math.max(this.inMin, Math.min(this.inMax, v || this.inMin));
+    const t = Math.log(a / this.inMin) / Math.log(this.inMax / this.inMin || 1);
+    return Math.round(t * this.TRACK);
+  }
+  private snap(v: number): number {
+    const s = this.cfg.inputStep;
+    return Math.max(this.inMin, Math.min(this.inMax, Math.round(v / s) * s));
+  }
+  get sliderFrac(): number {
+    return this.sliderPos / this.TRACK;
+  }
+  onSlide(v: string): void {
+    this.sliderPos = Number(v);
+    this.input = this.posToInput(this.sliderPos);
+    this.popKey++;
+    if (navigator.vibrate) navigator.vibrate(2);
+  }
+
   stepInput(dir: number): void {
-    this.input = Math.max(0, this.input + dir * this.cfg.inputStep);
+    this.input = this.snap(this.input + dir * this.cfg.inputStep);
+    this.sliderPos = this.inputToPos(this.input);
     this.popKey++;
     if (navigator.vibrate) navigator.vibrate(4);
   }
@@ -64,6 +132,8 @@ export class GoalIntroComponent implements OnInit {
   onInputText(v: string): void {
     const n = parseInt((v || '').replace(/[^0-9]/g, ''), 10);
     this.input = isNaN(n) ? 0 : n;
+    if (this.input > this.inMax) this.inMax = Math.round(this.input * 1.25);
+    this.sliderPos = this.inputToPos(this.input);
     this.popKey++;
   }
 

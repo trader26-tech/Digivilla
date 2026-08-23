@@ -1,105 +1,56 @@
 <div class="result-screen" [class.entered]="entered" [style.--hue]="hue">
   <button class="back" (click)="goBack()" aria-label="Back">←</button>
 
-  <header class="head">
-    <span class="eyebrow">YOUR PLAN FOR {{ goal.label | uppercase }}</span>
-    <h1 class="title">Invest just</h1>
+  <!-- ONE focal point: the monthly amount -->
+  <div class="hero">
     <div class="sip">{{ compactInr(monthlySip) }}<span class="per">/mo</span></div>
-    <p class="sip-sub">for {{ horizonLabel }}</p>
-  </header>
-
-  <!-- Donut / rim chart: invest vs mutual-fund growth -->
-  <div class="donut-card">
-    <div class="donut">
-      <svg viewBox="0 0 120 120">
-        <!-- faint base rim -->
-        <circle cx="60" cy="60" [attr.r]="ringR" class="rim-base" />
-        <!-- you invest arc -->
-        <circle
-          cx="60" cy="60" [attr.r]="ringR"
-          class="rim invested"
-          [attr.stroke-dasharray]="investedDash"
-          stroke-dashoffset="0"
-          transform="rotate(-90 60 60)"
-        />
-        <!-- mutual funds add arc -->
-        <circle
-          cx="60" cy="60" [attr.r]="ringR"
-          class="rim growth"
-          [attr.stroke-dasharray]="growthDash"
-          [attr.stroke-dashoffset]="growthOffset"
-          transform="rotate(-90 60 60)"
-        />
-      </svg>
-      <div class="donut-center">
-        <span class="dc-label">You reach</span>
-        <span class="dc-amount">{{ compactInr(amount) }}</span>
-      </div>
-    </div>
-
-    <!-- amounts below -->
-    <div class="legend">
-      <div class="leg">
-        <span class="dot invested"></span>
-        <div class="leg-text">
-          <span class="leg-label">You invest</span>
-          <span class="leg-val">{{ compactInr(totalInvested) }}</span>
-        </div>
-      </div>
-      <div class="leg">
-        <span class="dot growth"></span>
-        <div class="leg-text">
-          <span class="leg-label">Mutual funds add</span>
-          <span class="leg-val growth-val">{{ compactInr(growth) }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="rate">at an expected <b>{{ returnLabel }}</b></div>
+    <p class="sip-sub">to reach {{ compactInr(amount) }}</p>
   </div>
 
-  <!-- Hidden fund reveal (eye button) -->
-  <button class="reveal-btn" (click)="toggleFunds()">
-    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-    {{ showFunds ? 'Hide the funds' : 'See where it’s invested' }}
-  </button>
+  <!-- Visual split: you invest vs funds grow. Almost no words. -->
+  <div class="donut">
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" [attr.r]="ringR" class="rim-base" />
+      <circle cx="60" cy="60" [attr.r]="ringR" class="rim invested"
+        [attr.stroke-dasharray]="investedDash" stroke-dashoffset="0" transform="rotate(-90 60 60)" />
+      <circle cx="60" cy="60" [attr.r]="ringR" class="rim growth"
+        [attr.stroke-dasharray]="growthDash" [attr.stroke-dashoffset]="growthOffset" transform="rotate(-90 60 60)" />
+    </svg>
+    <div class="donut-center">
+      <span class="dc-grow">+{{ compactInr(growth) }}</span>
+      <span class="dc-label">funds add</span>
+    </div>
+  </div>
 
-  <div class="funds-panel" *ngIf="showFunds">
-    <div class="loading" *ngIf="loadingFunds">Loading your funds…</div>
-
-    <ng-container *ngIf="basket as b">
-      <!-- why: allocation ring + one line -->
-      <div class="why-head">
-        <div class="alloc-ring">
-          <div class="alloc-bar">
-            <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
-          </div>
-          <div class="alloc-legend">
-            <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
-          </div>
-        </div>
-        <p class="why-line">A <b>{{ b.name | lowercase }}</b> mix — chosen for a {{ goal.label | lowercase }}. Diversified, top-rated funds do the compounding.</p>
-      </div>
-
-      <!-- fund list: graphical, minimal text -->
-      <div class="fund-list">
-        <div class="fund" *ngFor="let f of funds">
-          <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
-          <div class="f-main">
-            <span class="f-name">{{ f.name }}</span>
-            <span class="f-meta">{{ f.bucket }} · <span class="f-stars">{{ stars(f.rating) }}</span></span>
-          </div>
-          <div class="f-ret">
-            <span class="f-ret-val">{{ sign(f.return_3y) }}</span>
-            <span class="f-ret-lbl">3Y</span>
-          </div>
-          <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
-        </div>
-      </div>
-
-      <p class="why-foot">We handle the picking &amp; rebalancing. You just invest.</p>
-    </ng-container>
+  <div class="mini-legend">
+    <span><i class="d-inv"></i>You put in {{ compactInr(totalInvested) }}</span>
+    <span><i class="d-grw"></i>Funds add {{ compactInr(growth) }}</span>
   </div>
 
   <button class="cta" (click)="proceed()">Start investing →</button>
-  <p class="foot-note">Sign in next to save this plan — nothing is saved yet.</p>
+
+  <!-- Understated reveal, out of the way -->
+  <button class="reveal-link" (click)="toggleFunds()">
+    {{ showFunds ? 'Hide funds' : 'Where does it go?' }}
+  </button>
+
+  <!-- Fund detail (hidden by default) -->
+  <div class="funds-panel" *ngIf="showFunds">
+    <div class="loading" *ngIf="loadingFunds">Loading…</div>
+    <ng-container *ngIf="basket as b">
+      <div class="alloc-bar">
+        <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
+      </div>
+      <div class="alloc-legend">
+        <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
+      </div>
+      <div class="fund-list">
+        <div class="fund" *ngFor="let f of funds">
+          <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
+          <span class="f-name">{{ f.name }}</span>
+          <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
 </div>
