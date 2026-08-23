@@ -8,11 +8,11 @@ import {
 } from '@angular/core';
 
 /**
- * The value-first welcome hero shown after the intro, before the goal picker.
+ * The cinematic value hero shown after the intro, before the goal picker.
  *
- * It doesn't just say "invest" — it SHOWS the gap: money left idle in savings
- * stays flat, while money invested with us soars. Two live counters race up so
- * the difference (our value) is felt, not read. One CTA into "Choose a goal".
+ * Matches the intro's dramatic, immersive energy: a dark dusk backdrop where a
+ * green growth curve glows to life and a big personal number counts up — showing
+ * that YOUR ₹10,000/month becomes far more with us than sitting idle.
  */
 @Component({
   selector: 'app-story',
@@ -22,16 +22,16 @@ import {
   styleUrl: './story.component.scss',
 })
 export class StoryComponent implements AfterViewInit, OnDestroy {
-  /** Emitted when the user taps the CTA -> show the goal picker. */
   @Output() done = new EventEmitter<void>();
 
-  // Illustrative figures: ₹10k/month for 20 years.
-  readonly savedFinal = 2_400_000; // money just parked (contributions only)
-  readonly investedFinal = 9_100_000; // same, invested & compounded with us
+  // ₹10,000/month for 20 years.
+  readonly investedFinal = 9_100_000; // grown & compounded with us
+  readonly savedFinal = 2_400_000; // left idle (contributions only)
 
-  saved = 0;
   invested = 0;
-  revealed = false; // triggers the chart draw-in
+  saved = 0;
+  /** staged reveal phases so it plays like a sequence, not all at once */
+  phase = 0; // 0 hidden, 1 line drawing, 2 counting, 3 settled
 
   private raf = 0;
   private timers: number[] = [];
@@ -39,14 +39,19 @@ export class StoryComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
-      this.saved = this.savedFinal;
       this.invested = this.investedFinal;
-      this.revealed = true;
+      this.saved = this.savedFinal;
+      this.phase = 3;
       return;
     }
-    // let the chart lines draw first, then race the counters up
-    this.timers.push(window.setTimeout(() => (this.revealed = true), 100));
-    this.timers.push(window.setTimeout(() => this.runCounters(), 650));
+    this.timers.push(
+      window.setTimeout(() => (this.phase = 1), 150), // curve starts drawing
+      window.setTimeout(() => {
+        this.phase = 2;
+        this.runCounters();
+      }, 800), // number races up as the curve climbs
+      window.setTimeout(() => (this.phase = 3), 2600), // settle + glow
+    );
   }
 
   ngOnDestroy(): void {
@@ -55,27 +60,30 @@ export class StoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private runCounters(): void {
-    const dur = 1600;
-    const startTs = performance.now();
+    const dur = 1800;
+    const start = performance.now();
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
     const tick = (now: number) => {
-      const t = Math.min(1, (now - startTs) / dur);
+      const t = Math.min(1, (now - start) / dur);
       const k = ease(t);
-      this.saved = Math.round(this.savedFinal * k);
       this.invested = Math.round(this.investedFinal * k);
+      this.saved = Math.round(this.savedFinal * k);
       if (t < 1) this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
   }
 
-  /** Compact INR for the counters, e.g. ₹91.0 L, ₹24.0 L. */
-  inr(v: number): string {
+  /** Full grouped rupees for the big hero number, e.g. 91,00,000. */
+  grouped(v: number): string {
+    return Math.round(v).toLocaleString('en-IN');
+  }
+  /** Compact for the small savings figure. */
+  compact(v: number): string {
     if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(1)} Cr`;
     if (v >= 100_000) return `₹${(v / 100_000).toFixed(1)} L`;
     return `₹${Math.round(v).toLocaleString('en-IN')}`;
   }
 
-  /** How many times bigger invested is vs saved — the punchline. */
   get multiple(): string {
     return (this.investedFinal / this.savedFinal).toFixed(1);
   }
