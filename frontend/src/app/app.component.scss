@@ -20,6 +20,9 @@
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 60;
+  /* SOLID black bar so page content never shows through / collides with it */
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   pointer-events: none;                 /* taps pass straight through to the screen */
   animation: chromeIn 0.5s ease both;
 }
