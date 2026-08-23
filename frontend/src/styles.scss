@@ -1,10 +1,10 @@
 /* Global design tokens — "dusk" theme (from the intro/story screens):
    deep indigo base, warm-gold + purple accents. Shared by every component. */
 :root {
-  --bg: #12102a;           /* deep indigo base (not flat black) */
-  --surface: #1c1940;      /* raised cards, tinted purple */
-  --surface-2: #262151;    /* insets, tracks, chips */
-  --border: #342d63;       /* hairlines with a purple cast */
+  --bg: #000000;           /* plain black background */
+  --surface: #141220;      /* raised cards, faint purple tint */
+  --surface-2: #1e1b2e;    /* insets, tracks, chips */
+  --border: #2a2740;       /* hairlines with a subtle purple cast */
   --text: #f2eefc;         /* soft warm-white text */
   --muted: #a99fce;        /* muted lavender for secondary text */
 
@@ -48,16 +48,7 @@ body {
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  /* the dusk backdrop — the SAME warm gold → coral → purple → indigo wash as the
-     intro/story screens, so every page shares that signature look (not flat dark). */
+  /* plain black background */
   background: var(--bg);
-  background-image:
-    /* warm gold + coral bloom rising from the bottom (the intro's signature glow) */
-    radial-gradient(135% 95% at 50% 122%, rgba(255, 154, 90, 0.22) 0%, rgba(255, 111, 97, 0.16) 20%, rgba(122, 62, 168, 0.16) 46%, rgba(18, 16, 42, 0) 70%),
-    /* purple haze from the top */
-    radial-gradient(110% 80% at 50% -12%, rgba(122, 62, 168, 0.26) 0%, rgba(18, 16, 42, 0) 58%),
-    /* a soft coral kiss off to one side for depth */
-    radial-gradient(70% 55% at 88% 8%, rgba(255, 111, 97, 0.10) 0%, rgba(18, 16, 42, 0) 60%);
-  background-attachment: fixed;
   min-height: 100vh;
 }

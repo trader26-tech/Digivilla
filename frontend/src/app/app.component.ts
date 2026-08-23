@@ -16,7 +16,6 @@ import { GoalResultComponent } from './goal-result.component';
 import { GoalTimingComponent } from './goal-timing.component';
 import { HomeComponent } from './home.component';
 import { IntroComponent } from './intro.component';
-import { GraphPreviewComponent } from './graph-preview.component';
 import { LandingComponent } from './landing.component';
 import { AuthResponse, GoalPreset } from './models';
 import { PlannerPanelComponent } from './planner-panel.component';
@@ -40,7 +39,6 @@ type Tab = 'home' | 'invest';
     GoalResultComponent,
     IntroComponent,
     StoryComponent,
-    GraphPreviewComponent,
     RefreshButtonComponent,
   ],
   templateUrl: './app.component.html',
@@ -74,14 +72,8 @@ export class AppComponent {
   plannerOpen = false;
   goalsVersion = 0;
 
-  previewGraph = new URLSearchParams(location.search).has('graph');
-
   /** Cinematic welcome shown on every launch, before anything else. */
   intro = true;
-
-  /** The playful "why invest / why us" story shown after the intro, before the
-   *  goal picker. Flows into the picker when finished or skipped. */
-  story = true;
 
   /** First-screen flow, all pre-login:
    *    picker -> goal-intro (educate + calc) -> amount (knob) -> timing -> landing
@@ -119,14 +111,9 @@ export class AppComponent {
     this.authed = true;
   }
 
-  /** The welcome animation finished -> reveal the "why invest" story. */
+  /** The welcome animation finished -> reveal the goal picker. */
   onIntroDone(): void {
     this.intro = false;
-  }
-
-  /** The story finished (or was skipped) -> reveal the goal picker. */
-  onStoryDone(): void {
-    this.story = false;
   }
 
   /** User tapped Continue on a goal in the picker -> show the amount screen. */

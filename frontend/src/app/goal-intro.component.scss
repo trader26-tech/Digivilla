@@ -4,9 +4,10 @@
 }
 
 .intro {
-  --accent-h: hsl(var(--hue, 222), 85%, 62%);
-  --accent-dk: hsl(var(--hue, 222), 80%, 55%);
-  --soft: hsl(var(--hue, 222), 45%, 16%);
+  /* Fixed brand theme — always purple, never per-goal blue/cyan. */
+  --accent-h: #7c5cff;
+  --accent-dk: #6035ff;
+  --soft: #241a4a;
   position: relative;
   max-width: 440px;
   margin: 0 auto;
@@ -50,7 +51,7 @@
      own hue (not a bright white blob), fading into the app background. */
   background:
     radial-gradient(ellipse 90% 55% at 50% 40%,
-      hsl(var(--hue, 222) 70% 40% / 0.22),
+      hsl(255 70% 40% / 0.22),
       transparent 70%),
     var(--bg, #12102a);
   opacity: 1;
@@ -100,9 +101,9 @@
   width: 46px;
   height: 46px;
   border-radius: 13px;
-  color: hsl(var(--hue, 222) 90% 78%);
-  background: hsl(var(--hue, 222) 55% 22% / 0.55);
-  box-shadow: inset 0 0 0 1px hsl(var(--hue, 222) 60% 45% / 0.4);
+  color: hsl(255 90% 78%);
+  background: hsl(255 55% 22% / 0.55);
+  box-shadow: inset 0 0 0 1px hsl(255 60% 45% / 0.4);
 }
 .wpt-text {
   font-size: 1rem;
@@ -250,20 +251,23 @@
   svg { opacity: 0.85; }
 }
 
-/* ---- result ---- */
+/* ---- result — the second theme colour (orange), for contrast ---- */
 .result {
+  --orange: #ff9f0a;
+  --orange-dk: #ffb347;
   margin-top: 1.6rem;
   padding: 1rem;
   border-radius: 18px;
-  background: var(--soft);
+  background: rgba(255, 159, 10, 0.12);
+  border: 1px solid rgba(255, 159, 10, 0.28);
   .r-label {
     display: block;
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--accent-dk);
-    opacity: 0.8;
+    color: var(--orange-dk);
+    opacity: 0.9;
     margin-bottom: 0.15rem;
   }
   .r-amount {
@@ -271,7 +275,7 @@
     font-weight: 850;
     line-height: 1;
     letter-spacing: -1.5px;
-    color: var(--accent-dk);
+    color: var(--orange-dk);
     font-variant-numeric: tabular-nums;
     transform-origin: center;
   }
@@ -425,8 +429,8 @@
   height: 60px;
   margin: 0 auto 0.9rem;
   border-radius: 50%;
-  color: hsl(var(--hue, 222) 90% 78%);
-  background: hsl(var(--hue, 222) 55% 22% / 0.55);
+  color: hsl(255 90% 78%);
+  background: hsl(255 55% 22% / 0.55);
   animation: boltPop 0.5s ease 0.1s both;
 }
 @keyframes boltPop {
