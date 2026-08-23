@@ -649,6 +649,19 @@ export class GoalResultComponent implements OnInit {
   celebrating = false;
   celebrationReady = false; // flips true after the animation -> reveal Continue
 
+  /** Confetti sparks — deterministic scatter (no Math.random at build time). */
+  readonly sparks = Array.from({ length: 22 }, (_, k) => {
+    const ang = (k / 22) * Math.PI * 2;
+    const spread = 30 + ((k * 37) % 55); // vary distance
+    const colors = ['#a05cff', '#c9a0ff', '#ff9a4a', '#ff6a3d', '#4be3a1'];
+    return {
+      x: `${Math.round(Math.cos(ang) * spread)}vw`,
+      y: `${Math.round(Math.sin(ang) * spread - 10)}vh`,
+      c: colors[k % colors.length],
+      d: 200 + ((k * 53) % 500), // staggered delay
+    };
+  });
+
   proceed(): void {
     if (this.celebrating) return;
     if (navigator.vibrate) navigator.vibrate([12, 40, 12, 40, 60]);
