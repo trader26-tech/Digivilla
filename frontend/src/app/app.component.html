@@ -1,9 +1,44 @@
 <!-- Cinematic welcome, every launch, before everything -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
+<!-- Shared onboarding chrome: MyLuxias brand + animated step progress.
+     Sits above every pre-login screen so branding + progress are consistent. -->
+<header class="flow-chrome" *ngIf="showChrome">
+  <div class="fc-inner">
+    <div class="brandmark" aria-label="MyLuxias">
+      <span class="bm-logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none">
+          <defs>
+            <linearGradient id="bmg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#a370ff" /><stop offset="1" stop-color="#ff9a4a" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="28" height="28" rx="9" fill="url(#bmg)" />
+          <path d="M9 22V11l4 6 3-4.5 3 4.5 4-6v11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+      </span>
+      <span class="bm-name">My<span class="bm-accent">Luxias</span></span>
+    </div>
+
+    <div class="fc-progress" [attr.aria-label]="'Step ' + flowStep + ' of ' + flowTotal">
+      <div class="fcp-track">
+        <span class="fcp-fill" [style.width.%]="flowFraction * 100"></span>
+      </div>
+      <div class="fcp-dots">
+        <span class="fcp-dot"
+              *ngFor="let l of flowLabels; let i = index"
+              [class.done]="i < preStep"
+              [class.on]="i === preStep"></span>
+      </div>
+    </div>
+
+    <span class="fc-step">{{ flowLabels[preStep] }}</span>
+  </div>
+</header>
+
 <!-- Pre-login flow. Wrapped so the steps slide between each other as one
      continuous journey (forward = slide left, back = slide right). -->
-<div class="pre-login" *ngIf="!intro && !authed" [@stepAnim]="preStep">
+<div class="pre-login" [class.has-chrome]="showChrome" *ngIf="!intro && !authed" [@stepAnim]="preStep">
   <!-- Step 1: no-login goal picker -->
   <app-goal-picker
     *ngIf="!pickedGoal && !chosenGoal"

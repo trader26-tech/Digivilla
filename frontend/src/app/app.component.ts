@@ -114,7 +114,26 @@ export class AppComponent {
     if (!this.pickedGoal && this.chosenGoal && !this.amountDone) return 1; // combined amount screen
     if (!this.pickedGoal && this.amountDone && !this.timingDone) return 2; // timing (skipped for short-term)
     if (!this.pickedGoal && this.timingDone) return 3; // results
-    return 4; // landing / auth
+    return 4; // home + quick login
+  }
+
+  /** ---- shared onboarding chrome (MyLuxias brand + progress) ---- */
+  /** Short label for each step, shown next to the progress. */
+  readonly flowLabels = ['Goal', 'Amount', 'Timeline', 'Plan', 'Finish'];
+  get flowTotal(): number {
+    return this.flowLabels.length;
+  }
+  /** 1-based current step for display. */
+  get flowStep(): number {
+    return this.preStep + 1;
+  }
+  /** 0..1 fraction complete, for the progress fill width. */
+  get flowFraction(): number {
+    return this.flowStep / this.flowTotal;
+  }
+  /** Show the brand+progress chrome only during the pre-login flow. */
+  get showChrome(): boolean {
+    return !this.intro && !this.authed;
   }
 
   /** Called when the landing page completes sign-in. Persists the session
