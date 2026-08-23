@@ -192,18 +192,31 @@ export class AppComponent {
   }
 
   /** Quick-login from the home sheet -> enter the app. The user has already
-   *  passed Firebase phone-OTP in the sheet; here we store a lightweight local
-   *  session (name + phone) so the authed shell renders. To make this a REAL
-   *  session, send the Firebase idToken to the backend, verify it there with
-   *  the Admin SDK, and swap the placeholder token below for the one it mints. */
-  onQuickLogin(user: { name: string; phone: string }): void {
-    const owner = 'usr_' + user.phone;
-    localStorage.setItem('wp_token', 'quick_' + user.phone);
-    localStorage.setItem('wp_owner', owner);
+   *  passed Firebase phone-OTP; exchange it for a REAL backend session at
+   *  /auth/phone (the server verifies the Firebase ID token with the Admin SDK
+   *  when configured, and returns our stateless token keyed to the user). If
+   *  the backend is unreachable we fall back to a local session so the flow
+   *  never dead-ends. */
+  onQuickLogin(user: { name: string; phone: string; idToken: string }): void {
     localStorage.setItem('wp_name', user.name);
     localStorage.setItem('wp_phone', user.phone);
     this.userName = user.name;
-    this.authed = true;
+
+    this.planner.phoneLogin(user.name, user.phone, user.idToken).subscribe({
+      next: (res) => {
+        localStorage.setItem('wp_token', res.token);
+        localStorage.setItem('wp_owner', res.user.owner);
+        localStorage.setItem('wp_name', res.user.name || user.name);
+        this.userName = res.user.name || user.name;
+        this.authed = true;
+      },
+      error: () => {
+        // Backend unavailable — keep a local session so the user still gets in.
+        localStorage.setItem('wp_token', 'local_' + user.phone);
+        localStorage.setItem('wp_owner', 'usr_' + user.phone);
+        this.authed = true;
+      },
+    });
   }
 
   signOut(): void {

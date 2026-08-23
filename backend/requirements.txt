@@ -5,3 +5,7 @@ pydantic==2.7.4
 pydantic-settings==2.3.4
 python-dotenv==1.0.1
 numpy==1.26.4
+# Optional: server-side verification of Firebase phone-OTP ID tokens. The code
+# imports it lazily, so the app still runs if it's absent (dev falls back to
+# trusting the client per settings.allow_unverified_phone).
+firebase-admin==6.5.0

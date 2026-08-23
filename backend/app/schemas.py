@@ -244,6 +244,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class PhoneAuthRequest(BaseModel):
+    """Posted after the client completes Firebase phone-OTP verification."""
+    name: str = ""
+    phone: str
+    id_token: str = ""  # Firebase ID token; verified server-side when Admin is set up
+
+
 class AuthUser(BaseModel):
     owner: str
     email: str

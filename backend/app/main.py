@@ -308,7 +308,8 @@ def delete_basket(basket_id: str, owner: Optional[str] = None) -> dict:
 from fastapi import Header  # noqa: E402
 
 from app import auth as auth_svc  # noqa: E402
-from app.schemas import AuthResponse, LoginRequest, SignupRequest  # noqa: E402
+from app import phone_auth as phone_svc  # noqa: E402
+from app.schemas import AuthResponse, LoginRequest, PhoneAuthRequest, SignupRequest  # noqa: E402
 
 
 @app.post("/auth/signup", response_model=AuthResponse)
@@ -325,6 +326,15 @@ def auth_login(req: LoginRequest) -> dict:
         return auth_svc.login(req.email, req.password)
     except auth_svc.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.post("/auth/phone", response_model=AuthResponse)
+def auth_phone(req: PhoneAuthRequest) -> dict:
+    """Sign in with a phone number after the client's Firebase OTP passes."""
+    try:
+        return phone_svc.login_with_phone(req.name or "", req.phone, req.id_token or "")
+    except phone_svc.PhoneAuthError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/auth/me")

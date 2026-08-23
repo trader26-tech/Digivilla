@@ -48,6 +48,16 @@ export class PlannerService {
     return this.http.post<AuthResponse>(`${this.base}/auth/login`, { email, password });
   }
 
+  /** Sign in with a phone number after Firebase OTP has been verified client-side.
+   *  `idToken` is the Firebase ID token (verified server-side when Admin is set up). */
+  phoneLogin(name: string, phone: string, idToken = ''): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.base}/auth/phone`, {
+      name,
+      phone,
+      id_token: idToken,
+    });
+  }
+
   presets(): Observable<GoalPreset[]> {
     return this.http.get<GoalPreset[]>(`${this.base}/presets`);
   }

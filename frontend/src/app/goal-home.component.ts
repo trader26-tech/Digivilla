@@ -32,8 +32,9 @@ export class GoalHomeComponent implements OnInit {
   @Input() monthly = 0;      // monthly SIP
   @Input() years = 0;
 
-  /** Emitted once the user is verified — carries their name + phone. */
-  @Output() loggedIn = new EventEmitter<{ name: string; phone: string }>();
+  /** Emitted once the user is verified — carries name, phone and the Firebase
+   *  ID token (empty in demo mode) so the app can exchange it for a session. */
+  @Output() loggedIn = new EventEmitter<{ name: string; phone: string; idToken: string }>();
 
   /** Invisible reCAPTCHA host for Firebase phone auth. */
   @ViewChild('recaptcha') recaptchaEl?: ElementRef<HTMLElement>;
@@ -107,9 +108,13 @@ export class GoalHomeComponent implements OnInit {
     this.verifying = true;
     this.error = '';
     try {
-      await this.fb.verifyCode(this.otp);
+      const user = await this.fb.verifyCode(this.otp);
       if (navigator.vibrate) navigator.vibrate(12);
-      this.loggedIn.emit({ name: this.name.trim(), phone: this.phone });
+      this.loggedIn.emit({
+        name: this.name.trim(),
+        phone: this.phone,
+        idToken: user.idToken === 'mock' ? '' : user.idToken,
+      });
     } catch (e: any) {
       this.error = e?.message || 'That code didn\'t match. Check and retry.';
     } finally {

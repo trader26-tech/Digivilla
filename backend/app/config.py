@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     )
     # Regex to additionally allow deploy origins (e.g. Railway subdomains).
     cors_origin_regex: Optional[str] = r"https://.*\.up\.railway\.app"
+    # Phone/OTP sign-in: when Firebase Admin isn't configured, trust the
+    # client-supplied phone so the flow works in dev. Set false in production
+    # (with Admin configured) to require a verified Firebase ID token.
+    allow_unverified_phone: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
