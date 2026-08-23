@@ -40,18 +40,31 @@ _admin_ready = False
 def _ensure_admin() -> bool:
     """Initialise the Firebase Admin SDK once. Returns True if it's usable.
 
-    Credentials are read from GOOGLE_APPLICATION_CREDENTIALS (a service-account
-    JSON path) per Firebase's standard. Any failure -> Admin is unavailable and
-    we fall back to the unverified path (dev only)."""
+    Credentials are resolved in this order:
+      1. FIREBASE_SERVICE_ACCOUNT — the service-account JSON *contents* pasted
+         into one env var. This is the Railway-friendly way: no file to mount.
+      2. GOOGLE_APPLICATION_CREDENTIALS — a filesystem path to the JSON, the
+         Firebase/Google standard (handy for local dev).
+    Any failure -> Admin is unavailable and we fall back to the unverified path
+    (allowed only when settings.allow_unverified_phone is true)."""
     global _admin_ready
     if _admin_ready:
         return True
     try:
+        import os
         import firebase_admin  # type: ignore
-        from firebase_admin import credentials  # noqa: F401
+        from firebase_admin import credentials
 
         if not firebase_admin._apps:  # not yet initialised
-            firebase_admin.initialize_app()
+            raw = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "").strip()
+            if raw:
+                import json as _json
+
+                cred = credentials.Certificate(_json.loads(raw))
+                firebase_admin.initialize_app(cred)
+            else:
+                # Uses GOOGLE_APPLICATION_CREDENTIALS (a path) if set.
+                firebase_admin.initialize_app()
         _admin_ready = True
         return True
     except Exception:
