@@ -94,12 +94,20 @@ export class AppComponent {
   authed = !!localStorage.getItem('wp_token');
   userName = localStorage.getItem('wp_name') || '';
 
+  /** Short-term "safety net" goals (emergency, health) are urgent — there's no
+   *  meaningful date to pick, so we skip the timing screen and preset ~6 months. */
+  get isShortTerm(): boolean {
+    const k = this.chosenGoal?.key || '';
+    return k === 'emergency' || k === 'health';
+  }
+
   /** Numeric index of the current pre-login screen, so the stepAnim trigger can
-   *  tell forward (:increment) from back (:decrement). */
+   *  tell forward (:increment) from back (:decrement). Short-term goals hide the
+   *  timing step entirely. */
   get preStep(): number {
     if (!this.pickedGoal && !this.chosenGoal) return 0; // picker
     if (!this.pickedGoal && this.chosenGoal && !this.amountDone) return 1; // combined amount screen
-    if (!this.pickedGoal && this.amountDone && !this.timingDone) return 2; // timing
+    if (!this.pickedGoal && this.amountDone && !this.timingDone) return 2; // timing (skipped for short-term)
     if (!this.pickedGoal && this.timingDone) return 3; // results
     return 4; // landing / auth
   }
@@ -131,10 +139,15 @@ export class AppComponent {
     this.amountDone = false;
   }
 
-  /** Combined amount screen confirmed -> move to the timing screen. */
+  /** Combined amount screen confirmed. Short-term goals skip the date screen
+   *  (auto ~6 months) and jump straight to results; others go to timing. */
   onAmountChosen(amount: number): void {
     this.chosenAmount = amount;
     this.amountDone = true;
+    if (this.isShortTerm) {
+      this.chosenYears = 0.5; // ~6 months — "as fast as possible"
+      this.timingDone = true;
+    }
   }
 
   /** Back from the amount screen returns to the goal picker. */
@@ -158,9 +171,11 @@ export class AppComponent {
     this.pickedGoal = true;
   }
 
-  /** Back from the results screen returns to the timing screen. */
+  /** Back from the results screen. Short-term goals skipped timing, so return
+   *  to the amount screen; others return to the timing screen. */
   onResultBack(): void {
     this.timingDone = false;
+    if (this.isShortTerm) this.amountDone = false;
   }
 
   signOut(): void {

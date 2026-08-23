@@ -31,19 +31,22 @@ export class GoalResultComponent implements OnInit {
 
   entered = false;
 
-  /** Which detail pill is expanded ('invest' | 'returns' | null). */
-  openPill: 'invest' | 'returns' | null = null;
+  /** Which full detail page is showing ('invest' | 'returns' | null = main). */
+  detailPage: 'invest' | 'returns' | null = null;
 
-  // Fund detail (loaded when the returns pill is opened).
+  // Fund detail (loaded when the returns page is opened).
   basket: ModelBasket | null = null;
   loadingFunds = false;
 
-  togglePill(which: 'invest' | 'returns'): void {
-    this.openPill = this.openPill === which ? null : which;
+  openDetail(which: 'invest' | 'returns'): void {
+    this.detailPage = which;
     if (navigator.vibrate) navigator.vibrate(6);
-    if (which === 'returns' && this.openPill === 'returns' && !this.basket && !this.loadingFunds) {
+    if (which === 'returns' && !this.basket && !this.loadingFunds) {
       this.loadFunds();
     }
+  }
+  closeDetail(): void {
+    this.detailPage = null;
   }
 
   private loadFunds(): void {
@@ -144,23 +147,132 @@ export class GoalResultComponent implements OnInit {
     return `${Math.round(this.annualReturn * 100)}% p.a.`;
   }
 
-  // ---- donut ring geometry (outer rim only) ----
+  // ============================================================
+  //  Growth chart: cumulative invested vs total value, year by year.
+  //  Shows compounding — the returns band widens dramatically over time.
+  // ============================================================
+
+  /** Per-year points: what you've put in vs what it's worth. */
+  get growthSeries(): { year: number; invested: number; value: number }[] {
+    const i = this.annualReturn / 12;
+    const p = this.monthlySip;
+    const totalYears = Math.max(1, Math.round(this.years));
+    const pts: { year: number; invested: number; value: number }[] = [];
+    for (let y = 0; y <= totalYears; y++) {
+      const n = y * 12;
+      const invested = p * n;
+      // FV of a monthly SIP after n months (deposits at start of month).
+      const value = i <= 0 ? invested : p * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+      pts.push({ year: y, invested: Math.round(invested), value: Math.round(value) });
+    }
+    return pts;
+  }
+
+  /** Chart geometry in a 320×200 viewBox (plot area inset for labels). */
+  private readonly chartW = 320;
+  private readonly chartH = 200;
+  private readonly padL = 8;
+  private readonly padR = 8;
+  private readonly padT = 14;
+  private readonly padB = 20;
+
+  private get chartMax(): number {
+    const s = this.growthSeries;
+    return Math.max(1, s[s.length - 1]?.value ?? 1);
+  }
+  private xAt(year: number): number {
+    const yrs = Math.max(1, Math.round(this.years));
+    const w = this.chartW - this.padL - this.padR;
+    return this.padL + (year / yrs) * w;
+  }
+  private yAt(v: number): number {
+    const h = this.chartH - this.padT - this.padB;
+    return this.padT + h - (v / this.chartMax) * h;
+  }
+
+  /** Smooth path along the TOTAL value line (top of the returns band). */
+  get valuePath(): string {
+    return this.linePath(this.growthSeries.map((p) => [this.xAt(p.year), this.yAt(p.value)]));
+  }
+  /** Smooth path along the INVESTED line (top of the contributions band). */
+  get investedPath(): string {
+    return this.linePath(this.growthSeries.map((p) => [this.xAt(p.year), this.yAt(p.invested)]));
+  }
+  /** Filled area under the total value line (the returns fill). */
+  get valueArea(): string {
+    const base = this.chartH - this.padB;
+    const line = this.linePath(this.growthSeries.map((p) => [this.xAt(p.year), this.yAt(p.value)]));
+    const last = this.growthSeries[this.growthSeries.length - 1];
+    return `${line} L ${this.xAt(last.year)} ${base} L ${this.xAt(0)} ${base} Z`;
+  }
+  /** Filled area under the invested line (the contributions fill). */
+  get investedArea(): string {
+    const base = this.chartH - this.padB;
+    const line = this.linePath(this.growthSeries.map((p) => [this.xAt(p.year), this.yAt(p.invested)]));
+    const last = this.growthSeries[this.growthSeries.length - 1];
+    return `${line} L ${this.xAt(last.year)} ${base} L ${this.xAt(0)} ${base} Z`;
+  }
+
+  /** Catmull-Rom → cubic bezier smoothing for a soft, premium curve. */
+  private linePath(pts: [number, number][]): string {
+    if (pts.length < 2) return '';
+    let d = `M ${pts[0][0]} ${pts[0][1]}`;
+    for (let k = 0; k < pts.length - 1; k++) {
+      const p0 = pts[k - 1] ?? pts[k];
+      const p1 = pts[k];
+      const p2 = pts[k + 1];
+      const p3 = pts[k + 2] ?? p2;
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${p2[0]} ${p2[1]}`;
+    }
+    return d;
+  }
+
+  /** X-axis tick years — a few evenly spaced markers. */
+  get xTicks(): { year: number; x: number }[] {
+    const yrs = Math.max(1, Math.round(this.years));
+    const step = yrs <= 6 ? 1 : yrs <= 12 ? 2 : 5;
+    const out: { year: number; x: number }[] = [];
+    for (let y = 0; y <= yrs; y += step) out.push({ year: y, x: this.xAt(y) });
+    if (out[out.length - 1].year !== yrs) out.push({ year: yrs, x: this.xAt(yrs) });
+    return out;
+  }
+
+  /** End-point coordinates for the labels/dots. */
+  get endValueXY(): { x: number; y: number } {
+    const last = this.growthSeries[this.growthSeries.length - 1];
+    return { x: this.xAt(last.year), y: this.yAt(last.value) };
+  }
+  get endInvestedXY(): { x: number; y: number } {
+    const last = this.growthSeries[this.growthSeries.length - 1];
+    return { x: this.xAt(last.year), y: this.yAt(last.invested) };
+  }
+
+  // ---- donut ring geometry: two clean segments with a small gap ----
   readonly ringR = 52; // radius in the 120x120 viewBox
+  private readonly GAP = 6; // gap between segments, in user units
   get ringCirc(): number {
     return 2 * Math.PI * this.ringR;
   }
-  /** Dash length for the "you invest" arc (rest is the growth arc). */
+  /** "You invest" segment: its share of the circle, minus a gap, flat ends. */
   get investedDash(): string {
-    const inv = (this.investedPct / 100) * this.ringCirc;
-    return `${inv} ${this.ringCirc - inv}`;
+    const seg = Math.max(0, (this.investedPct / 100) * this.ringCirc - this.GAP);
+    return `${seg} ${this.ringCirc - seg}`;
   }
-  /** Growth arc starts where invested ends: offset it. */
+  /** "Returns" segment, offset to start after the invested segment + gap. */
   get growthDash(): string {
-    const grw = (this.growthPct / 100) * this.ringCirc;
-    return `${grw} ${this.ringCirc - grw}`;
+    const seg = Math.max(0, (this.growthPct / 100) * this.ringCirc - this.GAP);
+    return `${seg} ${this.ringCirc - seg}`;
   }
   get growthOffset(): number {
-    return -((this.investedPct / 100) * this.ringCirc);
+    // start the returns arc just after the invested segment (+half gap each side)
+    return -((this.investedPct / 100) * this.ringCirc) + this.GAP / 2;
+  }
+  get investedOffset(): number {
+    return this.GAP / 2; // nudge so the gap is centered on the seam
   }
 
   get horizonLabel(): string {

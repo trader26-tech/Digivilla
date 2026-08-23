@@ -54,46 +54,66 @@
 }
 .welcome.leaving { opacity: 0; }
 .welcome-inner {
+  width: 100%;
   max-width: 22rem;
   text-align: center;
 }
 
-/* the hook line — words fade in */
-.hook {
+/* the title fades in */
+.welcome-title {
   color: var(--text);
   font-weight: 800;
   letter-spacing: -0.5px;
-  font-size: clamp(1.7rem, 7vw, 2.15rem);
-  line-height: 1.3;
-  margin: 0;
-}
-.hook .w {
-  display: inline-block;
+  font-size: clamp(1.6rem, 6.5vw, 2rem);
+  line-height: 1.2;
+  margin: 0 0 1.8rem;
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
-.hook.show .w { opacity: 1; transform: none; }
+.welcome-title.show { opacity: 1; transform: none; }
 
-/* the reassurance line, fades in after the hook */
-.reassure {
-  margin: 1.1rem 0 0;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  font-weight: 600;
-  color: hsl(var(--hue, 222) 45% 38%);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+/* the reasons — icon + text rows, stagger in */
+.welcome-points {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  text-align: left;
 }
-.reassure.show { opacity: 1; transform: none; }
+.wpt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.wpt.show { opacity: 1; transform: none; }
+.wpt-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  color: var(--accent-dk);
+  background: hsl(var(--hue, 222) 90% 93%);
+  box-shadow: inset 0 0 0 1px hsl(var(--hue, 222) 60% 85%);
+}
+.wpt-text {
+  font-size: 1rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--text);
+  padding-top: 0.5rem;
+}
 
 /* the button the user taps to enter */
 .welcome-cta {
+  margin-top: 2rem;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 1.8rem;
   border: none;
   border-radius: 999px;
   padding: 0.95rem 1.6rem;
@@ -366,9 +386,84 @@
   &:active { transform: scale(0.99); }
 }
 
+/* ============ "do it fast" nudge (short-term goals) ============ */
+.urge-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(16, 24, 40, 0.4);
+  backdrop-filter: blur(3px);
+  animation: fade 0.2s ease;
+}
+.urge {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 31;
+  width: calc(100% - 2.4rem);
+  max-width: 24rem;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 1.6rem 1.5rem 1.4rem;
+  text-align: center;
+  box-shadow: 0 24px 60px -20px rgba(16, 24, 40, 0.5);
+  animation: urgeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes urgeUp {
+  from { opacity: 0; transform: translate(-50%, 20px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.urge-bolt {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 0.9rem;
+  border-radius: 50%;
+  color: var(--accent-dk);
+  background: hsl(var(--hue, 222) 90% 93%);
+  animation: boltPop 0.5s ease 0.1s both;
+}
+@keyframes boltPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.urge-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text);
+}
+.urge-body {
+  margin: 0 0 1.3rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--muted);
+  b { color: var(--accent-dk); }
+}
+.urge-go {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem;
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
+  cursor: pointer;
+  box-shadow: 0 12px 28px -12px var(--accent-h);
+  transition: transform 0.15s ease, filter 0.15s;
+  &:hover { filter: brightness(1.05); }
+  &:active { transform: scale(0.98); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .intro, .hook, .reassure, .welcome-cta, .panel, .cta, .welcome { transition: none !important; }
-  .hook .w { transition: none; opacity: 1; transform: none; }
+  .intro, .welcome-title, .wpt, .welcome-cta, .panel, .cta, .welcome { transition: none !important; }
+  .welcome-title, .wpt { opacity: 1; transform: none; }
   .r-amount { animation: none !important; }
-  .sheet { transform: none; animation: none; }
+  .sheet, .urge, .urge-bolt { transform: none; animation: none; }
+  .urge { transform: translateX(-50%); }
 }

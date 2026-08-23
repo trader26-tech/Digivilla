@@ -26,6 +26,9 @@ import { GoalPreset } from './models';
 })
 export class GoalIntroComponent implements OnInit, OnDestroy {
   @Input({ required: true }) goal!: GoalPreset;
+  /** True for urgent "safety net" goals (emergency, health): no date is picked,
+   *  and Continue shows a "do it fast" nudge before proceeding. */
+  @Input() shortTerm = false;
   /** Emits the chosen amount to carry to the timing screen. */
   @Output() amountReady = new EventEmitter<number>();
   @Output() back = new EventEmitter<void>();
@@ -35,19 +38,14 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
   entered = false;
   popKey = 0; // bumped on each change so the result number can re-pop
 
-  /** The "why" welcome plays as a full-screen moment. It no longer auto-
-   *  dismisses — the user taps the button to enter the calculator. `phase` is
-   *  'why' while the welcome shows, 'calc' once dismissed. whyShown fades the
-   *  words in; reassureShown / ctaShown stagger the reassurance + button in;
-   *  whyLeaving fades the whole overlay out on tap. */
+  /** The "why this fund" welcome plays as a full-screen moment showing the
+   *  reasons; the user taps a button to enter the calculator. `phase` is 'why'
+   *  while it shows, 'calc' once dismissed. whyShown fades the title + points in;
+   *  ctaShown reveals the button; whyLeaving fades the overlay out on tap. */
   phase: 'why' | 'calc' = 'why';
   whyShown = false;
-  reassureShown = false;
   ctaShown = false;
   whyLeaving = false;
-
-  /** The "Why this fund?" detail sheet on the calculator screen. */
-  detailOpen = false;
 
   // slider track for the input value
   readonly TRACK = 1000;
@@ -62,12 +60,11 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
     this.input = this.cfg.defaultInput;
     this.setupInputRange();
     this.timers.push(setTimeout(() => (this.entered = true), 20));
-    // Stagger the welcome in: words -> reassurance -> button. No auto-dismiss.
-    this.timers.push(setTimeout(() => (this.whyShown = true), 60));
-    const wordCount = this.whyWords.length;
-    const afterWords = 120 + wordCount * 55 + 350;
-    this.timers.push(setTimeout(() => (this.reassureShown = true), afterWords));
-    this.timers.push(setTimeout(() => (this.ctaShown = true), afterWords + 350));
+    // Stagger the welcome in: title + points, then the button. No auto-dismiss.
+    this.timers.push(setTimeout(() => (this.whyShown = true), 80));
+    const pts = this.detail.points.length;
+    const afterPoints = 200 + pts * 160 + 400;
+    this.timers.push(setTimeout(() => (this.ctaShown = true), afterPoints));
   }
 
   ngOnDestroy(): void {
@@ -82,26 +79,17 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
     this.timers.push(setTimeout(() => (this.phase = 'calc'), 450));
   }
 
-  openDetail(): void {
-    this.detailOpen = true;
-  }
-  closeDetail(): void {
-    this.detailOpen = false;
-  }
-
   get hue(): number {
     return this.cfg.hue;
   }
 
-  /** The "why" line split into words, for a staggered fade-in animation. */
-  get whyWords(): string[] {
-    return (this.cfg.hook || this.cfg.why).split(' ');
-  }
-  get reassureLine(): string {
-    return this.cfg.reassure || "Don't worry — we've got you.";
-  }
   get detail(): DetailContent {
     return this.cfg.detail || fallbackDetail(this.goal);
+  }
+
+  /** Reassuring CTA label for the welcome screen. */
+  get ctaLabel(): string {
+    return this.cfg.reassure ? 'Got it — let’s go' : 'Let’s go';
   }
 
   /** Live recommended amount from the current input. Never zero. */
@@ -183,9 +171,22 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
     this.back.emit();
   }
 
-  /** Continue -> carry the amount forward. Nothing is "saved" here — that only
-   *  happens at the very end of the flow. */
+  /** Shown for short-term goals when Continue is pressed: a "do it fast" nudge. */
+  urgeOpen = false;
+
+  /** Continue -> for short-term goals, first show the urgency nudge; otherwise
+   *  carry the amount straight forward. Nothing is "saved" here. */
   continue(): void {
+    if (navigator.vibrate) navigator.vibrate(8);
+    if (this.shortTerm) {
+      this.urgeOpen = true;
+      return;
+    }
+    this.amountReady.emit(this.recommended);
+  }
+
+  /** Confirm from the urgency nudge -> proceed. */
+  proceed(): void {
     if (navigator.vibrate) navigator.vibrate(8);
     this.amountReady.emit(this.recommended);
   }
