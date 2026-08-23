@@ -14,3 +14,8 @@ frontend/.angular/
 
 # Claude local state
 .claude/
+
+# Firebase service-account keys — SECRET, never commit
+*firebase-adminsdk*.json
+backend/*firebase-adminsdk*.json
+serviceAccount*.json
