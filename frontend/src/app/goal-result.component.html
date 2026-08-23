@@ -128,46 +128,81 @@
   <button class="d-cta invest" (click)="closeDetail()">Got it</button>
 </div>
 
-<!-- ============ DETAIL: MUTUAL FUND RETURNS ============ -->
+<!-- ============ DETAIL: MUTUAL FUND RETURNS — real past performance ============ -->
 <div class="detail returns-page" *ngIf="detailPage === 'returns'">
   <header class="top">
     <button class="back" (click)="closeDetail()" aria-label="Back">←</button>
-    <h1>Mutual fund returns</h1>
+    <h1>How it has performed</h1>
     <span class="faq-spacer"></span>
   </header>
 
-  <div class="d-hero returns">
-    <span class="d-hero-cap">Funds add on top</span>
-    <span class="d-hero-amt">+{{ fullInr(growth) }}</span>
-    <span class="d-hero-sub">at an expected {{ returnLabel }}</span>
+  <!-- Loading shimmer -->
+  <div class="perf-loading" *ngIf="loadingFunds || loadingPerf">
+    <div class="pl-bar"></div>
+    <span>Fetching {{ perfYears || 3 }}-year track record…</span>
   </div>
 
-  <div class="loading" *ngIf="loadingFunds">Loading funds…</div>
-
-  <ng-container *ngIf="basket as b">
-    <span class="d-label">Where it's invested</span>
-    <div class="alloc-bar">
-      <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
-    </div>
-    <div class="alloc-legend">
-      <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
+  <ng-container *ngIf="!loadingFunds && !loadingPerf && metrics as m">
+    <!-- Big headline: what this blended plan actually did -->
+    <div class="perf-hero">
+      <span class="ph-cap">If you'd invested {{ perfYears }} years ago</span>
+      <span class="ph-amt">₹10,000 → <b>{{ compactInr(sampleNow) }}</b></span>
+      <span class="ph-sub">that's <b class="up">+{{ perfTotalPct }}%</b> — the real, blended track record of these funds</span>
     </div>
 
-    <span class="d-label">The funds</span>
-    <div class="fund-list">
-      <div class="fund" *ngFor="let f of funds">
-        <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
-        <div class="f-main">
-          <span class="f-name">{{ f.name }}</span>
-          <span class="f-meta">{{ f.bucket }} · {{ stars(f.rating) }}</span>
-        </div>
-        <span class="f-ret">{{ sign(f.return_3y) }} <small>3Y</small></span>
-        <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
+    <!-- The performance line: how the blended basket has moved -->
+    <div class="perf-chart" [class.drawn]="perfEntered">
+      <svg viewBox="0 0 320 150" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="perfFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#a370ff" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#a370ff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id="perfStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#b088ff" />
+            <stop offset="100%" stop-color="#ffb36b" />
+          </linearGradient>
+        </defs>
+        <path class="pc-area" [attr.d]="perfArea" fill="url(#perfFill)" />
+        <path class="pc-line" [attr.d]="perfLine" fill="none" stroke="url(#perfStroke)" />
+        <circle *ngIf="perfTroughXY as t" class="pc-trough" [attr.cx]="t.x" [attr.cy]="t.y" r="4" />
+        <circle *ngIf="perfEndXY as e" class="pc-end" [attr.cx]="e.x" [attr.cy]="e.y" r="4.5" />
+      </svg>
+      <div class="pc-xaxis">
+        <span *ngFor="let t of perfXLabels" [style.left.%]="(t.x / 320) * 100">{{ t.label }}</span>
       </div>
     </div>
+
+    <!-- Three glanceable stats -->
+    <div class="perf-stats">
+      <div class="pstat">
+        <span class="ps-val up">{{ perfCagr }}%</span>
+        <span class="ps-lbl">per year<br>blended avg</span>
+      </div>
+      <div class="pstat">
+        <span class="ps-val down">−{{ perfDrawdown }}%</span>
+        <span class="ps-lbl">worst dip<br>then recovered</span>
+      </div>
+      <div class="pstat">
+        <span class="ps-val">{{ perfYears }}Y</span>
+        <span class="ps-lbl">real track<br>record</span>
+      </div>
+    </div>
+
+    <!-- Where the money sits (kept — it's visual & quick) -->
+    <div class="alloc-block" *ngIf="allocSlices.length">
+      <span class="d-label">What you're invested in</span>
+      <div class="alloc-bar">
+        <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
+      </div>
+      <div class="alloc-legend">
+        <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
+      </div>
+    </div>
+
+    <p class="d-note">Past performance from real NAV history. We pick &amp; rebalance top-rated funds for your goal — you just invest.</p>
   </ng-container>
 
-  <p class="d-note">Diversified, top-rated funds picked for your goal. We handle the picking &amp; rebalancing — you just invest.</p>
-
+  <div class="spacer"></div>
   <button class="d-cta returns" (click)="closeDetail()">Got it</button>
 </div>
