@@ -87,64 +87,6 @@
 }
 .donut svg { width: 100%; height: 100%; }
 
-/* ---- celebration: the ring spins on itself, then settles with a glow ---- */
-.donut.spin svg {
-  animation: ringSpin 1.5s cubic-bezier(0.5, 0, 0.15, 1) forwards;
-  transform-origin: 60px 60px;
-}
-@keyframes ringSpin {
-  0%   { transform: rotate(0deg) scale(1); }
-  70%  { transform: rotate(1080deg) scale(1.06); }  /* 3 fast turns */
-  100% { transform: rotate(1080deg) scale(1); }
-}
-.donut.spin {
-  animation: donutGlow 1.5s ease forwards;
-}
-@keyframes donutGlow {
-  0%, 60% { filter: none; }
-  100% { filter: drop-shadow(0 0 26px rgba(160, 92, 255, 0.6)); }
-}
-
-/* the "Goal added!" that appears in the centre after the spin */
-.donut-center.added { gap: 0.3rem; }
-.added-check {
-  width: 46px; height: 46px;
-  display: grid; place-items: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #a05cff, #ff8a3d);
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 800;
-  opacity: 0;
-  transform: scale(0.3);
-  animation: addPop 0.5s cubic-bezier(0.34, 1.7, 0.5, 1) 0.85s forwards;
-}
-.added-txt {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  color: var(--text);
-  opacity: 0;
-  transform: translateY(6px);
-  animation: addRise 0.4s ease 1.15s forwards;
-}
-@keyframes addPop { to { opacity: 1; transform: scale(1); } }
-@keyframes addRise { to { opacity: 1; transform: none; } }
-
-/* fade the rest of the page's content out during the celebration so the ring
-   is the hero moment */
-.plan.celebrating .goal-amt,
-.plan.celebrating .legend,
-.plan.celebrating .note,
-.plan.celebrating .pills,
-.plan.celebrating .slide,
-.plan.celebrating .later,
-.plan.celebrating .top {
-  animation: fadeAway 0.4s ease forwards;
-  pointer-events: none;
-}
-@keyframes fadeAway { to { opacity: 0; transform: translateY(8px); } }
-
 .rim-base { fill: none; stroke: var(--surface-2); stroke-width: 14; }
 .rim {
   fill: none;
@@ -885,4 +827,182 @@
   .rim { transition: none; }
   .area-value, .area-inv, .dot-value, .dot-inv { opacity: 1; animation: none; }
   .line-value, .line-inv { stroke-dashoffset: 0; animation: none; }
+}
+
+/* ============================================================
+   CELEBRATION — full-screen "your goal is ready" moment.
+   Ring draws + spins into a tick, facts rise, then Continue appears.
+   ============================================================ */
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  padding: 2rem;
+  background:
+    radial-gradient(120% 80% at 50% 30%, rgba(160, 92, 255, 0.18), transparent 60%),
+    radial-gradient(90% 60% at 50% 90%, rgba(255, 122, 61, 0.14), transparent 60%),
+    #000;
+  overflow: hidden;
+  animation: celIn 0.4s ease both;
+}
+@keyframes celIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- the ring ---- */
+.cel-ring {
+  position: relative;
+  width: 190px;
+  height: 190px;
+}
+.cel-ring svg { width: 100%; height: 100%; overflow: visible; }
+.cel-track { fill: none; stroke: rgba(255, 255, 255, 0.08); stroke-width: 9; }
+.cel-arc {
+  fill: none;
+  stroke: url(#celGrad);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-dasharray: 327;               /* 2πr, r=52 */
+  stroke-dashoffset: 327;
+  filter: drop-shadow(0 0 10px rgba(160, 92, 255, 0.55));
+  /* draw the ring closed, then a couple of celebratory spins */
+  animation: celDraw 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards,
+             celSpin 1.5s cubic-bezier(0.5, 0, 0.2, 1) 1.2s forwards;
+  transform-origin: 60px 60px;
+}
+@keyframes celDraw { to { stroke-dashoffset: 0; } }
+@keyframes celSpin {
+  0%   { transform: rotate(-90deg) scale(1); }
+  60%  { transform: rotate(630deg) scale(1.05); }   /* 2 smooth turns */
+  100% { transform: rotate(630deg) scale(1); }
+}
+
+/* the tick draws itself after the ring settles */
+.cel-tick {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  path {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+    animation: tickDraw 0.4s cubic-bezier(0.4, 0, 0.2, 1) 2.7s forwards;
+  }
+}
+@keyframes tickDraw { to { stroke-dashoffset: 0; } }
+
+/* ---- copy ---- */
+.cel-copy { text-align: center; }
+.cel-title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 850;
+  letter-spacing: -0.5px;
+  color: #fff;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: celRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 2.9s forwards;
+}
+.cel-sub {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: celRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 3.05s forwards;
+  b { color: var(--text); font-weight: 800; }
+}
+@keyframes celRise { to { opacity: 1; transform: none; } }
+
+/* ---- two facts ---- */
+.cel-facts {
+  display: flex;
+  gap: 0.8rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: celRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 3.2s forwards;
+}
+.cel-fact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.9rem 1.4rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cf-val {
+  font-size: 1.3rem;
+  font-weight: 850;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  small { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+  &.up { color: var(--good); }
+}
+.cf-lbl { font-size: 0.72rem; font-weight: 650; color: var(--muted); }
+
+/* ---- continue button (revealed only when ready) ---- */
+.cel-cta {
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 16px;
+  padding: 1.05rem 2.4rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  background: linear-gradient(135deg, #a05cff, #ff6a3d);
+  box-shadow: 0 14px 34px -12px rgba(180, 90, 200, 0.8);
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
+  pointer-events: none;
+  transition: transform 0.15s ease;
+}
+.cel-cta.show {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  animation: ctaPop 0.5s cubic-bezier(0.34, 1.6, 0.5, 1) forwards;
+}
+.cel-cta:active { transform: scale(0.97); }
+@keyframes ctaPop {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- confetti sparks ---- */
+.spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--sc);
+  opacity: 0;
+  animation: sparkFly 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  animation-delay: calc(var(--sd) + 1200ms);
+}
+@keyframes sparkFly {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.4) rotate(0deg); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1) rotate(220deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cel-arc, .cel-tick path, .cel-title, .cel-sub, .cel-facts, .spark {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
 }
