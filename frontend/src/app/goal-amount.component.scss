@@ -219,7 +219,7 @@
   display: grid;
   place-items: center;
   padding: 1.5rem;
-  background: hsl(var(--hue) 70% 97%);
+  background: #f3eeff;
   animation: cheerIn 0.4s ease both;
 }
 @keyframes cheerIn { from { opacity: 0; } to { opacity: 1; } }
@@ -241,7 +241,7 @@
   place-items: center;
   margin-bottom: 1.1rem;
   svg { overflow: visible; }
-  .cr-track { fill: none; stroke: hsl(var(--hue) 40% 88%); stroke-width: 4; }
+  .cr-track { fill: none; stroke: #d9ccff; stroke-width: 4; }
   .cr-fill {
     fill: none;
     stroke-width: 4;
@@ -297,7 +297,7 @@
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: hsl(var(--hue) 70% 55%);
+    background: #a370ff;
     opacity: 0.35;
     animation: dotPulse 1.1s ease-in-out infinite;
   }
