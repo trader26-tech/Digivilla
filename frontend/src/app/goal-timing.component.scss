@@ -3,10 +3,11 @@
   min-height: 100vh;
 }
 .screen {
-  /* Fixed brand theme — always purple, never per-goal blue/cyan. */
-  --accent-h: #a370ff;
-  --accent-dk: #7a3ea8;
-  --accent-soft: rgba(163, 112, 255, 0.16);
+  /* Orange accent on this screen — balances the purple "why" screen so the
+     flow mixes both brand colours. */
+  --accent-h: #ff9f2e;
+  --accent-dk: #f0810a;
+  --accent-soft: rgba(255, 159, 46, 0.16);
   max-width: 440px;
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
@@ -275,6 +276,9 @@
 }
 
 .cta {
+  /* purple button + orange calendar/slider = the purple+orange mix */
+  --pp: #a370ff;
+  --pp-dk: #7a3ea8;
   margin-top: auto;
   width: 100%;
   border: none;
@@ -283,9 +287,9 @@
   font-size: 1.1rem;
   font-weight: 750;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
+  background: linear-gradient(135deg, var(--pp), var(--pp-dk));
   cursor: pointer;
-  box-shadow: 0 12px 28px -12px var(--accent-h);
+  box-shadow: 0 12px 28px -12px var(--pp);
   transition: transform 0.15s ease, filter 0.15s;
 }
 .cta:hover {

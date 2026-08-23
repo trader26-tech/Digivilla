@@ -28,8 +28,8 @@
     </svg>
     <div class="donut-center">
       <span class="dc-cap">Goal reached in</span>
-      <span class="dc-amt">{{ months }}</span>
-      <span class="dc-sub">months</span>
+      <span class="dc-amt">{{ reachValue }}</span>
+      <span class="dc-sub">{{ reachUnit }}</span>
     </div>
   </div>
 
@@ -128,80 +128,61 @@
   <button class="d-cta invest" (click)="closeDetail()">Got it</button>
 </div>
 
-<!-- ============ DETAIL: MUTUAL FUND RETURNS — real past performance ============ -->
+<!-- ============ DETAIL: RETURNS — personalized, scrubbable SIP projection ============ -->
 <div class="detail returns-page" *ngIf="detailPage === 'returns'">
   <header class="top">
     <button class="back" (click)="closeDetail()" aria-label="Back">←</button>
-    <h1>How it has performed</h1>
+    <h1>Your money grows</h1>
     <span class="faq-spacer"></span>
   </header>
 
-  <!-- Loading shimmer -->
-  <div class="perf-loading" *ngIf="loadingFunds || loadingPerf">
-    <div class="pl-bar"></div>
-    <span>Fetching {{ perfYears || 3 }}-year track record…</span>
+  <!-- Live readout — updates as you scrub the chart -->
+  <div class="rd">
+    <span class="rd-time">{{ scrubTimeLabel }}</span>
+    <span class="rd-total">{{ fullInr(scrubValue) }}</span>
+    <div class="rd-split">
+      <span class="rd-chip inv"><i></i>Invested {{ compactInr(scrubInvested) }}</span>
+      <span class="rd-chip ret"><i></i>Returns +{{ compactInr(scrubReturns) }}</span>
+    </div>
   </div>
 
-  <ng-container *ngIf="!loadingFunds && !loadingPerf && metrics as m">
-    <!-- Big headline: what this blended plan actually did -->
-    <div class="perf-hero">
-      <span class="ph-cap">If you'd invested {{ perfYears }} years ago</span>
-      <span class="ph-amt">₹10,000 → <b>{{ compactInr(sampleNow) }}</b></span>
-      <span class="ph-sub">that's <b class="up">+{{ perfTotalPct }}%</b> — the real, blended track record of these funds</span>
-    </div>
+  <!-- The chart is the hero. Drag anywhere on it to scrub. -->
+  <div #chart class="grow-chart" [class.drawn]="perfEntered"
+       (pointerdown)="onScrub($event, chart)" (pointermove)="$event.buttons && onScrub($event, chart)">
+    <svg viewBox="0 0 320 160" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="invFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#a370ff" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#a370ff" stop-opacity="0.05" />
+        </linearGradient>
+        <linearGradient id="retFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff9a4a" stop-opacity="0.5" />
+          <stop offset="100%" stop-color="#ff6f61" stop-opacity="0.08" />
+        </linearGradient>
+      </defs>
+      <!-- returns band (between invested and total) -->
+      <path class="g-ret-area" [attr.d]="returnsArea" fill="url(#retFill)" />
+      <!-- invested area (their own money) -->
+      <path class="g-inv-area" [attr.d]="investedArea2" fill="url(#invFill)" />
+      <!-- the two lines -->
+      <path class="g-inv-line" [attr.d]="investedLine" fill="none" />
+      <path class="g-val-line" [attr.d]="valueLine" fill="none" />
+      <!-- scrub head -->
+      <line class="g-scrub" [attr.x1]="scrubX" [attr.x2]="scrubX" y1="4" y2="156" />
+      <circle class="g-dot inv" [attr.cx]="scrubX" [attr.cy]="scrubInvY" r="4" />
+      <circle class="g-dot val" [attr.cx]="scrubX" [attr.cy]="scrubValY" r="5" />
+    </svg>
+  </div>
 
-    <!-- The performance line: how the blended basket has moved -->
-    <div class="perf-chart" [class.drawn]="perfEntered">
-      <svg viewBox="0 0 320 150" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="perfFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#a370ff" stop-opacity="0.35" />
-            <stop offset="100%" stop-color="#a370ff" stop-opacity="0" />
-          </linearGradient>
-          <linearGradient id="perfStroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#b088ff" />
-            <stop offset="100%" stop-color="#ffb36b" />
-          </linearGradient>
-        </defs>
-        <path class="pc-area" [attr.d]="perfArea" fill="url(#perfFill)" />
-        <path class="pc-line" [attr.d]="perfLine" fill="none" stroke="url(#perfStroke)" />
-        <circle *ngIf="perfTroughXY as t" class="pc-trough" [attr.cx]="t.x" [attr.cy]="t.y" r="4" />
-        <circle *ngIf="perfEndXY as e" class="pc-end" [attr.cx]="e.x" [attr.cy]="e.y" r="4.5" />
-      </svg>
-      <div class="pc-xaxis">
-        <span *ngFor="let t of perfXLabels" [style.left.%]="(t.x / 320) * 100">{{ t.label }}</span>
-      </div>
+  <!-- Where the money sits — one compact visual bar, no list -->
+  <div class="alloc-block" *ngIf="allocSlices.length">
+    <div class="alloc-bar">
+      <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
     </div>
-
-    <!-- Three glanceable stats -->
-    <div class="perf-stats">
-      <div class="pstat">
-        <span class="ps-val up">{{ perfCagr }}%</span>
-        <span class="ps-lbl">per year<br>blended avg</span>
-      </div>
-      <div class="pstat">
-        <span class="ps-val down">−{{ perfDrawdown }}%</span>
-        <span class="ps-lbl">worst dip<br>then recovered</span>
-      </div>
-      <div class="pstat">
-        <span class="ps-val">{{ perfYears }}Y</span>
-        <span class="ps-lbl">real track<br>record</span>
-      </div>
+    <div class="alloc-legend">
+      <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
     </div>
-
-    <!-- Where the money sits (kept — it's visual & quick) -->
-    <div class="alloc-block" *ngIf="allocSlices.length">
-      <span class="d-label">What you're invested in</span>
-      <div class="alloc-bar">
-        <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
-      </div>
-      <div class="alloc-legend">
-        <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
-      </div>
-    </div>
-
-    <p class="d-note">Past performance from real NAV history. We pick &amp; rebalance top-rated funds for your goal — you just invest.</p>
-  </ng-container>
+  </div>
 
   <div class="spacer"></div>
   <button class="d-cta returns" (click)="closeDetail()">Got it</button>

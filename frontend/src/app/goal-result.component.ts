@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
-import { BasketItem, BasketMetrics, GoalPreset, GrowthPoint, ModelBasket } from './models';
+import { BasketItem, GoalPreset, ModelBasket } from './models';
 import { PlannerService } from './planner.service';
 
 /**
@@ -38,11 +38,6 @@ export class GoalResultComponent implements OnInit {
   basket: ModelBasket | null = null;
   loadingFunds = false;
 
-  // Real blended 3-year performance of this basket (growth curve, drawdown, CAGR).
-  metrics: BasketMetrics | null = null;
-  loadingPerf = false;
-  perfEntered = false; // flips true a beat after load -> the line draws in
-
   openDetail(which: 'invest' | 'returns'): void {
     this.detailPage = which;
     if (navigator.vibrate) navigator.vibrate(6);
@@ -51,8 +46,14 @@ export class GoalResultComponent implements OnInit {
       this.barsEntered = false;
       setTimeout(() => (this.barsEntered = true), 80);
     }
-    if (which === 'returns' && !this.basket && !this.loadingFunds) {
-      this.loadFunds();
+    if (which === 'returns') {
+      // The projection is computed on-device from THEIR plan — no fetch needed.
+      // Default the scrub head to the final month (goal reached).
+      this.scrubIdx = this.sipSeries.length - 1;
+      this.perfEntered = false;
+      setTimeout(() => (this.perfEntered = true), 80);
+      // Load the funds only for the little allocation bar (optional, non-blocking).
+      if (!this.basket && !this.loadingFunds) this.loadFunds();
     }
   }
   closeDetail(): void {
@@ -63,152 +64,119 @@ export class GoalResultComponent implements OnInit {
 
   private loadFunds(): void {
     this.loadingFunds = true;
-    this.loadingPerf = true;
     this.api.modelBaskets().subscribe({
       next: (list) => {
         this.basket = list.find((b) => b.key === this.riskKey) ?? list[1] ?? list[0] ?? null;
         this.loadingFunds = false;
-        this.loadPerformance();
       },
-      error: () => {
-        this.loadingFunds = false;
-        this.loadingPerf = false;
-      },
+      error: () => (this.loadingFunds = false),
     });
   }
 
-  /** Fetch the REAL blended 3-year NAV history for this basket's funds. */
-  private loadPerformance(): void {
-    const items = this.funds.map((f) => ({ scheme_code: f.scheme_code, weight: f.weight }));
-    if (!items.length) {
-      this.loadingPerf = false;
-      return;
+  // ============================================================
+  //  Personalized SIP projection — THEIR plan, month by month.
+  //  Invested (what they put in) vs Total value (with market growth).
+  //  Scrubbable: tap/drag the chart to read any month.
+  // ============================================================
+
+  perfEntered = false; // flips true a beat after open -> the line draws in
+  scrubIdx = 0;        // which month the scrub head is on
+
+  /** Per-month projection of their actual SIP toward their goal. */
+  get sipSeries(): { month: number; invested: number; value: number }[] {
+    const i = this.annualReturn / 12;
+    const p = this.monthlySip;
+    const n = this.months;
+    const out: { month: number; invested: number; value: number }[] = [];
+    for (let m = 0; m <= n; m++) {
+      const invested = p * m;
+      const value = i <= 0 ? invested : p * (((Math.pow(1 + i, m) - 1) / i) * (1 + i));
+      out.push({ month: m, invested: Math.round(invested), value: Math.round(value) });
     }
-    this.api.analyzeBasket(items, true).subscribe({
-      next: (m) => {
-        this.metrics = m;
-        this.loadingPerf = false;
-        this.perfEntered = false;
-        setTimeout(() => (this.perfEntered = true), 90);
-      },
-      error: () => (this.loadingPerf = false),
-    });
+    return out;
   }
 
-  // ============================================================
-  //  Blended 3-year performance chart (from real NAV history).
-  // ============================================================
+  /** The point currently under the scrub head. */
+  get scrubPt(): { month: number; invested: number; value: number } {
+    const s = this.sipSeries;
+    const idx = Math.max(0, Math.min(this.scrubIdx, s.length - 1));
+    return s[idx] ?? { month: 0, invested: 0, value: 0 };
+  }
+  get scrubInvested(): number { return this.scrubPt.invested; }
+  get scrubValue(): number { return this.scrubPt.value; }
+  get scrubReturns(): number { return Math.max(0, this.scrubPt.value - this.scrubPt.invested); }
 
-  /** The blended growth series, trimmed to ~the last 3 years for a clean story. */
-  get perfSeries(): GrowthPoint[] {
-    const g = this.metrics?.growth ?? [];
-    if (g.length <= 40) return g;
-    return g.slice(-37); // ~last 3 years of monthly points
+  /** A friendly label for the scrubbed month, e.g. "Month 8" or "Year 3". */
+  get scrubTimeLabel(): string {
+    const m = this.scrubPt.month;
+    if (m === 0) return 'Start';
+    if (m % 12 === 0) return `Year ${m / 12}`;
+    if (m < 12) return `Month ${m}`;
+    const y = Math.floor(m / 12);
+    return `Year ${y}, mo ${m % 12}`;
   }
 
-  /** ₹ that a sample 10k lump sum would be worth today, at the blended CAGR. */
-  get perfMultiple(): number {
-    const s = this.perfSeries;
-    if (s.length < 2) return 0;
-    return s[s.length - 1].value / s[0].value;
-  }
-  get sampleNow(): number {
-    return Math.round(10000 * (this.perfMultiple || 1));
-  }
-
-  /** Total blended return over the shown window, %. */
-  get perfTotalPct(): number {
-    const m = this.perfMultiple;
-    return m ? Math.round((m - 1) * 100) : 0;
-  }
-
-  /** Worst peak-to-trough dip over the window, % (positive number for display). */
-  get perfDrawdown(): number {
-    const dd = this.metrics?.max_drawdown;
-    if (dd != null) return Math.abs(Math.round(dd));
-    const s = this.perfSeries;
-    const worst = Math.min(0, ...s.map((p) => p.drawdown));
-    return Math.abs(Math.round(worst));
-  }
-
-  get perfCagr(): number {
-    return Math.round(this.metrics?.cagr ?? this.metrics?.return_3y ?? this.annualReturn * 100);
-  }
-
-  get perfYears(): number {
-    const s = this.perfSeries;
-    return Math.max(1, Math.round((s.length - 1) / 12));
-  }
-
-  // ---- SVG geometry for the performance line (viewBox 0 0 320 150) ----
+  // ---- SVG geometry (viewBox 0 0 320 160) ----
   private readonly PW = 320;
-  private readonly PH = 150;
-  private readonly PPAD = 6;
+  private readonly PH = 160;
+  private readonly PPAD = 8;
 
-  private get perfMin(): number {
-    const s = this.perfSeries;
-    return s.length ? Math.min(...s.map((p) => p.value)) : 0;
-  }
-  private get perfMax(): number {
-    const s = this.perfSeries;
+  private get sipMax(): number {
+    const s = this.sipSeries;
     return s.length ? Math.max(...s.map((p) => p.value)) : 1;
   }
-  private px(i: number): number {
-    const n = this.perfSeries.length - 1 || 1;
-    return this.PPAD + (i / n) * (this.PW - 2 * this.PPAD);
+  px(idx: number): number {
+    const n = this.sipSeries.length - 1 || 1;
+    return this.PPAD + (idx / n) * (this.PW - 2 * this.PPAD);
   }
-  private py(v: number): number {
-    const lo = this.perfMin;
-    const hi = this.perfMax;
-    const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
-    // leave headroom top & bottom
+  private pyVal(v: number): number {
+    const hi = this.sipMax || 1;
+    const t = v / hi;
     return this.PH - this.PPAD - t * (this.PH - 2 * this.PPAD);
   }
 
-  get perfLine(): string {
-    const s = this.perfSeries;
+  private path(key: 'value' | 'invested'): string {
+    const s = this.sipSeries;
     if (s.length < 2) return '';
-    return s.map((p, i) => `${i ? 'L' : 'M'}${this.px(i).toFixed(1)} ${this.py(p.value).toFixed(1)}`).join(' ');
+    return s.map((p, idx) => `${idx ? 'L' : 'M'}${this.px(idx).toFixed(1)} ${this.pyVal(p[key]).toFixed(1)}`).join(' ');
   }
-  get perfArea(): string {
-    const s = this.perfSeries;
+  get valueLine(): string { return this.path('value'); }
+  get investedLine(): string { return this.path('invested'); }
+
+  /** Filled area between the two lines = the market's contribution (returns). */
+  get returnsArea(): string {
+    const s = this.sipSeries;
     if (s.length < 2) return '';
-    const line = s.map((p, i) => `${i ? 'L' : 'M'}${this.px(i).toFixed(1)} ${this.py(p.value).toFixed(1)}`).join(' ');
+    const top = s.map((p, idx) => `${idx ? 'L' : 'M'}${this.px(idx).toFixed(1)} ${this.pyVal(p.value).toFixed(1)}`).join(' ');
+    const bottom = s
+      .slice()
+      .reverse()
+      .map((p, k) => `L${this.px(s.length - 1 - k).toFixed(1)} ${this.pyVal(p.invested).toFixed(1)}`)
+      .join(' ');
+    return `${top} ${bottom} Z`;
+  }
+  /** Area under the invested line = their own money. */
+  get investedArea2(): string {
+    const s = this.sipSeries;
+    if (s.length < 2) return '';
+    const line = s.map((p, idx) => `${idx ? 'L' : 'M'}${this.px(idx).toFixed(1)} ${this.pyVal(p.invested).toFixed(1)}`).join(' ');
     return `${line} L${this.px(s.length - 1).toFixed(1)} ${this.PH} L${this.px(0).toFixed(1)} ${this.PH} Z`;
   }
 
-  /** The lowest point (worst drawdown) marker, for a red dot on the line. */
-  get perfTroughXY(): { x: number; y: number } | null {
-    const s = this.perfSeries;
-    if (s.length < 2) return null;
-    let idx = 0;
-    let worst = 0;
-    s.forEach((p, i) => {
-      if (p.drawdown < worst) {
-        worst = p.drawdown;
-        idx = i;
-      }
-    });
-    if (worst === 0) return null;
-    return { x: this.px(idx), y: this.py(s[idx].value) };
-  }
-  get perfEndXY(): { x: number; y: number } | null {
-    const s = this.perfSeries;
-    if (s.length < 2) return null;
-    return { x: this.px(s.length - 1), y: this.py(s[s.length - 1].value) };
-  }
+  get scrubX(): number { return this.px(Math.max(0, Math.min(this.scrubIdx, this.sipSeries.length - 1))); }
+  get scrubValY(): number { return this.pyVal(this.scrubValue); }
+  get scrubInvY(): number { return this.pyVal(this.scrubInvested); }
 
-  /** X-axis: a few year labels evenly along the window. */
-  get perfXLabels(): { x: number; label: string }[] {
-    const s = this.perfSeries;
-    if (s.length < 2) return [];
-    const out: { x: number; label: string }[] = [];
-    const picks = [0, Math.floor((s.length - 1) / 2), s.length - 1];
-    for (const i of picks) {
-      const yr = s[i].date.split('-')[0];
-      out.push({ x: this.px(i), label: `’${yr.slice(2)}` });
-    }
-    return out;
+  /** Handle a pointer move over the chart -> snap the scrub head to the nearest month. */
+  onScrub(ev: PointerEvent, el: HTMLElement): void {
+    const rect = el.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+    const n = this.sipSeries.length - 1;
+    // account for the horizontal padding baked into px()
+    const usable = (this.PW - 2 * this.PPAD) / this.PW;
+    const adj = Math.max(0, Math.min(1, (frac - this.PPAD / this.PW) / usable));
+    this.scrubIdx = Math.round(adj * n);
+    if (navigator.vibrate) navigator.vibrate(2);
   }
 
   /** Full grouped INR, e.g. ₹17,54,671 — for the donut centre + pills. */
@@ -263,6 +231,20 @@ export class GoalResultComponent implements OnInit {
 
   get months(): number {
     return Math.max(1, Math.round(this.years * 12));
+  }
+
+  /** Human-friendly headline: months when under a year, otherwise years. */
+  get reachValue(): string {
+    const m = this.months;
+    if (m < 12) return `${m}`;
+    const y = m / 12;
+    return Number.isInteger(y) ? `${y}` : y.toFixed(1);
+  }
+  get reachUnit(): string {
+    const m = this.months;
+    if (m < 12) return m === 1 ? 'month' : 'months';
+    const y = m / 12;
+    return y === 1 ? 'year' : 'years';
   }
 
   /** Monthly SIP needed to reach `amount` at `annualReturn` over `months`.
