@@ -221,7 +221,7 @@
   font-size: 0.95rem;
   font-weight: 650;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad-dusk);
   cursor: pointer;
 }
 .primary:disabled {

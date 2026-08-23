@@ -19,6 +19,10 @@
   font-size: 1.8rem;
   margin: 0;
   letter-spacing: -0.5px;
+  background: var(--grad-dusk);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .basket-btn {
   border: 1px solid var(--border);
@@ -504,7 +508,7 @@
   font-size: 0.95rem;
   font-weight: 650;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad-dusk);
   cursor: pointer;
   margin-bottom: 1rem;
 }

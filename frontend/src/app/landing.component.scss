@@ -243,7 +243,7 @@ section {
     border: none;
     color: #fff;
     padding: 0.8rem 1.5rem;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    background: var(--grad-dusk);
     box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--accent) 70%, transparent);
     &:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -12px color-mix(in srgb, var(--accent) 75%, transparent); }
   }
@@ -378,7 +378,7 @@ section {
   padding: 0.8rem;
   border-radius: 11px;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad-dusk);
   box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--accent) 75%, transparent);
   transition: transform 0.16s ease, box-shadow 0.2s ease;
   &:hover:not(:disabled) { transform: translateY(-1px); }
@@ -460,7 +460,7 @@ section {
     font-size: clamp(1.8rem, 4vw, 2.7rem);
     font-weight: 800;
     letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    background: var(--grad-dusk);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

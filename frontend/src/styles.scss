@@ -16,6 +16,12 @@
   --orange: #ff9a4a;       /* warm gold/coral */
   --orange-dk: #ff6f61;
 
+  /* signature gradients — purple → warm-gold, the intro's dusk DNA. Use these on
+     hero CTAs, brand marks and headline accents so both colors read everywhere. */
+  --grad-dusk: linear-gradient(115deg, #a370ff 0%, #b866d6 42%, #ff6f61 78%, #ff9a4a 100%);
+  --grad-dusk-soft: linear-gradient(115deg, rgba(163,112,255,0.18), rgba(255,111,97,0.14) 70%, rgba(255,154,74,0.16));
+  --grad-warm: linear-gradient(135deg, #ff9a4a, #ff6f61);
+
   --warn: #ffb84d;
   --good: #4be3a1;
   --ok: #ffb84d;

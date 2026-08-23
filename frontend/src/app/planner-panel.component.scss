@@ -115,7 +115,7 @@
   border-bottom-left-radius: 4px;
 }
 .user .msg {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad-dusk);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
@@ -184,7 +184,7 @@
   border-color: var(--accent);
 }
 .chip.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad-dusk);
   border-color: transparent;
   color: #fff;
 }
@@ -265,7 +265,7 @@
   font-size: 0.95rem;
   font-weight: 650;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad-dusk);
   cursor: pointer;
 }
 .primary:hover {
