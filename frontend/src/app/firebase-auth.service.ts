@@ -68,9 +68,13 @@ export class FirebaseAuthService {
       return;
     }
 
-    // Lazy-load the SDK so the mock path pulls in nothing.
-    const { initializeApp, getApps } = await import('firebase/app');
-    const { getAuth, RecaptchaVerifier, signInWithPhoneNumber } = await import('firebase/auth');
+    // Lazy-load the SDK so the mock path pulls in nothing. The specifiers are
+    // built at runtime so TypeScript doesn't require `firebase` to be installed
+    // until you actually flip ENABLED on (then run `npm i firebase`).
+    const appMod = 'firebase/app';
+    const authMod = 'firebase/auth';
+    const { initializeApp, getApps } = await import(/* @vite-ignore */ appMod);
+    const { getAuth, RecaptchaVerifier, signInWithPhoneNumber } = await import(/* @vite-ignore */ authMod);
 
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     this.auth = getAuth(app);

@@ -23,6 +23,8 @@ export class GoalResultComponent implements OnInit {
   @Input({ required: true }) goal!: GoalPreset;
   @Input() amount = 0; // target corpus
   @Input() years = 0;  // horizon in years
+  /** DEV: deep-link into a sub-view on load (from the Jump menu). */
+  @Input() initialView: string | null = null;
 
   @Output() continued = new EventEmitter<number>(); // emits the monthly SIP
   @Output() back = new EventEmitter<void>();
@@ -311,6 +313,10 @@ export class GoalResultComponent implements OnInit {
 
   ngOnInit(): void {
     setTimeout(() => (this.entered = true), 30);
+    // DEV deep-link: open a sub-view straight away when jumped to.
+    if (this.initialView === 'plan-invest') setTimeout(() => this.openDetail('invest'), 60);
+    else if (this.initialView === 'plan-returns') setTimeout(() => this.openDetail('returns'), 60);
+    else if (this.initialView === 'celebrate') setTimeout(() => this.proceed(), 200);
   }
 
   get hue(): number {

@@ -21,6 +21,9 @@ import { LandingComponent } from './landing.component';
 import { AuthResponse, GoalPreset } from './models';
 import { PlannerPanelComponent } from './planner-panel.component';
 import { RefreshButtonComponent } from './refresh-button.component';
+import { DevNavComponent, DevScreen } from './dev-nav.component';
+import { PlannerService } from './planner.service';
+import { inject } from '@angular/core';
 
 type Tab = 'home' | 'invest';
 
@@ -40,6 +43,7 @@ type Tab = 'home' | 'invest';
     GoalHomeComponent,
     IntroComponent,
     RefreshButtonComponent,
+    DevNavComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -90,6 +94,18 @@ export class AppComponent {
 
   authed = !!localStorage.getItem('wp_token');
   userName = localStorage.getItem('wp_name') || '';
+
+  /** A sample goal preset, loaded once, so the dev-nav can jump into the
+   *  plan/home screens without walking the picker. */
+  private sampleGoal: GoalPreset | null = null;
+  private planner = inject(PlannerService);
+
+  constructor() {
+    this.planner.presets().subscribe({
+      next: (list) => (this.sampleGoal = list[0] ?? null),
+      error: () => {},
+    });
+  }
 
   /** Numeric index of the current pre-login screen, so the stepAnim trigger can
    *  tell forward (:increment) from back (:decrement). */
@@ -156,14 +172,18 @@ export class AppComponent {
     this.timingDone = false;
   }
 
-  /** Quick-login from the home sheet -> enter the app. Stores a lightweight
-   *  session so the authed shell renders (real OTP verification comes later). */
-  onQuickLogin(phone: string): void {
-    const owner = 'usr_' + phone;
-    localStorage.setItem('wp_token', 'quick_' + phone);
+  /** Quick-login from the home sheet -> enter the app. The user has already
+   *  passed Firebase phone-OTP in the sheet; here we store a lightweight local
+   *  session (name + phone) so the authed shell renders. To make this a REAL
+   *  session, send the Firebase idToken to the backend, verify it there with
+   *  the Admin SDK, and swap the placeholder token below for the one it mints. */
+  onQuickLogin(user: { name: string; phone: string }): void {
+    const owner = 'usr_' + user.phone;
+    localStorage.setItem('wp_token', 'quick_' + user.phone);
     localStorage.setItem('wp_owner', owner);
-    localStorage.setItem('wp_name', '');
-    this.userName = '';
+    localStorage.setItem('wp_name', user.name);
+    localStorage.setItem('wp_phone', user.phone);
+    this.userName = user.name;
     this.authed = true;
   }
 
@@ -173,6 +193,95 @@ export class AppComponent {
     this.authed = false;
     this.tab = 'home';
     this.plannerOpen = false;
+  }
+
+  /** DEV: jump straight to any screen with sample data pre-filled. Wired to the
+   *  floating "Jump" button so you don't have to walk the whole flow each time. */
+  jumpTo(screen: DevScreen): void {
+    // reset all flow flags to a clean slate first
+    this.intro = false;
+    this.pickedGoal = false;
+    this.chosenGoal = null;
+    this.amountDone = false;
+    this.timingDone = false;
+    this.plannerOpen = false;
+
+    const g = this.sampleGoal;
+    // sensible sample values for screens that need a goal + amount + horizon
+    const withGoal = () => {
+      this.chosenGoal = g;
+      this.chosenAmount = g?.default_amount || 300000;
+      this.chosenYears = g?.default_years || 2;
+      this.chosenMonthly = 11614;
+    };
+
+    switch (screen) {
+      case 'intro':
+        this.intro = true;
+        this.authed = false;
+        break;
+      case 'picker':
+        this.authed = false;
+        break;
+      case 'amount':
+        this.authed = false;
+        withGoal();
+        break; // chosenGoal set, amountDone false -> amount screen
+      case 'timing':
+        this.authed = false;
+        withGoal();
+        this.amountDone = true;
+        break;
+      case 'plan':
+      case 'plan-invest':
+      case 'plan-returns':
+      case 'celebrate':
+        this.authed = false;
+        withGoal();
+        this.amountDone = true;
+        this.timingDone = true;
+        // deep-link into a sub-view of the plan screen after it renders
+        this.pendingPlanView = screen;
+        break;
+      case 'home':
+        this.authed = false;
+        withGoal();
+        this.pickedGoal = true;
+        break;
+      case 'landing':
+        this.authed = false;
+        withGoal();
+        this.pickedGoal = true;
+        // the landing/sign-in shows via goal-home's login sheet; keep it simple
+        break;
+      case 'dashboard':
+        withGoal();
+        this.pickedGoal = true;
+        this.ensureDevSession();
+        this.authed = true;
+        this.tab = 'home';
+        break;
+      case 'basket':
+        withGoal();
+        this.pickedGoal = true;
+        this.ensureDevSession();
+        this.authed = true;
+        this.tab = 'invest';
+        break;
+    }
+  }
+
+  /** The plan sub-view to auto-open (invest/returns/celebrate) after jumping. */
+  pendingPlanView: DevScreen | null = null;
+
+  /** Give the authed shell a throwaway session so dashboard/basket render. */
+  private ensureDevSession(): void {
+    if (!localStorage.getItem('wp_token')) {
+      localStorage.setItem('wp_token', 'dev');
+      localStorage.setItem('wp_owner', 'usr_dev');
+      localStorage.setItem('wp_name', 'Dev');
+      this.userName = 'Dev';
+    }
   }
 
   setTab(t: Tab): void {

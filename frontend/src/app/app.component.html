@@ -33,6 +33,7 @@
     [goal]="chosenGoal"
     [amount]="chosenAmount"
     [years]="chosenYears"
+    [initialView]="pendingPlanView"
     (continued)="onResultContinue($event)"
     (back)="onResultBack()"
   ></app-goal-result>
@@ -94,3 +95,6 @@
 <!-- Always-on "refresh to latest" button — force-clears the PWA cache so the
      newest deploy always loads. Floats above every screen. -->
 <app-refresh-button></app-refresh-button>
+
+<!-- DEV: floating "Jump" menu to hop straight to any screen with sample data. -->
+<app-dev-nav (jump)="jumpTo($event)"></app-dev-nav>

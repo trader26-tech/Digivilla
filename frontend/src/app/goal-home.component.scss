@@ -148,40 +148,116 @@
   background: var(--border);
   margin: 0 auto 1.1rem;
 }
-.login-sheet h2 { margin: 0 0 0.3rem; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.3px; }
-.ls-sub { margin: 0 0 1.2rem; font-size: 0.92rem; color: var(--muted); line-height: 1.5; }
-
-.phone-field {
-  display: flex;
+/* little "goal saved" badge above the heading */
+.ls-saved {
+  display: inline-flex;
   align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 750;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.ls-check {
+  width: 15px; height: 15px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: #34d399;
+  color: #06281d;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.login-sheet h2 { margin: 0 0 0.3rem; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.3px; }
+.ls-sub { margin: 0 0 1.2rem; font-size: 0.92rem; color: var(--muted); line-height: 1.5;
+  b { color: var(--text); font-weight: 750; } }
+.ls-edit {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 750;
+  color: #a05cff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* labelled fields (name, phone) */
+.field { display: block; margin-bottom: 0.75rem; }
+.field-l {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.field-in {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  outline: none;
+  background: var(--surface-2);
+  padding: 0.95rem 1rem;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+.field-in::placeholder { color: var(--muted); font-weight: 500; }
+.field-in:focus { border-color: #a05cff; }
+
+/* phone row: +91 prefix glued to the input */
+.phone-row {
+  display: flex;
+  align-items: stretch;
   border: 1.5px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
   background: var(--surface-2);
   transition: border-color 0.2s;
 }
-.phone-field:focus-within { border-color: #a05cff; }
+.phone-row:focus-within { border-color: #a05cff; }
 .cc {
+  display: flex;
+  align-items: center;
   padding: 0 0.7rem 0 1rem;
   font-weight: 750;
   color: var(--text);
   border-right: 1px solid var(--border);
-  align-self: stretch;
-  display: flex;
-  align-items: center;
 }
-.phone-input {
-  flex: 1;
+.phone-in {
   border: none;
-  outline: none;
+  border-radius: 0;
   background: transparent;
-  padding: 1rem 1rem;
-  font-family: inherit;
-  font-size: 1.15rem;
-  font-weight: 650;
   letter-spacing: 0.5px;
-  color: var(--text);
 }
+.phone-in:focus { border-color: transparent; }
+
+/* OTP: big spaced digits, centered */
+.otp-in {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5rem;
+  padding: 1rem;
+}
+
+.ls-error {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: #ff8f8f;
+}
+
+/* the invisible reCAPTCHA lives here — never takes space */
+.recaptcha-host { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 .ls-cta {
   width: 100%;
