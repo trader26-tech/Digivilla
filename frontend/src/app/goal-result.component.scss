@@ -7,9 +7,11 @@
 .detail {
   max-width: 440px;
   margin: 0 auto;
-  padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  padding: 0.75rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  /* The onboarding chrome adds ~2.9rem of top padding on the wrapper; subtract
+     it so the screen fits in one viewport with no scroll. */
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: calc(100dvh - 2.9rem);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -67,8 +69,8 @@
 }
 .faq-spacer { width: 40px; flex: none; }
 .goal-amt {
-  margin: 0.6rem 0 0;
-  font-size: 0.95rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
   color: var(--muted);
   b { color: var(--text); font-weight: 800; }
 }
@@ -76,9 +78,9 @@
 /* ---- glowing segmented donut ---- */
 .donut {
   position: relative;
-  width: 220px;
-  height: 220px;
-  margin: 1.1rem auto 0;
+  width: 176px;
+  height: 176px;
+  margin: 0.8rem auto 0;
   animation: donutIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes donutIn {
@@ -104,28 +106,28 @@
   align-items: center;
   justify-content: center;
 }
-.dc-cap { font-size: 0.8rem; font-weight: 650; color: var(--muted); }
+.dc-cap { font-size: 0.72rem; font-weight: 650; color: var(--muted); }
 .dc-amt {
-  font-size: 3.2rem;
+  font-size: 2.5rem;
   font-weight: 850;
-  letter-spacing: -2px;
+  letter-spacing: -1.5px;
   line-height: 1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
-  margin: 0.1rem 0;
+  margin: 0.05rem 0;
   background: linear-gradient(135deg, #c9adff, #ffb36b);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.dc-sub { font-size: 0.9rem; color: var(--muted); font-weight: 650; }
+.dc-sub { font-size: 0.8rem; color: var(--muted); font-weight: 650; }
 
 /* ---- legend: your money vs market growth ---- */
 .legend {
   width: 100%;
   display: flex;
   gap: 0.6rem;
-  margin-top: 1.3rem;
+  margin-top: 0.9rem;
 }
 .leg {
   flex: 1;
@@ -176,64 +178,63 @@
 }
 .re-ic { font-size: 1.05rem; flex: none; line-height: 1.45; }
 
-.spacer { flex: 1; min-height: 0.75rem; }
+.spacer { flex: 1; min-height: 0.5rem; }
 
-/* ---- pills (just above the slider) ---- */
-.pills {
+/* ---- one tidy action box: two detail rows + the slide ---- */
+.actions {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  margin-bottom: 0.85rem;
+  gap: 0.55rem;
+  padding: 0.6rem;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 .pill {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
   border: none;
-  border-radius: 16px;
-  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  padding: 0.7rem 0.85rem;
   cursor: pointer;
   text-align: left;
   color: #fff;
   font-family: inherit;
   transition: transform 0.12s ease, filter 0.12s;
 }
-.pill:hover { filter: brightness(1.04); }
+.pill:hover { filter: brightness(1.05); }
 .pill:active { transform: scale(0.99); }
 .pill.invest { background: linear-gradient(135deg, #a05cff, #7a3ea8); }
 .pill.returns { background: linear-gradient(135deg, #ff9a4a, #ff6a3d); }
-.pill-l { display: flex; align-items: center; gap: 0.7rem; flex: 1; min-width: 0; }
 .pill-ic {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   background: rgba(255, 255, 255, 0.22);
   display: grid;
   place-items: center;
-  font-size: 1.05rem;
+  font-size: 1rem;
   flex: none;
 }
-.pill-t { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.pill-t b { font-size: 0.98rem; font-weight: 750; }
-.pill-t small { font-size: 0.72rem; opacity: 0.85; }
+.pill-nm { font-size: 0.95rem; font-weight: 750; flex: 1; min-width: 0; }
 .pill-val {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 800;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   flex: none;
   small { font-size: 0.68rem; font-weight: 600; opacity: 0.9; }
-  small.up { background: rgba(255, 255, 255, 0.24); padding: 0.1rem 0.4rem; border-radius: 999px; }
 }
-.pill-arrow { font-size: 1.3rem; opacity: 0.8; flex: none; }
+.pill-arrow { font-size: 1.2rem; opacity: 0.75; flex: none; }
 
-/* ---- slide to confirm ---- */
+/* ---- slide to confirm (bottom of the action box) ---- */
 .slide {
   position: relative;
   width: 100%;
-  height: 60px;
-  border-radius: 999px;
+  height: 56px;
+  border-radius: 14px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -246,7 +247,7 @@
   left: 0;
   top: 0;
   height: 100%;
-  border-radius: 999px;
+  border-radius: 14px;
   background: linear-gradient(90deg, var(--purple), var(--orange));
   transition: width 0.05s linear;
   z-index: 0;
@@ -266,14 +267,14 @@
   position: absolute;
   top: 4px;
   left: 0;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   margin-left: 4px;
   border: none;
-  border-radius: 50%;
+  border-radius: 11px;
   background: #fff;
   color: var(--purple-dk);
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
   cursor: grab;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
@@ -284,11 +285,11 @@
 .slide-knob:active { cursor: grabbing; }
 .slide.done .slide-knob { transition: left 0.3s ease; }
 .later {
-  margin-top: 0.8rem;
+  margin-top: 0.7rem;
   border: none;
   background: transparent;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
 }

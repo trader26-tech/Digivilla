@@ -92,43 +92,33 @@
     </div>
   </div>
 
-  <!-- Reassurance strip -->
-  <div class="reassure">
-    <span class="re-ic">✨</span>
-    <span>Invest just <b>{{ compactInr(monthlySip) }}/mo</b> and the market does the rest — earning you <b>{{ compactInr(growth) }}</b> extra.</span>
-  </div>
-
   <div class="spacer"></div>
 
-  <!-- Pills, just above the slider -->
-  <div class="pills">
+  <!-- One tidy action box: the two detail pills + the slide-to-invest together -->
+  <div class="actions">
     <button class="pill invest" (click)="openDetail('invest')">
-      <div class="pill-l">
-        <span class="pill-ic">🐷</span>
-        <div class="pill-t"><b>You invest</b><small>Tap to know more</small></div>
-      </div>
+      <span class="pill-ic">🐷</span>
+      <span class="pill-nm">You invest</span>
       <span class="pill-val">{{ compactInr(monthlySip) }}<small>/mo</small></span>
       <span class="pill-arrow">›</span>
     </button>
 
     <button class="pill returns" (click)="openDetail('returns')">
-      <div class="pill-l">
-        <span class="pill-ic">◈</span>
-        <div class="pill-t"><b>Mutual fund returns</b><small>Tap to know more</small></div>
-      </div>
-      <span class="pill-val">{{ compactInr(growth) }} <small class="up">{{ returnLabel }}</small></span>
+      <span class="pill-ic">◈</span>
+      <span class="pill-nm">Mutual fund returns</span>
+      <span class="pill-val">{{ compactInr(growth) }}</span>
       <span class="pill-arrow">›</span>
     </button>
+
+    <div class="slide" [class.done]="confirmed">
+      <div class="slide-fill" [style.width.%]="slidePct < 9 ? 9 : slidePct"></div>
+      <span class="slide-label">{{ confirmed ? 'Starting…' : 'Slide to start investing' }}</span>
+      <button class="slide-knob" [style.left.%]="slidePct"
+        (pointerdown)="startSlide($event)" (pointermove)="moveSlide($event)"
+        (pointerup)="endSlide()" (pointercancel)="endSlide()" aria-label="Slide to start investing">→</button>
+    </div>
   </div>
 
-  <!-- Slide to confirm -->
-  <div class="slide" [class.done]="confirmed">
-    <div class="slide-fill" [style.width.%]="slidePct < 9 ? 9 : slidePct"></div>
-    <span class="slide-label">{{ confirmed ? 'Starting…' : 'Slide to start investing' }}</span>
-    <button class="slide-knob" [style.left.%]="slidePct"
-      (pointerdown)="startSlide($event)" (pointermove)="moveSlide($event)"
-      (pointerup)="endSlide()" (pointercancel)="endSlide()" aria-label="Slide to start investing">→</button>
-  </div>
   <button class="later" (click)="proceed()">I'll do this later</button>
 </div>
 
