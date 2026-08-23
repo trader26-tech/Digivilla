@@ -31,10 +31,36 @@ export class GoalResultComponent implements OnInit {
 
   entered = false;
 
-  // Fund reveal (hidden by default behind the eye button).
-  showFunds = false;
+  /** Which detail pill is expanded ('invest' | 'returns' | null). */
+  openPill: 'invest' | 'returns' | null = null;
+
+  // Fund detail (loaded when the returns pill is opened).
   basket: ModelBasket | null = null;
   loadingFunds = false;
+
+  togglePill(which: 'invest' | 'returns'): void {
+    this.openPill = this.openPill === which ? null : which;
+    if (navigator.vibrate) navigator.vibrate(6);
+    if (which === 'returns' && this.openPill === 'returns' && !this.basket && !this.loadingFunds) {
+      this.loadFunds();
+    }
+  }
+
+  private loadFunds(): void {
+    this.loadingFunds = true;
+    this.api.modelBaskets().subscribe({
+      next: (list) => {
+        this.basket = list.find((b) => b.key === this.riskKey) ?? list[1] ?? list[0] ?? null;
+        this.loadingFunds = false;
+      },
+      error: () => (this.loadingFunds = false),
+    });
+  }
+
+  /** Full grouped INR, e.g. ₹17,54,671 — for the donut centre + pills. */
+  fullInr(v: number): string {
+    return `₹${Math.round(v).toLocaleString('en-IN')}`;
+  }
 
   ngOnInit(): void {
     setTimeout(() => (this.entered = true), 30);
@@ -47,21 +73,6 @@ export class GoalResultComponent implements OnInit {
   /** The model basket matching this goal's risk (conservative/balanced/aggressive). */
   private get riskKey(): string {
     return this.goal?.default_risk || 'balanced';
-  }
-
-  toggleFunds(): void {
-    this.showFunds = !this.showFunds;
-    if (this.showFunds && !this.basket && !this.loadingFunds) {
-      this.loadingFunds = true;
-      this.api.modelBaskets().subscribe({
-        next: (list) => {
-          this.basket =
-            list.find((b) => b.key === this.riskKey) ?? list[1] ?? list[0] ?? null;
-          this.loadingFunds = false;
-        },
-        error: () => (this.loadingFunds = false),
-      });
-    }
   }
 
   get funds(): BasketItem[] {
@@ -96,7 +107,7 @@ export class GoalResultComponent implements OnInit {
     return risk === 'aggressive' ? 0.12 : risk === 'conservative' ? 0.07 : 0.10;
   }
 
-  private get months(): number {
+  get months(): number {
     return Math.max(1, Math.round(this.years * 12));
   }
 
@@ -175,8 +186,41 @@ export class GoalResultComponent implements OnInit {
     this.back.emit();
   }
   proceed(): void {
-    if (navigator.vibrate) navigator.vibrate(8);
+    if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
     this.continued.emit();
+  }
+
+  // ---- slide-to-confirm ----
+  slidePct = 0;            // 0..100 knob progress
+  private sliding = false;
+  private trackEl: HTMLElement | null = null;
+  confirmed = false;
+
+  startSlide(ev: PointerEvent): void {
+    if (this.confirmed) return;
+    this.sliding = true;
+    this.trackEl = (ev.currentTarget as HTMLElement).parentElement;
+    (ev.target as HTMLElement).setPointerCapture?.(ev.pointerId);
+  }
+  moveSlide(ev: PointerEvent): void {
+    if (!this.sliding || !this.trackEl || this.confirmed) return;
+    const rect = this.trackEl.getBoundingClientRect();
+    const knob = 56; // knob width
+    const x = ev.clientX - rect.left - knob / 2;
+    const max = rect.width - knob;
+    this.slidePct = Math.max(0, Math.min(100, (x / max) * 100));
+    if (this.slidePct >= 96) this.completeSlide();
+  }
+  endSlide(): void {
+    if (this.confirmed) return;
+    this.sliding = false;
+    if (this.slidePct < 96) this.slidePct = 0; // snap back if not far enough
+  }
+  private completeSlide(): void {
+    this.sliding = false;
+    this.slidePct = 100;
+    this.confirmed = true;
+    this.proceed();
   }
 }
 

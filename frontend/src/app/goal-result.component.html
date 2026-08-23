@@ -1,56 +1,88 @@
-<div class="result-screen" [class.entered]="entered" [style.--hue]="hue">
-  <button class="back" (click)="goBack()" aria-label="Back">←</button>
+<div class="plan" [class.entered]="entered">
+  <!-- Header -->
+  <header class="top">
+    <button class="back" (click)="goBack()" aria-label="Back">←</button>
+    <h1>Here's your plan</h1>
+    <span class="faq">FAQ</span>
+  </header>
+  <p class="goal-amt">Goal Amount · <b>{{ fullInr(amount) }}</b></p>
 
-  <!-- ONE focal point: the monthly amount -->
-  <div class="hero">
-    <div class="sip">{{ compactInr(monthlySip) }}<span class="per">/mo</span></div>
-    <p class="sip-sub">to reach {{ compactInr(amount) }}</p>
-  </div>
-
-  <!-- Visual split: you invest vs funds grow. Almost no words. -->
+  <!-- Donut: invest (purple) vs mutual-fund returns (orange) -->
   <div class="donut">
     <svg viewBox="0 0 120 120">
       <circle cx="60" cy="60" [attr.r]="ringR" class="rim-base" />
       <circle cx="60" cy="60" [attr.r]="ringR" class="rim invested"
         [attr.stroke-dasharray]="investedDash" stroke-dashoffset="0" transform="rotate(-90 60 60)" />
-      <circle cx="60" cy="60" [attr.r]="ringR" class="rim growth"
+      <circle cx="60" cy="60" [attr.r]="ringR" class="rim returns"
         [attr.stroke-dasharray]="growthDash" [attr.stroke-dashoffset]="growthOffset" transform="rotate(-90 60 60)" />
     </svg>
     <div class="donut-center">
-      <span class="dc-grow">+{{ compactInr(growth) }}</span>
-      <span class="dc-label">funds add</span>
+      <span class="dc-cap">You invest</span>
+      <span class="dc-amt">{{ fullInr(totalInvested) }}</span>
+      <span class="dc-sub">{{ months }} months</span>
     </div>
   </div>
 
-  <div class="mini-legend">
-    <span><i class="d-inv"></i>You put in {{ compactInr(totalInvested) }}</span>
-    <span><i class="d-grw"></i>Funds add {{ compactInr(growth) }}</span>
-  </div>
-
-  <button class="cta" (click)="proceed()">Start investing →</button>
-
-  <!-- Understated reveal, out of the way -->
-  <button class="reveal-link" (click)="toggleFunds()">
-    {{ showFunds ? 'Hide funds' : 'Where does it go?' }}
-  </button>
-
-  <!-- Fund detail (hidden by default) -->
-  <div class="funds-panel" *ngIf="showFunds">
-    <div class="loading" *ngIf="loadingFunds">Loading…</div>
-    <ng-container *ngIf="basket as b">
-      <div class="alloc-bar">
-        <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
-      </div>
-      <div class="alloc-legend">
-        <span *ngFor="let s of allocSlices"><i [style.background]="assetColor(s.kind)"></i>{{ s.pct }}% {{ s.label }}</span>
-      </div>
-      <div class="fund-list">
-        <div class="fund" *ngFor="let f of funds">
-          <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
-          <span class="f-name">{{ f.name }}</span>
-          <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
+  <!-- Detail pills -->
+  <div class="pills">
+    <button class="pill invest" [class.open]="openPill === 'invest'" (click)="togglePill('invest')">
+      <div class="pill-row">
+        <div class="pill-l">
+          <span class="pill-ic">🐷</span>
+          <div class="pill-t"><b>You invest</b><small>Tap to know more</small></div>
         </div>
+        <span class="pill-val">{{ compactInr(monthlySip) }}<small>/mo</small></span>
       </div>
-    </ng-container>
+      <div class="pill-detail" *ngIf="openPill === 'invest'">
+        <div class="dl"><span>Every month</span><b>{{ compactInr(monthlySip) }}</b></div>
+        <div class="dl"><span>For</span><b>{{ months }} months</b></div>
+        <div class="dl"><span>You put in</span><b>{{ compactInr(totalInvested) }}</b></div>
+        <p class="dl-note">A steady SIP — automatic, every month, until you reach the goal.</p>
+      </div>
+    </button>
+
+    <button class="pill returns" [class.open]="openPill === 'returns'" (click)="togglePill('returns')">
+      <div class="pill-row">
+        <div class="pill-l">
+          <span class="pill-ic">◈</span>
+          <div class="pill-t"><b>Mutual fund returns</b><small>Tap to know more</small></div>
+        </div>
+        <span class="pill-val">{{ compactInr(growth) }} <small class="up">{{ returnLabel }}</small></span>
+      </div>
+      <div class="pill-detail" *ngIf="openPill === 'returns'">
+        <div class="dl"><span>Growth on top</span><b class="pos">+{{ compactInr(growth) }}</b></div>
+        <div class="dl"><span>Expected return</span><b>{{ returnLabel }}</b></div>
+        <div class="loading" *ngIf="loadingFunds">Loading funds…</div>
+        <ng-container *ngIf="basket as b">
+          <div class="alloc-bar">
+            <span *ngFor="let s of allocSlices" [style.width.%]="s.pct" [style.background]="assetColor(s.kind)" [title]="s.label"></span>
+          </div>
+          <div class="fund-list">
+            <div class="fund" *ngFor="let f of funds">
+              <span class="f-dot" [style.background]="assetColor(f.asset_class)"></span>
+              <span class="f-name">{{ f.name }}</span>
+              <span class="f-wt">{{ (f.weight * 100).toFixed(0) }}%</span>
+            </div>
+          </div>
+        </ng-container>
+        <p class="dl-note">Diversified, top-rated funds. We pick &amp; rebalance — you just invest.</p>
+      </div>
+    </button>
   </div>
+
+  <!-- Slide to confirm -->
+  <div class="slide" [class.done]="confirmed">
+    <div class="slide-fill" [style.width.%]="slidePct < 8 ? 8 : slidePct"></div>
+    <span class="slide-label">{{ confirmed ? 'Starting…' : 'Slide to start investing' }}</span>
+    <button
+      class="slide-knob"
+      [style.left.%]="slidePct"
+      (pointerdown)="startSlide($event)"
+      (pointermove)="moveSlide($event)"
+      (pointerup)="endSlide()"
+      (pointercancel)="endSlide()"
+      aria-label="Slide to start investing"
+    >→</button>
+  </div>
+  <button class="later" (click)="proceed()">I'll do this later</button>
 </div>
