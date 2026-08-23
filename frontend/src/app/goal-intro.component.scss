@@ -71,6 +71,8 @@
   color: var(--muted);
   max-width: 24rem;
 }
+/* In phase 2, centre the calculator group between the text and the CTA. */
+.calc-phase .panel { margin-top: auto; }
 
 /* ---- calculator panel (revealed in phase 2) ---- */
 .panel {
