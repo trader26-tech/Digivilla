@@ -117,7 +117,7 @@ export class AppComponent {
     return 4; // home + quick login
   }
 
-  /** ---- shared onboarding chrome (MyLuxias brand + progress) ---- */
+  /** ---- shared onboarding chrome (MyLakshyas brand + progress) ---- */
   /** Short label for each step, shown next to the progress. */
   readonly flowLabels = ['Goal', 'Amount', 'Timeline', 'Plan', 'Finish'];
   get flowTotal(): number {

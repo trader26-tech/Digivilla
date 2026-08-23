@@ -9,7 +9,7 @@
 
   <!-- Top bar -->
   <header class="lp-nav">
-    <div class="brand"><span class="logo">◆</span><span>WealthPath</span></div>
+    <div class="brand"><span class="logo">◆</span><span>MyLakshyas</span></div>
     <nav class="lp-links">
       <a href="#why">Why us</a>
       <a href="#how">How it works</a>
@@ -29,7 +29,7 @@
         not a guess.
       </h1>
       <p class="lede reveal in" #reveal>
-        WealthPath is the mutual-fund distributor that starts with <em>your</em> goal —
+        MyLakshyas is the mutual-fund distributor that starts with <em>your</em> goal —
         then builds, researches and stress-tests the exact portfolio to get you there.
         Our only job is to make our clients richer.
       </p>
@@ -102,7 +102,7 @@
           </button>
 
           <p class="switch">
-            {{ mode === 'signup' ? 'Already have an account?' : 'New to WealthPath?' }}
+            {{ mode === 'signup' ? 'Already have an account?' : 'New to MyLakshyas?' }}
             <button type="button" (click)="setMode(mode === 'signup' ? 'signin' : 'signup')">
               {{ mode === 'signup' ? 'Sign in' : 'Create one' }}
             </button>
@@ -121,7 +121,7 @@
   <!-- Why us -->
   <section id="why" class="why">
     <div class="section-head reveal" #reveal>
-      <span class="kicker">Why WealthPath</span>
+      <span class="kicker">Why MyLakshyas</span>
       <h2>Distribution done the way it should be.</h2>
       <p>Most distributors sell you a product. We engineer you a plan — and stay accountable to the outcome.</p>
     </div>
@@ -160,14 +160,14 @@
   <!-- Closing CTA -->
   <section class="closing reveal" #reveal>
     <h2>Your goals deserve a real plan.</h2>
-    <p>Join thousands letting WealthPath do the hard part — the researching, the math, the discipline.</p>
+    <p>Join thousands letting MyLakshyas do the hard part — the researching, the math, the discipline.</p>
     <button class="cta primary big" (click)="setMode('signup'); loginCard.scrollIntoView({ behavior: 'smooth' })">
       Get started free
     </button>
   </section>
 
   <footer class="lp-foot">
-    <div class="brand"><span class="logo">◆</span><span>WealthPath</span></div>
-    <span class="muted">© 2026 WealthPath · Mutual fund investments are subject to market risks.</span>
+    <div class="brand"><span class="logo">◆</span><span>MyLakshyas</span></div>
+    <span class="muted">© 2026 MyLakshyas · Mutual fund investments are subject to market risks.</span>
   </footer>
 </div>

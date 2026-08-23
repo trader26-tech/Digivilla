@@ -1,38 +1,31 @@
 <!-- Cinematic welcome, every launch, before everything -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
-<!-- Shared onboarding chrome: MyLuxias brand + animated step progress.
-     Sits above every pre-login screen so branding + progress are consistent. -->
+<!-- Shared onboarding chrome: MyLakshyas brand + slim step progress.
+     A minimal top strip — a small wordmark and a thin progress line that
+     advances per step. Kept light so it reads as part of each screen. -->
 <header class="flow-chrome" *ngIf="showChrome">
   <div class="fc-inner">
-    <div class="brandmark" aria-label="MyLuxias">
+    <div class="brandmark" aria-label="MyLakshyas">
       <span class="bm-logo" aria-hidden="true">
-        <svg viewBox="0 0 32 32" fill="none">
+        <svg viewBox="0 0 28 28" fill="none">
           <defs>
             <linearGradient id="bmg" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stop-color="#a370ff" /><stop offset="1" stop-color="#ff9a4a" />
             </linearGradient>
           </defs>
-          <rect x="2" y="2" width="28" height="28" rx="9" fill="url(#bmg)" />
-          <path d="M9 22V11l4 6 3-4.5 3 4.5 4-6v11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <path d="M6 21V8l8 8 8-8v13" stroke="url(#bmg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
         </svg>
       </span>
-      <span class="bm-name">My<span class="bm-accent">Luxias</span></span>
+      <span class="bm-name">My<span class="bm-accent">Lakshyas</span></span>
     </div>
 
-    <div class="fc-progress" [attr.aria-label]="'Step ' + flowStep + ' of ' + flowTotal">
-      <div class="fcp-track">
-        <span class="fcp-fill" [style.width.%]="flowFraction * 100"></span>
-      </div>
-      <div class="fcp-dots">
-        <span class="fcp-dot"
-              *ngFor="let l of flowLabels; let i = index"
-              [class.done]="i < preStep"
-              [class.on]="i === preStep"></span>
-      </div>
-    </div>
+    <span class="fc-step">{{ flowStep }}<span class="fc-step-tot">/{{ flowTotal }}</span></span>
+  </div>
 
-    <span class="fc-step">{{ flowLabels[preStep] }}</span>
+  <!-- ultra-thin progress line spanning the full width, right at the top edge -->
+  <div class="fc-line" [attr.aria-label]="'Step ' + flowStep + ' of ' + flowTotal">
+    <span class="fc-line-fill" [style.width.%]="flowFraction * 100"></span>
   </div>
 </header>
 
@@ -88,7 +81,7 @@
 <div class="shell" [class.dock-open]="plannerOpen">
   <div class="main-col">
     <header class="topnav">
-      <div class="brand"><span class="logo">◆</span><span>WealthPath</span></div>
+      <div class="brand"><span class="logo">◆</span><span>MyLakshyas</span></div>
       <nav class="tabs">
         <button [class.active]="tab === 'home'" (click)="setTab('home')">Home</button>
         <button [class.active]="tab === 'invest'" (click)="setTab('invest')">Build &amp; Research</button>
