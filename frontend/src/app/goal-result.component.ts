@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
-import { BasketItem, GoalPreset, ModelBasket } from './models';
+import { BasketItem, BasketMetrics, GoalPreset, GrowthPoint, ModelBasket } from './models';
 import { PlannerService } from './planner.service';
 
 /**
@@ -38,6 +38,11 @@ export class GoalResultComponent implements OnInit {
   basket: ModelBasket | null = null;
   loadingFunds = false;
 
+  // Real blended 3-year performance of this basket (growth curve, drawdown, CAGR).
+  metrics: BasketMetrics | null = null;
+  loadingPerf = false;
+  perfEntered = false; // flips true a beat after load -> the line draws in
+
   openDetail(which: 'invest' | 'returns'): void {
     this.detailPage = which;
     if (navigator.vibrate) navigator.vibrate(6);
@@ -53,17 +58,157 @@ export class GoalResultComponent implements OnInit {
   closeDetail(): void {
     this.detailPage = null;
     this.barsEntered = false;
+    this.perfEntered = false;
   }
 
   private loadFunds(): void {
     this.loadingFunds = true;
+    this.loadingPerf = true;
     this.api.modelBaskets().subscribe({
       next: (list) => {
         this.basket = list.find((b) => b.key === this.riskKey) ?? list[1] ?? list[0] ?? null;
         this.loadingFunds = false;
+        this.loadPerformance();
       },
-      error: () => (this.loadingFunds = false),
+      error: () => {
+        this.loadingFunds = false;
+        this.loadingPerf = false;
+      },
     });
+  }
+
+  /** Fetch the REAL blended 3-year NAV history for this basket's funds. */
+  private loadPerformance(): void {
+    const items = this.funds.map((f) => ({ scheme_code: f.scheme_code, weight: f.weight }));
+    if (!items.length) {
+      this.loadingPerf = false;
+      return;
+    }
+    this.api.analyzeBasket(items, true).subscribe({
+      next: (m) => {
+        this.metrics = m;
+        this.loadingPerf = false;
+        this.perfEntered = false;
+        setTimeout(() => (this.perfEntered = true), 90);
+      },
+      error: () => (this.loadingPerf = false),
+    });
+  }
+
+  // ============================================================
+  //  Blended 3-year performance chart (from real NAV history).
+  // ============================================================
+
+  /** The blended growth series, trimmed to ~the last 3 years for a clean story. */
+  get perfSeries(): GrowthPoint[] {
+    const g = this.metrics?.growth ?? [];
+    if (g.length <= 40) return g;
+    return g.slice(-37); // ~last 3 years of monthly points
+  }
+
+  /** ₹ that a sample 10k lump sum would be worth today, at the blended CAGR. */
+  get perfMultiple(): number {
+    const s = this.perfSeries;
+    if (s.length < 2) return 0;
+    return s[s.length - 1].value / s[0].value;
+  }
+  get sampleNow(): number {
+    return Math.round(10000 * (this.perfMultiple || 1));
+  }
+
+  /** Total blended return over the shown window, %. */
+  get perfTotalPct(): number {
+    const m = this.perfMultiple;
+    return m ? Math.round((m - 1) * 100) : 0;
+  }
+
+  /** Worst peak-to-trough dip over the window, % (positive number for display). */
+  get perfDrawdown(): number {
+    const dd = this.metrics?.max_drawdown;
+    if (dd != null) return Math.abs(Math.round(dd));
+    const s = this.perfSeries;
+    const worst = Math.min(0, ...s.map((p) => p.drawdown));
+    return Math.abs(Math.round(worst));
+  }
+
+  get perfCagr(): number {
+    return Math.round(this.metrics?.cagr ?? this.metrics?.return_3y ?? this.annualReturn * 100);
+  }
+
+  get perfYears(): number {
+    const s = this.perfSeries;
+    return Math.max(1, Math.round((s.length - 1) / 12));
+  }
+
+  // ---- SVG geometry for the performance line (viewBox 0 0 320 150) ----
+  private readonly PW = 320;
+  private readonly PH = 150;
+  private readonly PPAD = 6;
+
+  private get perfMin(): number {
+    const s = this.perfSeries;
+    return s.length ? Math.min(...s.map((p) => p.value)) : 0;
+  }
+  private get perfMax(): number {
+    const s = this.perfSeries;
+    return s.length ? Math.max(...s.map((p) => p.value)) : 1;
+  }
+  private px(i: number): number {
+    const n = this.perfSeries.length - 1 || 1;
+    return this.PPAD + (i / n) * (this.PW - 2 * this.PPAD);
+  }
+  private py(v: number): number {
+    const lo = this.perfMin;
+    const hi = this.perfMax;
+    const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
+    // leave headroom top & bottom
+    return this.PH - this.PPAD - t * (this.PH - 2 * this.PPAD);
+  }
+
+  get perfLine(): string {
+    const s = this.perfSeries;
+    if (s.length < 2) return '';
+    return s.map((p, i) => `${i ? 'L' : 'M'}${this.px(i).toFixed(1)} ${this.py(p.value).toFixed(1)}`).join(' ');
+  }
+  get perfArea(): string {
+    const s = this.perfSeries;
+    if (s.length < 2) return '';
+    const line = s.map((p, i) => `${i ? 'L' : 'M'}${this.px(i).toFixed(1)} ${this.py(p.value).toFixed(1)}`).join(' ');
+    return `${line} L${this.px(s.length - 1).toFixed(1)} ${this.PH} L${this.px(0).toFixed(1)} ${this.PH} Z`;
+  }
+
+  /** The lowest point (worst drawdown) marker, for a red dot on the line. */
+  get perfTroughXY(): { x: number; y: number } | null {
+    const s = this.perfSeries;
+    if (s.length < 2) return null;
+    let idx = 0;
+    let worst = 0;
+    s.forEach((p, i) => {
+      if (p.drawdown < worst) {
+        worst = p.drawdown;
+        idx = i;
+      }
+    });
+    if (worst === 0) return null;
+    return { x: this.px(idx), y: this.py(s[idx].value) };
+  }
+  get perfEndXY(): { x: number; y: number } | null {
+    const s = this.perfSeries;
+    if (s.length < 2) return null;
+    return { x: this.px(s.length - 1), y: this.py(s[s.length - 1].value) };
+  }
+
+  /** X-axis: a few year labels evenly along the window. */
+  get perfXLabels(): { x: number; label: string }[] {
+    const s = this.perfSeries;
+    if (s.length < 2) return [];
+    const out: { x: number; label: string }[] = [];
+    const picks = [0, Math.floor((s.length - 1) / 2), s.length - 1];
+    for (const i of picks) {
+      const yr = s[i].date.split('-')[0];
+      out.push({ x: this.px(i), label: `’${yr.slice(2)}` });
+    }
+    return out;
   }
 
   /** Full grouped INR, e.g. ₹17,54,671 — for the donut centre + pills. */

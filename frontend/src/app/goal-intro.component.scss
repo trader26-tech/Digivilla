@@ -44,9 +44,10 @@
   position: absolute;
   inset: 0;
   z-index: 5;
-  display: grid;
-  place-items: center;
-  padding: 2rem 1.6rem calc(2rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.6rem calc(1.5rem + env(safe-area-inset-bottom));
   /* Blends with the dark dusk background: a soft, low-opacity glow in the goal's
      own hue (not a bright white blob), fading into the app background. */
   background:
@@ -58,42 +59,51 @@
   transition: opacity 0.45s ease;
 }
 .welcome.leaving { opacity: 0; }
+/* fills the height: title + points sit centred, the CTA is pinned to the bottom */
 .welcome-inner {
   width: 100%;
   max-width: 22rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 
-/* the title fades in */
+/* title + points form the centred block (auto margins push CTA down) */
 .welcome-title {
   color: var(--text);
   font-weight: 800;
   letter-spacing: -0.5px;
   font-size: clamp(1.6rem, 6.5vw, 2rem);
   line-height: 1.2;
-  margin: 0 0 1.8rem;
+  margin: auto 0 1.8rem;   /* top auto centres the title+points block */
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 .welcome-title.show { opacity: 1; transform: none; }
 
-/* the reasons — icon + text rows, stagger in */
+/* the reasons — icon + text rows, stagger in one by one */
 .welcome-points {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
   text-align: left;
+  margin-bottom: auto;    /* bottom auto pushes the CTA to the very bottom */
 }
 .wpt {
   display: flex;
   align-items: flex-start;
   gap: 0.9rem;
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+  transform: translateX(-18px) scale(0.96);
+  transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 .wpt.show { opacity: 1; transform: none; }
+/* the icon tile gives a little pop as the row lands */
+.wpt-icon { transition: transform 0.5s cubic-bezier(0.34, 1.7, 0.5, 1); }
+.wpt.show .wpt-icon { animation: iconPop 0.5s cubic-bezier(0.34, 1.7, 0.5, 1); }
+@keyframes iconPop { 0% { transform: scale(0.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .wpt-icon {
   flex: none;
   display: grid;
@@ -113,23 +123,25 @@
   padding-top: 0.5rem;
 }
 
-/* the button the user taps to enter */
+/* the button the user taps to enter — pinned to the bottom, full width */
 .welcome-cta {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+  width: 100%;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   border: none;
   border-radius: 999px;
-  padding: 0.95rem 1.6rem;
+  padding: 1.05rem 1.6rem;
   font-size: 1.05rem;
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, var(--accent-h), var(--accent-dk));
   cursor: pointer;
-  box-shadow: 0 12px 28px -12px var(--accent-h);
+  box-shadow: 0 14px 30px -12px var(--accent-h);
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(14px);
   transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1), filter 0.15s;
   &.show { opacity: 1; transform: none; }
   &:hover { filter: brightness(1.05); }

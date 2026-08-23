@@ -60,7 +60,7 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
     // Stagger the welcome in: title + points, then the button. No auto-dismiss.
     this.timers.push(setTimeout(() => (this.whyShown = true), 80));
     const pts = this.detail.points.length;
-    const afterPoints = 200 + pts * 160 + 400;
+    const afterPoints = 350 + pts * 260 + 250;
     this.timers.push(setTimeout(() => (this.ctaShown = true), afterPoints));
   }
 

@@ -87,7 +87,7 @@
   <button class="later" (click)="proceed()">I'll do this later</button>
 </div>
 
-<!-- ============ DETAIL: YOU INVEST — the growth graph ============ -->
+<!-- ============ DETAIL: YOU INVEST — the growth chart ============ -->
 <div class="detail invest-page" *ngIf="detailPage === 'invest'" [class.entered]="entered">
   <header class="top">
     <button class="back" (click)="closeDetail()" aria-label="Back">←</button>
@@ -95,54 +95,34 @@
     <span class="faq-spacer"></span>
   </header>
 
-  <!-- monthly amount, front and centre -->
-  <div class="g-hero">
-    <span class="g-cap">You invest</span>
-    <span class="g-amt">{{ fullInr(monthlySip) }}<small>/mo</small></span>
-    <span class="g-sub">for {{ horizonLabel }} · {{ returnLabel }} expected</span>
-  </div>
+  <!-- the chart is the hero — minimal text, animated stacked bars -->
+  <div class="chart-hero" [class.grow]="barsEntered">
+    <!-- two big numbers up top: what you invest vs what the market adds -->
+    <div class="ch-totals">
+      <div class="ch-tot inv">
+        <span class="ch-dot"></span>
+        <span class="ch-lbl">You invest</span>
+        <span class="ch-val">{{ compactInr(totalInvested) }}</span>
+      </div>
+      <div class="ch-tot ret">
+        <span class="ch-dot"></span>
+        <span class="ch-lbl">Returns</span>
+        <span class="ch-val">+{{ compactInr(growth) }}</span>
+      </div>
+    </div>
 
-  <!-- animated stacked bar chart: invested (bottom) + returns (top), per year -->
-  <div class="chart-card" [class.grow]="barsEntered">
+    <!-- the bars -->
     <div class="bars">
       <div class="bar-col" *ngFor="let b of barSeries; let i = index"
-           [style.--d.ms]="120 + i * 120">
-        <div class="bar-stack">
-          <!-- extra returns segment (on top) -->
-          <div class="seg ret" [style.height.%]="barsEntered ? b.retPct : 0" [title]="'Returns +' + compactInr(b.returns)"></div>
-          <!-- invested segment (bottom) -->
-          <div class="seg inv" [style.height.%]="barsEntered ? b.invPct : 0" [title]="'Invested ' + compactInr(b.invested)"></div>
-        </div>
+           [style.--d.ms]="140 + i * 130">
         <span class="bar-total">{{ compactInr(b.total) }}</span>
-        <span class="bar-year">{{ b.year }}y</span>
+        <div class="bar-stack">
+          <div class="seg ret" [style.height.%]="barsEntered ? b.retPct : 0"></div>
+          <div class="seg inv" [style.height.%]="barsEntered ? b.invPct : 0"></div>
+        </div>
+        <span class="bar-year">{{ b.label }}</span>
       </div>
     </div>
-
-    <!-- legend + end totals -->
-    <div class="chart-legend">
-      <div class="lg-item value">
-        <span class="lg-dot"></span>
-        <span class="lg-txt">Returns</span>
-        <b class="lg-val up">+{{ compactInr(growth) }}</b>
-      </div>
-      <div class="lg-item inv">
-        <span class="lg-dot"></span>
-        <span class="lg-txt">You invest</span>
-        <b class="lg-val">{{ compactInr(totalInvested) }}</b>
-      </div>
-    </div>
-  </div>
-
-  <!-- the punchline: the gap = compounding -->
-  <div class="g-split">
-    <div class="gs-track">
-      <span class="gs-inv" [style.width.%]="investedPct"></span>
-      <span class="gs-ret" [style.width.%]="growthPct"></span>
-    </div>
-    <p class="gs-note">
-      You put in <b>{{ compactInr(totalInvested) }}</b>. Compounding adds
-      <b class="up">+{{ compactInr(growth) }}</b> on top — <b>{{ growthPct }}%</b> of your corpus is pure growth.
-    </p>
   </div>
 
   <button class="d-cta invest" (click)="closeDetail()">Got it</button>

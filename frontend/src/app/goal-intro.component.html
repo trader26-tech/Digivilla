@@ -52,7 +52,7 @@
 
       <div class="welcome-points">
         <div class="wpt" *ngFor="let p of detail.points; let i = index"
-             [class.show]="whyShown" [style.transition-delay.ms]="200 + i * 160">
+             [class.show]="whyShown" [style.transition-delay.ms]="350 + i * 260">
           <span class="wpt-icon">
             <svg viewBox="0 0 24 24" width="24" height="24">
               <ng-container [ngSwitch]="p.icon">

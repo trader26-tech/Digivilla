@@ -418,48 +418,52 @@
 .d-cta.invest { background: linear-gradient(135deg, var(--purple), var(--purple-dk)); }
 .d-cta.returns { background: linear-gradient(135deg, var(--orange), var(--orange-dk)); }
 
-/* ============ "How it grows" graph screen ============ */
-.g-hero {
+/* ============ "How it grows" — chart is the hero, minimal text ============ */
+.chart-hero {
   width: 100%;
-  text-align: center;
-  margin: 0.4rem 0 1.3rem;
+  display: flex;
+  flex-direction: column;
+  margin: auto 0; /* center the chart in the space between header and CTA */
 }
-.g-cap {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.02em;
-}
-.g-amt {
-  display: block;
-  font-size: clamp(2.2rem, 9vw, 2.9rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  color: var(--text);
-  margin: 0.15rem 0;
-}
-.g-amt small { font-size: 0.4em; font-weight: 700; color: var(--muted); }
-.g-sub { display: block; font-size: 0.85rem; color: var(--muted); }
 
-/* chart card */
-.chart-card {
-  width: 100%;
+/* two totals up top: invested (slate) vs returns (purple) */
+.ch-totals {
+  display: flex;
+  gap: 0.9rem;
+}
+.ch-tot {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 0.9rem 0.9rem 0.6rem;
-  box-shadow: var(--shadow-sm);
 }
-/* ---- animated stacked bar chart ---- */
+.ch-dot { width: 11px; height: 11px; border-radius: 4px; grid-row: span 2; align-self: center; }
+.ch-tot.inv .ch-dot { background: #8aa0c4; }
+.ch-tot.ret .ch-dot { background: var(--purple); box-shadow: 0 0 10px -1px var(--purple); }
+.ch-lbl { font-size: 0.74rem; font-weight: 600; color: var(--muted); }
+.ch-val {
+  grid-column: 2;
+  font-size: 1.3rem;
+  font-weight: 850;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ch-tot.inv .ch-val { color: var(--text); }
+.ch-tot.ret .ch-val { color: #c9adff; }
+
+/* the bars — the focal point. */
 .bars {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.5rem;
-  height: 200px;
-  padding: 0.4rem 0.2rem 0;
+  gap: 0.7rem;
+  margin-top: 1.6rem;
 }
 .bar-col {
   flex: 1 1 0;
@@ -467,91 +471,51 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
   justify-content: flex-end;
 }
-/* the stack fills the vertical space; segments are % of the tallest bar */
+/* explicit pixel height so the % segment heights always resolve */
 .bar-stack {
   position: relative;
   width: 100%;
-  max-width: 34px;
-  flex: 1 1 auto;
+  max-width: 42px;
+  height: 300px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
 }
 .seg {
   width: 100%;
-  /* height is bound inline (0 until barsEntered), and animates via this transition */
-  transition: height 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms);
+  transition: height 0.95s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms);
 }
 .seg.inv {
   background: #8aa0c4;
-  border-radius: 0 0 5px 5px;
+  border-radius: 0 0 7px 7px;
 }
 .seg.ret {
-  background: linear-gradient(180deg, var(--purple), var(--purple-dk));
-  border-radius: 5px 5px 0 0;
-  box-shadow: 0 0 16px -4px var(--purple);
+  background: linear-gradient(180deg, #c39bff, var(--purple));
+  border-radius: 7px 7px 0 0;
+  box-shadow: 0 0 20px -4px var(--purple);
 }
-
+/* the total value floats above each bar, fading in after it grows */
 .bar-total {
-  margin-top: 0.4rem;
-  font-size: 0.62rem;
-  font-weight: 750;
-  color: var(--text);
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #c9adff;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   opacity: 0;
-  transition: opacity 0.4s ease calc(var(--d, 0ms) + 500ms);
+  transform: translateY(4px);
+  transition: opacity 0.4s ease calc(var(--d, 0ms) + 550ms),
+              transform 0.4s ease calc(var(--d, 0ms) + 550ms);
 }
-.chart-card.grow .bar-total { opacity: 1; }
+.chart-hero.grow .bar-total { opacity: 1; transform: none; }
 .bar-year {
-  margin-top: 0.15rem;
-  font-size: 0.62rem;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--muted);
 }
-
-/* legend row */
-.chart-legend {
-  display: flex;
-  gap: 1.2rem;
-  justify-content: center;
-  margin-top: 0.6rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--border);
-}
-.lg-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
-.lg-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.lg-item.value .lg-dot { background: linear-gradient(180deg, var(--purple), var(--purple-dk)); }
-.lg-item.inv .lg-dot { background: #8aa0c4; }
-.lg-txt { color: var(--muted); }
-.lg-val { color: var(--text); font-weight: 750; }
-.lg-val.up { color: var(--good); }
-
-/* the compounding punchline */
-.g-split { width: 100%; margin-top: 1.3rem; }
-.gs-track {
-  display: flex;
-  height: 12px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--surface-2);
-}
-.gs-inv { background: #8aa0c4; }
-.gs-ret {
-  background: linear-gradient(90deg, var(--purple), var(--purple-dk));
-  transition: width 0.6s ease;
-}
-.gs-note {
-  margin: 0.7rem 0 0;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  color: var(--muted);
-  text-align: center;
-}
-.gs-note b { color: var(--text); font-weight: 750; }
-.gs-note b.up { color: var(--purple-dk); }
 
 @media (prefers-reduced-motion: reduce) {
   .plan, .detail { transition: none; animation: none; }
