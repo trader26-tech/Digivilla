@@ -85,22 +85,16 @@
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: none; }
 }
-.donut svg { width: 100%; height: 100%; overflow: visible; }
-.rim-base { fill: none; stroke: var(--surface-2); stroke-width: 15; }
+.donut svg { width: 100%; height: 100%; }
+.rim-base { fill: none; stroke: var(--surface-2); stroke-width: 14; }
 .rim {
   fill: none;
-  stroke-width: 15;
-  stroke-linecap: round;         /* soft, premium segment ends */
+  stroke-width: 14;
+  stroke-linecap: butt;          /* flat ends -> clean even arcs, no blobs */
   transition: stroke-dasharray 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.rim.invested {
-  stroke: url(#gInvest);
-  filter: drop-shadow(0 0 5px rgba(160, 92, 255, 0.5));
-}
-.rim.returns {
-  stroke: url(#gReturns);
-  filter: drop-shadow(0 0 5px rgba(255, 122, 61, 0.55));
-}
+.rim.invested { stroke: url(#gInvest); }
+.rim.returns { stroke: url(#gReturns); }
 .donut-center {
   position: absolute;
   inset: 0;

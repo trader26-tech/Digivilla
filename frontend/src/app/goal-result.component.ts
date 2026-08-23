@@ -443,7 +443,7 @@ export class GoalResultComponent implements OnInit {
 
   // ---- donut ring geometry: two clean segments with a small gap ----
   readonly ringR = 52; // radius in the 120x120 viewBox
-  private readonly GAP = 9; // small gap between the two segments
+  private readonly GAP = 4; // small even gap between the two segments (flat caps)
   get ringCirc(): number {
     return 2 * Math.PI * this.ringR;
   }
