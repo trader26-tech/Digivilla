@@ -26,9 +26,6 @@ import { GoalPreset } from './models';
 })
 export class GoalIntroComponent implements OnInit, OnDestroy {
   @Input({ required: true }) goal!: GoalPreset;
-  /** True for urgent "safety net" goals (emergency, health): no date is picked,
-   *  and Continue shows a "do it fast" nudge before proceeding. */
-  @Input() shortTerm = false;
   /** Emits the chosen amount to carry to the timing screen. */
   @Output() amountReady = new EventEmitter<number>();
   @Output() back = new EventEmitter<void>();
@@ -171,22 +168,9 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
     this.back.emit();
   }
 
-  /** Shown for short-term goals when Continue is pressed: a "do it fast" nudge. */
-  urgeOpen = false;
-
-  /** Continue -> for short-term goals, first show the urgency nudge; otherwise
-   *  carry the amount straight forward. Nothing is "saved" here. */
+  /** Continue -> carry the amount forward to the timing (date) screen. Nothing
+   *  is "saved" here — that only happens at the very end of the flow. */
   continue(): void {
-    if (navigator.vibrate) navigator.vibrate(8);
-    if (this.shortTerm) {
-      this.urgeOpen = true;
-      return;
-    }
-    this.amountReady.emit(this.recommended);
-  }
-
-  /** Confirm from the urgency nudge -> proceed. */
-  proceed(): void {
     if (navigator.vibrate) navigator.vibrate(8);
     this.amountReady.emit(this.recommended);
   }

@@ -1,24 +1,26 @@
-/* Global design tokens — light theme, shared across all components. */
+/* Global design tokens — dark theme, shared across all components.
+   Every screen reads these vars, so the whole app inherits the palette. */
 :root {
-  --bg: #f5f7fb;
-  --surface: #ffffff;
-  --surface-2: #f0f3f9;
-  --border: #e2e7f0;
-  --text: #16202e;
-  --muted: #667085;
-  --accent: #2f6bff;
-  --accent-2: #1d4fd7;
-  --warn: #d98600;
-  --good: #12a150;
-  --ok: #d98600;
-  --low: #e5484d;
-  --eq: #2f6bff;
-  --hy: #8b5cf6;
-  --dt: #12a150;
-  --gd: #d98600;
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.05);
-  --shadow-md: 0 4px 12px -4px rgba(16, 24, 40, 0.12), 0 2px 6px rgba(16, 24, 40, 0.06);
-  --shadow-lg: 0 20px 48px -24px rgba(16, 24, 40, 0.28);
+  --bg: #0b0d12;            /* deep near-black base */
+  --surface: #14171f;      /* cards / raised panels */
+  --surface-2: #1c202b;    /* insets, tracks, chips */
+  --border: #272c38;       /* hairlines on dark */
+  --text: #eef1f7;         /* primary text */
+  --muted: #97a0b2;        /* secondary text */
+  --accent: #5b8cff;       /* brighter blue so it pops on dark */
+  --accent-2: #3f6fe0;
+  --warn: #f5a623;
+  --good: #34d399;         /* lighter green reads better on dark */
+  --ok: #f5a623;
+  --low: #ff5c62;
+  --eq: #5b8cff;
+  --hy: #a78bfa;
+  --dt: #34d399;
+  --gd: #f5a623;
+  /* On dark, shadows read as depth/glow — deeper, softer. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 56px -24px rgba(0, 0, 0, 0.75);
 }
 
 * {

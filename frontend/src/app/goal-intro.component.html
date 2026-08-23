@@ -77,18 +77,4 @@
       </button>
     </div>
   </div>
-
-  <!-- ===== "Do it fast" nudge for short-term goals ===== -->
-  <div class="urge-backdrop" *ngIf="urgeOpen" (click)="urgeOpen = false"></div>
-  <div class="urge" *ngIf="urgeOpen">
-    <div class="urge-bolt">
-      <svg viewBox="0 0 24 24" width="34" height="34"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z" fill="currentColor"/></svg>
-    </div>
-    <h2 class="urge-title">Start this one now</h2>
-    <p class="urge-body">
-      A safety net works best when it’s ready fast. Aim to complete it
-      <b>within 6 months</b> — this is the first step to a stress-free plan.
-    </p>
-    <button class="urge-go" (click)="proceed()">Let’s do it →</button>
-  </div>
 </div>

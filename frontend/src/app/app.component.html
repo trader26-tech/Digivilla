@@ -1,5 +1,8 @@
+<!-- TEMP graph preview harness -->
+<app-graph-preview *ngIf="previewGraph"></app-graph-preview>
+
 <!-- Cinematic welcome, every launch, before everything -->
-<app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
+<app-intro *ngIf="!previewGraph && intro" (done)="onIntroDone()"></app-intro>
 
 <!-- Playful "why invest / why us" story, after the intro, before the picker -->
 <app-story *ngIf="!intro && story && !authed" (done)="onStoryDone()"></app-story>
@@ -17,7 +20,6 @@
   <app-goal-intro
     *ngIf="!pickedGoal && chosenGoal && !amountDone"
     [goal]="chosenGoal"
-    [shortTerm]="isShortTerm"
     (amountReady)="onAmountChosen($event)"
     (back)="onAmountBack()"
   ></app-goal-intro>
