@@ -73,23 +73,34 @@
   b { color: var(--text); font-weight: 800; }
 }
 
-/* ---- clean segmented donut ---- */
+/* ---- glowing segmented donut ---- */
 .donut {
   position: relative;
-  width: 244px;
-  height: 244px;
-  margin: 1.4rem auto 0;
+  width: 220px;
+  height: 220px;
+  margin: 1.1rem auto 0;
+  animation: donutIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.donut svg { width: 100%; height: 100%; }
-.rim-base { fill: none; stroke: var(--surface-2); stroke-width: 12; }
+@keyframes donutIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+.donut svg { width: 100%; height: 100%; overflow: visible; }
+.rim-base { fill: none; stroke: var(--surface-2); stroke-width: 13; }
 .rim {
   fill: none;
-  stroke-width: 12;
-  stroke-linecap: butt;          /* flat ends — clean segments, no rounded blobs */
+  stroke-width: 13;
+  stroke-linecap: round;         /* soft, premium segment ends */
   transition: stroke-dasharray 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.rim.invested { stroke: var(--purple); }
-.rim.returns { stroke: var(--orange); }
+.rim.invested {
+  stroke: url(#gInvest);
+  filter: drop-shadow(0 0 8px rgba(163, 112, 255, 0.55));
+}
+.rim.returns {
+  stroke: url(#gReturns);
+  filter: drop-shadow(0 0 8px rgba(255, 140, 90, 0.55));
+}
 .donut-center {
   position: absolute;
   inset: 0;
@@ -98,18 +109,75 @@
   align-items: center;
   justify-content: center;
 }
-.dc-cap { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.dc-cap { font-size: 0.8rem; font-weight: 650; color: var(--muted); }
 .dc-amt {
-  font-size: 2rem;
+  font-size: 3.2rem;
   font-weight: 850;
-  letter-spacing: -1px;
+  letter-spacing: -2px;
+  line-height: 1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
-  margin: 0.15rem 0;
+  margin: 0.1rem 0;
+  background: linear-gradient(135deg, #c9adff, #ffb36b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-.dc-sub { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.dc-sub { font-size: 0.9rem; color: var(--muted); font-weight: 650; }
 
-.spacer { flex: 1; min-height: 1rem; }
+/* ---- legend: your money vs market growth ---- */
+.legend {
+  width: 100%;
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+}
+.leg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.leg-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.leg-invest .leg-dot { background: linear-gradient(135deg, #b088ff, #7a3ea8); }
+.leg-returns .leg-dot { background: linear-gradient(135deg, #ffb36b, #ff6f61); }
+.leg-txt { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.leg-txt small { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+.leg-txt b { font-size: 1.05rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.leg-pct {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--muted);
+  flex: none;
+}
+.leg-invest .leg-pct { color: #b088ff; }
+.leg-returns .leg-pct { color: #ff8c5a; }
+
+/* ---- reassurance strip ---- */
+.reassure {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(163, 112, 255, 0.12), rgba(255, 111, 97, 0.1));
+  border: 1px solid color-mix(in srgb, var(--purple) 24%, transparent);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--muted);
+  b { color: var(--text); font-weight: 750; }
+}
+.re-ic { font-size: 1rem; flex: none; line-height: 1.4; }
+
+.spacer { flex: 1; min-height: 0.75rem; }
 
 /* ---- pills (just above the slider) ---- */
 .pills {

@@ -10,6 +10,16 @@
   <!-- Clean segmented donut -->
   <div class="donut">
     <svg viewBox="0 0 120 120">
+      <defs>
+        <linearGradient id="gInvest" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#b088ff" />
+          <stop offset="100%" stop-color="#7a3ea8" />
+        </linearGradient>
+        <linearGradient id="gReturns" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ffb36b" />
+          <stop offset="100%" stop-color="#ff6f61" />
+        </linearGradient>
+      </defs>
       <circle cx="60" cy="60" [attr.r]="ringR" class="rim-base" />
       <circle cx="60" cy="60" [attr.r]="ringR" class="rim invested"
         [attr.stroke-dasharray]="investedDash" [attr.stroke-dashoffset]="investedOffset" transform="rotate(-90 60 60)" />
@@ -17,10 +27,30 @@
         [attr.stroke-dasharray]="growthDash" [attr.stroke-dashoffset]="growthOffset" transform="rotate(-90 60 60)" />
     </svg>
     <div class="donut-center">
-      <span class="dc-cap">You invest</span>
-      <span class="dc-amt">{{ fullInr(totalInvested) }}</span>
-      <span class="dc-sub">{{ months }} months</span>
+      <span class="dc-cap">Goal reached in</span>
+      <span class="dc-amt">{{ months }}</span>
+      <span class="dc-sub">months</span>
     </div>
+  </div>
+
+  <!-- Legend: what makes up the goal -->
+  <div class="legend">
+    <div class="leg leg-invest">
+      <span class="leg-dot"></span>
+      <div class="leg-txt"><small>Your money</small><b>{{ compactInr(totalInvested) }}</b></div>
+      <span class="leg-pct">{{ investedPct }}%</span>
+    </div>
+    <div class="leg leg-returns">
+      <span class="leg-dot"></span>
+      <div class="leg-txt"><small>Market growth</small><b>{{ compactInr(growth) }}</b></div>
+      <span class="leg-pct">{{ growthPct }}%</span>
+    </div>
+  </div>
+
+  <!-- Reassurance strip -->
+  <div class="reassure">
+    <span class="re-ic">✨</span>
+    <span>Invest just <b>{{ compactInr(monthlySip) }}/mo</b> and the market does the rest — earning you <b>{{ compactInr(growth) }}</b> extra.</span>
   </div>
 
   <div class="spacer"></div>

@@ -182,42 +182,52 @@ export class GoalResultComponent implements OnInit {
   /** Flips true a beat after entry so the bars grow up with a stagger. */
   barsEntered = false;
 
-  /** A handful of milestone years so the bars stay readable (not one per year
-   *  for a 30-year plan). Each bar carries the invested + returns split, sized
-   *  as a % of the final corpus so heights are comparable across bars. */
+  /** 5 evenly-spaced milestone bars along the whole horizon — always 5, even for
+   *  a 1-year plan (where they fall at ~2/5/7/10/12 months). Each bar stacks the
+   *  invested amount (bottom) + the extra returns (top), sized as a % of the
+   *  final corpus so heights are comparable. */
   get barSeries(): {
-    year: number;
-    invPct: number; // invested height, % of tallest bar
-    retPct: number; // extra-return height stacked on top, % of tallest bar
+    label: string; // x-axis label, e.g. "3mo" or "5y"
+    invPct: number;
+    retPct: number;
     invested: number;
     returns: number;
     total: number;
   }[] {
-    const s = this.growthSeries;
-    const totalYears = s.length - 1;
-    if (totalYears <= 0) return [];
+    const totalMonths = this.months;
+    const i = this.annualReturn / 12;
+    const p = this.monthlySip;
+    if (totalMonths <= 0 || p <= 0) return [];
 
-    // Pick up to 6 evenly-spaced milestone years, always including the last.
-    const wanted = Math.min(6, totalYears);
-    const picks = new Set<number>();
-    for (let k = 1; k <= wanted; k++) {
-      picks.add(Math.max(1, Math.round((k / wanted) * totalYears)));
-    }
-    const years = [...picks].sort((a, b) => a - b);
+    const BARS = 5;
+    // The tallest (final) corpus sets the scale.
+    const fv = (n: number) =>
+      i <= 0 ? p * n : p * (((Math.pow(1 + i, n) - 1) / i) * (1 + i));
+    const maxVal = Math.max(1, fv(totalMonths));
 
-    const maxVal = Math.max(1, s[totalYears].value);
-    return years.map((y) => {
-      const pt = s[y];
-      const returns = Math.max(0, pt.value - pt.invested);
-      return {
-        year: y,
-        invPct: (pt.invested / maxVal) * 100,
+    const out = [];
+    for (let k = 1; k <= BARS; k++) {
+      const n = Math.max(1, Math.round((k / BARS) * totalMonths));
+      const invested = p * n;
+      const value = fv(n);
+      const returns = Math.max(0, value - invested);
+      out.push({
+        label: this.monthsLabel(n),
+        invPct: (invested / maxVal) * 100,
         retPct: (returns / maxVal) * 100,
-        invested: pt.invested,
-        returns,
-        total: pt.value,
-      };
-    });
+        invested: Math.round(invested),
+        returns: Math.round(returns),
+        total: Math.round(value),
+      });
+    }
+    return out;
+  }
+
+  /** Compact axis label for a number of months: "3mo", "9mo", "2y", "5y". */
+  private monthsLabel(n: number): string {
+    if (n < 12) return `${n}mo`;
+    const y = n / 12;
+    return `${Number.isInteger(y) ? y : y.toFixed(1)}y`;
   }
 
   /** Chart geometry in a 320×200 viewBox (plot area inset for labels). */
@@ -305,7 +315,7 @@ export class GoalResultComponent implements OnInit {
 
   // ---- donut ring geometry: two clean segments with a small gap ----
   readonly ringR = 52; // radius in the 120x120 viewBox
-  private readonly GAP = 6; // gap between segments, in user units
+  private readonly GAP = 14; // gap between segments (wide enough for rounded caps)
   get ringCirc(): number {
     return 2 * Math.PI * this.ringR;
   }
