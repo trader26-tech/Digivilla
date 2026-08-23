@@ -10,7 +10,6 @@ import {
 } from '@angular/animations';
 
 import { BasketLabComponent } from './basket-lab.component';
-import { GoalAmountComponent } from './goal-amount.component';
 import { GoalIntroComponent } from './goal-intro.component';
 import { GoalPickerComponent } from './goal-picker.component';
 import { GoalResultComponent } from './goal-result.component';
@@ -35,7 +34,6 @@ type Tab = 'home' | 'invest';
     LandingComponent,
     GoalPickerComponent,
     GoalIntroComponent,
-    GoalAmountComponent,
     GoalTimingComponent,
     GoalResultComponent,
     IntroComponent,
@@ -86,10 +84,8 @@ export class AppComponent {
    *  only once timing is confirmed. */
   pickedGoal = false;
   chosenGoal: GoalPreset | null = null;
-  introDone = false; // goal-intro confirmed -> show the knob
-  presetAmount = 0; // recommended amount from the intro calculator
+  amountDone = false; // combined intro+amount confirmed -> show timing
   chosenAmount = 0;
-  amountDone = false; // amount confirmed -> show timing screen
   chosenYears = 0;
   timingDone = false; // timing confirmed -> show the results screen
 
@@ -100,11 +96,10 @@ export class AppComponent {
    *  tell forward (:increment) from back (:decrement). */
   get preStep(): number {
     if (!this.pickedGoal && !this.chosenGoal) return 0; // picker
-    if (!this.pickedGoal && this.chosenGoal && !this.introDone) return 1; // goal intro
-    if (!this.pickedGoal && this.introDone && !this.amountDone) return 2; // amount knob
-    if (!this.pickedGoal && this.amountDone && !this.timingDone) return 3; // timing
-    if (!this.pickedGoal && this.timingDone) return 4; // results
-    return 5; // landing / auth
+    if (!this.pickedGoal && this.chosenGoal && !this.amountDone) return 1; // combined amount screen
+    if (!this.pickedGoal && this.amountDone && !this.timingDone) return 2; // timing
+    if (!this.pickedGoal && this.timingDone) return 3; // results
+    return 4; // landing / auth
   }
 
   /** Called when the landing page completes sign-in. Persists the session
@@ -128,32 +123,21 @@ export class AppComponent {
     this.story = false;
   }
 
-  /** User tapped Continue on a goal in the picker -> show the goal intro. */
+  /** User tapped Continue on a goal in the picker -> show the amount screen. */
   onGoalChosen(goal: GoalPreset): void {
     this.chosenGoal = goal;
-    this.introDone = false;
+    this.amountDone = false;
   }
 
-  /** Goal intro finished -> its recommended amount presets the knob. */
-  onIntroAmount(amount: number): void {
-    this.presetAmount = amount;
-    this.introDone = true;
-  }
-
-  /** Back from the intro returns to the goal picker. */
-  onIntroBack(): void {
-    this.chosenGoal = null;
-  }
-
-  /** User confirmed an amount on the knob screen -> move to the timing screen. */
+  /** Combined amount screen confirmed -> move to the timing screen. */
   onAmountChosen(amount: number): void {
     this.chosenAmount = amount;
     this.amountDone = true;
   }
 
-  /** Back from the amount screen returns to the goal intro. */
+  /** Back from the amount screen returns to the goal picker. */
   onAmountBack(): void {
-    this.introDone = false;
+    this.chosenGoal = null;
   }
 
   /** User confirmed a horizon on the timing screen -> show the results screen. */

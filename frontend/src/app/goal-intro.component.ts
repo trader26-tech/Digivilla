@@ -9,32 +9,30 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { GoalPreset } from './models';
-import { RupiComponent, RupiPose } from './rupi.component';
 
 /**
- * The screen shown right after a goal is picked, before the amount knob.
- *
- * Deliberately minimal — mirrors the timing screen: one question, one focal
- * card, one CTA. A tiny per-goal "calculator" turns ONE simple input (monthly
- * expenses, home price, guests…) into a recommended amount, which is emitted as
- * the preset for the knob screen.
+ * The single screen shown after a goal is picked (merges the old intro + amount
+ * screens). A short animated "why" line explains the goal and its rule of thumb,
+ * then a tiny per-goal calculator turns ONE input (monthly expenses, home price,
+ * guests…) into the amount to save. Continue emits that amount to the timing step.
  */
 @Component({
   selector: 'app-goal-intro',
   standalone: true,
-  imports: [CommonModule, FormsModule, RupiComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './goal-intro.component.html',
   styleUrl: './goal-intro.component.scss',
 })
 export class GoalIntroComponent implements OnInit {
   @Input({ required: true }) goal!: GoalPreset;
-  /** Emits the recommended amount to preset on the knob. */
+  /** Emits the chosen amount to carry to the timing screen. */
   @Output() amountReady = new EventEmitter<number>();
   @Output() back = new EventEmitter<void>();
 
   cfg!: IntroConfig;
   input = 0; // the single calculator input value
   entered = false;
+  popKey = 0; // bumped on each change so the result number can re-pop
 
   ngOnInit(): void {
     this.cfg = INTRO[this.goal.key] ?? fallbackConfig(this.goal);
@@ -46,10 +44,9 @@ export class GoalIntroComponent implements OnInit {
     return this.cfg.hue;
   }
 
-  /** The goal name for the question heading, e.g. "your Emergency Fund". */
-  get questionLabel(): string {
-    const label = this.goal?.label || 'this goal';
-    return /fund|cushion/i.test(label) ? `your ${label}` : `your ${label}`;
+  /** The "why" line split into words, for a staggered fade-in animation. */
+  get whyWords(): string[] {
+    return this.cfg.why.split(' ');
   }
 
   /** Live recommended amount from the current input. Never zero. */
@@ -60,11 +57,14 @@ export class GoalIntroComponent implements OnInit {
 
   stepInput(dir: number): void {
     this.input = Math.max(0, this.input + dir * this.cfg.inputStep);
+    this.popKey++;
+    if (navigator.vibrate) navigator.vibrate(4);
   }
 
   onInputText(v: string): void {
     const n = parseInt((v || '').replace(/[^0-9]/g, ''), 10);
     this.input = isNaN(n) ? 0 : n;
+    this.popKey++;
   }
 
   get inputDisplay(): string {
@@ -83,14 +83,6 @@ export class GoalIntroComponent implements OnInit {
     return `₹${Math.round(v).toLocaleString('en-IN')}`;
   }
 
-  /** What Rupi "says" — short, warm, goal-specific. */
-  get rupiSays(): string {
-    return this.cfg.rupiSays;
-  }
-  get rupiPose(): RupiPose {
-    return this.cfg.rupiPose ?? 'point';
-  }
-
   goBack(): void {
     this.back.emit();
   }
@@ -105,11 +97,7 @@ export class GoalIntroComponent implements OnInit {
 
 interface IntroConfig {
   hue: number;
-  tagline: string; // one-liner: what it is
-  why: string; // one-liner: why it matters (legacy — no longer shown)
-  rupiSays: string; // Rupi's short spoken line (replaces the paragraph)
-  rupiPose?: RupiPose;
-  hero: string; // svg id rendered by the template switch
+  why: string; // the animated "why" line (goal + rule of thumb)
   inputLabel: string; // e.g. "Your monthly expenses"
   inputPrefix: string; // "₹" or "" (for counts)
   inputSuffix: string; // "" or " guests"
@@ -118,6 +106,11 @@ interface IntroConfig {
   ruleText: string; // the calculation rule, shown small e.g. "× 6 months"
   floor: number; // minimum recommended amount
   compute: (x: number) => number; // input -> recommended amount
+  // Legacy fields kept optional so existing config entries still type-check.
+  tagline?: string;
+  rupiSays?: string;
+  rupiPose?: string;
+  hero?: string;
 }
 
 /** Per-goal configuration. Hues match the picker/knob so colour is coherent. */
@@ -125,7 +118,7 @@ const INTRO: Record<string, IntroConfig> = {
   emergency: {
     hue: 190,
     tagline: 'Your safety net for life’s surprises.',
-    why: 'Job loss, repairs, a medical bill — this keeps them from becoming a crisis.',
+    why: 'Job loss or a big bill can hit anytime. Six months of expenses keeps a rough patch from becoming a crisis.',
     rupiSays: "Life throws curveballs — this keeps a bad day from becoming a bad year.",
     rupiPose: 'point',
     hero: 'shield',

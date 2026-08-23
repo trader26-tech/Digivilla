@@ -80,58 +80,85 @@
   line-height: 1.4;
 }
 
-/* ---- you invest vs market grows ---- */
-.split-card {
-  margin-top: 2rem;
+/* ---- donut / rim chart ---- */
+.donut-card {
+  margin-top: 1.6rem;
   width: 100%;
   max-width: 360px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.2rem 1.2rem 1rem;
+  border-radius: 22px;
+  padding: 1.4rem 1.2rem 1rem;
   box-shadow: var(--shadow-md);
 }
-.split-bar {
+.donut {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 0.4rem;
+}
+.donut svg { width: 100%; height: 100%; }
+.rim-base {
+  fill: none;
+  stroke: var(--surface-2);
+  stroke-width: 12;
+}
+.rim {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.rim.invested { stroke: hsl(var(--hue, 222), 50%, 74%); }
+.rim.growth { stroke: var(--accent-h); filter: drop-shadow(0 2px 6px hsl(var(--hue,222) 80% 55% / 0.5)); }
+.donut-center {
+  position: absolute;
+  inset: 0;
   display: flex;
-  height: 16px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--surface-2);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.seg {
-  height: 100%;
-  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-  &.invested { background: hsl(var(--hue, 222), 45%, 72%); }
-  &.growth { background: linear-gradient(90deg, var(--accent-h), var(--accent-dk)); }
+.dc-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
 }
+.dc-amount {
+  font-size: 1.9rem;
+  font-weight: 850;
+  letter-spacing: -1px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .legend {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 0.6rem;
 }
-.leg {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
+.leg { display: flex; align-items: flex-start; gap: 0.5rem; }
 .dot {
   width: 10px;
   height: 10px;
   border-radius: 3px;
-  margin-top: 0.25rem;
+  margin-top: 0.3rem;
   flex: none;
-  &.invested { background: hsl(var(--hue, 222), 45%, 72%); }
-  &.growth { background: var(--accent-dk); }
+  &.invested { background: hsl(var(--hue, 222), 50%, 74%); }
+  &.growth { background: var(--accent-h); }
 }
 .leg-text { display: flex; flex-direction: column; }
-.leg-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.leg-label { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
 .leg-val {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--text);
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
+  &.growth-val { color: var(--accent-dk); }
 }
 .rate {
   margin-top: 0.9rem;
@@ -143,26 +170,113 @@
   b { color: var(--accent-dk); }
 }
 
-/* ---- target reached ---- */
-.target {
-  margin-top: 1.6rem;
+/* ---- reveal button + funds panel ---- */
+.reveal-btn {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent-dk);
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  &:hover { border-color: var(--accent-h); background: var(--soft); }
+}
+.funds-panel {
+  width: 100%;
+  max-width: 360px;
+  margin-top: 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.1rem;
+  box-shadow: var(--shadow-sm);
+  animation: panel 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes panel {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+.loading { text-align: center; color: var(--muted); padding: 1rem; font-size: 0.9rem; }
+.why-head { margin-bottom: 0.9rem; }
+.alloc-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.alloc-bar span { height: 100%; }
+.alloc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  margin-top: 0.5rem;
+}
+.alloc-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+.alloc-legend i { width: 8px; height: 8px; border-radius: 2px; }
+.why-line {
+  margin: 0.7rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text);
+  b { color: var(--accent-dk); text-transform: capitalize; }
+}
+.fund-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.9rem 0;
+}
+.fund {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+}
+.f-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.f-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.f-name {
+  font-size: 0.85rem;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.f-meta { font-size: 0.7rem; color: var(--muted); }
+.f-stars { color: var(--warn); letter-spacing: -1px; }
+.f-ret { text-align: right; flex: none; }
+.f-ret-val { display: block; font-size: 0.85rem; font-weight: 750; color: var(--good); }
+.f-ret-lbl { font-size: 0.6rem; color: var(--muted); }
+.f-wt {
+  flex: none;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 2.4rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.why-foot {
+  margin: 0;
   text-align: center;
-  .t-label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    margin-bottom: 0.15rem;
-  }
-  .t-amount {
-    font-size: 2rem;
-    font-weight: 850;
-    letter-spacing: -1px;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-  }
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-dk);
 }
 
 .cta {
@@ -189,5 +303,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .result-screen { transition: none; }
-  .seg { transition: none; }
+  .rim { transition: none; }
+  .funds-panel { animation: none; }
 }

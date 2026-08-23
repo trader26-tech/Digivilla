@@ -1,14 +1,16 @@
 <div class="intro" [class.entered]="entered" [style.--hue]="hue">
   <button class="back" (click)="goBack()" aria-label="Back">←</button>
 
-  <!-- Header: goal name + one-line what/why. Uses the space, no 4-line wrap. -->
-  <header class="head">
-    <div class="badge">{{ goal.icon }}</div>
-    <h1 class="name">{{ goal.label }}</h1>
-    <p class="tag">{{ cfg.tagline }}</p>
-  </header>
+  <!-- Animated "why" line — words fade in one by one, no emoji. -->
+  <p class="why" [class.show]="entered">
+    <span
+      class="w"
+      *ngFor="let w of whyWords; let i = index"
+      [style.transition-delay.ms]="120 + i * 55"
+    >{{ w }}&nbsp;</span>
+  </p>
 
-  <!-- The input: adjust with − / + or type. -->
+  <!-- The calculator: adjust the input, watch the amount. -->
   <div class="calc">
     <span class="calc-label">{{ cfg.inputLabel }}</span>
     <div class="stepper">
@@ -29,10 +31,10 @@
     <span class="rule">{{ cfg.ruleText }}</span>
   </div>
 
-  <!-- The result: how much they need to save. -->
+  <!-- The result. -->
   <div class="result">
-    <span class="r-label">You'll need to save</span>
-    <div class="r-amount">{{ compactInr(recommended) }}</div>
+    <span class="r-label">You'll aim to save</span>
+    <div class="r-amount" [class.pop]="popKey % 2 === 0" [class.pop2]="popKey % 2 === 1">{{ compactInr(recommended) }}</div>
     <span class="r-full">₹{{ recommended | number:'1.0-0' }}</span>
   </div>
 
