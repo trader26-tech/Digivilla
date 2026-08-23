@@ -153,10 +153,28 @@ def login_with_phone(name: str, phone: str, id_token: str = "") -> dict:
         auth_svc._insert(row)
         user = row
     elif name and not user.get("name"):
-        # backfill a name if we didn't have one
+        # backfill a name if we didn't have one — and persist it
         user["name"] = name.strip()
+        _update_name(user["owner"], user["name"])
 
     return {"token": auth_svc._issue_token(user["owner"]), "user": auth_svc._public(user)}
+
+
+def _update_name(owner: str, name: str) -> None:
+    """Persist a backfilled name for an existing phone user."""
+    if auth_svc._use_supabase():
+        from app.supabase_client import get_supabase
+
+        try:
+            get_supabase().table("users").update({"name": name}).eq("owner", owner).execute()
+        except Exception:
+            pass  # non-fatal: the session still works
+    else:
+        rows = auth_svc._read_local()
+        for r in rows:
+            if r.get("owner") == owner:
+                r["name"] = name
+        auth_svc._write_local(rows)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
