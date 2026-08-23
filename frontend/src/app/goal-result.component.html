@@ -72,48 +72,32 @@
     <span class="g-sub">for {{ horizonLabel }} · {{ returnLabel }} expected</span>
   </div>
 
-  <!-- the compounding chart -->
-  <div class="chart-card">
-    <svg viewBox="0 0 320 200" class="growth-chart">
-      <defs>
-        <linearGradient id="fill-value" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="var(--purple)" stop-opacity="0.28" />
-          <stop offset="1" stop-color="var(--purple)" stop-opacity="0.02" />
-        </linearGradient>
-        <linearGradient id="fill-inv" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#8aa0c4" stop-opacity="0.22" />
-          <stop offset="1" stop-color="#8aa0c4" stop-opacity="0.02" />
-        </linearGradient>
-      </defs>
-
-      <!-- returns band (total value fill) sits behind; invested fill on top -->
-      <path class="area-value" [attr.d]="valueArea" fill="url(#fill-value)" />
-      <path class="area-inv" [attr.d]="investedArea" fill="url(#fill-inv)" />
-
-      <!-- the two curves -->
-      <path class="line-value" [attr.d]="valuePath" fill="none" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round" />
-      <path class="line-inv" [attr.d]="investedPath" fill="none" stroke="#8aa0c4" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" />
-
-      <!-- end dots -->
-      <circle class="dot-value" [attr.cx]="endValueXY.x" [attr.cy]="endValueXY.y" r="3.5" fill="var(--purple)" />
-      <circle class="dot-inv" [attr.cx]="endInvestedXY.x" [attr.cy]="endInvestedXY.y" r="3" fill="#8aa0c4" />
-
-      <!-- x-axis year ticks -->
-      <g class="ticks">
-        <text *ngFor="let t of xTicks" [attr.x]="t.x" y="196" text-anchor="middle" class="tick">{{ t.year }}y</text>
-      </g>
-    </svg>
+  <!-- animated stacked bar chart: invested (bottom) + returns (top), per year -->
+  <div class="chart-card" [class.grow]="barsEntered">
+    <div class="bars">
+      <div class="bar-col" *ngFor="let b of barSeries; let i = index"
+           [style.--d.ms]="120 + i * 120">
+        <div class="bar-stack">
+          <!-- extra returns segment (on top) -->
+          <div class="seg ret" [style.height.%]="barsEntered ? b.retPct : 0" [title]="'Returns +' + compactInr(b.returns)"></div>
+          <!-- invested segment (bottom) -->
+          <div class="seg inv" [style.height.%]="barsEntered ? b.invPct : 0" [title]="'Invested ' + compactInr(b.invested)"></div>
+        </div>
+        <span class="bar-total">{{ compactInr(b.total) }}</span>
+        <span class="bar-year">{{ b.year }}y</span>
+      </div>
+    </div>
 
     <!-- legend + end totals -->
     <div class="chart-legend">
       <div class="lg-item value">
         <span class="lg-dot"></span>
-        <span class="lg-txt">Total value</span>
-        <b class="lg-val">{{ compactInr(amount) }}</b>
+        <span class="lg-txt">Returns</span>
+        <b class="lg-val up">+{{ compactInr(growth) }}</b>
       </div>
       <div class="lg-item inv">
         <span class="lg-dot"></span>
-        <span class="lg-txt">You invested</span>
+        <span class="lg-txt">You invest</span>
         <b class="lg-val">{{ compactInr(totalInvested) }}</b>
       </div>
     </div>
