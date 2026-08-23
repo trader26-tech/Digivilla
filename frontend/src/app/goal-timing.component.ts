@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 
 import { GoalPreset } from './models';
 
@@ -36,10 +44,62 @@ export class GoalTimingComponent implements OnInit {
 
   entered = false;
 
+  /** Hidden native date input, opened by tapping the calendar card. */
+  @ViewChild('dateInput') dateInput?: ElementRef<HTMLInputElement>;
+
   ngOnInit(): void {
     const defDays = Math.round((this.goal?.default_years || 10) * 365);
     this.pos = this.daysToPos(defDays);
     requestAnimationFrame(() => (this.entered = true));
+  }
+
+  // ---- tap-the-calendar -> native date picker ----
+  private toISO(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+      d.getDate(),
+    ).padStart(2, '0')}`;
+  }
+  /** min/max selectable dates, mapped from the horizon bounds. */
+  get minDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + this.MIN_DAYS);
+    return this.toISO(d);
+  }
+  get maxDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + this.MAX_DAYS);
+    return this.toISO(d);
+  }
+  /** Current target date as an ISO string, to pre-fill the picker. */
+  get currentISO(): string {
+    return this.toISO(this.targetDate);
+  }
+
+  openDatePicker(): void {
+    const el = this.dateInput?.nativeElement;
+    if (!el) return;
+    // showPicker() is the modern way; fall back to focus/click on older browsers.
+    try {
+      (el as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+    } catch {
+      /* ignore */
+    }
+    el.focus();
+    el.click();
+  }
+
+  onDatePicked(value: string): void {
+    if (!value) return;
+    const picked = new Date(value + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Math.round((picked.getTime() - today.getTime()) / 86_400_000);
+    const clamped = Math.max(this.MIN_DAYS, Math.min(this.MAX_DAYS, days));
+    this.pos = this.daysToPos(clamped);
+    if (navigator.vibrate) navigator.vibrate(8);
+    // retrigger the calendar pop
+    this.lastUnitValue = -1;
+    this.pulseKey++;
   }
 
   get hue(): number {

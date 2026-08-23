@@ -35,13 +35,19 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
   entered = false;
   popKey = 0; // bumped on each change so the result number can re-pop
 
-  /** The "why" overlay plays as a brief full-screen moment, then fades out
-   *  entirely — leaving ONLY the calculator. `phase` is 'why' while the overlay
-   *  exists, 'calc' once it's gone. whyShown fades the words in; whyLeaving
-   *  fades the whole overlay out. */
+  /** The "why" welcome plays as a full-screen moment. It no longer auto-
+   *  dismisses — the user taps the button to enter the calculator. `phase` is
+   *  'why' while the welcome shows, 'calc' once dismissed. whyShown fades the
+   *  words in; reassureShown / ctaShown stagger the reassurance + button in;
+   *  whyLeaving fades the whole overlay out on tap. */
   phase: 'why' | 'calc' = 'why';
   whyShown = false;
+  reassureShown = false;
+  ctaShown = false;
   whyLeaving = false;
+
+  /** The "Why this fund?" detail sheet on the calculator screen. */
+  detailOpen = false;
 
   // slider track for the input value
   readonly TRACK = 1000;
@@ -56,23 +62,31 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
     this.input = this.cfg.defaultInput;
     this.setupInputRange();
     this.timers.push(setTimeout(() => (this.entered = true), 20));
-    // Fade the words in, then hold, then dismiss the overlay for good.
+    // Stagger the welcome in: words -> reassurance -> button. No auto-dismiss.
     this.timers.push(setTimeout(() => (this.whyShown = true), 60));
     const wordCount = this.whyWords.length;
-    const hold = 120 + wordCount * 55 + 1100; // last word delay + read beat
-    this.timers.push(setTimeout(() => this.reveal(), hold));
+    const afterWords = 120 + wordCount * 55 + 350;
+    this.timers.push(setTimeout(() => (this.reassureShown = true), afterWords));
+    this.timers.push(setTimeout(() => (this.ctaShown = true), afterWords + 350));
   }
 
   ngOnDestroy(): void {
     this.timers.forEach((t) => clearTimeout(t));
   }
 
-  /** Dismiss the "why" overlay: fade it out, then remove it, leaving the
-   *  calculator alone. Tapping the overlay skips the hold. */
+  /** User tapped the welcome button -> fade the overlay out, reveal calculator. */
   reveal(): void {
     if (this.phase === 'calc' || this.whyLeaving) return;
+    if (navigator.vibrate) navigator.vibrate(8);
     this.whyLeaving = true;
     this.timers.push(setTimeout(() => (this.phase = 'calc'), 450));
+  }
+
+  openDetail(): void {
+    this.detailOpen = true;
+  }
+  closeDetail(): void {
+    this.detailOpen = false;
   }
 
   get hue(): number {
@@ -81,7 +95,13 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
 
   /** The "why" line split into words, for a staggered fade-in animation. */
   get whyWords(): string[] {
-    return this.cfg.why.split(' ');
+    return (this.cfg.hook || this.cfg.why).split(' ');
+  }
+  get reassureLine(): string {
+    return this.cfg.reassure || "Don't worry — we've got you.";
+  }
+  get detail(): DetailContent {
+    return this.cfg.detail || fallbackDetail(this.goal);
   }
 
   /** Live recommended amount from the current input. Never zero. */
@@ -171,9 +191,21 @@ export class GoalIntroComponent implements OnInit, OnDestroy {
   }
 }
 
+interface DetailPoint {
+  icon: string; // svg id rendered by the sheet's switch
+  text: string; // short, clear line
+}
+interface DetailContent {
+  title: string; // e.g. "Why an emergency fund?"
+  points: DetailPoint[]; // 3 short reasons
+}
+
 interface IntroConfig {
   hue: number;
-  why: string; // the animated "why" line (goal + rule of thumb)
+  why: string; // fallback welcome line (used if `hook` is absent)
+  hook?: string; // the short welcome line, e.g. "Life happens — a surprise bill…"
+  reassure?: string; // the reassuring line under it, e.g. "Don't worry — we've got you."
+  detail?: DetailContent; // the "Why this fund?" sheet content
   inputLabel: string; // e.g. "Your monthly expenses"
   inputPrefix: string; // "₹" or "" (for counts)
   inputSuffix: string; // "" or " guests"
@@ -189,15 +221,33 @@ interface IntroConfig {
   hero?: string;
 }
 
+function fallbackDetail(goal: GoalPreset): DetailContent {
+  return {
+    title: `Why plan for ${goal.label.toLowerCase()}?`,
+    points: [
+      { icon: 'target', text: 'A clear target keeps you on track.' },
+      { icon: 'growth', text: 'Investing beats letting it sit idle.' },
+      { icon: 'shield', text: 'A steady monthly plan makes it painless.' },
+    ],
+  };
+}
+
 /** Per-goal configuration. Hues match the picker/knob so colour is coherent. */
 const INTRO: Record<string, IntroConfig> = {
   emergency: {
     hue: 190,
-    tagline: 'Your safety net for life’s surprises.',
+    hook: 'Life happens — a surprise bill, a sudden job change.',
+    reassure: "Don't worry, we've got you. Let's build a cushion so you're always ready.",
+    detail: {
+      title: 'Why an emergency fund?',
+      points: [
+        { icon: 'shield', text: '6 months of expenses covers a job gap or a big surprise bill.' },
+        { icon: 'water', text: 'Kept in liquid funds — safe and available within a day.' },
+        { icon: 'calm', text: 'Low-risk, not for growth. It’s peace of mind, not a bet.' },
+      ],
+    },
     why: "Life happens — a surprise bill, a job change. Don't worry, we'll help you build a cushion so you're always ready.",
-    rupiSays: "Life throws curveballs — this keeps a bad day from becoming a bad year.",
-    rupiPose: 'point',
-    hero: 'shield',
+    tagline: 'Your safety net for life’s surprises.',
     inputLabel: 'Your monthly expenses',
     inputPrefix: '₹',
     inputSuffix: '',

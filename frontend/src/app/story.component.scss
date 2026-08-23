@@ -13,9 +13,9 @@
   isolation: isolate;
   padding: 2rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
   color: #fff;
-  /* cinematic dusk, echoing the intro */
+  /* SAME dusk gradient as the intro — warm gold → purple → indigo */
   background:
-    radial-gradient(120% 90% at 50% 118%, #1f7a52 0%, #10603f 14%, #123a5c 40%, #1a1d4a 66%, #0c0b24 100%);
+    radial-gradient(140% 120% at 50% 118%, #ff9a5a 0%, #ff6f61 16%, #7a3ea8 44%, #241a4a 72%, #0e0b24 100%);
   animation: heroIn 0.7s ease both;
 }
 @keyframes heroIn { from { opacity: 0; } to { opacity: 1; } }
@@ -23,14 +23,14 @@
 /* --------------------------------------------------------------- sky fx */
 .sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 
-/* a warm/green glow rising from behind the number */
+/* warm glow rising from behind the number (gold, like the intro's sun) */
 .glow-core {
   position: absolute;
-  left: 50%; top: 42%;
-  width: 70vmin; height: 70vmin;
+  left: 50%; top: 44%;
+  width: 78vmin; height: 78vmin;
   transform: translate(-50%, -50%) scale(0.6);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(46,255,176,0.28) 0%, rgba(46,255,176,0) 62%);
+  background: radial-gradient(circle, rgba(255,190,110,0.30) 0%, rgba(255,160,90,0) 62%);
   opacity: 0;
   animation: coreRise 2s cubic-bezier(0.22,1,0.36,1) 0.2s forwards;
 }
@@ -41,19 +41,19 @@
 
 .ray {
   position: absolute;
-  left: 50%; top: 42%;
+  left: 50%; top: 44%;
   width: 2px; height: 60vh;
   transform-origin: top center;
-  background: linear-gradient(to bottom, rgba(160,255,220,0.35), transparent 70%);
+  background: linear-gradient(to bottom, rgba(255,225,170,0.4), transparent 70%);
   opacity: 0;
   animation: rayIn 2.2s ease 0.6s forwards;
 }
 .r1 { transform: translateX(-50%) rotate(-22deg); }
 .r2 { transform: translateX(-50%) rotate(4deg); animation-delay: 0.75s; }
 .r3 { transform: translateX(-50%) rotate(26deg); animation-delay: 0.9s; }
-@keyframes rayIn { 0%{opacity:0} 60%{opacity:0.6} 100%{opacity:0.25} }
+@keyframes rayIn { 0%{opacity:0} 60%{opacity:0.6} 100%{opacity:0.28} }
 
-/* drifting sparks (money motes) */
+/* drifting gold sparks (money motes) */
 .spark {
   position: absolute;
   width: 6px; height: 6px;
@@ -86,23 +86,20 @@
 
 .lead {
   margin: 0 0 0.4rem;
-  font-size: clamp(1rem, 3.4vw, 1.2rem);
-  color: rgba(255,255,255,0.82);
+  font-size: clamp(1.05rem, 3.6vw, 1.3rem);
+  color: rgba(255,255,255,0.85);
   font-weight: 500;
   animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) 0.15s both;
 }
-.chip {
-  display: inline-block;
+.lead b {
   font-weight: 800;
-  color: #fff;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.22);
-  padding: 0.05em 0.5em;
-  border-radius: 10px;
+  background: linear-gradient(100deg, #ffe7a8, #ffbe55);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* ---- glowing curve ---- */
-.viz { margin: 0.6rem auto -0.4rem; max-width: 440px; }
+/* ---- glowing gold curve ---- */
+.viz { margin: 0.6rem auto -0.2rem; max-width: 440px; }
 .viz svg { width: 100%; height: auto; overflow: visible; }
 
 .curve, .curve-glow { stroke-dasharray: 480; stroke-dashoffset: 480; }
@@ -117,68 +114,54 @@
 [data-phase="2"] .curve-fill, [data-phase="3"] .curve-fill { animation: fade 0.9s ease forwards; }
 @keyframes fade { to { opacity: 1; } }
 
-.save { opacity: 0; }
-[data-phase="2"] .save, [data-phase="3"] .save { animation: fade 0.8s ease 0.2s forwards; }
-
 .coin { opacity: 0; transform-box: view-box; transform-origin: 396px 34px; }
 [data-phase="2"] .coin, [data-phase="3"] .coin {
   animation: coinPop 0.55s cubic-bezier(0.34,1.7,0.5,1) 1.5s forwards,
              coinFloat 3.2s ease-in-out 2.1s infinite;
 }
 .coin-halo { animation: halo 2.4s ease-in-out infinite; transform-origin: 396px 34px; transform-box: view-box; }
-.coin-r { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; font-size: 14px; fill: #9a6a08; }
+.coin-r { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; font-size: 15px; fill: #9a6a08; }
 @keyframes coinPop {
   from { opacity: 0; transform: translateY(14px) scale(0.4); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes coinFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-@keyframes halo { 0%,100%{opacity:0.3; transform:scale(1)} 50%{opacity:0.55; transform:scale(1.18)} }
+@keyframes halo { 0%,100%{opacity:0.35; transform:scale(1)} 50%{opacity:0.6; transform:scale(1.18)} }
 
-/* ---- the hero number ---- */
+/* ---- the hero number (gold) ---- */
 .result { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) 0.6s both; }
-.r-eyebrow {
-  display: block;
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 0.35rem;
-}
 .r-amount {
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 0.05em;
   line-height: 1;
-  color: #fff;
-  text-shadow: 0 0 34px rgba(46,255,176,0.45);
+  text-shadow: 0 0 40px rgba(255,190,90,0.5);
 }
 .r-amount .cur {
   font-size: clamp(1.6rem, 6vw, 2.4rem);
   font-weight: 700;
-  color: #7dffcb;
+  color: #ffd27a;
 }
 .r-amount .num {
-  font-size: clamp(2.8rem, 12vw, 4.6rem);
+  font-size: clamp(2.9rem, 12vw, 4.8rem);
   font-weight: 800;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(180deg, #ffffff, #b9ffe4);
+  background: linear-gradient(180deg, #fff6e0, #ffca62);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.r-compare {
+.r-sub {
   display: block;
-  margin-top: 0.7rem;
-  font-size: clamp(0.9rem, 2.8vw, 1.05rem);
-  color: rgba(255,255,255,0.78);
+  margin-top: 0.6rem;
+  font-size: clamp(0.9rem, 2.7vw, 1rem);
+  color: rgba(255,255,255,0.7);
 }
-.r-compare b { color: #fff; font-weight: 700; }
-.r-compare .mult { color: #4dffb4; font-weight: 800; }
 
-/* ---- cta ---- */
+/* ---- cta (gold) ---- */
 .cta {
-  margin-top: 1.8rem;
+  margin-top: 1.9rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -190,10 +173,10 @@
   font: inherit;
   font-weight: 700;
   font-size: 1.05rem;
-  color: #0c3b28;
+  color: #4a2e05;
   cursor: pointer;
-  background: linear-gradient(120deg, #7dffcb, #2effb0);
-  box-shadow: 0 16px 40px -12px rgba(46,255,176,0.6), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  background: linear-gradient(120deg, #ffe08a, #f7b81f);
+  box-shadow: 0 16px 40px -12px rgba(247,184,31,0.6), 0 0 0 1px rgba(255,255,255,0.12) inset;
   animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) 0.75s both, ctaPulse 2.6s ease-in-out 1.6s infinite;
   transition: transform 0.2s ease, filter 0.2s;
 }
@@ -202,8 +185,8 @@
 .cta:hover svg { transform: translateX(4px); }
 .cta:active { transform: translateY(0) scale(0.99); }
 @keyframes ctaPulse {
-  0%, 100% { box-shadow: 0 16px 40px -12px rgba(46,255,176,0.55), 0 0 0 1px rgba(255,255,255,0.1) inset; }
-  50% { box-shadow: 0 16px 52px -10px rgba(46,255,176,0.85), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+  0%, 100% { box-shadow: 0 16px 40px -12px rgba(247,184,31,0.55), 0 0 0 1px rgba(255,255,255,0.12) inset; }
+  50% { box-shadow: 0 16px 52px -10px rgba(247,184,31,0.85), 0 0 0 1px rgba(255,255,255,0.12) inset; }
 }
 
 .fineprint {
@@ -218,7 +201,7 @@
 /* ------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .hero, .lead, .result, .cta, .glow-core, .ray, .spark, .coin, .coin-halo,
-  .curve, .curve-glow, .curve-fill, .save { animation: none; }
+  .curve, .curve-glow, .curve-fill { animation: none; }
   .curve, .curve-glow { stroke-dashoffset: 0; }
-  .curve-fill, .save, .coin, .glow-core { opacity: 1; }
+  .curve-fill, .coin, .glow-core { opacity: 1; }
 }

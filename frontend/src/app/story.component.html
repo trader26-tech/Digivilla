@@ -1,5 +1,5 @@
 <section class="hero" [attr.data-phase]="phase">
-  <!-- cinematic dusk backdrop -->
+  <!-- cinematic dusk backdrop, continuing the intro's sky -->
   <div class="sky" aria-hidden="true">
     <span class="glow-core"></span>
     <span class="ray r1"></span><span class="ray r2"></span><span class="ray r3"></span>
@@ -8,21 +8,21 @@
   </div>
 
   <div class="inner">
-    <p class="lead">You invest <b class="chip">₹10,000</b> a month.</p>
+    <p class="lead">Invest in <b>gold</b>, the smart way.</p>
 
-    <!-- the glowing growth curve behind the number -->
+    <!-- the glowing gold growth curve -->
     <div class="viz" aria-hidden="true">
       <svg viewBox="0 0 420 240" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="curve" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stop-color="#0f9c62" /><stop offset="1" stop-color="#2effb0" />
+            <stop offset="0" stop-color="#e69a2b" /><stop offset="1" stop-color="#ffd766" />
           </linearGradient>
           <linearGradient id="curve-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#25e39c" stop-opacity="0.35" />
-            <stop offset="1" stop-color="#25e39c" stop-opacity="0" />
+            <stop offset="0" stop-color="#ffcf5c" stop-opacity="0.32" />
+            <stop offset="1" stop-color="#ffcf5c" stop-opacity="0" />
           </linearGradient>
           <radialGradient id="coinG" cx="36%" cy="30%" r="75%">
-            <stop offset="0" stop-color="#fff0c0" /><stop offset="1" stop-color="#f7b81f" />
+            <stop offset="0" stop-color="#fff2c2" /><stop offset="1" stop-color="#f4b81f" />
           </radialGradient>
           <filter id="lineGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="6" result="b" />
@@ -34,29 +34,25 @@
         <path class="curve-glow" d="M24 210 C170 202 280 150 396 34" fill="none" stroke="url(#curve)" stroke-width="7" stroke-linecap="round" filter="url(#lineGlow)" />
         <path class="curve" d="M24 210 C170 202 280 150 396 34" fill="none" stroke="url(#curve)" stroke-width="5" stroke-linecap="round" />
 
-        <!-- idle savings — faint, flat -->
-        <path class="save" d="M24 210 C170 209 280 206 396 202" fill="none" stroke="#7d88a3" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9" opacity="0.55" />
-
         <!-- coin bursting at the peak -->
         <g class="coin">
-          <circle class="coin-halo" cx="396" cy="34" r="26" fill="#ffd873" opacity="0.35" />
-          <circle cx="396" cy="34" r="14" fill="url(#coinG)" />
+          <circle class="coin-halo" cx="396" cy="34" r="26" fill="#ffd873" opacity="0.4" />
+          <circle cx="396" cy="34" r="15" fill="url(#coinG)" />
           <text x="396" y="35" text-anchor="middle" dominant-baseline="central" class="coin-r">₹</text>
         </g>
       </svg>
     </div>
 
-    <!-- the hero: a big number that counts up -->
+    <!-- the hero: gold value counting up -->
     <div class="result">
-      <span class="r-eyebrow">In 20 years, that becomes</span>
       <div class="r-amount">
         <span class="cur">₹</span><span class="num">{{ grouped(invested) }}</span>
       </div>
-      <span class="r-compare">vs just <b>{{ compact(saved) }}</b> sitting in savings — <b class="mult">{{ multiple }}× more.</b></span>
+      <span class="r-sub">gold could grow ₹10k/month into, in 20 years</span>
     </div>
 
     <button class="cta" (click)="start()" type="button">
-      Make it yours
+      Start with gold
       <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
     <span class="fineprint">Illustrative long-run assumptions. Not investment advice.</span>
