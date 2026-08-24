@@ -57,11 +57,12 @@
 .pitch .w {
   display: inline-block;
   opacity: 0;
-  transform: translateY(0.5em);
-  filter: blur(6px);
-  animation: wordIn 0.7s cubic-bezier(0.2, 0.8, 0.25, 1) both;
-  animation-delay: calc(0.35s + var(--i) * 0.09s);
+  transform: translateY(0.42em);
+  filter: blur(4px);
+  animation: wordIn 0.66s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+  animation-delay: calc(0.35s + var(--i) * 0.085s);
   margin-right: 0.24em;
+  will-change: opacity, transform, filter;
 }
 @keyframes wordIn {
   to { opacity: 1; transform: none; filter: blur(0); }
