@@ -94,17 +94,19 @@
   color: var(--text);
 }
 .add {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--purple);
+  border: none;
+  background: linear-gradient(135deg, #a05cff, #ff7a3d);
+  color: #fff;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 750;
-  padding: 0.4rem 0.85rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.1s;
+  box-shadow: 0 6px 16px -8px rgba(160, 92, 255, 0.7);
+  transition: transform 0.1s, filter 0.15s;
 }
+.add:hover { filter: brightness(1.06); }
 .add:active { transform: scale(0.96); }
 
 .goal-list { display: flex; flex-direction: column; gap: 0.75rem; }

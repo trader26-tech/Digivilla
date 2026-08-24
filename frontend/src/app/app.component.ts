@@ -132,9 +132,10 @@ export class AppComponent {
   get flowFraction(): number {
     return this.flowStep / this.flowTotal;
   }
-  /** Show the brand+progress chrome only during the pre-login flow. */
+  /** Show the brand+progress chrome only during the goal-building flow —
+   *  not on the intro, the welcome gate, or once authed. */
   get showChrome(): boolean {
-    return !this.intro && !this.authed;
+    return !this.intro && !this.gate && !this.authed;
   }
 
   /** Called when the landing page completes sign-in. Persists the session
