@@ -23,12 +23,11 @@ export class HomeComponent implements OnInit, OnChanges {
   @Input() refreshKey = 0;
   @Output() planNew = new EventEmitter<void>();
   @Output() exploreFunds = new EventEmitter<void>();
+  /** Tapping a goal card opens its full detail page (handled by AppComponent). */
+  @Output() openGoal = new EventEmitter<Goal>();
 
   goals: Goal[] = [];
   loading = true;
-
-  /** Which goal is expanded to full detail (id), or null. */
-  openId: string | null = null;
 
   constructor(private api: PlannerService) {}
 
@@ -50,19 +49,15 @@ export class HomeComponent implements OnInit, OnChanges {
     });
   }
 
-  toggle(g: Goal): void {
-    this.openId = this.openId === g.id ? null : g.id;
+  open(g: Goal): void {
     if (navigator.vibrate) navigator.vibrate(5);
-  }
-  isOpen(g: Goal): boolean {
-    return this.openId === g.id;
+    this.openGoal.emit(g);
   }
 
   remove(g: Goal, ev: Event): void {
     ev.stopPropagation();
     this.api.deleteGoal(g.id).subscribe(() => {
       this.goals = this.goals.filter((x) => x.id !== g.id);
-      if (this.openId === g.id) this.openId = null;
     });
   }
 
@@ -112,34 +107,6 @@ export class HomeComponent implements OnInit, OnChanges {
   reachedPct(g: Goal): number {
     if (g.target_amount <= 0) return 0;
     return this.clampPct((g.progress.on_track_value / g.target_amount) * 100);
-  }
-
-  // ---- "what if I add ₹X extra per month" ----
-  /** Extra monthly top-up the user is exploring, per goal id. */
-  topUp: Record<string, number> = {};
-  topUpSteps = [1000, 2500, 5000, 10000];
-
-  extra(g: Goal): number {
-    return this.topUp[g.id] || 0;
-  }
-  setExtra(g: Goal, amount: number, ev: Event): void {
-    ev.stopPropagation();
-    this.topUp[g.id] = this.extra(g) === amount ? 0 : amount;
-    if (navigator.vibrate) navigator.vibrate(4);
-  }
-  /** Projected FINAL value if they add `extra` more per month from now to goal end. */
-  whatIfFinal(g: Goal): number {
-    const base = g.projected_p50 || g.target_amount;
-    const extra = this.extra(g);
-    if (extra <= 0) return base;
-    const monthsLeft = Math.max(0, g.progress.months_total - g.progress.months_elapsed);
-    const r = (1 + (g.expected_return ?? 0.1)) ** (1 / 12) - 1;
-    const fvExtra =
-      r > 0 ? extra * (((1 + r) ** monthsLeft - 1) / r) * (1 + r) : extra * monthsLeft;
-    return base + fvExtra;
-  }
-  whatIfBoost(g: Goal): number {
-    return Math.max(0, this.whatIfFinal(g) - (g.projected_p50 || g.target_amount));
   }
 
   // ================= helpers =================

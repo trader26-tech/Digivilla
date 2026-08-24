@@ -3,7 +3,7 @@
 .home {
   max-width: 480px;
   margin: 0 auto;
-  padding: 1.5rem 1.15rem calc(2rem + env(safe-area-inset-bottom));
+  padding: 1rem 1.15rem calc(1.25rem + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
 }
@@ -13,8 +13,8 @@
 /* ================= HERO ================= */
 .hero {
   position: relative;
-  border-radius: 26px;
-  padding: 2rem 1.5rem 1.5rem;
+  border-radius: 22px;
+  padding: 1.2rem 1.4rem 1rem;
   text-align: center;
   overflow: hidden;
   background:
@@ -33,8 +33,8 @@
   color: var(--muted);
 }
 .hero-value {
-  margin: 0.4rem 0 0.3rem;
-  font-size: clamp(2.8rem, 12vw, 3.6rem);
+  margin: 0.25rem 0 0.2rem;
+  font-size: clamp(2.5rem, 11vw, 3.2rem);
   font-weight: 850;
   letter-spacing: -2.5px;
   line-height: 1;
@@ -58,8 +58,8 @@
   align-items: center;
   justify-content: center;
   gap: 1.4rem;
-  margin-top: 1.4rem;
-  padding-top: 1.3rem;
+  margin-top: 1rem;
+  padding-top: 0.95rem;
   border-top: 1px solid var(--border);
 }
 .hs { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
@@ -85,7 +85,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 1.8rem 0.25rem 0.85rem;
+  margin: 1.1rem 0.25rem 0.7rem;
 }
 .goals-head span {
   font-size: 1.05rem;
@@ -109,11 +109,11 @@
 .add:hover { filter: brightness(1.06); }
 .add:active { transform: scale(0.96); }
 
-.goal-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.goal-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .goal {
-  border-radius: 20px;
-  padding: 1rem 1.1rem 1.05rem;
+  border-radius: 18px;
+  padding: 0.85rem 1rem 0.9rem;
   background: var(--surface);
   border: 1px solid var(--border);
   cursor: pointer;
@@ -128,11 +128,11 @@
 
 .g-row { display: flex; align-items: center; gap: 0.75rem; }
 .g-icon {
-  width: 42px; height: 42px;
+  width: 36px; height: 36px;
   flex: none;
   display: grid; place-items: center;
-  border-radius: 12px;
-  font-size: 1.2rem;
+  border-radius: 10px;
+  font-size: 1.05rem;
   background: var(--surface-2);
 }
 .g-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
@@ -155,8 +155,8 @@
 
 /* progress bar */
 .g-bar {
-  margin-top: 0.85rem;
-  height: 7px;
+  margin-top: 0.65rem;
+  height: 6px;
   border-radius: 999px;
   background: var(--surface-2);
   overflow: hidden;
@@ -172,8 +172,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.55rem;
-  font-size: 0.78rem;
+  margin-top: 0.45rem;
+  font-size: 0.76rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }

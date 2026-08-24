@@ -28,8 +28,17 @@
     <app-home
       [refreshKey]="goalsVersion"
       (planNew)="startAddGoal()"
+      (openGoal)="openGoalDetail($event)"
     ></app-home>
   </div>
+</div>
+
+<!-- Full-screen detail for a single tapped goal. -->
+<div class="goal-detail-overlay" *ngIf="selectedGoal">
+  <app-goal-detail
+    [goal]="selectedGoal"
+    (back)="closeGoalDetail()"
+  ></app-goal-detail>
 </div>
 
 <!-- Add-goal: the SAME onboarding flow (picker -> amount -> timing -> plan),

@@ -14,11 +14,12 @@ import { GoalPickerComponent } from './goal-picker.component';
 import { GoalHomeComponent } from './goal-home.component';
 import { GoalResultComponent } from './goal-result.component';
 import { GoalTimingComponent } from './goal-timing.component';
+import { GoalDetailComponent } from './goal-detail.component';
 import { WelcomeGateComponent } from './welcome-gate.component';
 import { HomeComponent } from './home.component';
 import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
-import { AuthResponse, GoalCreate, GoalPreset } from './models';
+import { AuthResponse, Goal, GoalCreate, GoalPreset } from './models';
 import { RefreshButtonComponent } from './refresh-button.component';
 import { DevNavComponent, DevScreen } from './dev-nav.component';
 import { PlannerService } from './planner.service';
@@ -38,6 +39,7 @@ type Tab = 'home' | 'invest';
     GoalTimingComponent,
     WelcomeGateComponent,
     GoalResultComponent,
+    GoalDetailComponent,
     GoalHomeComponent,
     IntroComponent,
     RefreshButtonComponent,
@@ -72,6 +74,9 @@ type Tab = 'home' | 'invest';
 export class AppComponent {
   tab: Tab = 'home';
   goalsVersion = 0;
+
+  /** The goal whose full detail page is open, or null for the dashboard. */
+  selectedGoal: Goal | null = null;
 
   /** Cinematic welcome shown on every launch, before anything else. */
   intro = true;
@@ -326,6 +331,7 @@ export class AppComponent {
     this.authed = false;
     this.tab = 'home';
     this.addingGoal = false;
+    this.selectedGoal = null;
   }
 
   /** DEV: jump straight to any screen with sample data pre-filled. Wired to the
@@ -419,6 +425,17 @@ export class AppComponent {
 
   setTab(t: Tab): void {
     this.tab = t;
+  }
+
+  /** Home goal tapped -> open its full detail page. */
+  openGoalDetail(g: Goal): void {
+    this.selectedGoal = g;
+  }
+  /** Back from the goal detail page -> return to the dashboard. */
+  closeGoalDetail(): void {
+    this.selectedGoal = null;
+    // A withdrawal/edit could have changed the numbers; refresh Home on return.
+    this.goalsVersion++;
   }
 
   onBasketSaved(): void {

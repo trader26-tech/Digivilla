@@ -33,9 +33,10 @@
 }
 
 .gate-inner {
-  margin: auto 0;   /* vertically centre the pitch; CTA sits pinned at the bottom */
+  flex: 1;                 /* fill the space; centre the pitch within it */
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 /* ---- the single punchy statement, revealed word by word ---- */
@@ -101,8 +102,8 @@
 }
 .cta.primary {
   color: #fff;
-  background: linear-gradient(120deg, #a370ff, #7a3ea8);
-  box-shadow: 0 16px 34px -12px rgba(163, 112, 255, 0.7);
+  background: linear-gradient(120deg, #a05cff 0%, #b866d6 55%, #ff7a3d 100%);
+  box-shadow: 0 16px 34px -12px rgba(180, 90, 200, 0.7);
 }
 .cta.primary:hover { transform: translateY(-2px); filter: brightness(1.05); }
 .cta.primary:active { transform: translateY(0) scale(0.99); }

@@ -30,10 +30,9 @@
     <article
       class="goal"
       *ngFor="let g of goals; trackBy: trackById"
-      [class.open]="isOpen(g)"
-      (click)="toggle(g)"
+      (click)="open(g)"
     >
-      <!-- summary row (always visible) -->
+      <!-- summary row -->
       <div class="g-row">
         <span class="g-icon">{{ goalIcon(g.goal) }}</span>
         <div class="g-main">
@@ -48,62 +47,6 @@
       <div class="g-legend">
         <span><i class="dot inv"></i>Invested {{ compact(invested(g)) }}</span>
         <span class="togo">{{ compact(toGo(g)) }} to go</span>
-      </div>
-
-      <!-- ===== expanded detail ===== -->
-      <div class="g-detail" *ngIf="isOpen(g)" (click)="$event.stopPropagation()">
-        <!-- what-if: add extra per month -->
-        <div class="whatif">
-          <span class="wi-cap">Add extra / month → bigger finish</span>
-          <div class="wi-steps">
-            <button
-              *ngFor="let s of topUpSteps"
-              class="wi-chip"
-              [class.on]="extra(g) === s"
-              (click)="setExtra(g, s, $event)"
-            >
-              +{{ compact(s) }}
-            </button>
-          </div>
-          <div class="wi-out" *ngIf="extra(g) > 0">
-            Finishes at <b>{{ compact(whatIfFinal(g)) }}</b>
-            <span class="wi-boost">+{{ compact(whatIfBoost(g)) }}</span>
-          </div>
-        </div>
-
-        <!-- key numbers -->
-        <div class="g-metrics">
-          <div><span>Monthly</span><b>{{ compact(g.monthly_investment) }}</b></div>
-          <div><span>XIRR</span><b class="xirr">{{ goalXirr(g) | number: '1.1-1' }}%</b></div>
-          <div><span>Elapsed</span><b>{{ g.progress.months_elapsed }}/{{ g.progress.months_total }}mo</b></div>
-          <div><span>Target</span><b>{{ compact(g.target_amount) }}</b></div>
-        </div>
-
-        <!-- projected range -->
-        <div class="g-range">
-          <span class="gr-l">Projected at goal</span>
-          <div class="gr-row">
-            <span class="gr-lo">{{ compact(g.projected_p10) }}</span>
-            <div class="gr-track"><span class="gr-mid"></span></div>
-            <span class="gr-hi">{{ compact(g.projected_p90) }}</span>
-          </div>
-          <span class="gr-mid-lbl">likely {{ compact(g.projected_p50) }}</span>
-        </div>
-
-        <!-- allocation -->
-        <div class="g-alloc" *ngIf="g.recommendations?.length">
-          <span class="ga-cap">Where it's invested</span>
-          <div class="ga-bar">
-            <span
-              *ngFor="let r of g.recommendations"
-              [style.width.%]="r.weight * 100"
-              [style.background]="assetColor(r.asset_class)"
-              [title]="r.name"
-            ></span>
-          </div>
-        </div>
-
-        <button class="g-remove" (click)="remove(g, $event)">Remove goal</button>
       </div>
     </article>
   </div>
