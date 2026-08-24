@@ -25,17 +25,29 @@
   </div>
 </section>
 
-<!-- ============ returning-user login sheet ============ -->
-<div class="sheet-backdrop" [class.show]="loginOpen" (click)="closeLogin()"></div>
-<aside class="login-sheet" [class.open]="loginOpen">
-  <span class="grabber"></span>
+<!-- ============ full-screen login panel — slides up from the bottom ============ -->
+<div class="login-screen" [class.open]="loginOpen" [attr.aria-hidden]="!loginOpen">
+  <!-- ambient glow, echoing the gate -->
+  <div class="ls-glow" aria-hidden="true"></div>
+
+  <!-- header: back/close + brand -->
+  <header class="ls-head">
+    <button class="ls-back" (click)="step === 'otp' ? editPhone() : closeLogin()" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="ls-brand">My<span class="ls-brand-accent">Lakshyas</span></span>
+    <span class="ls-head-spacer"></span>
+  </header>
 
   <!-- STEP 1: phone -->
-  <ng-container *ngIf="step === 'phone'">
-    <h2>Enter your number</h2>
-    <p class="ls-sub">We'll text you a one-time code to get you in. New or returning — same door.</p>
+  <div class="ls-body" *ngIf="step === 'phone'">
+    <div class="ls-lead">
+      <span class="ls-emoji">👋</span>
+      <h1>Enter your number</h1>
+      <p>We'll text you a one-time code to get you in.<br />New or returning — same door.</p>
+    </div>
 
-    <label class="field">
+    <div class="ls-field">
       <span class="field-l">Phone number</span>
       <div class="phone-row">
         <span class="cc">+91</span>
@@ -50,41 +62,46 @@
           autocomplete="tel"
         />
       </div>
-    </label>
-
-    <span class="ls-error" *ngIf="error">{{ error }}</span>
-
-    <button class="ls-cta" [disabled]="!validPhone || sending" (click)="sendCode()">
-      <span *ngIf="!sending">Send code</span>
-      <span *ngIf="sending">Sending…</span>
-    </button>
-    <span class="ls-fine">We'll text a one-time code to verify it's you.</span>
-  </ng-container>
+      <span class="ls-error" *ngIf="error">{{ error }}</span>
+    </div>
+  </div>
 
   <!-- STEP 2: OTP -->
-  <ng-container *ngIf="step === 'otp'">
-    <h2>Enter the code</h2>
-    <p class="ls-sub">We sent a 6-digit code to <b>+91 {{ phone }}</b>. <button class="ls-edit" (click)="editPhone()">Change</button></p>
+  <div class="ls-body" *ngIf="step === 'otp'">
+    <div class="ls-lead">
+      <span class="ls-emoji">📩</span>
+      <h1>Enter the code</h1>
+      <p>Sent a 6-digit code to <b>+91 {{ phone }}</b>.<br /><button class="ls-edit" (click)="editPhone()">Change number</button></p>
+    </div>
 
-    <input
-      class="field-in otp-in"
-      type="tel"
-      inputmode="numeric"
-      placeholder="• • • • • •"
-      [ngModel]="otp"
-      (ngModelChange)="onOtp($event)"
-      maxlength="6"
-      autocomplete="one-time-code"
-    />
+    <div class="ls-field">
+      <input
+        class="field-in otp-in"
+        type="tel"
+        inputmode="numeric"
+        placeholder="• • • • • •"
+        [ngModel]="otp"
+        (ngModelChange)="onOtp($event)"
+        maxlength="6"
+        autocomplete="one-time-code"
+      />
+      <span class="ls-error" *ngIf="error">{{ error }}</span>
+      <span class="ls-hint" *ngIf="isMock">Demo mode — any 6 digits work until Firebase is connected.</span>
+    </div>
+  </div>
 
-    <span class="ls-error" *ngIf="error">{{ error }}</span>
-
-    <button class="ls-cta" [disabled]="!validOtp || verifying" (click)="verify()">
+  <!-- footer CTA, pinned to the bottom -->
+  <footer class="ls-foot">
+    <button *ngIf="step === 'phone'" class="ls-cta" [disabled]="!validPhone || sending" (click)="sendCode()">
+      <span *ngIf="!sending">Send code</span>
+      <span *ngIf="sending">Sending…</span>
+      <svg *ngIf="!sending" viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button *ngIf="step === 'otp'" class="ls-cta" [disabled]="!validOtp || verifying" (click)="verify()">
       <span *ngIf="!verifying">Log in</span>
       <span *ngIf="verifying">Verifying…</span>
     </button>
-    <span class="ls-fine" *ngIf="isMock">Demo mode — any 6 digits work until Firebase is connected.</span>
-  </ng-container>
+  </footer>
 
   <div #recaptcha class="recaptcha-host"></div>
-</aside>
+</div>

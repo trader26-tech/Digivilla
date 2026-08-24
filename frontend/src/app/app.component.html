@@ -1,88 +1,14 @@
 <!-- Cinematic welcome, every launch, before everything -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
-<!-- "Why us" welcome gate: Log in (returning) or Get started (new) -->
+<!-- Onboarding is just: intro -> "what this platform is" info + phone/OTP login.
+     After OTP, the user lands straight on the Home dashboard. No goal flow here;
+     goals are created from Home via the "+ New" button. -->
 <app-welcome-gate
-  *ngIf="!intro && gate && !authed"
+  *ngIf="!intro && !authed"
   (getStarted)="onGateStart()"
   (loggedIn)="onGateLogin($event)"
 ></app-welcome-gate>
-
-<!-- Shared onboarding chrome: MyLakshyas brand + slim step progress.
-     A minimal top strip — a small wordmark and a thin progress line that
-     advances per step. Kept light so it reads as part of each screen. -->
-<header class="flow-chrome" *ngIf="showChrome">
-  <div class="fc-inner">
-    <div class="brandmark" aria-label="MyLakshyas">
-      <span class="bm-logo" aria-hidden="true">
-        <svg viewBox="0 0 28 28" fill="none">
-          <defs>
-            <linearGradient id="bmg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#a370ff" /><stop offset="1" stop-color="#ff9a4a" />
-            </linearGradient>
-          </defs>
-          <path d="M6 21V8l8 8 8-8v13" stroke="url(#bmg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-        </svg>
-      </span>
-      <span class="bm-name">My<span class="bm-accent">Lakshyas</span></span>
-    </div>
-
-    <span class="fc-step">{{ flowStep }}<span class="fc-step-tot">/{{ flowTotal }}</span></span>
-  </div>
-
-  <!-- ultra-thin progress line spanning the full width, right at the top edge -->
-  <div class="fc-line" [attr.aria-label]="'Step ' + flowStep + ' of ' + flowTotal">
-    <span class="fc-line-fill" [style.width.%]="flowFraction * 100"></span>
-  </div>
-</header>
-
-<!-- Pre-login flow. Wrapped so the steps slide between each other as one
-     continuous journey (forward = slide left, back = slide right). -->
-<div class="pre-login" [class.has-chrome]="showChrome" *ngIf="!intro && !gate && !authed" [@stepAnim]="preStep">
-  <!-- Step 1: no-login goal picker -->
-  <app-goal-picker
-    *ngIf="!pickedGoal && !chosenGoal"
-    (goalChosen)="onGoalChosen($event)"
-  ></app-goal-picker>
-
-  <!-- Step 2: ONE combined screen — animated "why" + the amount calculator. -->
-  <app-goal-intro
-    *ngIf="!pickedGoal && chosenGoal && !amountDone"
-    [goal]="chosenGoal"
-    (amountReady)="onAmountChosen($event)"
-    (back)="onAmountBack()"
-  ></app-goal-intro>
-
-  <!-- Step 3: choose how long to invest (horizon -> live target date) -->
-  <app-goal-timing
-    *ngIf="!pickedGoal && amountDone && !timingDone && chosenGoal"
-    [goal]="chosenGoal"
-    [amount]="chosenAmount"
-    (timingChosen)="onTimingChosen($event)"
-    (back)="onTimingBack()"
-  ></app-goal-timing>
-
-  <!-- Step 5: results — monthly SIP + expected mutual-fund returns (placeholder) -->
-  <app-goal-result
-    *ngIf="!pickedGoal && timingDone && chosenGoal"
-    [goal]="chosenGoal"
-    [amount]="chosenAmount"
-    [years]="chosenYears"
-    [initialView]="pendingPlanView"
-    (continued)="onResultContinue($event)"
-    (back)="onResultBack()"
-  ></app-goal-result>
-
-  <!-- Step 6: goal added -> dummy home + quick-login bottom sheet -->
-  <app-goal-home
-    *ngIf="pickedGoal && chosenGoal"
-    [goal]="chosenGoal"
-    [amount]="chosenAmount"
-    [monthly]="chosenMonthly"
-    [years]="chosenYears"
-    (loggedIn)="onQuickLogin($event)"
-  ></app-goal-home>
-</div>
 
 <!-- Authed dashboard shell. Shows for ANY logged-in user — including a
      returning user (token in localStorage) or one who logged in via the gate,

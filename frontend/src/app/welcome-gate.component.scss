@@ -135,115 +135,183 @@
 }
 .cta.ghost:hover b { color: #ffb98a; }
 
-/* ============ returning-user login sheet (matches goal-home) ============ */
-.sheet-backdrop {
+/* ============ full-screen login panel — slides up from the bottom ============ */
+.login-screen {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  background: rgba(6, 4, 16, 0.6);
-  backdrop-filter: blur(2px);
-  opacity: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* dark dusk background, same family as the intro/gate */
+  background:
+    radial-gradient(120% 80% at 50% -10%, #241a4a 0%, #12102a 45%, #0a0818 100%);
+  color: #fff;
+  /* start off-screen at the bottom, slide up on .open */
+  transform: translateY(100%);
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+.login-screen.open {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.ls-glow {
+  position: absolute;
+  top: -8%; left: 50%;
+  width: 130vw; height: 55vh;
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 55% at 50% 25%, rgba(163, 112, 255, 0.24), transparent 70%),
+    radial-gradient(45% 40% at 72% 55%, rgba(255, 154, 74, 0.14), transparent 70%);
+}
 
-.login-sheet {
-  position: fixed;
-  left: 50%; bottom: 0;
-  z-index: 41;
-  width: min(460px, 100%);
-  transform: translateX(-50%) translateY(105%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-radius: 26px 26px 0 0;
-  padding: 0.8rem 1.4rem calc(1.6rem + env(safe-area-inset-bottom));
-  box-shadow: 0 -20px 50px -20px rgba(0,0,0,0.5);
-  transition: transform 0.5s cubic-bezier(0.22,1,0.36,1);
+/* header */
+.ls-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: calc(0.9rem + env(safe-area-inset-top)) 1.25rem 0.4rem;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
-.login-sheet.open { transform: translateX(-50%) translateY(0); }
-.grabber {
-  display: block;
-  width: 42px; height: 4px;
-  border-radius: 999px;
-  background: var(--border);
-  margin: 0 auto 1.1rem;
+.ls-back {
+  width: 40px; height: 40px;
+  flex: none;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
 }
-.login-sheet h2 { margin: 0 0 0.3rem; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.3px; }
-.ls-sub { margin: 0 0 1.2rem; font-size: 0.92rem; color: var(--muted); line-height: 1.5;
-  b { color: var(--text); font-weight: 750; } }
+.ls-back:hover { background: rgba(255, 255, 255, 0.12); }
+.ls-back:active { transform: scale(0.94); }
+.ls-brand { font-size: 1rem; font-weight: 800; letter-spacing: -0.3px; }
+.ls-brand-accent {
+  background: linear-gradient(100deg, #b98bff, #ff9a4a);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ls-head-spacer { width: 40px; flex: none; }
+
+/* body: centred lead + field */
+.ls-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  box-sizing: border-box;
+}
+.ls-lead { text-align: center; }
+.ls-emoji { font-size: 2.4rem; display: block; margin-bottom: 0.7rem; }
+.ls-lead h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.7rem, 6vw, 2.1rem);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+.ls-lead p {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.68);
+  b { color: #fff; font-weight: 750; }
+}
 .ls-edit {
-  border: none; background: none; padding: 0;
-  font: inherit; font-weight: 750; color: #a05cff; cursor: pointer;
+  border: none; background: none; padding: 0.2rem 0;
+  font: inherit; font-weight: 750; color: #b98bff; cursor: pointer;
   text-decoration: underline;
 }
 
-.field { display: block; margin-bottom: 0.75rem; }
-.field-l { display: block; margin-bottom: 0.35rem; font-size: 0.76rem; font-weight: 700; color: var(--muted); }
+.ls-field { display: block; }
+.field-l { display: block; margin-bottom: 0.4rem; font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.6); }
 .field-in {
   width: 100%;
   box-sizing: border-box;
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
   outline: none;
-  background: var(--surface-2);
-  padding: 0.95rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1.1rem 1.1rem;
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text);
-  transition: border-color 0.2s;
+  color: #fff;
+  transition: border-color 0.2s, background 0.2s;
 }
-.field-in::placeholder { color: var(--muted); font-weight: 500; }
-.field-in:focus { border-color: #a05cff; }
+.field-in::placeholder { color: rgba(255,255,255,0.4); font-weight: 500; }
+.field-in:focus { border-color: #b98bff; background: rgba(255,255,255,0.09); }
 
 .phone-row {
   display: flex;
   align-items: stretch;
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
   overflow: hidden;
-  background: var(--surface-2);
-  transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.06);
+  transition: border-color 0.2s, background 0.2s;
 }
-.phone-row:focus-within { border-color: #a05cff; }
-.cc { display: flex; align-items: center; padding: 0 0.7rem 0 1rem; font-weight: 750; color: var(--text); border-right: 1px solid var(--border); }
+.phone-row:focus-within { border-color: #b98bff; background: rgba(255,255,255,0.09); }
+.cc { display: flex; align-items: center; padding: 0 0.8rem 0 1.1rem; font-weight: 750; color: #fff; border-right: 1px solid rgba(255,255,255,0.14); }
 .phone-in { border: none; border-radius: 0; background: transparent; letter-spacing: 0.5px; }
-.phone-in:focus { border-color: transparent; }
+.phone-in:focus { border-color: transparent; background: transparent; }
 
-.otp-in { text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: 0.5rem; padding: 1rem; }
+.otp-in { text-align: center; font-size: 1.9rem; font-weight: 800; letter-spacing: 0.6rem; padding: 1.1rem; }
 
-.ls-error { display: block; margin-top: 0.6rem; font-size: 0.8rem; font-weight: 650; color: #ff8f8f; }
+.ls-error { display: block; margin-top: 0.7rem; font-size: 0.85rem; font-weight: 650; color: #ff9a9a; }
+.ls-hint { display: block; margin-top: 0.7rem; font-size: 0.78rem; color: rgba(255,255,255,0.5); }
 .recaptcha-host { position: absolute; width: 0; height: 0; overflow: hidden; }
 
+/* footer CTA, pinned to the bottom */
+.ls-foot {
+  position: relative;
+  z-index: 1;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem calc(1.6rem + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
 .ls-cta {
   width: 100%;
-  margin-top: 1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border: none;
-  border-radius: 16px;
-  padding: 1.05rem;
+  border-radius: 18px;
+  padding: 1.15rem;
   font: inherit;
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 750;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, #a05cff, #7a3ea8);
-  box-shadow: 0 14px 30px -12px rgba(160,92,255,0.7);
+  background: linear-gradient(120deg, #a370ff, #7a3ea8);
+  box-shadow: 0 16px 34px -12px rgba(163, 112, 255, 0.7);
   transition: transform 0.15s ease, filter 0.15s, opacity 0.2s;
 }
-.ls-cta:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.ls-cta:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 .ls-cta:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.05); }
 .ls-cta:not(:disabled):active { transform: translateY(0) scale(0.99); }
-.ls-fine { display: block; margin-top: 0.8rem; text-align: center; font-size: 0.72rem; color: var(--muted); }
 
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .gate, .eyebrow, .pitch, .reasons li, .cta-stack { animation: none; transition: none; }
-  .login-sheet, .sheet-backdrop { transition: none; }
+  .login-screen { transition: none; }
 }

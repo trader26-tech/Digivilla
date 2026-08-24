@@ -1,6 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 .screen {
   /* Orange accent on this screen — balances the purple "why" screen so the
@@ -12,6 +13,7 @@
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
