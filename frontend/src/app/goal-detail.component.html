@@ -1,5 +1,5 @@
 <section class="detail" *ngIf="goal">
-  <!-- ============ header ============ -->
+  <!-- header -->
   <header class="top">
     <button class="back" (click)="onBack()" aria-label="Back">‹</button>
     <div class="top-title">
@@ -9,208 +9,124 @@
     <span class="top-spacer"></span>
   </header>
 
-  <!-- ============ hero — current value + gain ============ -->
-  <div class="hero">
-    <span class="hero-cap">Current value</span>
-    <h2 class="hero-value">{{ compact(current) }}</h2>
-    <span class="hero-gain" [class.flat]="gain <= 0">
-      ▲ {{ compact(gain) }} · {{ gainPct | number: '1.0-1' }}%
-    </span>
-
-    <!-- progress to target -->
-    <div class="hero-prog">
-      <div class="hp-track"><span class="hp-fill" [style.width.%]="reachedPct"></span></div>
-      <div class="hp-legend">
-        <span>{{ reachedPct | number: '1.0-0' }}% of {{ compact(goal.target_amount) }}</span>
-        <span class="hp-togo">{{ compact(toGo) }} to go</span>
-      </div>
+  <!-- ============ chance of reaching the goal ============ -->
+  <div class="chance">
+    <span class="ch-cap">Chance of reaching {{ compact(target) }}</span>
+    <div class="ch-num">
+      <b>{{ successPct }}<i>%</i></b>
+      <span class="ch-tag" [class.warn]="successPct < 60" [class.ok]="successPct >= 80">
+        {{ successPct >= 80 ? 'On track' : successPct >= 60 ? 'Getting there' : 'Needs a boost' }}
+      </span>
     </div>
   </div>
 
-  <!-- ============ key stats ============ -->
-  <div class="stats">
-    <div class="stat">
-      <span class="s-l">Invested</span>
-      <b class="s-v">{{ compact(invested) }}</b>
-    </div>
-    <div class="stat">
-      <span class="s-l">Growth</span>
-      <b class="s-v pos">+{{ compact(gain) }}</b>
-    </div>
-    <div class="stat">
-      <span class="s-l">XIRR</span>
-      <b class="s-v xirr">{{ xirr | number: '1.1-1' }}%</b>
-    </div>
-    <div class="stat">
-      <span class="s-l">Monthly SIP</span>
-      <b class="s-v">{{ compact(goal.monthly_investment) }}</b>
-    </div>
-    <div class="stat">
-      <span class="s-l">Elapsed</span>
-      <b class="s-v">{{ goal.progress.months_elapsed }}/{{ goal.progress.months_total }} mo</b>
-    </div>
-    <div class="stat">
-      <span class="s-l">Target</span>
-      <b class="s-v">{{ compact(goal.target_amount) }}</b>
+  <!-- ============ the line chart (Monte Carlo cone) ============ -->
+  <div class="chart-card">
+    <svg
+      class="chart"
+      [attr.viewBox]="'0 0 ' + W + ' ' + H"
+      preserveAspectRatio="none"
+      role="img"
+      aria-label="Projected value over time"
+    >
+      <defs>
+        <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02" />
+        </linearGradient>
+      </defs>
+
+      <!-- outcome cone -->
+      <path [attr.d]="bandPath" fill="url(#band)" />
+
+      <!-- target line -->
+      <line
+        class="target-line"
+        [attr.x1]="0"
+        [attr.x2]="W"
+        [attr.y1]="targetY"
+        [attr.y2]="targetY"
+      />
+
+      <!-- median path -->
+      <path class="med-line" [attr.d]="medPath" />
+
+      <!-- end cap -->
+      <circle class="end-dot" [attr.cx]="endDot.x" [attr.cy]="endDot.y" r="4" />
+    </svg>
+
+    <div class="chart-x">
+      <span>Today</span>
+      <span class="chart-target-lbl">Target {{ compact(target) }}</span>
+      <span>{{ monthsLabel(monthsLeft) }}</span>
     </div>
   </div>
 
-  <!-- ============ growth over time ============ -->
-  <div class="card">
-    <div class="card-head">
-      <span class="card-cap">How it has grown</span>
-      <div class="legend">
-        <span><i class="k inv"></i>Invested</span>
-        <span><i class="k val"></i>Value</span>
-      </div>
+  <!-- ============ invested vs value ============ -->
+  <div class="figs">
+    <div class="fig">
+      <span class="fig-l">Invested</span>
+      <b class="fig-v">{{ compact(invested) }}</b>
     </div>
-    <div class="chart">
-      <div class="col" *ngFor="let p of growthSeries">
-        <div class="bars">
-          <span class="bar val" [style.height.%]="barH(p.value)"></span>
-          <span class="bar inv" [style.height.%]="barH(p.invested)"></span>
-        </div>
-        <span class="col-x">{{ p.month }}m</span>
-      </div>
+    <div class="fig-div"></div>
+    <div class="fig">
+      <span class="fig-l">Value now</span>
+      <b class="fig-v">{{ compact(current) }}</b>
+      <span class="fig-gain" [class.flat]="gain <= 0">▲ {{ compact(gain) }}</span>
     </div>
   </div>
 
-  <!-- ============ where it's invested (funds + concentration) ============ -->
-  <div class="card" *ngIf="hasHoldings">
-    <div class="card-head">
-      <span class="card-cap">Where it's invested</span>
-      <span class="card-note">Top holding {{ topConcentration | number: '1.0-0' }}%</span>
+  <!-- ============ invest more -> reach it sooner ============ -->
+  <div class="slab">
+    <span class="slab-cap">Invest more, reach it sooner</span>
+    <div class="chips">
+      <button
+        *ngFor="let s of monthlySteps"
+        class="chip"
+        [class.on]="extraMonthly === s"
+        (click)="setExtra(s)"
+      >
+        +{{ compact(s) }}<i>/mo</i>
+      </button>
     </div>
 
-    <!-- allocation bar -->
-    <div class="alloc-bar">
-      <span
-        *ngFor="let h of holdingsByWeight"
-        [style.width.%]="h.weight * 100"
-        [style.background]="assetColor(h.asset_class)"
-        [title]="h.name"
-      ></span>
-    </div>
-
-    <!-- fund rows with concentration -->
-    <div class="funds">
-      <div class="fund" *ngFor="let h of holdingsByWeight">
-        <span class="f-dot" [style.background]="assetColor(h.asset_class)"></span>
-        <div class="f-main">
-          <b class="f-name">{{ h.name }}</b>
-          <span class="f-class">{{ assetLabel(h.asset_class) }}</span>
-        </div>
-        <div class="f-right">
-          <b class="f-wt">{{ h.weight * 100 | number: '1.0-0' }}%</b>
-          <span class="f-amt" *ngIf="h.monthly_amount">{{ compact(h.monthly_amount) }}/mo</span>
-        </div>
+    <div class="slab-out" *ngIf="hasBoost">
+      <div class="so-sooner" *ngIf="monthsSooner > 0">
+        <b>{{ monthsLabel(monthsSooner) }}</b> sooner
       </div>
+      <div class="so-sooner" *ngIf="monthsSooner <= 0">
+        <b>Same date</b><span class="so-sub"> — but a bigger cushion</span>
+      </div>
+      <div class="so-prob">
+        Chance <span class="was">{{ baseSuccessPct }}%</span>
+        <span class="arrow">→</span>
+        <b>{{ boostedSuccessPct }}%</b>
+      </div>
+    </div>
+    <p class="slab-hint" *ngIf="!hasBoost">Pick an amount to see the impact.</p>
+  </div>
+
+  <!-- ============ see my investments ============ -->
+  <button class="see-btn" (click)="toggleFunds()" *ngIf="hasHoldings">
+    <span>See my investments</span>
+    <i class="caret" [class.up]="showFunds">›</i>
+  </button>
+
+  <div class="funds" *ngIf="showFunds && hasHoldings">
+    <div class="fund" *ngFor="let f of fundRows">
+      <span class="f-dot" [style.background]="assetColor(f.assetClass)"></span>
+      <div class="f-main">
+        <b class="f-name">{{ f.name }}</b>
+        <span class="f-meta">{{ assetLabel(f.assetClass) }} · {{ f.weight * 100 | number: '1.0-0' }}%</span>
+      </div>
+      <b class="f-ret" [class.neg]="f.ret < 0">
+        {{ f.ret >= 0 ? '+' : '' }}{{ f.ret | number: '1.1-1' }}%
+      </b>
     </div>
   </div>
 
-  <!-- no fund breakdown saved for this goal -->
-  <div class="card muted-card" *ngIf="!hasHoldings">
-    <span class="card-cap">Where it's invested</span>
-    <p class="empty-line">Fund breakdown isn't recorded for this goal yet.</p>
-  </div>
-
-  <!-- ============ projected range at goal ============ -->
-  <div class="card">
-    <span class="card-cap">Projected at goal date</span>
-    <div class="range">
-      <div class="r-ends">
-        <span class="r-lo">{{ compact(goal.projected_p10) }}</span>
-        <span class="r-hi">{{ compact(goal.projected_p90) }}</span>
-      </div>
-      <div class="r-track"><span class="r-mid" [style.left.%]="50"></span></div>
-      <div class="r-labels">
-        <span>Worst case</span>
-        <span class="r-likely">Likely {{ compact(goal.projected_p50) }}</span>
-        <span>Best case</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ WHAT-IF projector — the star ============ -->
-  <div class="card whatif">
-    <span class="card-cap accent">Boost this goal</span>
-    <p class="wi-lead">See how much more you finish with if you invest more.</p>
-
-    <!-- lever 1: extra monthly SIP -->
-    <div class="lever">
-      <div class="lever-l">
-        <span class="lv-t">Add per month</span>
-        <span class="lv-s">Extra SIP till goal date</span>
-      </div>
-      <div class="chips">
-        <button
-          *ngFor="let s of monthlySteps"
-          class="chip"
-          [class.on]="extraMonthly === s"
-          (click)="setMonthly(s)"
-        >
-          +{{ compact(s) }}
-        </button>
-      </div>
-    </div>
-
-    <!-- lever 2: one-time lump sum today -->
-    <div class="lever">
-      <div class="lever-l">
-        <span class="lv-t">Invest now</span>
-        <span class="lv-s">One-time lump sum today</span>
-      </div>
-      <div class="chips">
-        <button
-          *ngFor="let s of lumpSteps"
-          class="chip"
-          [class.on]="lumpSum === s"
-          (click)="setLump(s)"
-        >
-          {{ compact(s) }}
-        </button>
-      </div>
-    </div>
-
-    <!-- outcome -->
-    <div class="wi-result" *ngIf="hasWhatIf">
-      <div class="wr-top">
-        <div class="wr-block">
-          <span class="wr-l">Now finishes at</span>
-          <b class="wr-v">{{ compact(whatIfFinal) }}</b>
-        </div>
-        <div class="wr-boost">
-          +{{ compact(whatIfBoost) }}
-          <span class="wr-pct">{{ whatIfLiftPct | number: '1.0-0' }}% more</span>
-        </div>
-      </div>
-
-      <!-- how much of the shortfall this closes -->
-      <div class="wr-close" *ngIf="toGo > 0">
-        <div class="wc-bar"><span [style.width.%]="shortfallClosedPct"></span></div>
-        <span class="wc-l">Closes {{ shortfallClosedPct | number: '1.0-0' }}% of the gap to target</span>
-      </div>
-
-      <button class="wi-clear" (click)="clearWhatIf()">Reset</button>
-    </div>
-
-    <p class="wi-hint" *ngIf="!hasWhatIf">Pick an amount above to see the impact.</p>
-  </div>
-
-  <!-- ============ withdrawals ============ -->
-  <div class="card">
-    <span class="card-cap">Withdrawals</span>
-    <div class="wd-list" *ngIf="withdrawals.length">
-      <div class="wd" *ngFor="let w of withdrawals">
-        <div class="wd-main">
-          <b>{{ compact(w.amount) }}</b>
-          <span *ngIf="w.note">{{ w.note }}</span>
-        </div>
-        <span class="wd-date">{{ w.date }}</span>
-      </div>
-    </div>
-    <p class="empty-line" *ngIf="!withdrawals.length">
-      No withdrawals yet — your money is fully invested toward this goal.
-    </p>
+  <!-- no funds recorded -->
+  <div class="no-funds" *ngIf="!hasHoldings">
+    Fund breakdown isn't recorded for this goal yet.
   </div>
 </section>

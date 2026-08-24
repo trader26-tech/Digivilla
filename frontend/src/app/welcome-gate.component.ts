@@ -117,30 +117,58 @@ export class WelcomeGateComponent {
     }
   }
 
-  /** Step 2 → verify + exchange for a real session at /auth/phone. */
+  /** Step 2 → verify the OTP, exchange for a session, then decide:
+   *  a returning user (has a stored name) is done; a brand-new user is
+   *  routed to the name step to introduce themselves. */
   async verify(): Promise<void> {
     if (!this.validOtp || this.verifying) return;
     this.verifying = true;
     this.error = '';
     try {
       const user = await this.fb.verifyCode(this.otp);
-      // Empty name for a returning user — the backend keeps their stored name.
-      this.api
-        .phoneLogin('', this.phone, user.idToken === 'mock' ? '' : user.idToken)
-        .subscribe({
-          next: (res) => {
+      this.idToken = user.idToken === 'mock' ? '' : user.idToken;
+      // First login with an empty name — the backend returns the user's stored
+      // name (blank for a brand-new phone number).
+      this.api.phoneLogin('', this.phone, this.idToken).subscribe({
+        next: (res) => {
+          this.verifying = false;
+          const existingName = (res.user?.name ?? '').trim();
+          if (existingName) {
+            // Returning user — straight in.
             if (navigator.vibrate) navigator.vibrate(12);
             this.loggedIn.emit(res);
-          },
-          error: (e) => {
-            this.verifying = false;
-            this.error = e?.error?.detail || 'Login failed. Please try again.';
-          },
-        });
+          } else {
+            // Brand-new user — ask what to call them.
+            this.step = 'name';
+          }
+        },
+        error: (e) => {
+          this.verifying = false;
+          this.error = e?.error?.detail || 'Login failed. Please try again.';
+        },
+      });
     } catch (e: any) {
       this.verifying = false;
       this.error = e?.message || 'That code didn\'t match. Check and retry.';
     }
+  }
+
+  /** Step 3 (new users only) → save their name and finish. */
+  saveName(): void {
+    if (!this.validName || this.saving) return;
+    this.saving = true;
+    this.error = '';
+    this.api.phoneLogin(this.name.trim(), this.phone, this.idToken).subscribe({
+      next: (res) => {
+        this.saving = false;
+        if (navigator.vibrate) navigator.vibrate(12);
+        this.loggedIn.emit(res);
+      },
+      error: (e) => {
+        this.saving = false;
+        this.error = e?.error?.detail || 'Could not save your name. Try again.';
+      },
+    });
   }
 
   editPhone(): void {

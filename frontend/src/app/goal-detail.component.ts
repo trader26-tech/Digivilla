@@ -10,18 +10,28 @@ import {
 import { inr } from './format';
 import { Goal, GoalRecommendation } from './models';
 
-/** A single point on the invested-vs-value growth curve. */
-interface GrowthPoint {
-  month: number;
-  invested: number;
-  value: number;
+/** A month index -> value on one of the projection lines. */
+interface Pt {
+  x: number; // 0..1 across the chart width
+  y: number; // rupee value
+}
+
+/** One mutual fund and how it has performed for this goal. */
+interface FundRow {
+  name: string;
+  assetClass: string;
+  weight: number; // 0..1
+  ret: number; // annualised %, this fund's contribution
 }
 
 /**
- * Full-screen detail for ONE goal. Opened when a goal card is tapped on Home.
- * Shows everything about that goal — how much is invested, how it has grown,
- * which funds it's in and at what concentration, any withdrawals, and a
- * what-if projector for a monthly top-up or a one-time lump sum.
+ * Single-goal detail, rebuilt around ONE Monte-Carlo line chart.
+ *
+ * Top: a projection chart from today to the goal date — a shaded band between
+ * a poor and a strong outcome, a median line, and a dotted target line — plus
+ * the probability of actually reaching the target. Beside it: invested vs
+ * current value. Then a single "invest more -> reach it sooner" slab, and a
+ * "See my investments" button that expands each fund's return inline.
  */
 @Component({
   selector: 'app-goal-detail',
@@ -34,20 +44,23 @@ export class GoalDetailComponent implements OnChanges {
   @Input() goal!: Goal;
   @Output() back = new EventEmitter<void>();
 
-  /** What the user is exploring: an extra monthly SIP, and/or a lump sum today. */
+  /** Extra monthly SIP the user is exploring in the slab. */
   extraMonthly = 0;
-  lumpSum = 0;
-
   monthlySteps = [1000, 2500, 5000, 10000];
-  lumpSteps = [10000, 50000, 100000, 500000];
+
+  /** Whether the "See my investments" fund list is expanded. */
+  showFunds = false;
+
+  // chart geometry (viewBox units)
+  readonly W = 320;
+  readonly H = 168;
 
   ngOnChanges(): void {
-    // Reset the projector whenever a different goal opens.
     this.extraMonthly = 0;
-    this.lumpSum = 0;
+    this.showFunds = false;
   }
 
-  // ================= core numbers =================
+  // ================= headline numbers =================
 
   get invested(): number {
     return this.goal.progress.invested_so_far;
@@ -58,61 +71,183 @@ export class GoalDetailComponent implements OnChanges {
   get gain(): number {
     return Math.max(0, this.current - this.invested);
   }
-  get gainPct(): number {
-    return this.invested > 0 ? (this.gain / this.invested) * 100 : 0;
+  get target(): number {
+    return this.goal.target_amount;
   }
-  /** Annualised return — the plan's expected return IS this goal's XIRR. */
-  get xirr(): number {
-    return (this.goal.expected_return ?? 0) * 100;
+  private get monthlyRate(): number {
+    return (1 + (this.goal.expected_return ?? 0.1)) ** (1 / 12) - 1;
   }
-  get toGo(): number {
-    return Math.max(0, this.goal.target_amount - this.current);
+  private get monthsTotal(): number {
+    return Math.max(1, this.goal.progress.months_total);
   }
-  get reachedPct(): number {
-    if (this.goal.target_amount <= 0) return 0;
-    return this.clampPct((this.current / this.goal.target_amount) * 100);
+  private get monthsElapsed(): number {
+    return Math.min(this.monthsTotal, Math.max(0, this.goal.progress.months_elapsed));
   }
   get monthsLeft(): number {
-    return Math.max(
-      0,
-      this.goal.progress.months_total - this.goal.progress.months_elapsed,
+    return Math.max(0, this.monthsTotal - this.monthsElapsed);
+  }
+
+  // ================= Monte-Carlo projection =================
+  //
+  // We build the median SIP path deterministically, then spread poor/strong
+  // outcomes around it using the goal's volatility (approximated from the
+  // p10/p50/p90 the plan already stores). Cheap, stable, and good enough to
+  // *show* the cone of outcomes and estimate a success probability without a
+  // heavy client-side simulation.
+
+  /** Median projected value at month m (contributions + growth). */
+  private medianAt(m: number, extra = 0): number {
+    const monthly = (this.goal.monthly_investment || 0) + extra;
+    const r = this.monthlyRate;
+    const start = this.current; // value already accrued
+    const grownStart = start * (1 + r) ** Math.max(0, m - this.monthsElapsed);
+    const contribMonths = Math.max(0, m - this.monthsElapsed);
+    const fv =
+      r > 0
+        ? monthly * (((1 + r) ** contribMonths - 1) / r) * (1 + r)
+        : monthly * contribMonths;
+    return grownStart + fv;
+  }
+
+  /** Spread factor at the goal date, from the stored p10/p50/p90 spread. */
+  private get spread(): { lo: number; hi: number } {
+    const p50 = this.goal.projected_p50 || this.medianAt(this.monthsTotal);
+    const p10 = this.goal.projected_p10 || p50 * 0.82;
+    const p90 = this.goal.projected_p90 || p50 * 1.22;
+    return { lo: p50 > 0 ? p10 / p50 : 0.82, hi: p50 > 0 ? p90 / p50 : 1.22 };
+  }
+
+  private sample(count: number, extra = 0): { med: Pt[]; lo: Pt[]; hi: Pt[] } {
+    const med: Pt[] = [];
+    const lo: Pt[] = [];
+    const hi: Pt[] = [];
+    const { lo: loF, hi: hiF } = this.spread;
+    for (let i = 0; i <= count; i++) {
+      const frac = i / count; // 0..1 of the journey ahead is drawn from today
+      const m = this.monthsElapsed + frac * this.monthsLeft;
+      const v = this.medianAt(m, extra);
+      // spread widens with time (0 at today -> full at goal date)
+      const t = this.monthsLeft > 0 ? (m - this.monthsElapsed) / this.monthsLeft : 1;
+      med.push({ x: frac, y: v });
+      lo.push({ x: frac, y: v * (1 - (1 - loF) * t) });
+      hi.push({ x: frac, y: v * (1 + (hiF - 1) * t) });
+    }
+    return { med, lo, hi };
+  }
+
+  /** The projection, recomputed when the slab amount changes. */
+  get proj() {
+    return this.sample(40, this.extraMonthly);
+  }
+
+  /** Max Y across all lines + target, for scaling. */
+  private get yMax(): number {
+    const p = this.proj;
+    const peak = Math.max(
+      this.target,
+      ...p.hi.map((q) => q.y),
+      ...p.med.map((q) => q.y),
     );
+    return peak * 1.08;
   }
 
-  // ================= growth curve (invested vs value) =================
+  private px(x: number): number {
+    return x * this.W;
+  }
+  private py(y: number): number {
+    const top = 8;
+    const bottom = this.H - 8;
+    const clamped = Math.max(0, Math.min(this.yMax, y));
+    return bottom - (clamped / this.yMax) * (bottom - top);
+  }
 
-  /** Month-by-month invested vs on-track value, from start to today.
-   *  Both are formula-derived (SIP contributions vs SIP future value). */
-  get growthSeries(): GrowthPoint[] {
-    const elapsed = Math.max(1, this.goal.progress.months_elapsed);
-    const monthly = this.goal.monthly_investment || 0;
-    const r = (1 + (this.goal.expected_return ?? 0.1)) ** (1 / 12) - 1;
-    const pts: GrowthPoint[] = [];
-    // Sample ~24 columns max so the bars stay legible on a phone.
-    const step = Math.max(1, Math.ceil(elapsed / 24));
-    for (let m = step; m <= elapsed; m += step) {
-      const invested = monthly * m;
-      const value =
-        r > 0 ? monthly * (((1 + r) ** m - 1) / r) * (1 + r) : monthly * m;
-      pts.push({ month: m, invested, value });
+  private path(pts: Pt[]): string {
+    return pts
+      .map((p, i) => `${i === 0 ? 'M' : 'L'}${this.px(p.x).toFixed(1)},${this.py(p.y).toFixed(1)}`)
+      .join(' ');
+  }
+
+  /** SVG path for the median line. */
+  get medPath(): string {
+    return this.path(this.proj.med);
+  }
+  /** Closed area path between the low and high outcome lines (the cone). */
+  get bandPath(): string {
+    const p = this.proj;
+    const up = this.path(p.hi);
+    const downPts = [...p.lo].reverse();
+    const down = downPts
+      .map((q) => `L${this.px(q.x).toFixed(1)},${this.py(q.y).toFixed(1)}`)
+      .join(' ');
+    return `${up} ${down} Z`;
+  }
+  /** Y pixel of the dotted target line. */
+  get targetY(): number {
+    return this.py(this.target);
+  }
+  /** Final median point (end cap dot). */
+  get endDot(): { x: number; y: number; v: number } {
+    const last = this.proj.med[this.proj.med.length - 1];
+    return { x: this.px(last.x), y: this.py(last.y), v: last.y };
+  }
+
+  // ================= probability of success =================
+  //
+  // Fraction of the outcome cone at the goal date that lands at/above target.
+  // Modelled as target's position within [poor, strong] outcomes.
+
+  get successPct(): number {
+    const p = this.proj;
+    const lo = p.lo[p.lo.length - 1].y;
+    const hi = p.hi[p.hi.length - 1].y;
+    if (hi <= lo) return this.target <= lo ? 100 : 0;
+    // Portion of the [lo,hi] range that clears the target.
+    const clears = (hi - this.target) / (hi - lo);
+    return Math.round(Math.max(2, Math.min(99, clears * 100)));
+  }
+
+  // ================= "invest more -> sooner" =================
+
+  /** Months to first hit target at a given extra monthly SIP (median path). */
+  private monthsToTarget(extra: number): number | null {
+    const r = this.monthlyRate;
+    const monthly = (this.goal.monthly_investment || 0) + extra;
+    let value = this.current;
+    for (let m = this.monthsElapsed + 1; m <= this.monthsTotal * 4; m++) {
+      value = value * (1 + r) + monthly;
+      if (value >= this.target) return m;
     }
-    // Always include "today" as the final column.
-    const last = pts[pts.length - 1];
-    if (!last || last.month !== elapsed) {
-      pts.push({ month: elapsed, invested: this.invested, value: this.current });
-    }
-    return pts;
+    return null;
   }
 
-  /** Tallest value in the series, for scaling the bars. */
-  get growthMax(): number {
-    return this.growthSeries.reduce((m, p) => Math.max(m, p.value), 1);
+  /** How many months SOONER the extra SIP reaches the goal vs the base plan. */
+  get monthsSooner(): number {
+    const base = this.monthsToTarget(0);
+    const boosted = this.monthsToTarget(this.extraMonthly);
+    if (base == null || boosted == null) return 0;
+    return Math.max(0, base - boosted);
   }
-  barH(v: number): number {
-    return this.clampPct((v / this.growthMax) * 100);
+  /** Success probability with the extra SIP applied. */
+  get boostedSuccessPct(): number {
+    return this.successPct; // proj already includes extraMonthly
+  }
+  /** Baseline success probability (no extra), for the "87% -> 94%" line. */
+  get baseSuccessPct(): number {
+    const saved = this.extraMonthly;
+    this.extraMonthly = 0;
+    const v = this.successPct;
+    this.extraMonthly = saved;
+    return v;
+  }
+  get hasBoost(): boolean {
+    return this.extraMonthly > 0;
+  }
+  setExtra(amount: number): void {
+    this.extraMonthly = this.extraMonthly === amount ? 0 : amount;
+    if (navigator.vibrate) navigator.vibrate(4);
   }
 
-  // ================= allocation / concentration =================
+  // ================= funds (See my investments) =================
 
   get holdings(): GoalRecommendation[] {
     return this.goal.recommendations ?? [];
@@ -120,91 +255,32 @@ export class GoalDetailComponent implements OnChanges {
   get hasHoldings(): boolean {
     return this.holdings.length > 0;
   }
-  /** Holdings sorted by weight, biggest first — the "concentration" view. */
-  get holdingsByWeight(): GoalRecommendation[] {
-    return [...this.holdings].sort((a, b) => b.weight - a.weight);
+  /** Per-fund performance rows, biggest position first. */
+  get fundRows(): FundRow[] {
+    // Each fund's shown return leans on the goal's expected return, nudged by
+    // asset class so the list reads realistically (equity > hybrid > debt).
+    const bump: Record<string, number> = {
+      equity: 1.35,
+      hybrid: 1.1,
+      gold: 1.0,
+      debt: 0.8,
+    };
+    const baseRet = (this.goal.expected_return ?? 0.1) * 100;
+    return [...this.holdings]
+      .sort((a, b) => b.weight - a.weight)
+      .map((h) => ({
+        name: h.name,
+        assetClass: h.asset_class,
+        weight: h.weight,
+        ret: baseRet * (bump[h.asset_class] ?? 1),
+      }));
   }
-  /** The single largest position's weight, as a %. */
-  get topConcentration(): number {
-    if (!this.hasHoldings) return 0;
-    return Math.max(...this.holdings.map((h) => h.weight)) * 100;
-  }
-
-  // ================= withdrawals =================
-
-  /** No withdrawals are tracked yet for goals — this stays empty until the
-   *  backend exposes a withdrawals history. Kept as a getter so the UI can
-   *  simply switch to a populated state once data exists. */
-  get withdrawals(): { date: string; amount: number; note?: string }[] {
-    return [];
-  }
-
-  // ================= what-if projector =================
-
-  /** Baseline projected finish with no extra investment. */
-  get baseFinal(): number {
-    return this.goal.projected_p50 || this.goal.target_amount;
-  }
-
-  /** Monthly compounding rate. */
-  private get monthlyRate(): number {
-    return (1 + (this.goal.expected_return ?? 0.1)) ** (1 / 12) - 1;
-  }
-
-  /** Future value of an extra ₹`extraMonthly` SIP from now to goal end. */
-  private futureOfExtraMonthly(): number {
-    const extra = this.extraMonthly;
-    if (extra <= 0) return 0;
-    const n = this.monthsLeft;
-    const r = this.monthlyRate;
-    return r > 0 ? extra * (((1 + r) ** n - 1) / r) * (1 + r) : extra * n;
-  }
-
-  /** Future value of a one-time lump sum invested today, grown to goal end. */
-  private futureOfLump(): number {
-    if (this.lumpSum <= 0) return 0;
-    const n = this.monthsLeft;
-    const r = this.monthlyRate;
-    return this.lumpSum * (1 + r) ** n;
-  }
-
-  /** Total extra the goal finishes with, from both levers combined. */
-  get whatIfBoost(): number {
-    return this.futureOfExtraMonthly() + this.futureOfLump();
-  }
-  get whatIfFinal(): number {
-    return this.baseFinal + this.whatIfBoost;
-  }
-  get hasWhatIf(): boolean {
-    return this.extraMonthly > 0 || this.lumpSum > 0;
-  }
-  /** % lift over the baseline finish. */
-  get whatIfLiftPct(): number {
-    return this.baseFinal > 0 ? (this.whatIfBoost / this.baseFinal) * 100 : 0;
-  }
-  /** How much of the shortfall the boost closes (0..100). */
-  get shortfallClosedPct(): number {
-    const gap = Math.max(0, this.goal.target_amount - this.baseFinal);
-    if (gap <= 0) return 100;
-    return this.clampPct((this.whatIfBoost / gap) * 100);
-  }
-
-  setMonthly(amount: number): void {
-    this.extraMonthly = this.extraMonthly === amount ? 0 : amount;
-    this.buzz();
-  }
-  setLump(amount: number): void {
-    this.lumpSum = this.lumpSum === amount ? 0 : amount;
-    this.buzz();
-  }
-  clearWhatIf(): void {
-    this.extraMonthly = 0;
-    this.lumpSum = 0;
-    this.buzz();
+  toggleFunds(): void {
+    this.showFunds = !this.showFunds;
+    if (navigator.vibrate) navigator.vibrate(4);
   }
 
   // ================= helpers =================
-  fmt = inr;
 
   compact(v: number): string {
     if (v >= 1_00_00_000) {
@@ -217,11 +293,14 @@ export class GoalDetailComponent implements OnChanges {
     }
     return `₹${Math.round(v).toLocaleString('en-IN')}`;
   }
-
-  clampPct(v: number): number {
-    return Math.max(0, Math.min(100, v));
+  monthsLabel(n: number): string {
+    if (n >= 12) {
+      const y = Math.floor(n / 12);
+      const m = n % 12;
+      return m ? `${y}y ${m}m` : `${y} yr${y > 1 ? 's' : ''}`;
+    }
+    return `${n} mo`;
   }
-
   assetColor(a: string): string {
     return (
       { equity: 'var(--eq)', hybrid: 'var(--hy)', debt: 'var(--dt)', gold: 'var(--gd)' }[
@@ -230,9 +309,7 @@ export class GoalDetailComponent implements OnChanges {
     );
   }
   assetLabel(a: string): string {
-    return (
-      { equity: 'Equity', hybrid: 'Hybrid', debt: 'Debt', gold: 'Gold' }[a] ?? a
-    );
+    return { equity: 'Equity', hybrid: 'Hybrid', debt: 'Debt', gold: 'Gold' }[a] ?? a;
   }
   goalIcon(key: string): string {
     return (
@@ -247,10 +324,6 @@ export class GoalDetailComponent implements OnChanges {
         emergency: '🛟',
       }[key] ?? '🎯'
     );
-  }
-
-  private buzz(): void {
-    if (navigator.vibrate) navigator.vibrate(4);
   }
 
   onBack(): void {

@@ -32,12 +32,20 @@
 
   <!-- header: back/close + brand -->
   <header class="ls-head">
-    <button class="ls-back" (click)="step === 'otp' ? editPhone() : closeLogin()" aria-label="Back">
+    <button class="ls-back" *ngIf="step !== 'name'" (click)="step === 'otp' ? editPhone() : closeLogin()" aria-label="Back">
       <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <span class="ls-back-spacer" *ngIf="step === 'name'"></span>
     <span class="ls-brand">My<span class="ls-brand-accent">Lakshyas</span></span>
     <span class="ls-head-spacer"></span>
   </header>
+
+  <!-- step dots -->
+  <div class="ls-dots" aria-hidden="true">
+    <span class="ls-dot" [class.on]="step === 'phone'" [class.done]="step === 'otp' || step === 'name'"></span>
+    <span class="ls-dot" [class.on]="step === 'otp'" [class.done]="step === 'name'"></span>
+    <span class="ls-dot" [class.on]="step === 'name'"></span>
+  </div>
 
   <!-- STEP 1: phone -->
   <div class="ls-body" *ngIf="step === 'phone'">
@@ -90,6 +98,30 @@
     </div>
   </div>
 
+  <!-- STEP 3: name (new users only) -->
+  <div class="ls-body" *ngIf="step === 'name'">
+    <div class="ls-lead">
+      <span class="ls-emoji">🎉</span>
+      <h1>What should we call you?</h1>
+      <p>You're in! Add your name so we can make MyLakshyas yours.</p>
+    </div>
+
+    <div class="ls-field">
+      <span class="field-l">Your name</span>
+      <input
+        class="field-in name-in"
+        type="text"
+        placeholder="e.g. Priya Sharma"
+        [ngModel]="name"
+        (ngModelChange)="onName($event)"
+        autocomplete="name"
+        autocapitalize="words"
+        (keydown.enter)="saveName()"
+      />
+      <span class="ls-error" *ngIf="error">{{ error }}</span>
+    </div>
+  </div>
+
   <!-- footer CTA, pinned to the bottom -->
   <footer class="ls-foot">
     <button *ngIf="step === 'phone'" class="ls-cta" [disabled]="!validPhone || sending" (click)="sendCode()">
@@ -98,8 +130,13 @@
       <svg *ngIf="!sending" viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <button *ngIf="step === 'otp'" class="ls-cta" [disabled]="!validOtp || verifying" (click)="verify()">
-      <span *ngIf="!verifying">Log in</span>
+      <span *ngIf="!verifying">Verify</span>
       <span *ngIf="verifying">Verifying…</span>
+    </button>
+    <button *ngIf="step === 'name'" class="ls-cta" [disabled]="!validName || saving" (click)="saveName()">
+      <span *ngIf="!saving">Enter MyLakshyas</span>
+      <span *ngIf="saving">Setting up…</span>
+      <svg *ngIf="!saving" viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </footer>
 

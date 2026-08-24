@@ -214,9 +214,30 @@
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.ls-head-spacer { width: 40px; flex: none; }
+.ls-head-spacer, .ls-back-spacer { width: 40px; flex: none; }
 
-/* body: centred lead + field */
+/* step dots under the header */
+.ls-dots {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0 0.2rem;
+}
+.ls-dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.4s ease;
+}
+.ls-dot.done { background: #b98bff; }
+.ls-dot.on {
+  width: 22px;
+  background: linear-gradient(90deg, #a370ff, #ff9a4a);
+}
+
+/* body: centred lead + field. Each step fades + rises in for polish. */
 .ls-body {
   position: relative;
   z-index: 1;
@@ -230,9 +251,23 @@
   margin: 0 auto;
   padding: 1rem 1.5rem;
   box-sizing: border-box;
+  animation: stepIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
 }
 .ls-lead { text-align: center; }
-.ls-emoji { font-size: 2.4rem; display: block; margin-bottom: 0.7rem; }
+.ls-emoji {
+  font-size: 2.6rem;
+  display: block;
+  margin-bottom: 0.7rem;
+  animation: emojiPop 0.55s cubic-bezier(0.34, 1.7, 0.5, 1) 0.1s both;
+}
+@keyframes emojiPop {
+  from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  to { opacity: 1; transform: none; }
+}
 .ls-lead h1 {
   margin: 0 0 0.5rem;
   font-size: clamp(1.7rem, 6vw, 2.1rem);
