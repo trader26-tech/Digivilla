@@ -84,7 +84,11 @@
   ></app-goal-home>
 </div>
 
-<ng-container *ngIf="pickedGoal && authed">
+<!-- Authed dashboard shell. Shows for ANY logged-in user — including a
+     returning user (token in localStorage) or one who logged in via the gate,
+     where pickedGoal is false. (Was `pickedGoal && authed`, which left an
+     authed-but-no-goal user on a blank screen.) -->
+<ng-container *ngIf="authed && !intro">
 <div class="shell">
   <div class="main-col">
     <header class="topnav">
