@@ -67,6 +67,9 @@
 @keyframes wordIn {
   to { opacity: 1; transform: none; filter: blur(0); }
 }
+@media (prefers-reduced-motion: reduce) {
+  .pitch .w, .gate-foot { animation-duration: 0.01s; animation-delay: 0s; }
+}
 
 .pitch .dim { color: rgba(255, 255, 255, 0.45); }  /* "what for." recedes */
 .pitch .accent {
