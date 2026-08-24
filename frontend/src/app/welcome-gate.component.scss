@@ -14,10 +14,9 @@
   box-sizing: border-box;
   overflow: hidden;
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+  transition: opacity 0.3s ease;
 }
-.gate.entered { opacity: 1; transform: none; }
+.gate.entered { opacity: 1; }
 
 /* ambient glow, echoing the intro's warm dusk */
 .glow {
@@ -39,55 +38,82 @@
   justify-content: center;
 }
 
-/* ---- the single punchy statement, revealed word by word ---- */
+/* small brand eyebrow */
+.eyebrow {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.1rem;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.15s + var(--i) * 0.11s);
+}
+
+/* ---- the punchy line — refined, not oversized ---- */
 .pitch {
   margin: 0;
-  font-size: clamp(2.1rem, 8.5vw, 2.9rem);
+  font-size: clamp(1.9rem, 7vw, 2.5rem);
   font-weight: 850;
-  line-height: 1.14;
-  letter-spacing: -0.035em;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: #fff;
 }
-.pitch .ln {
-  display: block;
-}
-.pitch .ln.gap { margin-top: 0.55em; }   /* breath before the promise line */
-
-/* each word masks up from below with a staggered delay */
+/* each word slides up from behind a mask with a staggered delay */
 .pitch .w {
   display: inline-block;
   opacity: 0;
-  transform: translateY(0.42em);
-  filter: blur(4px);
-  animation: wordIn 0.66s cubic-bezier(0.2, 0.8, 0.25, 1) both;
-  animation-delay: calc(0.35s + var(--i) * 0.085s);
-  margin-right: 0.24em;
-  will-change: opacity, transform, filter;
+  transform: translateY(18px);
+  animation: reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.15s + var(--i) * 0.11s);
+  margin-right: 0.22em;
+  will-change: opacity, transform;
 }
-@keyframes wordIn {
-  to { opacity: 1; transform: none; filter: blur(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pitch .w, .gate-foot { animation-duration: 0.01s; animation-delay: 0s; }
-}
-
-.pitch .dim { color: rgba(255, 255, 255, 0.45); }  /* "what for." recedes */
-.pitch .accent {
+.pitch .grad {
   background: linear-gradient(100deg, #c9a0ff, #a370ff);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.pitch .grad {
+.pitch .grad2 {
   background: linear-gradient(100deg, #b98bff 0%, #ff9a4a 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* supporting line, smaller + quieter, animates last */
+.subline {
+  margin: 1.1rem 0 0;
+  font-size: clamp(0.95rem, 3.4vw, 1.05rem);
+  line-height: 1.5;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.62);
+  max-width: 20rem;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.15s + var(--i) * 0.11s);
+}
+
+@keyframes reveal {
+  to { opacity: 1; transform: none; }
 }
 
 /* ---- CTA pinned to the bottom, like every other screen ---- */
 .gate-foot {
   margin-top: auto;
   padding-top: 1.5rem;
-  animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.25s both;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eyebrow, .pitch .w, .subline, .gate-foot {
+    animation-duration: 0.01s; animation-delay: 0s;
+  }
 }
 .cta {
   width: 100%;
