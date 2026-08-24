@@ -9,7 +9,6 @@ import {
   trigger,
 } from '@angular/animations';
 
-import { BasketLabComponent } from './basket-lab.component';
 import { GoalIntroComponent } from './goal-intro.component';
 import { GoalPickerComponent } from './goal-picker.component';
 import { GoalHomeComponent } from './goal-home.component';
@@ -33,7 +32,6 @@ type Tab = 'home' | 'invest';
   imports: [
     CommonModule,
     HomeComponent,
-    BasketLabComponent,
     LandingComponent,
     GoalPickerComponent,
     GoalIntroComponent,
