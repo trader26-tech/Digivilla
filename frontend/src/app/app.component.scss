@@ -94,8 +94,40 @@
 .shell {
   display: flex;
   min-height: 100vh;
-  transition: padding-right 0.28s ease;
 }
+
+/* ---- add-goal overlay: the onboarding flow, full-screen over the app ---- */
+.add-goal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  background: #000;
+  background-image:
+    radial-gradient(120% 90% at 50% 115%, rgba(255, 122, 89, 0.10) 0%, rgba(122, 62, 168, 0.10) 34%, rgba(0, 0, 0, 0) 62%),
+    radial-gradient(100% 80% at 50% -10%, rgba(122, 62, 168, 0.14) 0%, rgba(0, 0, 0, 0) 55%);
+  animation: agIn 0.3s ease both;
+}
+@keyframes agIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.add-goal-close {
+  position: fixed;
+  top: calc(0.9rem + env(safe-area-inset-top));
+  right: 1rem;
+  z-index: 90;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s;
+}
+.add-goal-close:hover { border-color: var(--accent); transform: scale(1.05); }
+.add-goal-close:active { transform: scale(0.94); }
 .main-col {
   flex: 1 1 auto;
   min-width: 0;

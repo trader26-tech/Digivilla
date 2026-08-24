@@ -18,8 +18,7 @@ import { GoalTimingComponent } from './goal-timing.component';
 import { HomeComponent } from './home.component';
 import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
-import { AuthResponse, GoalPreset } from './models';
-import { PlannerPanelComponent } from './planner-panel.component';
+import { AuthResponse, GoalCreate, GoalPreset } from './models';
 import { RefreshButtonComponent } from './refresh-button.component';
 import { DevNavComponent, DevScreen } from './dev-nav.component';
 import { PlannerService } from './planner.service';
@@ -34,7 +33,6 @@ type Tab = 'home' | 'invest';
     CommonModule,
     HomeComponent,
     BasketLabComponent,
-    PlannerPanelComponent,
     LandingComponent,
     GoalPickerComponent,
     GoalIntroComponent,
@@ -73,11 +71,14 @@ type Tab = 'home' | 'invest';
 })
 export class AppComponent {
   tab: Tab = 'home';
-  plannerOpen = false;
   goalsVersion = 0;
 
   /** Cinematic welcome shown on every launch, before anything else. */
   intro = true;
+
+  /** After the intro: the "why us" welcome gate with Log in / Get started.
+   *  Stays true until the user either logs in or taps Get started. */
+  gate = true;
 
   /** First-screen flow, all pre-login:
    *    picker -> goal-intro (educate + calc) -> amount (knob) -> timing -> landing
@@ -147,9 +148,21 @@ export class AppComponent {
     this.authed = true;
   }
 
-  /** The welcome animation finished -> reveal the goal picker. */
+  /** The welcome animation finished -> reveal the "why us" welcome gate. */
   onIntroDone(): void {
     this.intro = false;
+  }
+
+  /** New user tapped "Get started" on the gate -> begin the goal flow. */
+  onGateStart(): void {
+    this.gate = false;
+  }
+
+  /** Returning user logged in from the gate -> straight to the dashboard,
+   *  skipping the whole goal-building flow. */
+  onGateLogin(res: AuthResponse): void {
+    this.gate = false;
+    this.onAuthed(res);
   }
 
   /** User tapped Continue on a goal in the picker -> show the amount screen. */
@@ -180,15 +193,93 @@ export class AppComponent {
     this.amountDone = false;
   }
 
-  /** Results screen confirmed (goal added) -> show the dummy home + login sheet. */
+  /** Results screen confirmed. During onboarding -> the home + login sheet.
+   *  While already signed in (adding a goal) -> save it and return to Home. */
   onResultContinue(monthly: number): void {
     this.chosenMonthly = monthly;
+    if (this.addingGoal && this.authed) {
+      this.saveNewGoal(monthly);
+      return;
+    }
     this.pickedGoal = true;
   }
 
   /** Back from the results screen returns to the timing screen. */
   onResultBack(): void {
     this.timingDone = false;
+  }
+
+  // ============================================================
+  //  Add a goal AFTER sign-in — reuse the whole onboarding flow
+  //  (picker -> amount -> timing -> plan) as a full-screen overlay.
+  // ============================================================
+
+  /** True while the signed-in user is running the add-goal flow. */
+  addingGoal = false;
+
+  /** Home "+" / add-goal -> launch the onboarding flow fresh. */
+  startAddGoal(): void {
+    this.chosenGoal = null;
+    this.amountDone = false;
+    this.timingDone = false;
+    this.chosenAmount = 0;
+    this.chosenYears = 0;
+    this.chosenMonthly = 0;
+    this.addingGoal = true;
+  }
+
+  /** Leave the add-goal flow without saving. */
+  cancelAddGoal(): void {
+    this.addingGoal = false;
+    this.chosenGoal = null;
+    this.amountDone = false;
+    this.timingDone = false;
+  }
+
+  /** Numeric step for the add-goal overlay's slide animation. */
+  get addStep(): number {
+    if (!this.chosenGoal) return 0;             // picker
+    if (this.chosenGoal && !this.amountDone) return 1; // amount
+    if (this.amountDone && !this.timingDone) return 2; // timing
+    return 3;                                    // result
+  }
+
+  /** Persist the just-built goal, then close the overlay and refresh Home. */
+  private saveNewGoal(monthly: number): void {
+    const g = this.chosenGoal;
+    if (!g) {
+      this.addingGoal = false;
+      return;
+    }
+    const risk = g.default_risk || 'balanced';
+    const rate = risk === 'aggressive' ? 0.12 : risk === 'conservative' ? 0.07 : 0.1;
+    const target = this.chosenAmount;
+    this.planner
+      .saveGoal({
+        goal: g.key,
+        label: g.label,
+        target_amount: target,
+        horizon_years: this.chosenYears,
+        resolved_risk: risk,
+        monthly_investment: monthly,
+        expected_return: rate,
+        projected_p50: target,
+        projected_p10: Math.round(target * 0.8),
+        projected_p90: Math.round(target * 1.25),
+      } as GoalCreate)
+      .subscribe({
+        next: () => this.finishAddGoal(),
+        error: () => this.finishAddGoal(), // never dead-end the UI
+      });
+  }
+
+  private finishAddGoal(): void {
+    this.addingGoal = false;
+    this.chosenGoal = null;
+    this.amountDone = false;
+    this.timingDone = false;
+    this.goalsVersion++; // tell Home to reload its goals
+    this.tab = 'home';
   }
 
   /** Quick-login from the home sheet -> enter the app. The user has already
@@ -224,7 +315,7 @@ export class AppComponent {
     localStorage.removeItem('wp_owner');
     this.authed = false;
     this.tab = 'home';
-    this.plannerOpen = false;
+    this.addingGoal = false;
   }
 
   /** DEV: jump straight to any screen with sample data pre-filled. Wired to the
@@ -236,7 +327,7 @@ export class AppComponent {
     this.chosenGoal = null;
     this.amountDone = false;
     this.timingDone = false;
-    this.plannerOpen = false;
+    this.addingGoal = false;
 
     const g = this.sampleGoal;
     // sensible sample values for screens that need a goal + amount + horizon
@@ -320,18 +411,6 @@ export class AppComponent {
     this.tab = t;
   }
 
-  togglePlanner(): void {
-    this.plannerOpen = !this.plannerOpen;
-  }
-  closePlanner(): void {
-    this.plannerOpen = false;
-  }
-
-  onGoalSaved(): void {
-    this.goalsVersion++;
-    this.tab = 'home';
-    this.plannerOpen = false;
-  }
   onBasketSaved(): void {
     this.goalsVersion++;
     this.tab = 'home';

@@ -78,7 +78,7 @@
 </div>
 
 <ng-container *ngIf="pickedGoal && authed">
-<div class="shell" [class.dock-open]="plannerOpen">
+<div class="shell">
   <div class="main-col">
     <header class="topnav">
       <div class="brand"><span class="logo">◆</span><span>MyLakshyas</span></div>
@@ -95,28 +95,47 @@
     <app-home
       *ngIf="tab === 'home'"
       [refreshKey]="goalsVersion"
-      (planNew)="togglePlanner()"
+      (planNew)="startAddGoal()"
       (exploreFunds)="setTab('invest')"
     ></app-home>
 
     <app-basket-lab *ngIf="tab === 'invest'" (saved)="onBasketSaved()"></app-basket-lab>
   </div>
-
-  <aside class="dock" [class.open]="plannerOpen">
-    <app-planner-panel
-      *ngIf="plannerOpen"
-      (closePanel)="closePlanner()"
-      (goalSaved)="onGoalSaved()"
-    ></app-planner-panel>
-  </aside>
 </div>
 
-<div class="dock-backdrop" *ngIf="plannerOpen" (click)="closePlanner()"></div>
+<!-- Add-goal: the SAME onboarding flow (picker -> amount -> timing -> plan),
+     opened full-screen when the signed-in user taps "+ New goal". -->
+<div class="add-goal-overlay" *ngIf="addingGoal" [@stepAnim]="addStep">
+  <button class="add-goal-close" (click)="cancelAddGoal()" aria-label="Cancel">✕</button>
 
-<div class="fabs" *ngIf="!plannerOpen">
-  <button class="fab primary" (click)="togglePlanner()">
-    <span class="fab-icon">◎</span><span class="fab-text">Plan a goal</span>
-  </button>
+  <app-goal-picker
+    *ngIf="!chosenGoal"
+    (goalChosen)="onGoalChosen($event)"
+  ></app-goal-picker>
+
+  <app-goal-intro
+    *ngIf="chosenGoal && !amountDone"
+    [goal]="chosenGoal"
+    (amountReady)="onAmountChosen($event)"
+    (back)="onAmountBack()"
+  ></app-goal-intro>
+
+  <app-goal-timing
+    *ngIf="chosenGoal && amountDone && !timingDone"
+    [goal]="chosenGoal"
+    [amount]="chosenAmount"
+    (timingChosen)="onTimingChosen($event)"
+    (back)="onTimingBack()"
+  ></app-goal-timing>
+
+  <app-goal-result
+    *ngIf="chosenGoal && timingDone"
+    [goal]="chosenGoal"
+    [amount]="chosenAmount"
+    [years]="chosenYears"
+    (continued)="onResultContinue($event)"
+    (back)="onResultBack()"
+  ></app-goal-result>
 </div>
 </ng-container>
 
