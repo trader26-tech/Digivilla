@@ -208,22 +208,24 @@
 }
 .ls-back:hover { background: rgba(255, 255, 255, 0.12); }
 .ls-back:active { transform: scale(0.94); }
-.ls-brand { font-size: 1rem; font-weight: 800; letter-spacing: -0.3px; }
+.ls-brand { font-size: 1rem; font-weight: 800; letter-spacing: -0.3px; margin-right: auto; }
 .ls-brand-accent {
   background: linear-gradient(100deg, #b98bff, #ff9a4a);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.ls-head-spacer, .ls-back-spacer { width: 40px; flex: none; }
+.ls-back-spacer { width: 40px; flex: none; }
 
-/* step dots under the header */
+/* step dots — pinned to the right of the header. The brand's margin-right:auto
+   pushes the dots to the far right of the header row. */
 .ls-dots {
   position: relative;
   z-index: 1;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.4rem;
-  padding: 0.5rem 0 0.2rem;
+  flex: none;
 }
 .ls-dot {
   width: 6px; height: 6px;
@@ -258,11 +260,11 @@
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
 }
-.ls-lead { text-align: center; }
+.ls-lead { text-align: left; }
 .ls-emoji {
-  font-size: 2.6rem;
+  font-size: 2.4rem;
   display: block;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.6rem;
   animation: emojiPop 0.55s cubic-bezier(0.34, 1.7, 0.5, 1) 0.1s both;
 }
 @keyframes emojiPop {

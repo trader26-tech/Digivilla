@@ -37,20 +37,18 @@
     </button>
     <span class="ls-back-spacer" *ngIf="step === 'name'"></span>
     <span class="ls-brand">My<span class="ls-brand-accent">Lakshyas</span></span>
-    <span class="ls-head-spacer"></span>
-  </header>
 
-  <!-- step dots -->
-  <div class="ls-dots" aria-hidden="true">
-    <span class="ls-dot" [class.on]="step === 'phone'" [class.done]="step === 'otp' || step === 'name'"></span>
-    <span class="ls-dot" [class.on]="step === 'otp'" [class.done]="step === 'name'"></span>
-    <span class="ls-dot" [class.on]="step === 'name'"></span>
-  </div>
+    <!-- step progress, pinned to the right of the header -->
+    <div class="ls-dots" aria-hidden="true">
+      <span class="ls-dot" [class.on]="step === 'phone'" [class.done]="step === 'otp' || step === 'name'"></span>
+      <span class="ls-dot" [class.on]="step === 'otp'" [class.done]="step === 'name'"></span>
+      <span class="ls-dot" [class.on]="step === 'name'"></span>
+    </div>
+  </header>
 
   <!-- STEP 1: phone -->
   <div class="ls-body" *ngIf="step === 'phone'">
     <div class="ls-lead">
-      <span class="ls-emoji">👋</span>
       <h1>Enter your number</h1>
       <p>We'll text you a one-time code to get you in.<br />New or returning — same door.</p>
     </div>
