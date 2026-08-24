@@ -269,10 +269,15 @@ export class AppComponent {
         projected_p50: target,
         projected_p10: Math.round(target * 0.8),
         projected_p90: Math.round(target * 1.25),
+        success_rate: 0.85,
+        recommendations: [],
       } as GoalCreate)
       .subscribe({
         next: () => this.finishAddGoal(),
-        error: () => this.finishAddGoal(), // never dead-end the UI
+        error: (err) => {
+          console.error('saveGoal failed', err);
+          this.finishAddGoal(); // never dead-end the UI
+        },
       });
   }
 
