@@ -237,19 +237,20 @@
   background: linear-gradient(90deg, #a370ff, #ff9a4a);
 }
 
-/* body: centred lead + field. Each step fades + rises in for polish. */
+/* body: top-aligned, left-aligned lead + field — the natural top-down flow.
+   Each step fades + rises in for polish. */
 .ls-body {
   position: relative;
   z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 2rem;
+  justify-content: flex-start;
+  gap: 1.6rem;
   max-width: 460px;
   width: 100%;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 1.75rem 1.5rem 1rem;
   box-sizing: border-box;
   animation: stepIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
