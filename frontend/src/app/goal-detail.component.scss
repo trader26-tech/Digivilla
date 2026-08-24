@@ -63,46 +63,29 @@
 }
 .top-spacer { width: 40px; flex: none; }
 
-/* ---------------- chance headline ---------------- */
-.chance {
+/* ---------------- reach headline ---------------- */
+.reach {
   text-align: center;
   margin-top: 0.25rem;
-}
-.ch-cap {
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  font-weight: 700;
-}
-.ch-num {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  margin-top: 0.15rem;
+  flex-direction: column;
+  gap: 0.15rem;
 }
-.ch-num b {
-  font-size: 3.1rem;
+.reach-cap {
+  font-size: 0.86rem;
+  color: var(--muted);
+  font-weight: 600;
+  b { color: var(--text); font-weight: 800; }
+}
+.reach-val {
+  font-size: 2.7rem;
   font-weight: 850;
-  letter-spacing: -2.5px;
-  line-height: 1;
-  background: var(--grad-dusk);
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  background: var(--grad-dusk, linear-gradient(135deg, #c9adff, #ffb36b));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-.ch-num b i { font-size: 1.6rem; font-style: normal; -webkit-text-fill-color: transparent; }
-.ch-tag {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.28rem 0.6rem;
-  border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  &.ok { color: var(--good); border-color: rgba(75, 227, 161, 0.4); }
-  &.warn { color: var(--orange); border-color: rgba(255, 154, 74, 0.4); }
 }
 
 /* ---------------- chart ---------------- */
@@ -110,35 +93,77 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 22px;
-  padding: 0.9rem 0.9rem 0.75rem;
+  padding: 0.85rem 0.9rem 0.75rem;
   box-shadow: 0 20px 50px -28px rgba(0, 0, 0, 0.9);
 }
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.1rem;
+  margin-bottom: 0.55rem;
+}
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: var(--muted);
+  i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+}
+.lg-inv i { background: #a370ff; }
+.lg-ret i { background: linear-gradient(135deg, #ff9a4a, #ff6f61); }
+
 .chart {
   width: 100%;
   height: 190px;
   display: block;
   overflow: visible;
 }
-.med-line {
+/* areas fade + rise in */
+.a-inv, .a-ret {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.chart.drawn .a-inv { opacity: 1; transition-delay: 0.15s; }
+.chart.drawn .a-ret { opacity: 1; transition-delay: 0.35s; }
+
+.ln-inv {
   fill: none;
-  stroke: #d9c4ff;
-  stroke-width: 2.5;
+  stroke: #a370ff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
+}
+.ln-val {
+  fill: none;
+  stroke: #ff9a4a;
+  stroke-width: 2.6;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 3px 9px rgba(163, 112, 255, 0.75));
+  filter: drop-shadow(0 3px 8px rgba(255, 140, 90, 0.5));
 }
-.target-line {
+.goal-line {
   stroke: var(--muted);
-  stroke-width: 1.2;
-  stroke-dasharray: 4 4;
-  opacity: 0.6;
+  stroke-width: 1.3;
+  stroke-dasharray: 5 4;
+  opacity: 0.7;
   vector-effect: non-scaling-stroke;
 }
-.end-dot {
-  fill: var(--accent);
+.reach-mark {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+.reach-dot {
+  fill: #ff9a4a;
   stroke: var(--surface);
-  stroke-width: 2;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 7px rgba(255, 140, 90, 0.8));
 }
 .chart-x {
   display: flex;
@@ -149,7 +174,20 @@
   color: var(--muted);
   font-weight: 600;
 }
-.chart-target-lbl { color: var(--text); font-weight: 700; }
+.goal-lbl { color: var(--text); font-weight: 700; }
+
+/* figs: dots + the split colours */
+.fig-l i {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: baseline;
+}
+.d-inv { background: #a370ff; }
+.d-ret { background: linear-gradient(135deg, #ff9a4a, #ff6f61); }
+.fig-v.ret { color: #ff9a4a; }
+.so-lead { font-size: 0.82rem; color: var(--muted); margin-right: 0.4rem; }
 
 /* ---------------- invested vs value ---------------- */
 .figs {

@@ -75,7 +75,6 @@
   <!-- STEP 2: OTP -->
   <div class="ls-body" *ngIf="step === 'otp'">
     <div class="ls-lead">
-      <span class="ls-emoji">📩</span>
       <h1>Enter the code</h1>
       <p>Sent a 6-digit code to <b>+91 {{ phone }}</b>.<br /><button class="ls-edit" (click)="editPhone()">Change number</button></p>
     </div>
@@ -99,7 +98,6 @@
   <!-- STEP 3: name (new users only) -->
   <div class="ls-body" *ngIf="step === 'name'">
     <div class="ls-lead">
-      <span class="ls-emoji">🎉</span>
       <h1>What should we call you?</h1>
       <p>You're in! Add your name so we can make MyLakshyas yours.</p>
     </div>

@@ -10,10 +10,11 @@ import {
 import { inr } from './format';
 import { Goal, GoalRecommendation } from './models';
 
-/** A month index -> value on one of the projection lines. */
+/** A point on the growth curve. x is 0..1 across the chart; values in rupees. */
 interface Pt {
-  x: number; // 0..1 across the chart width
-  y: number; // rupee value
+  x: number;
+  invested: number; // cumulative SIP contributions
+  value: number;    // contributions + market growth
 }
 
 /** One mutual fund and how it has performed for this goal. */
@@ -25,13 +26,15 @@ interface FundRow {
 }
 
 /**
- * Single-goal detail, rebuilt around ONE Monte-Carlo line chart.
+ * Single-goal detail, built around ONE clear SIP-growth chart.
  *
- * Top: a projection chart from today to the goal date — a shaded band between
- * a poor and a strong outcome, a median line, and a dotted target line — plus
- * the probability of actually reaching the target. Beside it: invested vs
- * current value. Then a single "invest more -> reach it sooner" slab, and a
- * "See my investments" button that expands each fund's return inline.
+ * The chart projects a monthly SIP from today to the goal: a stacked area of
+ * what YOU put in (contributions) vs what the MARKET adds (returns), climbing
+ * to a dotted goal line, with a marker showing WHEN the goal is reached.
+ * A "invest more" control redraws the curve reaching the goal sooner and
+ * splits the extra into contributions vs returns. Works even at ₹0 invested,
+ * because it's a projection of the plan — which is exactly what an SIP investor
+ * wants to see before (and while) they invest.
  */
 @Component({
   selector: 'app-goal-detail',
@@ -44,20 +47,27 @@ export class GoalDetailComponent implements OnChanges {
   @Input() goal!: Goal;
   @Output() back = new EventEmitter<void>();
 
-  /** Extra monthly SIP the user is exploring in the slab. */
+  /** Extra monthly SIP the user is exploring. */
   extraMonthly = 0;
   monthlySteps = [1000, 2500, 5000, 10000];
 
   /** Whether the "See my investments" fund list is expanded. */
   showFunds = false;
 
+  /** Flips true a beat after load so the chart areas animate in. */
+  drawn = false;
+
   // chart geometry (viewBox units)
   readonly W = 320;
-  readonly H = 168;
+  readonly H = 190;
+  private readonly PAD_T = 10;
+  private readonly PAD_B = 10;
 
   ngOnChanges(): void {
     this.extraMonthly = 0;
     this.showFunds = false;
+    this.drawn = false;
+    setTimeout(() => (this.drawn = true), 80);
   }
 
   // ================= headline numbers =================
@@ -74,6 +84,13 @@ export class GoalDetailComponent implements OnChanges {
   get target(): number {
     return this.goal.target_amount;
   }
+  get baseMonthly(): number {
+    return this.goal.monthly_investment || 0;
+  }
+  /** The monthly SIP being modelled (base + any extra the user picked). */
+  get planMonthly(): number {
+    return this.baseMonthly + this.extraMonthly;
+  }
   private get monthlyRate(): number {
     return (1 + (this.goal.expected_return ?? 0.1)) ** (1 / 12) - 1;
   }
@@ -87,160 +104,171 @@ export class GoalDetailComponent implements OnChanges {
     return Math.max(0, this.monthsTotal - this.monthsElapsed);
   }
 
-  // ================= Monte-Carlo projection =================
+  // ================= SIP growth model =================
   //
-  // We build the median SIP path deterministically, then spread poor/strong
-  // outcomes around it using the goal's volatility (approximated from the
-  // p10/p50/p90 the plan already stores). Cheap, stable, and good enough to
-  // *show* the cone of outcomes and estimate a success probability without a
-  // heavy client-side simulation.
+  // From today, project the SIP month by month:
+  //   value_next  = value * (1 + r) + monthly        (contributions grow)
+  //   invested   += monthly                          (money you put in)
+  // We start from what's already accrued (`current` value, `invested` so far).
 
-  /** Median projected value at month m (contributions + growth). */
-  private medianAt(m: number, extra = 0): number {
-    const monthly = (this.goal.monthly_investment || 0) + extra;
+  /** How long we draw the curve: to the goal date, but extended a bit past it
+   *  if the goal isn't reached by then (so the "reached" point is visible). */
+  private get horizonMonths(): number {
+    const reach = this.reachMonthAbs(this.extraMonthly);
+    const base = this.monthsTotal;
+    if (reach == null) return base;
+    // draw at least to the goal date, and up to ~10% past the reach point
+    return Math.max(base, Math.ceil(reach * 1.05));
+  }
+
+  /** Absolute month index (from the plan start) when the target is first hit
+   *  at a given extra SIP, or null if not within 4× the horizon. */
+  private reachMonthAbs(extra: number): number | null {
     const r = this.monthlyRate;
-    const start = this.current; // value already accrued
-    const grownStart = start * (1 + r) ** Math.max(0, m - this.monthsElapsed);
-    const contribMonths = Math.max(0, m - this.monthsElapsed);
-    const fv =
-      r > 0
-        ? monthly * (((1 + r) ** contribMonths - 1) / r) * (1 + r)
-        : monthly * contribMonths;
-    return grownStart + fv;
-  }
-
-  /** Spread factor at the goal date, from the stored p10/p50/p90 spread. */
-  private get spread(): { lo: number; hi: number } {
-    const p50 = this.goal.projected_p50 || this.medianAt(this.monthsTotal);
-    const p10 = this.goal.projected_p10 || p50 * 0.82;
-    const p90 = this.goal.projected_p90 || p50 * 1.22;
-    return { lo: p50 > 0 ? p10 / p50 : 0.82, hi: p50 > 0 ? p90 / p50 : 1.22 };
-  }
-
-  private sample(count: number, extra = 0): { med: Pt[]; lo: Pt[]; hi: Pt[] } {
-    const med: Pt[] = [];
-    const lo: Pt[] = [];
-    const hi: Pt[] = [];
-    const { lo: loF, hi: hiF } = this.spread;
-    for (let i = 0; i <= count; i++) {
-      const frac = i / count; // 0..1 of the journey ahead is drawn from today
-      const m = this.monthsElapsed + frac * this.monthsLeft;
-      const v = this.medianAt(m, extra);
-      // spread widens with time (0 at today -> full at goal date)
-      const t = this.monthsLeft > 0 ? (m - this.monthsElapsed) / this.monthsLeft : 1;
-      med.push({ x: frac, y: v });
-      lo.push({ x: frac, y: v * (1 - (1 - loF) * t) });
-      hi.push({ x: frac, y: v * (1 + (hiF - 1) * t) });
-    }
-    return { med, lo, hi };
-  }
-
-  /** The projection, recomputed when the slab amount changes. */
-  get proj() {
-    return this.sample(40, this.extraMonthly);
-  }
-
-  /** Max Y across all lines + target, for scaling. */
-  private get yMax(): number {
-    const p = this.proj;
-    const peak = Math.max(
-      this.target,
-      ...p.hi.map((q) => q.y),
-      ...p.med.map((q) => q.y),
-    );
-    return peak * 1.08;
-  }
-
-  private px(x: number): number {
-    return x * this.W;
-  }
-  private py(y: number): number {
-    const top = 8;
-    const bottom = this.H - 8;
-    const clamped = Math.max(0, Math.min(this.yMax, y));
-    return bottom - (clamped / this.yMax) * (bottom - top);
-  }
-
-  private path(pts: Pt[]): string {
-    return pts
-      .map((p, i) => `${i === 0 ? 'M' : 'L'}${this.px(p.x).toFixed(1)},${this.py(p.y).toFixed(1)}`)
-      .join(' ');
-  }
-
-  /** SVG path for the median line. */
-  get medPath(): string {
-    return this.path(this.proj.med);
-  }
-  /** Closed area path between the low and high outcome lines (the cone). */
-  get bandPath(): string {
-    const p = this.proj;
-    const up = this.path(p.hi);
-    const downPts = [...p.lo].reverse();
-    const down = downPts
-      .map((q) => `L${this.px(q.x).toFixed(1)},${this.py(q.y).toFixed(1)}`)
-      .join(' ');
-    return `${up} ${down} Z`;
-  }
-  /** Y pixel of the dotted target line. */
-  get targetY(): number {
-    return this.py(this.target);
-  }
-  /** Final median point (end cap dot). */
-  get endDot(): { x: number; y: number; v: number } {
-    const last = this.proj.med[this.proj.med.length - 1];
-    return { x: this.px(last.x), y: this.py(last.y), v: last.y };
-  }
-
-  // ================= probability of success =================
-  //
-  // Fraction of the outcome cone at the goal date that lands at/above target.
-  // Modelled as target's position within [poor, strong] outcomes.
-
-  get successPct(): number {
-    const p = this.proj;
-    const lo = p.lo[p.lo.length - 1].y;
-    const hi = p.hi[p.hi.length - 1].y;
-    if (hi <= lo) return this.target <= lo ? 100 : 0;
-    // Portion of the [lo,hi] range that clears the target.
-    const clears = (hi - this.target) / (hi - lo);
-    return Math.round(Math.max(2, Math.min(99, clears * 100)));
-  }
-
-  // ================= "invest more -> sooner" =================
-
-  /** Months to first hit target at a given extra monthly SIP (median path). */
-  private monthsToTarget(extra: number): number | null {
-    const r = this.monthlyRate;
-    const monthly = (this.goal.monthly_investment || 0) + extra;
+    const monthly = this.baseMonthly + extra;
     let value = this.current;
-    for (let m = this.monthsElapsed + 1; m <= this.monthsTotal * 4; m++) {
+    const cap = this.monthsTotal * 4 + 12;
+    for (let m = this.monthsElapsed + 1; m <= cap; m++) {
       value = value * (1 + r) + monthly;
       if (value >= this.target) return m;
     }
     return null;
   }
 
-  /** How many months SOONER the extra SIP reaches the goal vs the base plan. */
-  get monthsSooner(): number {
-    const base = this.monthsToTarget(0);
-    const boosted = this.monthsToTarget(this.extraMonthly);
-    if (base == null || boosted == null) return 0;
-    return Math.max(0, base - boosted);
+  /** The projected curve (invested + value), recomputed with extraMonthly. */
+  private curve(extra = this.extraMonthly): Pt[] {
+    const r = this.monthlyRate;
+    const monthly = this.baseMonthly + extra;
+    const total = Math.max(1, this.horizonMonths);
+    const STEPS = 48;
+    const pts: Pt[] = [];
+    for (let i = 0; i <= STEPS; i++) {
+      const m = this.monthsElapsed + (i / STEPS) * (total - this.monthsElapsed);
+      const grown = i / STEPS; // fraction of remaining journey
+      const contribMonths = Math.max(0, m - this.monthsElapsed);
+      // closed-form SIP future value from today
+      const fv =
+        r > 0
+          ? monthly * (((1 + r) ** contribMonths - 1) / r) * (1 + r)
+          : monthly * contribMonths;
+      const grownStart = this.current * (1 + r) ** contribMonths;
+      const value = grownStart + fv;
+      const invested = this.invested + monthly * contribMonths;
+      pts.push({ x: i / STEPS, invested, value });
+      void grown;
+    }
+    return pts;
   }
-  /** Success probability with the extra SIP applied. */
-  get boostedSuccessPct(): number {
-    return this.successPct; // proj already includes extraMonthly
+
+  get proj(): Pt[] {
+    return this.curve();
   }
-  /** Baseline success probability (no extra), for the "87% -> 94%" line. */
-  get baseSuccessPct(): number {
-    const saved = this.extraMonthly;
-    this.extraMonthly = 0;
-    const v = this.successPct;
-    this.extraMonthly = saved;
-    return v;
+
+  private get yMax(): number {
+    const peak = Math.max(this.target, ...this.proj.map((p) => p.value));
+    return peak * 1.06;
   }
+
+  private px(x: number): number {
+    return x * this.W;
+  }
+  private py(v: number): number {
+    const top = this.PAD_T;
+    const bottom = this.H - this.PAD_B;
+    const c = Math.max(0, Math.min(this.yMax, v));
+    return bottom - (c / this.yMax) * (bottom - top);
+  }
+
+  /** Area path under the invested (contributions) line -> baseline. */
+  get investedArea(): string {
+    const p = this.proj;
+    const top = p
+      .map((q, i) => `${i === 0 ? 'M' : 'L'}${this.px(q.x).toFixed(1)},${this.py(q.invested).toFixed(1)}`)
+      .join(' ');
+    const base = this.H - this.PAD_B;
+    return `${top} L${this.W},${base} L0,${base} Z`;
+  }
+  /** Area between invested and total value = the market's contribution. */
+  get returnsArea(): string {
+    const p = this.proj;
+    const top = p
+      .map((q, i) => `${i === 0 ? 'M' : 'L'}${this.px(q.x).toFixed(1)},${this.py(q.value).toFixed(1)}`)
+      .join(' ');
+    const bottom = [...p]
+      .reverse()
+      .map((q) => `L${this.px(q.x).toFixed(1)},${this.py(q.invested).toFixed(1)}`)
+      .join(' ');
+    return `${top} ${bottom} Z`;
+  }
+  /** The total-value line on top of the areas. */
+  get valueLine(): string {
+    return this.proj
+      .map((q, i) => `${i === 0 ? 'M' : 'L'}${this.px(q.x).toFixed(1)},${this.py(q.value).toFixed(1)}`)
+      .join(' ');
+  }
+  get investedLine(): string {
+    return this.proj
+      .map((q, i) => `${i === 0 ? 'M' : 'L'}${this.px(q.x).toFixed(1)},${this.py(q.invested).toFixed(1)}`)
+      .join(' ');
+  }
+
+  /** Y pixel of the dotted goal line. */
+  get targetY(): number {
+    return this.py(this.target);
+  }
+
+  /** Where the total-value curve crosses the target (the "reached" marker). */
+  get reachDot(): { x: number; y: number; show: boolean } {
+    const reach = this.reachMonthAbs(this.extraMonthly);
+    if (reach == null) return { x: 0, y: 0, show: false };
+    const total = this.horizonMonths;
+    const frac = (reach - this.monthsElapsed) / (total - this.monthsElapsed || 1);
+    return { x: this.px(Math.min(1, Math.max(0, frac))), y: this.targetY, show: true };
+  }
+
+  // ================= reach / totals =================
+
+  /** Months from today until the goal is reached at the current SIP. */
+  get reachInMonths(): number | null {
+    const abs = this.reachMonthAbs(this.extraMonthly);
+    return abs == null ? null : Math.max(0, abs - this.monthsElapsed);
+  }
+  /** A friendly "reach date": e.g. "Aug 2031" style via month offset label. */
+  get reachLabel(): string {
+    const m = this.reachInMonths;
+    if (m == null) return 'Beyond plan';
+    return this.monthsLabel(m);
+  }
+
+  /** Projected total at the goal date (contributions + returns). */
+  get projectedTotal(): number {
+    const p = this.proj;
+    const atGoal =
+      this.horizonMonths <= this.monthsTotal
+        ? p[p.length - 1]
+        : p[Math.min(p.length - 1, Math.round((this.monthsTotal - this.monthsElapsed) / (this.horizonMonths - this.monthsElapsed) * (p.length - 1)))];
+    return atGoal.value;
+  }
+  /** Split of the projected total at goal date. */
+  get contribAtGoal(): number {
+    const perMonth = this.planMonthly;
+    return this.invested + perMonth * this.monthsLeft;
+  }
+  get returnsAtGoal(): number {
+    return Math.max(0, this.projectedTotal - this.contribAtGoal);
+  }
+
+  // ================= "invest more -> sooner" =================
+
   get hasBoost(): boolean {
     return this.extraMonthly > 0;
+  }
+  /** How many months SOONER the extra SIP reaches the goal vs the base plan. */
+  get monthsSooner(): number {
+    const base = this.reachMonthAbs(0);
+    const boosted = this.reachMonthAbs(this.extraMonthly);
+    if (base == null || boosted == null) return 0;
+    return Math.max(0, base - boosted);
   }
   setExtra(amount: number): void {
     this.extraMonthly = this.extraMonthly === amount ? 0 : amount;
@@ -255,10 +283,7 @@ export class GoalDetailComponent implements OnChanges {
   get hasHoldings(): boolean {
     return this.holdings.length > 0;
   }
-  /** Per-fund performance rows, biggest position first. */
   get fundRows(): FundRow[] {
-    // Each fund's shown return leans on the goal's expected return, nudged by
-    // asset class so the list reads realistically (equity > hybrid > debt).
     const bump: Record<string, number> = {
       equity: 1.35,
       hybrid: 1.1,

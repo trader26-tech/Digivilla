@@ -27,6 +27,7 @@
 
     <app-home
       [refreshKey]="goalsVersion"
+      [userName]="userName"
       (planNew)="startAddGoal()"
       (openGoal)="openGoalDetail($event)"
     ></app-home>

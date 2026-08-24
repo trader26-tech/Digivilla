@@ -9,76 +9,81 @@
     <span class="top-spacer"></span>
   </header>
 
-  <!-- ============ chance of reaching the goal ============ -->
-  <div class="chance">
-    <span class="ch-cap">Chance of reaching {{ compact(target) }}</span>
-    <div class="ch-num">
-      <b>{{ successPct }}<i>%</i></b>
-      <span class="ch-tag" [class.warn]="successPct < 60" [class.ok]="successPct >= 80">
-        {{ successPct >= 80 ? 'On track' : successPct >= 60 ? 'Getting there' : 'Needs a boost' }}
-      </span>
-    </div>
+  <!-- ============ reach headline ============ -->
+  <div class="reach">
+    <span class="reach-cap">On <b>{{ compact(planMonthly) }}/mo</b>, you reach {{ compact(target) }} in</span>
+    <b class="reach-val">{{ reachLabel }}</b>
   </div>
 
-  <!-- ============ the line chart (Monte Carlo cone) ============ -->
+  <!-- ============ SIP growth chart ============ -->
   <div class="chart-card">
+    <!-- legend: your money vs market -->
+    <div class="legend">
+      <span class="lg lg-inv"><i></i>Your SIP</span>
+      <span class="lg lg-ret"><i></i>Market returns</span>
+    </div>
+
     <svg
       class="chart"
+      [class.drawn]="drawn"
       [attr.viewBox]="'0 0 ' + W + ' ' + H"
       preserveAspectRatio="none"
       role="img"
-      aria-label="Projected value over time"
+      aria-label="How your SIP grows to the goal"
     >
       <defs>
-        <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
-          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02" />
+        <linearGradient id="gd-inv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#a370ff" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#a370ff" stop-opacity="0.06" />
+        </linearGradient>
+        <linearGradient id="gd-ret" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff9a4a" stop-opacity="0.5" />
+          <stop offset="100%" stop-color="#ff6f61" stop-opacity="0.08" />
         </linearGradient>
       </defs>
 
-      <!-- outcome cone -->
-      <path [attr.d]="bandPath" fill="url(#band)" />
+      <!-- market returns band (between invested and total) -->
+      <path class="a-ret" [attr.d]="returnsArea" fill="url(#gd-ret)" />
+      <!-- your contributions area -->
+      <path class="a-inv" [attr.d]="investedArea" fill="url(#gd-inv)" />
 
-      <!-- target line -->
-      <line
-        class="target-line"
-        [attr.x1]="0"
-        [attr.x2]="W"
-        [attr.y1]="targetY"
-        [attr.y2]="targetY"
-      />
+      <!-- the two lines -->
+      <path class="ln-inv" [attr.d]="investedLine" />
+      <path class="ln-val" [attr.d]="valueLine" />
 
-      <!-- median path -->
-      <path class="med-line" [attr.d]="medPath" />
+      <!-- goal line -->
+      <line class="goal-line" [attr.x1]="0" [attr.x2]="W" [attr.y1]="targetY" [attr.y2]="targetY" />
 
-      <!-- end cap -->
-      <circle class="end-dot" [attr.cx]="endDot.x" [attr.cy]="endDot.y" r="4" />
+      <!-- reached marker -->
+      <g *ngIf="reachDot.show">
+        <line class="reach-mark" [attr.x1]="reachDot.x" [attr.x2]="reachDot.x" [attr.y1]="targetY" [attr.y2]="H - 10" />
+        <circle class="reach-dot" [attr.cx]="reachDot.x" [attr.cy]="reachDot.y" r="5" />
+      </g>
     </svg>
 
     <div class="chart-x">
-      <span>Today</span>
-      <span class="chart-target-lbl">Target {{ compact(target) }}</span>
-      <span>{{ monthsLabel(monthsLeft) }}</span>
+      <span>Now</span>
+      <span class="goal-lbl">🎯 {{ compact(target) }}</span>
+      <span>{{ reachLabel }}</span>
     </div>
   </div>
 
-  <!-- ============ invested vs value ============ -->
+  <!-- ============ split at goal: your money vs market ============ -->
   <div class="figs">
     <div class="fig">
-      <span class="fig-l">Invested</span>
-      <b class="fig-v">{{ compact(invested) }}</b>
+      <span class="fig-l"><i class="d-inv"></i>You invest</span>
+      <b class="fig-v">{{ compact(contribAtGoal) }}</b>
     </div>
     <div class="fig-div"></div>
     <div class="fig">
-      <span class="fig-l">Value now</span>
-      <b class="fig-v">{{ compact(current) }}</b>
-      <span class="fig-gain" [class.flat]="gain <= 0">▲ {{ compact(gain) }}</span>
+      <span class="fig-l"><i class="d-ret"></i>Market adds</span>
+      <b class="fig-v ret">+{{ compact(returnsAtGoal) }}</b>
     </div>
   </div>
 
   <!-- ============ invest more -> reach it sooner ============ -->
   <div class="slab">
-    <span class="slab-cap">Invest more, reach it sooner</span>
+    <span class="slab-cap">Invest more each month → reach it sooner</span>
     <div class="chips">
       <button
         *ngFor="let s of monthlySteps"
@@ -92,23 +97,19 @@
 
     <div class="slab-out" *ngIf="hasBoost">
       <div class="so-sooner" *ngIf="monthsSooner > 0">
-        <b>{{ monthsLabel(monthsSooner) }}</b> sooner
+        <span class="so-lead">Reach it</span>
+        <b>{{ monthsLabel(monthsSooner) }} sooner</b>
       </div>
       <div class="so-sooner" *ngIf="monthsSooner <= 0">
-        <b>Same date</b><span class="so-sub"> — but a bigger cushion</span>
-      </div>
-      <div class="so-prob">
-        Chance <span class="was">{{ baseSuccessPct }}%</span>
-        <span class="arrow">→</span>
-        <b>{{ boostedSuccessPct }}%</b>
+        <b>A bigger cushion</b><span class="so-sub"> over your goal</span>
       </div>
     </div>
-    <p class="slab-hint" *ngIf="!hasBoost">Pick an amount to see the impact.</p>
+    <p class="slab-hint" *ngIf="!hasBoost">Tap an amount to see how much faster you reach it.</p>
   </div>
 
   <!-- ============ see my investments ============ -->
   <button class="see-btn" (click)="toggleFunds()" *ngIf="hasHoldings">
-    <span>See my investments</span>
+    <span>Where it's invested</span>
     <i class="caret" [class.up]="showFunds">›</i>
   </button>
 
@@ -125,7 +126,6 @@
     </div>
   </div>
 
-  <!-- no funds recorded -->
   <div class="no-funds" *ngIf="!hasHoldings">
     Fund breakdown isn't recorded for this goal yet.
   </div>

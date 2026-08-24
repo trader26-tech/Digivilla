@@ -261,16 +261,6 @@
   to { opacity: 1; transform: none; }
 }
 .ls-lead { text-align: left; }
-.ls-emoji {
-  font-size: 2.4rem;
-  display: block;
-  margin-bottom: 0.6rem;
-  animation: emojiPop 0.55s cubic-bezier(0.34, 1.7, 0.5, 1) 0.1s both;
-}
-@keyframes emojiPop {
-  from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
-  to { opacity: 1; transform: none; }
-}
 .ls-lead h1 {
   margin: 0 0 0.5rem;
   font-size: clamp(1.7rem, 6vw, 2.1rem);

@@ -1,21 +1,51 @@
 <section class="home">
-  <div class="loading-block" *ngIf="loading">Loading…</div>
+  <div class="loading-block" *ngIf="loading">
+    <span class="spinner"></span>
+  </div>
 
-  <!-- ============ HERO — invested · current · XIRR ============ -->
+  <!-- ============ HERO ============ -->
   <div class="hero" *ngIf="!loading && goals.length">
-    <span class="hero-cap">Current value</span>
-    <h1 class="hero-value">{{ compact(totalCurrent) }}</h1>
-    <span class="hero-gain">▲ {{ compact(totalGain) }} gained</span>
-
-    <div class="hero-split">
-      <div class="hs">
-        <span class="hs-l">Invested</span>
-        <b class="hs-v">{{ compact(totalInvested) }}</b>
+    <!-- greeting + mascot -->
+    <div class="hero-top">
+      <div class="greet">
+        <span class="greet-l">{{ greeting }}<ng-container *ngIf="firstName">,</ng-container></span>
+        <span class="greet-n" *ngIf="firstName">{{ firstName }} 👋</span>
       </div>
-      <div class="hs-div"></div>
-      <div class="hs">
-        <span class="hs-l">XIRR</span>
-        <b class="hs-v xirr">{{ portfolioXirr | number: '1.1-1' }}%</b>
+      <div class="mascot">
+        <app-rupi [pose]="isFresh ? 'wave' : 'cheer'" [size]="64"></app-rupi>
+      </div>
+    </div>
+
+    <!-- fresh: forward-looking; active: current value -->
+    <div class="hero-body" *ngIf="isFresh">
+      <span class="hero-cap">You're building toward</span>
+      <h1 class="hero-value">{{ compact(animTarget) }}</h1>
+      <span class="hero-sub">
+        {{ compact(totalMonthly) }}/mo across
+        {{ goals.length }} goal<ng-container *ngIf="goals.length > 1">s</ng-container>
+        — the journey starts now 🚀
+      </span>
+    </div>
+
+    <div class="hero-body" *ngIf="!isFresh">
+      <span class="hero-cap">Portfolio value</span>
+      <h1 class="hero-value">{{ compact(animCurrent) }}</h1>
+      <span class="hero-gain">▲ {{ compact(totalGain) }} gained · {{ portfolioXirr | number: '1.1-1' }}% XIRR</span>
+    </div>
+
+    <!-- little stat chips -->
+    <div class="hero-chips">
+      <div class="chip">
+        <span class="chip-l">Invested</span>
+        <b class="chip-v">{{ compact(animInvested) }}</b>
+      </div>
+      <div class="chip">
+        <span class="chip-l">Monthly</span>
+        <b class="chip-v">{{ compact(totalMonthly) }}</b>
+      </div>
+      <div class="chip">
+        <span class="chip-l">Goals</span>
+        <b class="chip-v">{{ goals.length }}</b>
       </div>
     </div>
   </div>
@@ -23,26 +53,26 @@
   <!-- ============ GOALS ============ -->
   <div class="goals-head" *ngIf="!loading && goals.length">
     <span>Your goals</span>
-    <button class="add" (click)="planNew.emit()">＋ New</button>
+    <button class="add" (click)="planNew.emit()">＋ New goal</button>
   </div>
 
   <div class="goal-list" *ngIf="!loading && goals.length">
     <article
       class="goal"
-      *ngFor="let g of goals; trackBy: trackById"
+      *ngFor="let g of goals; let i = index; trackBy: trackById"
+      [style.--d.ms]="i * 80"
       (click)="open(g)"
     >
-      <!-- summary row -->
       <div class="g-row">
         <span class="g-icon">{{ goalIcon(g.goal) }}</span>
         <div class="g-main">
           <b class="g-name">{{ g.label }}</b>
           <span class="g-sub">{{ compact(current(g)) }} of {{ compact(g.target_amount) }}</span>
         </div>
+        <span class="g-pct">{{ pct(reachedPct(g)) }}</span>
         <span class="g-chev">›</span>
       </div>
 
-      <!-- progress: reached vs to-go -->
       <div class="g-bar"><span class="g-fill" [style.width.%]="reachedPct(g)"></span></div>
       <div class="g-legend">
         <span><i class="dot inv"></i>Invested {{ compact(invested(g)) }}</span>
@@ -51,11 +81,16 @@
     </article>
   </div>
 
-  <!-- empty state -->
+  <!-- ============ EMPTY STATE ============ -->
   <div class="empty" *ngIf="!loading && !goals.length">
-    <div class="empty-icon">🎯</div>
-    <h2>No goals yet</h2>
-    <p>Start your first goal and watch it grow.</p>
-    <button class="primary" (click)="planNew.emit()">Plan a goal</button>
+    <div class="empty-mascot">
+      <app-rupi pose="wave" [size]="150"></app-rupi>
+    </div>
+    <h2>Hi{{ firstName ? ', ' + firstName : '' }}! Let's begin 🎯</h2>
+    <p>Pick a goal — a home, a trip, retirement — and watch<br />Rupi turn it into a simple monthly plan.</p>
+    <button class="primary" (click)="planNew.emit()">
+      Create your first goal
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 </section>
