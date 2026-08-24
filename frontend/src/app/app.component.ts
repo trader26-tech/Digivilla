@@ -144,7 +144,11 @@ export class AppComponent {
   onAuthed(res: AuthResponse): void {
     localStorage.setItem('wp_token', res.token);
     localStorage.setItem('wp_owner', res.user.owner);
-    localStorage.setItem('wp_name', res.user.name || res.user.email.split('@')[0]);
+    // Phone users get a synthetic "phone+…@mylakshyas.local" email — never show
+    // that as a name; only use a real (non-synthetic) email local-part.
+    const email = res.user.email || '';
+    const emailName = email.includes('@mylakshyas.local') ? '' : email.split('@')[0];
+    localStorage.setItem('wp_name', res.user.name || emailName);
     this.userName = localStorage.getItem('wp_name') || '';
     this.authed = true;
   }

@@ -144,7 +144,10 @@ def login_with_phone(name: str, phone: str, id_token: str = "") -> dict:
         row = {
             "id": uuid.uuid4().hex,
             "owner": "usr_" + uuid.uuid4().hex[:16],
-            "email": "",           # phone users may have no email
+            # Phone users have no real email, but the users table has a UNIQUE
+            # email column — so give each one a synthetic, unique placeholder
+            # (an empty "" collides on the second phone signup).
+            "email": f"phone+{e164.lstrip('+')}@mylakshyas.local",
             "phone": e164,
             "name": (name or "").strip(),
             "salt": "",            # no password for phone accounts
