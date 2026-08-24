@@ -17,19 +17,12 @@
 <ng-container *ngIf="authed && !intro">
 <div class="shell">
   <div class="main-col">
-    <header class="topnav">
-      <div class="brand"><span class="logo">◆</span><span>MyLakshyas</span></div>
-      <div class="nav-user">
-        <span class="hello" *ngIf="userName">Hi, {{ userName }}</span>
-        <button class="signout" (click)="signOut()" title="Sign out">Sign out</button>
-      </div>
-    </header>
-
     <app-home
       [refreshKey]="goalsVersion"
       [userName]="userName"
       (planNew)="startAddGoal()"
       (openGoal)="openGoalDetail($event)"
+      (signOut)="signOut()"
     ></app-home>
   </div>
 </div>

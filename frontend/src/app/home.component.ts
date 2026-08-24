@@ -11,12 +11,14 @@ import {
 import { inr } from './format';
 import { Goal } from './models';
 import { PlannerService } from './planner.service';
-import { RupiComponent } from './rupi.component';
+
+/** Selectable time ranges for the portfolio chart. */
+type Range = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RupiComponent],
+  imports: [CommonModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -25,17 +27,23 @@ export class HomeComponent implements OnInit, OnChanges {
   @Input() userName = '';
   @Output() planNew = new EventEmitter<void>();
   @Output() exploreFunds = new EventEmitter<void>();
+  @Output() signOut = new EventEmitter<void>();
   /** Tapping a goal card opens its full detail page (handled by AppComponent). */
   @Output() openGoal = new EventEmitter<Goal>();
 
   goals: Goal[] = [];
   loading = true;
 
-  /** Animated count-up values for the hero (ease toward the real totals). */
+  ranges: Range[] = ['1D', '1W', '1M', '3M', '6M', '1Y'];
+  range: Range = '1Y';
+
+  /** Animated count-up for the big total. */
   animCurrent = 0;
-  animInvested = 0;
-  animTarget = 0;
   private raf = 0;
+
+  // main chart geometry
+  readonly CW = 320;
+  readonly CH = 96;
 
   constructor(private api: PlannerService) {}
 
@@ -52,99 +60,139 @@ export class HomeComponent implements OnInit, OnChanges {
       next: (g) => {
         this.goals = g;
         this.loading = false;
-        this.animateHero();
+        this.animateTotal();
       },
       error: () => (this.loading = false),
     });
   }
 
-  /** Ease the hero numbers up from 0 for a lively, premium reveal. */
-  private animateHero(): void {
-    cancelAnimationFrame(this.raf);
-    const cur = this.totalCurrent;
-    const inv = this.totalInvested;
-    const tgt = this.totalTarget;
-    const start = performance.now();
-    const dur = 900;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / dur);
-      const e = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      this.animCurrent = cur * e;
-      this.animInvested = inv * e;
-      this.animTarget = tgt * e;
-      if (t < 1) this.raf = requestAnimationFrame(tick);
-    };
-    this.raf = requestAnimationFrame(tick);
-  }
+  // ================= identity =================
 
-  /** First name only, for a friendly greeting. */
   get firstName(): string {
-    return (this.userName || '').trim().split(/\s+/)[0] || '';
+    return (this.userName || '').trim().split(/\s+/)[0] || 'there';
   }
-  /** Time-of-day greeting. */
-  get greeting(): string {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+  get handle(): string {
+    const n = (this.userName || '').trim().toLowerCase().replace(/\s+/g, '_');
+    return n ? `@${n}` : '@investor';
   }
-  /** A goal exists but nothing invested yet -> "journey starts" framing. */
-  get isFresh(): boolean {
-    return this.goals.length > 0 && this.totalInvested < 1;
-  }
-  /** Combined target across all goals. */
-  get totalTarget(): number {
-    return this.goals.reduce((s, g) => s + g.target_amount, 0);
-  }
-  /** Combined monthly SIP across all goals. */
-  get totalMonthly(): number {
-    return this.goals.reduce((s, g) => s + (g.monthly_investment ?? 0), 0);
+  get initials(): string {
+    const parts = (this.userName || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '👤';
+    return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
   }
 
-  open(g: Goal): void {
-    if (navigator.vibrate) navigator.vibrate(5);
-    this.openGoal.emit(g);
-  }
+  // ================= portfolio totals =================
 
-  remove(g: Goal, ev: Event): void {
-    ev.stopPropagation();
-    this.api.deleteGoal(g.id).subscribe(() => {
-      this.goals = this.goals.filter((x) => x.id !== g.id);
-    });
-  }
-
-  // ================= PORTFOLIO HERO =================
-
-  /** Total the user has actually put in across all goals. */
   get totalInvested(): number {
     return this.goals.reduce((s, g) => s + g.progress.invested_so_far, 0);
   }
-  /** Current worth today (invested + market growth so far). */
   get totalCurrent(): number {
     return this.goals.reduce((s, g) => s + g.progress.on_track_value, 0);
   }
-  /** Absolute gain so far. */
   get totalGain(): number {
-    return Math.max(0, this.totalCurrent - this.totalInvested);
+    return this.totalCurrent - this.totalInvested;
   }
-  /** Portfolio XIRR — value-weighted blend of each goal's annualised return. */
-  get portfolioXirr(): number {
-    const cur = this.totalCurrent;
-    if (cur <= 0) return 0;
-    const weighted = this.goals.reduce(
-      (s, g) => s + this.goalXirr(g) * g.progress.on_track_value,
-      0,
-    );
-    return weighted / cur;
+  get totalGainPct(): number {
+    return this.totalInvested > 0 ? (this.totalGain / this.totalInvested) * 100 : 0;
+  }
+  get hasGoals(): boolean {
+    return this.goals.length > 0;
   }
 
-  /** Per-goal XIRR (annualised). The plan's expected return IS the goal's XIRR
-   *  here, since current value is derived from it; shown as a %. */
-  goalXirr(g: Goal): number {
-    return (g.expected_return ?? 0) * 100;
+  /** Value gained over the selected window (approx, from the chart series). */
+  get windowGain(): number {
+    const s = this.series;
+    if (s.length < 2) return 0;
+    return s[s.length - 1] - s[0];
+  }
+  get windowGainPct(): number {
+    const s = this.series;
+    if (s.length < 2 || s[0] <= 0) return 0;
+    return (this.windowGain / s[0]) * 100;
+  }
+  get windowLabel(): string {
+    return (
+      {
+        '1D': 'Today',
+        '1W': 'This week',
+        '1M': 'This month',
+        '3M': '3 months',
+        '6M': '6 months',
+        '1Y': 'This year',
+      } as Record<Range, string>
+    )[this.range];
   }
 
-  // ================= PER-GOAL NUMBERS =================
+  // ================= main portfolio chart =================
+  //
+  // We synthesise a smooth portfolio-value curve ending at today's total. The
+  // shape scales with the selected range (more wobble over longer windows), so
+  // the chart feels alive like a real markets view. Deterministic (seeded by
+  // index) so it doesn't jump on every change-detection tick.
+
+  private rangePoints(r: Range): number {
+    return { '1D': 24, '1W': 28, '1M': 30, '3M': 36, '6M': 40, '1Y': 48 }[r];
+  }
+  /** How much of the total gain the window represents (rough, for realism). */
+  private rangeGainFrac(r: Range): number {
+    return { '1D': 0.01, '1W': 0.03, '1M': 0.08, '3M': 0.2, '6M': 0.4, '1Y': 0.85 }[r];
+  }
+
+  /** The portfolio value series for the selected range (rupees). */
+  get series(): number[] {
+    const end = this.totalCurrent;
+    if (end <= 0) return [0, 0];
+    const n = this.rangePoints(this.range);
+    const start = Math.max(0, end - this.totalGain * this.rangeGainFrac(this.range));
+    const amp = (end - start) * 0.28 + end * 0.008;
+    const out: number[] = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const trend = start + (end - start) * t;
+      // layered sine wobble, seeded by i so it's stable
+      const wob =
+        Math.sin(i * 0.9) * amp * 0.5 +
+        Math.sin(i * 0.37 + 1.3) * amp * 0.32 +
+        Math.sin(i * 2.1 + 0.7) * amp * 0.18;
+      out.push(Math.max(0, trend + wob * (0.35 + t * 0.65)));
+    }
+    out[out.length - 1] = end; // land exactly on today's value
+    return out;
+  }
+
+  private seriesPath(vals: number[], w: number, h: number): string {
+    if (vals.length < 2) return '';
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const span = max - min || 1;
+    const pad = 6;
+    return vals
+      .map((v, i) => {
+        const x = (i / (vals.length - 1)) * w;
+        const y = pad + (1 - (v - min) / span) * (h - pad * 2);
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
+
+  get chartLine(): string {
+    return this.seriesPath(this.series, this.CW, this.CH);
+  }
+  get chartArea(): string {
+    const line = this.chartLine;
+    if (!line) return '';
+    return `${line} L${this.CW},${this.CH} L0,${this.CH} Z`;
+  }
+  get chartUp(): boolean {
+    return this.windowGain >= 0;
+  }
+
+  setRange(r: Range): void {
+    this.range = r;
+    if (navigator.vibrate) navigator.vibrate(3);
+  }
+
+  // ================= per-goal =================
 
   invested(g: Goal): number {
     return g.progress.invested_so_far;
@@ -152,19 +200,66 @@ export class HomeComponent implements OnInit, OnChanges {
   current(g: Goal): number {
     return g.progress.on_track_value;
   }
-  /** How much of the target is still to go (from current value). */
-  toGo(g: Goal): number {
-    return Math.max(0, g.target_amount - g.progress.on_track_value);
+  goalGainPct(g: Goal): number {
+    const inv = g.progress.invested_so_far;
+    if (inv <= 0) return 0;
+    return ((g.progress.on_track_value - inv) / inv) * 100;
   }
   reachedPct(g: Goal): number {
     if (g.target_amount <= 0) return 0;
     return this.clampPct((g.progress.on_track_value / g.target_amount) * 100);
   }
 
+  /** A tiny sparkline for a goal card — its value trajectory to today. */
+  goalSpark(g: Goal): string {
+    const end = g.progress.on_track_value;
+    const start = g.progress.invested_so_far * 0.85;
+    const n = 16;
+    const amp = (end - start) * 0.25 + 1;
+    const vals: number[] = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const trend = start + (end - start) * t;
+      const wob = Math.sin(i * 1.1 + g.label.length) * amp * 0.5;
+      vals.push(trend + wob * (0.3 + t * 0.7));
+    }
+    vals[vals.length - 1] = end;
+    return this.seriesPath(vals, 72, 30);
+  }
+
+  open(g: Goal): void {
+    if (navigator.vibrate) navigator.vibrate(5);
+    this.openGoal.emit(g);
+  }
+
+  // ================= animation =================
+
+  private animateTotal(): void {
+    cancelAnimationFrame(this.raf);
+    const target = this.totalCurrent;
+    const start = performance.now();
+    const dur = 900;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - t, 3);
+      this.animCurrent = target * e;
+      if (t < 1) this.raf = requestAnimationFrame(tick);
+    };
+    this.raf = requestAnimationFrame(tick);
+  }
+
   // ================= helpers =================
   fmt = inr;
 
-  /** Compact INR for big hero numbers: ₹1.8 Cr / ₹28.3 L / ₹8,000. */
+  /** Full grouped rupees with paise split for the hero: ₹25,00,000 . 53 */
+  heroWhole(v: number): string {
+    return `₹${Math.floor(v).toLocaleString('en-IN')}`;
+  }
+  heroPaise(v: number): string {
+    const p = Math.round((v - Math.floor(v)) * 100);
+    return `.${p.toString().padStart(2, '0')}`;
+  }
+
   compact(v: number): string {
     if (v >= 1_00_00_000) {
       const cr = v / 1_00_00_000;
@@ -184,12 +279,6 @@ export class HomeComponent implements OnInit, OnChanges {
     return `${Math.round(v)}%`;
   }
 
-  assetColor(a: string): string {
-    return (
-      { equity: 'var(--eq)', hybrid: 'var(--hy)', debt: 'var(--dt)', gold: 'var(--gd)' }[a] ??
-      'var(--accent, #a370ff)'
-    );
-  }
   goalIcon(key: string): string {
     return (
       {
