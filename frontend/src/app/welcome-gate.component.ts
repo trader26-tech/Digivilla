@@ -39,14 +39,20 @@ export class WelcomeGateComponent {
   private api = inject(PlannerService);
 
   entered = false;
-  /** The login sheet overlay. */
+  /** The full-screen login overlay. */
   loginOpen = false;
-  step: 'phone' | 'otp' = 'phone';
+  /** phone -> otp -> (name, only for brand-new users) */
+  step: 'phone' | 'otp' | 'name' = 'phone';
   phone = '';
   otp = '';
+  name = '';
   sending = false;
   verifying = false;
+  saving = false;
   error = '';
+
+  /** The verified Firebase idToken, kept so the name step can re-submit. */
+  private idToken = '';
 
   constructor() {
     setTimeout(() => (this.entered = true), 30);
@@ -61,6 +67,9 @@ export class WelcomeGateComponent {
   get validOtp(): boolean {
     return /^\d{6}$/.test(this.otp);
   }
+  get validName(): boolean {
+    return this.name.trim().length >= 2;
+  }
 
   onPhone(v: string): void {
     this.phone = v.replace(/\D/g, '').slice(0, 10);
@@ -68,6 +77,10 @@ export class WelcomeGateComponent {
   }
   onOtp(v: string): void {
     this.otp = v.replace(/\D/g, '').slice(0, 6);
+    this.error = '';
+  }
+  onName(v: string): void {
+    this.name = v.replace(/[^\p{L}\s.'-]/gu, '').slice(0, 40);
     this.error = '';
   }
 
