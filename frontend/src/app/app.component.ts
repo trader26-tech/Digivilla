@@ -15,6 +15,7 @@ import { GoalPickerComponent } from './goal-picker.component';
 import { GoalHomeComponent } from './goal-home.component';
 import { GoalResultComponent } from './goal-result.component';
 import { GoalTimingComponent } from './goal-timing.component';
+import { WelcomeGateComponent } from './welcome-gate.component';
 import { HomeComponent } from './home.component';
 import { IntroComponent } from './intro.component';
 import { LandingComponent } from './landing.component';
@@ -37,6 +38,7 @@ type Tab = 'home' | 'invest';
     GoalPickerComponent,
     GoalIntroComponent,
     GoalTimingComponent,
+    WelcomeGateComponent,
     GoalResultComponent,
     GoalHomeComponent,
     IntroComponent,

@@ -1,6 +1,13 @@
 <!-- Cinematic welcome, every launch, before everything -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
+<!-- "Why us" welcome gate: Log in (returning) or Get started (new) -->
+<app-welcome-gate
+  *ngIf="!intro && gate && !authed"
+  (getStarted)="onGateStart()"
+  (loggedIn)="onGateLogin($event)"
+></app-welcome-gate>
+
 <!-- Shared onboarding chrome: MyLakshyas brand + slim step progress.
      A minimal top strip — a small wordmark and a thin progress line that
      advances per step. Kept light so it reads as part of each screen. -->
@@ -31,7 +38,7 @@
 
 <!-- Pre-login flow. Wrapped so the steps slide between each other as one
      continuous journey (forward = slide left, back = slide right). -->
-<div class="pre-login" [class.has-chrome]="showChrome" *ngIf="!intro && !authed" [@stepAnim]="preStep">
+<div class="pre-login" [class.has-chrome]="showChrome" *ngIf="!intro && !gate && !authed" [@stepAnim]="preStep">
   <!-- Step 1: no-login goal picker -->
   <app-goal-picker
     *ngIf="!pickedGoal && !chosenGoal"
