@@ -3,25 +3,37 @@
   <div class="glow" aria-hidden="true"></div>
 
   <div class="gate-inner">
-    <span class="eyebrow">Why MyLakshyas</span>
-
-    <h1 class="pitch">
-      Most people never<br />start investing.<br />
-      <span class="accent">We fix that.</span>
+    <h1 class="pitch" aria-label="Most people invest without knowing what for. We help you invest toward what actually matters — your goals.">
+      <span class="ln">
+        <span class="w" style="--i:0">Most</span>
+        <span class="w" style="--i:1">people</span>
+        <span class="w" style="--i:2">invest</span>
+      </span>
+      <span class="ln">
+        <span class="w" style="--i:3">without</span>
+        <span class="w" style="--i:4">knowing</span>
+        <span class="w dim" style="--i:5">what&nbsp;for.</span>
+      </span>
+      <span class="ln gap">
+        <span class="w accent" style="--i:6">We&nbsp;help&nbsp;you&nbsp;invest</span>
+      </span>
+      <span class="ln">
+        <span class="w accent" style="--i:7">toward&nbsp;what&nbsp;matters</span>
+        <span class="w" style="--i:8">—</span>
+      </span>
+      <span class="ln">
+        <span class="w" style="--i:9">your</span>
+        <span class="w grad" style="--i:10">goals.</span>
+      </span>
     </h1>
+  </div>
 
-    <ul class="reasons">
-      <li><span class="r-mark"></span>We turn your dream into a clear monthly plan — no jargon.</li>
-      <li><span class="r-mark"></span>We pick the funds, do the math, and rebalance for you.</li>
-      <li><span class="r-mark"></span>You just choose a goal. We handle the rest.</li>
-    </ul>
-
-    <div class="cta-stack">
-      <button class="cta primary" (click)="start()">
-        Continue
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
+  <!-- CTA pinned to the bottom, matching every other screen -->
+  <div class="gate-foot">
+    <button class="cta primary" (click)="start()">
+      Get started
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
 </section>
 

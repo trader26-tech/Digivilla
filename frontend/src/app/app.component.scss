@@ -1,6 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
+  min-height: 100dvh;
   background: transparent;
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -94,6 +95,7 @@
 .shell {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ---- add-goal overlay: the onboarding flow, full-screen over the app ---- */
@@ -243,6 +245,7 @@
   top: 0;
   right: 0;
   height: 100vh;
+  height: 100dvh;
   width: 420px;
   max-width: 92vw;
   background: var(--surface);
