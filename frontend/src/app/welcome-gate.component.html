@@ -18,11 +18,8 @@
 
     <div class="cta-stack">
       <button class="cta primary" (click)="start()">
-        Get started
+        Continue
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="cta ghost" (click)="openLogin()">
-        Already have an account? <b>Log in</b>
       </button>
     </div>
   </div>
@@ -35,8 +32,8 @@
 
   <!-- STEP 1: phone -->
   <ng-container *ngIf="step === 'phone'">
-    <h2>Welcome back</h2>
-    <p class="ls-sub">Log in with your phone number to pick up right where you left off.</p>
+    <h2>Enter your number</h2>
+    <p class="ls-sub">We'll text you a one-time code to get you in. New or returning — same door.</p>
 
     <label class="field">
       <span class="field-l">Phone number</span>

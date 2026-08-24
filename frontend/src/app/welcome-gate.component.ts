@@ -71,9 +71,9 @@ export class WelcomeGateComponent {
     this.error = '';
   }
 
-  // ---- the two paths ----
+  // ---- entry: everyone logs in (phone + OTP), then lands on Home ----
   start(): void {
-    this.getStarted.emit();
+    this.openLogin();
   }
 
   openLogin(): void {
