@@ -543,12 +543,16 @@
 .sb-col:nth-child(4) .sb-stack { animation-delay: 0.42s; }
 .sb-col:nth-child(5) .sb-stack { animation-delay: 0.51s; }
 .sb-col:nth-child(6) .sb-stack { animation-delay: 0.60s; }
-.sb-yr { font-size: 0.72rem; font-weight: 700; color: var(--ink); opacity: 0.55; }
-.sb-col:last-child .sb-yr { color: var(--brass); opacity: 1; }
+.sb-yr { font-size: 0.7rem; font-weight: 700; color: var(--ink); opacity: 0.55; }
+.sb-col:first-child .sb-yr { color: var(--ink); opacity: 0.75; }
 
-.stack-foot { margin: 1.1rem 0 0; font-size: 0.9rem; line-height: 1.45; color: var(--ink); opacity: 0.82; }
-.stack-foot strong.pos { color: var(--positive); font-family: var(--font-display); font-weight: 700; }
+.stack-foot { margin: 1.1rem 0 0.35rem; font-size: 0.92rem; line-height: 1.45; color: var(--ink); opacity: 0.85; }
+.stack-foot strong { font-family: var(--font-display); font-weight: 700; }
+.stack-foot strong.pos { color: var(--positive); }
 .sf-mult { display: inline-block; margin-left: 0.3rem; font-weight: 700; font-size: 0.82rem; color: var(--positive); }
+.stack-basis { margin: 0; font-size: 0.76rem; line-height: 1.4; color: var(--ink); opacity: 0.55; }
+.stack-basis strong { font-weight: 700; color: var(--ink); opacity: 1; }
+.stack-basis .star { color: var(--terracotta); font-weight: 700; }
 
 /* ---------- funds (filtered by asset, tap to expand) ---------- */
 .funds-card .card-title { margin-bottom: 0.2rem; }
