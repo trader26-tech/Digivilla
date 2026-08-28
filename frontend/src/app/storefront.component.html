@@ -85,32 +85,11 @@
         <span class="tile-price">{{ compact(t.p.price) }}</span>
       </div>
 
-      <!-- risk label (own row) — tap for a small risk/return popover -->
-      <div class="risk-wrap">
-        <button
-          class="tile-loc"
-          type="button"
-          [class.on]="isRiskInfoOpen(t.p, t.v.key)"
-          (click)="toggleRiskInfo(t.p, t.v.key); $event.stopPropagation()"
-          [attr.aria-expanded]="isRiskInfoOpen(t.p, t.v.key)"
-          [attr.aria-label]="riskWord(t.v.key) + ' — see risk and return'"
-        >
-          <span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>
-          <span class="loc-txt">{{ t.v.label }}</span>
-          <svg class="loc-go" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-
-        <!-- small popover -->
-        <div class="risk-pop" *ngIf="isRiskInfoOpen(t.p, t.v.key)" (click)="$event.stopPropagation()">
-          <span class="rp-head"><span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>{{ riskWord(t.v.key) }}</span>
-          <div class="rp-rows">
-            <div class="rp-row"><span>Expected return</span><b>{{ t.v.growthPct }}% / yr</b></div>
-            <div class="rp-row"><span>Past 3 years</span><b>{{ t.v.past3y }}% / yr</b></div>
-            <div class="rp-row"><span>Monthly income</span><b>{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : 'Nil' }}</b></div>
-          </div>
-          <button class="rp-detail" type="button" (click)="open(t.p, t.v.key); $event.stopPropagation()">View details →</button>
-        </div>
-      </div>
+      <!-- risk + return level (static) -->
+      <span class="tile-loc" [attr.data-v]="t.v.key">
+        <span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>
+        {{ t.v.label }}
+      </span>
 
       <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
       <div class="tile-stats">

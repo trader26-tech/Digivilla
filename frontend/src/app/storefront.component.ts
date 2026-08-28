@@ -132,27 +132,6 @@ export class StorefrontComponent {
     this.openProperty.emit({ property: p.key, variant });
   }
 
-  /** Which tile's risk popover is open, e.g. "flat:construction". null = none. */
-  riskInfoKey: string | null = null;
-
-  /** Tapping the risk label toggles a small inline popover with this plot's
-   *  risk/return — no full-screen map. */
-  toggleRiskInfo(p: Property, vk: VariantKey): void {
-    const key = `${p.key}:${vk}`;
-    this.riskInfoKey = this.riskInfoKey === key ? null : key;
-  }
-  isRiskInfoOpen(p: Property, vk: VariantKey): boolean {
-    return this.riskInfoKey === `${p.key}:${vk}`;
-  }
-  closeRiskInfo(): void {
-    this.riskInfoKey = null;
-  }
-
-  /** Short risk word for the popover heading. */
-  riskWord(vk: VariantKey): string {
-    return vk === 'ready' ? 'Low risk' : vk === 'construction' ? 'Medium risk' : 'High risk';
-  }
-
   /** The development name for a tile — from the shared SCHEME_META (single
    *  source of truth; now the Chennai locality names). Keeps tile↔detail in sync. */
   schemeName(p: Property, vk: VariantKey): string {

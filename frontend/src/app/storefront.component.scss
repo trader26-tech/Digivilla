@@ -199,99 +199,45 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-/* risk label = the tappable "open the risk–reward map" control (own row) */
+/* risk + return level — a quiet static chip on its own row */
 .tile-loc {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
+  gap: 0.38rem;
   margin: 0.55rem 0 0;
-  padding: 0.28rem 0.6rem;
-  border: none;
+  padding: 0.3rem 0.65rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--brass) 12%, transparent);
   font-family: var(--font-body);
   font-size: 0.76rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--ink);
-  cursor: pointer;
+  letter-spacing: 0.005em;
   max-width: 100%;
-  transition: background 0.15s ease, transform 0.12s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.tile-loc:hover { background: color-mix(in srgb, var(--brass) 20%, transparent); }
-.tile-loc:active { transform: scale(0.97); }
-.tile-loc.on .loc-go { transform: rotate(180deg); }
-.loc-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.loc-go { flex: none; color: var(--brass); opacity: 0.8; transition: transform 0.2s ease; }
+/* tint per risk level for instant read */
+.tile-loc[data-v='ready'] {
+  background: color-mix(in srgb, var(--positive) 12%, transparent);
+  color: var(--positive);
+}
+.tile-loc[data-v='construction'] {
+  background: color-mix(in srgb, var(--brass) 14%, transparent);
+  color: color-mix(in srgb, var(--brass) 88%, var(--ink));
+}
+.tile-loc[data-v='prelaunch'] {
+  background: color-mix(in srgb, var(--terracotta) 12%, transparent);
+  color: var(--terracotta);
+}
 
 /* risk colour dot */
 .risk-dot {
   flex: none;
-  width: 8px; height: 8px;
+  width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--brass);
+  background: currentColor;
 }
-.risk-dot[data-v='ready'] { background: var(--positive); }
-.risk-dot[data-v='construction'] { background: var(--brass); }
-.risk-dot[data-v='prelaunch'] { background: var(--terracotta); }
-
-/* ---------- risk popover ---------- */
-.risk-wrap { position: relative; align-self: flex-start; max-width: 100%; }
-.risk-pop {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 0;
-  z-index: 5;
-  width: max-content;
-  min-width: 200px;
-  max-width: min(260px, 78vw);
-  padding: 0.7rem 0.8rem;
-  border: 1px solid var(--survey);
-  border-radius: 12px;
-  background: var(--paper);
-  box-shadow: 0 16px 34px -14px rgba(22, 48, 43, 0.4);
-  cursor: default;
-  animation: pop 0.16s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-@keyframes pop {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-.rp-head {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: 0.5rem;
-}
-.rp-rows { display: flex; flex-direction: column; gap: 0.35rem; }
-.rp-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.8rem;
-}
-.rp-row span { color: var(--ink); opacity: 0.6; }
-.rp-row b { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rp-detail {
-  width: 100%;
-  min-height: 40px;
-  margin-top: 0.6rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--brass);
-  color: var(--paper);
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: filter 0.15s ease;
-}
-.rp-detail:hover { filter: brightness(1.05); }
 /* the amount to invest — the one big figure */
 .tile-price {
   flex: none;
