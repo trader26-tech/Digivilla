@@ -528,27 +528,32 @@
   background-image: linear-gradient(45deg, transparent 50%, var(--brass) 50%), linear-gradient(135deg, var(--brass) 50%, transparent 50%);
   background-position: calc(100% - 14px) center, calc(100% - 9px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
 }
-.plots-row { display: flex; gap: 0.5rem; margin: 0.2rem 0 1.2rem; }
-.plot-tab {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
-  padding: 0.7rem 0.4rem; border: 1.5px solid var(--survey); border-radius: 12px;
-  background: var(--paper); cursor: pointer; font-family: var(--font-body); color: var(--ink);
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+/* compact segmented pill row — small, so the chart is the main thing */
+.plots-row {
+  display: inline-flex; gap: 0; margin: 0.1rem 0 1rem;
+  border: 1px solid var(--survey); border-radius: 9px; overflow: hidden;
+  background: color-mix(in srgb, var(--survey) 22%, var(--paper));
 }
-.plot-tab:hover { border-color: color-mix(in srgb, var(--positive) 45%, var(--survey)); }
-.plot-tab:active { transform: scale(0.98); }
-.plot-tab.on { border-color: var(--positive); background: color-mix(in srgb, var(--positive) 8%, var(--paper)); }
-.pt-n { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--ink); }
-.plot-tab.on .pt-n { color: var(--positive); }
-.pt-l { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.55; }
-.pt-amt { font-size: 0.82rem; font-weight: 700; color: var(--ink); opacity: 0.75; margin-top: 0.1rem; }
+.plot-tab {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.3rem 0.7rem; border: none; background: transparent; cursor: pointer;
+  font-family: var(--font-body); color: var(--ink);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.plot-tab + .plot-tab { border-left: 1px solid var(--survey); }
+.plot-tab:hover { background: color-mix(in srgb, var(--brass) 8%, transparent); }
+.plot-tab.on { background: var(--ink); color: var(--paper); }
+.pt-n { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; line-height: 1; }
+.pt-l { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.6; }
+.pt-amt { font-size: 0.74rem; font-weight: 700; opacity: 0.75; }
+.plot-tab.on .pt-l, .plot-tab.on .pt-amt { opacity: 0.85; }
 
 /* ── stacked growth bars: invested base + gain on top, year by year ─────── */
 .stack-legend { display: flex; gap: 1.2rem; margin: 0.4rem 0 1rem; }
 .sl-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.75; }
 .sl-dot { width: 11px; height: 11px; border-radius: 3px; }
-.sl-dot.invested { background: color-mix(in srgb, var(--ink) 32%, var(--paper)); }
-.sl-dot.gain { background: var(--positive); }
+.sl-dot.invested { background: color-mix(in srgb, var(--ink) 55%, var(--paper)); }
+.sl-dot.gain { background: color-mix(in srgb, var(--ink) 22%, var(--paper)); }
 
 .stack-bars { display: flex; gap: 0.5rem; align-items: end; height: 200px; padding-top: 0.4rem; }
 .sb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.35rem; }
