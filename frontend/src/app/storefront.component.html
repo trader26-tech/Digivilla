@@ -79,7 +79,7 @@
 
             <!-- figures: Land shows growth only; others show income + growth -->
             <span class="r-figs" *ngIf="p.incomePays; else growthOnly">
-              <span class="r-income">{{ inr(p.variants[vk].monthlyIncome) }}<span class="u">/mo</span></span>
+              <span class="r-income">{{ inr(p.variants[vk].monthlyIncome!) }}<span class="u">/mo</span></span>
               <span class="r-growth">+{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%*</span>
             </span>
             <ng-template #growthOnly>

@@ -151,10 +151,15 @@ export class LandDetailComponent implements OnInit {
     const vol = (m.volatility ?? 14) / 100;
     return this.horizons.map(y => {
       const mid = amt * Math.pow(1 + er, y);
-      // 1-sigma-ish band on the compound outcome, scaled by √time (random walk).
-      const spread = vol * Math.sqrt(y);
-      const low = amt * Math.pow(1 + Math.max(er - spread, -0.6), y);
-      const high = amt * Math.pow(1 + er + spread, y);
+      // Band on the *annualised* return, narrowing with time — over a long
+      // horizon good and bad years average out, so the band should tighten, not
+      // explode. (A √y spread on the compound outcome balloons to a meaningless
+      // "₹0 to thousands of crore" range.) Scale the annual sigma by 1/√y.
+      const spread = Math.min(vol / Math.sqrt(y), 0.9);
+      const lowRate = Math.max(er - spread, -0.15);
+      const highRate = er + spread;
+      const low = amt * Math.pow(1 + lowRate, y);
+      const high = amt * Math.pow(1 + highRate, y);
       return { year: y, low, mid, high };
     });
   });
