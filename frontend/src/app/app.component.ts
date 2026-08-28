@@ -5,6 +5,7 @@ import { IntroComponent } from './intro.component';
 import { LandDetailComponent } from './land-detail.component';
 import { PropertyDetailComponent } from './property-detail.component';
 import { PropertyKey } from './property-package.data';
+import { RiskMapComponent } from './risk-map.component';
 import { StorefrontComponent } from './storefront.component';
 
 type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
@@ -17,7 +18,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, IntroComponent, StorefrontComponent, LandDetailComponent, PropertyDetailComponent],
+  imports: [CommonModule, IntroComponent, StorefrontComponent, LandDetailComponent, PropertyDetailComponent, RiskMapComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
