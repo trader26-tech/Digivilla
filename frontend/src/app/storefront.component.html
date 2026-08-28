@@ -1,8 +1,81 @@
 <main class="deed">
-  <!-- ===== 3D terrain map (three.js) — full-bleed hero; elevation = rent ===== -->
+  <!-- ===== dark "atlas" map — full-bleed hero; glow/height = rent ===== -->
   <section class="geo" aria-label="Risk and reward map of every estate">
-    <div class="geo-canvas">
-      <app-terrain-map (explore)="openProperty.emit({ property: $event, variant: 'balanced' })"></app-terrain-map>
+    <div class="geo-canvas" (click)="selectedSpot.set(null)">
+      <!-- dark map base: glowing roads, districts, rent "heat" -->
+      <svg class="atlas" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <radialGradient id="heatLand" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#2E6B4F" stop-opacity="0.9"/><stop offset="100%" stop-color="#2E6B4F" stop-opacity="0"/></radialGradient>
+          <radialGradient id="heatFlat" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#C89A46" stop-opacity="0.9"/><stop offset="100%" stop-color="#C89A46" stop-opacity="0"/></radialGradient>
+          <radialGradient id="heatApartment" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#5B9BD1" stop-opacity="0.9"/><stop offset="100%" stop-color="#5B9BD1" stop-opacity="0"/></radialGradient>
+          <radialGradient id="heatDuplex" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#D98A5B" stop-opacity="0.95"/><stop offset="100%" stop-color="#D98A5B" stop-opacity="0"/></radialGradient>
+        </defs>
+        <!-- deep base -->
+        <rect x="0" y="0" width="100" height="100" fill="#16211f"/>
+        <!-- district blocks -->
+        <g class="atlas-blocks">
+          <rect x="6" y="10" width="26" height="20" rx="2"/><rect x="40" y="6" width="30" height="16" rx="2"/>
+          <rect x="74" y="12" width="20" height="26" rx="2"/><rect x="10" y="40" width="22" height="26" rx="2"/>
+          <rect x="60" y="44" width="30" height="22" rx="2"/><rect x="38" y="34" width="18" height="18" rx="2"/>
+          <rect x="4" y="72" width="34" height="20" rx="2"/><rect x="66" y="72" width="28" height="18" rx="2"/>
+        </g>
+        <!-- glowing "roads" grid -->
+        <g class="atlas-roads">
+          <line x1="0" y1="34" x2="100" y2="34"/><line x1="0" y1="68" x2="100" y2="68"/>
+          <line x1="36" y1="0" x2="36" y2="100"/><line x1="72" y1="0" x2="100" y2="100"/>
+          <path d="M0 90 Q 40 74 72 82 T 100 70"/>
+          <path d="M12 0 Q 20 40 8 68 T 24 100"/>
+        </g>
+        <!-- rent heat blooms — one per property, size = rent -->
+        <ellipse *ngFor="let s of spots" class="atlas-heat"
+          [attr.cx]="s.x" [attr.cy]="s.y" [attr.rx]="8 + s.glow * 26" [attr.ry]="8 + s.glow * 26"
+          [attr.fill]="'url(#heat' + s.propName + ')'"
+          [class.dim]="selectedSpot() !== null && !isSpotSelected(s)"/>
+      </svg>
+
+      <!-- edge captions -->
+      <span class="geo-cap up">↑ pays more rent</span>
+      <span class="geo-cap side">more risk →</span>
+
+      <!-- legend, TOP-RIGHT on the map -->
+      <div class="atlas-legend" (click)="$event.stopPropagation()">
+        <span *ngFor="let p of mapProps" class="al-item"><span class="al-dot" [attr.data-p]="p"></span>{{ propName(p) }}</span>
+      </div>
+
+      <!-- glowing markers -->
+      <button *ngFor="let s of spots" class="atlas-pin" type="button"
+        [attr.data-p]="s.property"
+        [class.sel]="isSpotSelected(s)"
+        [class.dim]="selectedSpot() !== null && !isSpotSelected(s)"
+        [style.left.%]="s.x" [style.top.%]="s.y"
+        (click)="selectSpot(s); $event.stopPropagation()"
+        [attr.aria-label]="s.propName + (s.rentHi > 0 ? ', up to ' + rentShort(s.rentHi) + ' a month rent' : ', growth only')">
+        <span class="ap-halo"></span>
+        <span class="ap-dot"></span>
+        <span class="ap-label">{{ s.propName }}<em *ngIf="s.rentHi > 0"> · {{ rentShort(s.rentHi) }}/mo</em><em *ngIf="s.rentHi === 0" class="growth"> · growth</em></span>
+      </button>
+
+      <!-- callout for the selected spot -->
+      <div class="atlas-callout" *ngIf="selectedSpot() as sp"
+        [style.left.%]="sp.x" [style.top.%]="sp.y"
+        [class.flip-x]="sp.x > 62" [class.flip-y]="sp.y < 34"
+        (click)="$event.stopPropagation()">
+        <div class="ac-head">
+          <span class="ac-dot" [attr.data-p]="sp.property"></span>
+          <span class="ac-name">{{ sp.propName }}</span>
+          <span class="ac-price">{{ compact(sp.price) }}</span>
+        </div>
+        <div class="ac-stats">
+          <span class="ac-stat" *ngIf="sp.rentHi > 0"><b>{{ rentShort(sp.rentLo) }}–{{ rentShort(sp.rentHi) }}</b><small>rent /mo</small></span>
+          <span class="ac-stat" *ngIf="sp.rentHi === 0"><b>Growth</b><small>no rent</small></span>
+          <span class="ac-stat"><b>{{ sp.reward | number:'1.0-1' }}%</b><small>return /yr</small></span>
+          <span class="ac-stat"><b>{{ sp.risk | number:'1.0-1' }}%</b><small>risk</small></span>
+        </div>
+        <button class="ac-go" type="button" (click)="openSpot(sp)">
+          Explore {{ sp.propName }}
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
 
       <!-- search + filter floating ON the map, near the curved bottom -->
       <div class="geo-search">

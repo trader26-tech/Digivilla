@@ -1,16 +1,31 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, signal } from '@angular/core';
 
 import {
   storeSchemeName, storeSchemeLocality,
   expectedGrowth, past3y, RISK_OF_STORE,
   riskScore, RiskScore,
+  riskOf as volOf, PACKAGES, PropertyKey,
 } from './property-package.data';
-import { TerrainMapComponent } from './terrain-map.component';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
+
+/** One property placed on the dark map. Elevation (glow size) = rent it pays;
+ *  X = risk. Land pays no rent → a flat, dim marker; Duplex → a bright peak. */
+export interface MapSpot {
+  property: PropertyKey;
+  propName: string;
+  price: number;
+  rentLo: number;
+  rentHi: number;
+  risk: number;
+  reward: number;
+  x: number;   // 0..100 horizontal (by risk)
+  y: number;   // 0..100 vertical (by rent — higher rent sits higher)
+  glow: number; // 0..1 heat/elevation (by rent)
+}
 
 /** A risk variant of a property, named in property terms rather than fund jargon:
  *   ready        = Ready-to-move  → income now, steadier (conservative)
@@ -44,7 +59,7 @@ export interface Property {
 @Component({
   selector: 'app-storefront',
   standalone: true,
-  imports: [CommonModule, FormsModule, TerrainMapComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './storefront.component.html',
   styleUrl: './storefront.component.scss',
 })
@@ -63,6 +78,53 @@ export class StorefrontComponent {
 
   /** Fires when the customer taps the risk × reward preview — opens the full map. */
   @Output() openMap = new EventEmitter<void>();
+
+  readonly mapProps: PropertyKey[] = ['land', 'flat', 'apartment', 'duplex'];
+
+  /** The four properties as spots on the dark map. */
+  private _spots?: MapSpot[];
+  get spots(): MapSpot[] {
+    if (!this._spots) this._spots = this.buildSpots();
+    return this._spots;
+  }
+  selectedSpot = signal<MapSpot | null>(null);
+
+  private buildSpots(): MapSpot[] {
+    const raw = this.properties.map((p) => {
+      const rents = this.variantOrder
+        .map((vk) => p.variants[vk].monthlyIncome)
+        .filter((r): r is number => r != null && r > 0);
+      return {
+        property: p.key, propName: p.name, price: p.price,
+        rentLo: rents.length ? Math.min(...rents) : 0,
+        rentHi: rents.length ? Math.max(...rents) : 0,
+        risk: volOf(p.key, 'balanced'),
+        reward: expectedGrowth(p.key, 'balanced'),
+      };
+    });
+    const rk = raw.map((r) => r.risk);
+    const rLo = Math.min(...rk), rHi = Math.max(...rk), rSpan = rHi - rLo || 1;
+    const maxRent = Math.max(...raw.map((r) => r.rentHi), 1);
+    return raw.map((r) => {
+      const glow = r.rentHi > 0 ? 0.32 + Math.sqrt(r.rentHi / maxRent) * 0.68 : 0.1;
+      return {
+        ...r,
+        x: 12 + ((r.risk - rLo) / rSpan) * 76,
+        y: 82 - glow * 60,     // more rent → higher on the map
+        glow,
+      };
+    });
+  }
+
+  selectSpot(s: MapSpot): void { this.selectedSpot.set(this.selectedSpot() === s ? null : s); }
+  isSpotSelected(s: MapSpot): boolean { return this.selectedSpot() === s; }
+  openSpot(s: MapSpot): void { this.openProperty.emit({ property: s.property, variant: 'balanced' }); }
+  propName(p: PropertyKey): string { return PACKAGES[p].name; }
+  rentShort(v: number): string {
+    if (v <= 0) return '';
+    if (v >= 1000) { const k = v / 1000; return '₹' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '₹' + v;
+  }
 
   /** Map the storefront's property-world variant names onto the basket risk
    *  profiles. Same mapping for every tier. */
