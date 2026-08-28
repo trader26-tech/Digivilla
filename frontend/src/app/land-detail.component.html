@@ -58,10 +58,18 @@
         </label>
       </div>
 
+      <!-- time-range tabs -->
+      <div class="range-tabs reveal" style="--s:3" role="tablist" aria-label="Time range">
+        <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
+                [class.on]="chartRange() === r.key" [attr.aria-selected]="chartRange() === r.key"
+                (click)="setRange(r.key)">{{ r.label }}</button>
+      </div>
+
       <div class="chart-loading" *ngIf="chartLoading()"><span class="spinner sm"></span> loading this fund…</div>
 
       <ng-container *ngIf="!chartLoading()">
-        <div class="chart-wrap reveal" style="--s:3">
+        <!-- re-keyed on range so the line re-draws when the window changes -->
+        <div class="chart-wrap reveal" style="--s:4" *ngFor="let _ of [chartRange() + chartSource()]">
           <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
                aria-label="Growth over time"
                (mousemove)="onChartMove($event)" (mouseleave)="onChartLeave()">
@@ -99,17 +107,12 @@
           </div>
         </div>
 
-        <!-- growth summary box, below the chart -->
-        <div class="growth-summary reveal" style="--s:4" *ngIf="growthEndpoints() as ep">
-          <div class="gs-line">
-            <span class="gs-from">₹{{ (ep.startVal | number:'1.0-0') }}</span>
-            <span class="gs-arrow" aria-hidden="true">→</span>
-            <span class="gs-to">{{ compact(ep.endVal) }}</span>
-          </div>
-          <p class="gs-sub" *ngIf="totalGrowthPct() as tg">
-            grew <strong class="pos">+{{ tg | number:'1.0-0' }}%</strong>
-            since {{ ep.startDate }} · <strong class="pos">{{ pct(m.return_3y) }}</strong> in the past 3 years
-          </p>
+        <!-- clean readout: ₹10,000 → ₹X  with a small +Y% for the window -->
+        <div class="readout reveal" style="--s:5" *ngIf="windowReadout() as r">
+          <span class="ro-from">{{ inr(r.from) }}</span>
+          <span class="ro-arrow" aria-hidden="true">→</span>
+          <span class="ro-to">{{ inr(r.to) }}</span>
+          <span class="ro-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
         </div>
       </ng-container>
     </section>

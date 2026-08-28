@@ -285,26 +285,54 @@
 .chart-loading { display: flex; align-items: center; gap: 0.5rem; padding: 3rem 0; justify-content: center; font-size: 0.85rem; color: var(--ink); opacity: 0.6; }
 .chart-sub { display: block; font-size: 0.8rem; font-weight: 600; color: var(--ink); opacity: 0.6; margin-bottom: 0.5rem; }
 
-/* growth summary box, below the chart */
-.growth-summary {
-  margin-top: 0.9rem;
-  padding: 1rem 1.15rem;
-  border: 1px solid var(--survey);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--positive) 7%, var(--paper));
+/* time-range tabs */
+.range-tabs {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0.2rem 0 0.7rem;
 }
-.gs-line {
+.range-tab {
+  border: 1px solid var(--survey);
+  border-radius: 8px;
+  background: var(--paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--ink) 60%, var(--paper));
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.range-tab:hover { border-color: var(--brass); color: var(--ink); }
+.range-tab.on {
+  border-color: var(--brass);
+  background: color-mix(in srgb, var(--brass) 10%, var(--paper));
+  color: var(--brass);
+}
+
+/* clean readout: ₹10,000 → ₹X  +Y% */
+.readout {
   display: flex;
   align-items: baseline;
-  gap: 0.55rem;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
   font-family: var(--font-display);
   font-weight: 700;
 }
-.gs-from { font-size: 1.15rem; color: var(--ink); opacity: 0.6; }
-.gs-arrow { font-size: 1.05rem; color: var(--positive); }
-.gs-to { font-size: 1.7rem; color: var(--ink); }
-.gs-sub { margin: 0.45rem 0 0; font-size: 0.88rem; font-weight: 500; color: var(--ink); opacity: 0.78; line-height: 1.4; }
-.gs-sub strong.pos { color: var(--positive); font-weight: 700; }
+.ro-from { font-size: 1.2rem; color: var(--ink); opacity: 0.55; }
+.ro-arrow { font-size: 1.1rem; color: var(--ink); opacity: 0.4; }
+.ro-to { font-size: 1.9rem; color: var(--ink); }
+.ro-pct {
+  margin-left: 0.15rem;
+  align-self: center;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+}
+.ro-pct.pos { color: var(--positive); background: color-mix(in srgb, var(--positive) 12%, var(--paper)); }
+.ro-pct.neg { color: var(--terracotta); background: color-mix(in srgb, var(--terracotta) 12%, var(--paper)); }
 
 .chart-wrap { position: relative; margin-top: 0.5rem; }
 .growth-svg { width: 100%; height: 220px; display: block; touch-action: none; }

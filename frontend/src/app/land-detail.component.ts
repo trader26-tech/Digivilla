@@ -212,6 +212,29 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     return this.fundMetrics()[Number(src)] ?? null;
   });
 
+  /** The chart series sliced to the selected time range (last N months). */
+  windowedGrowth = computed(() => {
+    const m = this.chartMetrics();
+    if (!m || !m.growth.length) return [];
+    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 36;
+    const pts = m.growth;
+    // +1 so a 36-month window spans 36 intervals (37 monthly points).
+    const start = Math.max(0, pts.length - (months + 1));
+    return pts.slice(start);
+  });
+
+  /** ₹10,000 rebased to the START of the selected window → value now, and the
+   *  % move over that window. Keeps the readout honest to the chosen range. */
+  windowReadout = computed<{ from: number; to: number; pct: number; startDate: string } | null>(() => {
+    const w = this.windowedGrowth();
+    if (w.length < 2) return null;
+    const base = 10000;
+    const first = w[0].value, last = w[w.length - 1].value;
+    if (first <= 0) return null;
+    const to = base * (last / first);
+    return { from: base, to, pct: (last / first - 1) * 100, startDate: w[0].date };
+  });
+
   ngOnInit(): void {
     this.active.set(this.initialVariant);
     this.startBenefits();
@@ -329,13 +352,12 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   private get plotW() { return this.chartW - this.padL - this.padR; }
   private get plotH() { return this.chartH - this.padT - this.padB; }
 
-  /** Value bounds of the current series, padded a touch at the top. */
+  /** Value bounds of the windowed series. */
   private vBounds = computed<{ lo: number; hi: number } | null>(() => {
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length) return null;
-    const vals = m.growth.map(g => g.value);
-    const lo = Math.min(...vals), hi = Math.max(...vals);
-    return { lo: Math.min(lo, 0) === lo ? lo : lo, hi };
+    const w = this.windowedGrowth();
+    if (!w.length) return null;
+    const vals = w.map(g => g.value);
+    return { lo: Math.min(...vals), hi: Math.max(...vals) };
   });
 
   private xAt(i: number, n: number): number {
@@ -347,37 +369,23 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   }
 
   growthPath = computed<string>(() => {
-    const m = this.chartMetrics(); const b = this.vBounds();
-    if (!m || !b) return '';
-    return m.growth.map((g, i) =>
-      `${i === 0 ? 'M' : 'L'}${this.xAt(i, m.growth.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`
+    const w = this.windowedGrowth(); const b = this.vBounds();
+    if (!w.length || !b) return '';
+    return w.map((g, i) =>
+      `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`
     ).join(' ');
   });
 
   growthArea = computed<string>(() => {
     const line = this.growthPath();
-    const m = this.chartMetrics();
-    if (!line || !m) return '';
+    const w = this.windowedGrowth();
+    if (!line || !w.length) return '';
     const baseY = this.chartH - this.padB;
-    const lastX = this.xAt(m.growth.length - 1, m.growth.length);
+    const lastX = this.xAt(w.length - 1, w.length);
     return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
   });
 
-  drawdownPath = computed<string>(() => {
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length) return '';
-    const dds = m.growth.map(g => g.drawdown);
-    const lo = Math.min(...dds), hi = Math.max(...dds, 0);
-    const span = hi - lo || 1;
-    // small strip 46 tall, 0 at top
-    return m.growth.map((g, i) => {
-      const x = this.xAt(i, m.growth.length);
-      const y = ((hi - g.drawdown) / span) * 46;
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
-    }).join(' ');
-  });
-
-  /** Y-axis ticks: 4 evenly spaced ₹ amounts. */
+  /** Y-axis ticks: 4 evenly spaced ₹ amounts across the windowed range. */
   yTicks = computed<{ y: number; label: string }[]>(() => {
     const b = this.vBounds();
     if (!b) return [];
@@ -390,24 +398,34 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     return out;
   });
 
-  /** X-axis ticks: ~5 dates spread across the series. */
+  /** X-axis ticks: ~5 dates spread across the windowed series (Y-M for short ranges). */
   xTicks = computed<{ x: number; label: string }[]>(() => {
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length) return [];
-    const n = m.growth.length;
+    const w = this.windowedGrowth();
+    if (!w.length) return [];
+    const n = w.length;
+    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 36;
+    const shortRange = months <= 24;
     const count = Math.min(5, n);
     const out: { x: number; label: string }[] = [];
     for (let i = 0; i < count; i++) {
       const idx = Math.round((i / (count - 1)) * (n - 1));
-      out.push({ x: this.xAt(idx, n), label: (m.growth[idx].date || '').slice(0, 4) });
+      const d = w[idx].date || '';
+      // short ranges show "Mon 'YY", longer ranges just the year
+      out.push({ x: this.xAt(idx, n), label: shortRange ? this.monLabel(d) : d.slice(0, 4) });
     }
     return out;
   });
 
+  private monLabel(ym: string): string {
+    const [y, mo] = ym.split('-');
+    const MON = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return mo ? `${MON[+mo] || ''} '${(y || '').slice(2)}` : (y || '');
+  }
+
   growthEndpoints = computed(() => {
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length) return null;
-    const first = m.growth[0], last = m.growth[m.growth.length - 1];
+    const w = this.windowedGrowth();
+    if (!w.length) return null;
+    const first = w[0], last = w[w.length - 1];
     return { startVal: first.value, endVal: last.value, startDate: first.date, endDate: last.date };
   });
 
@@ -416,27 +434,25 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   // ── Hover ────────────────────────────────────────────────────────────────────
   hoverIdx = signal<number | null>(null);
 
-  /** Resolve the mouse x (in the SVG's own viewBox units) to the nearest point. */
   onChartMove(ev: MouseEvent): void {
     const svg = (ev.currentTarget as SVGSVGElement);
     const rect = svg.getBoundingClientRect();
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length || rect.width === 0) return;
+    const w = this.windowedGrowth();
+    if (!w.length || rect.width === 0) return;
     const xView = ((ev.clientX - rect.left) / rect.width) * this.chartW;
     const frac = Math.max(0, Math.min(1, (xView - this.padL) / this.plotW));
-    this.hoverIdx.set(Math.round(frac * (m.growth.length - 1)));
+    this.hoverIdx.set(Math.round(frac * (w.length - 1)));
   }
   onChartLeave(): void { this.hoverIdx.set(null); }
 
-  /** The hovered point, with its screen coords + values for the tooltip. */
   hover = computed(() => {
     const i = this.hoverIdx();
-    const m = this.chartMetrics(); const b = this.vBounds();
-    if (i == null || !m || !b || !m.growth[i]) return null;
-    const g = m.growth[i];
-    const x = this.xAt(i, m.growth.length);
+    const w = this.windowedGrowth(); const b = this.vBounds();
+    if (i == null || !w.length || !b || !w[i]) return null;
+    const g = w[i];
+    const x = this.xAt(i, w.length);
     const y = this.yAt(g.value, b.lo, b.hi);
-    const base = m.base_investment || (m.growth[0]?.value ?? 10000);
+    const base = w[0]?.value ?? g.value;   // % vs the window's own start
     const growthPct = base > 0 ? (g.value / base - 1) * 100 : 0;
     return { x, y, value: g.value, date: g.date, growthPct, drawdown: g.drawdown };
   });
