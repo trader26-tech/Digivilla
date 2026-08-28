@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -49,7 +49,7 @@ interface MapPin {
   templateUrl: './property-detail.component.html',
   styleUrl: './property-detail.component.scss',
 })
-export class PropertyDetailComponent implements OnInit {
+export class PropertyDetailComponent implements OnInit, OnDestroy {
   /** Which tier to show (set by the storefront tile that was tapped). */
   @Input() property: PropertyKey = 'flat';
   /** Which risk variant to open on. */
@@ -84,11 +84,51 @@ export class PropertyDetailComponent implements OnInit {
   activeVariant = computed<Variant>(() => this.pkg().variants[this.active()]);
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
 
+  /** Reassuring messages that cycle while the data loads, so the wait reads as
+   *  "preparing your property", not a spinner. Index advances on a timer. */
+  loadStep = signal(0);
+  private loadTimer?: ReturnType<typeof setInterval>;
+  loadMessages = computed<string[]>(() => {
+    const n = this.pkg().name.toLowerCase();
+    const one = n === 'land' ? 'plot' : n;
+    return this.incomePays
+      ? [
+          `Preparing the best ${one}s for you, at affordable pricing…`,
+          `Scouting India’s steadiest funds for your ${one}…`,
+          `Pricing your monthly income and its safety net…`,
+          `Simulating 4,000 possible futures for this mix…`,
+          `Laying out your ${one} on the risk–reward map…`,
+        ]
+      : [
+          `Preparing the best ${one}s for you, at affordable pricing…`,
+          `Scouting India’s steadiest growth funds for your ${one}…`,
+          `Measuring how this mix has really moved…`,
+          `Simulating 4,000 possible futures for this mix…`,
+          `Laying out your ${one} on the risk–reward map…`,
+        ];
+  });
+  loadingMsg = computed<string>(() => {
+    const msgs = this.loadMessages();
+    return msgs[this.loadStep() % msgs.length];
+  });
+
   ngOnInit(): void {
     this.active.set(this.initialVariant);
     this.amount.set(this.ticketPrice);
     this.loadAll();
+    // Cycle the reassuring copy every ~2s while loading.
+    this.loadTimer = setInterval(() => {
+      if (this.loading()) this.loadStep.update(s => s + 1);
+    }, 2000);
   }
+
+  ngOnDestroy(): void {
+    if (this.loadTimer) clearInterval(this.loadTimer);
+  }
+
+  /** Track the loading message by step so each change re-creates the node,
+   *  replaying its fade-in. */
+  trackByStep = (): number => this.loadStep();
 
   loadAll(): void {
     this.loading.set(true);

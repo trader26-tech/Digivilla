@@ -57,11 +57,47 @@
   </section>
   <p class="vblurb reveal" style="--s:2">{{ activeVariant().blurb }}</p>
 
-  <!-- ===== loading / error ===== -->
-  <div class="state" *ngIf="loading()">
-    <span class="spinner" aria-hidden="true"></span>
-    Pulling real NAV history and simulating this mix…
+  <!-- ===== loading: "preparing your property" ===== -->
+  <div class="prep" *ngIf="loading()" role="status" aria-live="polite">
+    <div class="prep-stage">
+      <!-- self-drawing building blueprint -->
+      <svg class="prep-art" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+        <!-- ground line -->
+        <path class="pa-ground" d="M20 168 H180"/>
+        <!-- tower outline -->
+        <path class="pa-draw" d="M64 168 V70 L100 44 L136 70 V168"/>
+        <!-- floors -->
+        <path class="pa-draw d" d="M64 96 H136 M64 122 H136 M64 148 H136"/>
+        <!-- windows (fade in, like lights switching on) -->
+        <g class="pa-win">
+          <rect x="74" y="104" width="12" height="10" rx="1"/>
+          <rect x="94" y="104" width="12" height="10" rx="1"/>
+          <rect x="114" y="104" width="12" height="10" rx="1"/>
+          <rect x="74" y="130" width="12" height="10" rx="1"/>
+          <rect x="94" y="130" width="12" height="10" rx="1"/>
+          <rect x="114" y="130" width="12" height="10" rx="1"/>
+        </g>
+        <!-- door -->
+        <rect class="pa-door" x="92" y="150" width="16" height="18" rx="1"/>
+        <!-- a rising "for you" pin -->
+        <g class="pa-pin">
+          <path d="M100 30 s-9 -8 -9 -15 a9 9 0 0 1 18 0 c0 7 -9 15 -9 15z"/>
+          <circle cx="100" cy="15" r="3.2" class="pa-pin-dot"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- keyed by step so Angular re-creates the node → the fade-in replays each change -->
+    <ng-container *ngFor="let m of [loadingMsg()]; trackBy: trackByStep">
+      <p class="prep-msg">{{ m }}</p>
+    </ng-container>
+
+    <!-- indeterminate shimmer bar -->
+    <div class="prep-bar" aria-hidden="true"><span></span></div>
+
+    <p class="prep-foot">Every figure is computed from real fund history — worth the moment.</p>
   </div>
+
   <div class="state err" *ngIf="error()">{{ error() }}</div>
 
   <ng-container *ngIf="!loading() && !error() && activeMetrics() as m">

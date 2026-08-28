@@ -99,6 +99,93 @@
 .spinner { width: 18px; height: 18px; border: 2px solid var(--survey); border-top-color: var(--brass); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ============================================================ */
+/* ===== "Preparing your property" loading screen ============ */
+/* ============================================================ */
+.prep {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 1rem;
+  padding: 3rem 1rem 3.5rem;
+  animation: reveal 0.4s ease both;
+}
+.prep-stage {
+  width: 168px; height: 168px;
+  display: grid; place-items: center;
+  border-radius: 20px;
+  background:
+    radial-gradient(80% 70% at 50% 30%, color-mix(in srgb, var(--brass) 10%, transparent), transparent 70%),
+    color-mix(in srgb, var(--survey) 16%, var(--paper));
+  border: 1px solid var(--survey);
+}
+.prep-art { width: 82%; height: 82%; }
+
+/* the ground + outline strokes draw themselves in, then loop subtly */
+.pa-ground { stroke: var(--survey); stroke-width: 2.5; stroke-linecap: round; }
+.pa-draw {
+  fill: none; stroke: var(--ink); stroke-width: 2.5;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 620; stroke-dashoffset: 620;
+  animation: paDraw 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.pa-draw.d { stroke: color-mix(in srgb, var(--ink) 55%, var(--paper)); stroke-width: 2; animation-delay: 0.5s; }
+@keyframes paDraw { to { stroke-dashoffset: 0; } }
+
+/* windows light up one by one, then gently pulse (like a building coming alive) */
+.pa-win rect {
+  fill: var(--brass); opacity: 0;
+  animation: paWin 0.4s ease forwards, paGlow 2.4s ease-in-out infinite;
+}
+.pa-win rect:nth-child(1) { animation-delay: 1.2s, 2.0s; }
+.pa-win rect:nth-child(2) { animation-delay: 1.35s, 2.2s; }
+.pa-win rect:nth-child(3) { animation-delay: 1.5s, 2.4s; }
+.pa-win rect:nth-child(4) { animation-delay: 1.4s, 2.1s; }
+.pa-win rect:nth-child(5) { animation-delay: 1.55s, 2.3s; }
+.pa-win rect:nth-child(6) { animation-delay: 1.7s, 2.5s; }
+@keyframes paWin { to { opacity: 0.9; } }
+@keyframes paGlow { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.95; } }
+.pa-door { fill: color-mix(in srgb, var(--ink) 70%, var(--paper)); opacity: 0; animation: paWin 0.4s ease 1.8s forwards; }
+
+/* the "for you" pin rises + bobs */
+.pa-pin { fill: none; stroke: var(--brass); stroke-width: 2.5; stroke-linejoin: round;
+  opacity: 0; transform-box: fill-box; transform-origin: 50% 100%;
+  animation: paPinIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.9s forwards, paBob 2.2s ease-in-out 2.6s infinite; }
+.pa-pin-dot { fill: var(--brass); stroke: none; }
+@keyframes paPinIn { from { opacity: 0; transform: translateY(10px) scale(0.7); } to { opacity: 1; transform: none; } }
+@keyframes paBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* the rotating reassurance line — cross-fades on each change via :key trick */
+.prep-msg {
+  margin: 0; max-width: 22ch;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.12rem; line-height: 1.3; color: var(--ink);
+  animation: msgIn 0.5s ease;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* indeterminate shimmer bar */
+.prep-bar {
+  width: min(240px, 70%); height: 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--survey) 55%, var(--paper)); overflow: hidden;
+}
+.prep-bar span {
+  display: block; height: 100%; width: 40%; border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  animation: prepSlide 1.3s ease-in-out infinite;
+}
+@keyframes prepSlide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+.prep-foot { margin: 0; font-size: 0.78rem; color: var(--ink); opacity: 0.55; max-width: 30ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-draw { stroke-dashoffset: 0; animation: none; }
+  .pa-win rect, .pa-door { opacity: 0.9; animation: none; }
+  .pa-pin { opacity: 1; animation: none; }
+  .prep-bar span { animation: none; width: 100%; background: var(--brass); opacity: 0.5; }
+  .prep-msg { animation: none; }
+}
+
 /* ---------- section scaffolding ---------- */
 .chart-head { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 1rem; }
 .chart-head.sm { margin-bottom: 0.7rem; }
