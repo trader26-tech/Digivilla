@@ -57,6 +57,14 @@ export interface PropertyPackage {
   variants: Record<VariantKey, Variant>;
 }
 
+/** Short risk word per variant — for tight spots like the variant pills,
+ *  where the full "Low risk · low returns" label won't fit. */
+export const RISK_SHORT: Record<VariantKey, string> = {
+  conservative: 'Low risk',
+  balanced: 'Medium risk',
+  aggressive: 'High risk',
+};
+
 /** Human-readable roles for the flow diagram + legend. */
 export const ROLE_LABEL: Record<LegRole, string> = {
   income: 'Income sleeve',
@@ -116,7 +124,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       balanced: {
-        key: 'balanced', label: 'Under construction', storeLabel: 'Under construction',
+        key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'The all-weather middle — real growth, without a stomach-churning ride.',
         accent: 'var(--brass)', targetGrowth: 11.8, rentMonthly: 0,
         legs: [
@@ -126,7 +134,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       aggressive: {
-        key: 'aggressive', label: 'Pre-launch', storeLabel: 'Pre-launch',
+        key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Built to appreciate — maximum compounding for the long horizon.',
         accent: 'var(--terracotta)', targetGrowth: 12.9, rentMonthly: 0,
         legs: [
@@ -158,7 +166,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       balanced: {
-        key: 'balanced', label: 'Under construction', storeLabel: 'Under construction',
+        key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'More growth behind the rent — two income sleeves share the monthly payout.',
         accent: 'var(--brass)', targetGrowth: 9.6, netGrowth: 6.6, rentMonthly: 6_250,
         legs: [
@@ -170,7 +178,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       aggressive: {
-        key: 'aggressive', label: 'Pre-launch', storeLabel: 'Pre-launch',
+        key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Rent plus a multi-asset payout, with the most growth compounding behind it.',
         accent: 'var(--terracotta)', targetGrowth: 10.3, netGrowth: 6.7, rentMonthly: 7_500,
         legs: [
@@ -206,7 +214,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       balanced: {
-        key: 'balanced', label: 'Under construction', storeLabel: 'Under construction',
+        key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'Two income sleeves pay ₹12,500 while a bigger growth core compounds behind them.',
         accent: 'var(--brass)', targetGrowth: 9.5, netGrowth: 6.5, rentMonthly: 12_500,
         legs: [
@@ -219,7 +227,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       aggressive: {
-        key: 'aggressive', label: 'Pre-launch', storeLabel: 'Pre-launch',
+        key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Three sleeves pay ₹15,000, with small/mid growth compounding hardest behind them.',
         accent: 'var(--terracotta)', targetGrowth: 10.5, netGrowth: 6.9, rentMonthly: 15_000,
         legs: [
@@ -257,7 +265,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       balanced: {
-        key: 'balanced', label: 'Under construction', storeLabel: 'Under construction',
+        key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'Three sleeves pay ₹24,750, with a broad growth core compounding behind it.',
         accent: 'var(--brass)', targetGrowth: 9.5, netGrowth: 6.5, rentMonthly: 24_750,
         legs: [
@@ -272,7 +280,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
         ],
       },
       aggressive: {
-        key: 'aggressive', label: 'Pre-launch', storeLabel: 'Pre-launch',
+        key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Four sleeves pay ₹29,700, with small/mid growth compounding hardest behind them.',
         accent: 'var(--terracotta)', targetGrowth: 10.6, netGrowth: 7.0, rentMonthly: 29_700,
         legs: [

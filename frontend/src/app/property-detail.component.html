@@ -46,7 +46,7 @@
       [style.--accent]="pkg().variants[vk].accent"
       (click)="select(vk)"
     >
-      <span class="vpill-label">{{ pkg().variants[vk].label }}</span>
+      <span class="vpill-label">{{ riskShort[vk] }}</span>
       <span class="vpill-growth" *ngIf="incomePays; else growthOnlyPill">
         {{ inr(pkg().variants[vk].rentMonthly) }}<span class="u">/mo</span>
       </span>

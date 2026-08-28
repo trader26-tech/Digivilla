@@ -8,6 +8,7 @@ import {
   LegRole,
   PACKAGES,
   PropertyKey,
+  RISK_SHORT,
   ROLE_LABEL,
   TAX_NOTE,
   Variant,
@@ -59,6 +60,8 @@ export class PropertyDetailComponent implements OnInit {
 
   readonly variantOrder = VARIANT_ORDER;
   readonly roleLabel = ROLE_LABEL;
+  /** Short risk word for the tight variant pills. */
+  readonly riskShort = RISK_SHORT;
   /** Exposed to the template for the risk–reward map readout. */
   readonly PACKAGES = PACKAGES;
   /** Order the fund roles are grouped/rendered in the breakdown. */
