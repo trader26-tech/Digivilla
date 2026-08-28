@@ -82,17 +82,8 @@
         <span class="tile-price">{{ compact(t.p.price) }}</span>
       </div>
 
-      <!-- stat row: all one size, one colour, each with an icon -->
+      <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
       <div class="tile-stats">
-        <div class="stat" *ngIf="t.p.incomePays">
-          <span class="stat-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 6v12M9 9h4.5a2 2 0 0 1 0 4H10a2 2 0 0 0 0 4h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <span class="stat-txt">
-            <span class="stat-l">Monthly income</span>
-            <span class="stat-v">{{ inr(t.v.monthlyIncome!) }}</span>
-          </span>
-        </div>
         <div class="stat">
           <span class="stat-ic" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 17l6-6 4 4 6-8M20 7h-4M20 7v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -109,6 +100,15 @@
           <span class="stat-txt">
             <span class="stat-l">Past 3 years</span>
             <span class="stat-v">{{ t.v.past3y }}%</span>
+          </span>
+        </div>
+        <div class="stat">
+          <span class="stat-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 6v12M9 9h4.5a2 2 0 0 1 0 4H10a2 2 0 0 0 0 4h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="stat-txt">
+            <span class="stat-l">Monthly income</span>
+            <span class="stat-v">{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : '—' }}</span>
           </span>
         </div>
       </div>
