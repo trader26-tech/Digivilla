@@ -131,6 +131,63 @@ def _monthly(series: list[tuple[date, float]]) -> dict[str, float]:
     return by_month
 
 
+def _nav_on_or_before(series: list[tuple[date, float]], target: date) -> Optional[float]:
+    """NAV as of `target` — the last actual NAV on or before that date (markets
+    are shut on weekends/holidays, so public sites use the prior trading day)."""
+    prior = None
+    for d, nav in series:  # series is ascending by date
+        if d <= target:
+            prior = nav
+        else:
+            break
+    return prior
+
+
+def _basket_trailing_return(
+    dailies: dict[int, list[tuple[date, float]]],
+    active_w: dict[int, float],
+    years: float,
+) -> Optional[float]:
+    """Annualised (CAGR) return of the weighted basket over the last `years`,
+    computed the way Groww / Value Research do it: value a ₹1 basket today vs
+    on the EXACT anniversary date, using each fund's real daily NAV (nearest
+    trading day on or before). Returns percent, or None if history is too short.
+    """
+    if not dailies:
+        return None
+    # "Today" = the freshest date all funds have data through (min of maxes).
+    latest = min(s[-1][0] for s in dailies.values())
+    # Exact calendar anniversary, e.g. 3 years / 5 years before `latest`.
+    whole = int(years)
+    try:
+        target = latest.replace(year=latest.year - whole)
+    except ValueError:  # Feb 29 → Feb 28
+        target = latest.replace(year=latest.year - whole, day=28)
+    if years != whole:  # fractional part (rare here) as days
+        target = target - timedelta(days=round((years - whole) * 365.25))
+
+    tw = sum(active_w.values()) or 1
+    grow_now = 0.0
+    grow_then = 0.0
+    for c, w in active_w.items():
+        s = dailies.get(c)
+        if not s or s[0][0] > target:  # fund didn't exist yet at the anniversary
+            return None
+        nav_now = s[-1][1]
+        nav_then = _nav_on_or_before(s, target)
+        if not nav_then or nav_then <= 0:
+            return None
+        wn = w / tw
+        grow_now += wn * (nav_now / nav_then)  # ₹wn grown to this multiple
+        grow_then += wn                        # ₹wn invested at the start
+    if grow_then <= 0:
+        return None
+    total_mult = grow_now / grow_then
+    if years <= 1:
+        return round((total_mult - 1) * 100, 2)
+    return round((total_mult ** (1 / years) - 1) * 100, 2)
+
+
 def analyze(items: list[dict], include_series: bool = False) -> BasketMetrics:
     """items: [{scheme_code, weight, asset_class?}]. Weights need not sum to 1."""
     funds = {f.scheme_code: f for f in dashboard.all_funds()}
@@ -145,6 +202,11 @@ def analyze(items: list[dict], include_series: bool = False) -> BasketMetrics:
     codes = list(weights.keys())
     with ThreadPoolExecutor(max_workers=min(8, len(codes) or 1)) as pool:
         series_list = list(pool.map(_fetch_series, codes))
+    # Keep the full DAILY series per fund — trailing returns are computed from
+    # exact NAV on the exact anniversary date (the method public sites use), so
+    # our CAGR matches Groww / Value Research instead of drifting on month-end
+    # sampling. The month-end series is only for the chart index / vol / drawdown.
+    dailies = {c: s for c, s in zip(codes, series_list) if s}
     monthlies = {c: _monthly(s) for c, s in zip(codes, series_list) if s}
 
     # Drop funds whose history is stale (last point older than ~3 months). Some
@@ -224,11 +286,18 @@ def analyze(items: list[dict], include_series: bool = False) -> BasketMetrics:
             return round((index[-1] / past - 1) * 100, 2)
         return round(((index[-1] / past) ** (1 / years) - 1) * 100, 2)
 
-    metrics.return_1y = ret_over(12)
-    metrics.return_3y = ret_over(36)
-    metrics.return_5y = ret_over(60)
+    # Trailing returns: EXACT daily-anniversary method (matches public sites),
+    # falling back to the month-end index only if daily history is too short.
+    metrics.return_1y = _basket_trailing_return(dailies, active_w, 1) or ret_over(12)
+    metrics.return_3y = _basket_trailing_return(dailies, active_w, 3) or ret_over(36)
+    metrics.return_5y = _basket_trailing_return(dailies, active_w, 5) or ret_over(60)
+    # Full-history CAGR: value the basket from the earliest common start to today
+    # on real daily NAV, so it's consistent with the trailing figures.
     span_years = len(index) / 12
-    if index[0] > 0 and span_years >= 1:
+    exact_full = _basket_trailing_return(dailies, active_w, round(span_years, 2)) if span_years >= 1 else None
+    if exact_full is not None:
+        metrics.cagr = exact_full
+    elif index[0] > 0 and span_years >= 1:
         metrics.cagr = round(((index[-1] / index[0]) ** (1 / span_years) - 1) * 100, 2)
 
     # Volatility from monthly returns (annualized).
