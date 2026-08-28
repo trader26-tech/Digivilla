@@ -8,8 +8,13 @@
   <!-- ===== catalogue: each variant is its own row, grouped by property ===== -->
   <div class="catalogue">
     <section class="group" *ngFor="let p of properties; let gi = index">
-      <!-- property heading -->
-      <div class="group-head reveal" [style.--s]="gi * 3 + 1">
+      <!-- property heading (Land opens its detail page) -->
+      <div class="group-head reveal" [class.linked]="p.key === 'land'"
+           [style.--s]="gi * 3 + 1"
+           (click)="open(p)"
+           [attr.role]="p.key === 'land' ? 'button' : null"
+           [attr.tabindex]="p.key === 'land' ? 0 : null"
+           (keydown.enter)="open(p)">
         <span class="g-thumb" [ngSwitch]="p.key" aria-hidden="true">
           <svg *ngSwitchCase="'land'" class="art" viewBox="0 0 120 120" fill="none">
             <path class="stroke" d="M14 84 L64 22 L106 52 L58 100 Z" />
@@ -41,6 +46,10 @@
         </span>
         <span class="g-name">{{ p.name }}</span>
         <span class="g-price">from {{ compact(p.price) }}</span>
+        <span class="g-open" *ngIf="p.key === 'land'">
+          View details
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
       </div>
 
       <!-- three variant rows -->
@@ -51,15 +60,35 @@
           [style.--s]="gi * 3 + vi + 2"
         >
           <button class="row-btn" type="button"
-            [attr.aria-label]="p.variants[vk].label + ' ' + p.name + ', ' + inr(p.variants[vk].monthlyIncome) + ' per month'">
+            (click)="open(p, vk)"
+            [attr.aria-label]="p.variants[vk].label + ' ' + p.name">
+            <!-- per-variant badge/logo -->
+            <span class="r-badge" [attr.data-v]="vk" aria-hidden="true" [ngSwitch]="vk">
+              <!-- ready-to-move = key -->
+              <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="18" height="18"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <!-- under construction = building/crane -->
+              <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="18" height="18"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <!-- pre-launch = growth arrow -->
+              <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="18" height="18"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+
             <span class="r-main">
-              <span class="r-label">{{ p.variants[vk].label }} {{ p.name }}</span>
+              <span class="r-label">{{ p.variants[vk].label }}</span>
               <span class="r-note">{{ p.variants[vk].note }}</span>
             </span>
-            <span class="r-figs">
+
+            <!-- figures: Land shows growth only; others show income + growth -->
+            <span class="r-figs" *ngIf="p.incomePays; else growthOnly">
               <span class="r-income">{{ inr(p.variants[vk].monthlyIncome) }}<span class="u">/mo</span></span>
-              <span class="r-growth">{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%<span class="u">/yr*</span></span>
+              <span class="r-growth">+{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%*</span>
             </span>
+            <ng-template #growthOnly>
+              <span class="r-figs">
+                <span class="r-income growth">{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%<span class="u">/yr*</span></span>
+                <span class="r-growth muted">growth only</span>
+              </span>
+            </ng-template>
+
             <svg class="r-chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </li>

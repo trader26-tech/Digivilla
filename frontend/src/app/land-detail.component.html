@@ -147,8 +147,11 @@
       <div class="bars">
         <div class="bar-col" *ngFor="let r of projection()">
           <div class="bar-stack" [style.height.%]="barHeight(r.high)">
+            <!-- shaded band spans low→high; the bar's full height is `high`, so
+                 the band fills the top (high−low)/high of it. -->
             <div class="bar-band" [style.height.%]="(r.high - r.low) / r.high * 100"></div>
-            <div class="bar-mid" [style.bottom.%]="(r.mid - r.low) / r.high * 100 * ((r.high - r.low) / r.high)"></div>
+            <!-- median line sits at mid/high of the bar height, measured from base. -->
+            <div class="bar-mid" [style.bottom.%]="r.mid / r.high * 100"></div>
           </div>
           <div class="bar-vals">
             <span class="bar-mid-v">{{ compact(r.mid) }}</span>

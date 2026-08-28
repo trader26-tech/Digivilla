@@ -2,4 +2,14 @@
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
 <!-- The storefront: the four property tiers. -->
-<app-storefront *ngIf="!intro"></app-storefront>
+<app-storefront
+  *ngIf="!intro && landVariant === null"
+  (openLand)="openLand($event)"
+></app-storefront>
+
+<!-- Land detail — the deep-dive page for the Land tier. -->
+<app-land-detail
+  *ngIf="!intro && landVariant !== null"
+  [initialVariant]="landVariant"
+  (back)="closeLand()"
+></app-land-detail>

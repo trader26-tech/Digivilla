@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
@@ -84,6 +84,8 @@ const HORIZONS = [1, 3, 5, 10, 20];
   styleUrl: './land-detail.component.scss',
 })
 export class LandDetailComponent implements OnInit {
+  /** Which variant to open on (set by the storefront row that was tapped). */
+  @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
 
   private api = inject(LandDetailService);
@@ -107,6 +109,7 @@ export class LandDetailComponent implements OnInit {
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
 
   ngOnInit(): void {
+    this.active.set(this.initialVariant);
     this.loadAll();
   }
 
