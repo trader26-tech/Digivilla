@@ -7,10 +7,10 @@
  * possession period). Growth funds NEVER pay monthly — they feed the income
  * sleeve once a year via a client-approved switch. Liquid is emergency-only.
  *
- * The scheme_code on each leg is the AMFI code we actually analyse against real
- * NAV history (a couple of labels map to the closest available scheme). Legs
- * without a code (e.g. a second arbitrage sleeve that mirrors the first) reuse a
- * representative code so the blended-basket analytics stay honest.
+ * The scheme_code on each leg is the AMFI code we analyse against real NAV
+ * history — REGULAR PLAN (Growth) for every fund, since Regular is the plan we
+ * sell, so every return shown is the real Regular-plan return the customer gets
+ * (Regular returns are lower than Direct — this is deliberate and correct).
  */
 
 export type PropertyKey = 'land' | 'flat' | 'apartment' | 'duplex';
