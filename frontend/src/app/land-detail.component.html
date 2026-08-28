@@ -10,30 +10,6 @@
     <span class="plate"><span class="plate-mark" aria-hidden="true">◈</span>PropertyNest</span>
   </header>
 
-  <!-- ===== variant selector — uses the tile names, no risk jargon ===== -->
-  <nav class="tabs" role="tablist" aria-label="Choose a plot">
-    <button
-      *ngFor="let v of variants"
-      class="tab"
-      type="button"
-      role="tab"
-      [class.on]="active() === v.key"
-      [attr.aria-selected]="active() === v.key"
-      (click)="select(v.key)"
-    >{{ v.name }}</button>
-  </nav>
-
-  <!-- ===== ONE hero: the tile name + the single headline figure ===== -->
-  <section class="hero" [attr.data-v]="active()">
-    <span class="hero-kicker">Land · {{ compact(ticketPrice) }}</span>
-    <h1 class="hero-name">{{ activeVariant().name }}</h1>
-    <div class="hero-fig">
-      <span class="hero-val">~{{ pct(activeMetrics()?.expected_return ?? activeVariant().targetGrowth) }}</span>
-      <span class="hero-unit">expected growth p.a.</span>
-    </div>
-    <p class="hero-sub">Capital appreciation only — no rent, no tenants.</p>
-  </section>
-
   <!-- ===== loading / error ===== -->
   <div class="state" *ngIf="loading()">
     <span class="spinner" aria-hidden="true"></span> Pulling real fund history…
@@ -41,29 +17,37 @@
   <div class="state err" *ngIf="error()">{{ error() }}</div>
 
   <ng-container *ngIf="!loading() && !error() && activeMetrics() as m">
-    <!-- ===== compact ratio strip ===== -->
-    <section class="ratios">
-      <div class="ratio"><span class="r-v pos">{{ pct(m.return_3y) }}</span><span class="r-k">3-yr return</span></div>
-      <div class="ratio"><span class="r-v neg">{{ pct(m.max_drawdown) }}</span><span class="r-k">Max drawdown</span></div>
-      <div class="ratio"><span class="r-v">{{ pct(m.volatility) }}</span><span class="r-k">Volatility</span></div>
-      <div class="ratio"><span class="r-v">{{ sharpe(m) !== null ? (sharpe(m) | number:'1.2-2') : '—' }}</span><span class="r-k">Sharpe</span></div>
-      <div class="ratio"><span class="r-v">{{ beta(m) !== null ? (beta(m) | number:'1.2-2') : '—' }}</span><span class="r-k">Beta</span></div>
+    <!-- ===== ONE hero: the tapped tile's name + a single details panel ===== -->
+    <section class="hero">
+      <span class="hero-kicker">Land · {{ compact(ticketPrice) }}</span>
+      <h1 class="hero-name">{{ activeVariant().name }}</h1>
+
+      <div class="hero-fig">
+        <span class="hero-val">~{{ pct(m.expected_return ?? activeVariant().targetGrowth) }}</span>
+        <span class="hero-unit">expected growth p.a. · capital appreciation only</span>
+      </div>
+
+      <!-- the single rectangular details panel -->
+      <div class="hero-panel">
+        <div class="hp-row"><span class="hp-k">Past 3-yr return</span><span class="hp-v pos">{{ pct(m.return_3y) }}</span></div>
+        <div class="hp-row"><span class="hp-k">Past 5-yr return</span><span class="hp-v pos">{{ pct(m.return_5y) }}</span></div>
+        <div class="hp-row"><span class="hp-k">Max drawdown</span><span class="hp-v neg">{{ pct(m.max_drawdown) }}</span></div>
+        <div class="hp-row"><span class="hp-k">Volatility</span><span class="hp-v">{{ pct(m.volatility) }}</span></div>
+        <div class="hp-row"><span class="hp-k">Sharpe ratio</span><span class="hp-v">{{ sharpe(m) !== null ? (sharpe(m) | number:'1.2-2') : '—' }}</span></div>
+        <div class="hp-row"><span class="hp-k">Beta vs market</span><span class="hp-v">{{ beta(m) !== null ? (beta(m) | number:'1.2-2') : '—' }}</span></div>
+        <div class="hp-row"><span class="hp-k">History measured</span><span class="hp-v">{{ m.history_years }} yrs</span></div>
+      </div>
     </section>
 
-    <!-- ===== ASSET ALLOCATION (look-through) — prominent ===== -->
+    <!-- ===== ASSET ALLOCATION (look-through) ===== -->
     <section class="card alloc-card">
       <div class="card-head">
         <h2 class="card-title">Where your money sits</h2>
         <span class="card-sub">true split, seen through every fund</span>
       </div>
       <div class="alloc-bar">
-        <span
-          *ngFor="let s of allocation()"
-          class="alloc-seg"
-          [attr.data-k]="s.key"
-          [style.width.%]="s.pct"
-          [attr.title]="s.label + ' ' + (s.pct | number:'1.0-0') + '%'"
-        ></span>
+        <span *ngFor="let s of allocation()" class="alloc-seg" [attr.data-k]="s.key"
+          [style.width.%]="s.pct" [attr.title]="s.label + ' ' + (s.pct | number:'1.0-0') + '%'"></span>
       </div>
       <ul class="alloc-legend">
         <li *ngFor="let s of allocation()">
@@ -74,7 +58,7 @@
       </ul>
     </section>
 
-    <!-- ===== how it actually moved — with a fund selector ===== -->
+    <!-- ===== how it actually moved — axes + hover, fund selector ===== -->
     <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
       <div class="card-head">
         <h2 class="card-title">How it actually moved</h2>
@@ -90,24 +74,63 @@
 
       <ng-container *ngIf="!chartLoading()">
         <span class="chart-sub" *ngIf="growthEndpoints() as ep">
-          {{ compact(ep.startVal) }} → {{ compact(ep.endVal) }} · {{ ep.startDate }}–{{ ep.endDate }}
+          Value of ₹{{ (ep.startVal | number:'1.0-0') }} invested in {{ ep.startDate }} → {{ compact(ep.endVal) }} today
         </span>
-        <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" preserveAspectRatio="none" role="img" aria-label="Growth over time">
-          <defs>
-            <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.20"/>
-              <stop offset="100%" stop-color="var(--positive)" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path class="g-area" [attr.d]="growthArea()" fill="url(#gfill)"/>
-          <path class="g-line" [attr.d]="growthPath()"/>
-        </svg>
+
+        <div class="chart-wrap">
+          <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
+               aria-label="Growth over time"
+               (mousemove)="onChartMove($event)" (mouseleave)="onChartLeave()">
+            <defs>
+              <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.20"/>
+                <stop offset="100%" stop-color="var(--positive)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Y grid + labels (₹ amount) -->
+            <g class="axis y-axis">
+              <ng-container *ngFor="let t of yTicks()">
+                <line class="grid" [attr.x1]="padL" [attr.x2]="chartW - padR" [attr.y1]="t.y" [attr.y2]="t.y"/>
+                <text class="tick-lbl y-lbl" [attr.x]="padL - 8" [attr.y]="t.y + 3">{{ t.label }}</text>
+              </ng-container>
+            </g>
+
+            <!-- area + line -->
+            <path class="g-area" [attr.d]="growthArea()" fill="url(#gfill)"/>
+            <path class="g-line" [attr.d]="growthPath()"/>
+
+            <!-- X labels (year) -->
+            <g class="axis x-axis">
+              <text *ngFor="let t of xTicks()" class="tick-lbl x-lbl" [attr.x]="t.x" [attr.y]="chartH - 8">{{ t.label }}</text>
+            </g>
+
+            <!-- hover marker -->
+            <g class="hover-g" *ngIf="hover() as h">
+              <line class="hover-line" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="padT" [attr.y2]="chartH - padB"/>
+              <circle class="hover-dot" [attr.cx]="h.x" [attr.cy]="h.y" r="4"/>
+            </g>
+          </svg>
+
+          <!-- tooltip (HTML, positioned over the SVG) -->
+          <div class="tip" *ngIf="hover() as h"
+               [style.left.%]="(h.x / chartW) * 100"
+               [class.flip]="(h.x / chartW) > 0.62">
+            <span class="tip-date">{{ h.date }}</span>
+            <span class="tip-val">{{ inr(h.value) }}</span>
+            <span class="tip-grow" [class.pos]="h.growthPct >= 0" [class.neg]="h.growthPct < 0">
+              {{ h.growthPct >= 0 ? '+' : '' }}{{ h.growthPct | number:'1.0-0' }}% vs start
+            </span>
+            <span class="tip-dd" *ngIf="h.drawdown < -0.05">{{ pct(h.drawdown) }} below peak</span>
+          </div>
+        </div>
+
         <div class="dd-row">
           <span class="dd-label">
             <span class="dd-dot"></span> Drawdown — how far below its own peak
             <em *ngIf="chartMetrics()?.max_drawdown != null"> · worst {{ pct(chartMetrics()!.max_drawdown) }}</em>
           </span>
-          <svg class="dd-svg" viewBox="0 0 680 54" preserveAspectRatio="none" aria-hidden="true">
+          <svg class="dd-svg" [attr.viewBox]="'0 0 ' + chartW + ' 46'" preserveAspectRatio="none" aria-hidden="true">
             <path class="dd-line" [attr.d]="drawdownPath()"/>
           </svg>
         </div>
