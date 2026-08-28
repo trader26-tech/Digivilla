@@ -220,27 +220,35 @@
 .tip-grow.neg { color: color-mix(in srgb, var(--terracotta) 55%, var(--paper)); }
 .tip-dd { font-size: 0.68rem; font-weight: 600; color: color-mix(in srgb, var(--terracotta) 55%, var(--paper)); opacity: 0.9; }
 
-.dd-row { margin-top: 0.7rem; }
-.dd-label { font-size: 0.74rem; font-weight: 600; color: var(--ink); opacity: 0.6; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-.dd-label em { font-style: normal; color: var(--terracotta); opacity: 0.9; }
-.dd-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--terracotta); }
-.dd-svg { width: 100%; height: 46px; display: block; margin-top: 0.25rem; }
-.dd-line { fill: none; stroke: var(--terracotta); stroke-width: 1.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.7; }
+/* ---------- projection: buy-by-the-plot ---------- */
+.plots-row { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
+.plot-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.7rem 0.4rem;
+  border: 1.5px solid var(--survey);
+  border-radius: 11px;
+  background: var(--paper);
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.plot-btn:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); }
+.plot-btn:active { transform: scale(0.98); }
+.plot-btn.on { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 9%, var(--paper)); }
+.plot-n { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; line-height: 1; color: var(--ink); }
+.plot-btn.on .plot-n { color: var(--brass); }
+.plot-lbl { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.55; }
+.plot-amt { font-size: 0.82rem; font-weight: 700; color: var(--ink); opacity: 0.75; margin-top: 0.15rem; }
 
-/* ---------- projection ---------- */
-.amount-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
-.amount-field { display: inline-flex; align-items: center; border: 1.5px solid var(--survey); border-radius: 9px; background: var(--paper); padding: 0 0.7rem; transition: border-color 0.15s ease; }
-.amount-field:focus-within { border-color: var(--brass); }
-.amount-field .cur { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; color: var(--ink); opacity: 0.55; }
-.amount-field input { border: none; background: transparent; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; color: var(--ink); padding: 0.5rem 0.1rem 0.5rem 0.3rem; width: 8ch; outline: none; }
-.presets { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-.preset { border: 1px solid var(--survey); border-radius: 7px; background: var(--paper); font-family: var(--font-body); font-weight: 600; font-size: 0.8rem; color: var(--ink); padding: 0.4rem 0.6rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
-.preset:hover { border-color: var(--brass); }
-.preset.on { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 10%, var(--paper)); color: var(--brass); }
-
-.proj-headline { margin: 0 0 1rem; font-size: 0.95rem; line-height: 1.4; color: var(--ink); }
-.proj-headline strong { font-family: var(--font-display); font-size: 1.15rem; }
-.proj-headline .mult { display: inline-block; margin-left: 0.35rem; font-weight: 700; font-size: 0.85rem; color: var(--positive); }
+.proj-headline { margin: 0 0 1rem; font-size: 0.95rem; line-height: 1.45; color: var(--ink); }
+.proj-headline strong { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+.proj-headline strong.grow { color: var(--positive); }
+.proj-headline .mult { display: inline-block; margin-left: 0.3rem; font-weight: 700; font-size: 0.85rem; color: var(--positive); }
 
 .bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; align-items: end; height: 210px; padding-top: 0.5rem; }
 .bar-col { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.3rem; }
