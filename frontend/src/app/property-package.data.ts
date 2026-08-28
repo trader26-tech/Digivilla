@@ -332,24 +332,24 @@ export interface SchemeMeta {
 
 export const SCHEME_META: Record<PropertyKey, Record<VariantKey, SchemeMeta>> = {
   land: {
-    conservative: { name: 'Horizon Meadow',  locality: 'Quiet outer plots — slow, sure ground' },
-    balanced:     { name: 'Horizon Ridge',   locality: 'Rising land on the growth corridor' },
-    aggressive:   { name: 'Horizon Summit',  locality: 'Frontier plots — steepest climb' },
+    conservative: { name: 'Kelambakkam Grove', locality: 'Quiet outer plots — slow, sure ground' },
+    balanced:     { name: 'Navalur Rise',      locality: 'Rising land on the OMR growth corridor' },
+    aggressive:   { name: 'Siruseri Heights',  locality: 'Frontier IT-belt plots — steepest climb' },
   },
   flat: {
-    conservative: { name: 'Marina Cove',     locality: 'Sheltered bay — calm, steady rent' },
-    balanced:     { name: 'Marina Rise',     locality: 'Mid-rise on the waterfront' },
-    aggressive:   { name: 'Marina Peak',     locality: 'Top-floor skyline — bigger swings' },
+    conservative: { name: 'Adyar Grove',       locality: 'Leafy Adyar — calm, steady rent' },
+    balanced:     { name: 'Velachery Rise',    locality: 'Well-connected Velachery, balanced' },
+    aggressive:   { name: 'OMR Heights',       locality: 'On the OMR skyline — bigger swings' },
   },
   apartment: {
-    conservative: { name: 'Emerald Court',   locality: 'Garden wing — grounded and green' },
-    balanced:     { name: 'Emerald Vista',   locality: 'City-view tower, balanced outlook' },
-    aggressive:   { name: 'Emerald Heights', locality: 'Penthouse tier — high exposure' },
+    conservative: { name: 'Anna Nagar Court',  locality: 'Established Anna Nagar — grounded' },
+    balanced:     { name: 'Nungambakkam Vista', locality: 'Central Nungambakkam, balanced outlook' },
+    aggressive:   { name: 'T. Nagar Heights',  locality: 'Prime T. Nagar — high exposure' },
   },
   duplex: {
-    conservative: { name: 'Crown Terrace',   locality: 'Ground estate — broad and stable' },
-    balanced:     { name: 'Crown Manor',     locality: 'The balanced two-storey estate' },
-    aggressive:   { name: 'Crown Pinnacle',  locality: 'The high estate — most to gain, most to ride' },
+    conservative: { name: 'Boat Club Terrace', locality: 'Boat Club Road — broad and stable' },
+    balanced:     { name: 'Poes Garden Manor', locality: 'The balanced Poes Garden estate' },
+    aggressive:   { name: 'ECR Pinnacle',      locality: 'The high ECR estate — most to gain, most to ride' },
   },
 };
 
