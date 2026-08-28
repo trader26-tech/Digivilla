@@ -73,8 +73,9 @@ function variantsFor(property: PropertyKey): LandVariant[] {
       targetGrowth: v.targetGrowth,
       legs: v.legs.map(l => ({
         scheme_code: l.scheme_code,
-        // Drop any " · Regular" suffix — the plan is shown as its own sub-line now.
-        label: l.label.replace(/\s*·\s*Regular\s*$/i, ''),
+        // Fund name reads as one line ending in "Regular Plan" (normalise any
+        // existing " · Regular"/"Regular" suffix so it's exactly that, once).
+        label: l.label.replace(/\s*·\s*Regular(\s*Plan)?\s*$/i, '').replace(/\s+Regular(\s+Plan)?\s*$/i, '').trim() + ' Regular Plan',
         weight: l.weight,
         role: l.note,
         look: ROLE_LOOK[l.role],
