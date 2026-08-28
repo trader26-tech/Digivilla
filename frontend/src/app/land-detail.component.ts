@@ -52,7 +52,7 @@ interface AllocSlice {
 const VARIANTS: LandVariant[] = [
   {
     key: 'conservative',
-    name: 'Ready-to-move',
+    name: 'Low risk',
     blurb: 'Steadiest path — a debt-cushioned core that rides out the dips.',
     targetGrowth: 10.2,
     legs: [
@@ -66,7 +66,7 @@ const VARIANTS: LandVariant[] = [
   },
   {
     key: 'balanced',
-    name: 'Under construction',
+    name: 'Medium risk',
     blurb: 'The all-weather middle — real growth, without a churning ride.',
     targetGrowth: 11.8,
     legs: [
@@ -80,7 +80,7 @@ const VARIANTS: LandVariant[] = [
   },
   {
     key: 'aggressive',
-    name: 'Pre-launch',
+    name: 'High risk',
     blurb: 'Built to appreciate — maximum compounding for the long horizon.',
     targetGrowth: 12.9,
     legs: [
