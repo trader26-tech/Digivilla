@@ -1,17 +1,26 @@
 /* ============================================================
-   PropertyNest — "The Estate Document"
-   Global base: the fixed palette + type. No other hex anywhere.
+   PropertyNest — clean fintech dashboard theme.
+   Global base: the design tokens + type. Every page reads these vars,
+   so changing them here restyles the whole app. Var NAMES are unchanged
+   from the prior "Estate Document" theme (--ink/--paper/--survey/--brass/
+   --terracotta/--positive/--negative) so no component needs editing.
    ============================================================ */
 :root {
-  --ink: #16302B;         /* deep estate green — text, brand surfaces */
-  --paper: #FAF8F3;       /* warm document white — background */
-  --survey: #DDD6C7;      /* faint khaki — borders, hairlines */
-  --brass: #A67C2E;       /* accent — CTAs, active states */
-  --terracotta: #8C4A32;  /* ONLY risk/disclaimer emphasis */
-  --positive: #2E6B4F;    /* gains */
-  --negative: #9B3B2E;    /* losses */
+  --ink: #0F172A;         /* near-black slate — primary text, big figures */
+  --paper: #FFFFFF;       /* white — card / page background */
+  --survey: #E7EAEE;      /* light grey — borders, hairlines */
+  --brass: #2F6BFF;       /* blue accent — links, CTAs, active states */
+  --terracotta: #B45309;  /* warm amber — ONLY risk/disclaimer emphasis */
+  --positive: #16A34A;    /* calm green — gains */
+  --negative: #DC2626;    /* red — losses */
 
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  /* Page ground is a barely-grey so white cards lift off it, like the ref. */
+  --ground: #F5F6F8;
+  /* Muted grey for the small ALL-CAPS labels. */
+  --muted: #6B7280;
+
+  /* Inter everywhere now (serif display retired). Display = heavier weight. */
+  --font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
