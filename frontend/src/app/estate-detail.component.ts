@@ -164,6 +164,29 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   plotName = computed(() => `${schemeName(this.property, this.active())} ${PACKAGES[this.property].name}`);
   plotLocality = computed(() => schemeLocality(this.property, this.active()));
 
+  /** The "how we get the growth number" explainer, hidden until the eye is tapped. */
+  growthInfoOpen = signal(false);
+  toggleGrowthInfo(): void { this.growthInfoOpen.update(v => !v); }
+  private readonly ASSET_PRIOR: Record<string, number> = { equity: 12, hybrid: 10, gold: 8, debt: 6.8, cash: 6.8 };
+  private readonly ASSET_LABEL: Record<string, string> = { equity: 'Equity', hybrid: 'Hybrid', gold: 'Gold', debt: 'Debt', cash: 'Cash / arbitrage' };
+  growthBreakdown = computed(() => {
+    const m = this.activeMetrics();
+    if (!m) return null;
+    const mix = m.asset_mix || {};
+    const rows = Object.entries(mix)
+      .map(([k, pctVal]) => ({
+        key: k, label: this.ASSET_LABEL[k] ?? k,
+        weight: pctVal as number, rate: this.ASSET_PRIOR[k] ?? 10,
+        contrib: ((pctVal as number) / 100) * (this.ASSET_PRIOR[k] ?? 10),
+      }))
+      .sort((a, b) => b.weight - a.weight);
+    const prior = rows.reduce((s, r) => s + r.contrib, 0);
+    const observed = m.cagr ?? prior;
+    const expected = m.expected_return ?? (0.5 * prior + 0.5 * observed);
+    return { rows, prior, observed, expected, historyYears: m.history_years };
+  });
+  forwardGrowth = computed<number | null>(() => this.activeMetrics()?.expected_return ?? this.activeVariant().targetGrowth);
+
   /** Hero growth ratios are hidden until tapped. */
   heroDetailsOpen = signal(false);
   toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }

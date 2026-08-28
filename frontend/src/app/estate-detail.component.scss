@@ -181,6 +181,38 @@
 .hero-grow-line .hg-pct { font-family: var(--font-display); font-weight: 700; color: var(--positive); opacity: 1; }
 .hero-grow-line .star { color: var(--terracotta); font-weight: 700; margin-left: 0.1rem; }
 
+/* eye button + growth explainer (how the forward % is worked out) */
+.grow-eye {
+  width: 26px; height: 26px; flex: none; align-self: center;
+  display: inline-grid; place-items: center; border-radius: 50%;
+  border: 1.4px solid color-mix(in srgb, var(--brass) 55%, var(--survey));
+  background: var(--paper); color: var(--brass); cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.grow-eye:hover { background: color-mix(in srgb, var(--brass) 10%, var(--paper)); }
+.grow-eye.on { background: var(--brass); color: var(--paper); border-color: var(--brass); }
+.grow-explain {
+  margin-top: 1rem; padding: 1.05rem 1.1rem;
+  border: 1px solid var(--survey); border-radius: 14px;
+  background: color-mix(in srgb, var(--survey) 10%, var(--paper));
+  animation: unfold 0.24s ease both;
+}
+.ge-lead { margin: 0 0 0.85rem; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+.ge-lead strong { font-family: var(--font-display); font-weight: 700; color: var(--positive); }
+.ge-part { margin-bottom: 0.9rem; }
+.ge-head { display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; font-weight: 700; color: var(--ink); margin-bottom: 0.4rem; }
+.ge-badge { width: 18px; height: 18px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--brass); color: var(--paper); font-size: 0.66rem; font-weight: 800; }
+.ge-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.34rem 0; font-size: 0.86rem; color: var(--ink); }
+.ge-k { opacity: 0.78; }
+.ge-k em { font-style: normal; font-size: 0.76rem; opacity: 0.6; margin-left: 0.15rem; }
+.ge-v { font-family: var(--font-display); font-weight: 700; font-feature-settings: 'tnum' 1; white-space: nowrap; }
+.ge-v.pos { color: var(--positive); }
+.ge-row.total { border-top: 1px solid color-mix(in srgb, var(--survey) 60%, transparent); margin-top: 0.15rem; padding-top: 0.5rem; }
+.ge-row.total .ge-k { font-weight: 700; opacity: 1; }
+.ge-blend { border-top: 2px solid color-mix(in srgb, var(--brass) 40%, var(--survey)); margin-top: 0.4rem; padding-top: 0.3rem; }
+.ge-blend .ge-v { font-size: 1.15rem; }
+.ge-foot { margin: 0.7rem 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--ink); opacity: 0.55; }
+
 /* ---------- combined-performance panel (tappable ratios) ---------- */
 .perf-panel {
   border: 1px solid var(--survey);
