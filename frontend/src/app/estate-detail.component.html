@@ -128,8 +128,8 @@
         <!-- horizon: secondary side control, default 20y -->
         <label class="horizon-pick">
           over
-          <select [value]="yearsAgo()" (change)="setYearsAgo(+$any($event.target).value)" aria-label="Time horizon">
-            <option *ngFor="let n of agoOptions" [value]="n">{{ n }} yrs</option>
+          <select (change)="setYearsAgo(+$any($event.target).value)" aria-label="Time horizon">
+            <option *ngFor="let n of agoOptions" [value]="n" [selected]="n === yearsAgo()">{{ n }} yrs</option>
           </select>
         </label>
       </div>
