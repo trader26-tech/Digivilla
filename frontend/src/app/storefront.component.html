@@ -74,58 +74,51 @@
       (keydown.space)="open(t.p, t.v.key); $event.preventDefault()"
       [attr.aria-label]="t.v.label + ' ' + t.p.name + ', ' + compact(t.p.price)"
     >
-      <!-- header: icon · name · the amount to invest (the one big figure) -->
+      <!-- header: icon · name · price -->
       <div class="tile-top">
         <span class="tile-ic" [attr.data-v]="t.v.key" aria-hidden="true" [ngSwitch]="t.v.key">
           <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="20" height="20"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="20" height="20"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
-        <span class="tile-head">
-          <span class="tile-name">{{ schemeName(t.p, t.v.key) }} {{ t.p.name }}</span>
-          <!-- risk label doubles as the map opener -->
-          <button
-            class="tile-loc"
-            type="button"
-            (click)="openMap(t.p, t.v.key); $event.stopPropagation()"
-            [attr.aria-label]="'See where ' + schemeName(t.p, t.v.key) + ' sits on the risk–reward map'"
-          >
-            <svg class="loc-mark" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-            <span class="loc-txt">{{ t.v.label }}</span>
-            <svg class="loc-go" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </span>
+        <span class="tile-name">{{ schemeName(t.p, t.v.key) }} {{ t.p.name }}</span>
         <span class="tile-price">{{ compact(t.p.price) }}</span>
       </div>
+
+      <!-- risk label (own row, tappable → opens the risk–reward map) -->
+      <button
+        class="tile-loc"
+        type="button"
+        (click)="openMap(t.p, t.v.key); $event.stopPropagation()"
+        [attr.aria-label]="'See where ' + schemeName(t.p, t.v.key) + ' sits on the risk–reward map'"
+      >
+        <svg class="loc-mark" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span class="loc-txt">{{ t.v.label }}</span>
+        <svg class="loc-go" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
 
       <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
       <div class="tile-stats">
         <div class="stat">
-          <span class="stat-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 17l6-6 4 4 6-8M20 7h-4M20 7v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="stat-l">
+            <svg class="stat-ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8M20 7h-4M20 7v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Growth
           </span>
-          <span class="stat-txt">
-            <span class="stat-l">Expected growth</span>
-            <span class="stat-v">{{ t.v.growthPct }}%</span>
-          </span>
+          <span class="stat-v">{{ t.v.growthPct }}%</span>
         </div>
         <div class="stat">
-          <span class="stat-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span class="stat-l">
+            <svg class="stat-ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            3-yr
           </span>
-          <span class="stat-txt">
-            <span class="stat-l">Past 3 years</span>
-            <span class="stat-v">{{ t.v.past3y }}%</span>
-          </span>
+          <span class="stat-v">{{ t.v.past3y }}%</span>
         </div>
         <div class="stat">
-          <span class="stat-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="15" height="15"><path d="M7 6h9M7 10h9M14 6c0 4-3 5-6 5l5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="stat-l">
+            <svg class="stat-ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M7 6h9M7 10h9M14 6c0 4-3 5-6 5l5 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Income
           </span>
-          <span class="stat-txt">
-            <span class="stat-l">Monthly income</span>
-            <span class="stat-v">{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : 'Nil' }}</span>
-          </span>
+          <span class="stat-v">{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : 'Nil' }}</span>
         </div>
       </div>
     </div>
