@@ -166,13 +166,20 @@
         </div>
       </div>
 
-      <p class="stack-foot">
-        <strong>{{ compact(amount()) }}</strong> in {{ plots() }} {{ plots() === 1 ? propName.toLowerCase() : propName.toLowerCase() + 's' }} could be
-        <strong class="pos">{{ compact(pastNowValue()) }}</strong> in {{ yearsAgo() }} years
-        <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
-      </p>
-      <p class="stack-foot" *ngIf="incomePays">…<strong class="rent">even after</strong> paying you <strong>{{ compact(pastRentPaid()) }}</strong> in rent along the way.</p>
-      <p class="stack-basis">Grown at this basket's <strong>{{ pct(avgGrowthPct()) }}</strong> 5-yr average return<span *ngIf="incomePays">, net of the rent it pays out each year</span>.<span class="star">*</span></p>
+      <div class="stack-foot">
+        <span class="sf-line">
+          <strong class="pos">{{ compact(pastNowValue()) }}</strong>
+          <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
+        </span>
+      </div>
+
+      <div class="stack-explain">
+        <div class="se-row"><span class="se-k">You put in</span><span class="se-v">{{ compact(amount()) }}</span></div>
+        <div class="se-row"><span class="se-k">Growth over {{ yearsAgo() }} years</span><span class="se-v pos">+{{ compact(pastNowValue() - amount()) }}</span></div>
+        <div class="se-row" *ngIf="incomePays"><span class="se-k">Rent paid to you</span><span class="se-v pos">+{{ compact(pastRentPaid()) }}</span></div>
+        <div class="se-row total"><span class="se-k">Worth today</span><span class="se-v">{{ compact(pastNowValue()) }}</span></div>
+        <p class="se-note">{{ pct(avgGrowthPct()) }} avg<span *ngIf="incomePays"> · net of the rent paid out</span> · illustrative, not guaranteed</p>
+      </div>
     </section>
 
     <!-- ===== How you get paid — concise monthly-income card (income tiers only) ===== -->
