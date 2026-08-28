@@ -20,17 +20,17 @@
     <!-- ===== hero: the tapped tile's name + one growth headline ===== -->
     <section class="hero">
       <div class="hero-top">
-        <h1 class="hero-name">{{ activeVariant().name }}</h1>
-        <span class="hero-price">{{ compact(ticketPrice) }}<span class="hm-unit">/plot</span></span>
+        <h1 class="hero-name reveal" style="--s:0">{{ activeVariant().name }}</h1>
+        <span class="hero-price reveal" style="--s:1">{{ compact(ticketPrice) }}<span class="hm-unit">/plot</span></span>
       </div>
-      <div class="hero-meta">
+      <div class="hero-meta reveal" style="--s:1">
         <span class="hero-grow">~{{ pct(m.expected_return ?? activeVariant().targetGrowth) }}<span class="hm-unit">/yr</span><span class="star">*</span></span>
       </div>
     </section>
 
-    <!-- ===== 1 · how it actually moved (axes + hover, combined stats) ===== -->
-    <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
-      <div class="card-head">
+    <!-- ===== 1 · how it actually moved (axes + hover, combined stats) — boxless ===== -->
+    <section class="chart-open" *ngIf="growthPath() || chartLoading()">
+      <div class="card-head reveal" style="--s:2">
         <h2 class="card-title">How it actually moved</h2>
         <label class="src-pick">
           <select [value]="chartSource()" (change)="pickChartSource($any($event.target).value)" aria-label="Choose what to chart">
@@ -43,17 +43,7 @@
       <div class="chart-loading" *ngIf="chartLoading()"><span class="spinner sm"></span> loading this fund…</div>
 
       <ng-container *ngIf="!chartLoading()">
-        <!-- combined-basket headline stats -->
-        <div class="chart-stats" *ngIf="chartMetrics() as cm">
-          <div class="cs"><span class="cs-v pos">{{ pct(cm.return_3y) }}</span><span class="cs-k">3-yr growth</span></div>
-          <div class="cs"><span class="cs-v neg">{{ pct(cm.max_drawdown) }}</span><span class="cs-k">Max drawdown</span></div>
-          <div class="cs" *ngIf="growthEndpoints() as ep">
-            <span class="cs-v">₹{{ (ep.startVal | number:'1.0-0') }} → {{ compact(ep.endVal) }}</span>
-            <span class="cs-k">{{ ep.startDate }} → today</span>
-          </div>
-        </div>
-
-        <div class="chart-wrap">
+        <div class="chart-wrap reveal" style="--s:3">
           <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
                aria-label="Growth over time"
                (mousemove)="onChartMove($event)" (mouseleave)="onChartLeave()">
@@ -88,6 +78,16 @@
             <span class="tip-grow" [class.pos]="h.growthPct >= 0" [class.neg]="h.growthPct < 0">
               {{ h.growthPct >= 0 ? '+' : '' }}{{ h.growthPct | number:'1.0-0' }}% vs start
             </span>
+          </div>
+        </div>
+
+        <!-- combined-basket headline stats, below the chart -->
+        <div class="chart-stats reveal" style="--s:4" *ngIf="chartMetrics() as cm">
+          <div class="cs"><span class="cs-v pos">{{ pct(cm.return_3y) }}</span><span class="cs-k">3-yr growth</span></div>
+          <div class="cs"><span class="cs-v neg">{{ pct(cm.max_drawdown) }}</span><span class="cs-k">Max drawdown</span></div>
+          <div class="cs" *ngIf="growthEndpoints() as ep">
+            <span class="cs-v">₹{{ (ep.startVal | number:'1.0-0') }} → {{ compact(ep.endVal) }}</span>
+            <span class="cs-k">{{ ep.startDate }} → today</span>
           </div>
         </div>
       </ng-container>

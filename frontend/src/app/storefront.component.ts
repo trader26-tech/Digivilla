@@ -148,9 +148,9 @@ export class StorefrontComponent {
       price: 10_00_000,
       incomePays: false,   // accumulation only — no monthly withdrawal
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 10.2, past3y: 13.4, monthlyIncome: null },
-        construction: { key: 'construction', label: 'Under construction', growthPct: 11.8, past3y: 15.6, monthlyIncome: null },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 12.9, past3y: 18.2, monthlyIncome: null },
+        ready:        { key: 'ready',        label: 'Low risk · low returns',      growthPct: 10.2, past3y: 13.4, monthlyIncome: null },
+        construction: { key: 'construction', label: 'Medium risk · medium returns', growthPct: 11.8, past3y: 15.6, monthlyIncome: null },
+        prelaunch:    { key: 'prelaunch',    label: 'High risk · high returns',         growthPct: 12.9, past3y: 18.2, monthlyIncome: null },
       },
     },
     {
@@ -159,9 +159,9 @@ export class StorefrontComponent {
       price: 25_00_000,
       incomePays: true,
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 5_000 },
-        construction: { key: 'construction', label: 'Under construction', growthPct: 9.6,  past3y: 12.4, monthlyIncome: 6_250 },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 10.3, past3y: 13.8, monthlyIncome: 7_500 },
+        ready:        { key: 'ready',        label: 'Low risk · low returns',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 5_000 },
+        construction: { key: 'construction', label: 'Medium risk · medium returns', growthPct: 9.6,  past3y: 12.4, monthlyIncome: 6_250 },
+        prelaunch:    { key: 'prelaunch',    label: 'High risk · high returns',         growthPct: 10.3, past3y: 13.8, monthlyIncome: 7_500 },
       },
     },
     {
@@ -170,9 +170,9 @@ export class StorefrontComponent {
       price: 50_00_000,
       incomePays: true,
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 10_000 },
-        construction: { key: 'construction', label: 'Under construction', growthPct: 9.5,  past3y: 12.4, monthlyIncome: 12_500 },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 10.5, past3y: 14.0, monthlyIncome: 15_000 },
+        ready:        { key: 'ready',        label: 'Low risk · low returns',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 10_000 },
+        construction: { key: 'construction', label: 'Medium risk · medium returns', growthPct: 9.5,  past3y: 12.4, monthlyIncome: 12_500 },
+        prelaunch:    { key: 'prelaunch',    label: 'High risk · high returns',         growthPct: 10.5, past3y: 14.0, monthlyIncome: 15_000 },
       },
     },
     {
@@ -181,9 +181,9 @@ export class StorefrontComponent {
       price: 99_00_000,
       incomePays: true,
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 19_800 },
-        construction: { key: 'construction', label: 'Under construction', growthPct: 9.5,  past3y: 12.4, monthlyIncome: 24_750 },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 10.6, past3y: 14.1, monthlyIncome: 29_700 },
+        ready:        { key: 'ready',        label: 'Low risk · low returns',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 19_800 },
+        construction: { key: 'construction', label: 'Medium risk · medium returns', growthPct: 9.5,  past3y: 12.4, monthlyIncome: 24_750 },
+        prelaunch:    { key: 'prelaunch',    label: 'High risk · high returns',         growthPct: 10.6, past3y: 14.1, monthlyIncome: 29_700 },
       },
     },
   ];

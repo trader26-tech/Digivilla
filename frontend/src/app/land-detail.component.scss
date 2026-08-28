@@ -13,6 +13,15 @@
   color: var(--ink);
 }
 
+/* ---------- staggered one-by-one reveal on load (150ms steps) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: reveal 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--s, 0) * 0.15s);
+}
+@keyframes reveal { to { opacity: 1; transform: none; } }
+
 /* ---------- top bar ---------- */
 .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .back {
@@ -142,6 +151,14 @@
 .card-title { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; line-height: 1.15; margin: 0; color: var(--ink); }
 .card-sub { font-size: 0.76rem; font-weight: 600; color: var(--ink); opacity: 0.55; }
 
+/* ---------- boxless chart section (sits open on the page, no card) ---------- */
+.chart-open {
+  margin-bottom: 1.4rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
 /* ---------- asset allocation (look-through) ---------- */
 .alloc-card { background: var(--ink); border-color: var(--ink); }
 .alloc-card .card-title { color: var(--paper); }
@@ -194,14 +211,14 @@
 .chart-loading { display: flex; align-items: center; gap: 0.5rem; padding: 3rem 0; justify-content: center; font-size: 0.85rem; color: var(--ink); opacity: 0.6; }
 .chart-sub { display: block; font-size: 0.8rem; font-weight: 600; color: var(--ink); opacity: 0.6; margin-bottom: 0.5rem; }
 
-/* combined-basket headline stats on the chart card */
+/* combined-basket headline stats, below the chart */
 .chart-stats {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.6rem;
-  padding: 0.15rem 0 0.9rem;
-  margin-bottom: 0.3rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--survey) 55%, transparent);
+  padding: 0.9rem 0 0.15rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--survey) 55%, transparent);
 }
 .cs { display: flex; flex-direction: column; gap: 0.05rem; }
 .cs-v { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; line-height: 1; color: var(--ink); font-feature-settings: 'tnum' 1; }
@@ -215,7 +232,8 @@
   fill: none; stroke: var(--positive); stroke-width: 2.2;
   stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke;
   stroke-dasharray: 2600; stroke-dashoffset: 2600;
-  animation: draw 1.2s ease forwards 0.1s;
+  /* start drawing once the chart block has revealed (stagger step 3 ≈ 0.45s) */
+  animation: draw 1.2s ease forwards 0.55s;
 }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 
@@ -328,6 +346,7 @@
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; opacity: 1; transform: none; }
   .g-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .bar-stack { animation: none; }
   .alloc-seg { transition: none; }
