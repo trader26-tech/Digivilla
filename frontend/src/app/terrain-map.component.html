@@ -1,0 +1,48 @@
+<div class="tm" (click)="clearSel()">
+  <!-- the three.js canvas mounts here -->
+  <div #host class="tm-host"></div>
+
+  <!-- edge captions -->
+  <span class="tm-cap up">↑ pays more rent</span>
+  <span class="tm-cap side">more risk →</span>
+
+  <!-- legend, top-right ON the map -->
+  <div class="tm-legend" (click)="$event.stopPropagation()">
+    <span *ngFor="let p of mapProps" class="tl-item">
+      <span class="tl-dot" [attr.data-p]="p"></span>{{ propName(p) }}
+    </span>
+  </div>
+
+  <!-- HTML labels that track each projected summit -->
+  <button *ngFor="let pk of markers()" class="tm-pin" type="button"
+    [attr.data-p]="pk.property"
+    [class.sel]="isSel(pk)"
+    [class.hide]="!pk.screen.vis"
+    [style.left.px]="pk.screen.x" [style.top.px]="pk.screen.y"
+    (click)="tapPeak(pk, $event)"
+    [attr.aria-label]="pk.propName + (pk.rentHi > 0 ? ', up to ' + rentShort(pk.rentHi) + ' a month' : ', growth only')">
+    {{ pk.propName }}<em *ngIf="pk.rentHi > 0"> · {{ rentShort(pk.rentHi) }}/mo</em><em *ngIf="pk.rentHi === 0" class="growth"> · growth</em>
+  </button>
+
+  <!-- callout for the selected peak -->
+  <div class="tm-callout" *ngIf="selected() as sp"
+    [style.left.px]="sp.screen.x" [style.top.px]="sp.screen.y"
+    [class.flip-x]="sp.screen.x > 220"
+    (click)="$event.stopPropagation()">
+    <div class="tc-head">
+      <span class="tc-dot" [attr.data-p]="sp.property"></span>
+      <span class="tc-name">{{ sp.propName }}</span>
+      <span class="tc-price">{{ compact(sp.price) }}</span>
+    </div>
+    <div class="tc-stats">
+      <span class="tc-stat" *ngIf="sp.rentHi > 0"><b>{{ rentShort(sp.rentLo) }}–{{ rentShort(sp.rentHi) }}</b><small>rent /mo</small></span>
+      <span class="tc-stat" *ngIf="sp.rentHi === 0"><b>Growth</b><small>no rent</small></span>
+      <span class="tc-stat"><b>{{ sp.reward | number:'1.0-1' }}%</b><small>return /yr</small></span>
+      <span class="tc-stat"><b>{{ sp.risk | number:'1.0-1' }}%</b><small>risk</small></span>
+    </div>
+    <button class="tc-go" type="button" (click)="explorePeak(sp)">
+      Explore {{ sp.propName }}
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
