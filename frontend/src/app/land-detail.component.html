@@ -100,7 +100,7 @@
                [style.left.%]="(h.x / chartW) * 100"
                [class.flip]="(h.x / chartW) > 0.62">
             <span class="tip-date">{{ h.date }}</span>
-            <span class="tip-val">{{ inr(h.value) }}</span>
+            <span class="tip-val">{{ compact(h.worth) }}</span>
             <span class="tip-grow" [class.pos]="h.growthPct >= 0" [class.neg]="h.growthPct < 0">
               {{ h.growthPct >= 0 ? '+' : '' }}{{ h.growthPct | number:'1.0-0' }}% vs start
             </span>
@@ -109,9 +109,9 @@
 
         <!-- clean readout: invested amount → ₹X  with a small +Y% for the window -->
         <div class="readout reveal" style="--s:5" *ngIf="windowReadout() as r">
-          <span class="ro-from">{{ inr(r.from) }}</span>
+          <span class="ro-from">{{ compact(r.from) }}</span>
           <span class="ro-arrow" aria-hidden="true">→</span>
-          <span class="ro-to">{{ inr(r.to) }}</span>
+          <span class="ro-to">{{ compact(r.to) }}</span>
           <span class="ro-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
         </div>
       </ng-container>

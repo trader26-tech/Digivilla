@@ -456,7 +456,11 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     const y = this.yAt(g.value, b.lo, b.hi);
     const base = w[0]?.value ?? g.value;   // % vs the window's own start
     const growthPct = base > 0 ? (g.value / base - 1) * 100 : 0;
-    return { x, y, value: g.value, date: g.date, growthPct, drawdown: g.drawdown };
+    // The investor's money: the amount they'd invest (ticket) grown to this
+    // point, so the tip shows real rupees, not a raw NAV.
+    const invested = this.amount();
+    const worth = base > 0 ? invested * (g.value / base) : invested;
+    return { x, y, value: g.value, invested, worth, date: g.date, growthPct, drawdown: g.drawdown };
   });
 
   projMax = computed<number>(() => {
@@ -483,7 +487,7 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     }
     if (v >= 1_00_000) {
       const l = v / 1_00_000;
-      return '₹' + (l % 1 === 0 ? l : l.toFixed(1).replace(/\.0$/, '')) + 'L';
+      return '₹' + (l % 1 === 0 ? l : l.toFixed(2).replace(/\.?0+$/, '')) + 'L';
     }
     return '₹' + Math.round(v).toLocaleString('en-IN');
   }
