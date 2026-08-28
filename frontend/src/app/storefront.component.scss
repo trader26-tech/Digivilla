@@ -1,42 +1,12 @@
-/* Fill the whole viewport with the dusk ground so wide screens don't
-   show the light global paper beside the centred document. */
-:host {
-  display: block;
-  min-height: 100dvh;
-  background: #191238;
-}
+:host { display: block; }
 
-/* ------------------------------------------------------------------
-   Warm-dusk palette — scoped to the storefront only.
-   The intro's sun sets into a deep plum-navy sky; the storefront now
-   continues that same world instead of snapping to a cold white page.
-   Only the design tokens are remapped here, so every element, layout
-   and animation stays exactly as-is — just recoloured. The intro
-   component defines its own colours and is left untouched.
-   Values are drawn straight from the intro gradient:
-     sun core  #fff6e0 / #ffd27a  → cream ink + brass glow
-     sky       #241a4a → #0e0b24  → paper (the dusk sky)
-     hills     #3a2668 / #5a3580  → survey hairlines
-     coral     #ff6f61            → terracotta / risk
-   ------------------------------------------------------------------ */
 .deed {
-  --paper: #191238;        /* dusk sky the sun set into — page ground */
-  --ink: #FBEFDD;          /* warm sun-cream — primary text on dark */
-  --survey: #3A2C63;       /* muted plum — borders, hairlines */
-  --brass: #E7AA55;        /* glowing brass sun — accents, active */
-  --terracotta: #FF9482;   /* intro coral — risk/disclaimer emphasis */
-  --positive: #7FD199;     /* warm gain green, lifted for the dark ground */
-  --negative: #E77563;     /* coral-red loss */
-
   max-width: 460px;
   margin: 0 auto;
   min-height: 100dvh;
   padding: calc(1.5rem + env(safe-area-inset-top)) 1.15rem
            calc(1.25rem + env(safe-area-inset-bottom));
-  /* faint warm glow overhead, as if the sky still holds the sun's afterlight */
-  background:
-    radial-gradient(120% 70% at 50% -8%, #2b1f57 0%, rgba(43, 31, 87, 0) 58%),
-    var(--paper);
+  background: var(--paper);
 }
 
 /* ---------- staggered reveal (150ms steps, capped so late rows don't lag) ---------- */
