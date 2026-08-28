@@ -41,11 +41,6 @@
       <h1 class="hero-name reveal" style="--s:0">{{ plotName() }}</h1>
       <div class="hero-line reveal" style="--s:1">
         <span class="hero-value">{{ inr(ticketPrice) }}</span>
-        <span class="hero-sep" aria-hidden="true">·</span>
-        <span class="hero-grow-line">grows <span class="hg-pct">~{{ pct(forwardGrowth()) }}/yr</span><span class="star">*</span></span>
-        <button class="grow-eye" type="button" (click)="toggleGrowthInfo()" [class.on]="growthInfoOpen()" [attr.aria-expanded]="growthInfoOpen()" aria-label="How this growth number is worked out">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-        </button>
       </div>
 
       <!-- how the forward growth number is worked out — revealed on the eye tap -->
@@ -91,8 +86,8 @@
       <!-- clean headline: CAGR + total growth over the window. Tap for detail. -->
       <div class="pp-head" *ngIf="windowReadout() as r">
         <div class="pp-nums">
-          <span class="pp-cagr" [class.pos]="(windowCagr() ?? 0) >= 0" [class.neg]="(windowCagr() ?? 0) < 0">{{ pct(windowCagr()) }}<span class="pp-u">/yr</span></span>
-          <span class="pp-sub">CAGR · {{ pct(r.pct, 0) }} total over {{ windowYears() }} {{ windowYears() === 1 ? 'year' : 'years' }}</span>
+          <span class="pp-cagr" [class.pos]="(windowCagr() ?? 0) >= 0" [class.neg]="(windowCagr() ?? 0) < 0">{{ pct(windowCagr()) }}<span class="pp-u">CAGR</span></span>
+          <span class="pp-sub">{{ pct(r.pct, 0) }} total over {{ windowYears() }} {{ windowYears() === 1 ? 'year' : 'years' }}</span>
         </div>
         <button class="pp-i" type="button" (click)="togglePpInfo()" [class.on]="ppInfoOpen()" [attr.aria-expanded]="ppInfoOpen()" aria-label="What this means">?</button>
       </div>
