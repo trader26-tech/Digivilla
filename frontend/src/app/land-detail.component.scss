@@ -565,7 +565,8 @@
 }
 .plot-tab + .plot-tab { border-left: 1px solid var(--survey); }
 .plot-tab:hover { background: color-mix(in srgb, var(--brass) 8%, transparent); }
-.plot-tab.on { background: var(--ink); color: var(--paper); }
+/* selected pill uses the cash/arbitrage dark-ash — no black */
+.plot-tab.on { background: color-mix(in srgb, var(--ink) 42%, var(--survey)); color: var(--paper); }
 .pt-n { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; line-height: 1; }
 .pt-l { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.6; }
 .pt-amt { font-size: 0.74rem; font-weight: 700; opacity: 0.75; }
@@ -574,8 +575,8 @@
 .stack-legend { display: flex; gap: 1.2rem; margin: 0.4rem 0 1rem; }
 .sl-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.75; }
 .sl-dot { width: 11px; height: 11px; border-radius: 3px; }
-.sl-dot.invested { background: var(--ink); }
-.sl-dot.gain { background: var(--brass); }
+.sl-dot.invested { background: color-mix(in srgb, var(--ink) 42%, var(--survey)); }
+.sl-dot.gain { background: color-mix(in srgb, var(--ink) 18%, var(--survey)); }
 
 .stack-bars { display: flex; gap: 0.5rem; align-items: end; height: 200px; padding-top: 0.4rem; }
 .sb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.35rem; }
@@ -590,13 +591,14 @@
   box-shadow: 0 6px 14px -9px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 @keyframes gcGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-/* gain = GOLD (brass), the appreciation; base = deep ink, the money you put in */
+/* both parts ASH — no black. gain = lighter ash on top, invested base = the
+   cash/arbitrage dark-ash below (same colour as the Cash slice). */
 .sb-gain {
   position: relative; width: 100%;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 72%, #fff), var(--brass));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 12%, #fff), color-mix(in srgb, var(--ink) 20%, var(--survey)));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
 }
-.sb-base { width: 100%; flex: 1; background: var(--ink); }
+.sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 42%, var(--survey)); }
 .sb-col:nth-child(1) .sb-stack { animation-delay: 0.15s; }
 .sb-col:nth-child(2) .sb-stack { animation-delay: 0.24s; }
 .sb-col:nth-child(3) .sb-stack { animation-delay: 0.33s; }
