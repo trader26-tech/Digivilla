@@ -22,6 +22,70 @@
 }
 @keyframes reveal { to { opacity: 1; transform: none; } }
 
+/* ---------- loading screen: plot + rotating benefits ---------- */
+.loading-screen {
+  padding: 0.4rem 0 2rem;
+  animation: reveal 0.4s ease both;
+}
+.loading-screen .hero-kicker { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.55; margin-bottom: 0.3rem; }
+.loading-screen .hero-name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(2rem, 8.5vw, 2.8rem); line-height: 1.02; letter-spacing: -0.02em;
+  margin: 0; color: var(--ink);
+}
+.loading-screen .hero-value {
+  font-family: var(--font-display); font-weight: 700; font-size: 2rem;
+  line-height: 1; color: var(--ink); margin-top: 0.7rem;
+}
+
+.benefit-stage {
+  margin-top: 1.8rem;
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+}
+.benefit-card {
+  flex: 1;
+  padding: 1.4rem;
+  border: 1px solid var(--survey);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brass) 5%, var(--paper));
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  /* re-key the animation each time the index changes → cross-fade + rise */
+  animation: benefitIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes benefitIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
+.benefit-ic {
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brass) 12%, var(--paper));
+  color: var(--brass);
+}
+.benefit-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.3rem; line-height: 1.15; margin: 0.2rem 0 0; color: var(--ink);
+}
+.benefit-body { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--ink); opacity: 0.75; }
+.benefit-dots { display: flex; gap: 0.4rem; justify-content: center; margin-top: 1rem; }
+.bdot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--survey);
+  transition: background 0.3s ease, width 0.3s ease;
+}
+.bdot.on { background: var(--brass); width: 20px; border-radius: 4px; }
+
+.loading-foot {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  margin-top: 1.6rem;
+  font-size: 0.82rem; font-weight: 500; color: var(--ink); opacity: 0.55;
+}
+
 /* ---------- top bar ---------- */
 .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .back {

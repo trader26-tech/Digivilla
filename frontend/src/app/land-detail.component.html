@@ -10,10 +10,36 @@
     <span class="plate"><span class="plate-mark" aria-hidden="true">◈</span>PropertyNest</span>
   </header>
 
-  <!-- ===== loading / error ===== -->
-  <div class="state" *ngIf="loading()">
-    <span class="spinner" aria-hidden="true"></span> Pulling real fund history…
-  </div>
+  <!-- ===== loading: show the plot + rotating benefits so the wait feels useful ===== -->
+  <section class="loading-screen" *ngIf="loading() && !error()">
+    <!-- the plot name is known instantly — no wait for it -->
+    <span class="hero-kicker">{{ plotLocality() }}</span>
+    <h1 class="hero-name">{{ plotName() }}</h1>
+    <div class="hero-value">{{ inr(ticketPrice) }}</div>
+
+    <!-- rotating benefit card (re-rendered each tick so the animation replays) -->
+    <div class="benefit-stage">
+      <div class="benefit-card" *ngFor="let _ of [benefitIdx()]">
+        <span class="benefit-ic" aria-hidden="true" [ngSwitch]="benefits[benefitIdx()].icon">
+          <svg *ngSwitchCase="'growth'" viewBox="0 0 24 24" width="26" height="26"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg *ngSwitchCase="'shield'" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg *ngSwitchCase="'liquid'" viewBox="0 0 24 24" width="26" height="26"><path d="M12 3c4 5 6 8 6 11a6 6 0 01-12 0c0-3 2-6 6-11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <svg *ngSwitchCase="'clock'" viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg *ngSwitchCase="'eye'" viewBox="0 0 24 24" width="26" height="26"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </span>
+        <h3 class="benefit-title">{{ benefits[benefitIdx()].title }}</h3>
+        <p class="benefit-body">{{ benefits[benefitIdx()].body }}</p>
+      </div>
+      <div class="benefit-dots">
+        <span class="bdot" *ngFor="let b of benefits; let i = index" [class.on]="i === benefitIdx()"></span>
+      </div>
+    </div>
+
+    <div class="loading-foot">
+      <span class="spinner sm" aria-hidden="true"></span> Fetching {{ activeVariant().legs.length }} funds' real track record…
+    </div>
+  </section>
+
   <div class="state err" *ngIf="error()">{{ error() }}</div>
 
   <ng-container *ngIf="!loading() && !error() && activeMetrics() as m">

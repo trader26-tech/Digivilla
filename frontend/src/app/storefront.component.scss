@@ -203,15 +203,19 @@
   text-overflow: ellipsis;
 }
 .tile-loc {
-  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--ink);
-  opacity: 0.55;
+  opacity: 0.6;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.loc-mark { flex: none; color: var(--brass); opacity: 0.9; }
 /* the amount to invest — the one big figure */
 .tile-price {
   flex: none;

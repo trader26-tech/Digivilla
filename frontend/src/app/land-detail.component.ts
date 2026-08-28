@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
@@ -110,7 +110,7 @@ interface ChartSource {
   templateUrl: './land-detail.component.html',
   styleUrl: './land-detail.component.scss',
 })
-export class LandDetailComponent implements OnInit {
+export class LandDetailComponent implements OnInit, OnDestroy {
   @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
 
@@ -161,6 +161,23 @@ export class LandDetailComponent implements OnInit {
   heroDetailsOpen = signal(false);
   toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }
 
+  /** Benefits shown, one at a time, while the fund data loads — so the wait
+   *  feels useful and the screen never looks like a blank spinner. */
+  readonly benefits: { icon: string; title: string; body: string }[] = [
+    { icon: 'growth', title: 'Own land, minus the paperwork',
+      body: 'No registration runs, no broker, no encroachment risk — your ₹10L is a curated basket of India\'s steadiest growth funds.' },
+    { icon: 'shield', title: 'Diversified, not one bet',
+      body: 'Three funds move together so a bad year in one is cushioned by the others — a smoother ride than any single fund.' },
+    { icon: 'liquid', title: 'Liquid when you need it',
+      body: 'Unlike a physical plot that can take months to sell, you can redeem in a few working days — no buyer to find.' },
+    { icon: 'clock', title: 'Built to compound',
+      body: 'Capital appreciation only — every rupee stays invested and grows, tested across real market cycles.' },
+    { icon: 'eye', title: 'Fully transparent',
+      body: 'Real NAV history, real drawdowns, real ratios — you\'ll see exactly how this mix behaved, no glossy promises.' },
+  ];
+  benefitIdx = signal(0);
+  private benefitTimer: any = null;
+
   /** Total growth of ₹10,000 over the whole measured history, for the summary. */
   totalGrowthPct = computed<number | null>(() => {
     const m = this.activeMetrics();
@@ -187,7 +204,21 @@ export class LandDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.active.set(this.initialVariant);
+    this.startBenefits();
     this.loadAll();
+  }
+
+  ngOnDestroy(): void { this.stopBenefits(); }
+
+  /** Rotate the benefit cards every ~2.6s while loading. */
+  private startBenefits(): void {
+    this.stopBenefits();
+    this.benefitTimer = setInterval(() => {
+      this.benefitIdx.update(i => (i + 1) % this.benefits.length);
+    }, 2600);
+  }
+  private stopBenefits(): void {
+    if (this.benefitTimer) { clearInterval(this.benefitTimer); this.benefitTimer = null; }
   }
 
   loadAll(): void {
@@ -201,11 +232,12 @@ export class LandDetailComponent implements OnInit {
         next: m => {
           this.metrics.update(cur => ({ ...cur, [v.key]: m }));
           anyOk = true;
-          if (--remaining === 0) this.loading.set(false);
+          if (--remaining === 0) { this.loading.set(false); this.stopBenefits(); }
         },
         error: () => {
           if (--remaining === 0) {
             this.loading.set(false);
+            this.stopBenefits();
             if (!anyOk) this.error.set('Could not reach the fund engine. Is the backend running?');
           }
         },
