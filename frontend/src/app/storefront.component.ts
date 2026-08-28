@@ -44,12 +44,16 @@ export interface Property {
 export class StorefrontComponent {
   readonly variantOrder: VariantKey[] = ['ready', 'construction', 'prelaunch'];
 
-  /** Fires when the customer opens the Land tier's detail page. Emits which
-   *  risk variant they tapped so the detail page opens on that one. */
-  @Output() openLand = new EventEmitter<'conservative' | 'balanced' | 'aggressive'>();
+  /** Fires when the customer opens a tier's detail page. Emits the property
+   *  and which risk variant they tapped, so the detail page opens on that one. */
+  @Output() openProperty = new EventEmitter<{
+    property: Property['key'];
+    variant: 'conservative' | 'balanced' | 'aggressive';
+  }>();
 
-  /** Map the storefront's property-world variant names onto the land baskets. */
-  private static readonly LAND_VARIANT: Record<VariantKey, 'conservative' | 'balanced' | 'aggressive'> = {
+  /** Map the storefront's property-world variant names onto the basket risk
+   *  profiles. Same mapping for every tier. */
+  private static readonly RISK_OF: Record<VariantKey, 'conservative' | 'balanced' | 'aggressive'> = {
     ready: 'conservative',
     construction: 'balanced',
     prelaunch: 'aggressive',
