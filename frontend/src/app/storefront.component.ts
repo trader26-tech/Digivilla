@@ -1,13 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
-export type VariantKey = 'conservative' | 'balanced' | 'aggressive';
+export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 
-/** A risk variant of a property — same ticket, different basket concentration. */
+/** A risk variant of a property, named in property terms rather than fund jargon:
+ *   ready        = Ready-to-move  → income now, steadier (conservative)
+ *   construction = Under construction → balanced
+ *   prelaunch    = Pre-launch     → most appreciation, less income (aggressive)
+ * Same ticket, different basket concentration. */
 export interface Variant {
   key: VariantKey;
-  label: string;
-  mix: string;                // basket character (concentration)
+  label: string;              // property-world name
+  note: string;               // one short plain-English hint
   appreciationLow: number;    // tentative annual appreciation %, low
   appreciationHigh: number;   // tentative annual appreciation %, high
   monthlyIncome: number;      // illustrative monthly SWP payout, rupees
@@ -36,15 +40,18 @@ export interface Property {
   styleUrl: './storefront.component.scss',
 })
 export class StorefrontComponent {
-  readonly variantOrder: VariantKey[] = ['conservative', 'balanced', 'aggressive'];
+  readonly variantOrder: VariantKey[] = ['ready', 'construction', 'prelaunch'];
 
   /** Which variant is selected for each property (defaults to balanced). */
   selected: Record<string, VariantKey> = {
-    land: 'balanced',
-    flat: 'balanced',
-    apartment: 'balanced',
-    duplex: 'balanced',
+    land: 'construction',
+    flat: 'construction',
+    apartment: 'construction',
+    duplex: 'construction',
   };
+
+  /** Which row is expanded (only one at a time). null = all collapsed. */
+  openKey: string | null = null;
 
   readonly properties: Property[] = [
     {
@@ -53,9 +60,9 @@ export class StorefrontComponent {
       tagline: 'A surveyed plot to start with',
       price: 10_00_000,
       variants: {
-        conservative: { key: 'conservative', label: 'Conservative', mix: 'Debt-led — steadier ground, gentle growth', appreciationLow: 7, appreciationHigh: 9, monthlyIncome: 5_800 },
-        balanced:     { key: 'balanced',     label: 'Balanced',     mix: 'Debt with a slice of equity',              appreciationLow: 8, appreciationHigh: 11, monthlyIncome: 5_000 },
-        aggressive:   { key: 'aggressive',   label: 'Aggressive',   mix: 'Equity-tilted — more growth, less income', appreciationLow: 10, appreciationHigh: 13, monthlyIncome: 3_800 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 7,  appreciationHigh: 9,  monthlyIncome: 5_800 },
+        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 8,  appreciationHigh: 11, monthlyIncome: 5_000 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 10, appreciationHigh: 13, monthlyIncome: 3_800 },
       },
     },
     {
@@ -64,9 +71,9 @@ export class StorefrontComponent {
       tagline: 'A compact home, balanced and liquid',
       price: 25_00_000,
       variants: {
-        conservative: { key: 'conservative', label: 'Conservative', mix: 'Income-first hybrid, low volatility',       appreciationLow: 8, appreciationHigh: 10, monthlyIncome: 15_000 },
-        balanced:     { key: 'balanced',     label: 'Balanced',     mix: 'Balanced between growth and income',        appreciationLow: 9, appreciationHigh: 12, monthlyIncome: 13_500 },
-        aggressive:   { key: 'aggressive',   label: 'Aggressive',   mix: 'Equity-heavy hybrid, growth-first',         appreciationLow: 11, appreciationHigh: 14, monthlyIncome: 10_500 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 8,  appreciationHigh: 10, monthlyIncome: 15_000 },
+        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 9,  appreciationHigh: 12, monthlyIncome: 13_500 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 11, appreciationHigh: 14, monthlyIncome: 10_500 },
       },
     },
     {
@@ -75,9 +82,9 @@ export class StorefrontComponent {
       tagline: 'A larger residence with room to grow',
       price: 50_00_000,
       variants: {
-        conservative: { key: 'conservative', label: 'Conservative', mix: 'Hybrid core — measured, income-steady',     appreciationLow: 9, appreciationHigh: 11, monthlyIncome: 32_000 },
-        balanced:     { key: 'balanced',     label: 'Balanced',     mix: 'Equity-tilted — growth with measured risk', appreciationLow: 10, appreciationHigh: 13, monthlyIncome: 29_000 },
-        aggressive:   { key: 'aggressive',   label: 'Aggressive',   mix: 'Growth equity — longer horizon',            appreciationLow: 12, appreciationHigh: 15, monthlyIncome: 23_000 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 9,  appreciationHigh: 11, monthlyIncome: 32_000 },
+        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 10, appreciationHigh: 13, monthlyIncome: 29_000 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 12, appreciationHigh: 15, monthlyIncome: 23_000 },
       },
     },
     {
@@ -86,12 +93,19 @@ export class StorefrontComponent {
       tagline: 'A two-storey estate, built to appreciate',
       price: 1_00_00_000,
       variants: {
-        conservative: { key: 'conservative', label: 'Conservative', mix: 'Growth core with a debt cushion',           appreciationLow: 10, appreciationHigh: 12, monthlyIncome: 68_000 },
-        balanced:     { key: 'balanced',     label: 'Balanced',     mix: 'Growth-led equity, balanced payout',        appreciationLow: 11, appreciationHigh: 14, monthlyIncome: 62_500 },
-        aggressive:   { key: 'aggressive',   label: 'Aggressive',   mix: 'Pure growth equity — the longest horizon',  appreciationLow: 13, appreciationHigh: 16, monthlyIncome: 50_000 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 10, appreciationHigh: 12, monthlyIncome: 68_000 },
+        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 11, appreciationHigh: 14, monthlyIncome: 62_500 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 13, appreciationHigh: 16, monthlyIncome: 50_000 },
       },
     },
   ];
+
+  toggle(p: Property): void {
+    this.openKey = this.openKey === p.key ? null : p.key;
+  }
+  isOpen(p: Property): boolean {
+    return this.openKey === p.key;
+  }
 
   variantOf(p: Property): Variant {
     return p.variants[this.selected[p.key]];

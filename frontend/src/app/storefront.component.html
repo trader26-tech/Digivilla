@@ -10,11 +10,17 @@
     <li
       class="prop reveal"
       *ngFor="let p of properties; let i = index"
+      [class.open]="isOpen(p)"
       [style.--s]="i + 1"
-      [attr.aria-label]="p.name + ', ' + inr(p.price)"
     >
-      <button class="prop-btn" type="button">
-        <!-- visual: architectural line art (swap for a photo later) -->
+      <!-- header row: tap to expand the variants -->
+      <button
+        class="prop-btn"
+        type="button"
+        [attr.aria-expanded]="isOpen(p)"
+        [attr.aria-label]="p.name + ', from ' + compact(p.price)"
+        (click)="toggle(p)"
+      >
         <span class="thumb" [ngSwitch]="p.key" aria-hidden="true">
 
           <svg *ngSwitchCase="'land'" class="art" viewBox="0 0 120 120" fill="none">
@@ -49,23 +55,47 @@
           </svg>
         </span>
 
-        <!-- name + one figure -->
         <span class="body">
           <span class="name">{{ p.name }}</span>
-          <span class="yield">{{ variantOf(p).monthlyIncome ? inr(variantOf(p).monthlyIncome) : '' }}<span class="u">/mo</span></span>
+          <span class="from">from {{ compact(p.price) }}</span>
         </span>
 
-        <!-- price + chevron -->
         <span class="tail">
-          <span class="price">{{ compact(p.price) }}</span>
-          <svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="teaser">
+            <span class="teaser-v">{{ inr(variantOf(p).monthlyIncome) }}<span class="u">/mo</span></span>
+            <span class="teaser-g">{{ variantOf(p).appreciationLow }}–{{ variantOf(p).appreciationHigh }}%<span class="u">/yr</span></span>
+          </span>
+          <svg class="chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
       </button>
+
+      <!-- expanded: the three variants -->
+      <div class="variants" *ngIf="isOpen(p)">
+        <button
+          *ngFor="let vk of variantOrder"
+          class="variant"
+          type="button"
+          [class.on]="selected[p.key] === vk"
+          [attr.aria-pressed]="selected[p.key] === vk"
+          (click)="pick(p, vk)"
+        >
+          <span class="v-mark" aria-hidden="true"></span>
+          <span class="v-main">
+            <span class="v-label">{{ p.variants[vk].label }}</span>
+            <span class="v-note">{{ p.variants[vk].note }}</span>
+          </span>
+          <span class="v-figs">
+            <span class="v-income">{{ inr(p.variants[vk].monthlyIncome) }}<span class="u">/mo</span></span>
+            <span class="v-growth">{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%<span class="u">/yr*</span></span>
+          </span>
+        </button>
+      </div>
     </li>
   </ul>
 
-  <!-- ===== one disclaimer for the whole list ===== -->
+  <!-- ===== footnote for the whole list ===== -->
   <p class="disclaimer reveal" [style.--s]="properties.length + 1">
-    Illustrative monthly income — not guaranteed. Subject to market risk.
+    <span class="star">*</span> Tentative, based on past fund returns — illustrative,
+    not guaranteed. Future returns are not assured. Subject to market risk.
   </p>
 </main>
