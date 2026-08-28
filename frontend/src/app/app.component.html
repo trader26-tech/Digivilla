@@ -19,5 +19,6 @@
   *ngIf="!intro && detail && detail.property !== 'land'"
   [property]="detail.property"
   [initialVariant]="detail.variant"
+  [focus]="detail.focus ?? null"
   (back)="closeDetail()"
 ></app-property-detail>

@@ -54,7 +54,13 @@ export class PropertyDetailComponent implements OnInit, OnDestroy {
   @Input() property: PropertyKey = 'flat';
   /** Which risk variant to open on. */
   @Input() initialVariant: VariantKey = 'balanced';
+  /** Optional deep-link focus: 'map' opens scrolled to the risk–reward map,
+   *  self-pin highlighted (used by the storefront tile's location pin). */
+  @Input() focus: 'map' | null = null;
   @Output() back = new EventEmitter<void>();
+
+  /** Set while we still owe a scroll-to-map once the data + view are ready. */
+  private pendingMapFocus = false;
 
   private api = inject(PropertyDetailService);
 
@@ -115,11 +121,20 @@ export class PropertyDetailComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.active.set(this.initialVariant);
     this.amount.set(this.ticketPrice);
+    this.pendingMapFocus = this.focus === 'map';
     this.loadAll();
     // Cycle the reassuring copy every ~2s while loading.
     this.loadTimer = setInterval(() => {
       if (this.loading()) this.loadStep.update(s => s + 1);
     }, 2000);
+  }
+
+  /** Once the data's in and the map has rendered, honour a pending map focus. */
+  private maybeFocusMap(): void {
+    if (!this.pendingMapFocus) return;
+    this.pendingMapFocus = false;
+    // Defer to the next frame so #mapCard exists in the DOM after *ngIf flips.
+    setTimeout(() => this.scrollToMap(), 60);
   }
 
   ngOnDestroy(): void {
@@ -142,12 +157,13 @@ export class PropertyDetailComponent implements OnInit, OnDestroy {
         next: m => {
           this.metrics.update(cur => ({ ...cur, [v.key]: m }));
           anyOk = true;
-          if (--remaining === 0) this.loading.set(false);
+          if (--remaining === 0) { this.loading.set(false); this.maybeFocusMap(); }
         },
         error: () => {
           if (--remaining === 0) {
             this.loading.set(false);
             if (!anyOk) this.error.set('Could not reach the fund engine. Is the backend running?');
+            else this.maybeFocusMap();
           }
         },
       });

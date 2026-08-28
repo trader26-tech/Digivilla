@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signa
 import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
+import { schemeName, schemeLocality } from './property-package.data';
 
 export type LandVariantKey = 'conservative' | 'balanced' | 'aggressive';
 
@@ -151,6 +152,22 @@ export class LandDetailComponent implements OnInit {
 
   activeVariant = computed(() => this.variants.find(v => v.key === this.active())!);
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
+
+  /** The plot's real product name + locality, matching the tapped storefront tile. */
+  plotName = computed(() => schemeName('land', this.active()));
+  plotLocality = computed(() => schemeLocality('land', this.active()));
+
+  /** Hero growth ratios are hidden until tapped. */
+  heroDetailsOpen = signal(false);
+  toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }
+
+  /** Total growth of ₹10,000 over the whole measured history, for the summary. */
+  totalGrowthPct = computed<number | null>(() => {
+    const m = this.activeMetrics();
+    if (!m || !m.growth.length) return null;
+    const first = m.growth[0].value, last = m.growth[m.growth.length - 1].value;
+    return first > 0 ? (last / first - 1) * 100 : null;
+  });
 
   /** Dropdown options for the chart: the blend + each fund of the active variant. */
   chartSources = computed<ChartSource[]>(() => {

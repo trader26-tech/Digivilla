@@ -25,14 +25,15 @@ export class AppComponent {
   /** The opening animation plays first; flips false when it finishes. */
   intro = true;
 
-  /** null = storefront; otherwise the detail page for this property + variant. */
-  detail: { property: PropertyKey; variant: RiskVariant } | null = null;
+  /** null = storefront; otherwise the detail page for this property + variant.
+   *  `focus: 'map'` opens the detail page scrolled to its risk–reward map. */
+  detail: { property: PropertyKey; variant: RiskVariant; focus?: 'map' } | null = null;
 
   onIntroDone(): void {
     this.intro = false;
   }
 
-  openProperty(e: { property: PropertyKey; variant: RiskVariant }): void {
+  openProperty(e: { property: PropertyKey; variant: RiskVariant; focus?: 'map' }): void {
     this.detail = e;
     window.scrollTo({ top: 0 });
   }

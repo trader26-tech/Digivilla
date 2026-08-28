@@ -129,6 +129,15 @@ export class StorefrontComponent {
     this.openProperty.emit({ property: p.key, variant });
   }
 
+  /** Tapping a tile's location pin: open the detail page focused on the
+   *  risk–reward map for this plot. The `focus` hook (read by the shell /
+   *  property-detail to scroll to + highlight this scheme) is being finalised
+   *  with the nav-wiring owner; until then this opens the detail page normally. */
+  openMap(p: Property, vk: VariantKey): void {
+    const variant = StorefrontComponent.RISK_OF[vk];
+    this.openProperty.emit({ property: p.key, variant });
+  }
+
   /** The unique development name for a tile, e.g. "Marina Rise".
    *  Uses retirement-57's store-key helper (maps ready→conservative etc.). */
   schemeName(p: Property, vk: VariantKey): string {

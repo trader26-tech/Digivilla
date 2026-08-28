@@ -17,21 +17,36 @@
   <div class="state err" *ngIf="error()">{{ error() }}</div>
 
   <ng-container *ngIf="!loading() && !error() && activeMetrics() as m">
-    <!-- ===== hero: the tapped tile's name + one growth headline ===== -->
+    <!-- ===== hero: the plot's own name, its value, then how much it grows ===== -->
     <section class="hero">
-      <div class="hero-top">
-        <h1 class="hero-name reveal" style="--s:0">{{ activeVariant().name }}</h1>
-        <span class="hero-price reveal" style="--s:1">{{ compact(ticketPrice) }}<span class="hm-unit">/plot</span></span>
+      <span class="hero-kicker reveal" style="--s:0">{{ plotLocality() }}</span>
+      <h1 class="hero-name reveal" style="--s:0">{{ plotName() }}</h1>
+
+      <!-- value -->
+      <div class="hero-value reveal" style="--s:1">{{ inr(ticketPrice) }}</div>
+      <!-- how much it grows -->
+      <div class="hero-grow-line reveal" style="--s:2">
+        could grow <span class="hg-pct">~{{ pct(m.expected_return ?? activeVariant().targetGrowth) }}</span> a year<span class="star">*</span>
       </div>
-      <div class="hero-meta reveal" style="--s:1">
-        <span class="hero-grow">~{{ pct(m.expected_return ?? activeVariant().targetGrowth) }}<span class="hm-unit">/yr</span><span class="star">*</span></span>
+
+      <!-- growth ratios: hidden until tapped -->
+      <button class="hero-more reveal" style="--s:2" type="button"
+              (click)="toggleHeroDetails()" [attr.aria-expanded]="heroDetailsOpen()">
+        {{ heroDetailsOpen() ? 'Hide' : 'Show' }} the numbers
+        <svg class="hm-chev" [class.up]="heroDetailsOpen()" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="hero-details" *ngIf="heroDetailsOpen()">
+        <div class="hd-row"><span class="hd-k">Past 3-yr combined growth</span><span class="hd-v pos">{{ pct(m.return_3y) }}</span></div>
+        <div class="hd-row"><span class="hd-k">Past 5-yr combined growth</span><span class="hd-v pos">{{ pct(m.return_5y) }}</span></div>
+        <div class="hd-row"><span class="hd-k">Combined max drawdown</span><span class="hd-v neg">{{ pct(m.max_drawdown) }}</span></div>
+        <div class="hd-row"><span class="hd-k">Combined volatility</span><span class="hd-v">{{ pct(m.volatility) }}</span></div>
       </div>
     </section>
 
     <!-- ===== 1 · how it actually moved (axes + hover, combined stats) — boxless ===== -->
     <section class="chart-open" *ngIf="growthPath() || chartLoading()">
       <div class="card-head reveal" style="--s:2">
-        <h2 class="card-title">How it actually moved</h2>
+        <h2 class="card-title">Past performance</h2>
         <label class="src-pick">
           <select [value]="chartSource()" (change)="pickChartSource($any($event.target).value)" aria-label="Choose what to chart">
             <option *ngFor="let s of chartSources()" [value]="s.id">{{ s.label }}</option>
@@ -81,14 +96,17 @@
           </div>
         </div>
 
-        <!-- combined-basket headline stats, below the chart -->
-        <div class="chart-stats reveal" style="--s:4" *ngIf="chartMetrics() as cm">
-          <div class="cs"><span class="cs-v pos">{{ pct(cm.return_3y) }}</span><span class="cs-k">3-yr growth</span></div>
-          <div class="cs"><span class="cs-v neg">{{ pct(cm.max_drawdown) }}</span><span class="cs-k">Max drawdown</span></div>
-          <div class="cs" *ngIf="growthEndpoints() as ep">
-            <span class="cs-v">₹{{ (ep.startVal | number:'1.0-0') }} → {{ compact(ep.endVal) }}</span>
-            <span class="cs-k">{{ ep.startDate }} → today</span>
+        <!-- growth summary box, below the chart -->
+        <div class="growth-summary reveal" style="--s:4" *ngIf="growthEndpoints() as ep">
+          <div class="gs-line">
+            <span class="gs-from">₹{{ (ep.startVal | number:'1.0-0') }}</span>
+            <span class="gs-arrow" aria-hidden="true">→</span>
+            <span class="gs-to">{{ compact(ep.endVal) }}</span>
           </div>
+          <p class="gs-sub" *ngIf="totalGrowthPct() as tg">
+            grew <strong class="pos">+{{ tg | number:'1.0-0' }}%</strong>
+            since {{ ep.startDate }} · <strong class="pos">{{ pct(m.return_3y) }}</strong> in the past 3 years
+          </p>
         </div>
       </ng-container>
     </section>

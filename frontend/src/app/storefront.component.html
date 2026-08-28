@@ -63,12 +63,15 @@
 
   <!-- ===== tiles ===== -->
   <div class="tiles">
-    <button
+    <div
       *ngFor="let t of tiles; let i = index"
       class="tile reveal"
-      type="button"
+      role="button"
+      tabindex="0"
       [style.--s]="i + 3"
       (click)="open(t.p, t.v.key)"
+      (keydown.enter)="open(t.p, t.v.key)"
+      (keydown.space)="open(t.p, t.v.key); $event.preventDefault()"
       [attr.aria-label]="t.v.label + ' ' + t.p.name + ', ' + compact(t.p.price)"
     >
       <!-- header: icon · name · the amount to invest (the one big figure) -->
@@ -83,6 +86,16 @@
           <span class="tile-loc">{{ t.p.name }} · {{ t.v.label }}</span>
         </span>
         <span class="tile-price">{{ compact(t.p.price) }}</span>
+
+        <!-- location pin: opens the risk–reward map for this plot -->
+        <button
+          class="tile-pin"
+          type="button"
+          (click)="openMap(t.p, t.v.key); $event.stopPropagation()"
+          [attr.aria-label]="'See where ' + schemeName(t.p, t.v.key) + ' sits on the risk–reward map'"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        </button>
       </div>
 
       <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
@@ -115,7 +128,7 @@
           </span>
         </div>
       </div>
-    </button>
+    </div>
 
     <p class="no-match" *ngIf="!tiles.length">No estates match your filters.</p>
   </div>
