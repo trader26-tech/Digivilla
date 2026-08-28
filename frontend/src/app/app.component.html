@@ -3,13 +3,21 @@
 
 <!-- The storefront: the four property tiers. -->
 <app-storefront
-  *ngIf="!intro && landVariant === null"
-  (openLand)="openLand($event)"
+  *ngIf="!intro && detail === null"
+  (openProperty)="openProperty($event)"
 ></app-storefront>
 
-<!-- Land detail — the deep-dive page for the Land tier. -->
+<!-- Land keeps its own dedicated detail page. -->
 <app-land-detail
-  *ngIf="!intro && landVariant !== null"
-  [initialVariant]="landVariant"
-  (back)="closeLand()"
+  *ngIf="!intro && detail?.property === 'land'"
+  [initialVariant]="detail!.variant"
+  (back)="closeDetail()"
 ></app-land-detail>
+
+<!-- Flat / Apartment / Duplex use the generic property-detail page. -->
+<app-property-detail
+  *ngIf="!intro && detail && detail.property !== 'land'"
+  [property]="detail.property"
+  [initialVariant]="detail.variant"
+  (back)="closeDetail()"
+></app-property-detail>

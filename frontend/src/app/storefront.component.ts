@@ -121,10 +121,10 @@ export class StorefrontComponent {
     this.filterOpen = false;
   }
 
-  /** Land is the one tier with a full detail page; other tiers stay inert for now. */
+  /** Open any tier's detail page, on the tapped risk variant (default balanced). */
   open(p: Property, vk?: VariantKey): void {
-    if (p.key !== 'land') return;
-    this.openLand.emit(vk ? StorefrontComponent.LAND_VARIANT[vk] : 'balanced');
+    const variant = vk ? StorefrontComponent.RISK_OF[vk] : 'balanced';
+    this.openProperty.emit({ property: p.key, variant });
   }
 
   // Figures from the PropertyNest package data. growthPct = expected p.a.;

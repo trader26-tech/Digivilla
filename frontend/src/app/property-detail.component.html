@@ -223,13 +223,13 @@
         {{ incomePays ? 'Every fund inside — and what it does' : 'The funds inside — and why each is here' }}
       </h2>
 
-      <ng-container *ngFor="let role of ['income','growth','hedge','liquid']">
-        <div class="role-group" *ngIf="hasRole($any(role))">
-          <div class="role-head" [ngClass]="roleClass($any(role))">
-            <span class="role-dot"></span>{{ roleLabel[$any(role)] }}
+      <ng-container *ngFor="let role of roleOrder">
+        <div class="role-group" *ngIf="hasRole(role)">
+          <div class="role-head" [ngClass]="roleClass(role)">
+            <span class="role-dot"></span>{{ roleLabel[role] }}
           </div>
           <ul class="fund-list">
-            <li class="fund" *ngFor="let leg of legsByRole($any(role))">
+            <li class="fund" *ngFor="let leg of legsByRole(role)">
               <div class="fund-top">
                 <span class="fund-w">{{ (leg.weight * 100) | number:'1.0-0' }}%</span>
                 <div class="fund-name-box">
@@ -244,7 +244,7 @@
                   <span class="fund-swp none" *ngIf="leg.withdrawMonthly === 0 && incomePays">no monthly</span>
                 </div>
               </div>
-              <div class="weight-bar"><span [style.width.%]="leg.weight * 100" [ngClass]="roleClass($any(role))"></span></div>
+              <div class="weight-bar"><span [style.width.%]="leg.weight * 100" [ngClass]="roleClass(role)"></span></div>
             </li>
           </ul>
         </div>

@@ -42,6 +42,8 @@ export class PropertyDetailComponent implements OnInit {
 
   readonly variantOrder = VARIANT_ORDER;
   readonly roleLabel = ROLE_LABEL;
+  /** Order the fund roles are grouped/rendered in the breakdown. */
+  readonly roleOrder: LegRole[] = ['income', 'growth', 'hedge', 'liquid'];
   readonly withdrawalRules = WITHDRAWAL_RULES;
   readonly taxNote = TAX_NOTE;
 
