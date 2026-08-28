@@ -43,40 +43,45 @@
   padding-bottom: 8vh;   /* optical centring, sits a touch above middle */
 }
 
-/* surveyed plot: box draws in, corner nodes pop, location pin drops, then a
-   soft radar sweep keeps it alive for the whole (min 3s) load */
-.load-mark { width: 96px; height: 96px; margin-bottom: 1.8rem; }
-.load-mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
-.lm-plot {
-  fill: none; stroke: var(--brass); stroke-width: 2.2;
-  stroke-dasharray: 320; stroke-dashoffset: 320;
-  transform-origin: 60px 60px;
-  animation: draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.15s, plotBreathe 3s ease-in-out infinite 1.2s;
+/* a single brass location pin: drops in once, then bobs gently over a soft
+   ground shadow that pulses in time. One colour, calm, premium. */
+.load-mark {
+  position: relative;
+  width: 64px; height: 80px;
+  margin-bottom: 1.8rem;
+  display: grid;
+  place-items: start center;
 }
-.lm-node { fill: var(--brass); opacity: 0; animation: nodePop 0.4s cubic-bezier(0.34,1.5,0.5,1) forwards; }
-.lm-node:nth-of-type(1) { animation-delay: 0.7s; }
-.lm-node:nth-of-type(2) { animation-delay: 0.85s; }
-.lm-node:nth-of-type(3) { animation-delay: 1s; }
-.lm-node:nth-of-type(4) { animation-delay: 1.15s; }
-.lm-ripple {
-  fill: none; stroke: var(--brass); stroke-width: 1.6;
-  transform-origin: 60px 60px; opacity: 0;
-  animation: ripple 2.2s ease-out infinite 1.5s;
+.load-mark svg {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%; display: block;
+  transform-origin: 32px 68px;
+  animation: pinDrop 0.6s cubic-bezier(0.34, 1.5, 0.4, 1) both, pinBob 2.4s ease-in-out infinite 0.7s;
 }
-.lm-ripple.r2 { animation-delay: 2.6s; }
-.lm-pin {
-  fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linejoin: round;
-  opacity: 0; transform-origin: 60px 76px;
-  animation: pinDrop 0.55s cubic-bezier(0.34, 1.6, 0.5, 1) forwards 1.25s, pinBob 2.4s ease-in-out infinite 1.9s;
+.lm-pin { fill: var(--brass); }
+.lm-pin-dot { fill: var(--paper); }
+.lm-shadow {
+  position: absolute;
+  left: 50%; bottom: 4px;
+  width: 26px; height: 7px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--brass) 30%, transparent);
+  filter: blur(2px);
+  animation: shadowPulse 2.4s ease-in-out infinite 0.7s;
 }
-.lm-pin-dot { fill: var(--brass); opacity: 0; animation: fadeNode 0.3s ease forwards 1.55s; }
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes fadeNode { to { opacity: 1; } }
-@keyframes nodePop { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
-@keyframes plotBreathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.97); opacity: 0.82; } }
-@keyframes pinDrop { from { opacity: 0; transform: translateY(-12px) scale(0.7); } to { opacity: 1; transform: none; } }
-@keyframes pinBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-@keyframes ripple { 0% { opacity: 0.5; transform: scale(0.15); } 100% { opacity: 0; transform: scale(1); } }
+@keyframes pinDrop {
+  from { opacity: 0; transform: translateY(-22px) scale(0.85); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pinBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes shadowPulse {
+  0%, 100% { transform: translateX(-50%) scale(1);    opacity: 0.5; }
+  50%      { transform: translateX(-50%) scale(0.72); opacity: 0.28; }
+}
 
 .load-kicker {
   font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em;
@@ -650,9 +655,7 @@
   .reveal { animation: none; opacity: 1; transform: none; }
   .card { animation: none; opacity: 1; transform: none; }
   .sb-stack { animation: none; transform: none; }
-  .lm-plot { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
-  .lm-node, .lm-pin, .lm-pin-dot, .load-kicker, .load-name, .load-benefit, .load-bar { animation: none; opacity: 1; transform: none; }
-  .lm-ripple { display: none; }
+  .load-mark svg, .lm-shadow, .load-kicker, .load-name, .load-benefit, .load-bar { animation: none; opacity: 1; transform: none; }
   .load-bar span { animation: slide 1.6s linear infinite; }   /* keep the progress hint moving */
   .g-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .bar-stack { animation: none; }
