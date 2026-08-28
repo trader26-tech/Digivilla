@@ -257,15 +257,32 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     this.stopBenefits();
     this.benefitTimer = setInterval(() => {
       this.benefitIdx.update(i => (i + 1) % this.benefits.length);
-    }, 2600);
+    }, 1900);
   }
   private stopBenefits(): void {
     if (this.benefitTimer) { clearInterval(this.benefitTimer); this.benefitTimer = null; }
   }
 
+  /** Minimum time the loading screen stays up, so the animation plays fully and
+   *  the user can read the message — no snapping to the page even if data is fast. */
+  private readonly MIN_LOAD_MS = 3000;
+  private loadStart = 0;
+
+  /** Flip loading off, but never before MIN_LOAD_MS has elapsed. */
+  private finishLoading(errMsg?: string): void {
+    const elapsed = Date.now() - this.loadStart;
+    const wait = Math.max(0, this.MIN_LOAD_MS - elapsed);
+    setTimeout(() => {
+      if (errMsg) this.error.set(errMsg);
+      this.loading.set(false);
+      this.stopBenefits();
+    }, wait);
+  }
+
   loadAll(): void {
     this.loading.set(true);
     this.error.set(null);
+    this.loadStart = Date.now();
     let remaining = this.variants.length;
     let anyOk = false;
     for (const v of this.variants) {
@@ -274,13 +291,11 @@ export class LandDetailComponent implements OnInit, OnDestroy {
         next: m => {
           this.metrics.update(cur => ({ ...cur, [v.key]: m }));
           anyOk = true;
-          if (--remaining === 0) { this.loading.set(false); this.stopBenefits(); }
+          if (--remaining === 0) this.finishLoading();
         },
         error: () => {
           if (--remaining === 0) {
-            this.loading.set(false);
-            this.stopBenefits();
-            if (!anyOk) this.error.set('Could not reach the fund engine. Is the backend running?');
+            this.finishLoading(anyOk ? undefined : 'Could not reach the fund engine. Is the backend running?');
           }
         },
       });
