@@ -603,7 +603,7 @@
 @media (prefers-reduced-motion: reduce) {
   .reveal { animation: none; opacity: 1; transform: none; }
   .card { animation: none; opacity: 1; transform: none; }
-  .pb-fill { animation: none; transform: none; }
+  .gc-fill, .cl-fill { animation: none; transform: none; }
   .lm-arc { animation: none; stroke-dasharray: 80 209; }
   .lm-glyph, .load-kicker, .load-name, .load-benefit, .load-bar { animation: none; opacity: 1; transform: none; }
   .load-bar span { animation: slide 1.6s linear infinite; }   /* keep the progress hint moving */

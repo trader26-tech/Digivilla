@@ -122,8 +122,8 @@
       </ng-container>
     </section>
 
-    <!-- ===== 2 · if you'd invested N years ago (backward comparison) ===== -->
-    <section class="card proj-card">
+    <!-- ===== 2 · How your plot would have grown — invested → became ===== -->
+    <section class="card grown-card">
       <div class="card-head">
         <h2 class="card-title">How your plot would have grown</h2>
       </div>
@@ -134,17 +134,34 @@
                 (click)="setYearsAgo(n)">{{ n }}y ago</button>
       </div>
 
-      <p class="proj-headline">
-        <strong>{{ compact(ticketPrice) }}</strong> invested {{ yearsAgo() }} years ago →
-        <strong class="grow">{{ compact(pastNowValue()) }}</strong>
-        <span class="mult">≈ {{ pastMultiple() | number:'1.1-1' }}×</span>
-      </p>
+      <div class="grown-compare">
+        <div class="gc-side invested">
+          <span class="gc-k">You invested</span>
+          <span class="gc-v">{{ compact(ticketPrice) }}</span>
+          <div class="gc-bar"><span class="gc-fill invested" style="height:100%"></span></div>
+          <span class="gc-foot">{{ yearsAgo() }} years ago</span>
+        </div>
 
-      <div class="bars">
-        <div class="bar-col" *ngFor="let r of pastProjection()">
-          <span class="pb-v">{{ compact(r.value) }}</span>
-          <div class="pb-track"><div class="pb-fill" [style.height.%]="(r.value / pastNowValue()) * 100"></div></div>
-          <div class="bar-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
+        <div class="gc-arrow" aria-hidden="true">
+          <svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 12h30M26 6l7 6-7 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="gc-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
+        </div>
+
+        <div class="gc-side became">
+          <span class="gc-k">It would be worth</span>
+          <span class="gc-v grow">{{ compact(pastNowValue()) }}</span>
+          <div class="gc-bar"><span class="gc-fill became" style="height:100%"></span></div>
+          <span class="gc-foot pos">+{{ ((pastMultiple() - 1) * 100) | number:'1.0-0' }}% gain</span>
+        </div>
+      </div>
+
+      <div class="climb">
+        <div class="climb-col" *ngFor="let r of pastProjection()">
+          <span class="cl-v">{{ compact(r.value) }}</span>
+          <div class="cl-track">
+            <div class="cl-fill" [class.now]="r.year === yearsAgo()" [style.height.%]="(r.value / pastNowValue()) * 100"></div>
+          </div>
+          <div class="cl-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
         </div>
       </div>
     </section>
