@@ -27,84 +27,7 @@
       </div>
     </section>
 
-    <!-- ===== 1 · ASSET ALLOCATION (look-through) ===== -->
-    <section class="card alloc-card">
-      <div class="card-head">
-        <h2 class="card-title">Where your money sits</h2>
-        <span class="card-sub">true split, seen through every fund</span>
-      </div>
-      <div class="alloc-bar">
-        <span *ngFor="let s of allocation()" class="alloc-seg" [attr.data-k]="s.key"
-          [style.width.%]="s.pct" [attr.title]="s.label + ' ' + (s.pct | number:'1.0-0') + '%'"></span>
-      </div>
-      <ul class="alloc-legend">
-        <li *ngFor="let s of allocation()">
-          <span class="a-dot" [attr.data-k]="s.key"></span>
-          <span class="a-label">{{ s.label }}</span>
-          <span class="a-pct">{{ s.pct | number:'1.0-0' }}%</span>
-        </li>
-      </ul>
-    </section>
-
-    <!-- ===== 2 · THE FUNDS INSIDE (which funds + ₹ per fund) ===== -->
-    <section class="card funds-card">
-      <div class="card-head">
-        <h2 class="card-title">The funds inside</h2>
-        <span class="card-sub">{{ compact(ticketPrice) }} split across {{ activeVariant().legs.length }} funds</span>
-      </div>
-      <ul class="fund-list">
-        <li class="fund" *ngFor="let leg of activeVariant().legs">
-          <div class="fund-top">
-            <span class="fund-w">{{ (leg.weight * 100) | number:'1.0-0' }}%</span>
-            <div class="fund-name-box">
-              <span class="fund-name">{{ leg.label }}</span>
-              <span class="fund-role">{{ leg.role }}</span>
-            </div>
-            <span class="fund-amt">{{ compact(ticketPrice * leg.weight) }}</span>
-          </div>
-          <div class="weight-bar"><span [style.width.%]="leg.weight * 100"></span></div>
-        </li>
-      </ul>
-    </section>
-
-    <!-- ===== 3 · COMBINED performance (tap ratios to learn what they mean) ===== -->
-    <section class="card perf-card">
-      <div class="card-head">
-        <h2 class="card-title">How the whole basket has done</h2>
-        <span class="card-sub">all {{ activeVariant().legs.length }} funds together, not one alone</span>
-      </div>
-      <div class="perf-panel">
-        <div class="pp-row"><span class="pp-k">Past 3-yr combined return</span><span class="pp-v pos">{{ pct(m.return_3y) }}</span></div>
-        <div class="pp-row"><span class="pp-k">Past 5-yr combined return</span><span class="pp-v pos">{{ pct(m.return_5y) }}</span></div>
-        <div class="pp-row"><span class="pp-k">Combined max drawdown</span><span class="pp-v neg">{{ pct(m.max_drawdown) }}</span></div>
-        <div class="pp-row"><span class="pp-k">Combined volatility</span><span class="pp-v">{{ pct(m.volatility) }}</span></div>
-
-        <!-- tappable rows: explain what the ratio means -->
-        <div class="pp-item" [class.open]="openRatio() === 'sharpe'">
-          <button class="pp-row tappable" type="button" (click)="toggleRatio('sharpe')" [attr.aria-expanded]="openRatio() === 'sharpe'">
-            <span class="pp-k">Sharpe ratio <span class="info-i" aria-hidden="true">?</span></span>
-            <span class="pp-v">{{ sharpe(m) !== null ? (sharpe(m) | number:'1.2-2') : '—' }}</span>
-          </button>
-          <p class="pp-info" *ngIf="openRatio() === 'sharpe'">{{ ratioInfo['sharpe'] }}</p>
-        </div>
-        <div class="pp-item" [class.open]="openRatio() === 'beta'">
-          <button class="pp-row tappable" type="button" (click)="toggleRatio('beta')" [attr.aria-expanded]="openRatio() === 'beta'">
-            <span class="pp-k">Beta vs market <span class="info-i" aria-hidden="true">?</span></span>
-            <span class="pp-v">{{ beta(m) !== null ? (beta(m) | number:'1.2-2') : '—' }}</span>
-          </button>
-          <p class="pp-info" *ngIf="openRatio() === 'beta'">{{ ratioInfo['beta'] }}</p>
-        </div>
-        <div class="pp-item" [class.open]="openRatio() === 'history'">
-          <button class="pp-row tappable" type="button" (click)="toggleRatio('history')" [attr.aria-expanded]="openRatio() === 'history'">
-            <span class="pp-k">History measured <span class="info-i" aria-hidden="true">?</span></span>
-            <span class="pp-v">{{ m.history_years }} yrs</span>
-          </button>
-          <p class="pp-info" *ngIf="openRatio() === 'history'">{{ ratioInfo['history'] }}</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 4 · how it actually moved (axes + hover, no drawdown strip) ===== -->
+    <!-- ===== 1 · how it actually moved (axes + hover, combined stats) ===== -->
     <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
       <div class="card-head">
         <h2 class="card-title">How it actually moved</h2>
@@ -119,9 +42,15 @@
       <div class="chart-loading" *ngIf="chartLoading()"><span class="spinner sm"></span> loading this fund…</div>
 
       <ng-container *ngIf="!chartLoading()">
-        <span class="chart-sub" *ngIf="growthEndpoints() as ep">
-          Value of ₹{{ (ep.startVal | number:'1.0-0') }} invested in {{ ep.startDate }} → {{ compact(ep.endVal) }} today
-        </span>
+        <!-- combined-basket headline stats -->
+        <div class="chart-stats" *ngIf="chartMetrics() as cm">
+          <div class="cs"><span class="cs-v pos">{{ pct(cm.return_3y) }}</span><span class="cs-k">3-yr growth</span></div>
+          <div class="cs"><span class="cs-v neg">{{ pct(cm.max_drawdown) }}</span><span class="cs-k">Max drawdown</span></div>
+          <div class="cs" *ngIf="growthEndpoints() as ep">
+            <span class="cs-v">₹{{ (ep.startVal | number:'1.0-0') }} → {{ compact(ep.endVal) }}</span>
+            <span class="cs-k">{{ ep.startDate }} → today</span>
+          </div>
+        </div>
 
         <div class="chart-wrap">
           <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
@@ -161,6 +90,83 @@
           </div>
         </div>
       </ng-container>
+    </section>
+
+    <!-- ===== 2 · ASSET ALLOCATION (look-through) ===== -->
+    <section class="card alloc-card">
+      <div class="card-head">
+        <h2 class="card-title">Where your money sits</h2>
+        <span class="card-sub">true split, seen through every fund</span>
+      </div>
+      <div class="alloc-bar">
+        <span *ngFor="let s of allocation()" class="alloc-seg" [attr.data-k]="s.key"
+          [style.width.%]="s.pct" [attr.title]="s.label + ' ' + (s.pct | number:'1.0-0') + '%'"></span>
+      </div>
+      <ul class="alloc-legend">
+        <li *ngFor="let s of allocation()">
+          <span class="a-dot" [attr.data-k]="s.key"></span>
+          <span class="a-label">{{ s.label }}</span>
+          <span class="a-pct">{{ s.pct | number:'1.0-0' }}%</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ===== 3 · THE FUNDS INSIDE (which funds + ₹ per fund) ===== -->
+    <section class="card funds-card">
+      <div class="card-head">
+        <h2 class="card-title">The funds inside</h2>
+        <span class="card-sub">{{ compact(ticketPrice) }} split across {{ activeVariant().legs.length }} funds</span>
+      </div>
+      <ul class="fund-list">
+        <li class="fund" *ngFor="let leg of activeVariant().legs">
+          <div class="fund-top">
+            <span class="fund-w">{{ (leg.weight * 100) | number:'1.0-0' }}%</span>
+            <div class="fund-name-box">
+              <span class="fund-name">{{ leg.label }}</span>
+              <span class="fund-role">{{ leg.role }}</span>
+            </div>
+            <span class="fund-amt">{{ compact(ticketPrice * leg.weight) }}</span>
+          </div>
+          <div class="weight-bar"><span [style.width.%]="leg.weight * 100"></span></div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ===== 4 · COMBINED performance (tap ratios to learn what they mean) ===== -->
+    <section class="card perf-card">
+      <div class="card-head">
+        <h2 class="card-title">How the whole basket has done</h2>
+        <span class="card-sub">all {{ activeVariant().legs.length }} funds together, not one alone</span>
+      </div>
+      <div class="perf-panel">
+        <div class="pp-row"><span class="pp-k">Past 3-yr combined return</span><span class="pp-v pos">{{ pct(m.return_3y) }}</span></div>
+        <div class="pp-row"><span class="pp-k">Past 5-yr combined return</span><span class="pp-v pos">{{ pct(m.return_5y) }}</span></div>
+        <div class="pp-row"><span class="pp-k">Combined max drawdown</span><span class="pp-v neg">{{ pct(m.max_drawdown) }}</span></div>
+        <div class="pp-row"><span class="pp-k">Combined volatility</span><span class="pp-v">{{ pct(m.volatility) }}</span></div>
+
+        <!-- tappable rows: explain what the ratio means -->
+        <div class="pp-item" [class.open]="openRatio() === 'sharpe'">
+          <button class="pp-row tappable" type="button" (click)="toggleRatio('sharpe')" [attr.aria-expanded]="openRatio() === 'sharpe'">
+            <span class="pp-k">Sharpe ratio <span class="info-i" aria-hidden="true">?</span></span>
+            <span class="pp-v">{{ sharpe(m) !== null ? (sharpe(m) | number:'1.2-2') : '—' }}</span>
+          </button>
+          <p class="pp-info" *ngIf="openRatio() === 'sharpe'">{{ ratioInfo['sharpe'] }}</p>
+        </div>
+        <div class="pp-item" [class.open]="openRatio() === 'beta'">
+          <button class="pp-row tappable" type="button" (click)="toggleRatio('beta')" [attr.aria-expanded]="openRatio() === 'beta'">
+            <span class="pp-k">Beta vs market <span class="info-i" aria-hidden="true">?</span></span>
+            <span class="pp-v">{{ beta(m) !== null ? (beta(m) | number:'1.2-2') : '—' }}</span>
+          </button>
+          <p class="pp-info" *ngIf="openRatio() === 'beta'">{{ ratioInfo['beta'] }}</p>
+        </div>
+        <div class="pp-item" [class.open]="openRatio() === 'history'">
+          <button class="pp-row tappable" type="button" (click)="toggleRatio('history')" [attr.aria-expanded]="openRatio() === 'history'">
+            <span class="pp-k">History measured <span class="info-i" aria-hidden="true">?</span></span>
+            <span class="pp-v">{{ m.history_years }} yrs</span>
+          </button>
+          <p class="pp-info" *ngIf="openRatio() === 'history'">{{ ratioInfo['history'] }}</p>
+        </div>
+      </div>
     </section>
 
     <!-- ===== 5 · if you invest today — by the plot ===== -->
