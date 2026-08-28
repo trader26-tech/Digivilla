@@ -1,0 +1,106 @@
+/* Inherits the global design tokens (paper/ink/survey/brass/positive). */
+:host { display: block; }
+
+.inc {
+  border: 1px solid var(--survey); border-radius: 16px;
+  padding: 1.2rem 1.1rem; background: color-mix(in srgb, var(--survey) 6%, var(--paper));
+}
+
+.inc-head { margin-bottom: 1rem; }
+.inc-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; line-height: 1.12; color: var(--ink); }
+.inc-sub { margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--ink); opacity: 0.65; }
+
+/* headline payout */
+.inc-hero {
+  display: flex; flex-direction: column; gap: 0.1rem; align-items: center;
+  text-align: center; padding: 1.1rem; margin-bottom: 1.2rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--positive) 9%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--positive) 30%, var(--survey));
+}
+.ih-k { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
+.ih-v { font-family: var(--font-display); font-weight: 800; font-size: 2.5rem; line-height: 1; color: var(--positive); font-variant-numeric: tabular-nums; }
+.ih-u { font-size: 0.9rem; font-weight: 700; opacity: 0.7; }
+.ih-foot { font-size: 0.8rem; opacity: 0.6; margin-top: 0.2rem; }
+
+/* step-by-step flow */
+.flow { list-style: none; margin: 0 0 1.2rem; padding: 0; }
+.fl-step {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.85rem 0.9rem; border-radius: 12px;
+  border: 1px solid var(--survey); background: var(--paper);
+  animation: flIn 0.45s ease both;
+}
+.fl-step.accent { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); background: color-mix(in srgb, var(--brass) 7%, var(--paper)); }
+.fl-step.you { border-color: color-mix(in srgb, var(--positive) 40%, var(--survey)); background: color-mix(in srgb, var(--positive) 8%, var(--paper)); }
+@keyframes flIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fl-num {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--font-display); font-weight: 800;
+  background: var(--ink); color: var(--paper); font-size: 0.95rem;
+}
+.fl-step.accent .fl-num { background: var(--brass); }
+.fl-ic { flex: none; width: 30px; text-align: center; font-size: 1.3rem; }
+.fl-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.fl-t { font-size: 0.98rem; font-weight: 700; color: var(--ink); }
+.fl-d { font-size: 0.82rem; line-height: 1.4; color: var(--ink); opacity: 0.75; }
+.fl-d b { font-weight: 700; opacity: 1; }
+.fl-fig {
+  flex: none; font-family: var(--font-display); font-weight: 800; font-size: 1.05rem;
+  color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.fl-fig small { font-size: 0.6rem; font-weight: 600; opacity: 0.7; }
+.fl-fig.pos { color: var(--positive); }
+
+/* connector arrows */
+.fl-arrow { list-style: none; display: flex; justify-content: flex-start; padding-left: 1.3rem; height: 20px; }
+.fl-arrow span {
+  width: 2px; height: 100%;
+  background: linear-gradient(var(--brass), color-mix(in srgb, var(--brass) 30%, transparent));
+  position: relative;
+}
+.fl-arrow span::after {
+  content: ""; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 6px solid var(--brass);
+}
+
+/* what keeps it going */
+.inc-keep { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.1rem; }
+.keep-item {
+  display: flex; align-items: flex-start; gap: 0.7rem;
+  padding: 0.7rem 0.85rem; border-radius: 11px;
+  background: color-mix(in srgb, var(--survey) 16%, var(--paper)); border: 1px solid var(--survey);
+}
+.keep-ic { flex: none; font-size: 1.2rem; line-height: 1.3; }
+.keep-t { display: block; font-size: 0.9rem; font-weight: 700; color: var(--ink); }
+.keep-d { display: block; font-size: 0.8rem; line-height: 1.4; color: var(--ink); opacity: 0.72; margin-top: 0.1rem; }
+
+/* runway meter */
+.runway { margin-bottom: 1.1rem; }
+.rw-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
+.rw-k { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.6; }
+.rw-v { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
+.rw-bar { position: relative; height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--survey) 55%, var(--paper)); }
+.rw-bar span { display: block; height: 100%; border-radius: 999px; background: var(--brass); animation: grow 0.9s cubic-bezier(0.22,1,0.36,1) both; }
+.rw-bar span.ok { background: var(--positive); }
+@keyframes grow { from { width: 0 !important; } }
+.rw-tick { position: absolute; top: -3px; bottom: -3px; left: 100%; width: 2px; background: var(--ink); opacity: 0.35; border-radius: 2px; }
+.rw-foot { display: block; margin-top: 0.4rem; font-size: 0.74rem; line-height: 1.4; opacity: 0.6; }
+
+/* tax note toggle */
+.tax-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 0.9rem; border: 1px solid var(--survey); border-radius: 11px;
+  background: var(--paper); color: var(--brass); cursor: pointer;
+  font-family: var(--font-body); font-weight: 700; font-size: 0.9rem;
+}
+.tax-toggle svg { transition: transform 0.2s ease; }
+.tax-toggle svg.open { transform: rotate(180deg); }
+.tax-body { margin: 0.6rem 0 0; padding: 0 0.3rem; font-size: 0.84rem; line-height: 1.5; color: var(--ink); opacity: 0.85; }
+
+.inc-disclaim { margin: 1rem 0 0; font-size: 0.72rem; line-height: 1.45; color: var(--terracotta); text-align: center; opacity: 0.85; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fl-step, .rw-bar span { animation: none; }
+}

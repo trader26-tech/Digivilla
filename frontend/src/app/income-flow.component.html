@@ -1,0 +1,104 @@
+<section class="inc">
+  <header class="inc-head">
+    <h2 class="inc-title">How you get {{ inr(monthly()) }} every month</h2>
+    <p class="inc-sub">Paid automatically to your bank — from month 13, after possession.</p>
+  </header>
+
+  <!-- the headline payout -->
+  <div class="inc-hero">
+    <span class="ih-k">Your monthly income</span>
+    <span class="ih-v">{{ inr(monthly()) }}<span class="ih-u">/month</span></span>
+    <span class="ih-foot">on a {{ compact(pkg().price) }} {{ pkg().name.toLowerCase() }}</span>
+  </div>
+
+  <!-- step-by-step flow: basket → sleeve → SWP → your bank -->
+  <ol class="flow">
+    <li class="fl-step">
+      <span class="fl-num">1</span>
+      <div class="fl-body">
+        <span class="fl-t">Your money is invested</span>
+        <span class="fl-d">{{ compact(pkg().price) }} goes into a curated basket — part into an <b>income sleeve</b>, the rest into growth.</span>
+      </div>
+      <span class="fl-fig">{{ compact(pkg().price) }}</span>
+    </li>
+
+    <li class="fl-arrow" aria-hidden="true"><span></span></li>
+
+    <li class="fl-step accent">
+      <span class="fl-num">2</span>
+      <div class="fl-body">
+        <span class="fl-t">The income sleeve holds your rent</span>
+        <span class="fl-d">
+          {{ compact(incomeCorpus()) }} sits in an <b>arbitrage fund</b><span *ngIf="primaryLeg() as p"> ({{ p.label }})</span> —
+          steady, low-swing, and taxed like equity.
+        </span>
+      </div>
+      <span class="fl-fig">{{ compact(incomeCorpus()) }}</span>
+    </li>
+
+    <li class="fl-arrow" aria-hidden="true"><span></span></li>
+
+    <li class="fl-step">
+      <span class="fl-num">3</span>
+      <div class="fl-body">
+        <span class="fl-t">An SWP pays you every month</span>
+        <span class="fl-d">
+          A <b>Systematic Withdrawal Plan</b> auto-sells a small slice on a set date each month and
+          <b>credits it straight to your bank account</b> — you do nothing.
+        </span>
+      </div>
+      <span class="fl-fig">{{ inr(monthly()) }}<small>/mo</small></span>
+    </li>
+
+    <li class="fl-arrow" aria-hidden="true"><span></span></li>
+
+    <li class="fl-step you">
+      <span class="fl-ic" aria-hidden="true">🏦</span>
+      <div class="fl-body">
+        <span class="fl-t">It lands in your bank</span>
+        <span class="fl-d">Same date, every month. Spend it as your rent — no tenants, no paperwork.</span>
+      </div>
+      <span class="fl-fig pos">{{ inr(monthly()) }}</span>
+    </li>
+  </ol>
+
+  <!-- what keeps it going: annual top-up + reserve + runway -->
+  <div class="inc-keep">
+    <div class="keep-item">
+      <span class="keep-ic" aria-hidden="true">🔁</span>
+      <div>
+        <span class="keep-t">Refilled once a year</span>
+        <span class="keep-d">Each year, with your approval, about {{ compact(annualTopUp()) }} of growth is switched into the income sleeve — so the payout keeps flowing for the long run.</span>
+      </div>
+    </div>
+    <div class="keep-item" *ngIf="hasLiquid()">
+      <span class="keep-ic" aria-hidden="true">⛑️</span>
+      <div>
+        <span class="keep-t">Emergency reserve</span>
+        <span class="keep-d">{{ compact(liquidCorpus()) }} sits in a liquid fund for a bad month — rent is paid from here and refilled from growth later.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- runway meter -->
+  <div class="runway">
+    <div class="rw-head">
+      <span class="rw-k">Income already in the sleeve</span>
+      <span class="rw-v">{{ runway() }} months of rent</span>
+    </div>
+    <div class="rw-bar">
+      <span [style.width.%]="runwayPct()" [class.ok]="runway() >= 24"></span>
+      <i class="rw-tick" aria-hidden="true"></i>
+    </div>
+    <span class="rw-foot">The 24-month line is the safety mark — below it, we top the sleeve back up.</span>
+  </div>
+
+  <!-- tax note (collapsible) -->
+  <button class="tax-toggle" type="button" (click)="toggleTax()" [attr.aria-expanded]="taxOpen()">
+    <span>Why this income is tax-efficient</span>
+    <svg viewBox="0 0 24 24" width="18" height="18" [class.open]="taxOpen()" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <p class="tax-body" *ngIf="taxOpen()">{{ taxNote }}</p>
+
+  <p class="inc-disclaim">Illustrative — not guaranteed. Rent starts month 13. Subject to market risk.</p>
+</section>
