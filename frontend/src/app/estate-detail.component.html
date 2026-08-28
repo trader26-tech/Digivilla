@@ -250,7 +250,7 @@
     <!-- ===== 3 · THE FUNDS INSIDE (filtered by tapped asset; tap a fund for detail) ===== -->
     <section class="card funds-card">
       <div class="card-head">
-        <h2 class="card-title">The funds inside</h2>
+        <h2 class="card-title">The funds inside <span class="plan-tag">Regular plans</span></h2>
         <span class="card-sub" *ngIf="!selectedAsset()">{{ compact(ticketPrice) }} · {{ activeVariant().legs.length }} funds · tap a fund</span>
         <button class="card-sub link" type="button" *ngIf="selectedAsset() as sel" (click)="selectAsset(sel)">
           showing {{ sel === 'cash' ? 'cash / arbitrage' : sel }} funds · clear ✕

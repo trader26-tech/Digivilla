@@ -660,6 +660,16 @@
 
 /* ---------- funds (filtered by asset, tap to expand) ---------- */
 .funds-card .card-title { margin-bottom: 0.2rem; }
+/* small "Regular plans" tag — parity with the Land funds-card; makes it explicit
+   these are Regular-plan funds (matches .plan-tag in land-detail) */
+.plan-tag {
+  display: inline-block; vertical-align: middle; margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+  font-family: var(--font-body); font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--brass); background: color-mix(in srgb, var(--brass) 12%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, var(--survey));
+}
 .card-sub.link {
   border: none; background: transparent; cursor: pointer;
   font: inherit; color: var(--brass); font-weight: 600; padding: 0;
