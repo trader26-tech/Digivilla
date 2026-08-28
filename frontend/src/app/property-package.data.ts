@@ -397,6 +397,77 @@ export function growthBreakdown(property: PropertyKey, variant: VariantKey): Gro
   return { observed, rows, prior, expected: expectedGrowth(property, variant) };
 }
 
+/* ==================================================================
+   Combined RISK SCORE (0–10) per basket — a single number that folds
+   the metrics that actually matter into one figure the user can read
+   at a glance:  volatility, beta vs the market, and the Sharpe ratio
+   (reward per unit of risk).  Higher number = more risk taken.
+
+   All self-contained (no API): the drivers are the basket's real asset
+   mix (from PACKAGES) and its real return (REAL_METRICS), combined with
+   defensible long-run per-asset-class figures.
+   ================================================================== */
+
+/** Long-run annualised volatility per asset class (decimal). Equity swings
+ *  hardest; debt/hybrid far less; cash/arbitrage barely moves. */
+const ASSET_VOL: Record<'equity' | 'debt' | 'cash', number> = { equity: 0.18, debt: 0.055, cash: 0.012 };
+/** Beta vs the broad equity market per asset class. Equity ≈ the market;
+ *  debt/hybrid lightly correlated; cash effectively market-neutral. */
+const ASSET_BETA: Record<'equity' | 'debt' | 'cash', number> = { equity: 1.0, debt: 0.25, cash: 0.02 };
+/** Risk-free rate used for the Sharpe ratio (decimal). */
+const RISK_FREE = 0.065;
+
+export interface RiskScore {
+  score: number;        // 0–10, one decimal — the headline number
+  volatility: number;   // weighted annualised volatility, %
+  beta: number;         // weighted beta vs market
+  sharpe: number;       // return over risk-free, per unit of volatility
+  equityPct: number;    // how much sits in equity, %
+}
+
+/** The weighted asset mix of a basket, as fractions that sum to ~1. */
+function assetMix(property: PropertyKey, variant: VariantKey): Record<'equity' | 'debt' | 'cash', number> {
+  const v = PACKAGES[property].variants[variant];
+  const by: Record<'equity' | 'debt' | 'cash', number> = { equity: 0, debt: 0, cash: 0 };
+  for (const leg of v.legs) by[ROLE_ASSET[leg.role]] += leg.weight;
+  const total = by.equity + by.debt + by.cash || 1;
+  return { equity: by.equity / total, debt: by.debt / total, cash: by.cash / total };
+}
+
+/** One combined 0–10 risk score for a basket, plus the sub-metrics behind it. */
+export function riskScore(property: PropertyKey, variant: VariantKey): RiskScore {
+  const mix = assetMix(property, variant);
+
+  // Weighted portfolio volatility and beta from the asset mix.
+  const vol =
+    mix.equity * ASSET_VOL.equity + mix.debt * ASSET_VOL.debt + mix.cash * ASSET_VOL.cash;
+  const beta =
+    mix.equity * ASSET_BETA.equity + mix.debt * ASSET_BETA.debt + mix.cash * ASSET_BETA.cash;
+
+  // Sharpe = excess return over risk-free, per unit of volatility (real return).
+  const ret = REAL_METRICS[property][variant].r5 / 100;
+  const sharpe = vol > 0 ? (ret - RISK_FREE) / vol : 0;
+
+  // Fold the three into 0–10. Volatility and beta push the score UP; a strong
+  // Sharpe (good reward for the risk) pulls it back DOWN a little.
+  //   vol 0→0.20   maps to 0→8       (the dominant driver)
+  //   beta 0→1     maps to 0→2
+  //   sharpe: each full point above ~0.5 shaves ~0.6 off
+  const fromVol = Math.min(vol / 0.20, 1) * 8;
+  const fromBeta = Math.min(beta, 1) * 2;
+  const sharpeRelief = Math.max(0, sharpe - 0.5) * 0.6;
+  const raw = fromVol + fromBeta - sharpeRelief;
+
+  const score = Math.max(0, Math.min(10, Math.round(raw * 10) / 10));
+  return {
+    score,
+    volatility: Math.round(vol * 1000) / 10,
+    beta: Math.round(beta * 100) / 100,
+    sharpe: Math.round(sharpe * 100) / 100,
+    equityPct: Math.round(mix.equity * 100),
+  };
+}
+
 /** Sum of monthly SWP across the income sleeve, for a variant. */
 export function totalMonthlyIncome(v: Variant): number {
   return v.legs.reduce((s, l) => s + l.withdrawMonthly, 0);
