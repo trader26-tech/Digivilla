@@ -1,44 +1,91 @@
 <main class="deed">
   <!-- ===== interactive risk × reward map — full-bleed hero, curved bottom ===== -->
   <section class="geo" aria-label="Risk and reward map of every estate">
-    <div class="geo-canvas" [class.has-sel]="selectedPin() !== null" (click)="selectedPin.set(null)">
-      <!-- soft "elevation" terrain — pure gradient light, no hard lines -->
-      <div class="geo-terrain" aria-hidden="true"></div>
-      <div class="geo-glow safe" aria-hidden="true"></div>
-      <div class="geo-glow risky" aria-hidden="true"></div>
+    <div class="geo-canvas" [class.has-sel]="selectedTerrain() !== null" (click)="selectedTerrain.set(null)">
+      <!-- topographic terrain: each property is a landform; ELEVATION = rent
+           (flat plain = no rent, tall peak = high rent), left→right = risk -->
+      <svg class="topo" viewBox="0 0 100 62" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="var(--brass)" stop-opacity="0.07"/>
+            <stop offset="100%" stop-color="var(--paper)" stop-opacity="1"/>
+          </linearGradient>
+          <radialGradient id="hillLand" cx="50%" cy="100%" r="90%">
+            <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="var(--positive)" stop-opacity="0.14"/>
+          </radialGradient>
+          <radialGradient id="hillFlat" cx="50%" cy="100%" r="90%">
+            <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="var(--brass)" stop-opacity="0.16"/>
+          </radialGradient>
+          <radialGradient id="hillApartment" cx="50%" cy="100%" r="90%">
+            <stop offset="0%" stop-color="#3E6C8E" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#3E6C8E" stop-opacity="0.16"/>
+          </radialGradient>
+          <radialGradient id="hillDuplex" cx="50%" cy="100%" r="90%">
+            <stop offset="0%" stop-color="var(--terracotta)" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="var(--terracotta)" stop-opacity="0.16"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="62" fill="var(--paper)"/>
+        <rect x="0" y="0" width="100" height="62" fill="url(#sky)"/>
 
-      <!-- gentle scale ticks along the two live edges (subtle, not a grid) -->
-      <span class="geo-cap up" aria-hidden="true">Higher return ↑</span>
-      <span class="geo-cap side" aria-hidden="true">More risk →</span>
+        <!-- each landform: nested contour rings, tallest = most rent -->
+        <g class="topo-hill" *ngFor="let t of terrains" [attr.data-p]="t.property"
+           [class.sel]="isTerrainSelected(t)"
+           [class.dim]="selectedTerrain() !== null && !isTerrainSelected(t)">
+          <!-- filled hill silhouette -->
+          <ellipse [attr.cx]="t.cx" [attr.cy]="60"
+                   [attr.rx]="9 + t.elev * 10" [attr.ry]="2 + t.elev * 26"
+                   [attr.fill]="'url(#hill' + (t.propName) + ')'" class="hill-body"/>
+          <!-- contour rings, like a real topo map -->
+          <ng-container *ngFor="let r of [0.85, 0.62, 0.4, 0.2]">
+            <ellipse *ngIf="t.elev > 0.05 || r < 0.5"
+                     [attr.cx]="t.cx" [attr.cy]="60"
+                     [attr.rx]="(9 + t.elev * 10) * r" [attr.ry]="(2 + t.elev * 26) * r"
+                     class="contour"/>
+          </ng-container>
+        </g>
+        <!-- ground line -->
+        <line x1="0" y1="60" x2="100" y2="60" class="ground"/>
+      </svg>
 
-      <!-- the pins, positioned in % over the canvas; label shows the property -->
-      <button *ngFor="let pin of mapPins" class="geo-pin" type="button"
-        [attr.data-p]="pin.property"
-        [class.sel]="isPinSelected(pin)"
-        [class.dim]="selectedPin() !== null && !isPinSelected(pin)"
-        [style.left.%]="pin.x" [style.top.%]="pin.y"
-        (click)="selectPin(pin); $event.stopPropagation()"
-        [attr.aria-label]="pin.name + ' ' + pin.propName + ', reward ' + (pin.reward | number:'1.0-1') + '%, risk ' + (pin.risk | number:'1.0-1') + '%'">
+      <!-- edge captions -->
+      <span class="geo-cap up" aria-hidden="true">↑ pays more rent</span>
+      <span class="geo-cap side" aria-hidden="true">more risk →</span>
+
+      <!-- tappable summit markers, one per property, on top of each hill -->
+      <button *ngFor="let t of terrains" class="geo-pin" type="button"
+        [attr.data-p]="t.property"
+        [class.sel]="isTerrainSelected(t)"
+        [class.dim]="selectedTerrain() !== null && !isTerrainSelected(t)"
+        [style.left.%]="t.cx"
+        [style.bottom.%]="(t.elev * 26 + 2) / 62 * 100 + 3.5"
+        (click)="selectTerrain(t); $event.stopPropagation()"
+        [attr.aria-label]="t.propName + (t.rentHi > 0 ? ', pays up to ' + rentShort(t.rentHi) + ' a month rent' : ', growth only')">
         <span class="pin-marker"><span class="pin-core"></span></span>
-        <span class="pin-label">{{ pin.propName }}</span>
+        <span class="pin-label">{{ t.propName }}<em *ngIf="t.rentHi > 0"> · {{ rentShort(t.rentHi) }}/mo</em><em *ngIf="t.rentHi === 0" class="growth"> · growth</em></span>
       </button>
 
-      <!-- callout for the selected pin -->
-      <div class="geo-callout" *ngIf="selectedPin() as sp"
-        [style.left.%]="sp.x" [style.top.%]="sp.y"
-        [class.flip-x]="sp.x > 60" [class.flip-y]="sp.y < 40"
+      <!-- callout for the selected terrain -->
+      <div class="geo-callout" *ngIf="selectedTerrain() as sp"
+        [style.left.%]="sp.cx"
+        [style.bottom.%]="(sp.elev * 26 + 2) / 62 * 100 + 12"
+        [class.flip-x]="sp.cx > 62"
         (click)="$event.stopPropagation()">
         <div class="gc-head">
           <span class="gc-dot" [attr.data-p]="sp.property"></span>
-          <span class="gc-name">{{ sp.name }}</span>
+          <span class="gc-name">{{ sp.propName }}</span>
+          <span class="gc-price">{{ compact(sp.price) }}</span>
         </div>
-        <div class="gc-prop">{{ sp.propName }} · {{ storeLabelOf(sp.storeVariant) }}</div>
         <div class="gc-stats">
-          <span class="gc-stat"><b>{{ sp.reward | number:'1.0-1' }}%</b><small>reward /yr</small></span>
+          <span class="gc-stat" *ngIf="sp.rentHi > 0"><b>{{ rentShort(sp.rentLo) }}–{{ rentShort(sp.rentHi) }}</b><small>rent /mo</small></span>
+          <span class="gc-stat" *ngIf="sp.rentHi === 0"><b>Growth</b><small>no rent</small></span>
+          <span class="gc-stat"><b>{{ sp.reward | number:'1.0-1' }}%</b><small>return /yr</small></span>
           <span class="gc-stat"><b>{{ sp.risk | number:'1.0-1' }}%</b><small>risk</small></span>
         </div>
-        <button class="gc-go" type="button" (click)="openPin(sp)">
-          View {{ propName(sp.property) }}
+        <button class="gc-go" type="button" (click)="openTerrain(sp)">
+          Explore {{ sp.propName }}
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>

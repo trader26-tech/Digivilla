@@ -6,21 +6,22 @@ import {
   storeSchemeName, storeSchemeLocality,
   expectedGrowth, past3y, RISK_OF_STORE,
   riskScore, RiskScore,
-  ALL_SCHEMES, riskOf as volOf,
-  PACKAGES, schemeName as devSchemeName,
-  PropertyKey, VariantKey as DataVariantKey,
+  riskOf as volOf,
+  PACKAGES, PropertyKey,
 } from './property-package.data';
 
-/** A property pin on the interactive risk × reward map. */
-export interface MapPin {
+/** One property as a landform on the terrain map. Elevation = rent it pays:
+ *  no rent (Land) = flat lowland, high rent (Duplex) = tall peak. X = risk. */
+export interface Terrain {
   property: PropertyKey;
-  variant: DataVariantKey;      // conservative | balanced | aggressive
-  storeVariant: 'ready' | 'construction' | 'prelaunch';
-  name: string;                 // dev name (Adyar Grove …)
-  propName: string;             // Flat / Land …
-  risk: number;                 // real volatility %
-  reward: number;               // real expected return %
-  x: number; y: number;         // placed position in the 100×100 map viewBox
+  propName: string;             // Land / Flat / Apartment / Duplex
+  price: number;                // ticket size (₹)
+  rentLo: number;               // lowest monthly rent across its variants (₹, 0 = Land)
+  rentHi: number;               // highest monthly rent (₹)
+  risk: number;                 // typical volatility % (balanced variant) → X position
+  reward: number;               // typical expected return % (balanced)
+  cx: number;                   // 0..100 horizontal centre (by risk)
+  elev: number;                 // 0..1 elevation (by rent) — hill height
 }
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
@@ -81,78 +82,66 @@ export class StorefrontComponent {
   /** Property display order + colours for the map legend and pins. */
   readonly mapProps: PropertyKey[] = ['land', 'flat', 'apartment', 'duplex'];
 
-  /** Data-variant → store-variant, so a map pin opens the right detail tab. */
-  private static readonly STORE_OF: Record<DataVariantKey, 'ready' | 'construction' | 'prelaunch'> = {
-    conservative: 'ready', balanced: 'construction', aggressive: 'prelaunch',
-  };
+  /** The four properties as terrain landforms. Elevation = rent (no rent →
+   *  flat lowland, high rent → tall peak); horizontal position = risk. Built
+   *  lazily so `properties` is initialised first. */
+  private _terrains?: Terrain[];
+  get terrains(): Terrain[] {
+    if (!this._terrains) this._terrains = this.buildTerrains();
+    return this._terrains;
+  }
 
-  /** The 12 schemes placed on the map. X = real volatility (risk), Y = real
-   *  expected reward. Positions are in a 0..100 viewBox with a margin, then
-   *  de-overlapped so every pin stays tappable. */
-  readonly mapPins: MapPin[] = this.buildPins();
+  /** Which terrain is selected (shows its info card). Null = none. */
+  selectedTerrain = signal<Terrain | null>(null);
 
-  /** Which pin is selected (shows its callout). Null = none. */
-  selectedPin = signal<MapPin | null>(null);
-
-  private buildPins(): MapPin[] {
-    const raw = ALL_SCHEMES.map((s) => ({
-      property: s.property, variant: s.variant,
-      risk: volOf(s.property, s.variant),
-      reward: expectedGrowth(s.property, s.variant),
-    }));
-    const rk = raw.map((r) => r.risk), rw = raw.map((r) => r.reward);
+  private buildTerrains(): Terrain[] {
+    const raw = this.properties.map((p) => {
+      const rents = this.variantOrder
+        .map((vk) => p.variants[vk].monthlyIncome)
+        .filter((r): r is number => r != null && r > 0);
+      const rentLo = rents.length ? Math.min(...rents) : 0;
+      const rentHi = rents.length ? Math.max(...rents) : 0;
+      return {
+        property: p.key, propName: p.name, price: p.price,
+        rentLo, rentHi,
+        // typical (balanced) risk & reward from REAL_METRICS
+        risk: volOf(p.key, 'balanced'),
+        reward: expectedGrowth(p.key, 'balanced'),
+      };
+    });
+    const rk = raw.map((r) => r.risk);
     const rLo = Math.min(...rk), rHi = Math.max(...rk), rSpan = rHi - rLo || 1;
-    const wLo = Math.min(...rw), wHi = Math.max(...rw), wSpan = wHi - wLo || 1;
-    // margins inside the 0..100 box (leave room for pin heads + labels)
-    const x0 = 12, x1 = 92, y0 = 16, y1 = 86;
-    const pins: MapPin[] = raw.map((r) => ({
-      property: r.property, variant: r.variant,
-      storeVariant: StorefrontComponent.STORE_OF[r.variant],
-      name: devSchemeName(r.property, r.variant),
-      propName: PACKAGES[r.property].name,
-      risk: r.risk, reward: r.reward,
-      x: x0 + ((r.risk - rLo) / rSpan) * (x1 - x0),
-      y: y1 - ((r.reward - wLo) / wSpan) * (y1 - y0),   // higher reward = higher up
+    const maxRent = Math.max(...raw.map((r) => r.rentHi), 1);
+    // horizontal spread by risk (leave margins); elevation by rent (sqrt so the
+    // low hills still read, and Land stays a flat plain).
+    return raw.map((r) => ({
+      ...r,
+      cx: 14 + ((r.risk - rLo) / rSpan) * 72,
+      elev: r.rentHi > 0 ? 0.28 + Math.sqrt(r.rentHi / maxRent) * 0.72 : 0,
     }));
-    // simple de-overlap so pins near each other separate (in viewBox units)
-    const MIN = 9;
-    for (let it = 0; it < 80; it++) {
-      let moved = false;
-      for (let i = 0; i < pins.length; i++) for (let j = i + 1; j < pins.length; j++) {
-        const a = pins[i], b = pins[j];
-        let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
-        if (d < MIN) {
-          if (d < 0.01) { dx = (i - j) || 1; dy = 1; d = Math.hypot(dx, dy); }
-          const push = (MIN - d) / 2, ux = dx / d, uy = dy / d;
-          a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
-          moved = true;
-        }
-      }
-      for (const p of pins) { p.x = Math.max(x0, Math.min(x1, p.x)); p.y = Math.max(y0, Math.min(y1, p.y)); }
-      if (!moved) break;
-    }
-    return pins;
   }
 
-  /** Tap a pin → select it (or toggle off if already selected). */
-  selectPin(p: MapPin): void {
-    this.selectedPin.set(this.selectedPin() === p ? null : p);
+  /** Tap a terrain → select it (or toggle off if already selected). */
+  selectTerrain(t: Terrain): void {
+    this.selectedTerrain.set(this.selectedTerrain() === t ? null : t);
   }
 
-  /** Open the detail page for the selected pin's property + variant. */
-  openPin(p: MapPin): void {
-    this.openProperty.emit({ property: p.property, variant: p.variant });
+  /** Open the detail page for a terrain (opens on its balanced variant). */
+  openTerrain(t: Terrain): void {
+    this.openProperty.emit({ property: t.property, variant: 'balanced' });
   }
 
-  isPinSelected(p: MapPin): boolean { return this.selectedPin() === p; }
+  isTerrainSelected(t: Terrain): boolean { return this.selectedTerrain() === t; }
+
+  /** Compact ₹ for the map cards, e.g. ₹5k, ₹29.7k. */
+  rentShort(v: number): string {
+    if (v <= 0) return '';
+    if (v >= 1000) { const k = v / 1000; return '₹' + (k % 1 === 0 ? k : k.toFixed(1)) + 'k'; }
+    return '₹' + v;
+  }
 
   /** Display name of a property (Land / Flat …). */
   propName(p: PropertyKey): string { return PACKAGES[p].name; }
-
-  /** Plain risk-return words for a store variant, for the callout. */
-  storeLabelOf(sv: 'ready' | 'construction' | 'prelaunch'): string {
-    return sv === 'ready' ? 'Low risk' : sv === 'construction' ? 'Medium risk' : 'High risk';
-  }
 
   /** Map the storefront's property-world variant names onto the basket risk
    *  profiles. Same mapping for every tier. */
