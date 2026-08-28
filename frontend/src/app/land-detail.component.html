@@ -42,7 +42,7 @@
       <div class="hero-line reveal" style="--s:1">
         <span class="hero-value">{{ inr(ticketPrice) }}</span>
         <span class="hero-sep" aria-hidden="true">·</span>
-        <span class="hero-grow-line">could grow <span class="hg-pct">~{{ pct(m.expected_return ?? activeVariant().targetGrowth) }}</span> a year<span class="star">*</span></span>
+        <span class="hero-grow-line">grown <span class="hg-pct">{{ pct(m.return_3y) }}/yr</span> over 3 years<span class="star">*</span></span>
       </div>
     </section>
 
@@ -239,7 +239,7 @@
   </ng-container>
 
   <p class="disclaimer">
-    <span class="star">*</span> Metrics from each fund's real NAV history — illustrative, not guaranteed.
-    Land earns through capital appreciation only; there is no rental income. Subject to market risk.
+    <span class="star">*</span> Past growth, from each fund's real NAV history — similar may be expected ahead,
+    but is not guaranteed. Capital appreciation only; no rental income. Subject to market risk.
   </p>
 </main>
