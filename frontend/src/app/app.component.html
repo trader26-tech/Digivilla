@@ -1,5 +1,5 @@
 <!-- Opening animation, plays once on launch. -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
-<!-- After the intro: a blank black canvas. The rebuilt UI goes here. -->
-<div class="blank" *ngIf="!intro"></div>
+<!-- The storefront: the four property tiers. -->
+<app-storefront *ngIf="!intro"></app-storefront>

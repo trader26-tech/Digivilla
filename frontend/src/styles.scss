@@ -1,18 +1,36 @@
-/* Global base — clean slate. The UI is being rebuilt from scratch, so no
-   design tokens or component styles live here yet: just a reset and a plain
-   black canvas. */
+/* ============================================================
+   PropertyNest — "The Estate Document"
+   Global base: the fixed palette + type. No other hex anywhere.
+   ============================================================ */
+:root {
+  --ink: #16302B;         /* deep estate green — text, brand surfaces */
+  --paper: #FAF8F3;       /* warm document white — background */
+  --survey: #DDD6C7;      /* faint khaki — borders, hairlines */
+  --brass: #A67C2E;       /* accent — CTAs, active states */
+  --terracotta: #8C4A32;  /* ONLY risk/disclaimer emphasis */
+  --positive: #2E6B4F;    /* gains */
+  --negative: #9B3B2E;    /* losses */
 
-* {
-  box-sizing: border-box;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-html,
-body {
+* { box-sizing: border-box; }
+
+html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: #000;
-  color: #fff;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-feature-settings: 'tnum' 1;   /* tabular numerals everywhere */
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* visible focus for accessibility */
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }

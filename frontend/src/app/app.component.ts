@@ -2,16 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
 import { IntroComponent } from './intro.component';
+import { StorefrontComponent } from './storefront.component';
 
 /**
- * Clean-slate shell. Plays the opening intro animation once, then shows a
- * blank black background. The whole UI is being rebuilt from scratch — nothing
- * else lives here yet.
+ * Shell. Plays the opening intro once, then reveals the PropertyNest
+ * storefront — the four property tiers a customer can own.
  */
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, IntroComponent],
+  imports: [CommonModule, IntroComponent, StorefrontComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
