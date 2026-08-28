@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { BasketMetrics, LandDetailService } from './land-detail.service';
 import {
   PACKAGES, PropertyKey, VariantKey, LegRole, RISK_SHORT,
-  schemeName, schemeLocality,
+  schemeName, schemeLocality, past3y, past5y,
 } from './property-package.data';
 import { RevealDirective } from './reveal.directive';
 
@@ -232,8 +232,15 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     return { from: base, to, pct: (last / first - 1) * 100, startDate: w[0].date };
   });
 
-  /** Annualised return (CAGR) over the selected window — the headline number. */
+  /** Annualised return (CAGR) over the selected window. At 3Y/5Y on the blend we
+   *  quote the SAME frozen REAL_METRICS the storefront tile shows, so tile and
+   *  detail never disagree; single funds / 1Y / 2Y use the live computed CAGR. */
   windowCagr = computed<number | null>(() => {
+    if (this.chartSource() === 'blend') {
+      const v = this.active();
+      if (this.chartRange() === '3y') return past3y(this.property, v);
+      if (this.chartRange() === '5y') return past5y(this.property, v);
+    }
     const w = this.windowedGrowth();
     if (w.length < 2) return null;
     const first = w[0].value, last = w[w.length - 1].value;
