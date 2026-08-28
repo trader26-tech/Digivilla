@@ -120,7 +120,24 @@ export class LandDetailComponent implements OnInit {
   readonly ticketPrice = 10_00_000;
 
   active = signal<LandVariantKey>('balanced');
-  amount = signal<number>(this.ticketPrice);
+
+  /** How many plots the customer is buying (each plot = one ₹10L ticket). */
+  plots = signal<number>(1);
+  /** The invested amount derived from the number of plots. */
+  amount = computed<number>(() => this.plots() * this.ticketPrice);
+
+  /** Which ratio row is expanded to show its plain-English meaning (or null). */
+  openRatio = signal<string | null>(null);
+  toggleRatio(key: string): void {
+    this.openRatio.update(cur => (cur === key ? null : key));
+  }
+
+  /** Plain-English meaning for each ratio, shown when its row is tapped. */
+  readonly ratioInfo: Record<string, string> = {
+    sharpe: 'Return earned for each unit of risk taken. Higher is better — it means the basket is paying you well for the ups and downs it puts you through. Above ~0.5 is solid for an equity mix.',
+    beta: 'How much this basket moves versus the whole market (market = 1.0). Below 1.0 means it swings less than the market; above 1.0 means it swings more. Lower beta = a calmer ride.',
+    history: 'How many years of real fund history these numbers are measured over. More years means the returns and the worst drawdown have been tested through more market cycles — so you can trust them more.',
+  };
 
   /** Blended metrics per variant. */
   metrics = signal<Record<string, BasketMetrics>>({});
@@ -411,10 +428,7 @@ export class LandDetailComponent implements OnInit {
     return (eq * 1.0 + hyb * 0.55) / 100;
   }
 
-  amountFromInput(v: string): void {
-    const n = Number(v.replace(/[^0-9]/g, ''));
-    this.amount.set(isNaN(n) ? 0 : n);
-  }
-
-  presetAmounts = [5_00_000, 10_00_000, 25_00_000, 50_00_000];
+  /** The plot choices offered: buy 1, 2 or 3 plots. */
+  readonly plotOptions = [1, 2, 3];
+  setPlots(n: number): void { this.plots.set(n); }
 }
