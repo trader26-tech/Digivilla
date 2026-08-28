@@ -208,27 +208,6 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   taxFreeLimit = 1_25_000;
   taxBarPct = computed<number>(() => Math.min(100, (this.rentAnnual() / this.taxFreeLimit) * 100));
 
-  /** "If you'd done this 5 years ago" — value now AND the rent it paid along the
-   *  way. The value-now already reflects that rent was withdrawn: we grow the
-   *  ticket at the NET-of-rent rate, so the number is honest. */
-  paidBack = computed(() => {
-    const ticket = this.ticketPrice;
-    const years = 5;
-    const grossRate = past5y(this.property, this.active()) / 100;
-    const rentYr = this.rentAnnual();
-    // net growth after the rent drag: value compounds on gross, minus each
-    // year's rent taken out.
-    let value = ticket;
-    const path: { year: number; value: number }[] = [{ year: 0, value }];
-    let totalRent = 0;
-    for (let y = 1; y <= years; y++) {
-      value = value * (1 + grossRate) - rentYr;   // grow, then pay out the year's rent
-      totalRent += rentYr;
-      path.push({ year: y, value: Math.max(0, value) });
-    }
-    return { invested: ticket, worthNow: value, rentPaid: totalRent, path, years };
-  });
-
   /** Hero growth ratios are hidden until tapped. */
   heroDetailsOpen = signal(false);
   toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }
