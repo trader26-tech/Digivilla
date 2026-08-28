@@ -228,7 +228,9 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   windowReadout = computed<{ from: number; to: number; pct: number; startDate: string } | null>(() => {
     const w = this.windowedGrowth();
     if (w.length < 2) return null;
-    const base = 10000;
+    // Base the readout on the ACTUAL amount invested (the ticket price), not a
+    // generic ₹10,000 — so it reads "₹10,00,000 → ₹14,00,000".
+    const base = this.amount();
     const first = w[0].value, last = w[w.length - 1].value;
     if (first <= 0) return null;
     const to = base * (last / first);
