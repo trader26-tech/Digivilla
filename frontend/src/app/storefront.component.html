@@ -1,64 +1,33 @@
 <main class="deed">
-  <!-- ===== interactive risk × reward map — the hero, top ~half of screen ===== -->
-  <section class="geo reveal" style="--s:0" aria-label="Risk and reward map of every estate">
-    <div class="geo-bar">
-      <div class="geo-titles">
-        <span class="geo-title">The Estate Map</span>
-        <span class="geo-sub">higher = better returns · right = more risk</span>
-      </div>
-      <div class="geo-legend">
-        <button *ngFor="let p of mapProps" class="gl-item" type="button"
-          [attr.data-p]="p" (click)="selectChip(p)"
-          [class.on]="activeKey === p">
-          <span class="gl-dot" [attr.data-p]="p"></span>{{ propName(p) }}
-        </button>
-      </div>
-    </div>
+  <!-- ===== interactive risk × reward map — full-bleed hero, curved bottom ===== -->
+  <section class="geo" aria-label="Risk and reward map of every estate">
+    <div class="geo-canvas" [class.has-sel]="selectedPin() !== null" (click)="selectedPin.set(null)">
+      <!-- soft "elevation" terrain — pure gradient light, no hard lines -->
+      <div class="geo-terrain" aria-hidden="true"></div>
+      <div class="geo-glow safe" aria-hidden="true"></div>
+      <div class="geo-glow risky" aria-hidden="true"></div>
 
-    <div class="geo-canvas" [class.has-sel]="selectedPin() !== null">
-      <!-- map surface: terrain zones + grid, drawn in a 0..100 box -->
-      <svg class="geo-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="geoTerrain" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%"  stop-color="var(--positive)" stop-opacity="0.14"/>
-            <stop offset="52%" stop-color="var(--brass)"    stop-opacity="0.10"/>
-            <stop offset="100%" stop-color="var(--terracotta)" stop-opacity="0.16"/>
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" width="100" height="100" fill="url(#geoTerrain)"/>
-        <!-- contour bands, like map elevation lines -->
-        <g class="geo-contours" fill="none" stroke="currentColor">
-          <path d="M-5 88 Q 30 74 55 80 T 108 66"/>
-          <path d="M-5 70 Q 32 54 58 62 T 108 46"/>
-          <path d="M-5 50 Q 34 34 60 42 T 108 26"/>
-          <path d="M-5 30 Q 36 16 64 24 T 108 8"/>
-        </g>
-        <!-- faint grid -->
-        <g class="geo-grid" stroke="currentColor">
-          <line x1="25" y1="0" x2="25" y2="100"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="75" y1="0" x2="75" y2="100"/>
-          <line x1="0" y1="25" x2="100" y2="25"/><line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="75" x2="100" y2="75"/>
-        </g>
-      </svg>
+      <!-- gentle scale ticks along the two live edges (subtle, not a grid) -->
+      <span class="geo-cap up" aria-hidden="true">Higher return ↑</span>
+      <span class="geo-cap side" aria-hidden="true">More risk →</span>
 
-      <!-- axis captions, like map compass labels -->
-      <span class="geo-cap top">More reward ↑</span>
-      <span class="geo-cap right">More risk →</span>
-
-      <!-- the pins, positioned in % over the canvas -->
+      <!-- the pins, positioned in % over the canvas; label shows the property -->
       <button *ngFor="let pin of mapPins" class="geo-pin" type="button"
         [attr.data-p]="pin.property"
         [class.sel]="isPinSelected(pin)"
         [class.dim]="selectedPin() !== null && !isPinSelected(pin)"
         [style.left.%]="pin.x" [style.top.%]="pin.y"
-        (click)="selectPin(pin)"
+        (click)="selectPin(pin); $event.stopPropagation()"
         [attr.aria-label]="pin.name + ' ' + pin.propName + ', reward ' + (pin.reward | number:'1.0-1') + '%, risk ' + (pin.risk | number:'1.0-1') + '%'">
         <span class="pin-marker"><span class="pin-core"></span></span>
+        <span class="pin-label">{{ pin.propName }}</span>
       </button>
 
       <!-- callout for the selected pin -->
       <div class="geo-callout" *ngIf="selectedPin() as sp"
         [style.left.%]="sp.x" [style.top.%]="sp.y"
-        [class.flip-x]="sp.x > 60" [class.flip-y]="sp.y < 34">
+        [class.flip-x]="sp.x > 60" [class.flip-y]="sp.y < 40"
+        (click)="$event.stopPropagation()">
         <div class="gc-head">
           <span class="gc-dot" [attr.data-p]="sp.property"></span>
           <span class="gc-name">{{ sp.name }}</span>
@@ -73,36 +42,33 @@
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+
+      <!-- search + filter floating ON the map, near the curved bottom -->
+      <div class="geo-search" (click)="$event.stopPropagation()">
+        <div class="search">
+          <svg class="search-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <input class="search-in" type="search" inputmode="search" placeholder="Search estates"
+            autocomplete="off" [ngModel]="query" (ngModelChange)="onQuery($event)" aria-label="Search estates"/>
+        </div>
+        <button class="filter-btn" type="button"
+          [class.on]="filter !== 'all'" [attr.aria-expanded]="filterOpen"
+          (click)="filterOpen = !filterOpen">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+      </div>
     </div>
 
-    <p class="geo-hint" *ngIf="selectedPin() === null">Tap any point to explore it</p>
+    <!-- scale + legend, BELOW the map -->
+    <div class="geo-scale">
+      <button *ngFor="let p of mapProps" class="gl-item" type="button"
+        [attr.data-p]="p" (click)="selectChip(p)" [class.on]="activeKey === p">
+        <span class="gl-dot" [attr.data-p]="p"></span>{{ propName(p) }}
+      </button>
+    </div>
   </section>
-
-  <!-- ===== search + filter ===== -->
-  <div class="toolbar reveal" style="--s:1">
-    <div class="search">
-      <svg class="search-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-      <input
-        class="search-in"
-        type="search"
-        inputmode="search"
-        placeholder="Search estates"
-        autocomplete="off"
-        [ngModel]="query"
-        (ngModelChange)="onQuery($event)"
-        aria-label="Search estates"
-      />
-    </div>
-    <button class="filter-btn" type="button"
-      [class.on]="filter !== 'all'"
-      [attr.aria-expanded]="filterOpen"
-      (click)="filterOpen = !filterOpen">
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
-    </button>
-  </div>
 
   <!-- filter menu -->
   <div class="filter-menu" *ngIf="filterOpen">
