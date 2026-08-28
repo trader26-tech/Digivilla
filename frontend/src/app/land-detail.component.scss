@@ -1,23 +1,12 @@
-/* Fill the whole viewport with the dusk ground so the page continues the
-   same world the intro + storefront live in (the sun that set into the sky). */
+/* Inherits the global light "Estate Document" palette (paper/ink/brass), so
+   tapping into Land is a seamless continuation of the light storefront. */
 :host {
   display: block;
   min-height: 100dvh;
-  background: #191238;
+  background: var(--paper);
 }
 
 .ld {
-  /* Warm-dusk palette, scoped to this page — mirrors the storefront so tapping
-     into Land is a seamless continuation, not a jump to a cold white page.
-     (Same token values the storefront remaps under .deed.) */
-  --paper: #191238;        /* dusk sky — page ground */
-  --ink: #FBEFDD;          /* warm sun-cream — primary text */
-  --survey: #3A2C63;       /* muted plum — borders, hairlines */
-  --brass: #E7AA55;        /* glowing brass sun — accents, active */
-  --terracotta: #FF9482;   /* coral — risk/disclaimer emphasis */
-  --positive: #7FD199;     /* warm gain green on the dark ground */
-  --negative: #E77563;     /* coral-red loss */
-
   max-width: 720px;
   margin: 0 auto;
   min-height: 100dvh;
@@ -25,9 +14,7 @@
   flex-direction: column;
   padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem
            calc(2rem + env(safe-area-inset-bottom));
-  background:
-    radial-gradient(120% 60% at 50% -6%, #2b1f57 0%, rgba(43, 31, 87, 0) 58%),
-    var(--paper);
+  background: var(--paper);
   color: var(--ink);
 }
 
@@ -239,7 +226,8 @@
   line-height: 1;
   color: var(--ink);
 }
-.stat-v.pos { color: color-mix(in srgb, #7BE0A8 80%, var(--paper)); }
+.stat-v.pos { color: var(--positive); }
+/* on the dark ink hero card, lift the green so it reads on the dark ground */
 .hero-stat .stat-v.pos { color: #8CE6B0; }
 .stat-v.neg { color: var(--negative); }
 .stat-foot { font-size: 0.72rem; font-weight: 500; color: var(--ink); opacity: 0.5; }
