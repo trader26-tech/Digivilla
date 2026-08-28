@@ -14,9 +14,7 @@
   --positive: #16A34A;    /* calm green — gains */
   --negative: #DC2626;    /* red — losses */
 
-  /* Page ground is a barely-grey so white cards lift off it, like the ref. */
-  --ground: #F5F6F8;
-  /* Muted grey for the small ALL-CAPS labels. */
+  /* Muted grey for the small ALL-CAPS labels (available to any component). */
   --muted: #6B7280;
 
   /* Inter everywhere now (serif display retired). Display = heavier weight. */

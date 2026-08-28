@@ -1,4 +1,5 @@
-/* Inherits the global light "Estate Document" palette (paper/ink/brass). */
+/* Inherits the global design tokens (paper/ink/survey/brass) from styles.scss —
+   the clean fintech theme. No hardcoded palette hex here. */
 :host { display: block; min-height: 100dvh; background: var(--paper); }
 
 .pd {
@@ -46,9 +47,9 @@
 .kicker { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brass); }
 .lede {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 800;
   font-size: clamp(2.2rem, 9vw, 3rem);
-  line-height: 1.02; letter-spacing: -0.02em;
+  line-height: 1.02; letter-spacing: -0.03em;
   margin: 0.4rem 0 0; color: var(--ink);
 }
 .sub { margin: 0.8rem 0 0; font-size: 0.95rem; line-height: 1.5; color: color-mix(in srgb, var(--ink) 80%, var(--paper)); }
@@ -72,7 +73,7 @@
 .vpill:hover { color: var(--ink); }
 .vpill.on {
   background: var(--paper); color: var(--ink);
-  box-shadow: 0 1px 3px rgba(22, 48, 43, 0.12);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 14%, transparent);
 }
 .vpill.on .vpill-growth { color: var(--accent, var(--brass)); }
 .vblurb { margin: 0 0 1.4rem; font-size: 0.9rem; line-height: 1.45; color: color-mix(in srgb, var(--ink) 72%, var(--paper)); }
@@ -87,7 +88,7 @@
 /* ---------- section scaffolding ---------- */
 .chart-head { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 1rem; }
 .chart-head.sm { margin-bottom: 0.7rem; }
-.sec-title { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; line-height: 1.1; margin: 0; color: var(--ink); }
+.sec-title { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; font-size: 1.3rem; line-height: 1.1; margin: 0; color: var(--ink); }
 .sec-sub { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; margin: 0; color: var(--ink); }
 .sec-title .thin { font-weight: 400; opacity: 0.6; }
 .chart-sub { font-size: 0.8rem; font-weight: 500; color: var(--ink); opacity: 0.6; }
@@ -153,7 +154,7 @@
 }
 .mc-stat.mid { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); background: color-mix(in srgb, var(--brass) 7%, var(--paper)); }
 .mc-k { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.55; }
-.mc-v { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mc-v { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 .mc-stat.down .mc-v { color: var(--terracotta); }
 .mc-stat.up .mc-v { color: var(--positive); }
 .mc-x { font-size: 0.78rem; font-weight: 700; color: var(--brass); }
@@ -190,7 +191,7 @@
 .flow-node.you { border-color: color-mix(in srgb, var(--positive) 45%, var(--survey)); background: color-mix(in srgb, var(--positive) 8%, var(--paper)); animation-delay: 0.45s; }
 @keyframes nodeIn { to { opacity: 1; transform: none; } }
 .fn-role { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.6; }
-.fn-amt { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.fn-amt { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); font-variant-numeric: tabular-nums; }
 .flow-node.you .fn-amt { color: var(--positive); }
 .fn-desc { font-size: 0.72rem; opacity: 0.6; }
 
@@ -292,7 +293,7 @@
 }
 .stat-k { font-size: 0.74rem; font-weight: 600; opacity: 0.6; }
 .stat-k .ann { font-weight: 500; opacity: 0.8; }
-.stat-v { font-family: var(--font-display); font-weight: 600; font-size: 1.4rem; line-height: 1; color: var(--ink); }
+.stat-v { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; line-height: 1; color: var(--ink); }
 .stat-v.pos { color: var(--positive); }
 .stat-v.neg { color: var(--terracotta); }
 .stat-foot { font-size: 0.72rem; opacity: 0.55; }
@@ -321,7 +322,7 @@
 }
 .cta-figs { display: flex; flex-direction: column; gap: 0.15rem; }
 .cta-k { font-size: 0.8rem; font-weight: 600; opacity: 0.7; }
-.cta-v { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; color: var(--ink); }
+.cta-v { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; color: var(--ink); }
 .cta-btn {
   flex: none; border: none; border-radius: 10px; cursor: pointer;
   padding: 0.85rem 1.3rem; background: var(--ink); color: var(--paper);
