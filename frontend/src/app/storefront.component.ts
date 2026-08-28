@@ -7,24 +7,29 @@ import {
   expectedGrowth, past3y, RISK_OF_STORE,
   riskScore, RiskScore,
   riskOf as volOf, PACKAGES, PropertyKey,
+  ALL_SCHEMES, schemeName as devName,
+  VariantKey as DataVariantKey,
 } from './property-package.data';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
 
-/** One property placed on the dark map. Elevation (glow size) = rent it pays;
- *  X = risk. Land pays no rent → a flat, dim marker; Duplex → a bright peak. */
+/** One SCHEME (property × risk variant) as an individual pin on the map.
+ *  X = risk (bottom-left = low risk), Y = expected return. Each pin carries
+ *  its own monthly rent, and is coloured by its property. */
 export interface MapSpot {
   property: PropertyKey;
+  variant: DataVariantKey;
+  storeVariant: VariantKey;
   propName: string;
+  name: string;          // unique dev name (Adyar Grove …)
   price: number;
-  rentLo: number;
-  rentHi: number;
-  risk: number;
-  reward: number;
-  x: number;   // 0..100 horizontal (by risk)
-  y: number;   // 0..100 vertical (by rent — higher rent sits higher)
-  glow: number; // 0..1 heat/elevation (by rent)
+  rent: number;          // this variant's monthly rent (₹, 0 = Land)
+  riskWord: string;      // Low / Medium / High risk
+  risk: number;          // volatility %
+  reward: number;        // expected return %
+  x: number;             // 0..100 horizontal (by risk)
+  y: number;             // 0..100 vertical (by return — higher = up)
 }
 
 /** A risk variant of a property, named in property terms rather than fund jargon:
@@ -81,7 +86,15 @@ export class StorefrontComponent {
 
   readonly mapProps: PropertyKey[] = ['land', 'flat', 'apartment', 'duplex'];
 
-  /** The four properties as spots on the dark map. */
+  /** Data-variant → store-variant, and a plain risk word, per scheme. */
+  private static readonly STORE_OF: Record<DataVariantKey, VariantKey> = {
+    conservative: 'ready', balanced: 'construction', aggressive: 'prelaunch',
+  };
+  private static readonly RISK_WORD: Record<DataVariantKey, string> = {
+    conservative: 'Low risk', balanced: 'Medium risk', aggressive: 'High risk',
+  };
+
+  /** All 12 schemes as individual pins. X = risk (bottom-left = low), Y = return. */
   private _spots?: MapSpot[];
   get spots(): MapSpot[] {
     if (!this._spots) this._spots = this.buildSpots();
@@ -90,30 +103,48 @@ export class StorefrontComponent {
   selectedSpot = signal<MapSpot | null>(null);
 
   private buildSpots(): MapSpot[] {
-    const raw = this.properties.map((p) => {
-      const rents = this.variantOrder
-        .map((vk) => p.variants[vk].monthlyIncome)
-        .filter((r): r is number => r != null && r > 0);
+    const raw = ALL_SCHEMES.map((s) => {
+      const sv = StorefrontComponent.STORE_OF[s.variant];
+      const prop = this.properties.find((p) => p.key === s.property)!;
+      const rent = prop.variants[sv].monthlyIncome ?? 0;
       return {
-        property: p.key, propName: p.name, price: p.price,
-        rentLo: rents.length ? Math.min(...rents) : 0,
-        rentHi: rents.length ? Math.max(...rents) : 0,
-        risk: volOf(p.key, 'balanced'),
-        reward: expectedGrowth(p.key, 'balanced'),
+        property: s.property, variant: s.variant, storeVariant: sv,
+        propName: PACKAGES[s.property].name,
+        name: devName(s.property, s.variant),
+        price: prop.price, rent,
+        riskWord: StorefrontComponent.RISK_WORD[s.variant],
+        risk: volOf(s.property, s.variant),
+        reward: expectedGrowth(s.property, s.variant),
       };
     });
-    const rk = raw.map((r) => r.risk);
+    const rk = raw.map((r) => r.risk), rw = raw.map((r) => r.reward);
     const rLo = Math.min(...rk), rHi = Math.max(...rk), rSpan = rHi - rLo || 1;
-    const maxRent = Math.max(...raw.map((r) => r.rentHi), 1);
-    return raw.map((r) => {
-      const glow = r.rentHi > 0 ? 0.32 + Math.sqrt(r.rentHi / maxRent) * 0.68 : 0.1;
-      return {
-        ...r,
-        x: 12 + ((r.risk - rLo) / rSpan) * 76,
-        y: 82 - glow * 60,     // more rent → higher on the map
-        glow,
-      };
-    });
+    const wLo = Math.min(...rw), wHi = Math.max(...rw), wSpan = wHi - wLo || 1;
+    // place by risk (X, low→left) and return (Y, high→up), within margins
+    const x0 = 12, x1 = 90, y0 = 14, y1 = 80;
+    const spots: MapSpot[] = raw.map((r) => ({
+      ...r,
+      x: x0 + ((r.risk - rLo) / rSpan) * (x1 - x0),
+      y: y1 - ((r.reward - wLo) / wSpan) * (y1 - y0),
+    }));
+    // de-overlap so all 12 stay tappable
+    const MIN = 12;
+    for (let it = 0; it < 90; it++) {
+      let moved = false;
+      for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) {
+        const a = spots[i], b = spots[j];
+        let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        if (d < MIN) {
+          if (d < 0.01) { dx = (i - j) || 1; dy = 1; d = Math.hypot(dx, dy); }
+          const push = (MIN - d) / 2, ux = dx / d, uy = dy / d;
+          a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+          moved = true;
+        }
+      }
+      for (const s of spots) { s.x = Math.max(x0, Math.min(x1, s.x)); s.y = Math.max(y0, Math.min(y1, s.y)); }
+      if (!moved) break;
+    }
+    return spots;
   }
 
   selectSpot(s: MapSpot): void { this.selectedSpot.set(this.selectedSpot() === s ? null : s); }
