@@ -395,6 +395,46 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     return amt > 0 ? last.mid / amt : null;
   });
 
+  // ── "If you'd invested N years ago" — backward look on the rolling-average
+  //    growth, so the customer can compare against their own property. ──────────
+  readonly agoOptions = [3, 5, 10, 20];
+  yearsAgo = signal<number>(5);
+  setYearsAgo(n: number): void { this.yearsAgo.set(n); }
+
+  /** The basket's rolling-average annual growth (from real past data). */
+  private avgGrowthRate(): number {
+    const m = this.activeMetrics();
+    if (!m) return 0.11;
+    // prefer the longest real track record for a stable rolling average
+    const pick = m.return_5y ?? m.return_3y ?? m.expected_return ?? 11;
+    return pick / 100;
+  }
+
+  /** Year-by-year path of ₹(ticket) compounded at the average rate, from
+   *  `yearsAgo` in the past up to today — for the comparison bars. */
+  pastProjection = computed<{ year: number; value: number }[]>(() => {
+    const amt = this.ticketPrice;
+    const rate = this.avgGrowthRate();
+    const years = this.yearsAgo();
+    const out: { year: number; value: number }[] = [];
+    // ~5 evenly spaced milestone points from start (year 0) to now (year N)
+    const steps = Math.min(years, 5);
+    for (let s = 0; s <= steps; s++) {
+      const y = Math.round((s / steps) * years);
+      out.push({ year: y, value: amt * Math.pow(1 + rate, y) });
+    }
+    return out;
+  });
+
+  /** What ₹(ticket) invested `yearsAgo` would be worth today. */
+  pastNowValue = computed<number>(() => {
+    const rows = this.pastProjection();
+    return rows.length ? rows[rows.length - 1].value : this.ticketPrice;
+  });
+  pastMultiple = computed<number>(() => {
+    return this.pastNowValue() / this.ticketPrice;
+  });
+
   // ── SVG geometry for the growth curve (with real X/Y axes + hover) ──────────
   readonly chartW = 680;
   readonly chartH = 260;

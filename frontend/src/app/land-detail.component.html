@@ -216,43 +216,6 @@
       </div>
     </section>
 
-    <!-- ===== 5 · if you invest today — by the plot ===== -->
-    <section class="card proj-card" appReveal>
-      <div class="card-head">
-        <h2 class="card-title">If you invest today…</h2>
-        <span class="card-sub">median path · {{ pct(m.expected_return) }} p.a.</span>
-      </div>
-
-      <div class="plots-row">
-        <button *ngFor="let n of plotOptions" type="button" class="plot-btn" [class.on]="plots() === n" (click)="setPlots(n)">
-          <span class="plot-n">{{ n }}</span>
-          <span class="plot-lbl">{{ n === 1 ? 'plot' : 'plots' }}</span>
-          <span class="plot-amt">{{ compact(n * ticketPrice) }}</span>
-        </button>
-      </div>
-
-      <p class="proj-headline" *ngIf="finalMultiple() as fm">
-        {{ plots() }} {{ plots() === 1 ? 'plot' : 'plots' }} · you invest <strong>{{ compact(amount()) }}</strong>,
-        and in 20 years it could grow to
-        <strong class="grow">{{ compact(projection()[projection().length - 1].mid) }}</strong>
-        <span class="mult">≈ {{ fm | number:'1.1-1' }}×</span>
-      </p>
-
-      <div class="bars">
-        <div class="bar-col" *ngFor="let r of projection()">
-          <div class="bar-stack" [style.height.%]="barHeight(r.high)">
-            <div class="bar-band" [style.height.%]="(r.high - r.low) / r.high * 100"></div>
-            <div class="bar-mid" [style.bottom.%]="r.mid / r.high * 100"></div>
-          </div>
-          <div class="bar-vals">
-            <span class="bar-mid-v">{{ compact(r.mid) }}</span>
-            <span class="bar-band-v">{{ compact(r.low) }}–{{ compact(r.high) }}</span>
-          </div>
-          <div class="bar-yr">{{ r.year }}<span class="u">yr</span></div>
-        </div>
-      </div>
-    </section>
-
     <!-- ===== CTA ===== -->
     <section class="cta-row">
       <div class="cta-figs">
