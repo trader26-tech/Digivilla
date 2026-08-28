@@ -98,14 +98,14 @@
             <svg class="stat-ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8M20 7h-4M20 7v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Growth
           </span>
-          <span class="stat-v">{{ t.v.growthPct }}%</span>
+          <span class="stat-v">{{ growthOf(t.p, t.v.key) | number:'1.0-1' }}%</span>
         </div>
         <div class="stat">
           <span class="stat-l">
             <svg class="stat-ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
             3-yr
           </span>
-          <span class="stat-v">{{ t.v.past3y }}%</span>
+          <span class="stat-v">{{ past3yOf(t.p, t.v.key) | number:'1.0-1' }}%</span>
         </div>
         <div class="stat">
           <span class="stat-l">

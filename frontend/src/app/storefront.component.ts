@@ -2,7 +2,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Output } from '@angular/core';
 
-import { storeSchemeName, storeSchemeLocality } from './property-package.data';
+import {
+  storeSchemeName, storeSchemeLocality,
+  expectedGrowth, past3y, RISK_OF_STORE,
+} from './property-package.data';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
@@ -140,6 +143,16 @@ export class StorefrontComponent {
   /** The short locality/tagline for a scheme. */
   schemeLocality(p: Property, vk: VariantKey): string {
     return storeSchemeLocality(p.key, vk);
+  }
+
+  /** Real expected annual growth % — from REAL_METRICS (single source of truth),
+   *  so the tile matches the detail page exactly. */
+  growthOf(p: Property, vk: VariantKey): number {
+    return expectedGrowth(p.key, RISK_OF_STORE[vk]);
+  }
+  /** Real trailing 3-year return %, same source. */
+  past3yOf(p: Property, vk: VariantKey): number {
+    return past3y(p.key, RISK_OF_STORE[vk]);
   }
 
   // Figures from the PropertyNest package data. growthPct = expected p.a.;
