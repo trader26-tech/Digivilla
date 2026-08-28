@@ -244,6 +244,22 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     return { from: base, to, pct: (last / first - 1) * 100, startDate: w[0].date };
   });
 
+  /** Annualised return (CAGR) over the selected window — the headline number. */
+  windowCagr = computed<number | null>(() => {
+    const w = this.windowedGrowth();
+    if (w.length < 2) return null;
+    const first = w[0].value, last = w[w.length - 1].value;
+    if (first <= 0) return null;
+    const years = (w.length - 1) / 12;
+    if (years <= 0) return null;
+    return (Math.pow(last / first, 1 / years) - 1) * 100;
+  });
+  windowYears = computed<number>(() => Math.max(1, Math.round((this.windowedGrowth().length - 1) / 12)));
+
+  /** The jargon readout stays hidden until tapped. */
+  ppInfoOpen = signal(false);
+  togglePpInfo(): void { this.ppInfoOpen.update(v => !v); }
+
   ngOnInit(): void {
     this.active.set(this.initialVariant);
     this.startBenefits();
