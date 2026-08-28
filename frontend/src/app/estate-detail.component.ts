@@ -108,6 +108,8 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   /** Variants + ticket for the tapped property (set in ngOnInit from @Input). */
   variants: LandVariant[] = variantsFor('flat');
   ticketPrice = PACKAGES['flat'].price;
+  /** "Flat" | "Apartment" | "Duplex" — for CTA + reserve button. */
+  get propName(): string { return PACKAGES[this.property].name; }
 
   active = signal<LandVariantKey>('balanced');
 
