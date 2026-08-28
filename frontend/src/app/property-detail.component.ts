@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
+  ALL_SCHEMES,
   Leg,
   LegRole,
   PACKAGES,
@@ -14,6 +15,8 @@ import {
   VARIANT_ORDER,
   WITHDRAWAL_RULES,
   runwayMonths,
+  schemeLocality,
+  schemeName,
   totalMonthlyIncome,
 } from './property-package.data';
 import { BasketMetrics, ProjPoint, PropertyDetailService } from './property-detail.service';
@@ -22,6 +25,20 @@ import { BasketMetrics, ProjPoint, PropertyDetailService } from './property-deta
 interface FanBand {
   year: number;
   p5: number; p25: number; p50: number; p75: number; p95: number;
+}
+
+/** One pin on the risk–reward map. */
+interface MapPin {
+  property: PropertyKey;
+  variant: VariantKey;
+  name: string;
+  locality: string;
+  risk: number;      // 0..1 (x)
+  reward: number;    // 0..1 (y)
+  cx: number;        // px
+  cy: number;        // px
+  isCurrent: boolean;
+  isSelf: boolean;   // same property (dev), any variant
 }
 
 @Component({
@@ -42,6 +59,8 @@ export class PropertyDetailComponent implements OnInit {
 
   readonly variantOrder = VARIANT_ORDER;
   readonly roleLabel = ROLE_LABEL;
+  /** Exposed to the template for the risk–reward map readout. */
+  readonly PACKAGES = PACKAGES;
   /** Order the fund roles are grouped/rendered in the breakdown. */
   readonly roleOrder: LegRole[] = ['income', 'growth', 'hedge', 'liquid'];
   readonly withdrawalRules = WITHDRAWAL_RULES;
@@ -94,6 +113,107 @@ export class PropertyDetailComponent implements OnInit {
 
   select(k: VariantKey): void { this.active.set(k); }
   goBack(): void { this.back.emit(); }
+
+  /** The unique development name + locality for the active scheme. */
+  schemeName = computed<string>(() => schemeName(this.property, this.active()));
+  schemeLocality = computed<string>(() => schemeLocality(this.property, this.active()));
+
+  // ── Risk–reward map ─────────────────────────────────────────────────────────
+  readonly mapW = 680;
+  readonly mapH = 460;
+  readonly mapPad = 46;
+
+  /** Which pin the customer tapped on the map (null = the current scheme). */
+  pinnedKey = signal<string | null>(null);
+
+  /** Raw risk/reward per scheme, before normalising to the box.
+   *  reward = the desk's expected growth %. risk = a tier-based swing proxy,
+   *  refined with the REAL measured volatility for any variant we've loaded. */
+  private rawScheme(property: PropertyKey, variant: VariantKey): { reward: number; risk: number } {
+    const v = PACKAGES[property].variants[variant];
+    const reward = v.targetGrowth;
+    // Tier baseline risk (pre-launch swings hardest); nudged by the growth level.
+    const tierRisk: Record<VariantKey, number> = { conservative: 10, balanced: 15, aggressive: 22 };
+    let risk = tierRisk[variant] + (v.targetGrowth - 8) * 0.4;
+    // If this is the property we're viewing and its metrics are in, use the real
+    // measured volatility — makes the current dev's pins honest.
+    if (property === this.property) {
+      const m = this.metrics()[variant];
+      if (m?.volatility != null) risk = m.volatility;
+      if (m?.expected_return != null) { /* reward stays the desk figure for comparability */ }
+    }
+    return { reward, risk };
+  }
+
+  /** All 12 schemes laid out as pins in the map box. */
+  mapPins = computed<MapPin[]>(() => {
+    const raws = ALL_SCHEMES.map(s => ({ ...s, ...this.rawScheme(s.property, s.variant) }));
+    const risks = raws.map(r => r.risk), rewards = raws.map(r => r.reward);
+    const rLo = Math.min(...risks), rHi = Math.max(...risks);
+    const wLo = Math.min(...rewards), wHi = Math.max(...rewards);
+    const rSpan = rHi - rLo || 1, wSpan = wHi - wLo || 1;
+    const innerW = this.mapW - this.mapPad * 2;
+    const innerH = this.mapH - this.mapPad * 2;
+    return raws.map(r => {
+      const risk = (r.risk - rLo) / rSpan;      // 0..1
+      const reward = (r.reward - wLo) / wSpan;   // 0..1
+      return {
+        property: r.property, variant: r.variant,
+        name: schemeName(r.property, r.variant),
+        locality: schemeLocality(r.property, r.variant),
+        risk, reward,
+        cx: this.mapPad + risk * innerW,
+        cy: this.mapPad + (1 - reward) * innerH,  // reward up
+        isCurrent: r.property === this.property && r.variant === this.active(),
+        isSelf: r.property === this.property,
+      };
+    });
+  });
+
+  /** The pin currently shown in the readout (tapped, or the active scheme). */
+  activePin = computed<MapPin | null>(() => {
+    const pins = this.mapPins();
+    const key = this.pinnedKey();
+    if (key) return pins.find(p => `${p.property}:${p.variant}` === key) ?? null;
+    return pins.find(p => p.isCurrent) ?? null;
+  });
+
+  /** Its real measured numbers, if we have them (only for the current property). */
+  activePinMetrics = computed<BasketMetrics | null>(() => {
+    const p = this.activePin();
+    if (!p || p.property !== this.property) return null;
+    return this.metrics()[p.variant] ?? null;
+  });
+
+  tapPin(p: MapPin): void {
+    this.pinnedKey.set(`${p.property}:${p.variant}`);
+    // Tapping a pin of THIS development also switches the page to that variant.
+    if (p.property === this.property) this.select(p.variant);
+  }
+
+  @ViewChild('mapCard') mapCard?: ElementRef<HTMLElement>;
+  scrollToMap(): void {
+    this.mapCard?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /** Reward-per-unit-of-risk for the active pin (higher = better deal). */
+  rewardPerRisk = computed<number | null>(() => {
+    const p = this.activePin();
+    if (!p) return null;
+    const m = this.activePinMetrics();
+    const reward = PACKAGES[p.property].variants[p.variant].targetGrowth;
+    const risk = m?.volatility ?? (10 + p.risk * 14);
+    return risk > 0 ? reward / risk : null;
+  });
+
+  /** A plain-English risk-reward verdict for the active pin. */
+  riskRewardVerdict = computed<string>(() => {
+    const r = this.rewardPerRisk();
+    if (r == null) return '';
+    if (r >= 1.0) return 'Strong deal — more reward than the risk you take.';
+    if (r >= 0.75) return 'Balanced — reward and risk broadly matched.';
+    return 'Racier — you take on more swing for the extra growth.';
+  });
 
   // ── Bucket mechanics ────────────────────────────────────────────────────────
   legsByRole(role: LegRole): Leg[] {

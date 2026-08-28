@@ -12,8 +12,16 @@
 
   <!-- ===== hero ===== -->
   <section class="hero reveal" style="--s:0">
-    <span class="kicker">{{ pkg().name }} · from {{ compact(ticketPrice) }}</span>
-    <h1 class="lede">{{ pkg().name }}</h1>
+    <span class="kicker">{{ pkg().name }} · {{ activeVariant().label }} · from {{ compact(ticketPrice) }}</span>
+    <h1 class="lede">{{ schemeName() }}</h1>
+    <button class="locality" type="button" (click)="scrollToMap()">
+      <svg class="loc-pin" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+        <path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="11" r="2.2" fill="currentColor"/>
+      </svg>
+      <span>{{ schemeLocality() }}</span>
+      <span class="loc-cta">see on the risk–reward map →</span>
+    </button>
     <p class="sub" *ngIf="incomePays; else growthSub">
       A curated basket that pays you a monthly income and keeps growing behind it —
       the rent comes from an arbitrage sleeve, the growth compounds and refills it each year.
@@ -140,6 +148,71 @@
         Each grey line is one simulated future; the band is where the middle half land.
         Simulated from this basket's own measured history — <em>illustrative, not a promise</em>.
       </p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ===== RISK–REWARD MAP ===================================== -->
+    <!-- ============================================================ -->
+    <section class="map-card reveal" style="--s:4" #mapCard>
+      <div class="chart-head">
+        <h2 class="sec-title">Where {{ schemeName() }} sits</h2>
+        <span class="chart-sub">every PropertyNest address, placed by how much risk it takes for its reward — tap any pin</span>
+      </div>
+
+      <div class="map-wrap">
+        <svg class="map-svg" [attr.viewBox]="'0 0 ' + mapW + ' ' + mapH" role="img"
+             aria-label="Risk–reward map of every scheme">
+          <!-- quadrant grid -->
+          <line class="map-axis" [attr.x1]="mapPad" [attr.y1]="mapH - mapPad" [attr.x2]="mapW - mapPad" [attr.y2]="mapH - mapPad"/>
+          <line class="map-axis" [attr.x1]="mapPad" [attr.y1]="mapPad" [attr.x2]="mapPad" [attr.y2]="mapH - mapPad"/>
+          <!-- the "fair value" diagonal: reward keeps pace with risk -->
+          <line class="map-diag" [attr.x1]="mapPad" [attr.y1]="mapH - mapPad" [attr.x2]="mapW - mapPad" [attr.y2]="mapPad"/>
+
+          <!-- axis labels -->
+          <text class="map-alab" [attr.x]="mapW / 2" [attr.y]="mapH - 12" text-anchor="middle">RISK  (swing) →</text>
+          <text class="map-alab" [attr.x]="16" [attr.y]="mapH / 2" text-anchor="middle" [attr.transform]="'rotate(-90 16 ' + (mapH / 2) + ')'">REWARD  (growth) →</text>
+
+          <!-- pins -->
+          <g *ngFor="let pin of mapPins()"
+             class="map-pin"
+             [class.self]="pin.isSelf"
+             [class.current]="pin.property === activePin()?.property && pin.variant === activePin()?.variant"
+             (click)="tapPin(pin)"
+             [attr.tabindex]="0"
+             role="button"
+             [attr.aria-label]="pin.name + ' — tap for risk and reward'">
+            <circle class="pin-halo" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="16"/>
+            <circle class="pin-dot" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="6"/>
+            <text class="pin-lab" [attr.x]="pin.cx" [attr.y]="pin.cy - 12" text-anchor="middle">{{ pin.name }}</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- readout for the tapped/active pin -->
+      <div class="map-read" *ngIf="activePin() as pin">
+        <div class="mr-head">
+          <span class="mr-name">{{ pin.name }}</span>
+          <span class="mr-loc">{{ pin.locality }}</span>
+        </div>
+        <div class="mr-figs">
+          <div class="mr-fig">
+            <span class="mr-k">Reward</span>
+            <span class="mr-v pos">{{ pct(PACKAGES[pin.property].variants[pin.variant].targetGrowth) }}<span class="u">/yr</span></span>
+            <span class="mr-foot">expected growth</span>
+          </div>
+          <div class="mr-fig">
+            <span class="mr-k">Risk</span>
+            <span class="mr-v neg">{{ activePinMetrics()?.volatility != null ? pct(activePinMetrics()!.volatility) : (pin.risk < 0.34 ? 'Low' : pin.risk < 0.67 ? 'Medium' : 'High') }}</span>
+            <span class="mr-foot">{{ activePinMetrics()?.volatility != null ? 'measured volatility' : 'typical swing' }}</span>
+          </div>
+          <div class="mr-fig">
+            <span class="mr-k">Reward / risk</span>
+            <span class="mr-v" [class.pos]="(rewardPerRisk() ?? 0) >= 0.9">{{ rewardPerRisk() !== null ? (rewardPerRisk() | number:'1.2-2') : '—' }}</span>
+            <span class="mr-foot">growth per unit of swing</span>
+          </div>
+        </div>
+        <p class="mr-verdict">{{ riskRewardVerdict() }}</p>
+      </div>
     </section>
 
     <!-- ============================================================ -->

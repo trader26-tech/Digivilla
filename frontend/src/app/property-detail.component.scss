@@ -55,6 +55,20 @@
 .sub { margin: 0.8rem 0 0; font-size: 0.95rem; line-height: 1.5; color: color-mix(in srgb, var(--ink) 80%, var(--paper)); }
 .norent { display: block; margin-top: 0.4rem; color: var(--terracotta); font-weight: 600; }
 
+/* locality chip under the development name — the map-pin cue */
+.locality {
+  display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+  margin-top: 0.7rem; padding: 0.4rem 0.7rem;
+  border: 1px solid var(--survey); border-radius: 999px;
+  background: color-mix(in srgb, var(--survey) 22%, var(--paper));
+  color: var(--ink); cursor: pointer;
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 500;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.locality:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); background: color-mix(in srgb, var(--brass) 6%, var(--paper)); }
+.loc-pin { color: var(--brass); flex: none; }
+.loc-cta { color: var(--brass); font-weight: 700; }
+
 /* ---------- variant tabs ---------- */
 .variant-pick {
   display: flex; gap: 0.3rem; padding: 0.28rem;
@@ -169,6 +183,59 @@
 .prob-l strong { font-weight: 700; opacity: 1; }
 .mc-note { margin: 0.4rem 0 0; font-size: 0.76rem; line-height: 1.45; color: var(--ink); opacity: 0.6; }
 .mc-note em { color: var(--terracotta); font-style: italic; opacity: 0.9; }
+
+/* ============================================================ */
+/* ===== Risk–reward map ===================================== */
+/* ============================================================ */
+.map-card { scroll-margin-top: 1rem; }
+.map-wrap { width: 100%; overflow: hidden; border-radius: 12px; }
+.map-svg {
+  width: 100%; height: auto; aspect-ratio: 680 / 460; display: block;
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--positive) 7%, transparent), transparent 55%),
+    radial-gradient(120% 90% at 0% 100%, color-mix(in srgb, var(--survey) 30%, transparent), transparent 55%),
+    color-mix(in srgb, var(--survey) 10%, var(--paper));
+  border-radius: 12px;
+}
+.map-axis { stroke: var(--survey); stroke-width: 1.5; }
+.map-diag { stroke: color-mix(in srgb, var(--brass) 45%, transparent); stroke-width: 1.5; stroke-dasharray: 5 6; }
+.map-alab { fill: var(--ink); opacity: 0.5; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
+
+.map-pin { cursor: pointer; }
+.map-pin:focus { outline: none; }
+.pin-halo { fill: color-mix(in srgb, var(--ink) 10%, transparent); opacity: 0; transition: opacity 0.15s ease; }
+.pin-dot { fill: color-mix(in srgb, var(--ink) 45%, var(--paper)); stroke: var(--paper); stroke-width: 2; transition: fill 0.15s ease, r 0.15s ease; }
+.pin-lab { fill: var(--ink); opacity: 0; font-size: 12px; font-weight: 600; transition: opacity 0.15s ease; pointer-events: none; }
+/* pins of THIS development stand out */
+.map-pin.self .pin-dot { fill: var(--brass); }
+.map-pin.self .pin-lab { opacity: 0.7; }
+.map-pin:hover .pin-halo, .map-pin:focus .pin-halo { opacity: 1; }
+.map-pin:hover .pin-lab, .map-pin:focus .pin-lab { opacity: 1; }
+/* the selected/tapped pin */
+.map-pin.current .pin-dot { fill: var(--brass); r: 8; stroke-width: 3; }
+.map-pin.current .pin-halo { opacity: 1; fill: color-mix(in srgb, var(--brass) 18%, transparent); }
+.map-pin.current .pin-lab { opacity: 1; font-weight: 700; }
+
+.map-read {
+  margin-top: 0.9rem; padding: 0.9rem 1rem; border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--brass) 35%, var(--survey));
+  background: color-mix(in srgb, var(--brass) 6%, var(--paper));
+}
+.mr-head { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+.mr-name { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--ink); }
+.mr-loc { font-size: 0.82rem; opacity: 0.65; }
+.mr-figs { display: flex; gap: 0.5rem; }
+.mr-fig {
+  flex: 1; display: flex; flex-direction: column; gap: 0.12rem;
+  padding: 0.6rem 0.7rem; border-radius: 10px;
+  background: var(--paper); border: 1px solid var(--survey);
+}
+.mr-k { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.55; }
+.mr-v { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mr-v.pos { color: var(--positive); }
+.mr-v.neg { color: var(--terracotta); }
+.mr-foot { font-size: 0.68rem; opacity: 0.55; }
+.mr-verdict { margin: 0.7rem 0 0; font-size: 0.86rem; font-weight: 600; color: var(--ink); }
 
 /* ============================================================ */
 /* ===== Bucket flow ========================================= */

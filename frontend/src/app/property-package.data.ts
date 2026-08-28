@@ -307,3 +307,53 @@ export function runwayMonths(v: Variant, ticket: number): number {
     .reduce((s, l) => s + l.weight * ticket, 0);
   return Math.round(incomeCorpus / v.rentMonthly);
 }
+
+/* ==================================================================
+   Unique development name + "locality" per scheme (property × variant).
+   Each tier is a named development; its three variants are distinct
+   addresses within it. The "locality" is a one-line character line —
+   it stands in for where the scheme sits in risk-reward terms, so the
+   map/pin metaphor reads naturally.
+   ================================================================== */
+export interface SchemeMeta {
+  /** The unique development name the customer sees, e.g. "Marina Cove". */
+  name: string;
+  /** Short locality/character line, tied to its risk-reward character. */
+  locality: string;
+}
+
+export const SCHEME_META: Record<PropertyKey, Record<VariantKey, SchemeMeta>> = {
+  land: {
+    conservative: { name: 'Horizon Meadow',  locality: 'Quiet outer plots — slow, sure ground' },
+    balanced:     { name: 'Horizon Ridge',   locality: 'Rising land on the growth corridor' },
+    aggressive:   { name: 'Horizon Summit',  locality: 'Frontier plots — steepest climb' },
+  },
+  flat: {
+    conservative: { name: 'Marina Cove',     locality: 'Sheltered bay — calm, steady rent' },
+    balanced:     { name: 'Marina Rise',     locality: 'Mid-rise on the waterfront' },
+    aggressive:   { name: 'Marina Peak',     locality: 'Top-floor skyline — bigger swings' },
+  },
+  apartment: {
+    conservative: { name: 'Emerald Court',   locality: 'Garden wing — grounded and green' },
+    balanced:     { name: 'Emerald Vista',   locality: 'City-view tower, balanced outlook' },
+    aggressive:   { name: 'Emerald Heights', locality: 'Penthouse tier — high exposure' },
+  },
+  duplex: {
+    conservative: { name: 'Crown Terrace',   locality: 'Ground estate — broad and stable' },
+    balanced:     { name: 'Crown Manor',     locality: 'The balanced two-storey estate' },
+    aggressive:   { name: 'Crown Pinnacle',  locality: 'The high estate — most to gain, most to ride' },
+  },
+};
+
+export function schemeName(property: PropertyKey, variant: VariantKey): string {
+  return SCHEME_META[property][variant].name;
+}
+export function schemeLocality(property: PropertyKey, variant: VariantKey): string {
+  return SCHEME_META[property][variant].locality;
+}
+
+/** Every (property, variant) pair, for building the risk-reward map. */
+export const ALL_SCHEMES: { property: PropertyKey; variant: VariantKey }[] =
+  (Object.keys(PACKAGES) as PropertyKey[]).flatMap((p) =>
+    VARIANT_ORDER.map((v) => ({ property: p, variant: v })),
+  );
