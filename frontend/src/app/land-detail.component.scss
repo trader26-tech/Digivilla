@@ -22,6 +22,19 @@
 }
 @keyframes reveal { to { opacity: 1; transform: none; } }
 
+/* reveal-on-scroll: cards fill in as they enter the viewport */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+              transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+.reveal-on-scroll.revealed { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll { opacity: 1; transform: none; transition: none; }
+}
+
 /* ---------- loading screen: minimal, centred, animated ---------- */
 .loading-screen {
   flex: 1;
@@ -245,18 +258,35 @@
   background: color-mix(in srgb, var(--paper) 14%, var(--ink));
   gap: 2px;
 }
-.alloc-seg { height: 100%; transition: width 0.4s cubic-bezier(0.2,0.7,0.2,1); }
-.alloc-seg[data-k='equity'], .a-dot[data-k='equity'] { background: var(--positive); }
-.alloc-seg[data-k='debt'],   .a-dot[data-k='debt']   { background: var(--brass); }
-.alloc-seg[data-k='gold'],   .a-dot[data-k='gold']   { background: color-mix(in srgb, var(--brass) 60%, var(--paper)); }
-.alloc-seg[data-k='cash'],   .a-dot[data-k='cash']   { background: color-mix(in srgb, var(--paper) 55%, var(--survey)); }
+.alloc-seg {
+  height: 100%; border: none; padding: 0; cursor: pointer;
+  transition: width 0.4s cubic-bezier(0.2,0.7,0.2,1), opacity 0.2s ease, filter 0.2s ease;
+}
+.alloc-seg.dim { opacity: 0.35; }
+.alloc-seg:hover { filter: brightness(1.12); }
+.alloc-seg[data-k='equity'], .a-dot[data-k='equity'], .fdl-dot[data-k='equity'] { background: var(--positive); }
+.alloc-seg[data-k='debt'],   .a-dot[data-k='debt'],   .fdl-dot[data-k='debt']   { background: var(--brass); }
+.alloc-seg[data-k='gold'],   .a-dot[data-k='gold'],   .fdl-dot[data-k='gold']   { background: color-mix(in srgb, var(--brass) 60%, var(--paper)); }
+.alloc-seg[data-k='cash'],   .a-dot[data-k='cash'],   .fdl-dot[data-k='cash']   { background: color-mix(in srgb, var(--paper) 55%, var(--survey)); }
 .alloc-legend {
   list-style: none; margin: 0.9rem 0 0; padding: 0;
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.55rem 1.2rem;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem 0.7rem;
 }
-.alloc-legend li { display: flex; align-items: center; gap: 0.5rem; }
+.a-chip {
+  width: 100%; min-height: 44px;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid transparent; border-radius: 9px;
+  background: transparent; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.a-chip:hover { background: color-mix(in srgb, var(--paper) 8%, transparent); }
+.a-chip.on {
+  background: color-mix(in srgb, var(--paper) 12%, transparent);
+  border-color: color-mix(in srgb, var(--paper) 30%, transparent);
+}
 .a-dot { width: 11px; height: 11px; border-radius: 3px; flex: none; }
-.a-label { flex: 1; font-size: 0.86rem; font-weight: 600; color: color-mix(in srgb, var(--paper) 85%, transparent); }
+.a-label { flex: 1; text-align: left; font-size: 0.86rem; font-weight: 600; color: color-mix(in srgb, var(--paper) 85%, transparent); }
 .a-pct { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--paper); }
 
 /* ---------- chart with fund selector ---------- */
@@ -430,17 +460,46 @@
 .bar-band-v { font-size: 0.58rem; font-weight: 600; color: var(--ink); opacity: 0.45; white-space: nowrap; }
 .bar-yr { font-size: 0.76rem; font-weight: 700; color: var(--ink); opacity: 0.6; }
 
-/* ---------- funds ---------- */
-.funds-card .card-title { margin-bottom: 1rem; }
-.fund-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.85rem; }
-.fund-top { display: flex; align-items: flex-start; gap: 0.7rem; }
-.fund-w { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; color: var(--brass); min-width: 3ch; }
-.fund-name-box { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.fund-name { font-weight: 700; font-size: 0.92rem; color: var(--ink); }
-.fund-role { font-size: 0.76rem; font-weight: 500; color: var(--ink); opacity: 0.6; }
-.fund-amt { flex: none; font-weight: 600; font-size: 0.88rem; color: var(--ink); opacity: 0.75; }
-.weight-bar { margin-top: 0.4rem; height: 6px; border-radius: 3px; background: var(--survey); overflow: hidden; }
-.weight-bar span { display: block; height: 100%; background: var(--brass); border-radius: 3px; }
+/* ---------- funds (filtered by asset, tap to expand) ---------- */
+.funds-card .card-title { margin-bottom: 0.2rem; }
+.card-sub.link {
+  border: none; background: transparent; cursor: pointer;
+  font: inherit; color: var(--brass); font-weight: 600; padding: 0;
+}
+.fund-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.fund { transition: opacity 0.2s ease; }
+.fund-top {
+  width: 100%; display: flex; align-items: center; gap: 0.7rem;
+  border: none; background: transparent; padding: 0; cursor: pointer; text-align: left;
+  min-height: 44px;
+}
+.fund-w { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--brass); min-width: 3ch; }
+.fund-name { flex: 1; min-width: 0; font-weight: 700; font-size: 0.92rem; color: var(--ink); }
+.fund-amt {
+  flex: none; display: inline-flex; align-items: center; gap: 0.25rem;
+  font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: var(--ink);
+  white-space: nowrap;
+}
+.fund-caret { color: var(--brass); opacity: 0.7; transition: transform 0.2s ease; }
+.fund.open .fund-caret { transform: rotate(180deg); }
+.weight-bar { margin-top: 0.45rem; height: 6px; border-radius: 3px; background: var(--survey); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--brass); border-radius: 3px; transition: width 0.4s cubic-bezier(0.2,0.7,0.2,1); }
+
+/* per-fund detail — only when tapped */
+.fund-detail {
+  margin-top: 0.7rem; padding: 0.75rem 0.85rem;
+  border-radius: 10px; background: color-mix(in srgb, var(--survey) 22%, transparent);
+  animation: fdIn 0.24s cubic-bezier(0.2,0.7,0.2,1) both;
+}
+@keyframes fdIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.fd-role { margin: 0 0 0.5rem; font-size: 0.85rem; line-height: 1.4; color: var(--ink); }
+.fd-invested { font-size: 0.82rem; color: var(--ink); opacity: 0.7; margin-bottom: 0.5rem; }
+.fd-invested b { font-weight: 700; opacity: 1; }
+.fd-look { list-style: none; margin: 0; padding: 0.55rem 0 0; border-top: 1px solid var(--survey); display: flex; flex-direction: column; gap: 0.3rem; }
+.fd-look li { display: flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; }
+.fdl-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.fdl-label { flex: 1; color: var(--ink); opacity: 0.75; }
+.fdl-pct { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* ---------- CTA ---------- */
 .cta-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; border-radius: 13px; background: var(--ink); margin-bottom: 1.3rem; }

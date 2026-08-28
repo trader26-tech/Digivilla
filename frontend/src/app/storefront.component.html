@@ -74,22 +74,22 @@
       (keydown.space)="open(t.p, t.v.key); $event.preventDefault()"
       [attr.aria-label]="t.v.label + ' ' + t.p.name + ', ' + compact(t.p.price)"
     >
-      <!-- header: icon · name · price -->
+      <!-- header: icon · [name + risk chip] · price -->
       <div class="tile-top">
         <span class="tile-ic" [attr.data-v]="t.v.key" aria-hidden="true" [ngSwitch]="t.v.key">
           <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="20" height="20"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="20" height="20"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
-        <span class="tile-name">{{ schemeName(t.p, t.v.key) }} {{ t.p.name }}</span>
+        <span class="tile-head">
+          <span class="tile-name">{{ schemeName(t.p, t.v.key) }} {{ t.p.name }}</span>
+          <span class="tile-loc" [attr.data-v]="t.v.key">
+            <span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>
+            {{ t.v.label }}
+          </span>
+        </span>
         <span class="tile-price">{{ compact(t.p.price) }}</span>
       </div>
-
-      <!-- risk + return level (static) -->
-      <span class="tile-loc" [attr.data-v]="t.v.key">
-        <span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>
-        {{ t.v.label }}
-      </span>
 
       <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
       <div class="tile-stats">

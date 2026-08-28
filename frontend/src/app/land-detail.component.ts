@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
 import { schemeName, schemeLocality } from './property-package.data';
+import { RevealDirective } from './reveal.directive';
 
 export type LandVariantKey = 'conservative' | 'balanced' | 'aggressive';
 
@@ -106,7 +107,7 @@ interface ChartSource {
 @Component({
   selector: 'app-land-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RevealDirective],
   templateUrl: './land-detail.component.html',
   styleUrl: './land-detail.component.scss',
 })
