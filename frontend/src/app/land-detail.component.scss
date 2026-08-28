@@ -32,30 +32,38 @@
 }
 .plate-mark { color: var(--brass); }
 
-/* ---------- ONE hero: name + a single details panel ---------- */
-.hero { margin: 0.4rem 0 1.5rem; }
-.hero-kicker {
-  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--brass);
-}
+/* ---------- compact hero: name, price, growth% ---------- */
+.hero { margin: 0.2rem 0 1.3rem; }
 .hero-name {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(2.3rem, 10vw, 3.2rem);
-  line-height: 1.0;
+  font-weight: 700;
+  font-size: clamp(2rem, 8.5vw, 2.7rem);
+  line-height: 1.02;
   letter-spacing: -0.02em;
-  margin: 0.5rem 0 0;
+  margin: 0;
   color: var(--ink);
 }
-.hero-fig { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; margin-top: 1rem; }
-.hero-val {
+.hero-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin-top: 0.45rem;
+}
+.hero-price {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 2.7rem;
-  line-height: 1;
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--ink);
+}
+.hero-grow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
   color: var(--positive);
 }
-.hero-unit { font-size: 0.88rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
+.hm-unit { font-size: 0.78rem; font-weight: 600; opacity: 0.55; margin-left: 0.05rem; }
+.hero-dot { color: var(--ink); opacity: 0.35; font-weight: 700; }
+.hero-grow .star { color: var(--terracotta); font-size: 0.9rem; margin-left: 0.1rem; }
 
 /* ---------- combined-performance panel (tappable ratios) ---------- */
 .perf-panel {
