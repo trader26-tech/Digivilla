@@ -5,37 +5,23 @@
     <h1 class="lede">Own property, without&nbsp;the property.</h1>
   </header>
 
-  <!-- ===== the four properties, as a rectangular list ===== -->
-  <ul class="catalogue">
-    <li
-      class="prop reveal"
-      *ngFor="let p of properties; let i = index"
-      [class.open]="isOpen(p)"
-      [style.--s]="i + 1"
-    >
-      <!-- header row: tap to expand the variants -->
-      <button
-        class="prop-btn"
-        type="button"
-        [attr.aria-expanded]="isOpen(p)"
-        [attr.aria-label]="p.name + ', from ' + compact(p.price)"
-        (click)="toggle(p)"
-      >
-        <span class="thumb" [ngSwitch]="p.key" aria-hidden="true">
-
+  <!-- ===== catalogue: each variant is its own row, grouped by property ===== -->
+  <div class="catalogue">
+    <section class="group" *ngFor="let p of properties; let gi = index">
+      <!-- property heading -->
+      <div class="group-head reveal" [style.--s]="gi * 3 + 1">
+        <span class="g-thumb" [ngSwitch]="p.key" aria-hidden="true">
           <svg *ngSwitchCase="'land'" class="art" viewBox="0 0 120 120" fill="none">
             <path class="stroke" d="M14 84 L64 22 L106 52 L58 100 Z" />
             <path class="stroke d1" d="M14 84 L58 100 M64 22 L106 52" stroke-dasharray="4 5" />
             <circle class="node" cx="14" cy="84" r="3" /><circle class="node" cx="64" cy="22" r="3" />
             <circle class="node" cx="106" cy="52" r="3" /><circle class="node" cx="58" cy="100" r="3" />
           </svg>
-
           <svg *ngSwitchCase="'flat'" class="art" viewBox="0 0 120 120" fill="none">
             <rect class="stroke" x="16" y="24" width="88" height="72" rx="1" />
             <path class="stroke" d="M60 24 L60 60 M60 60 L104 60 M16 60 L44 60 M44 60 L44 96" />
             <rect class="node" x="76" y="32" width="16" height="9" rx="1" />
           </svg>
-
           <svg *ngSwitchCase="'apartment'" class="art" viewBox="0 0 120 120" fill="none">
             <rect class="stroke" x="34" y="20" width="52" height="86" rx="1" />
             <path class="stroke" d="M34 20 L60 8 L86 20" />
@@ -46,7 +32,6 @@
             </g>
             <rect class="node" x="54" y="86" width="12" height="20" rx="1" />
           </svg>
-
           <svg *ngSwitchCase="'duplex'" class="art" viewBox="0 0 120 120" fill="none">
             <path class="stroke" d="M20 104 L20 44 L60 16 L100 44 L100 104" />
             <path class="stroke" d="M20 60 L100 60" />
@@ -54,47 +39,36 @@
             <path class="stroke d2" d="M68 104 L68 82 L92 82 L92 104" />
           </svg>
         </span>
-
-        <span class="body">
-          <span class="name">{{ p.name }}</span>
-          <span class="from">from {{ compact(p.price) }}</span>
-        </span>
-
-        <span class="tail">
-          <span class="teaser">
-            <span class="teaser-v">{{ inr(variantOf(p).monthlyIncome) }}<span class="u">/mo</span></span>
-            <span class="teaser-g">{{ variantOf(p).appreciationLow }}–{{ variantOf(p).appreciationHigh }}%<span class="u">/yr</span></span>
-          </span>
-          <svg class="chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </button>
-
-      <!-- expanded: the three variants -->
-      <div class="variants" *ngIf="isOpen(p)">
-        <button
-          *ngFor="let vk of variantOrder"
-          class="variant"
-          type="button"
-          [class.on]="selected[p.key] === vk"
-          [attr.aria-pressed]="selected[p.key] === vk"
-          (click)="pick(p, vk)"
-        >
-          <span class="v-mark" aria-hidden="true"></span>
-          <span class="v-main">
-            <span class="v-label">{{ p.variants[vk].label }}</span>
-            <span class="v-note">{{ p.variants[vk].note }}</span>
-          </span>
-          <span class="v-figs">
-            <span class="v-income">{{ inr(p.variants[vk].monthlyIncome) }}<span class="u">/mo</span></span>
-            <span class="v-growth">{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%<span class="u">/yr*</span></span>
-          </span>
-        </button>
+        <span class="g-name">{{ p.name }}</span>
+        <span class="g-price">from {{ compact(p.price) }}</span>
       </div>
-    </li>
-  </ul>
+
+      <!-- three variant rows -->
+      <ul class="rows">
+        <li
+          class="row reveal"
+          *ngFor="let vk of variantOrder; let vi = index"
+          [style.--s]="gi * 3 + vi + 2"
+        >
+          <button class="row-btn" type="button"
+            [attr.aria-label]="p.variants[vk].label + ' ' + p.name + ', ' + inr(p.variants[vk].monthlyIncome) + ' per month'">
+            <span class="r-main">
+              <span class="r-label">{{ p.variants[vk].label }} {{ p.name }}</span>
+              <span class="r-note">{{ p.variants[vk].note }}</span>
+            </span>
+            <span class="r-figs">
+              <span class="r-income">{{ inr(p.variants[vk].monthlyIncome) }}<span class="u">/mo</span></span>
+              <span class="r-growth">{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%<span class="u">/yr*</span></span>
+            </span>
+            <svg class="r-chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </li>
+      </ul>
+    </section>
+  </div>
 
   <!-- ===== footnote for the whole list ===== -->
-  <p class="disclaimer reveal" [style.--s]="properties.length + 1">
+  <p class="disclaimer">
     <span class="star">*</span> Tentative, based on past fund returns — illustrative,
     not guaranteed. Future returns are not assured. Subject to market risk.
   </p>

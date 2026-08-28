@@ -42,17 +42,6 @@ export interface Property {
 export class StorefrontComponent {
   readonly variantOrder: VariantKey[] = ['ready', 'construction', 'prelaunch'];
 
-  /** Which variant is selected for each property (defaults to balanced). */
-  selected: Record<string, VariantKey> = {
-    land: 'construction',
-    flat: 'construction',
-    apartment: 'construction',
-    duplex: 'construction',
-  };
-
-  /** Which row is expanded (only one at a time). null = all collapsed. */
-  openKey: string | null = null;
-
   readonly properties: Property[] = [
     {
       key: 'land',
@@ -99,21 +88,6 @@ export class StorefrontComponent {
       },
     },
   ];
-
-  toggle(p: Property): void {
-    this.openKey = this.openKey === p.key ? null : p.key;
-  }
-  isOpen(p: Property): boolean {
-    return this.openKey === p.key;
-  }
-
-  variantOf(p: Property): Variant {
-    return p.variants[this.selected[p.key]];
-  }
-
-  pick(p: Property, v: VariantKey): void {
-    this.selected[p.key] = v;
-  }
 
   /** Indian-format rupees: ₹25,00,000. */
   inr(v: number): string {
