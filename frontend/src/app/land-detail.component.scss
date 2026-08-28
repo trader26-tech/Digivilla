@@ -32,8 +32,14 @@
 }
 .plate-mark { color: var(--brass); }
 
-/* ---------- compact hero: name, price, growth% ---------- */
+/* ---------- compact hero: name + price on one row, growth% below ---------- */
 .hero { margin: 0.2rem 0 1.3rem; }
+.hero-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
 .hero-name {
   font-family: var(--font-display);
   font-weight: 700;
@@ -42,18 +48,21 @@
   letter-spacing: -0.02em;
   margin: 0;
   color: var(--ink);
+  min-width: 0;
 }
 .hero-meta {
   display: flex;
   align-items: baseline;
   gap: 0.55rem;
-  margin-top: 0.45rem;
+  margin-top: 0.4rem;
 }
 .hero-price {
+  flex: none;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.35rem;
   color: var(--ink);
+  white-space: nowrap;
 }
 .hero-grow {
   font-family: var(--font-display);

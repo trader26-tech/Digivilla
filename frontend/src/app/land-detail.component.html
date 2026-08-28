@@ -19,10 +19,11 @@
   <ng-container *ngIf="!loading() && !error() && activeMetrics() as m">
     <!-- ===== hero: the tapped tile's name + one growth headline ===== -->
     <section class="hero">
-      <h1 class="hero-name">{{ activeVariant().name }}</h1>
-      <div class="hero-meta">
+      <div class="hero-top">
+        <h1 class="hero-name">{{ activeVariant().name }}</h1>
         <span class="hero-price">{{ compact(ticketPrice) }}<span class="hm-unit">/plot</span></span>
-        <span class="hero-dot" aria-hidden="true">·</span>
+      </div>
+      <div class="hero-meta">
         <span class="hero-grow">~{{ pct(m.expected_return ?? activeVariant().targetGrowth) }}<span class="hm-unit">/yr</span><span class="star">*</span></span>
       </div>
     </section>

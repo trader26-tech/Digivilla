@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Output } from '@angular/core';
 
+import { storeSchemeName, storeSchemeLocality } from './property-package.data';
+
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
 
@@ -125,6 +127,16 @@ export class StorefrontComponent {
   open(p: Property, vk?: VariantKey): void {
     const variant = vk ? StorefrontComponent.RISK_OF[vk] : 'balanced';
     this.openProperty.emit({ property: p.key, variant });
+  }
+
+  /** The unique development name for a tile, e.g. "Marina Rise".
+   *  Uses retirement-57's store-key helper (maps ready→conservative etc.). */
+  schemeName(p: Property, vk: VariantKey): string {
+    return storeSchemeName(p.key, vk);
+  }
+  /** The short locality/tagline for a scheme. */
+  schemeLocality(p: Property, vk: VariantKey): string {
+    return storeSchemeLocality(p.key, vk);
   }
 
   // Figures from the PropertyNest package data. growthPct = expected p.a.;
