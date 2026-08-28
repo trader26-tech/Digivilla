@@ -210,29 +210,38 @@
   white-space: nowrap;
 }
 
-/* ---------- stat row: all one size, one colour, no divider ---------- */
+/* ---------- stat row: icon + value, no boxes, one colour ---------- */
 .tile-stats {
   display: flex;
-  gap: 0.6rem;
-  margin-top: 0.9rem;
+  gap: 0.5rem;
+  margin-top: 0.95rem;
 }
 .stat {
   flex: 1;
   min-width: 0;
   display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.stat-ic {
+  flex: none;
+  display: inline-flex;
+  color: var(--brass);
+  opacity: 0.85;
+}
+.stat-txt {
+  display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.6rem 0.7rem;
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--survey) 20%, transparent);
+  gap: 0.15rem;
+  min-width: 0;
 }
 .stat-l {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--ink);
-  opacity: 0.55;
+  opacity: 0.5;
   white-space: nowrap;
 }
 .stat-v {
