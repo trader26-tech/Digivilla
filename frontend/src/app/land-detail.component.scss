@@ -57,32 +57,54 @@
 }
 .hero-unit { font-size: 0.88rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
 
-/* the single rectangular details panel */
-.hero-panel {
-  margin-top: 1.3rem;
+/* ---------- combined-performance panel (tappable ratios) ---------- */
+.perf-panel {
   border: 1px solid var(--survey);
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--survey) 8%, var(--paper));
+  border-radius: 11px;
+  background: var(--paper);
   overflow: hidden;
 }
-.hp-row {
+.pp-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.72rem 1.05rem;
+  padding: 0.72rem 1rem;
+  width: 100%;
 }
-.hp-row + .hp-row { border-top: 1px solid color-mix(in srgb, var(--survey) 60%, transparent); }
-.hp-k { font-size: 0.9rem; font-weight: 500; color: var(--ink); opacity: 0.72; }
-.hp-v {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.15rem;
+.perf-panel > .pp-row + .pp-item,
+.perf-panel > .pp-row + .pp-row,
+.perf-panel > .pp-item + .pp-item,
+.perf-panel > .pp-item + .pp-row { border-top: 1px solid color-mix(in srgb, var(--survey) 60%, transparent); }
+.pp-item > .pp-row { border-top: none; }
+.pp-k { font-size: 0.9rem; font-weight: 500; color: var(--ink); opacity: 0.74; display: inline-flex; align-items: center; gap: 0.4rem; }
+.pp-v { font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.pp-v.pos { color: var(--positive); }
+.pp-v.neg { color: var(--terracotta); }
+
+/* tappable rows */
+.pp-row.tappable { border: none; background: transparent; cursor: pointer; font-family: var(--font-body); text-align: left; transition: background 0.15s ease; }
+.pp-row.tappable:hover { background: color-mix(in srgb, var(--brass) 6%, transparent); }
+.info-i {
+  width: 15px; height: 15px; flex: none;
+  display: inline-grid; place-items: center;
+  border-radius: 50%;
+  border: 1.3px solid color-mix(in srgb, var(--brass) 55%, var(--survey));
+  color: var(--brass);
+  font-size: 0.62rem; font-weight: 800;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.pp-item.open .info-i { background: var(--brass); color: var(--paper); border-color: var(--brass); }
+.pp-info {
+  margin: 0;
+  padding: 0 1rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
   color: var(--ink);
-  font-feature-settings: 'tnum' 1;
+  opacity: 0.72;
+  animation: unfold 0.22s ease both;
 }
-.hp-v.pos { color: var(--positive); }
-.hp-v.neg { color: var(--terracotta); }
+@keyframes unfold { from { opacity: 0; transform: translateY(-4px); } to { opacity: 0.72; transform: none; } }
 
 /* ---------- loading / error ---------- */
 .state { display: flex; align-items: center; gap: 0.6rem; padding: 2.5rem 0; font-size: 0.92rem; color: var(--ink); opacity: 0.7; }
