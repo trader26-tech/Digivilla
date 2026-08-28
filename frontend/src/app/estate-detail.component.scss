@@ -223,51 +223,27 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- section — no box, just title + content, divided by a hairline ---------- */
-/* Distinct, elevated cards — each section is its own panel with depth, so the
-   page reads as separate cards, not one flat sheet of newspaper. */
+/* Clean sections separated by generous space and a soft hairline — no boxes,
+   no coloured rails. Calm and premium. */
 .card {
-  position: relative;
-  margin: 0 0 1.15rem;
-  padding: 1.35rem 1.25rem;
-  border: 1px solid var(--survey);
-  border-radius: 18px;
-  background: var(--paper);
-  box-shadow:
-    0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent),
-    0 10px 28px -20px color-mix(in srgb, var(--ink) 40%, transparent);
-  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
-}
-.card:hover {
-  box-shadow:
-    0 2px 4px color-mix(in srgb, var(--ink) 6%, transparent),
-    0 18px 40px -22px color-mix(in srgb, var(--ink) 45%, transparent);
-  border-color: color-mix(in srgb, var(--brass) 30%, var(--survey));
-}
-/* a slim brass rail on the left edge, tinted per card type, for differentiation */
-.card::before {
-  content: '';
-  position: absolute; left: 0; top: 1.1rem; bottom: 1.1rem;
-  width: 3px; border-radius: 0 3px 3px 0;
-  background: var(--brass); opacity: 0.55;
-}
-.chart-card::before { background: var(--positive); }
-.alloc-card::before { background: var(--brass); }
-.funds-card::before { background: color-mix(in srgb, var(--ink) 45%, var(--paper)); }
-.perf-card::before  { background: var(--ink); opacity: 0.35; }
-.proj-card::before  { background: var(--positive); }
-
-/* staggered reveal-on-load: cards rise + fade in one after another */
-.card {
+  margin: 0;
+  padding: 1.7rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--survey) 60%, transparent);
+  /* gentle fade+rise in on load */
   opacity: 0;
-  transform: translateY(16px);
-  animation: cardIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  transform: translateY(14px);
+  animation: cardIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.card:nth-of-type(1) { animation-delay: 0.05s; }
-.card:nth-of-type(2) { animation-delay: 0.14s; }
-.card:nth-of-type(3) { animation-delay: 0.23s; }
-.card:nth-of-type(4) { animation-delay: 0.32s; }
-.card:nth-of-type(5) { animation-delay: 0.41s; }
-.card:nth-of-type(6) { animation-delay: 0.50s; }
+.card:first-of-type { border-top: none; padding-top: 0.4rem; }
+.card:nth-of-type(1) { animation-delay: 0.04s; }
+.card:nth-of-type(2) { animation-delay: 0.12s; }
+.card:nth-of-type(3) { animation-delay: 0.20s; }
+.card:nth-of-type(4) { animation-delay: 0.28s; }
+.card:nth-of-type(5) { animation-delay: 0.36s; }
+.card:nth-of-type(6) { animation-delay: 0.44s; }
 @keyframes cardIn { to { opacity: 1; transform: none; } }
 
 .card-head {
@@ -493,45 +469,73 @@
 .ago-tab:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); }
 .ago-tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-/* short headline */
-.proj-headline { margin: 0 0 1.1rem; font-size: 0.95rem; line-height: 1.5; color: var(--ink); opacity: 0.8; }
-.proj-headline strong { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; opacity: 1; }
-.proj-headline strong.grow { color: var(--positive); }
-.proj-headline .mult { display: inline-block; margin-left: 0.3rem; font-weight: 700; font-size: 0.85rem; color: var(--positive); }
-
-/* growth bars: then → now — the golden climb the user loved */
-.bars { display: flex; gap: 0.5rem; align-items: end; height: 190px; padding-top: 0.4rem; }
-.bar-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.35rem; }
-.pb-v { font-family: var(--font-display); font-weight: 700; font-size: 0.74rem; color: var(--ink); opacity: 0.8; white-space: nowrap; }
-.pb-track { width: 62%; max-width: 44px; flex: 1; display: flex; align-items: flex-end; }
-.pb-fill {
-  position: relative;
-  width: 100%; min-height: 5px; border-radius: 7px 7px 2px 2px;
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--brass) 92%, #fff),
-    var(--brass) 45%,
-    color-mix(in srgb, var(--brass) 68%, var(--paper)));
-  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--brass) 70%, transparent);
-  transform-origin: bottom;
-  animation: barGrow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+/* ── the hero comparison: invested → became ─────────────────────────────── */
+.grown-compare {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin: 0.2rem 0 1.6rem;
+}
+.gc-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+}
+.gc-k { font-size: 0.76rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
+.gc-v { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; color: var(--ink); }
+.gc-v.grow { color: var(--brass); }
+.gc-bar {
+  width: 100%; max-width: 130px; height: 92px;
+  display: flex; align-items: flex-end;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--survey) 22%, var(--paper));
   overflow: hidden;
 }
-/* a soft sheen down the left of each bar */
-.pb-fill::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(105deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 42%);
+.gc-fill {
+  width: 100%; border-radius: 12px 12px 0 0;
+  transform-origin: bottom;
+  animation: gcGrow 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-/* the tallest (now) bar reads even richer */
-.bar-col:last-child .pb-fill { background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 96%, #fff), var(--brass) 55%); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--brass) 80%, transparent); }
-@keyframes barGrow { from { transform: scaleY(0); opacity: 0.4; } to { transform: scaleY(1); opacity: 1; } }
-.bar-col:nth-child(1) .pb-fill { animation-delay: 0.30s; }
-.bar-col:nth-child(2) .pb-fill { animation-delay: 0.38s; }
-.bar-col:nth-child(3) .pb-fill { animation-delay: 0.46s; }
-.bar-col:nth-child(4) .pb-fill { animation-delay: 0.54s; }
-.bar-col:nth-child(5) .pb-fill { animation-delay: 0.62s; }
-.bar-col:nth-child(6) .pb-fill { animation-delay: 0.70s; }
-.bar-yr { font-size: 0.74rem; font-weight: 700; color: var(--ink); opacity: 0.6; }
-.bar-col:last-child .bar-yr { color: var(--brass); opacity: 1; }
+/* invested = short reference block; became = tall golden — the contrast IS the point */
+.gc-side.invested .gc-fill { height: 46% !important; background: color-mix(in srgb, var(--ink) 22%, var(--paper)); animation-delay: 0.15s; }
+.gc-side.became .gc-fill {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 94%, #fff), var(--brass) 55%);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--brass) 80%, transparent);
+  animation-delay: 0.28s;
+}
+@keyframes gcGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.gc-foot { font-size: 0.72rem; font-weight: 600; color: var(--ink); opacity: 0.55; }
+.gc-foot.pos { color: var(--positive); opacity: 1; }
+.gc-arrow {
+  flex: none; align-self: center;
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  color: var(--brass);
+}
+.gc-mult { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; color: var(--positive); }
+
+/* ── the climb, year by year (calm, brass) ──────────────────────────────── */
+.climb { display: flex; gap: 0.5rem; align-items: end; height: 150px; padding-top: 0.3rem; }
+.climb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.3rem; }
+.cl-v { font-family: var(--font-display); font-weight: 700; font-size: 0.7rem; color: var(--ink); opacity: 0.75; white-space: nowrap; }
+.cl-track { width: 60%; max-width: 40px; flex: 1; display: flex; align-items: flex-end; }
+.cl-fill {
+  width: 100%; min-height: 4px; border-radius: 5px 5px 0 0;
+  background: color-mix(in srgb, var(--brass) 40%, var(--survey));
+  transform-origin: bottom;
+  animation: gcGrow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.cl-fill.now { background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 94%, #fff), var(--brass) 55%); box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--brass) 70%, transparent); }
+.climb-col:nth-child(1) .cl-fill { animation-delay: 0.34s; }
+.climb-col:nth-child(2) .cl-fill { animation-delay: 0.41s; }
+.climb-col:nth-child(3) .cl-fill { animation-delay: 0.48s; }
+.climb-col:nth-child(4) .cl-fill { animation-delay: 0.55s; }
+.climb-col:nth-child(5) .cl-fill { animation-delay: 0.62s; }
+.climb-col:nth-child(6) .cl-fill { animation-delay: 0.69s; }
+.cl-yr { font-size: 0.72rem; font-weight: 700; color: var(--ink); opacity: 0.55; }
+.climb-col:last-child .cl-yr { color: var(--brass); opacity: 1; }
 
 /* ---------- funds (filtered by asset, tap to expand) ---------- */
 .funds-card .card-title { margin-bottom: 0.2rem; }
