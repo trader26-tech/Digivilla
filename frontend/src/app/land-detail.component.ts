@@ -178,6 +178,41 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   heroDetailsOpen = signal(false);
   toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }
 
+  /** The "how we get the growth number" explainer is hidden until the eye is tapped. */
+  growthInfoOpen = signal(false);
+  toggleGrowthInfo(): void { this.growthInfoOpen.update(v => !v); }
+
+  /** Long-run expected return assumption per asset class (%), matching the
+   *  backend engine's priors — used to explain the forward growth figure. */
+  private readonly ASSET_PRIOR: Record<string, number> = { equity: 12, hybrid: 10, gold: 8, debt: 6.8, cash: 6.8 };
+  private readonly ASSET_LABEL: Record<string, string> = { equity: 'Equity', hybrid: 'Hybrid', gold: 'Gold', debt: 'Debt', cash: 'Cash / arbitrage' };
+
+  /** Reconstructs, transparently, HOW the forward growth figure is built:
+   *  final = 50% × the basket's real historical CAGR + 50% × the weighted
+   *  asset-class assumption. Returned as parts for the explainer UI. */
+  growthBreakdown = computed(() => {
+    const m = this.activeMetrics();
+    if (!m) return null;
+    const mix = m.asset_mix || {};
+    // weighted asset-class prior
+    const rows = Object.entries(mix)
+      .map(([k, pctVal]) => ({
+        key: k,
+        label: this.ASSET_LABEL[k] ?? k,
+        weight: pctVal as number,               // % of the basket in this class
+        rate: this.ASSET_PRIOR[k] ?? 10,         // long-run assumption for it
+        contrib: ((pctVal as number) / 100) * (this.ASSET_PRIOR[k] ?? 10),
+      }))
+      .sort((a, b) => b.weight - a.weight);
+    const prior = rows.reduce((s, r) => s + r.contrib, 0);
+    const observed = m.cagr ?? prior;            // real measured CAGR over full history
+    const expected = m.expected_return ?? (0.5 * prior + 0.5 * observed);
+    return { rows, prior, observed, expected, historyYears: m.history_years };
+  });
+
+  /** The forward growth % shown in the hero (same source as the tile). */
+  forwardGrowth = computed<number | null>(() => this.activeMetrics()?.expected_return ?? this.activeVariant().targetGrowth);
+
   /** Benefits shown, one at a time, while the fund data loads — so the wait
    *  feels useful and the screen never looks like a blank spinner. */
   readonly benefits: { icon: string; title: string; body: string }[] = [

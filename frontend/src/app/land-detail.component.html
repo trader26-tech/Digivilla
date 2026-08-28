@@ -47,7 +47,37 @@
       <div class="hero-line reveal" style="--s:1">
         <span class="hero-value">{{ inr(ticketPrice) }}</span>
         <span class="hero-sep" aria-hidden="true">·</span>
-        <span class="hero-grow-line">grown <span class="hg-pct">{{ pct(m.return_3y) }}/yr</span> over 3 years<span class="star">*</span></span>
+        <span class="hero-grow-line">grows <span class="hg-pct">~{{ pct(forwardGrowth()) }}/yr</span><span class="star">*</span></span>
+        <button class="grow-eye" type="button" (click)="toggleGrowthInfo()" [class.on]="growthInfoOpen()" [attr.aria-expanded]="growthInfoOpen()" aria-label="How this growth number is worked out">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+      </div>
+
+      <!-- how the forward growth number is worked out — revealed on the eye tap -->
+      <div class="grow-explain" *ngIf="growthInfoOpen() && growthBreakdown() as g">
+        <p class="ge-lead">How we get <strong>~{{ pct(g.expected) }}/yr</strong></p>
+
+        <!-- Part 1: real history -->
+        <div class="ge-part">
+          <div class="ge-head"><span class="ge-badge">1</span> What these funds actually did</div>
+          <div class="ge-row"><span class="ge-k">Real growth over {{ g.historyYears }} yrs (CAGR)</span><span class="ge-v">{{ pct(g.observed) }}</span></div>
+        </div>
+
+        <!-- Part 2: asset-class assumption -->
+        <div class="ge-part">
+          <div class="ge-head"><span class="ge-badge">2</span> A long-run assumption per asset class</div>
+          <div class="ge-row" *ngFor="let r of g.rows">
+            <span class="ge-k">{{ r.label }} <em>{{ r.weight | number:'1.0-0' }}% × {{ r.rate }}%</em></span>
+            <span class="ge-v">{{ r.contrib | number:'1.1-1' }}%</span>
+          </div>
+          <div class="ge-row total"><span class="ge-k">Weighted assumption</span><span class="ge-v">{{ pct(g.prior) }}</span></div>
+        </div>
+
+        <!-- The blend -->
+        <div class="ge-blend">
+          <div class="ge-row"><span class="ge-k">Average of the two <em>(50% + 50%)</em></span><span class="ge-v pos">~{{ pct(g.expected) }}/yr</span></div>
+        </div>
+        <p class="ge-foot">We blend real history with a sober assumption so the figure isn't just a lucky recent streak. Illustrative, not guaranteed.</p>
       </div>
     </section>
 
