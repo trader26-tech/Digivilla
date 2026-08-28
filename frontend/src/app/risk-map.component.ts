@@ -25,8 +25,10 @@ interface MapPin {
   riskPct: number | null; // measured volatility %, if loaded
   rx: number;            // 0..1 normalised risk
   ry: number;            // 0..1 normalised reward
-  cx: number;            // px (after de-overlap nudging)
+  cx: number;            // px in the 1000×720 board (after de-overlap nudging)
   cy: number;            // px
+  xPct: number;          // cx as % of board width (for HTML placement)
+  yPct: number;          // cy as % of board height
   labelAbove: boolean;   // place the label above (true) or below the dot
   isSelected: boolean;
 }
@@ -163,6 +165,7 @@ export class RiskMapComponent implements OnInit {
         rx, ry,
         cx: this.padL + rx * innerW,
         cy: this.padT + (1 - ry) * innerH,
+        xPct: 0, yPct: 0,
         labelAbove: true,
         isSelected: r.property === sel?.property && r.variant === sel?.variant,
       };
@@ -196,7 +199,11 @@ export class RiskMapComponent implements OnInit {
       }
       if (!moved) break;
     }
-    for (const p of pins) p.labelAbove = p.cy > this.padT + 48;
+    for (const p of pins) {
+      p.labelAbove = p.cy > this.padT + 48;
+      p.xPct = (p.cx / this.W) * 100;
+      p.yPct = (p.cy / this.H) * 100;
+    }
     return pins;
   });
 
@@ -250,21 +257,25 @@ export class RiskMapComponent implements OnInit {
     };
   });
 
-  // ── Pan / zoom handlers ───────────────────────────────────────────────
+  // ── Pan / zoom handlers (CSS-transform on the board = smooth + reliable) ──
   onPointerDown(e: PointerEvent): void {
     this.dragging = true; this.moved = false;
     this.startX = e.clientX; this.startY = e.clientY;
     this.startTx = this.tx(); this.startTy = this.ty();
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    // NB: no setPointerCapture — it would swallow taps meant for the pins.
   }
   onPointerMove(e: PointerEvent): void {
     if (!this.dragging) return;
     const dx = e.clientX - this.startX, dy = e.clientY - this.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this.moved = true;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) this.moved = true;
     this.tx.set(this.startTx + dx);
     this.ty.set(this.startTy + dy);
   }
-  onPointerUp(): void { this.dragging = false; }
+  onPointerUp(): void {
+    this.dragging = false;
+    // reset the moved flag shortly after, so the next tap isn't blocked
+    setTimeout(() => { this.moved = false; }, 0);
+  }
 
   onWheel(e: WheelEvent): void {
     e.preventDefault();
@@ -296,8 +307,8 @@ export class RiskMapComponent implements OnInit {
   private setScale(s: number): void {
     this.scale.set(Math.max(this.minScale, Math.min(this.maxScale, s)));
   }
-  /** The transform string for the pan/zoom group. */
-  mapTransform = computed(() => `translate(${this.tx()} ${this.ty()}) scale(${this.scale()})`);
+  /** CSS transform for the pan/zoom board div. */
+  mapTransform = computed(() => `translate(${this.tx()}px, ${this.ty()}px) scale(${this.scale()})`);
 
   /** Legend colour for a property. */
   colorOf(p: PropertyKey): string { return PROP_COLOR[p]; }
