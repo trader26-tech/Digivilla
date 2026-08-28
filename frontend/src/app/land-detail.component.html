@@ -117,42 +117,64 @@
       </ng-container>
     </section>
 
-    <!-- ===== 2 · ASSET ALLOCATION (look-through) ===== -->
-    <section class="card alloc-card">
+    <!-- ===== 2 · ASSET ALLOCATION (look-through, interactive) ===== -->
+    <section class="card alloc-card" appReveal>
       <div class="card-head">
         <h2 class="card-title">Where your money sits</h2>
-        <span class="card-sub">true split, seen through every fund</span>
+        <span class="card-sub">tap a slice to see its funds</span>
       </div>
       <div class="alloc-bar">
-        <span *ngFor="let s of allocation()" class="alloc-seg" [attr.data-k]="s.key"
-          [style.width.%]="s.pct" [attr.title]="s.label + ' ' + (s.pct | number:'1.0-0') + '%'"></span>
+        <button *ngFor="let s of allocation()" type="button"
+          class="alloc-seg" [attr.data-k]="s.key"
+          [class.dim]="selectedAsset() && selectedAsset() !== s.key"
+          [style.width.%]="s.pct"
+          (click)="selectAsset(s.key)"
+          [attr.aria-label]="s.label + ' ' + (s.pct | number:'1.0-0') + '%' + ', tap to see funds'"></button>
       </div>
       <ul class="alloc-legend">
         <li *ngFor="let s of allocation()">
-          <span class="a-dot" [attr.data-k]="s.key"></span>
-          <span class="a-label">{{ s.label }}</span>
-          <span class="a-pct">{{ s.pct | number:'1.0-0' }}%</span>
+          <button type="button" class="a-chip" [class.on]="selectedAsset() === s.key" (click)="selectAsset(s.key)">
+            <span class="a-dot" [attr.data-k]="s.key"></span>
+            <span class="a-label">{{ s.label }}</span>
+            <span class="a-pct">{{ s.pct | number:'1.0-0' }}%</span>
+          </button>
         </li>
       </ul>
     </section>
 
-    <!-- ===== 3 · THE FUNDS INSIDE (which funds + ₹ per fund) ===== -->
-    <section class="card funds-card">
+    <!-- ===== 3 · THE FUNDS INSIDE (filtered by tapped asset; tap a fund for detail) ===== -->
+    <section class="card funds-card" appReveal>
       <div class="card-head">
         <h2 class="card-title">The funds inside</h2>
-        <span class="card-sub">{{ compact(ticketPrice) }} split across {{ activeVariant().legs.length }} funds</span>
+        <span class="card-sub" *ngIf="!selectedAsset()">{{ compact(ticketPrice) }} · {{ activeVariant().legs.length }} funds · tap a fund</span>
+        <button class="card-sub link" type="button" *ngIf="selectedAsset() as sel" (click)="selectAsset(sel)">
+          showing {{ sel === 'cash' ? 'cash / arbitrage' : sel }} funds · clear ✕
+        </button>
       </div>
       <ul class="fund-list">
-        <li class="fund" *ngFor="let leg of activeVariant().legs">
-          <div class="fund-top">
-            <span class="fund-w">{{ (leg.weight * 100) | number:'1.0-0' }}%</span>
-            <div class="fund-name-box">
-              <span class="fund-name">{{ leg.label }}</span>
-              <span class="fund-role">{{ leg.role }}</span>
-            </div>
-            <span class="fund-amt">{{ compact(ticketPrice * leg.weight) }}</span>
+        <li class="fund" *ngFor="let f of shownFunds()" [class.open]="expandedFund() === f.code">
+          <button class="fund-top" type="button" (click)="toggleFund(f.code)" [attr.aria-expanded]="expandedFund() === f.code">
+            <span class="fund-w">{{ f.weightPct | number:'1.0-0' }}%</span>
+            <span class="fund-name">{{ f.label }}</span>
+            <span class="fund-amt">
+              {{ f.inAsset != null ? compact(f.inAsset) : compact(f.amount) }}
+              <svg class="fund-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </button>
+          <div class="weight-bar"><span [style.width.%]="f.weightPct"></span></div>
+
+          <!-- detail: only when this fund is tapped -->
+          <div class="fund-detail" *ngIf="expandedFund() === f.code">
+            <p class="fd-role">{{ f.role }}</p>
+            <div class="fd-invested">Invested here <b>{{ compact(f.amount) }}</b> ({{ f.weightPct | number:'1.0-0' }}%)</div>
+            <ul class="fd-look">
+              <li *ngFor="let r of lookRows(f.look)">
+                <span class="fdl-dot" [attr.data-k]="r.key"></span>
+                <span class="fdl-label">{{ r.label }}</span>
+                <span class="fdl-pct">{{ r.pct | number:'1.0-0' }}%</span>
+              </li>
+            </ul>
           </div>
-          <div class="weight-bar"><span [style.width.%]="leg.weight * 100"></span></div>
         </li>
       </ul>
     </section>

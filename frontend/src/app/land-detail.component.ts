@@ -319,6 +319,51 @@ export class LandDetailComponent implements OnInit, OnDestroy {
       .filter(s => s.pct >= 0.5);
   });
 
+  // ── Interactive allocation → funds ──────────────────────────────────────────
+  /** Which asset class is selected in the split bar. null = show all funds. */
+  selectedAsset = signal<AllocSlice['key'] | null>(null);
+  /** Which fund row is expanded to show its detail. null = none. */
+  expandedFund = signal<number | null>(null);
+
+  selectAsset(key: AllocSlice['key']): void {
+    this.selectedAsset.update(cur => (cur === key ? null : key));
+    this.expandedFund.set(null);
+  }
+  toggleFund(code: number): void {
+    this.expandedFund.update(cur => (cur === code ? null : code));
+  }
+
+  /** Funds shown in the list: all of them, or — when an asset class is picked —
+   *  only the funds that hold that class, with the ₹ each puts into it. */
+  shownFunds = computed(() => {
+    const legs = this.activeVariant().legs;
+    const sel = this.selectedAsset();
+    const ticket = this.ticketPrice;
+    if (!sel) {
+      return legs.map(l => ({
+        code: l.scheme_code, label: l.label, role: l.role,
+        weightPct: l.weight * 100, amount: ticket * l.weight, look: l.look, inAsset: null as number | null,
+      }));
+    }
+    return legs
+      .filter(l => l.look[sel] > 0)
+      .map(l => ({
+        code: l.scheme_code, label: l.label, role: l.role,
+        weightPct: l.weight * 100, amount: ticket * l.weight, look: l.look,
+        // ₹ this fund contributes to the selected class
+        inAsset: ticket * l.weight * l.look[sel],
+      }))
+      .sort((a, b) => (b.inAsset ?? 0) - (a.inAsset ?? 0));
+  });
+
+  /** Per-fund look-through as a small list for the expanded detail. */
+  lookRows(look: LookThrough): { key: string; label: string; pct: number }[] {
+    const LABELS: Record<string, string> = { equity: 'Equity', debt: 'Debt', gold: 'Gold', cash: 'Cash / arbitrage' };
+    return (['equity', 'debt', 'gold', 'cash'] as const)
+      .map(k => ({ key: k, label: LABELS[k], pct: look[k] * 100 }))
+      .filter(r => r.pct >= 0.5);
+  }
+
   // ── Projection (editable amount, credible band) ─────────────────────────────
   projection = computed<ProjRow[]>(() => {
     const m = this.activeMetrics();
