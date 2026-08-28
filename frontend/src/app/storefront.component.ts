@@ -6,6 +6,7 @@ import {
   storeSchemeName, storeSchemeLocality,
   expectedGrowth, past3y, RISK_OF_STORE,
   riskScore, RiskScore,
+  ALL_SCHEMES, riskOf as volOf,
 } from './property-package.data';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
@@ -59,6 +60,28 @@ export class StorefrontComponent {
      *  highlighting this scheme (set by the tile's location pin). */
     focus?: 'map';
   }>();
+
+  /** Fires when the customer taps the risk × reward preview — opens the full map. */
+  @Output() openMap = new EventEmitter<void>();
+
+  /** The 12 schemes as normalised dots (0..1) for the mini risk×reward preview.
+   *  X = real volatility, Y = real expected reward — the SAME axes as the full
+   *  map page, so the preview is a faithful thumbnail of it. */
+  get mapDots(): { x: number; y: number; v: 'conservative' | 'balanced' | 'aggressive' }[] {
+    const raw = ALL_SCHEMES.map((s) => ({
+      v: s.variant,
+      risk: volOf(s.property, s.variant),
+      reward: expectedGrowth(s.property, s.variant),
+    }));
+    const rk = raw.map((r) => r.risk), rw = raw.map((r) => r.reward);
+    const rLo = Math.min(...rk), rHi = Math.max(...rk), rSpan = rHi - rLo || 1;
+    const wLo = Math.min(...rw), wHi = Math.max(...rw), wSpan = wHi - wLo || 1;
+    return raw.map((r) => ({
+      x: (r.risk - rLo) / rSpan,
+      y: (r.reward - wLo) / wSpan,
+      v: r.v,
+    }));
+  }
 
   /** Map the storefront's property-world variant names onto the basket risk
    *  profiles. Same mapping for every tier. */

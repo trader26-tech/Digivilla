@@ -61,6 +61,23 @@
     </button>
   </div>
 
+  <!-- ===== risk × reward preview — taps into the full map ===== -->
+  <button class="rr-preview reveal" style="--s:2" type="button"
+    (click)="openMap.emit()" aria-label="Open the risk and reward map">
+    <div class="rr-head">
+      <span class="rr-title">Risk <span class="rr-x">×</span> Reward</span>
+      <span class="rr-go">See the map
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </div>
+    <div class="rr-plot" aria-hidden="true">
+      <span class="rr-axis-y">Reward</span>
+      <span class="rr-axis-x">Risk</span>
+      <span class="rr-dot" *ngFor="let d of mapDots" [attr.data-v]="d.v"
+        [style.left.%]="8 + d.x * 84" [style.bottom.%]="14 + d.y * 78"></span>
+    </div>
+  </button>
+
   <!-- ===== tiles ===== -->
   <div class="tiles">
     <div

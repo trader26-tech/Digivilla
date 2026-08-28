@@ -392,6 +392,61 @@
 .why-row.rk .wr-r { opacity: 0.85; font-weight: 800; }
 .risk-note { margin: 0.65rem 0 0; font-size: 0.68rem; line-height: 1.45; color: var(--ink); opacity: 0.5; }
 
+/* ---------- risk × reward preview box ---------- */
+.rr-preview {
+  width: 100%;
+  display: block;
+  margin-bottom: 1.1rem;
+  padding: 0.85rem 0.95rem 0.95rem;
+  border: 1px solid var(--survey);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--survey) 10%, var(--paper));
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: border-color 0.15s ease, box-shadow 0.18s ease, transform 0.12s ease;
+}
+.rr-preview:hover {
+  border-color: color-mix(in srgb, var(--brass) 42%, var(--survey));
+  box-shadow: 0 12px 30px -18px rgba(22, 48, 43, 0.35);
+}
+.rr-preview:active { transform: scale(0.995); }
+.rr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+.rr-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink); }
+.rr-x { color: var(--brass); font-weight: 700; margin: 0 0.05rem; }
+.rr-go {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  font-size: 0.78rem; font-weight: 700; color: var(--brass);
+}
+/* the mini scatter — a faithful thumbnail of the full map */
+.rr-plot {
+  position: relative;
+  height: 92px;
+  border-radius: 10px;
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--survey) 22%, transparent), transparent 60%),
+    repeating-linear-gradient(90deg, transparent 0 24%, color-mix(in srgb, var(--survey) 30%, transparent) 24% calc(24% + 1px)),
+    repeating-linear-gradient(0deg,  transparent 0 30%, color-mix(in srgb, var(--survey) 30%, transparent) 30% calc(30% + 1px));
+  overflow: hidden;
+}
+.rr-axis-y, .rr-axis-x {
+  position: absolute; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--ink); opacity: 0.4;
+}
+.rr-axis-y { top: 4px; left: 6px; }
+.rr-axis-x { bottom: 3px; right: 6px; }
+.rr-dot {
+  position: absolute;
+  width: 9px; height: 9px; border-radius: 50%;
+  transform: translate(-50%, 50%);
+  background: var(--brass);
+  border: 1.5px solid var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.rr-dot[data-v='conservative'] { background: var(--positive); }
+.rr-dot[data-v='balanced']     { background: var(--brass); }
+.rr-dot[data-v='aggressive']   { background: var(--terracotta); }
+
 .no-match {
   padding: 2.5rem 0;
   text-align: center;

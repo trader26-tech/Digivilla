@@ -3,9 +3,17 @@
 
 <!-- The storefront: the four property tiers. -->
 <app-storefront
-  *ngIf="!intro && detail === null"
+  *ngIf="!intro && detail === null && !showMap"
   (openProperty)="openProperty($event)"
+  (openMap)="openMap()"
 ></app-storefront>
+
+<!-- Full risk × reward map, opened from the storefront preview box. -->
+<app-risk-map
+  *ngIf="!intro && detail === null && showMap"
+  (back)="closeMap()"
+  (openDetail)="openFromMap($event)"
+></app-risk-map>
 
 <!-- Land keeps its own dedicated detail page. -->
 <app-land-detail
