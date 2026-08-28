@@ -1,4 +1,83 @@
 <main class="deed">
+  <!-- ===== interactive risk × reward map — the hero, top ~half of screen ===== -->
+  <section class="geo reveal" style="--s:0" aria-label="Risk and reward map of every estate">
+    <div class="geo-bar">
+      <div class="geo-titles">
+        <span class="geo-title">The Estate Map</span>
+        <span class="geo-sub">higher = better returns · right = more risk</span>
+      </div>
+      <div class="geo-legend">
+        <button *ngFor="let p of mapProps" class="gl-item" type="button"
+          [attr.data-p]="p" (click)="selectChip(p)"
+          [class.on]="activeKey === p">
+          <span class="gl-dot" [attr.data-p]="p"></span>{{ propName(p) }}
+        </button>
+      </div>
+    </div>
+
+    <div class="geo-canvas" [class.has-sel]="selectedPin() !== null">
+      <!-- map surface: terrain zones + grid, drawn in a 0..100 box -->
+      <svg class="geo-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="geoTerrain" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%"  stop-color="var(--positive)" stop-opacity="0.14"/>
+            <stop offset="52%" stop-color="var(--brass)"    stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="var(--terracotta)" stop-opacity="0.16"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" fill="url(#geoTerrain)"/>
+        <!-- contour bands, like map elevation lines -->
+        <g class="geo-contours" fill="none" stroke="currentColor">
+          <path d="M-5 88 Q 30 74 55 80 T 108 66"/>
+          <path d="M-5 70 Q 32 54 58 62 T 108 46"/>
+          <path d="M-5 50 Q 34 34 60 42 T 108 26"/>
+          <path d="M-5 30 Q 36 16 64 24 T 108 8"/>
+        </g>
+        <!-- faint grid -->
+        <g class="geo-grid" stroke="currentColor">
+          <line x1="25" y1="0" x2="25" y2="100"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="75" y1="0" x2="75" y2="100"/>
+          <line x1="0" y1="25" x2="100" y2="25"/><line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="75" x2="100" y2="75"/>
+        </g>
+      </svg>
+
+      <!-- axis captions, like map compass labels -->
+      <span class="geo-cap top">More reward ↑</span>
+      <span class="geo-cap right">More risk →</span>
+
+      <!-- the pins, positioned in % over the canvas -->
+      <button *ngFor="let pin of mapPins" class="geo-pin" type="button"
+        [attr.data-p]="pin.property"
+        [class.sel]="isPinSelected(pin)"
+        [class.dim]="selectedPin() !== null && !isPinSelected(pin)"
+        [style.left.%]="pin.x" [style.top.%]="pin.y"
+        (click)="selectPin(pin)"
+        [attr.aria-label]="pin.name + ' ' + pin.propName + ', reward ' + (pin.reward | number:'1.0-1') + '%, risk ' + (pin.risk | number:'1.0-1') + '%'">
+        <span class="pin-marker"><span class="pin-core"></span></span>
+      </button>
+
+      <!-- callout for the selected pin -->
+      <div class="geo-callout" *ngIf="selectedPin() as sp"
+        [style.left.%]="sp.x" [style.top.%]="sp.y"
+        [class.flip-x]="sp.x > 60" [class.flip-y]="sp.y < 34">
+        <div class="gc-head">
+          <span class="gc-dot" [attr.data-p]="sp.property"></span>
+          <span class="gc-name">{{ sp.name }}</span>
+        </div>
+        <div class="gc-prop">{{ sp.propName }} · {{ storeLabelOf(sp.storeVariant) }}</div>
+        <div class="gc-stats">
+          <span class="gc-stat"><b>{{ sp.reward | number:'1.0-1' }}%</b><small>reward /yr</small></span>
+          <span class="gc-stat"><b>{{ sp.risk | number:'1.0-1' }}%</b><small>risk</small></span>
+        </div>
+        <button class="gc-go" type="button" (click)="openPin(sp)">
+          View {{ propName(sp.property) }}
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="geo-hint" *ngIf="selectedPin() === null">Tap any point to explore it</p>
+  </section>
+
   <!-- ===== search + filter ===== -->
   <div class="toolbar reveal" style="--s:1">
     <div class="search">
@@ -60,23 +139,6 @@
       {{ c.name }}
     </button>
   </div>
-
-  <!-- ===== risk × reward preview — taps into the full map ===== -->
-  <button class="rr-preview reveal" style="--s:2" type="button"
-    (click)="openMap.emit()" aria-label="Open the risk and reward map">
-    <div class="rr-head">
-      <span class="rr-title">Risk <span class="rr-x">×</span> Reward</span>
-      <span class="rr-go">See the map
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-    </div>
-    <div class="rr-plot" aria-hidden="true">
-      <span class="rr-axis-y">Reward</span>
-      <span class="rr-axis-x">Risk</span>
-      <span class="rr-dot" *ngFor="let d of mapDots" [attr.data-v]="d.v"
-        [style.left.%]="8 + d.x * 84" [style.bottom.%]="14 + d.y * 78"></span>
-    </div>
-  </button>
 
   <!-- ===== tiles ===== -->
   <div class="tiles">

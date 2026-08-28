@@ -392,60 +392,124 @@
 .why-row.rk .wr-r { opacity: 0.85; font-weight: 800; }
 .risk-note { margin: 0.65rem 0 0; font-size: 0.68rem; line-height: 1.45; color: var(--ink); opacity: 0.5; }
 
-/* ---------- risk × reward preview box ---------- */
-.rr-preview {
-  width: 100%;
-  display: block;
-  margin-bottom: 1.1rem;
-  padding: 0.85rem 0.95rem 0.95rem;
-  border: 1px solid var(--survey);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--survey) 10%, var(--paper));
-  cursor: pointer;
-  text-align: left;
-  font-family: var(--font-body);
-  transition: border-color 0.15s ease, box-shadow 0.18s ease, transform 0.12s ease;
+/* ================= interactive risk × reward MAP (home hero) ================= */
+$land: var(--positive);
+$flat: var(--brass);
+$apt:  #3E6C8E;
+$dup:  var(--terracotta);
+
+.geo { margin-bottom: 1.1rem; }
+.geo-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.6rem; }
+.geo-titles { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.geo-title { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; line-height: 1.05; color: var(--ink); }
+.geo-sub { font-size: 0.7rem; font-weight: 600; color: var(--ink); opacity: 0.5; }
+.geo-legend { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: flex-end; }
+.gl-item {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.22rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--survey); background: var(--paper);
+  font-family: var(--font-body); font-size: 0.68rem; font-weight: 700; color: var(--ink);
+  cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
 }
-.rr-preview:hover {
-  border-color: color-mix(in srgb, var(--brass) 42%, var(--survey));
-  box-shadow: 0 12px 30px -18px rgba(22, 48, 43, 0.35);
-}
-.rr-preview:active { transform: scale(0.995); }
-.rr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
-.rr-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink); }
-.rr-x { color: var(--brass); font-weight: 700; margin: 0 0.05rem; }
-.rr-go {
-  display: inline-flex; align-items: center; gap: 0.2rem;
-  font-size: 0.78rem; font-weight: 700; color: var(--brass);
-}
-/* the mini scatter — a faithful thumbnail of the full map */
-.rr-plot {
+.gl-item.on { border-color: color-mix(in srgb, var(--brass) 50%, var(--survey)); background: color-mix(in srgb, var(--brass) 8%, var(--paper)); }
+.gl-dot { width: 8px; height: 8px; border-radius: 50%; }
+.gl-dot[data-p='land'] { background: #{$land}; }
+.gl-dot[data-p='flat'] { background: #{$flat}; }
+.gl-dot[data-p='apartment'] { background: #{$apt}; }
+.gl-dot[data-p='duplex'] { background: #{$dup}; }
+
+/* the map surface — tall, like a real map viewport (≈ half the screen) */
+.geo-canvas {
   position: relative;
-  height: 92px;
-  border-radius: 10px;
-  background:
-    linear-gradient(0deg, color-mix(in srgb, var(--survey) 22%, transparent), transparent 60%),
-    repeating-linear-gradient(90deg, transparent 0 24%, color-mix(in srgb, var(--survey) 30%, transparent) 24% calc(24% + 1px)),
-    repeating-linear-gradient(0deg,  transparent 0 30%, color-mix(in srgb, var(--survey) 30%, transparent) 30% calc(30% + 1px));
+  height: 46vh;
+  min-height: 300px;
+  max-height: 460px;
+  border-radius: 18px;
   overflow: hidden;
+  border: 1px solid var(--survey);
+  background:
+    radial-gradient(120% 90% at 15% 95%, color-mix(in srgb, var(--positive) 12%, var(--paper)), transparent 55%),
+    radial-gradient(120% 90% at 92% 8%, color-mix(in srgb, var(--terracotta) 12%, var(--paper)), transparent 55%),
+    var(--paper);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 14px 34px -22px rgba(22,48,43,0.4);
 }
-.rr-axis-y, .rr-axis-x {
-  position: absolute; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em;
-  text-transform: uppercase; color: var(--ink); opacity: 0.4;
+.geo-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.geo-contours { color: var(--brass); opacity: 0.16; stroke-width: 0.5; }
+.geo-grid { color: var(--ink); opacity: 0.06; stroke-width: 0.4; }
+.geo-cap {
+  position: absolute; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--ink); opacity: 0.4; pointer-events: none;
 }
-.rr-axis-y { top: 4px; left: 6px; }
-.rr-axis-x { bottom: 3px; right: 6px; }
-.rr-dot {
-  position: absolute;
-  width: 9px; height: 9px; border-radius: 50%;
-  transform: translate(-50%, 50%);
+.geo-cap.top { top: 0.6rem; left: 0.7rem; }
+.geo-cap.right { bottom: 0.6rem; right: 0.7rem; }
+
+/* map pins — teardrop markers, like a maps app */
+.geo-pin {
+  position: absolute; transform: translate(-50%, -100%);
+  border: none; background: transparent; padding: 0; cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.2s ease;
+  z-index: 2;
+}
+.pin-marker {
+  position: relative; display: block;
+  width: 22px; height: 22px; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
   background: var(--brass);
-  border: 1.5px solid var(--paper);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 30%, transparent);
+  border: 2px solid var(--paper);
+  box-shadow: 0 3px 8px -2px rgba(22,48,43,0.5);
+  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1);
 }
-.rr-dot[data-v='conservative'] { background: var(--positive); }
-.rr-dot[data-v='balanced']     { background: var(--brass); }
-.rr-dot[data-v='aggressive']   { background: var(--terracotta); }
+.pin-core {
+  position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 50%;
+  transform: translate(-50%, -50%); background: var(--paper);
+}
+.geo-pin[data-p='land'] .pin-marker { background: #{$land}; }
+.geo-pin[data-p='flat'] .pin-marker { background: #{$flat}; }
+.geo-pin[data-p='apartment'] .pin-marker { background: #{$apt}; }
+.geo-pin[data-p='duplex'] .pin-marker { background: #{$dup}; }
+.geo-pin:hover .pin-marker { transform: rotate(-45deg) scale(1.12); }
+.geo-pin.sel { z-index: 5; }
+.geo-pin.sel .pin-marker { transform: rotate(-45deg) scale(1.3); box-shadow: 0 6px 16px -3px rgba(22,48,43,0.55); }
+.geo-pin.dim { opacity: 0.32; }
+
+/* selected-pin callout — a floating map info card */
+.geo-callout {
+  position: absolute; z-index: 6; width: 60vw; max-width: 220px;
+  transform: translate(-50%, calc(-100% - 28px));
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px; border: 1px solid var(--survey);
+  background: var(--paper);
+  box-shadow: 0 18px 40px -14px rgba(22,48,43,0.5);
+  animation: geoPop 0.18s cubic-bezier(0.2,0.8,0.2,1) both;
+}
+.geo-callout.flip-x { transform: translate(-88%, calc(-100% - 28px)); }
+.geo-callout.flip-y { transform: translate(-50%, 28px); }
+.geo-callout.flip-x.flip-y { transform: translate(-88%, 28px); }
+@keyframes geoPop { from { opacity: 0; transform: translate(-50%, calc(-100% - 20px)) scale(0.96); } }
+.gc-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.15rem; }
+.gc-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.gc-dot[data-p='land'] { background: #{$land}; }
+.gc-dot[data-p='flat'] { background: #{$flat}; }
+.gc-dot[data-p='apartment'] { background: #{$apt}; }
+.gc-dot[data-p='duplex'] { background: #{$dup}; }
+.gc-name { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; color: var(--ink); line-height: 1.1; }
+.gc-prop { font-size: 0.7rem; font-weight: 600; color: var(--ink); opacity: 0.55; margin-bottom: 0.5rem; }
+.gc-stats { display: flex; gap: 1rem; margin-bottom: 0.6rem; }
+.gc-stat { display: flex; flex-direction: column; }
+.gc-stat b { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+.gc-stat small { font-size: 0.62rem; font-weight: 600; color: var(--ink); opacity: 0.5; }
+.gc-go {
+  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;
+  padding: 0.5rem; border: none; border-radius: 10px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.gc-go:hover { background: color-mix(in srgb, var(--ink) 88%, var(--brass)); }
+.geo-hint {
+  margin: 0.55rem 0 0; text-align: center;
+  font-size: 0.72rem; font-weight: 600; color: var(--ink); opacity: 0.45;
+}
 
 .no-match {
   padding: 2.5rem 0;

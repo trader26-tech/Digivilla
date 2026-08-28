@@ -1,13 +1,27 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, signal } from '@angular/core';
 
 import {
   storeSchemeName, storeSchemeLocality,
   expectedGrowth, past3y, RISK_OF_STORE,
   riskScore, RiskScore,
   ALL_SCHEMES, riskOf as volOf,
+  PACKAGES, schemeName as devSchemeName,
+  PropertyKey, VariantKey as DataVariantKey,
 } from './property-package.data';
+
+/** A property pin on the interactive risk × reward map. */
+export interface MapPin {
+  property: PropertyKey;
+  variant: DataVariantKey;      // conservative | balanced | aggressive
+  storeVariant: 'ready' | 'construction' | 'prelaunch';
+  name: string;                 // dev name (Adyar Grove …)
+  propName: string;             // Flat / Land …
+  risk: number;                 // real volatility %
+  reward: number;               // real expected return %
+  x: number; y: number;         // placed position in the 100×100 map viewBox
+}
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
@@ -64,23 +78,80 @@ export class StorefrontComponent {
   /** Fires when the customer taps the risk × reward preview — opens the full map. */
   @Output() openMap = new EventEmitter<void>();
 
-  /** The 12 schemes as normalised dots (0..1) for the mini risk×reward preview.
-   *  X = real volatility, Y = real expected reward — the SAME axes as the full
-   *  map page, so the preview is a faithful thumbnail of it. */
-  get mapDots(): { x: number; y: number; v: 'conservative' | 'balanced' | 'aggressive' }[] {
+  /** Property display order + colours for the map legend and pins. */
+  readonly mapProps: PropertyKey[] = ['land', 'flat', 'apartment', 'duplex'];
+
+  /** Data-variant → store-variant, so a map pin opens the right detail tab. */
+  private static readonly STORE_OF: Record<DataVariantKey, 'ready' | 'construction' | 'prelaunch'> = {
+    conservative: 'ready', balanced: 'construction', aggressive: 'prelaunch',
+  };
+
+  /** The 12 schemes placed on the map. X = real volatility (risk), Y = real
+   *  expected reward. Positions are in a 0..100 viewBox with a margin, then
+   *  de-overlapped so every pin stays tappable. */
+  readonly mapPins: MapPin[] = this.buildPins();
+
+  /** Which pin is selected (shows its callout). Null = none. */
+  selectedPin = signal<MapPin | null>(null);
+
+  private buildPins(): MapPin[] {
     const raw = ALL_SCHEMES.map((s) => ({
-      v: s.variant,
+      property: s.property, variant: s.variant,
       risk: volOf(s.property, s.variant),
       reward: expectedGrowth(s.property, s.variant),
     }));
     const rk = raw.map((r) => r.risk), rw = raw.map((r) => r.reward);
     const rLo = Math.min(...rk), rHi = Math.max(...rk), rSpan = rHi - rLo || 1;
     const wLo = Math.min(...rw), wHi = Math.max(...rw), wSpan = wHi - wLo || 1;
-    return raw.map((r) => ({
-      x: (r.risk - rLo) / rSpan,
-      y: (r.reward - wLo) / wSpan,
-      v: r.v,
+    // margins inside the 0..100 box (leave room for pin heads + labels)
+    const x0 = 12, x1 = 92, y0 = 16, y1 = 86;
+    const pins: MapPin[] = raw.map((r) => ({
+      property: r.property, variant: r.variant,
+      storeVariant: StorefrontComponent.STORE_OF[r.variant],
+      name: devSchemeName(r.property, r.variant),
+      propName: PACKAGES[r.property].name,
+      risk: r.risk, reward: r.reward,
+      x: x0 + ((r.risk - rLo) / rSpan) * (x1 - x0),
+      y: y1 - ((r.reward - wLo) / wSpan) * (y1 - y0),   // higher reward = higher up
     }));
+    // simple de-overlap so pins near each other separate (in viewBox units)
+    const MIN = 9;
+    for (let it = 0; it < 80; it++) {
+      let moved = false;
+      for (let i = 0; i < pins.length; i++) for (let j = i + 1; j < pins.length; j++) {
+        const a = pins[i], b = pins[j];
+        let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        if (d < MIN) {
+          if (d < 0.01) { dx = (i - j) || 1; dy = 1; d = Math.hypot(dx, dy); }
+          const push = (MIN - d) / 2, ux = dx / d, uy = dy / d;
+          a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+          moved = true;
+        }
+      }
+      for (const p of pins) { p.x = Math.max(x0, Math.min(x1, p.x)); p.y = Math.max(y0, Math.min(y1, p.y)); }
+      if (!moved) break;
+    }
+    return pins;
+  }
+
+  /** Tap a pin → select it (or toggle off if already selected). */
+  selectPin(p: MapPin): void {
+    this.selectedPin.set(this.selectedPin() === p ? null : p);
+  }
+
+  /** Open the detail page for the selected pin's property + variant. */
+  openPin(p: MapPin): void {
+    this.openProperty.emit({ property: p.property, variant: p.variant });
+  }
+
+  isPinSelected(p: MapPin): boolean { return this.selectedPin() === p; }
+
+  /** Display name of a property (Land / Flat …). */
+  propName(p: PropertyKey): string { return PACKAGES[p].name; }
+
+  /** Plain risk-return words for a store variant, for the callout. */
+  storeLabelOf(sv: 'ready' | 'construction' | 'prelaunch'): string {
+    return sv === 'ready' ? 'Low risk' : sv === 'construction' ? 'Medium risk' : 'High risk';
   }
 
   /** Map the storefront's property-world variant names onto the basket risk
