@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
+import { EstateDetailComponent } from './estate-detail.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent } from './land-detail.component';
-import { PropertyDetailComponent } from './property-detail.component';
 import { PropertyKey } from './property-package.data';
 import { RiskMapComponent } from './risk-map.component';
 import { StorefrontComponent } from './storefront.component';
@@ -13,12 +13,12 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
 /**
  * Shell. Plays the opening intro once, then reveals the PropertyNest
  * storefront. Tapping a tier swaps in its detail page — Land keeps its own
- * dedicated page; Flat/Apartment/Duplex use the generic property-detail page.
+ * dedicated page; Flat/Apartment/Duplex use the income-tier estate-detail page.
  */
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, IntroComponent, StorefrontComponent, LandDetailComponent, PropertyDetailComponent, RiskMapComponent],
+  imports: [CommonModule, IntroComponent, StorefrontComponent, LandDetailComponent, EstateDetailComponent, RiskMapComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })

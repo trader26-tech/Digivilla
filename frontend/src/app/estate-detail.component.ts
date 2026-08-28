@@ -205,6 +205,10 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     if (!rent) return null;
     return Math.round(this.incomeSleeve() / rent);
   });
+  runwayYears = computed<number | null>(() => {
+    const m = this.runwayMonths();
+    return m == null ? null : Math.floor(m / 12);
+  });
 
   // ── formatting ───────────────────────────────────────────────────────────────
   inr(v: number | null | undefined): string { return v == null ? '—' : '₹' + Math.round(v).toLocaleString('en-IN'); }

@@ -23,11 +23,11 @@
   (back)="closeDetail()"
 ></app-land-detail>
 
-<!-- Flat / Apartment / Duplex use the generic property-detail page. -->
-<app-property-detail
+<!-- Flat / Apartment / Duplex — income-tier detail page (Land template +
+     monthly-income bucket mechanics + tax note; no Monte Carlo). -->
+<app-estate-detail
   *ngIf="!intro && detail && detail.focus !== 'map' && detail.property !== 'land'"
   [property]="detail.property"
   [initialVariant]="detail.variant"
-  [focus]="null"
   (back)="closeDetail()"
-></app-property-detail>
+></app-estate-detail>

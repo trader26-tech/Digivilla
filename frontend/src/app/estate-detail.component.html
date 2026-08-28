@@ -96,7 +96,7 @@
       <div class="flow-notes">
         <div class="fnote" *ngIf="runwayMonths() as rw">
           <span class="fnote-dot income"></span>
-          Income sleeve holds <strong>{{ compact(incomeSleeve()) }}</strong> — about <strong>{{ rw }} months</strong> of rent in reserve.
+          Income sleeve holds <strong>{{ compact(incomeSleeve()) }}</strong> — over <strong>{{ runwayYears() }} years</strong> of rent, so a weak market never forces a sale.
         </div>
         <div class="fnote" *ngIf="hasLiquid()">
           <span class="fnote-dot liquid"></span>
