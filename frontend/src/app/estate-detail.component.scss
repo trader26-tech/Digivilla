@@ -484,73 +484,41 @@
 .ago-tab:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); }
 .ago-tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-/* ── the hero comparison: invested → became ─────────────────────────────── */
-.grown-compare {
-  display: flex;
-  align-items: stretch;
-  gap: 0.5rem;
-  margin: 0.2rem 0 1.6rem;
-}
-.gc-side {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.35rem;
-}
-.gc-k { font-size: 0.76rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
-.gc-v { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; color: var(--ink); }
-.gc-v.grow { color: var(--brass); }
-.gc-bar {
-  width: 100%; max-width: 130px; height: 92px;
-  display: flex; align-items: flex-end;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--survey) 22%, var(--paper));
-  overflow: hidden;
-}
-.gc-fill {
-  width: 100%; border-radius: 12px 12px 0 0;
+/* ── stacked growth bars: invested base + gain on top, year by year ─────── */
+.stack-legend { display: flex; gap: 1.2rem; margin: 0.4rem 0 1rem; }
+.sl-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.75; }
+.sl-dot { width: 11px; height: 11px; border-radius: 3px; }
+.sl-dot.invested { background: color-mix(in srgb, var(--ink) 30%, var(--paper)); }
+.sl-dot.gain { background: var(--brass); }
+
+.stack-bars { display: flex; gap: 0.5rem; align-items: end; height: 200px; padding-top: 0.4rem; }
+.sb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.35rem; }
+.sb-v { font-family: var(--font-display); font-weight: 700; font-size: 0.72rem; color: var(--ink); opacity: 0.8; white-space: nowrap; }
+.sb-track { width: 64%; max-width: 46px; flex: 1; display: flex; align-items: flex-end; }
+.sb-stack {
+  width: 100%; min-height: 5px;
+  display: flex; flex-direction: column;
+  border-radius: 7px 7px 2px 2px; overflow: hidden;
   transform-origin: bottom;
-  animation: gcGrow 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-/* invested = short reference block; became = tall golden — the contrast IS the point */
-.gc-side.invested .gc-fill { height: 46% !important; background: color-mix(in srgb, var(--ink) 22%, var(--paper)); animation-delay: 0.15s; }
-.gc-side.became .gc-fill {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 94%, #fff), var(--brass) 55%);
-  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--brass) 80%, transparent);
-  animation-delay: 0.28s;
+  animation: gcGrow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  box-shadow: 0 6px 14px -9px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 @keyframes gcGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-.gc-foot { font-size: 0.72rem; font-weight: 600; color: var(--ink); opacity: 0.55; }
-.gc-foot.pos { color: var(--positive); opacity: 1; }
-.gc-arrow {
-  flex: none; align-self: center;
-  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
-  color: var(--brass);
-}
-.gc-mult { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; color: var(--positive); }
+/* gain sits on TOP (golden), invested base BELOW (solid ink-grey) */
+.sb-gain { width: 100%; background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 94%, #fff), var(--brass) 60%); }
+.sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 26%, var(--paper)); }
+.sb-col:nth-child(1) .sb-stack { animation-delay: 0.15s; }
+.sb-col:nth-child(2) .sb-stack { animation-delay: 0.24s; }
+.sb-col:nth-child(3) .sb-stack { animation-delay: 0.33s; }
+.sb-col:nth-child(4) .sb-stack { animation-delay: 0.42s; }
+.sb-col:nth-child(5) .sb-stack { animation-delay: 0.51s; }
+.sb-col:nth-child(6) .sb-stack { animation-delay: 0.60s; }
+.sb-yr { font-size: 0.72rem; font-weight: 700; color: var(--ink); opacity: 0.55; }
+.sb-col:last-child .sb-yr { color: var(--brass); opacity: 1; }
 
-/* ── the climb, year by year (calm, brass) ──────────────────────────────── */
-.climb { display: flex; gap: 0.5rem; align-items: end; height: 150px; padding-top: 0.3rem; }
-.climb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.3rem; }
-.cl-v { font-family: var(--font-display); font-weight: 700; font-size: 0.7rem; color: var(--ink); opacity: 0.75; white-space: nowrap; }
-.cl-track { width: 60%; max-width: 40px; flex: 1; display: flex; align-items: flex-end; }
-.cl-fill {
-  width: 100%; min-height: 4px; border-radius: 5px 5px 0 0;
-  background: color-mix(in srgb, var(--brass) 40%, var(--survey));
-  transform-origin: bottom;
-  animation: gcGrow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-.cl-fill.now { background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 94%, #fff), var(--brass) 55%); box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--brass) 70%, transparent); }
-.climb-col:nth-child(1) .cl-fill { animation-delay: 0.34s; }
-.climb-col:nth-child(2) .cl-fill { animation-delay: 0.41s; }
-.climb-col:nth-child(3) .cl-fill { animation-delay: 0.48s; }
-.climb-col:nth-child(4) .cl-fill { animation-delay: 0.55s; }
-.climb-col:nth-child(5) .cl-fill { animation-delay: 0.62s; }
-.climb-col:nth-child(6) .cl-fill { animation-delay: 0.69s; }
-.cl-yr { font-size: 0.72rem; font-weight: 700; color: var(--ink); opacity: 0.55; }
-.climb-col:last-child .cl-yr { color: var(--brass); opacity: 1; }
+.stack-foot { margin: 1.1rem 0 0; font-size: 0.9rem; line-height: 1.45; color: var(--ink); opacity: 0.82; }
+.stack-foot strong.pos { color: var(--positive); font-family: var(--font-display); font-weight: 700; }
+.sf-mult { display: inline-block; margin-left: 0.3rem; font-weight: 700; font-size: 0.82rem; color: var(--positive); }
 
 /* ---------- funds (filtered by asset, tap to expand) ---------- */
 .funds-card .card-title { margin-bottom: 0.2rem; }
@@ -618,7 +586,7 @@
 @media (prefers-reduced-motion: reduce) {
   .reveal { animation: none; opacity: 1; transform: none; }
   .card { animation: none; opacity: 1; transform: none; }
-  .gc-fill, .cl-fill { animation: none; transform: none; }
+  .sb-stack { animation: none; transform: none; }
   .lm-plot { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
   .lm-node, .lm-pin, .lm-pin-dot, .load-kicker, .load-name, .load-benefit, .load-bar { animation: none; opacity: 1; transform: none; }
   .lm-ripple { display: none; }

@@ -137,36 +137,31 @@
                 (click)="setYearsAgo(n)">{{ n }}y ago</button>
       </div>
 
-      <div class="grown-compare">
-        <div class="gc-side invested">
-          <span class="gc-k">You invested</span>
-          <span class="gc-v">{{ compact(ticketPrice) }}</span>
-          <div class="gc-bar"><span class="gc-fill invested" style="height:100%"></span></div>
-          <span class="gc-foot">{{ yearsAgo() }} years ago</span>
-        </div>
-
-        <div class="gc-arrow" aria-hidden="true">
-          <svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 12h30M26 6l7 6-7 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="gc-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
-        </div>
-
-        <div class="gc-side became">
-          <span class="gc-k">It would be worth</span>
-          <span class="gc-v grow">{{ compact(pastNowValue()) }}</span>
-          <div class="gc-bar"><span class="gc-fill became" style="height:100%"></span></div>
-          <span class="gc-foot pos">+{{ ((pastMultiple() - 1) * 100) | number:'1.0-0' }}% gain</span>
-        </div>
+      <!-- legend: what the two parts of each bar mean -->
+      <div class="stack-legend">
+        <span class="sl-item"><span class="sl-dot invested"></span>Invested {{ compact(ticketPrice) }}</span>
+        <span class="sl-item"><span class="sl-dot gain"></span>Growth</span>
       </div>
 
-      <div class="climb">
-        <div class="climb-col" *ngFor="let r of pastProjection()">
-          <span class="cl-v">{{ compact(r.value) }}</span>
-          <div class="cl-track">
-            <div class="cl-fill" [class.now]="r.year === yearsAgo()" [style.height.%]="(r.value / pastNowValue()) * 100"></div>
+      <!-- each bar = invested base + the gain stacked on top, year by year -->
+      <div class="stack-bars">
+        <div class="sb-col" *ngFor="let r of pastProjection()">
+          <span class="sb-v">{{ compact(r.value) }}</span>
+          <div class="sb-track">
+            <div class="sb-stack" [style.height.%]="(r.value / pastNowValue()) * 100">
+              <div class="sb-gain" [style.height.%]="((r.value - ticketPrice) / r.value) * 100"></div>
+              <div class="sb-base"></div>
+            </div>
           </div>
-          <div class="cl-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
+          <div class="sb-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
         </div>
       </div>
+
+      <p class="stack-foot">
+        {{ compact(ticketPrice) }} invested {{ yearsAgo() }} years ago would be
+        <strong class="pos">{{ compact(pastNowValue()) }}</strong> today
+        <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
+      </p>
     </section>
 
     <!-- ===== 3 · ASSET ALLOCATION (look-through, interactive) ===== -->
