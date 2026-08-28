@@ -1,43 +1,35 @@
 <main class="rm">
-  <!-- top bar -->
-  <header class="rm-top">
-    <button class="rm-back" type="button" (click)="goBack()" aria-label="Back to properties">
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span>Back</span>
-    </button>
-    <span class="rm-title">Risk <span class="x">×</span> Reward</span>
-    <span class="rm-loading" *ngIf="loading()">measuring…</span>
-  </header>
+  <!-- back arrow only, no text -->
+  <button class="rm-back" type="button" (click)="goBack()" aria-label="Back to properties">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+      <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
 
-  <p class="rm-lede">Every estate, placed by how much <strong>risk</strong> it takes for its <strong>reward</strong>. Tap any point.</p>
-
-  <!-- the map -->
+  <!-- the map — pure visual, no words -->
   <div class="rm-wrap">
     <svg class="rm-svg" [attr.viewBox]="'0 0 ' + W + ' ' + H" role="img" aria-label="Risk versus reward map of every estate">
       <defs>
         <linearGradient id="rmGlow" x1="0" y1="1" x2="1" y2="0">
           <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.04"/>
-          <stop offset="100%" stop-color="var(--positive)" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="var(--positive)" stop-opacity="0.16"/>
         </linearGradient>
+        <marker id="rmArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--ink)" opacity="0.45"/>
+        </marker>
       </defs>
 
       <!-- plot background -->
-      <rect [attr.x]="padL" [attr.y]="padT" [attr.width]="W - padL - padR" [attr.height]="H - padT - padB" rx="14" fill="url(#rmGlow)"/>
+      <rect [attr.x]="padL" [attr.y]="padT" [attr.width]="W - padL - padR" [attr.height]="H - padT - padB" rx="16" fill="url(#rmGlow)"/>
 
-      <!-- axes -->
-      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="W - padR" [attr.y2]="H - padB"/>
-      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="padT" [attr.x2]="padL" [attr.y2]="H - padB"/>
+      <!-- axes, with arrowheads = the only directional cue (reward↑, risk→) -->
+      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="W - padR + 6" [attr.y2]="H - padB" marker-end="url(#rmArrow)"/>
+      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="padL" [attr.y2]="padT - 6" marker-end="url(#rmArrow)"/>
 
-      <!-- fair-value diagonal (subtle, no colliding label) -->
+      <!-- fair-value diagonal -->
       <line class="rm-diag" [attr.x1]="diag.x1" [attr.y1]="diag.y1" [attr.x2]="diag.x2" [attr.y2]="diag.y2"/>
 
-      <!-- axis labels -->
-      <text class="rm-axlab" [attr.x]="padL + (W - padL - padR) / 2" [attr.y]="H - 34" text-anchor="middle">RISK  —  how much it swings  →</text>
-      <text class="rm-axlab" [attr.x]="30" [attr.y]="padT + (H - padT - padB) / 2" text-anchor="middle" [attr.transform]="'rotate(-90 30 ' + (padT + (H - padT - padB) / 2) + ')'">REWARD  —  expected growth  →</text>
-
-      <!-- pins: connector-free, coloured by property, every one labelled -->
+      <!-- pins: coloured dots only, the selected one highlighted -->
       <g *ngFor="let pin of pins(); let i = index; trackBy: trackPin"
          class="rm-pin"
          [class.sel]="pin.isSelected"
@@ -48,47 +40,8 @@
          role="button"
          [attr.aria-label]="pin.name + ' ' + pin.propName + ', ' + pin.riskLabel + ', reward ' + pin.reward + '%'">
         <circle class="rm-halo" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="22"/>
-        <circle class="rm-dot" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="10"/>
-        <text class="rm-plab"
-              [attr.x]="pin.cx"
-              [attr.y]="pin.labelAbove ? pin.cy - 17 : pin.cy + 27"
-              text-anchor="middle">{{ pin.isSelected ? pin.name : pin.shortName }}</text>
+        <circle class="rm-dot" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="11"/>
       </g>
     </svg>
   </div>
-
-  <!-- legend: colour per property -->
-  <div class="rm-legend">
-    <span class="lg" *ngFor="let p of legendProps" [style.--c]="colorOf(p)">
-      <i class="lg-dot"></i>{{ propName(p) }}
-    </span>
-  </div>
-
-  <!-- readout for the selected scheme -->
-  <section class="rm-read" *ngIf="selectedPin() as pin">
-    <div class="rr-head">
-      <span class="rr-name">{{ pin.name }}</span>
-      <span class="rr-prop">{{ pin.propName }} · {{ pin.riskLabel }}</span>
-    </div>
-    <div class="rr-figs">
-      <div class="rr-fig">
-        <span class="rr-k">Reward</span>
-        <span class="rr-v pos">{{ pct(pin.reward) }}<span class="u">/yr</span></span>
-        <span class="rr-foot">expected growth</span>
-      </div>
-      <div class="rr-fig">
-        <span class="rr-k">Risk</span>
-        <span class="rr-v neg" [class.txt]="pin.riskPct == null">{{ pin.riskPct != null ? pct(pin.riskPct) : pin.riskLabel }}</span>
-        <span class="rr-foot">{{ pin.riskPct != null ? 'measured swing' : 'typical swing' }}</span>
-      </div>
-      <div class="rr-fig">
-        <span class="rr-k">Reward / risk</span>
-        <span class="rr-v" [class.pos]="(rewardPerRisk() ?? 0) >= 0.9">{{ rewardPerRisk() !== null ? (rewardPerRisk() | number:'1.2-2') : '—' }}</span>
-        <span class="rr-foot">growth per unit of swing</span>
-      </div>
-    </div>
-    <p class="rr-verdict">{{ verdict() }}</p>
-  </section>
-
-  <p class="rm-note">Risk is each mix's real measured volatility where available, else its typical tier swing. Illustrative — not a promise.</p>
 </main>
