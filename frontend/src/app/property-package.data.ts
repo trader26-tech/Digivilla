@@ -346,6 +346,28 @@ export const REAL_METRICS: Record<PropertyKey, Record<VariantKey, RealMetric>> =
   },
 };
 
+/** Real RISK per scheme — annualised volatility % and worst drawdown %, from
+ *  the Regular-plan NAV history. Kept as its own table (separate from
+ *  REAL_METRICS) for the risk×reward map's X axis. */
+export const REAL_RISK: Record<PropertyKey, Record<VariantKey, { vol: number; dd: number }>> = {
+  land: {
+    conservative: { vol: 11.0, dd: -19.3 }, balanced: { vol: 15.8, dd: -25.6 }, aggressive: { vol: 16.2, dd: -29.3 },
+  },
+  flat: {
+    conservative: { vol: 5.1, dd: -8.8 }, balanced: { vol: 8.8, dd: -13.7 }, aggressive: { vol: 9.5, dd: -17.2 },
+  },
+  apartment: {
+    conservative: { vol: 5.3, dd: -9.2 }, balanced: { vol: 8.3, dd: -13.4 }, aggressive: { vol: 10.2, dd: -18.2 },
+  },
+  duplex: {
+    conservative: { vol: 5.5, dd: -9.5 }, balanced: { vol: 8.7, dd: -14.3 }, aggressive: { vol: 11.5, dd: -20.2 },
+  },
+};
+/** Real risk (volatility %) for a scheme — the risk×reward map's X axis. */
+export function riskOf(property: PropertyKey, variant: VariantKey): number {
+  return REAL_RISK[property][variant].vol;
+}
+
 /** The forward "grows ~X%/yr" figure for a scheme — the SAME everywhere. */
 export function expectedGrowth(property: PropertyKey, variant: VariantKey): number {
   return REAL_METRICS[property][variant].exp;
