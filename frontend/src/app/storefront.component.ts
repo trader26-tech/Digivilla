@@ -5,6 +5,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import {
   storeSchemeName, storeSchemeLocality,
   expectedGrowth, past3y, RISK_OF_STORE,
+  growthBreakdown, GrowthBreakdown,
 } from './property-package.data';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
@@ -153,6 +154,22 @@ export class StorefrontComponent {
   /** Real trailing 3-year return %, same source. */
   past3yOf(p: Property, vk: VariantKey): number {
     return past3y(p.key, RISK_OF_STORE[vk]);
+  }
+
+  /** How the "Growth %" figure is built — real 5-yr return blended 50/50 with a
+   *  weighted asset-class assumption. Shown in the tile's tap-to-reveal. */
+  growthWhy(p: Property, vk: VariantKey): GrowthBreakdown {
+    return growthBreakdown(p.key, RISK_OF_STORE[vk]);
+  }
+
+  /** Which tile's growth breakdown is open (one at a time). Keyed property·variant. */
+  openWhy: string | null = null;
+  private whyKey(p: Property, vk: VariantKey): string { return `${p.key}·${vk}`; }
+  isWhyOpen(p: Property, vk: VariantKey): boolean { return this.openWhy === this.whyKey(p, vk); }
+  toggleWhy(p: Property, vk: VariantKey, ev: Event): void {
+    ev.stopPropagation();   // don't open the detail page
+    const k = this.whyKey(p, vk);
+    this.openWhy = this.openWhy === k ? null : k;
   }
 
   // Figures from the PropertyNest package data. growthPct = expected p.a.;

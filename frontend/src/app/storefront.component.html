@@ -98,7 +98,15 @@
             <svg class="stat-ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8M20 7h-4M20 7v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Growth
           </span>
-          <span class="stat-v">{{ growthOf(t.p, t.v.key) | number:'1.0-1' }}%</span>
+          <span class="stat-v">
+            {{ growthOf(t.p, t.v.key) | number:'1.0-1' }}%
+            <button type="button" class="why-btn" [class.on]="isWhyOpen(t.p, t.v.key)"
+              (click)="toggleWhy(t.p, t.v.key, $event)"
+              [attr.aria-expanded]="isWhyOpen(t.p, t.v.key)"
+              aria-label="How this growth is worked out">
+              <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 17v-4M12 8.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            </button>
+          </span>
         </div>
         <div class="stat">
           <span class="stat-l">
@@ -114,6 +122,29 @@
           </span>
           <span class="stat-v">{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : 'Nil' }}</span>
         </div>
+      </div>
+
+      <!-- tap-to-reveal: how the Growth % is worked out -->
+      <div class="why-panel" *ngIf="isWhyOpen(t.p, t.v.key)" (click)="$event.stopPropagation()">
+        <ng-container *ngIf="growthWhy(t.p, t.v.key) as g">
+          <div class="why-blend">
+            <span class="wb-half"><b>{{ g.observed | number:'1.0-1' }}%</b> earned, last 5 yrs</span>
+            <span class="wb-x">blended with</span>
+            <span class="wb-half"><b>{{ g.prior | number:'1.0-1' }}%</b> from the mix below</span>
+          </div>
+          <div class="why-rows">
+            <div class="why-row" *ngFor="let r of g.rows">
+              <span class="wr-bar" [style.width.%]="r.weight"></span>
+              <span class="wr-l">{{ r.label }}</span>
+              <span class="wr-w">{{ r.weight | number:'1.0-0' }}%</span>
+              <span class="wr-r">at {{ r.rate | number:'1.0-1' }}%</span>
+            </div>
+          </div>
+          <div class="why-total">
+            <span class="wt-l">Growth used</span>
+            <span class="wt-v">{{ g.expected | number:'1.0-1' }}%</span>
+          </div>
+        </ng-container>
       </div>
     </div>
 

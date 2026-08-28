@@ -44,6 +44,74 @@
       </div>
     </section>
 
+    <!-- ===== How you get paid — the monthly income scheme (income tiers only) ===== -->
+    <section class="card paid-card" *ngIf="incomePays">
+      <!-- hero income -->
+      <div class="paid-hero">
+        <div class="ph-k">You get, every month</div>
+        <div class="ph-v">{{ inr(rentMonthly()) }}</div>
+        <div class="ph-u">paid to your bank · for life</div>
+      </div>
+
+      <!-- three minimal rows -->
+      <div class="paid-rows">
+        <div class="pr r1">
+          <span class="pr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></span>
+          <span class="pr-tx">Straight to your bank</span>
+          <span class="pr-v">{{ inr(rentMonthly()) }}<small>/mo</small></span>
+        </div>
+        <div class="pr r2">
+          <span class="pr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></span>
+          <span class="pr-tx">Refills so it never ends<small>growth tops it up</small></span>
+          <span class="pr-v muted">every year</span>
+        </div>
+        <div class="pr r3">
+          <span class="pr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7h-5"/><path d="M21 7v5"/></svg></span>
+          <span class="pr-tx">Your money keeps growing<small>how these funds really did, last 5 yrs</small></span>
+          <span class="pr-v">~{{ pct(incomeGrowthPct()) }}/yr</span>
+        </div>
+      </div>
+
+      <!-- tax expander -->
+      <button class="tax-row" type="button" (click)="toggleTax()" [class.open]="taxOpen()" [attr.aria-expanded]="taxOpen()">
+        <span class="tax-tx">Save <b>{{ inr(taxSaved()) }} a year</b> if you're in the 30% tax bracket</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="tax-open" *ngIf="taxOpen()">
+        <ul class="tax-pts">
+          <li><span class="tp-n">1</span><span>This money is <b>equity</b> — taxed at a flat <b>12.5%</b>, not at your income slab (up to 30%).</span></li>
+          <li><span class="tp-n">2</span><span>You get <b>{{ inr(rentMonthly()) }} × 12 = {{ inr(rentAnnual()) }}</b> in the year.</span></li>
+          <li><span class="tp-n">3</span><span><b>{{ inr(rentAnnual()) }}</b> is below the <b>₹1.25 lakh</b> tax-free limit — so your tax is <b>₹0</b>.</span></li>
+        </ul>
+        <div class="tax-bar">
+          <div class="tb-track"><span class="tb-fill" [style.width.%]="taxBarPct()"></span><i class="tb-line"></i></div>
+          <div class="tb-labels"><span>You: {{ inr(rentAnnual()) }}</span><span>Free up to ₹1.25L</span></div>
+        </div>
+      </div>
+
+      <!-- if you'd done this 5 years ago -->
+      <div class="paid-back" *ngIf="paidBack() as pb">
+        <h3 class="pb-h">If you'd done this 5 years ago</h3>
+        <div class="pb-top">
+          <div class="pb-fig"><span class="pb-k">You put in</span><span class="pb-fv">{{ compact(pb.invested) }}</span></div>
+          <span class="pb-arw" aria-hidden="true">→</span>
+          <div class="pb-fig"><span class="pb-k">Worth now</span><span class="pb-fv grow">{{ compact(pb.worthNow) }}</span></div>
+        </div>
+        <p class="pb-sub">…and it paid you <b>{{ compact(pb.rentPaid) }}</b> rent along the way.</p>
+
+        <div class="pb-bars">
+          <div class="pbb-col" *ngFor="let p of pb.path">
+            <span class="pbb-v">{{ compact(p.value) }}</span>
+            <div class="pbb-track"><div class="pbb-fill" [style.height.%]="(p.value / pb.worthNow) * 100"></div></div>
+            <div class="pbb-y">{{ p.year === 0 ? 'now' : '+' + p.year + 'y' }}</div>
+          </div>
+        </div>
+        <p class="pb-note">Your {{ compact(pb.invested) }} grew to <b>{{ compact(pb.worthNow) }}</b> <em>even while paying you rent</em> every month.</p>
+      </div>
+
+      <p class="paid-disc">Illustrative, not guaranteed · rent starts after possession (month 13).</p>
+    </section>
+
     <!-- ===== 1 · Past performance — one bounded card ===== -->
     <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
       <div class="card-head">
