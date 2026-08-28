@@ -237,7 +237,8 @@
         <strong class="pos">{{ compact(pastNowValue()) }}</strong> in {{ yearsAgo() }} years
         <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
       </p>
-      <p class="stack-basis">Based on this basket's <strong>{{ pct(avgGrowthPct()) }}</strong> average annual return over the last 5 years.<span class="star">*</span></p>
+      <p class="stack-foot" *ngIf="incomePays">…<strong class="rent">even after</strong> paying you <strong>{{ compact(pastRentPaid()) }}</strong> in rent along the way.</p>
+      <p class="stack-basis">Grown at this basket's <strong>{{ pct(avgGrowthPct()) }}</strong> 5-yr average return<span *ngIf="incomePays">, net of the rent it pays out each year</span>.<span class="star">*</span></p>
     </section>
 
     <!-- ===== 3 · ASSET ALLOCATION (look-through, interactive) ===== -->

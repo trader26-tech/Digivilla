@@ -509,23 +509,39 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
 
   /** Year-by-year path of the invested amount (plots × ticket) compounded at
    *  the 5-yr average rate, up to today — for the stacked bars. */
-  pastProjection = computed<{ year: number; value: number }[]>(() => {
-    const amt = this.amount();               // plots × ticket price
+  /** Year-by-year value of the invested amount. For INCOME tiers it compounds
+   *  NET of rent — grow at the rate, then pay out that year's rent (× plots) —
+   *  so the bars honestly reflect that rent is being withdrawn. */
+  private pastFull = computed<{ years: number[]; value: number; rentPaid: number }>(() => {
+    const amt = this.amount();
     const rate = this.avgGrowthRate();
     const years = this.yearsAgo();
-    const out: { year: number; value: number }[] = [];
+    const rentYr = this.incomePays ? this.rentAnnual() * this.plots() : 0;
+    const byYear: number[] = [amt];
+    let v = amt, rentPaid = 0;
+    for (let y = 1; y <= years; y++) {
+      v = Math.max(0, v * (1 + rate) - rentYr);
+      rentPaid += rentYr;
+      byYear.push(v);
+    }
+    return { years: byYear as any, value: v, rentPaid } as any;
+  });
+
+  pastProjection = computed<{ year: number; value: number }[]>(() => {
+    const full = this.pastFull() as any;
+    const byYear: number[] = full.years;
+    const years = this.yearsAgo();
     const steps = Math.min(years, 5);
+    const out: { year: number; value: number }[] = [];
     for (let s = 0; s <= steps; s++) {
       const y = Math.round((s / steps) * years);
-      out.push({ year: y, value: amt * Math.pow(1 + rate, y) });
+      out.push({ year: y, value: byYear[y] ?? byYear[byYear.length - 1] });
     }
     return out;
   });
 
-  pastNowValue = computed<number>(() => {
-    const rows = this.pastProjection();
-    return rows.length ? rows[rows.length - 1].value : this.amount();
-  });
+  pastNowValue = computed<number>(() => (this.pastFull() as any).value);
+  pastRentPaid = computed<number>(() => (this.pastFull() as any).rentPaid);
   pastMultiple = computed<number>(() => this.pastNowValue() / this.amount());
 
   // ── SVG geometry for the growth curve (with real X/Y axes + hover) ──────────
