@@ -185,7 +185,7 @@
   background: var(--ink);
   color: var(--paper);
   border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(22, 48, 43, 0.22);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 22%, transparent);
   pointer-events: none;
   white-space: nowrap;
   z-index: 2;
