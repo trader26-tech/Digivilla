@@ -5,7 +5,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import {
   storeSchemeName, storeSchemeLocality,
   expectedGrowth, past3y, RISK_OF_STORE,
-  growthBreakdown, GrowthBreakdown,
+  riskScore, RiskScore,
 } from './property-package.data';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
@@ -156,10 +156,10 @@ export class StorefrontComponent {
     return past3y(p.key, RISK_OF_STORE[vk]);
   }
 
-  /** How the "Growth %" figure is built — real 5-yr return blended 50/50 with a
-   *  weighted asset-class assumption. Shown in the tile's tap-to-reveal. */
-  growthWhy(p: Property, vk: VariantKey): GrowthBreakdown {
-    return growthBreakdown(p.key, RISK_OF_STORE[vk]);
+  /** Combined 0–10 risk score for a tile (volatility + beta + Sharpe folded
+   *  into one number), plus the sub-metrics behind it for the reveal. */
+  riskOf(p: Property, vk: VariantKey): RiskScore {
+    return riskScore(p.key, RISK_OF_STORE[vk]);
   }
 
   /** Which tile's growth breakdown is open (one at a time). Keyed property·variant. */

@@ -448,15 +448,17 @@ export function riskScore(property: PropertyKey, variant: VariantKey): RiskScore
   const ret = REAL_METRICS[property][variant].r5 / 100;
   const sharpe = vol > 0 ? (ret - RISK_FREE) / vol : 0;
 
-  // Fold the three into 0–10. Volatility and beta push the score UP; a strong
-  // Sharpe (good reward for the risk) pulls it back DOWN a little.
-  //   vol 0→0.20   maps to 0→8       (the dominant driver)
+  // Fold the drivers into 0–10. Volatility and beta are the backbone; a small
+  // return-tilt captures the extra concentration risk two baskets with the same
+  // asset split but different equity (large-cap vs mid/small-cap) really carry —
+  // a higher realised return at the same volatility means a spicier equity core.
+  //   vol 0→0.20   maps to 0→7       (the dominant driver)
   //   beta 0→1     maps to 0→2
-  //   sharpe: each full point above ~0.5 shaves ~0.6 off
-  const fromVol = Math.min(vol / 0.20, 1) * 8;
+  //   return 6→18% maps to 0→1       (the concentration tilt)
+  const fromVol = Math.min(vol / 0.20, 1) * 7;
   const fromBeta = Math.min(beta, 1) * 2;
-  const sharpeRelief = Math.max(0, sharpe - 0.5) * 0.6;
-  const raw = fromVol + fromBeta - sharpeRelief;
+  const fromReturn = Math.min(Math.max((ret * 100 - 6) / 12, 0), 1) * 1;
+  const raw = fromVol + fromBeta + fromReturn;
 
   const score = Math.max(0, Math.min(10, Math.round(raw * 10) / 10));
   return {

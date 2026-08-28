@@ -358,6 +358,43 @@
 .wt-l { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink); opacity: 0.55; }
 .wt-v { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: var(--brass); font-variant-numeric: tabular-nums; }
 
+/* ---- combined RISK score: the 0–10 number on the stat row ---- */
+.risk-num {
+  font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--positive);
+}
+.risk-num[data-band='mid'] { color: var(--brass); }
+.risk-num[data-band='hi']  { color: var(--terracotta); }
+.risk-max { font-size: 0.72rem; font-weight: 600; color: var(--ink); opacity: 0.4; margin-left: 0.05rem; }
+
+/* the 0–10 meter inside the reveal — shows where this basket sits */
+.risk-meter { margin-bottom: 0.7rem; }
+.rm-track {
+  position: relative; height: 7px; border-radius: 4px;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--positive) 45%, var(--paper)),
+    color-mix(in srgb, var(--brass) 50%, var(--paper)),
+    color-mix(in srgb, var(--terracotta) 55%, var(--paper)));
+}
+.rm-knob {
+  position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--paper); border: 2.5px solid var(--ink);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.rm-ends {
+  display: flex; justify-content: space-between; margin-top: 0.3rem;
+  font-size: 0.64rem; font-weight: 600; color: var(--ink); opacity: 0.45;
+}
+.risk-read { margin: 0 0 0.6rem; font-size: 0.76rem; color: var(--ink); opacity: 0.75; }
+.risk-read b { font-family: var(--font-display); font-weight: 700; opacity: 1; }
+
+/* the sub-metrics, two columns (label · value) */
+.why-row.rk { grid-template-columns: 1fr auto; }
+.why-row.rk .wr-l i { font-style: normal; font-weight: 500; opacity: 0.5; }
+.why-row.rk .wr-r { opacity: 0.85; font-weight: 800; }
+.risk-note { margin: 0.65rem 0 0; font-size: 0.68rem; line-height: 1.45; color: var(--ink); opacity: 0.5; }
+
 .no-match {
   padding: 2.5rem 0;
   text-align: center;
