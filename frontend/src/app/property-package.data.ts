@@ -128,7 +128,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       balanced: {
         key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'The all-weather middle — real growth, without a stomach-churning ride.',
-        accent: 'var(--brass)', targetGrowth: 15.3, rentMonthly: 0,
+        accent: 'var(--brass)', targetGrowth: 15.0, rentMonthly: 0,
         legs: [
           { scheme_code: HDFC_BAL_ADV, label: 'HDFC Balanced Advantage', weight: 0.20, role: 'hedge', withdrawMonthly: 0, withdrawMax: 0, note: 'The debt cushion that tames the swings' },
           { scheme_code: PPFAS_FLEXI, label: 'Parag Parikh Flexi Cap', weight: 0.45, role: 'growth', withdrawMonthly: 0, withdrawMax: 0, note: 'Core diversified compounder' },
@@ -158,7 +158,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       conservative: {
         key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'Steadiest rent — a big arbitrage sleeve pays you, growth compounds quietly behind it.',
-        accent: 'var(--positive)', targetGrowth: 12.3, netGrowth: 5.9, rentMonthly: 5_000,
+        accent: 'var(--positive)', targetGrowth: 10.6, netGrowth: 5.9, rentMonthly: 5_000,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.40, role: 'income', withdrawMonthly: 5_000, withdrawMax: 5_417, note: 'Your rent is drawn from here (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.15, role: 'income', withdrawMonthly: 0, withdrawMax: 2_500, note: 'Backup income sleeve — refills arbitrage annually' },
@@ -170,7 +170,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       balanced: {
         key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'More growth behind the rent — two income sleeves share the monthly payout.',
-        accent: 'var(--brass)', targetGrowth: 13.4, netGrowth: 6.6, rentMonthly: 6_250,
+        accent: 'var(--brass)', targetGrowth: 12.3, netGrowth: 6.6, rentMonthly: 6_250,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.25, role: 'income', withdrawMonthly: 3_300, withdrawMax: 3_385, note: 'Primary rent sleeve (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.20, role: 'income', withdrawMonthly: 2_950, withdrawMax: 3_333, note: 'Second rent sleeve, splits the payout' },
@@ -182,7 +182,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       aggressive: {
         key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Rent plus a multi-asset payout, with the most growth compounding behind it.',
-        accent: 'var(--terracotta)', targetGrowth: 13.8, netGrowth: 6.7, rentMonthly: 7_500,
+        accent: 'var(--terracotta)', targetGrowth: 12.9, netGrowth: 6.7, rentMonthly: 7_500,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.15, role: 'income', withdrawMonthly: 2_000, withdrawMax: 2_031, note: 'Rent sleeve (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.15, role: 'income', withdrawMonthly: 2_400, withdrawMax: 2_500, note: 'Second rent sleeve' },
@@ -205,7 +205,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       conservative: {
         key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'A large arbitrage sleeve pays a steady ₹10,000, six funds spread the risk.',
-        accent: 'var(--positive)', targetGrowth: 12.3, netGrowth: 5.9, rentMonthly: 10_000,
+        accent: 'var(--positive)', targetGrowth: 10.6, netGrowth: 5.9, rentMonthly: 10_000,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.40, role: 'income', withdrawMonthly: 10_000, withdrawMax: 10_833, note: 'Your rent is drawn from here (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.15, role: 'income', withdrawMonthly: 0, withdrawMax: 5_000, note: 'Backup income sleeve — refills arbitrage annually' },
@@ -218,7 +218,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       balanced: {
         key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'Two income sleeves pay ₹12,500 while a bigger growth core compounds behind them.',
-        accent: 'var(--brass)', targetGrowth: 13.2, netGrowth: 6.5, rentMonthly: 12_500,
+        accent: 'var(--brass)', targetGrowth: 12.1, netGrowth: 6.5, rentMonthly: 12_500,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.25, role: 'income', withdrawMonthly: 6_600, withdrawMax: 6_771, note: 'Primary rent sleeve (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.20, role: 'income', withdrawMonthly: 5_900, withdrawMax: 6_667, note: 'Second rent sleeve, splits the payout' },
@@ -231,7 +231,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       aggressive: {
         key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Three sleeves pay ₹15,000, with small/mid growth compounding hardest behind them.',
-        accent: 'var(--terracotta)', targetGrowth: 14.1, netGrowth: 6.9, rentMonthly: 15_000,
+        accent: 'var(--terracotta)', targetGrowth: 13.2, netGrowth: 6.9, rentMonthly: 15_000,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.10, role: 'income', withdrawMonthly: 2_700, withdrawMax: 2_708, note: 'Rent sleeve (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.20, role: 'income', withdrawMonthly: 6_300, withdrawMax: 6_667, note: 'Second rent sleeve' },
@@ -255,7 +255,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       conservative: {
         key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'Two arbitrage sleeves split a ₹19,800 rent; seven funds keep it well spread.',
-        accent: 'var(--positive)', targetGrowth: 13.3, netGrowth: 5.9, rentMonthly: 19_800,
+        accent: 'var(--positive)', targetGrowth: 10.2, netGrowth: 5.9, rentMonthly: 19_800,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.20, role: 'income', withdrawMonthly: 9_900, withdrawMax: 10_725, note: 'Half your rent (equity-taxed SWP)' },
           { scheme_code: EDELWEISS_ARBITRAGE, label: 'Edelweiss Arbitrage', weight: 0.20, role: 'income', withdrawMonthly: 9_900, withdrawMax: 10_725, note: 'The other half — a second AMC spreads the sleeve' },
@@ -269,7 +269,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       balanced: {
         key: 'balanced', label: 'Medium risk · medium returns', storeLabel: 'Under construction',
         blurb: 'Three sleeves pay ₹24,750, with a broad growth core compounding behind it.',
-        accent: 'var(--brass)', targetGrowth: 14.1, netGrowth: 6.5, rentMonthly: 24_750,
+        accent: 'var(--brass)', targetGrowth: 12.1, netGrowth: 6.5, rentMonthly: 24_750,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.125, role: 'income', withdrawMonthly: 6_600, withdrawMax: 6_703, note: 'Rent sleeve (equity-taxed SWP)' },
           { scheme_code: EDELWEISS_ARBITRAGE, label: 'Edelweiss Arbitrage', weight: 0.125, role: 'income', withdrawMonthly: 6_600, withdrawMax: 6_703, note: 'Second arbitrage AMC spreads the sleeve' },
@@ -284,7 +284,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
       aggressive: {
         key: 'aggressive', label: 'High risk · high returns', storeLabel: 'Pre-launch',
         blurb: 'Four sleeves pay ₹29,700, with small/mid growth compounding hardest behind them.',
-        accent: 'var(--terracotta)', targetGrowth: 14.0, netGrowth: 7.0, rentMonthly: 29_700,
+        accent: 'var(--terracotta)', targetGrowth: 13.2, netGrowth: 7.0, rentMonthly: 29_700,
         legs: [
           { scheme_code: KOTAK_ARBITRAGE, label: 'Kotak Equity Arbitrage', weight: 0.10, role: 'income', withdrawMonthly: 5_300, withdrawMax: 5_363, note: 'Rent sleeve (equity-taxed SWP)' },
           { scheme_code: ICICI_EQ_SAVINGS, label: 'ICICI Pru Equity Savings', weight: 0.15, role: 'income', withdrawMonthly: 9_700, withdrawMax: 9_900, note: 'Largest rent sleeve' },
@@ -317,30 +317,30 @@ export const VARIANT_ORDER: VariantKey[] = ['conservative', 'balanced', 'aggress
          _expected_return). This is WHERE the "grows ~X%/yr" figure
          comes from — the real history of these funds, not a target.
    Regenerate by running the analyze engine over each basket's legs.
-   (Snapshot taken 2026-08-29 from real NAV history.)
+   (Snapshot 2026-08-29, REGULAR PLAN NAV history.)
    ================================================================== */
 export interface RealMetric { r3: number; r5: number; exp: number; }
 
 export const REAL_METRICS: Record<PropertyKey, Record<VariantKey, RealMetric>> = {
   land: {
     conservative: { r3: 11.7, r5: 12.0, exp: 12.5 },
-    balanced:     { r3: 16.8, r5: 15.1, exp: 15.3 },
+    balanced:     { r3: 16.4, r5: 14.6, exp: 15.0 },
     aggressive:   { r3: 15.7, r5: 16.3, exp: 16.2 },
   },
   flat: {
-    conservative: { r3: 12.3, r5: 10.9, exp: 12.3 },
-    balanced:     { r3: 14.5, r5: 12.2, exp: 13.4 },
-    aggressive:   { r3: 13.9, r5: 13.2, exp: 13.8 },
+    conservative: { r3: 9.3,  r5: 8.9,  exp: 10.6 },
+    balanced:     { r3: 12.4, r5: 10.7, exp: 12.3 },
+    aggressive:   { r3: 12.6, r5: 12.3, exp: 12.9 },
   },
   apartment: {
-    conservative: { r3: 12.3, r5: 10.8, exp: 12.3 },
-    balanced:     { r3: 14.1, r5: 12.2, exp: 13.2 },
-    aggressive:   { r3: 13.6, r5: 13.5, exp: 14.1 },
+    conservative: { r3: 9.3,  r5: 8.8,  exp: 10.6 },
+    balanced:     { r3: 12.1, r5: 10.8, exp: 12.1 },
+    aggressive:   { r3: 12.8, r5: 12.8, exp: 13.2 },
   },
   duplex: {
-    conservative: { r3: 14.0, r5: 13.8, exp: 13.3 },
-    balanced:     { r3: 15.4, r5: 14.4, exp: 14.1 },
-    aggressive:   { r3: 14.2, r5: 14.5, exp: 14.0 },
+    conservative: { r3: 9.6,  r5: 9.5,  exp: 10.2 },
+    balanced:     { r3: 12.5, r5: 11.6, exp: 12.1 },
+    aggressive:   { r3: 13.3, r5: 13.8, exp: 13.2 },
   },
 };
 
