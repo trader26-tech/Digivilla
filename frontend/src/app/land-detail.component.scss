@@ -227,8 +227,8 @@
   color: var(--ink);
 }
 .stat-v.pos { color: var(--positive); }
-/* on the dark ink hero card, lift the green so it reads on the dark ground */
-.hero-stat .stat-v.pos { color: #8CE6B0; }
+/* on the dark ink hero card, lift the estate green with paper so it stays on-palette */
+.hero-stat .stat-v.pos { color: color-mix(in srgb, var(--positive) 55%, var(--paper)); }
 .stat-v.neg { color: var(--negative); }
 .stat-foot { font-size: 0.72rem; font-weight: 500; color: var(--ink); opacity: 0.5; }
 .u { font-family: var(--font-body); font-size: 0.6em; font-weight: 500; opacity: 0.7; }

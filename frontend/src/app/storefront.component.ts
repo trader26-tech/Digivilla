@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Output } from '@angular/core';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
@@ -37,7 +38,7 @@ export interface Property {
 @Component({
   selector: 'app-storefront',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './storefront.component.html',
   styleUrl: './storefront.component.scss',
 })
@@ -54,6 +55,44 @@ export class StorefrontComponent {
     construction: 'balanced',
     prelaunch: 'aggressive',
   };
+
+  /** Currently-selected property chip. */
+  activeKey: Property['key'] = 'land';
+  /** Search text. */
+  query = '';
+
+  get active(): Property {
+    return this.properties.find((p) => p.key === this.activeKey) ?? this.properties[0];
+  }
+
+  /** Variant tiles for the active property, filtered by the search text. */
+  get tiles(): { p: Property; v: Variant }[] {
+    const p = this.active;
+    const q = this.query.trim().toLowerCase();
+    return this.variantOrder
+      .map((vk) => ({ p, v: p.variants[vk] }))
+      .filter((t) => !q || (`${t.v.label} ${p.name}`).toLowerCase().includes(q));
+  }
+
+  /** Chips that match the search (so search can also narrow the chip row). */
+  get chips(): Property[] {
+    const q = this.query.trim().toLowerCase();
+    if (!q) return this.properties;
+    return this.properties.filter((p) => p.name.toLowerCase().includes(q));
+  }
+
+  selectChip(p: Property): void {
+    this.activeKey = p.key;
+  }
+
+  onQuery(v: string): void {
+    this.query = v;
+    // if the active chip no longer matches, jump to the first matching one
+    const chips = this.chips;
+    if (chips.length && !chips.some((p) => p.key === this.activeKey)) {
+      this.activeKey = chips[0].key;
+    }
+  }
 
   /** Land is the one tier with a full detail page; other tiers stay inert for now. */
   open(p: Property, vk?: VariantKey): void {
