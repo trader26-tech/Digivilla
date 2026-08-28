@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, computed, in
 import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
-import { schemeName, schemeLocality, past3y, past5y } from './property-package.data';
+import { schemeName, schemeLocality } from './property-package.data';
 import { RevealDirective } from './reveal.directive';
 
 export type LandVariantKey = 'conservative' | 'balanced' | 'aggressive';
@@ -276,15 +276,21 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   });
 
   /** Annualised return (CAGR) over the selected window — the headline number.
-   *  For the combined basket at 3Y/5Y we quote the SAME frozen REAL_METRICS the
-   *  storefront tile shows, so the tile and this page never disagree. Single
-   *  funds and 1Y/2Y windows fall back to the live computed CAGR. */
+   *  We ALWAYS quote the backend's exact daily-anniversary trailing return for
+   *  the chosen range (return_1y/3y/5y) — the same figure public sites like
+   *  Groww / Value Research show — for BOTH the blended basket AND a single
+   *  fund, so tapping a fund shows its real published CAGR, not a value
+   *  re-derived from the month-sampled chart line. Only the 2Y window (no
+   *  backend trailing figure) and missing data fall back to the line. */
   windowCagr = computed<number | null>(() => {
-    if (this.chartSource() === 'blend') {
-      const v = this.active();
-      if (this.chartRange() === '3y') return past3y('land', v);
-      if (this.chartRange() === '5y') return past5y('land', v);
+    const range = this.chartRange();
+    const m = this.chartMetrics();
+    if (m) {
+      if (range === '1y' && m.return_1y != null) return m.return_1y;
+      if (range === '3y' && m.return_3y != null) return m.return_3y;
+      if (range === '5y' && m.return_5y != null) return m.return_5y;
     }
+    // 2Y (or if the backend figure is absent): derive from the windowed line.
     const w = this.windowedGrowth();
     if (w.length < 2) return null;
     const first = w[0].value, last = w[w.length - 1].value;

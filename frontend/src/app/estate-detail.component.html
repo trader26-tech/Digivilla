@@ -250,7 +250,7 @@
     <!-- ===== 3 · THE FUNDS INSIDE (filtered by tapped asset; tap a fund for detail) ===== -->
     <section class="card funds-card">
       <div class="card-head">
-        <h2 class="card-title">The funds inside <span class="plan-tag">Regular plans</span></h2>
+        <h2 class="card-title">The funds inside</h2>
         <span class="card-sub" *ngIf="!selectedAsset()">{{ compact(ticketPrice) }} · {{ activeVariant().legs.length }} funds · tap a fund</span>
         <button class="card-sub link" type="button" *ngIf="selectedAsset() as sel" (click)="selectAsset(sel)">
           showing {{ sel === 'cash' ? 'cash / arbitrage' : sel }} funds · clear ✕
@@ -260,7 +260,7 @@
         <li class="fund" *ngFor="let f of shownFunds()" [class.open]="expandedFund() === f.code">
           <button class="fund-top" type="button" (click)="toggleFund(f.code)" [attr.aria-expanded]="expandedFund() === f.code">
             <span class="fund-w">{{ f.weightPct | number:'1.0-0' }}%</span>
-            <span class="fund-name">{{ f.label }}</span>
+            <span class="fund-name">{{ f.label }}<span class="fund-plan">Regular Plan</span></span>
             <span class="fund-amt">
               {{ f.inAsset != null ? compact(f.inAsset) : compact(f.amount) }}
               <svg class="fund-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

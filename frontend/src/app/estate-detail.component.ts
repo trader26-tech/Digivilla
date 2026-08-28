@@ -73,7 +73,8 @@ function variantsFor(property: PropertyKey): LandVariant[] {
       targetGrowth: v.targetGrowth,
       legs: v.legs.map(l => ({
         scheme_code: l.scheme_code,
-        label: l.label,
+        // Drop any " · Regular" suffix — the plan is shown as its own sub-line now.
+        label: l.label.replace(/\s*·\s*Regular\s*$/i, ''),
         weight: l.weight,
         role: l.note,
         look: ROLE_LOOK[l.role],
