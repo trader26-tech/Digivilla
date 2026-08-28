@@ -1,94 +1,20 @@
 <main class="deed">
-  <!-- ===== dark "atlas" map — full-bleed hero; glow/height = rent ===== -->
-  <section class="geo" aria-label="Risk and reward map of every estate">
-    <div class="geo-canvas" (click)="selectedSpot.set(null)">
-      <!-- dark map base: risk regions (low = green bottom-left, high = red top-right) -->
-      <svg class="atlas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="riskZones" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%"  stop-color="#1c3a2e"/>
-            <stop offset="42%" stop-color="#1e2d29"/>
-            <stop offset="72%" stop-color="#33291e"/>
-            <stop offset="100%" stop-color="#3a221c"/>
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" width="100" height="100" fill="#16211f"/>
-        <rect x="0" y="0" width="100" height="100" fill="url(#riskZones)"/>
-        <!-- soft glow anchoring the safe corner + the risky corner -->
-        <ellipse cx="8" cy="94" rx="46" ry="42" fill="#2E6B4F" opacity="0.22" class="zone-glow"/>
-        <ellipse cx="94" cy="10" rx="46" ry="42" fill="#8C4A32" opacity="0.24" class="zone-glow"/>
-        <!-- glowing "roads" grid -->
-        <g class="atlas-roads">
-          <line x1="0" y1="33" x2="100" y2="33"/><line x1="0" y1="66" x2="100" y2="66"/>
-          <line x1="33" y1="0" x2="33" y2="100"/><line x1="66" y1="0" x2="66" y2="100"/>
-          <path d="M0 88 Q 40 72 72 80 T 100 66"/>
-        </g>
+  <!-- ===== search + filter ===== -->
+  <div class="toolbar reveal" style="--s:1">
+    <div class="search">
+      <svg class="search-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
-
-      <!-- corner region labels + axis captions -->
-      <span class="zone-tag safe">LOW RISK</span>
-      <span class="zone-tag bold">HIGH RISK</span>
-      <span class="geo-cap up">↑ higher return</span>
-      <span class="geo-cap side">more risk →</span>
-
-      <!-- legend, TOP-RIGHT on the map -->
-      <div class="atlas-legend" (click)="$event.stopPropagation()">
-        <span *ngFor="let p of mapProps" class="al-item"><span class="al-dot" [attr.data-p]="p"></span>{{ propName(p) }}</span>
-      </div>
-
-      <!-- all 12 schemes as individual pins -->
-      <button *ngFor="let s of spots" class="atlas-pin" type="button"
-        [attr.data-p]="s.property"
-        [class.sel]="isSpotSelected(s)"
-        [class.dim]="selectedSpot() !== null && !isSpotSelected(s)"
-        [style.left.%]="s.x" [style.top.%]="s.y"
-        (click)="selectSpot(s); $event.stopPropagation()"
-        [attr.aria-label]="s.name + ' ' + s.propName + ', ' + s.riskWord + (s.rent > 0 ? ', ' + rentShort(s.rent) + ' a month rent' : ', growth only')">
-        <span class="ap-dot"></span>
-        <span class="ap-label">{{ s.propName }}<em *ngIf="s.rent > 0"> {{ rentShort(s.rent) }}/mo</em><em *ngIf="s.rent === 0" class="growth"> growth</em></span>
-      </button>
-
-      <!-- callout for the selected scheme -->
-      <div class="atlas-callout" *ngIf="selectedSpot() as sp"
-        [style.left.%]="sp.x" [style.top.%]="sp.y"
-        [class.flip-x]="sp.x > 60" [class.flip-y]="sp.y < 36"
-        (click)="$event.stopPropagation()">
-        <div class="ac-head">
-          <span class="ac-dot" [attr.data-p]="sp.property"></span>
-          <span class="ac-name">{{ sp.name }}</span>
-          <span class="ac-price">{{ compact(sp.price) }}</span>
-        </div>
-        <div class="ac-sub">{{ sp.propName }} · {{ sp.riskWord }}</div>
-        <div class="ac-stats">
-          <span class="ac-stat" *ngIf="sp.rent > 0"><b>{{ rentShort(sp.rent) }}</b><small>rent /mo</small></span>
-          <span class="ac-stat" *ngIf="sp.rent === 0"><b>Growth</b><small>no rent</small></span>
-          <span class="ac-stat"><b>{{ sp.reward | number:'1.0-1' }}%</b><small>return /yr</small></span>
-          <span class="ac-stat"><b>{{ sp.risk | number:'1.0-1' }}%</b><small>risk</small></span>
-        </div>
-        <button class="ac-go" type="button" (click)="openSpot(sp)">
-          Explore {{ sp.propName }}
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-
-      <!-- search + filter floating ON the map, near the curved bottom -->
-      <div class="geo-search">
-        <div class="search">
-          <svg class="search-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-          <input class="search-in" type="search" inputmode="search" placeholder="Search estates"
-            autocomplete="off" [ngModel]="query" (ngModelChange)="onQuery($event)" aria-label="Search estates"/>
-        </div>
-        <button class="filter-btn" type="button"
-          [class.on]="filter !== 'all'" [attr.aria-expanded]="filterOpen"
-          (click)="filterOpen = !filterOpen">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
-        </button>
-      </div>
+      <input class="search-in" type="search" inputmode="search" placeholder="Search estates"
+        autocomplete="off" [ngModel]="query" (ngModelChange)="onQuery($event)" aria-label="Search estates"/>
     </div>
-  </section>
+    <button class="filter-btn" type="button"
+      [class.on]="filter !== 'all'" [attr.aria-expanded]="filterOpen"
+      (click)="filterOpen = !filterOpen">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    </button>
+  </div>
 
   <!-- filter menu -->
   <div class="filter-menu" *ngIf="filterOpen">
