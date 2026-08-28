@@ -74,45 +74,31 @@
       type="button"
       [style.--s]="i + 3"
       (click)="open(t.p, t.v.key)"
-      [attr.aria-label]="t.v.label + ' ' + t.p.name"
+      [attr.aria-label]="t.v.label + ' ' + t.p.name + ', ' + compact(t.p.price)"
     >
-      <!-- top row: icon + name + price -->
-      <div class="tile-top">
-        <span class="tile-ic" [attr.data-v]="t.v.key" aria-hidden="true" [ngSwitch]="t.v.key">
-          <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="20" height="20"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="20" height="20"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-        <span class="tile-head">
-          <span class="tile-name">{{ t.v.label }} {{ t.p.name }}</span>
-          <span class="tile-price">{{ compact(t.p.price) }} · {{ t.p.incomePays ? 'income + growth' : 'pure growth' }}</span>
-        </span>
-        <svg class="tile-chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
+      <!-- icon + short name + prominent price -->
+      <span class="tile-ic" [attr.data-v]="t.v.key" aria-hidden="true" [ngSwitch]="t.v.key">
+        <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="22" height="22"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="22" height="22"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="22" height="22"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
 
-      <!-- stat row: the numbers -->
-      <div class="tile-stats">
-        <div class="stat">
-          <span class="stat-v">{{ t.v.growthPct }}%<span class="u">/yr</span></span>
-          <span class="stat-l">Expected growth</span>
-        </div>
-        <div class="stat">
-          <span class="stat-v pos">{{ t.v.past3y }}%<span class="u">/yr</span></span>
-          <span class="stat-l">Past 3 years</span>
-        </div>
-        <div class="stat">
-          <span class="stat-v" [class.income]="t.p.incomePays">{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : '—' }}</span>
-          <span class="stat-l">{{ t.p.incomePays ? 'Monthly income' : 'No income' }}</span>
-        </div>
-      </div>
+      <span class="tile-mid">
+        <span class="tile-name">{{ t.v.label }} {{ t.p.name }}</span>
+        <span class="tile-metric">
+          <ng-container *ngIf="t.p.incomePays">{{ inr(t.v.monthlyIncome!) }}<span class="u">/mo</span></ng-container>
+          <ng-container *ngIf="!t.p.incomePays">{{ t.v.growthPct }}%<span class="u">/yr growth</span></ng-container>
+          <span class="tile-past"> · {{ t.v.past3y }}%<span class="u"> 3-yr</span></span>
+        </span>
+      </span>
+
+      <span class="tile-price">{{ compact(t.p.price) }}</span>
+      <svg class="tile-chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
 
     <p class="no-match" *ngIf="!tiles.length">No estates match your filters.</p>
   </div>
 
   <!-- ===== footnote ===== -->
-  <p class="disclaimer">
-    <span class="star">*</span> Illustrative — not guaranteed. Past returns don't
-    assure future ones. Rent begins after month 12. Subject to market risk.
-  </p>
+  <p class="disclaimer">Illustrative — not guaranteed. Subject to market risk.</p>
 </main>

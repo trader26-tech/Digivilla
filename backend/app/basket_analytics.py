@@ -73,6 +73,11 @@ class ProjPoint(BaseModel):
     p10: float
     p50: float
     p90: float
+    # Wider fan for the Monte Carlo chart (5th/25th/75th/95th percentiles).
+    p5: float = 0.0
+    p25: float = 0.0
+    p75: float = 0.0
+    p95: float = 0.0
 
 
 class Projection(BaseModel):
@@ -82,6 +87,14 @@ class Projection(BaseModel):
     final_p10: float
     final_p50: float
     final_p90: float
+    # Monte Carlo provenance/quality, for the "how probable" story on the UI.
+    sims: int = 0
+    prob_gain: Optional[float] = None  # P(ends above what you put in), %
+    prob_double: Optional[float] = None  # P(ends >= 2x the base), %
+    expected_multiple: Optional[float] = None  # median end value / base
+    # A handful of full simulated paths (base=100), so the UI can draw the
+    # spaghetti/fan behind the percentile band. Downsampled for payload size.
+    sample_paths: list[list[float]] = []
 
 
 def _fetch_series(code: int) -> list[tuple[date, float]]:

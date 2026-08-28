@@ -6,25 +6,32 @@ import { BasketMetrics, LandDetailService } from './land-detail.service';
 
 export type LandVariantKey = 'conservative' | 'balanced' | 'aggressive';
 
-/** One fund leg of a land basket — display label plus the AMFI scheme code we
- *  actually analyse (a couple of labels map to the closest available scheme). */
+/** True underlying asset-class split for a fund (look-through), as fractions
+ *  that sum to 1. Based on each category's typical composition. */
+interface LookThrough {
+  equity: number;
+  debt: number;
+  gold: number;
+  cash: number;   // arbitrage / cash & equivalents
+}
+
+/** One fund leg of a land basket. */
 interface Leg {
   scheme_code: number;
   label: string;   // the name the customer sees
   weight: number;  // 0..1
   role: string;    // one-line "why it's here"
+  look: LookThrough;
 }
 
 interface LandVariant {
   key: LandVariantKey;
-  label: string;
+  name: string;          // the TILE name shown to the customer (no risk jargon)
   blurb: string;         // one-line positioning
-  accent: string;        // css var for the risk tone
-  targetGrowth: number;  // headline "expected growth" the storefront advertises
+  targetGrowth: number;  // headline expected growth the storefront advertises
   legs: Leg[];
 }
 
-/** A point plotted on the projection chart (value of the lump sum at year Y). */
 interface ProjRow {
   year: number;
   low: number;
@@ -32,49 +39,68 @@ interface ProjRow {
   high: number;
 }
 
-/** The land baskets, with the EXACT allocations the desk publishes. Capital
- *  appreciation only — there is NO rental income on land. */
+/** A slice of the rolled-up look-through allocation. */
+interface AllocSlice {
+  key: 'equity' | 'debt' | 'gold' | 'cash';
+  label: string;
+  pct: number;   // 0..100
+}
+
+/** The land baskets. Variant NAMES mirror the storefront tiles the customer
+ *  tapped in — "Ready-to-move / Under construction / Pre-launch" — never the
+ *  risk words. Capital appreciation only; there is NO rental income. */
 const VARIANTS: LandVariant[] = [
   {
     key: 'conservative',
-    label: 'Conservative',
+    name: 'Ready-to-move',
     blurb: 'Steadiest path — a debt-cushioned core that rides out the dips.',
-    accent: 'var(--positive)',
     targetGrowth: 10.2,
     legs: [
-      { scheme_code: 102330, label: 'ICICI Pru Equity Savings', weight: 0.25, role: 'Hedged equity + debt — low swings, the shock absorber' },
-      { scheme_code: 100119, label: 'HDFC Balanced Advantage', weight: 0.40, role: 'Dynamically shifts equity↔debt to cushion drawdowns' },
-      { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.35, role: 'Diversified growth engine across large/mid/global' },
+      { scheme_code: 102330, label: 'ICICI Pru Equity Savings', weight: 0.25, role: 'Hedged equity + debt — the shock absorber',
+        look: { equity: 0.35, debt: 0.30, gold: 0, cash: 0.35 } },
+      { scheme_code: 100119, label: 'HDFC Balanced Advantage', weight: 0.40, role: 'Shifts equity↔debt to cushion drawdowns',
+        look: { equity: 0.50, debt: 0.35, gold: 0, cash: 0.15 } },
+      { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.35, role: 'Diversified growth engine',
+        look: { equity: 0.80, debt: 0.05, gold: 0, cash: 0.15 } },
     ],
   },
   {
     key: 'balanced',
-    label: 'Balanced',
-    blurb: 'The all-weather middle — real growth, without a stomach-churning ride.',
-    accent: 'var(--brass)',
+    name: 'Under construction',
+    blurb: 'The all-weather middle — real growth, without a churning ride.',
     targetGrowth: 11.8,
     legs: [
-      { scheme_code: 100119, label: 'HDFC Balanced Advantage', weight: 0.20, role: 'The debt cushion that tames the swings' },
-      { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.45, role: 'Core diversified compounder' },
-      { scheme_code: 147704, label: 'Motilal Oswal Large and Midcap', weight: 0.35, role: 'A midcap tilt for the extra growth' },
+      { scheme_code: 100119, label: 'HDFC Balanced Advantage', weight: 0.20, role: 'The debt cushion that tames the swings',
+        look: { equity: 0.50, debt: 0.35, gold: 0, cash: 0.15 } },
+      { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.45, role: 'Core diversified compounder',
+        look: { equity: 0.80, debt: 0.05, gold: 0, cash: 0.15 } },
+      { scheme_code: 147704, label: 'Motilal Oswal Large and Midcap', weight: 0.35, role: 'A midcap tilt for the extra growth',
+        look: { equity: 0.98, debt: 0, gold: 0, cash: 0.02 } },
     ],
   },
   {
     key: 'aggressive',
-    label: 'Aggressive',
+    name: 'Pre-launch',
     blurb: 'Built to appreciate — maximum compounding for the long horizon.',
-    accent: 'var(--terracotta)',
     targetGrowth: 12.9,
     legs: [
-      { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.40, role: 'A diversified anchor under the higher-beta legs' },
-      { scheme_code: 105758, label: 'HDFC Mid-Cap Opportunities', weight: 0.35, role: 'The midcap growth core' },
-      { scheme_code: 113177, label: 'Nippon India Small Cap', weight: 0.25, role: 'Small-cap kicker — highest potential, highest swings' },
+      { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.40, role: 'A diversified anchor under the higher-beta legs',
+        look: { equity: 0.80, debt: 0.05, gold: 0, cash: 0.15 } },
+      { scheme_code: 105758, label: 'HDFC Mid-Cap Opportunities', weight: 0.35, role: 'The midcap growth core',
+        look: { equity: 0.95, debt: 0, gold: 0, cash: 0.05 } },
+      { scheme_code: 113177, label: 'Nippon India Small Cap', weight: 0.25, role: 'Small-cap kicker — highest potential',
+        look: { equity: 0.95, debt: 0, gold: 0, cash: 0.05 } },
     ],
   },
 ];
 
-/** Horizons shown on the "what ₹X becomes" chart. */
 const HORIZONS = [1, 3, 5, 10, 20];
+
+/** One selectable line on the "how it moved" chart: the blend, or a single fund. */
+interface ChartSource {
+  id: string;         // 'blend' | scheme_code as string
+  label: string;
+}
 
 @Component({
   selector: 'app-land-detail',
@@ -84,7 +110,6 @@ const HORIZONS = [1, 3, 5, 10, 20];
   styleUrl: './land-detail.component.scss',
 })
 export class LandDetailComponent implements OnInit {
-  /** Which variant to open on (set by the storefront row that was tapped). */
   @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
 
@@ -94,19 +119,37 @@ export class LandDetailComponent implements OnInit {
   readonly horizons = HORIZONS;
   readonly ticketPrice = 10_00_000;
 
-  /** Which variant the customer is viewing. */
   active = signal<LandVariantKey>('balanced');
-
-  /** Editable lump sum for the projection chart (defaults to the ₹10L ticket). */
   amount = signal<number>(this.ticketPrice);
 
-  /** Real metrics per variant, keyed by variant key. */
+  /** Blended metrics per variant. */
   metrics = signal<Record<string, BasketMetrics>>({});
+  /** Per-fund metrics cache, keyed by scheme_code. */
+  fundMetrics = signal<Record<number, BasketMetrics>>({});
   loading = signal(true);
   error = signal<string | null>(null);
 
+  /** Which line the growth chart is showing: 'blend' or a scheme_code. */
+  chartSource = signal<string>('blend');
+
   activeVariant = computed(() => this.variants.find(v => v.key === this.active())!);
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
+
+  /** Dropdown options for the chart: the blend + each fund of the active variant. */
+  chartSources = computed<ChartSource[]>(() => {
+    const opts: ChartSource[] = [{ id: 'blend', label: 'Combined basket' }];
+    for (const leg of this.activeVariant().legs) {
+      opts.push({ id: String(leg.scheme_code), label: leg.label });
+    }
+    return opts;
+  });
+
+  /** Metrics currently feeding the chart (blend or the picked single fund). */
+  chartMetrics = computed<BasketMetrics | null>(() => {
+    const src = this.chartSource();
+    if (src === 'blend') return this.activeMetrics();
+    return this.fundMetrics()[Number(src)] ?? null;
+  });
 
   ngOnInit(): void {
     this.active.set(this.initialVariant);
@@ -136,13 +179,46 @@ export class LandDetailComponent implements OnInit {
     }
   }
 
-  select(k: LandVariantKey): void { this.active.set(k); }
+  /** Lazily fetch a single fund's own series the first time it's picked. */
+  private ensureFund(code: number): void {
+    if (this.fundMetrics()[code]) return;
+    this.api.analyze([{ scheme_code: code, weight: 1 }]).subscribe({
+      next: m => this.fundMetrics.update(cur => ({ ...cur, [code]: m })),
+      error: () => {},
+    });
+  }
+
+  pickChartSource(id: string): void {
+    this.chartSource.set(id);
+    if (id !== 'blend') this.ensureFund(Number(id));
+  }
+
+  select(k: LandVariantKey): void {
+    this.active.set(k);
+    this.chartSource.set('blend');   // reset the chart picker to the new blend
+  }
   goBack(): void { this.back.emit(); }
 
-  // ── Projection: scale the amount, extend to each horizon deterministically ──
-  /** Median compound value + a 1-sigma-ish band, per horizon, for the entered
-   *  amount. Uses the basket's own expected return & volatility (from real NAV
-   *  history), so the band widens correctly with the risk of the mix. */
+  // ── Look-through asset allocation (rolled up to true asset classes) ──────────
+  allocation = computed<AllocSlice[]>(() => {
+    const legs = this.activeVariant().legs;
+    const acc = { equity: 0, debt: 0, gold: 0, cash: 0 };
+    for (const l of legs) {
+      acc.equity += l.weight * l.look.equity;
+      acc.debt += l.weight * l.look.debt;
+      acc.gold += l.weight * l.look.gold;
+      acc.cash += l.weight * l.look.cash;
+    }
+    const total = acc.equity + acc.debt + acc.gold + acc.cash || 1;
+    const LABELS: Record<AllocSlice['key'], string> = {
+      equity: 'Equity', debt: 'Debt', gold: 'Gold', cash: 'Cash / arbitrage',
+    };
+    return (['equity', 'debt', 'gold', 'cash'] as const)
+      .map(k => ({ key: k, label: LABELS[k], pct: (acc[k] / total) * 100 }))
+      .filter(s => s.pct >= 0.5);
+  });
+
+  // ── Projection (editable amount, credible band) ─────────────────────────────
   projection = computed<ProjRow[]>(() => {
     const m = this.activeMetrics();
     const amt = this.amount();
@@ -151,20 +227,13 @@ export class LandDetailComponent implements OnInit {
     const vol = (m.volatility ?? 14) / 100;
     return this.horizons.map(y => {
       const mid = amt * Math.pow(1 + er, y);
-      // Band on the *annualised* return, narrowing with time — over a long
-      // horizon good and bad years average out, so the band should tighten, not
-      // explode. (A √y spread on the compound outcome balloons to a meaningless
-      // "₹0 to thousands of crore" range.) Scale the annual sigma by 1/√y.
       const spread = Math.min(vol / Math.sqrt(y), 0.9);
-      const lowRate = Math.max(er - spread, -0.15);
-      const highRate = er + spread;
-      const low = amt * Math.pow(1 + lowRate, y);
-      const high = amt * Math.pow(1 + highRate, y);
+      const low = amt * Math.pow(1 + Math.max(er - spread, -0.15), y);
+      const high = amt * Math.pow(1 + er + spread, y);
       return { year: y, low, mid, high };
     });
   });
 
-  /** The 20-year median multiple, for the headline "grows to ~Nx". */
   finalMultiple = computed<number | null>(() => {
     const rows = this.projection();
     if (!rows.length) return null;
@@ -173,7 +242,7 @@ export class LandDetailComponent implements OnInit {
     return amt > 0 ? last.mid / amt : null;
   });
 
-  // ── SVG geometry for the historical growth curve (the ₹10k → today line) ────
+  // ── SVG geometry for the growth curve ───────────────────────────────────────
   readonly chartW = 680;
   readonly chartH = 240;
   readonly padL = 8;
@@ -181,35 +250,33 @@ export class LandDetailComponent implements OnInit {
   readonly padT = 12;
   readonly padB = 22;
 
-  /** The historical growth curve as an SVG path 'd', normalised to the box. */
   growthPath = computed<string>(() => {
-    const m = this.activeMetrics();
+    const m = this.chartMetrics();
     if (!m || !m.growth.length) return '';
     return this.pathFrom(m.growth.map(g => g.value));
   });
 
-  /** Matching area fill under the growth curve. */
   growthArea = computed<string>(() => {
-    const m = this.activeMetrics();
+    const m = this.chartMetrics();
     if (!m || !m.growth.length) return '';
     return this.areaFrom(m.growth.map(g => g.value));
   });
 
-  /** The drawdown (underwater) curve — how far below peak, over time. */
   drawdownPath = computed<string>(() => {
-    const m = this.activeMetrics();
+    const m = this.chartMetrics();
     if (!m || !m.growth.length) return '';
-    // drawdown is <= 0; plot magnitude so deeper = lower.
     return this.pathFrom(m.growth.map(g => g.drawdown), true);
   });
 
-  /** Start/end value labels on the growth curve. */
   growthEndpoints = computed(() => {
-    const m = this.activeMetrics();
+    const m = this.chartMetrics();
     if (!m || !m.growth.length) return null;
     const first = m.growth[0], last = m.growth[m.growth.length - 1];
     return { startVal: first.value, endVal: last.value, startDate: first.date, endDate: last.date };
   });
+
+  /** True when the chart's picked source is still loading its series. */
+  chartLoading = computed<boolean>(() => this.chartSource() !== 'blend' && !this.chartMetrics());
 
   private pathFrom(vals: number[], invert = false): string {
     if (vals.length < 2) return '';
@@ -219,10 +286,8 @@ export class LandDetailComponent implements OnInit {
     const h = this.chartH - this.padT - this.padB;
     return vals.map((v, i) => {
       const x = this.padL + (i / (vals.length - 1)) * w;
-      const t = (v - lo) / span;             // 0..1
-      const y = invert
-        ? this.padT + t * h                  // for drawdown: 0 (top) = no dd
-        : this.padT + (1 - t) * h;           // growth: high value = top
+      const t = (v - lo) / span;
+      const y = invert ? this.padT + t * h : this.padT + (1 - t) * h;
       return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
     }).join(' ');
   }
@@ -235,7 +300,6 @@ export class LandDetailComponent implements OnInit {
     return `${line} L${w.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
   }
 
-  // ── Projection chart geometry (bar-style, editable amount) ──────────────────
   projMax = computed<number>(() => {
     const rows = this.projection();
     return rows.length ? Math.max(...rows.map(r => r.high)) : 1;
@@ -246,14 +310,12 @@ export class LandDetailComponent implements OnInit {
     return max > 0 ? (v / max) * 100 : 0;
   }
 
-  // ── Formatting helpers ──────────────────────────────────────────────────────
-  /** Indian-format rupees: ₹25,00,000. */
+  // ── Formatting ──────────────────────────────────────────────────────────────
   inr(v: number | null | undefined): string {
     if (v == null) return '—';
     return '₹' + Math.round(v).toLocaleString('en-IN');
   }
 
-  /** Compact: ₹10L, ₹1.4Cr. */
   compact(v: number | null | undefined): string {
     if (v == null) return '—';
     if (v >= 1_00_00_000) {
@@ -272,28 +334,16 @@ export class LandDetailComponent implements OnInit {
     return v.toFixed(dp) + '%';
   }
 
-  /** Sharpe-style ratio from a basket's own return & vol (risk-free 6.5%). */
   sharpe(m: BasketMetrics | null): number | null {
     if (!m || m.expected_return == null || !m.volatility) return null;
     return (m.expected_return - 6.5) / m.volatility;
   }
 
-  /** Beta proxy: equity-weight-scaled — a mix that is 80% equity carries ~0.8
-   *  of broad-market swings. Honest, category-based, no external index feed. */
   beta(m: BasketMetrics | null): number | null {
     if (!m) return null;
     const eq = m.asset_mix?.['equity'] ?? 0;
     const hyb = m.asset_mix?.['hybrid'] ?? 0;
-    // hybrid funds carry ~0.55 equity beta; pure equity ~1.0.
     return (eq * 1.0 + hyb * 0.55) / 100;
-  }
-
-  assetMixEntries(m: BasketMetrics | null): { label: string; pct: number }[] {
-    if (!m || !m.asset_mix) return [];
-    const LABELS: Record<string, string> = { equity: 'Equity', hybrid: 'Hybrid', debt: 'Debt', gold: 'Gold' };
-    return Object.entries(m.asset_mix)
-      .map(([k, v]) => ({ label: LABELS[k] ?? k, pct: v }))
-      .sort((a, b) => b.pct - a.pct);
   }
 
   amountFromInput(v: string): void {
