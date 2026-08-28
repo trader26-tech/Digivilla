@@ -226,36 +226,62 @@
 .spinner.sm { width: 14px; height: 14px; border-width: 2px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---------- generic card ---------- */
+/* ---------- generic card — one self-contained component ---------- */
 .card {
-  margin-bottom: 1.4rem;
-  padding: 1.15rem;
-  border: 1px solid var(--survey);
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--survey) 7%, var(--paper));
+  margin-bottom: 1.1rem;
+  padding: 1.25rem 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--survey) 80%, transparent);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(22, 48, 43, 0.04), 0 8px 24px -18px rgba(22, 48, 43, 0.25);
 }
-.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
-.card-title { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; line-height: 1.15; margin: 0; color: var(--ink); }
-.card-sub { font-size: 0.76rem; font-weight: 600; color: var(--ink); opacity: 0.55; }
-
-/* ---------- boxless chart section (sits open on the page, no card) ---------- */
-.chart-open {
-  margin-bottom: 1.4rem;
-  padding: 0;
-  border: none;
-  background: transparent;
+.card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem;
 }
+.card-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.3rem; line-height: 1.12; letter-spacing: -0.01em;
+  margin: 0; color: var(--ink);
+}
+.card-sub { font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.5; }
 
-/* ---------- asset allocation (look-through) ---------- */
-.alloc-card { background: var(--ink); border-color: var(--ink); }
-.alloc-card .card-title { color: var(--paper); }
-.alloc-card .card-sub { color: color-mix(in srgb, var(--paper) 62%, transparent); }
+/* ---------- Past-performance card ---------- */
+.chart-card .card-head { margin-bottom: 0.6rem; }
+/* plain-English readout, sits under the title — subordinate to it */
+.pp-readout {
+  margin: 0 0 0.9rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ink);
+  opacity: 0.75;
+}
+.pp-readout b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  opacity: 1;
+}
+.ppr-pct {
+  display: inline-block;
+  margin-left: 0.3rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.ppr-pct.pos { color: var(--positive); background: color-mix(in srgb, var(--positive) 12%, var(--paper)); }
+.ppr-pct.neg { color: var(--terracotta); background: color-mix(in srgb, var(--terracotta) 12%, var(--paper)); }
+
+/* ---------- asset allocation (look-through) — light card, consistent ---------- */
 .alloc-bar {
   display: flex;
-  height: 26px;
+  height: 28px;
   border-radius: 8px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--paper) 14%, var(--ink));
+  background: color-mix(in srgb, var(--survey) 40%, var(--paper));
   gap: 2px;
 }
 .alloc-seg {
@@ -266,8 +292,8 @@
 .alloc-seg:hover { filter: brightness(1.12); }
 .alloc-seg[data-k='equity'], .a-dot[data-k='equity'], .fdl-dot[data-k='equity'] { background: var(--positive); }
 .alloc-seg[data-k='debt'],   .a-dot[data-k='debt'],   .fdl-dot[data-k='debt']   { background: var(--brass); }
-.alloc-seg[data-k='gold'],   .a-dot[data-k='gold'],   .fdl-dot[data-k='gold']   { background: color-mix(in srgb, var(--brass) 60%, var(--paper)); }
-.alloc-seg[data-k='cash'],   .a-dot[data-k='cash'],   .fdl-dot[data-k='cash']   { background: color-mix(in srgb, var(--paper) 55%, var(--survey)); }
+.alloc-seg[data-k='gold'],   .a-dot[data-k='gold'],   .fdl-dot[data-k='gold']   { background: color-mix(in srgb, var(--brass) 55%, var(--paper)); }
+.alloc-seg[data-k='cash'],   .a-dot[data-k='cash'],   .fdl-dot[data-k='cash']   { background: color-mix(in srgb, var(--ink) 30%, var(--survey)); }
 .alloc-legend {
   list-style: none; margin: 0.9rem 0 0; padding: 0;
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem 0.7rem;
@@ -280,14 +306,14 @@
   background: transparent; cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-.a-chip:hover { background: color-mix(in srgb, var(--paper) 8%, transparent); }
+.a-chip:hover { background: color-mix(in srgb, var(--survey) 22%, transparent); }
 .a-chip.on {
-  background: color-mix(in srgb, var(--paper) 12%, transparent);
-  border-color: color-mix(in srgb, var(--paper) 30%, transparent);
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  border-color: color-mix(in srgb, var(--brass) 40%, var(--survey));
 }
 .a-dot { width: 11px; height: 11px; border-radius: 3px; flex: none; }
-.a-label { flex: 1; text-align: left; font-size: 0.86rem; font-weight: 600; color: color-mix(in srgb, var(--paper) 85%, transparent); }
-.a-pct { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--paper); }
+.a-label { flex: 1; text-align: left; font-size: 0.86rem; font-weight: 600; color: var(--ink); opacity: 0.8; }
+.a-pct { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
 
 /* ---------- chart with fund selector ---------- */
 .src-pick {

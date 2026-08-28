@@ -58,11 +58,12 @@
         </label>
       </div>
 
-      <!-- concise readout, right under the title (subordinate to it) -->
-      <div class="pp-readout" *ngIf="windowReadout() as r">
-        <span class="ppr-nums">{{ compact(r.from) }} <span class="ppr-arrow" aria-hidden="true">→</span> {{ compact(r.to) }}</span>
+      <!-- plain-English readout, right under the title (subordinate to it) -->
+      <p class="pp-readout" *ngIf="windowReadout() as r">
+        {{ compact(r.from) }} invested {{ rangeWords() }} would be worth
+        <b>{{ compact(r.to) }}</b> today
         <span class="ppr-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
-      </div>
+      </p>
 
       <!-- time-range tabs -->
       <div class="range-tabs" role="tablist" aria-label="Time range">

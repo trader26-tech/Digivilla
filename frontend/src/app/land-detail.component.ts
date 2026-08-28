@@ -161,6 +161,12 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   chartRange = signal<string>('3y');
   setRange(key: string): void { this.chartRange.set(key); }
 
+  /** "3 years ago" etc., for the plain-English performance readout. */
+  rangeWords(): string {
+    const n = parseInt(this.chartRange(), 10) || 3;
+    return n === 1 ? '1 year ago' : `${n} years ago`;
+  }
+
   activeVariant = computed(() => this.variants.find(v => v.key === this.active())!);
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
 
