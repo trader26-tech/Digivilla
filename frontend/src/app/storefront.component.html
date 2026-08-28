@@ -83,22 +83,19 @@
         </span>
         <span class="tile-head">
           <span class="tile-name">{{ schemeName(t.p, t.v.key) }} {{ t.p.name }}</span>
-          <span class="tile-loc">
+          <!-- risk label doubles as the map opener -->
+          <button
+            class="tile-loc"
+            type="button"
+            (click)="openMap(t.p, t.v.key); $event.stopPropagation()"
+            [attr.aria-label]="'See where ' + schemeName(t.p, t.v.key) + ' sits on the risk–reward map'"
+          >
             <svg class="loc-mark" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-            {{ t.v.label }}
-          </span>
+            <span class="loc-txt">{{ t.v.label }}</span>
+            <svg class="loc-go" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </span>
         <span class="tile-price">{{ compact(t.p.price) }}</span>
-
-        <!-- location pin: opens the risk–reward map for this plot -->
-        <button
-          class="tile-pin"
-          type="button"
-          (click)="openMap(t.p, t.v.key); $event.stopPropagation()"
-          [attr.aria-label]="'See where ' + schemeName(t.p, t.v.key) + ' sits on the risk–reward map'"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
-        </button>
       </div>
 
       <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
