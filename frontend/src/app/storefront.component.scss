@@ -361,11 +361,8 @@
 /* ---- combined RISK score: the 0–10 number on the stat row ---- */
 .risk-num {
   font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums;
-  color: var(--positive);
+  color: var(--ink);
 }
-.risk-num[data-band='mid'] { color: var(--brass); }
-.risk-num[data-band='hi']  { color: var(--terracotta); }
-.risk-max { font-size: 0.72rem; font-weight: 600; color: var(--ink); opacity: 0.4; margin-left: 0.05rem; }
 
 /* the 0–10 meter inside the reveal — shows where this basket sits */
 .risk-meter { margin-bottom: 0.7rem; }

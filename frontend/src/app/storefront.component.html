@@ -99,13 +99,7 @@
             Risk
           </span>
           <span class="stat-v">
-            <span class="risk-num" [attr.data-band]="riskOf(t.p, t.v.key).score >= 7 ? 'hi' : riskOf(t.p, t.v.key).score >= 4 ? 'mid' : 'lo'">{{ riskOf(t.p, t.v.key).score | number:'1.1-1' }}</span><span class="risk-max">/10</span>
-            <button type="button" class="why-btn" [class.on]="isWhyOpen(t.p, t.v.key)"
-              (click)="toggleWhy(t.p, t.v.key, $event)"
-              [attr.aria-expanded]="isWhyOpen(t.p, t.v.key)"
-              aria-label="How this risk score is worked out">
-              <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 17v-4M12 8.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
-            </button>
+            <span class="risk-num">{{ riskOf(t.p, t.v.key).score | number:'1.2-2' }}</span>
           </span>
         </div>
         <div class="stat">
@@ -124,26 +118,6 @@
         </div>
       </div>
 
-      <!-- tap-to-reveal: how the 0–10 risk score is worked out -->
-      <div class="why-panel" *ngIf="isWhyOpen(t.p, t.v.key)" (click)="$event.stopPropagation()">
-        <ng-container *ngIf="riskOf(t.p, t.v.key) as rk">
-          <!-- 0–10 meter: shows where this sits, and what each end means -->
-          <div class="risk-meter">
-            <div class="rm-track">
-              <span class="rm-knob" [style.left.%]="rk.score * 10"></span>
-            </div>
-            <div class="rm-ends"><span>0 · calm</span><span>10 · racy</span></div>
-          </div>
-          <p class="risk-read">Sits at <b>{{ rk.score | number:'1.1-1' }} of 10</b> — {{ rk.equityPct }}% in equity.</p>
-          <!-- the metrics folded into the score, in plain words -->
-          <div class="why-rows">
-            <div class="why-row rk"><span class="wr-l">Swinginess <i>(volatility)</i></span><span class="wr-r">{{ rk.volatility | number:'1.0-1' }}%</span></div>
-            <div class="why-row rk"><span class="wr-l">Market sensitivity <i>(beta)</i></span><span class="wr-r">{{ rk.beta | number:'1.2-2' }}</span></div>
-            <div class="why-row rk"><span class="wr-l">Reward per unit of risk <i>(Sharpe)</i></span><span class="wr-r">{{ rk.sharpe | number:'1.2-2' }}</span></div>
-          </div>
-          <p class="risk-note">Lower means steadier; a higher Sharpe means you're paid better for the risk taken.</p>
-        </ng-container>
-      </div>
     </div>
 
     <p class="no-match" *ngIf="!tiles.length">No estates match your filters.</p>
