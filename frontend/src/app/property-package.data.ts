@@ -106,7 +106,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
     incomePays: false,
     variants: {
       conservative: {
-        key: 'conservative', label: 'Ready-to-move', storeLabel: 'Ready-to-move',
+        key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'Steadiest path — a debt-cushioned core that rides out the dips.',
         accent: 'var(--positive)', targetGrowth: 10.2, rentMonthly: 0,
         legs: [
@@ -146,7 +146,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
     incomePays: true,
     variants: {
       conservative: {
-        key: 'conservative', label: 'Ready-to-move', storeLabel: 'Ready-to-move',
+        key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'Steadiest rent — a big arbitrage sleeve pays you, growth compounds quietly behind it.',
         accent: 'var(--positive)', targetGrowth: 8.3, netGrowth: 5.9, rentMonthly: 5_000,
         legs: [
@@ -193,7 +193,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
     incomePays: true,
     variants: {
       conservative: {
-        key: 'conservative', label: 'Ready-to-move', storeLabel: 'Ready-to-move',
+        key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'A large arbitrage sleeve pays a steady ₹10,000, six funds spread the risk.',
         accent: 'var(--positive)', targetGrowth: 8.3, netGrowth: 5.9, rentMonthly: 10_000,
         legs: [
@@ -243,7 +243,7 @@ export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
     incomePays: true,
     variants: {
       conservative: {
-        key: 'conservative', label: 'Ready-to-move', storeLabel: 'Ready-to-move',
+        key: 'conservative', label: 'Low risk · low returns', storeLabel: 'Ready-to-move',
         blurb: 'Two arbitrage sleeves split a ₹19,800 rent; seven funds keep it well spread.',
         accent: 'var(--positive)', targetGrowth: 8.3, netGrowth: 5.9, rentMonthly: 19_800,
         legs: [
