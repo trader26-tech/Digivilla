@@ -71,7 +71,7 @@
       (click)="open(t.p, t.v.key)"
       [attr.aria-label]="t.v.label + ' ' + t.p.name + ', ' + compact(t.p.price)"
     >
-      <!-- header: icon · name · price -->
+      <!-- header: icon · name · the amount to invest (the one big figure) -->
       <div class="tile-top">
         <span class="tile-ic" [attr.data-v]="t.v.key" aria-hidden="true" [ngSwitch]="t.v.key">
           <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="20" height="20"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -82,28 +82,19 @@
         <span class="tile-price">{{ compact(t.p.price) }}</span>
       </div>
 
-      <!-- the USP: returns, given room to breathe -->
-      <div class="tile-usp">
-        <!-- income properties: monthly income is the hero -->
-        <div class="usp-hero" *ngIf="t.p.incomePays">
-          <span class="usp-val">{{ inr(t.v.monthlyIncome!) }}<span class="usp-u">/mo</span></span>
-          <span class="usp-lbl">monthly income</span>
+      <!-- stat row: all one size, one colour -->
+      <div class="tile-stats">
+        <div class="stat" *ngIf="t.p.incomePays">
+          <span class="stat-l">Monthly income</span>
+          <span class="stat-v">{{ inr(t.v.monthlyIncome!) }}</span>
         </div>
-        <!-- land: growth is the hero -->
-        <div class="usp-hero" *ngIf="!t.p.incomePays">
-          <span class="usp-val brass">{{ t.v.growthPct }}%<span class="usp-u">/yr</span></span>
-          <span class="usp-lbl">expected growth</span>
+        <div class="stat">
+          <span class="stat-l">Expected growth</span>
+          <span class="stat-v">{{ t.v.growthPct }}%</span>
         </div>
-
-        <div class="usp-side">
-          <div class="usp-mini" *ngIf="t.p.incomePays">
-            <span class="mini-v">{{ t.v.growthPct }}%</span>
-            <span class="mini-l">growth /yr</span>
-          </div>
-          <div class="usp-mini">
-            <span class="mini-v pos">{{ t.v.past3y }}%</span>
-            <span class="mini-l">past 3-yr</span>
-          </div>
+        <div class="stat">
+          <span class="stat-l">Past 3 years</span>
+          <span class="stat-v">{{ t.v.past3y }}%</span>
         </div>
       </div>
     </button>
