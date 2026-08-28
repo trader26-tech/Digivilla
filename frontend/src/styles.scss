@@ -1,54 +1,18 @@
-/* Global design tokens — "dusk" theme (from the intro/story screens):
-   deep indigo base, warm-gold + purple accents. Shared by every component. */
-:root {
-  --bg: #000000;           /* plain black background */
-  --surface: #141220;      /* raised cards, faint purple tint */
-  --surface-2: #1e1b2e;    /* insets, tracks, chips */
-  --border: #2a2740;       /* hairlines with a subtle purple cast */
-  --text: #f2eefc;         /* soft warm-white text */
-  --muted: #a99fce;        /* muted lavender for secondary text */
-
-  /* Signature accents from the dusk gradient */
-  --accent: #a370ff;       /* purple — primary accent */
-  --accent-2: #7a3ea8;     /* deeper purple */
-  --purple: #a370ff;
-  --purple-dk: #7a3ea8;
-  --orange: #ff9a4a;       /* warm gold/coral */
-  --orange-dk: #ff6f61;
-
-  /* signature gradients — purple → warm-gold, the intro's dusk DNA. Use these on
-     hero CTAs, brand marks and headline accents so both colors read everywhere. */
-  --grad-dusk: linear-gradient(115deg, #a370ff 0%, #b866d6 42%, #ff6f61 78%, #ff9a4a 100%);
-  --grad-dusk-soft: linear-gradient(115deg, rgba(163,112,255,0.18), rgba(255,111,97,0.14) 70%, rgba(255,154,74,0.16));
-  --grad-warm: linear-gradient(135deg, #ff9a4a, #ff6f61);
-
-  --warn: #ffb84d;
-  --good: #4be3a1;
-  --ok: #ffb84d;
-  --low: #ff6f7d;
-
-  /* asset-class colors, tuned for the dusk palette */
-  --eq: #a370ff;           /* equity = purple */
-  --hy: #c58bff;           /* hybrid = lighter purple */
-  --dt: #4be3a1;           /* debt = mint */
-  --gd: #ff9a4a;           /* gold = warm orange */
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(10, 6, 30, 0.4);
-  --shadow-md: 0 8px 22px -8px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(10, 6, 30, 0.45);
-  --shadow-lg: 0 26px 60px -26px rgba(0, 0, 0, 0.75);
-}
+/* Global base — clean slate. The UI is being rebuilt from scratch, so no
+   design tokens or component styles live here yet: just a reset and a plain
+   black canvas. */
 
 * {
   box-sizing: border-box;
 }
+
 html,
 body {
   margin: 0;
   padding: 0;
-  color: var(--text);
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  /* plain black background */
-  background: var(--bg);
-  min-height: 100vh;
 }
