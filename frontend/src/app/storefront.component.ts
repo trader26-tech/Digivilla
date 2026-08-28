@@ -132,12 +132,25 @@ export class StorefrontComponent {
     this.openProperty.emit({ property: p.key, variant });
   }
 
-  /** Tapping a tile's location pin: open the detail page focused on the
-   *  risk–reward map for this plot. `focus: 'map'` tells the shell /
-   *  property-detail to scroll to #mapCard and highlight this scheme. */
-  openMap(p: Property, vk: VariantKey): void {
-    const variant = StorefrontComponent.RISK_OF[vk];
-    this.openProperty.emit({ property: p.key, variant, focus: 'map' });
+  /** Which tile's risk popover is open, e.g. "flat:construction". null = none. */
+  riskInfoKey: string | null = null;
+
+  /** Tapping the risk label toggles a small inline popover with this plot's
+   *  risk/return — no full-screen map. */
+  toggleRiskInfo(p: Property, vk: VariantKey): void {
+    const key = `${p.key}:${vk}`;
+    this.riskInfoKey = this.riskInfoKey === key ? null : key;
+  }
+  isRiskInfoOpen(p: Property, vk: VariantKey): boolean {
+    return this.riskInfoKey === `${p.key}:${vk}`;
+  }
+  closeRiskInfo(): void {
+    this.riskInfoKey = null;
+  }
+
+  /** Short risk word for the popover heading. */
+  riskWord(vk: VariantKey): string {
+    return vk === 'ready' ? 'Low risk' : vk === 'construction' ? 'Medium risk' : 'High risk';
   }
 
   /** The development name for a tile — from the shared SCHEME_META (single

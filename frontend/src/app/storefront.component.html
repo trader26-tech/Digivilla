@@ -85,17 +85,32 @@
         <span class="tile-price">{{ compact(t.p.price) }}</span>
       </div>
 
-      <!-- risk label (own row, tappable → opens the risk–reward map) -->
-      <button
-        class="tile-loc"
-        type="button"
-        (click)="openMap(t.p, t.v.key); $event.stopPropagation()"
-        [attr.aria-label]="'See where ' + schemeName(t.p, t.v.key) + ' sits on the risk–reward map'"
-      >
-        <svg class="loc-mark" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-        <span class="loc-txt">{{ t.v.label }}</span>
-        <svg class="loc-go" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <!-- risk label (own row) — tap for a small risk/return popover -->
+      <div class="risk-wrap">
+        <button
+          class="tile-loc"
+          type="button"
+          [class.on]="isRiskInfoOpen(t.p, t.v.key)"
+          (click)="toggleRiskInfo(t.p, t.v.key); $event.stopPropagation()"
+          [attr.aria-expanded]="isRiskInfoOpen(t.p, t.v.key)"
+          [attr.aria-label]="riskWord(t.v.key) + ' — see risk and return'"
+        >
+          <span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>
+          <span class="loc-txt">{{ t.v.label }}</span>
+          <svg class="loc-go" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <!-- small popover -->
+        <div class="risk-pop" *ngIf="isRiskInfoOpen(t.p, t.v.key)" (click)="$event.stopPropagation()">
+          <span class="rp-head"><span class="risk-dot" [attr.data-v]="t.v.key" aria-hidden="true"></span>{{ riskWord(t.v.key) }}</span>
+          <div class="rp-rows">
+            <div class="rp-row"><span>Expected return</span><b>{{ t.v.growthPct }}% / yr</b></div>
+            <div class="rp-row"><span>Past 3 years</span><b>{{ t.v.past3y }}% / yr</b></div>
+            <div class="rp-row"><span>Monthly income</span><b>{{ t.p.incomePays ? inr(t.v.monthlyIncome!) : 'Nil' }}</b></div>
+          </div>
+          <button class="rp-detail" type="button" (click)="open(t.p, t.v.key); $event.stopPropagation()">View details →</button>
+        </div>
+      </div>
 
       <!-- stat row: growth · past 3-yr · monthly income (income always last) -->
       <div class="tile-stats">
