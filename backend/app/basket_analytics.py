@@ -64,9 +64,6 @@ class BasketMetrics(BaseModel):
     yearly_returns: list[YearReturn] = []
     # Forward Monte Carlo projection (lump sum), populated when include_series=True.
     projection: Optional["Projection"] = None
-    # Backtest of investing a lump sum and taking rent out (income tiers only),
-    # populated when a `rent`/`invested` pair is passed to analyze().
-    withdrawal_backtest: Optional["WithdrawalBacktest"] = None
     # Smallest lump sum where every fund clears its own minimum purchase.
     min_investment: float = 0.0
 
@@ -98,29 +95,6 @@ class Projection(BaseModel):
     # A handful of full simulated paths (base=100), so the UI can draw the
     # spaghetti/fan behind the percentile band. Downsampled for payload size.
     sample_paths: list[list[float]] = []
-
-
-class BacktestYear(BaseModel):
-    """One year of the 'invest ₹X, take rent, how did the fund do' backtest."""
-    year: str
-    value_end: float      # fund value at year end (after that year's rent taken)
-    rent_taken: float     # rent withdrawn during the year
-
-
-class WithdrawalBacktest(BaseModel):
-    """Real backtest: invest `invested` at the start of the window, take
-    `monthly_rent` out every month, apply the basket's ACTUAL monthly returns
-    over the last ~`years` years, and report how the fund actually ended up.
-
-    Answers "if I'd invested this AND taken the rent, what would it be worth?"
-    """
-    invested: float           # lump sum at the start
-    monthly_rent: float       # rent taken each month
-    years: float              # length of the backtest window
-    total_rent: float         # total rent taken over the window
-    value_end: float          # fund value at the end (after all withdrawals)
-    value_no_withdraw: float  # what it would be if you'd taken nothing (for contrast)
-    yearly: list[BacktestYear] = []
 
 
 def _fetch_series(code: int) -> list[tuple[date, float]]:
@@ -157,17 +131,8 @@ def _monthly(series: list[tuple[date, float]]) -> dict[str, float]:
     return by_month
 
 
-def analyze(
-    items: list[dict],
-    include_series: bool = False,
-    invested: float = 0.0,
-    monthly_rent: float = 0.0,
-) -> BasketMetrics:
-    """items: [{scheme_code, weight, asset_class?}]. Weights need not sum to 1.
-
-    If `invested` and `monthly_rent` are both > 0, also runs a real
-    withdrawal backtest over the last 5 years and attaches it.
-    """
+def analyze(items: list[dict], include_series: bool = False) -> BasketMetrics:
+    """items: [{scheme_code, weight, asset_class?}]. Weights need not sum to 1."""
     funds = {f.scheme_code: f for f in dashboard.all_funds()}
     weights: dict[int, float] = {}
     for it in items:
@@ -229,7 +194,6 @@ def analyze(
     # for "what drove this move" attribution on hover.
     ac_of = {c: (funds.get(c).asset_class if funds.get(c) else "equity") for c in active_codes}
     index = [100.0]
-    monthly_rets: list[float] = []  # real monthly basket return each step
     contrib_by_month: list[dict[str, float]] = [{}]  # month 0 has no move
     for i in range(1, len(months)):
         prev_m, cur_m = months[i - 1], months[i]
@@ -243,7 +207,6 @@ def analyze(
                 port_ret += cr
                 contrib[ac_of[c]] = contrib.get(ac_of[c], 0.0) + cr
         index.append(index[-1] * (1 + port_ret))
-        monthly_rets.append(port_ret)
         contrib_by_month.append(contrib)
     self_contrib = contrib_by_month  # captured by _attach_series via closure param
 
@@ -305,68 +268,7 @@ def analyze(
             max_drawdown=metrics.max_drawdown,
         )
 
-    if invested > 0 and monthly_rent > 0 and monthly_rets:
-        metrics.withdrawal_backtest = _backtest_withdrawal(
-            months, monthly_rets, invested, monthly_rent, years=5
-        )
     return metrics
-
-
-def _backtest_withdrawal(
-    months: list[str],
-    monthly_rets: list[float],
-    invested: float,
-    monthly_rent: float,
-    years: int = 5,
-) -> "WithdrawalBacktest":
-    """Invest `invested` at the start of the last `years`, apply each month's
-    REAL basket return, and take `monthly_rent` out every month. Report the
-    fund's actual end value + a no-withdrawal comparison + a per-year trail.
-
-    monthly_rets[i] is the return taking months[i] -> months[i+1]; so month
-    labels for the returns are months[1:].
-    """
-    n = years * 12
-    # Use the last n monthly returns (and their month labels).
-    rets = monthly_rets[-n:] if len(monthly_rets) > n else monthly_rets[:]
-    ret_months = months[1:][-len(rets):] if len(months) > 1 else []
-
-    with_val = invested       # fund while taking rent
-    without_val = invested    # same fund, taking nothing (for contrast)
-    total_rent = 0.0
-    yearly: list[BacktestYear] = []
-    year_rent = 0.0
-
-    for i, r in enumerate(rets):
-        # grow by the real month return, then take the rent out
-        with_val *= (1 + r)
-        without_val *= (1 + r)
-        with_val = max(0.0, with_val - monthly_rent)
-        total_rent += monthly_rent
-        year_rent += monthly_rent
-        # close a year on every 12th month (or at the very end)
-        label = ret_months[i] if i < len(ret_months) else ""
-        is_year_end = ((i + 1) % 12 == 0) or (i == len(rets) - 1)
-        if is_year_end:
-            yr = label[:4] if label else str(len(yearly) + 1)
-            yearly.append(
-                BacktestYear(
-                    year=yr,
-                    value_end=round(with_val),
-                    rent_taken=round(year_rent),
-                )
-            )
-            year_rent = 0.0
-
-    return WithdrawalBacktest(
-        invested=round(invested),
-        monthly_rent=round(monthly_rent),
-        years=round(len(rets) / 12, 1),
-        total_rent=round(total_rent),
-        value_end=round(with_val),
-        value_no_withdraw=round(without_val),
-        yearly=yearly,
-    )
 
 
 def _min_investment(weights: dict[int, float], funds) -> float:
