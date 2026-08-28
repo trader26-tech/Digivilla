@@ -18,23 +18,6 @@
 }
 @keyframes reveal { to { opacity: 1; transform: none; } }
 
-/* ---------- brand plate ---------- */
-.masthead { margin-bottom: 1rem; }
-.plate {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.34rem 0.72rem;
-  background: var(--ink);
-  color: var(--paper);
-  border-radius: 3px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.plate-mark { color: var(--brass); }
-
 /* ---------- toolbar: search + filter ---------- */
 .toolbar {
   display: flex;

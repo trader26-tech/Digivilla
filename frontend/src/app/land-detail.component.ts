@@ -242,30 +242,90 @@ export class LandDetailComponent implements OnInit {
     return amt > 0 ? last.mid / amt : null;
   });
 
-  // ── SVG geometry for the growth curve ───────────────────────────────────────
+  // ── SVG geometry for the growth curve (with real X/Y axes + hover) ──────────
   readonly chartW = 680;
-  readonly chartH = 240;
-  readonly padL = 8;
-  readonly padR = 8;
+  readonly chartH = 260;
+  readonly padL = 58;   // room for the ₹ Y-axis labels
+  readonly padR = 10;
   readonly padT = 12;
-  readonly padB = 22;
+  readonly padB = 30;   // room for the year X-axis labels
+
+  private get plotW() { return this.chartW - this.padL - this.padR; }
+  private get plotH() { return this.chartH - this.padT - this.padB; }
+
+  /** Value bounds of the current series, padded a touch at the top. */
+  private vBounds = computed<{ lo: number; hi: number } | null>(() => {
+    const m = this.chartMetrics();
+    if (!m || !m.growth.length) return null;
+    const vals = m.growth.map(g => g.value);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    return { lo: Math.min(lo, 0) === lo ? lo : lo, hi };
+  });
+
+  private xAt(i: number, n: number): number {
+    return this.padL + (n <= 1 ? 0 : (i / (n - 1)) * this.plotW);
+  }
+  private yAt(v: number, lo: number, hi: number): number {
+    const span = hi - lo || 1;
+    return this.padT + (1 - (v - lo) / span) * this.plotH;
+  }
 
   growthPath = computed<string>(() => {
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length) return '';
-    return this.pathFrom(m.growth.map(g => g.value));
+    const m = this.chartMetrics(); const b = this.vBounds();
+    if (!m || !b) return '';
+    return m.growth.map((g, i) =>
+      `${i === 0 ? 'M' : 'L'}${this.xAt(i, m.growth.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`
+    ).join(' ');
   });
 
   growthArea = computed<string>(() => {
+    const line = this.growthPath();
     const m = this.chartMetrics();
-    if (!m || !m.growth.length) return '';
-    return this.areaFrom(m.growth.map(g => g.value));
+    if (!line || !m) return '';
+    const baseY = this.chartH - this.padB;
+    const lastX = this.xAt(m.growth.length - 1, m.growth.length);
+    return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
   });
 
   drawdownPath = computed<string>(() => {
     const m = this.chartMetrics();
     if (!m || !m.growth.length) return '';
-    return this.pathFrom(m.growth.map(g => g.drawdown), true);
+    const dds = m.growth.map(g => g.drawdown);
+    const lo = Math.min(...dds), hi = Math.max(...dds, 0);
+    const span = hi - lo || 1;
+    // small strip 46 tall, 0 at top
+    return m.growth.map((g, i) => {
+      const x = this.xAt(i, m.growth.length);
+      const y = ((hi - g.drawdown) / span) * 46;
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+  });
+
+  /** Y-axis ticks: 4 evenly spaced ₹ amounts. */
+  yTicks = computed<{ y: number; label: string }[]>(() => {
+    const b = this.vBounds();
+    if (!b) return [];
+    const n = 4;
+    const out: { y: number; label: string }[] = [];
+    for (let i = 0; i <= n; i++) {
+      const v = b.lo + (i / n) * (b.hi - b.lo);
+      out.push({ y: this.yAt(v, b.lo, b.hi), label: this.compact(v) });
+    }
+    return out;
+  });
+
+  /** X-axis ticks: ~5 dates spread across the series. */
+  xTicks = computed<{ x: number; label: string }[]>(() => {
+    const m = this.chartMetrics();
+    if (!m || !m.growth.length) return [];
+    const n = m.growth.length;
+    const count = Math.min(5, n);
+    const out: { x: number; label: string }[] = [];
+    for (let i = 0; i < count; i++) {
+      const idx = Math.round((i / (count - 1)) * (n - 1));
+      out.push({ x: this.xAt(idx, n), label: (m.growth[idx].date || '').slice(0, 4) });
+    }
+    return out;
   });
 
   growthEndpoints = computed(() => {
@@ -275,30 +335,35 @@ export class LandDetailComponent implements OnInit {
     return { startVal: first.value, endVal: last.value, startDate: first.date, endDate: last.date };
   });
 
-  /** True when the chart's picked source is still loading its series. */
   chartLoading = computed<boolean>(() => this.chartSource() !== 'blend' && !this.chartMetrics());
 
-  private pathFrom(vals: number[], invert = false): string {
-    if (vals.length < 2) return '';
-    const lo = Math.min(...vals), hi = Math.max(...vals);
-    const span = hi - lo || 1;
-    const w = this.chartW - this.padL - this.padR;
-    const h = this.chartH - this.padT - this.padB;
-    return vals.map((v, i) => {
-      const x = this.padL + (i / (vals.length - 1)) * w;
-      const t = (v - lo) / span;
-      const y = invert ? this.padT + t * h : this.padT + (1 - t) * h;
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
-    }).join(' ');
-  }
+  // ── Hover ────────────────────────────────────────────────────────────────────
+  hoverIdx = signal<number | null>(null);
 
-  private areaFrom(vals: number[]): string {
-    const line = this.pathFrom(vals);
-    if (!line) return '';
-    const w = this.chartW - this.padR;
-    const baseY = this.chartH - this.padB;
-    return `${line} L${w.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
+  /** Resolve the mouse x (in the SVG's own viewBox units) to the nearest point. */
+  onChartMove(ev: MouseEvent): void {
+    const svg = (ev.currentTarget as SVGSVGElement);
+    const rect = svg.getBoundingClientRect();
+    const m = this.chartMetrics();
+    if (!m || !m.growth.length || rect.width === 0) return;
+    const xView = ((ev.clientX - rect.left) / rect.width) * this.chartW;
+    const frac = Math.max(0, Math.min(1, (xView - this.padL) / this.plotW));
+    this.hoverIdx.set(Math.round(frac * (m.growth.length - 1)));
   }
+  onChartLeave(): void { this.hoverIdx.set(null); }
+
+  /** The hovered point, with its screen coords + values for the tooltip. */
+  hover = computed(() => {
+    const i = this.hoverIdx();
+    const m = this.chartMetrics(); const b = this.vBounds();
+    if (i == null || !m || !b || !m.growth[i]) return null;
+    const g = m.growth[i];
+    const x = this.xAt(i, m.growth.length);
+    const y = this.yAt(g.value, b.lo, b.hi);
+    const base = m.base_investment || (m.growth[0]?.value ?? 10000);
+    const growthPct = base > 0 ? (g.value / base - 1) * 100 : 0;
+    return { x, y, value: g.value, date: g.date, growthPct, drawdown: g.drawdown };
+  });
 
   projMax = computed<number>(() => {
     const rows = this.projection();
