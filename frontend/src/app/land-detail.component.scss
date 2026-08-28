@@ -122,14 +122,8 @@
 }
 .plate-mark { color: var(--brass); }
 
-/* ---------- hero: plot name → value → how much it grows ---------- */
-.hero { margin: 0.2rem 0 1.4rem; }
-.hero-kicker {
-  display: block;
-  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;
-  color: var(--ink); opacity: 0.55;
-  margin-bottom: 0.3rem;
-}
+/* ---------- hero: concise — plot name, then value · growth on one line ---------- */
+.hero { margin: 0.2rem 0 1.5rem; }
 .hero-name {
   font-family: var(--font-display);
   font-weight: 700;
@@ -139,62 +133,29 @@
   margin: 0;
   color: var(--ink);
 }
+.hero-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
 .hero-value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 2rem;
+  font-size: 1.6rem;
   line-height: 1;
   color: var(--ink);
-  margin-top: 0.7rem;
 }
+.hero-sep { color: var(--ink); opacity: 0.3; font-weight: 700; }
 .hero-grow-line {
   font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
-  opacity: 0.8;
-  margin-top: 0.35rem;
+  opacity: 0.85;
 }
 .hero-grow-line .hg-pct { font-family: var(--font-display); font-weight: 700; color: var(--positive); opacity: 1; }
 .hero-grow-line .star { color: var(--terracotta); font-weight: 700; margin-left: 0.1rem; }
-.hm-unit { font-size: 0.78rem; font-weight: 600; opacity: 0.55; margin-left: 0.05rem; }
-
-/* hidden growth numbers, revealed on tap */
-.hero-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.8rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--survey);
-  border-radius: 8px;
-  background: var(--paper);
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: var(--brass);
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.hero-more:hover { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 6%, var(--paper)); }
-.hm-chev { transition: transform 0.2s ease; }
-.hm-chev.up { transform: rotate(180deg); }
-.hero-details {
-  margin-top: 0.7rem;
-  border: 1px solid var(--survey);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--survey) 8%, var(--paper));
-  overflow: hidden;
-  animation: unfold 0.24s ease both;
-}
-.hd-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 0.6rem 0.95rem;
-}
-.hd-row + .hd-row { border-top: 1px solid color-mix(in srgb, var(--survey) 55%, transparent); }
-.hd-k { font-size: 0.86rem; font-weight: 500; color: var(--ink); opacity: 0.72; }
-.hd-v { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); font-feature-settings: 'tnum' 1; }
-.hd-v.pos { color: var(--positive); }
-.hd-v.neg { color: var(--terracotta); }
 
 /* ---------- combined-performance panel (tappable ratios) ---------- */
 .perf-panel {

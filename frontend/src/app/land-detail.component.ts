@@ -153,8 +153,8 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   activeVariant = computed(() => this.variants.find(v => v.key === this.active())!);
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
 
-  /** The plot's real product name + locality, matching the tapped storefront tile. */
-  plotName = computed(() => schemeName('land', this.active()));
+  /** The plot's name EXACTLY as the tapped tile shows it: "<scheme> Land". */
+  plotName = computed(() => `${schemeName('land', this.active())} Land`);
   plotLocality = computed(() => schemeLocality('land', this.active()));
 
   /** Hero growth ratios are hidden until tapped. */
