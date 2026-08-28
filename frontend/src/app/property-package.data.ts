@@ -355,6 +355,46 @@ export function past5y(property: PropertyKey, variant: VariantKey): number {
   return REAL_METRICS[property][variant].r5;
 }
 
+/** Long-run expected annual return assumption per asset class (%), matching the
+ *  backend engine's priors — used to explain the forward growth figure. */
+const ASSET_PRIOR: Record<'equity' | 'debt' | 'cash', number> = { equity: 12, debt: 6.8, cash: 6.8 };
+/** What asset class each bucket role mostly represents (for the breakdown). */
+const ROLE_ASSET: Record<LegRole, 'equity' | 'debt' | 'cash'> = {
+  growth: 'equity', income: 'cash', liquid: 'cash', hedge: 'debt',
+};
+const ASSET_NAME: Record<'equity' | 'debt' | 'cash', string> = {
+  equity: 'Equity', debt: 'Debt / hybrid', cash: 'Cash / arbitrage',
+};
+
+export interface GrowthPart { label: string; weight: number; rate: number; contrib: number; }
+export interface GrowthBreakdown {
+  observed: number;                 // the funds' real long-run return (5-yr)
+  rows: GrowthPart[];               // weighted asset-class assumption, per class
+  prior: number;                    // the weighted assumption total
+  expected: number;                 // the published forward figure (= REAL_METRICS.exp)
+}
+
+/** Reconstructs HOW the forward growth figure is built, so it can be shown
+ *  transparently: 50% × the funds' real 5-yr return + 50% × a weighted
+ *  asset-class assumption. Self-contained (no API), so it works on the tile. */
+export function growthBreakdown(property: PropertyKey, variant: VariantKey): GrowthBreakdown {
+  const v = PACKAGES[property].variants[variant];
+  const byClass: Record<'equity' | 'debt' | 'cash', number> = { equity: 0, debt: 0, cash: 0 };
+  for (const leg of v.legs) byClass[ROLE_ASSET[leg.role]] += leg.weight;
+  const total = byClass.equity + byClass.debt + byClass.cash || 1;
+  const rows: GrowthPart[] = (['equity', 'debt', 'cash'] as const)
+    .filter((k) => byClass[k] > 0)
+    .map((k) => {
+      const weight = (byClass[k] / total) * 100;
+      const rate = ASSET_PRIOR[k];
+      return { label: ASSET_NAME[k], weight, rate, contrib: (weight / 100) * rate };
+    })
+    .sort((a, b) => b.weight - a.weight);
+  const prior = rows.reduce((s, r) => s + r.contrib, 0);
+  const observed = past5y(property, variant);
+  return { observed, rows, prior, expected: expectedGrowth(property, variant) };
+}
+
 /** Sum of monthly SWP across the income sleeve, for a variant. */
 export function totalMonthlyIncome(v: Variant): number {
   return v.legs.reduce((s, l) => s + l.withdrawMonthly, 0);
