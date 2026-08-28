@@ -331,16 +331,6 @@
 }
 .card-sub { font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.5; }
 
-/* small "Regular plans" tag — makes it explicit these are Regular-plan funds */
-.plan-tag {
-  display: inline-block; vertical-align: middle; margin-left: 0.5rem;
-  padding: 0.15rem 0.5rem; border-radius: 999px;
-  font-family: var(--font-body); font-size: 0.6rem; font-weight: 800;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--brass); background: color-mix(in srgb, var(--brass) 12%, var(--paper));
-  border: 1px solid color-mix(in srgb, var(--brass) 30%, var(--survey));
-}
-
 /* ---------- Past-performance card ---------- */
 .chart-card .card-head { margin-bottom: 0.6rem; }
 /* plain-English readout, sits under the title — subordinate to it */
@@ -666,7 +656,14 @@
   min-height: 44px;
 }
 .fund-w { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--brass); min-width: 3ch; }
-.fund-name { flex: 1; min-width: 0; font-weight: 700; font-size: 0.92rem; color: var(--ink); }
+.fund-name {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem;
+  font-weight: 700; font-size: 0.92rem; color: var(--ink);
+}
+.fund-plan {
+  font-family: var(--font-body); font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.02em; color: var(--brass); opacity: 0.85;
+}
 .fund-amt {
   flex: none; display: inline-flex; align-items: center; gap: 0.25rem;
   font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: var(--ink);
