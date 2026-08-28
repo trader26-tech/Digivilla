@@ -13,13 +13,13 @@
   <!-- ===== loading: minimal, centred, animated ===== -->
   <section class="loading-screen" *ngIf="loading() && !error()">
     <div class="load-center">
-      <!-- soft breathing land mark that self-draws -->
+      <!-- elegant progress ring with the brass mark at centre -->
       <div class="load-mark" aria-hidden="true">
         <svg viewBox="0 0 120 120" fill="none">
-          <path class="lm-plot" d="M14 84 L64 22 L106 52 L58 100 Z"/>
-          <circle class="lm-node" cx="14" cy="84" r="3.5"/><circle class="lm-node" cx="64" cy="22" r="3.5"/>
-          <circle class="lm-node" cx="106" cy="52" r="3.5"/><circle class="lm-node" cx="58" cy="100" r="3.5"/>
+          <circle class="lm-track" cx="60" cy="60" r="46"/>
+          <circle class="lm-arc" cx="60" cy="60" r="46"/>
         </svg>
+        <span class="lm-glyph">◈</span>
       </div>
 
       <!-- plot identity — known instantly -->
