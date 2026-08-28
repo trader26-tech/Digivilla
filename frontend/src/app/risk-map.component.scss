@@ -1,118 +1,151 @@
 /* Inherits the global design tokens (paper/ink/survey/brass). */
-:host { display: block; min-height: 100dvh; background: var(--paper); }
+:host { display: block; height: 100dvh; overflow: hidden; background: var(--paper); }
 
-.rm {
-  position: relative;
-  max-width: 820px;
-  margin: 0 auto;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;   /* the map is the only element — centre it */
-  padding: calc(1rem + env(safe-area-inset-top)) 1.1rem
-           calc(1.6rem + env(safe-area-inset-bottom));
-  color: var(--ink);
+.rm { position: relative; width: 100%; height: 100dvh; overflow: hidden; }
+
+/* ── full-screen pan/zoom viewport ─────────────────────────────── */
+.rm-viewport {
+  position: absolute; inset: 0;
+  cursor: grab; touch-action: none;
+  background: color-mix(in srgb, var(--survey) 14%, var(--paper));
   animation: rmIn 0.4s ease both;
 }
+.rm-viewport:active { cursor: grabbing; }
 @keyframes rmIn { from { opacity: 0; } to { opacity: 1; } }
+.rm-svg { width: 100%; height: 100%; display: block; }
+.rm-svg g { transition: none; }
 
-/* floating back arrow — icon only, no text */
+/* grid 'streets' */
+.rm-grid line { stroke: color-mix(in srgb, var(--ink) 7%, transparent); stroke-width: 1.5; }
+.rm-diag { stroke: color-mix(in srgb, var(--brass) 34%, transparent); stroke-width: 3; stroke-dasharray: 8 10; stroke-linecap: round; }
+.rm-axis { stroke: color-mix(in srgb, var(--ink) 22%, transparent); stroke-width: 2.5; }
+.rm-axlab { fill: var(--ink); opacity: 0.5; font-size: 20px; font-weight: 800; letter-spacing: 0.08em; }
+
+/* ── property markers (teardrop pins) ──────────────────────────── */
+.rm-pin { cursor: pointer; outline: none; }
+.rm-glow { opacity: 0; transition: opacity 0.2s ease; }
+.rm-marker {
+  transform-box: fill-box; transform-origin: center bottom;
+  animation: pinDrop 0.5s cubic-bezier(0.22, 1.5, 0.4, 1) both;
+  animation-delay: var(--d, 0s);
+}
+@keyframes pinDrop { from { transform: translateY(-24px) scale(0.4); opacity: 0; } to { opacity: 1; } }
+.rm-tear { fill: var(--c, var(--brass)); stroke: var(--paper); stroke-width: 3; }
+.rm-tear-dot { fill: var(--paper); }
+.rm-plab {
+  fill: var(--ink); font-size: 17px; font-weight: 700; opacity: 0.92;
+  paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round;
+  pointer-events: none;
+}
+/* hover / focus lifts the pin */
+.rm-pin:hover .rm-marker, .rm-pin:focus .rm-marker { transform: translateY(-3px) scale(1.06); }
+.rm-pin:hover .rm-glow, .rm-pin:focus .rm-glow { opacity: 0.5; }
+
+/* selected pin — bigger, glowing, bold label */
+.rm-pin.sel .rm-glow { opacity: 1; animation: selPulse 2s ease-in-out infinite; }
+.rm-pin.sel .rm-marker { transform: scale(1.22); }
+.rm-pin.sel .rm-tear { stroke-width: 3.5; filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--ink) 40%, transparent)); }
+.rm-pin.sel .rm-plab { font-weight: 800; font-size: 19px; opacity: 1; }
+@keyframes selPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* ── floating controls (fixed on screen) ───────────────────────── */
 .rm-back {
-  position: absolute;
-  top: calc(1rem + env(safe-area-inset-top));
-  left: 1rem;
-  z-index: 2;
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
+  position: absolute; top: calc(1rem + env(safe-area-inset-top)); left: 1rem; z-index: 3;
+  width: 46px; height: 46px; display: grid; place-items: center;
   border: 1px solid var(--survey); border-radius: 50%;
   background: var(--paper); color: var(--brass); cursor: pointer;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
-  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ink) 16%, transparent);
+  transition: transform 0.12s ease;
 }
-.rm-back:hover { box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 16%, transparent); }
-.rm-back:active { transform: scale(0.94); }
+.rm-back:active { transform: scale(0.93); }
 
-/* the map */
-.rm-wrap { width: 100%; overflow: hidden; border-radius: 20px; border: 1px solid var(--survey); background: var(--paper); box-shadow: 0 10px 40px -22px color-mix(in srgb, var(--ink) 40%, transparent); }
-.rm-svg {
-  width: 100%; height: auto; aspect-ratio: 1000 / 720; display: block;
-  background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--positive) 7%, transparent), transparent 55%),
-    radial-gradient(120% 90% at 0% 100%, color-mix(in srgb, var(--survey) 20%, transparent), transparent 55%),
-    var(--paper);
+.rm-zoom {
+  position: absolute; top: calc(1rem + env(safe-area-inset-top)); right: 1rem; z-index: 3;
+  display: flex; flex-direction: column;
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--survey); background: var(--paper);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ink) 16%, transparent);
 }
-
-.rm-axis { stroke: var(--survey); stroke-width: 2; }
-.rm-diag { stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-width: 2; stroke-dasharray: 6 9; }
-.rm-axlab { fill: var(--ink); opacity: 0.5; font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
-
-/* pins — coloured by property, every one labelled, popped in staggered */
-.rm-pin { cursor: pointer; outline: none; }
-.rm-halo { fill: var(--c, var(--brass)); opacity: 0; transition: opacity 0.15s ease; }
-.rm-dot {
-  fill: var(--c, var(--ink));
-  stroke: var(--paper); stroke-width: 3.5;
-  transform-box: fill-box; transform-origin: center;
-  transform: scale(0);
-  animation: pinPop 0.5s cubic-bezier(0.22, 1.4, 0.4, 1) both;
-  animation-delay: var(--d, 0s);
-  transition: r 0.15s ease;
+.rm-zoom button {
+  width: 46px; height: 46px; border: none; background: var(--paper);
+  color: var(--ink); font-size: 1.4rem; font-weight: 400; cursor: pointer;
+  display: grid; place-items: center; transition: background 0.12s ease;
 }
-@keyframes pinPop { to { transform: scale(1); } }
-/* every label is always visible now, with a paper outline so it reads over dots */
-.rm-plab {
-  fill: var(--ink); font-size: 16px; font-weight: 600;
-  opacity: 0.9; pointer-events: none;
-  paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round;
-  transition: opacity 0.15s ease, font-weight 0.15s ease;
-}
-.rm-pin:hover .rm-halo, .rm-pin:focus .rm-halo { opacity: 0.16; }
-.rm-pin:hover .rm-plab, .rm-pin:focus .rm-plab { opacity: 1; }
+.rm-zoom button + button { border-top: 1px solid var(--survey); }
+.rm-zoom button:hover { background: color-mix(in srgb, var(--brass) 10%, var(--paper)); }
+.rm-zoom button:active { background: color-mix(in srgb, var(--brass) 18%, var(--paper)); }
+.rm-reset { color: var(--brass); font-size: 1.15rem; }
 
-/* selected pin stands out — bigger, pulsing ring, bold full name */
-.rm-pin.sel .rm-dot { r: 13; }
-.rm-pin.sel .rm-halo { opacity: 0.22; animation: selPulse 2s ease-in-out infinite; }
-.rm-pin.sel .rm-plab { opacity: 1; font-weight: 800; font-size: 18px; }
-@keyframes selPulse { 0%, 100% { r: 24px; } 50% { r: 30px; } }
-
-/* legend */
 .rm-legend {
-  display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem;
-  justify-content: center; margin-top: 0.7rem;
+  position: absolute; left: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 3;
+  display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; max-width: 62%;
+  padding: 0.55rem 0.8rem; border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--survey);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ink) 12%, transparent);
 }
-.lg { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--ink); opacity: 0.8; }
-.lg-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c, var(--brass)); }
+.lg { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.lg-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--brass)); }
 
-/* readout */
-.rm-read {
-  margin-top: 1rem; padding: 1rem 1.1rem; border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--brass) 38%, var(--survey));
-  background: color-mix(in srgb, var(--brass) 6%, var(--paper));
-  animation: rmIn 0.3s ease both;
+/* ── slide-up info card (Google-Maps style bottom sheet) ───────── */
+.rm-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+  max-width: 640px; margin: 0 auto;
+  padding: 1.1rem 1.2rem calc(1.3rem + env(safe-area-inset-bottom));
+  background: var(--paper);
+  border-radius: 22px 22px 0 0;
+  border: 1px solid var(--survey); border-bottom: none;
+  box-shadow: 0 -12px 40px -16px color-mix(in srgb, var(--ink) 45%, transparent);
+  transform: translateY(110%);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.rr-head { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
-.rr-name { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; color: var(--ink); }
-.rr-prop { font-size: 0.85rem; opacity: 0.65; font-weight: 500; }
-.rr-figs { display: flex; gap: 0.5rem; }
-.rr-fig {
-  flex: 1; display: flex; flex-direction: column; gap: 0.15rem;
-  padding: 0.7rem 0.8rem; border-radius: 10px;
-  background: var(--paper); border: 1px solid var(--survey);
+.rm-sheet.open { transform: translateY(0); }
+.rm-sheet::before {
+  content: ""; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 40px; height: 4px; border-radius: 999px; background: var(--survey);
 }
-.rr-k { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.55; }
-.rr-v { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; line-height: 1.05; color: var(--ink); font-variant-numeric: tabular-nums; }
-/* text values like "Low risk" get a smaller, tidy size so they don't wrap ugly */
-.rr-v.txt { font-size: 1.05rem; line-height: 1.15; }
-.rr-v.pos { color: var(--positive); }
-.rr-v.neg { color: var(--terracotta); }
-.u { font-size: 0.62rem; font-weight: 600; opacity: 0.7; }
-.rr-foot { font-size: 0.68rem; opacity: 0.55; }
-.rr-verdict { margin: 0.8rem 0 0; font-size: 0.92rem; font-weight: 600; color: var(--ink); }
+.sheet-x {
+  position: absolute; top: 0.7rem; right: 0.9rem;
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: color-mix(in srgb, var(--survey) 30%, var(--paper)); color: var(--ink);
+  font-size: 1.2rem; line-height: 1; cursor: pointer;
+}
+.sheet-head { margin: 0.5rem 0 0.9rem; }
+.sheet-badge {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+  background: color-mix(in srgb, var(--c, var(--brass)) 16%, var(--paper));
+  color: color-mix(in srgb, var(--c, var(--brass)) 75%, var(--ink));
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.sheet-name { margin: 0.4rem 0 0.15rem; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; line-height: 1.05; color: var(--ink); }
+.sheet-loc { margin: 0; font-size: 0.86rem; color: var(--ink); opacity: 0.6; }
 
-.rm-note { margin: 1rem 0 0; font-size: 0.74rem; line-height: 1.45; color: var(--ink); opacity: 0.55; text-align: center; }
+.sheet-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.9rem; }
+.ss {
+  display: flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.6rem 0.7rem; border-radius: 10px;
+  background: color-mix(in srgb, var(--survey) 14%, var(--paper)); border: 1px solid var(--survey);
+}
+.ss-k { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.55; }
+.ss-v { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ss-v.pos { color: var(--positive); }
+.ss-v.neg { color: var(--terracotta); }
+.ss-v.txt { font-size: 0.95rem; line-height: 1.15; }
+.u { font-size: 0.6rem; font-weight: 600; opacity: 0.7; }
+
+.sheet-verdict { margin: 0 0 1rem; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+.sheet-cta {
+  width: 100%; border: none; border-radius: 12px; cursor: pointer;
+  padding: 0.95rem 1rem; background: var(--ink); color: var(--paper);
+  font-family: var(--font-body); font-weight: 700; font-size: 1rem;
+  transition: transform 0.12s ease, opacity 0.15s ease;
+}
+.sheet-cta:hover { opacity: 0.92; }
+.sheet-cta:active { transform: scale(0.98); }
 
 @media (prefers-reduced-motion: reduce) {
-  .rm, .rm-read { animation: none; }
-  .rm-dot { transform: scale(1); animation: none; }
-  .rm-pin.sel .rm-halo { animation: none; }
+  .rm-viewport, .rm-marker { animation: none; }
+  .rm-pin.sel .rm-glow { animation: none; }
+  .rm-sheet { transition: none; }
 }

@@ -39,6 +39,12 @@ export class AppComponent {
     window.scrollTo({ top: 0 });
   }
 
+  /** From the map's info card → open that plot's full detail page (no focus). */
+  openFromMap(e: { property: PropertyKey; variant: RiskVariant }): void {
+    this.detail = { property: e.property, variant: e.variant };
+    window.scrollTo({ top: 0 });
+  }
+
   closeDetail(): void {
     this.detail = null;
   }

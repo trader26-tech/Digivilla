@@ -1,47 +1,106 @@
 <main class="rm">
-  <!-- back arrow only, no text -->
-  <button class="rm-back" type="button" (click)="goBack()" aria-label="Back to properties">
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-      <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
-
-  <!-- the map — pure visual, no words -->
-  <div class="rm-wrap">
-    <svg class="rm-svg" [attr.viewBox]="'0 0 ' + W + ' ' + H" role="img" aria-label="Risk versus reward map of every estate">
+  <!-- full-screen pan/zoom map -->
+  <div class="rm-viewport"
+       (pointerdown)="onPointerDown($event)"
+       (pointermove)="onPointerMove($event)"
+       (pointerup)="onPointerUp()"
+       (pointerleave)="onPointerUp()"
+       (wheel)="onWheel($event)"
+       (touchstart)="onTouchStart($event)"
+       (touchmove)="onTouchMove($event)"
+       (touchend)="onTouchEnd($event)">
+    <svg class="rm-svg" [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="xMidYMid slice"
+         role="img" aria-label="Risk versus reward map of every estate — drag to pan, pinch to zoom">
       <defs>
-        <linearGradient id="rmGlow" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.04"/>
-          <stop offset="100%" stop-color="var(--positive)" stop-opacity="0.16"/>
+        <!-- terrain: calmer/steadier lower-left, racier/higher upper-right -->
+        <linearGradient id="terrain" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stop-color="color-mix(in srgb, var(--positive) 14%, var(--paper))"/>
+          <stop offset="48%" stop-color="var(--paper)"/>
+          <stop offset="100%" stop-color="color-mix(in srgb, var(--terracotta) 12%, var(--paper))"/>
         </linearGradient>
-        <marker id="rmArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0 0 L10 5 L0 10 z" fill="var(--ink)" opacity="0.45"/>
+        <radialGradient id="selGlow">
+          <stop offset="0%" stop-color="var(--brass)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--brass)" stop-opacity="0"/>
+        </radialGradient>
+        <marker id="rmArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--ink)" opacity="0.4"/>
         </marker>
       </defs>
 
-      <!-- plot background -->
-      <rect [attr.x]="padL" [attr.y]="padT" [attr.width]="W - padL - padR" [attr.height]="H - padT - padB" rx="16" fill="url(#rmGlow)"/>
+      <!-- everything inside this group pans + zooms together -->
+      <g [attr.transform]="mapTransform()">
+        <!-- terrain fill -->
+        <rect x="0" y="0" [attr.width]="W" [attr.height]="H" fill="url(#terrain)"/>
 
-      <!-- axes, with arrowheads = the only directional cue (reward↑, risk→) -->
-      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="W - padR + 6" [attr.y2]="H - padB" marker-end="url(#rmArrow)"/>
-      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="padL" [attr.y2]="padT - 6" marker-end="url(#rmArrow)"/>
+        <!-- map grid (like streets) -->
+        <g class="rm-grid">
+          <line *ngFor="let gx of gridX" [attr.x1]="gx" [attr.y1]="0" [attr.x2]="gx" [attr.y2]="H"/>
+          <line *ngFor="let gy of gridY" [attr.x1]="0" [attr.y1]="gy" [attr.x2]="W" [attr.y2]="gy"/>
+        </g>
 
-      <!-- fair-value diagonal -->
-      <line class="rm-diag" [attr.x1]="diag.x1" [attr.y1]="diag.y1" [attr.x2]="diag.x2" [attr.y2]="diag.y2"/>
+        <!-- fair-value diagonal (a 'main road') -->
+        <line class="rm-diag" [attr.x1]="diag.x1" [attr.y1]="diag.y1" [attr.x2]="diag.x2" [attr.y2]="diag.y2"/>
 
-      <!-- pins: coloured dots only, the selected one highlighted -->
-      <g *ngFor="let pin of pins(); let i = index; trackBy: trackPin"
-         class="rm-pin"
-         [class.sel]="pin.isSelected"
-         [style.--d]="i * 0.045 + 's'"
-         [style.--c]="pin.color"
-         (click)="select(pin)"
-         tabindex="0"
-         role="button"
-         [attr.aria-label]="pin.name + ' ' + pin.propName + ', ' + pin.riskLabel + ', reward ' + pin.reward + '%'">
-        <circle class="rm-halo" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="22"/>
-        <circle class="rm-dot" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="11"/>
+        <!-- axes with arrowheads: reward ↑, risk → -->
+        <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="W - padR + 6" [attr.y2]="H - padB" marker-end="url(#rmArrow)"/>
+        <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="padL" [attr.y2]="padT - 6" marker-end="url(#rmArrow)"/>
+        <text class="rm-axlab" [attr.x]="padL + (W - padL - padR) / 2" [attr.y]="H - 30" text-anchor="middle">RISK →</text>
+        <text class="rm-axlab" [attr.x]="26" [attr.y]="padT + (H - padT - padB) / 2" text-anchor="middle" [attr.transform]="'rotate(-90 26 ' + (padT + (H - padT - padB) / 2) + ')'">REWARD →</text>
+
+        <!-- property markers: teardrop pins, coloured, named -->
+        <g *ngFor="let pin of pins(); let i = index; trackBy: trackPin"
+           class="rm-pin"
+           [class.sel]="pin.isSelected"
+           [style.--d]="i * 0.04 + 's'"
+           [style.--c]="pin.color"
+           (click)="select(pin)"
+           tabindex="0"
+           role="button"
+           [attr.aria-label]="pin.name + ' ' + pin.propName + ', ' + pin.riskLabel + ', reward ' + pin.reward + '%'">
+          <!-- selection glow -->
+          <circle class="rm-glow" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="46" fill="url(#selGlow)"/>
+          <!-- teardrop pin (translated to the point; tip at cy) -->
+          <g class="rm-marker" [attr.transform]="'translate(' + pin.cx + ' ' + pin.cy + ')'">
+            <path class="rm-tear" d="M0 0 C -13 -20 -11 -34 0 -40 C 11 -34 13 -20 0 0 Z"/>
+            <circle class="rm-tear-dot" cx="0" cy="-27" r="6"/>
+          </g>
+          <!-- name label -->
+          <text class="rm-plab" [attr.x]="pin.cx" [attr.y]="pin.cy + 18" text-anchor="middle">{{ pin.shortName }}</text>
+        </g>
       </g>
     </svg>
+
+    <!-- floating controls (screen-fixed, don't pan) -->
+    <button class="rm-back" type="button" (click)="goBack()" aria-label="Back to properties">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="rm-zoom">
+      <button type="button" (click)="zoomIn()" aria-label="Zoom in">＋</button>
+      <button type="button" (click)="zoomOut()" aria-label="Zoom out">－</button>
+      <button type="button" class="rm-reset" (click)="resetView()" aria-label="Reset view">⤢</button>
+    </div>
+    <div class="rm-legend">
+      <span class="lg" *ngFor="let p of legendProps" [style.--c]="colorOf(p)"><i class="lg-dot"></i>{{ propName(p) }}</span>
+    </div>
+  </div>
+
+  <!-- slide-up info card (Google-Maps style) -->
+  <div class="rm-sheet" [class.open]="card()" *ngIf="card() as c" [style.--c]="c.color">
+    <button class="sheet-x" type="button" (click)="closeCard()" aria-label="Close">×</button>
+    <div class="sheet-head">
+      <span class="sheet-badge">{{ c.propName }}</span>
+      <h2 class="sheet-name">{{ c.name }}</h2>
+      <p class="sheet-loc">{{ c.locality }}</p>
+    </div>
+    <div class="sheet-stats">
+      <div class="ss"><span class="ss-k">Price</span><span class="ss-v">{{ compact(c.price) }}</span></div>
+      <div class="ss"><span class="ss-k">Reward</span><span class="ss-v pos">{{ pct(c.reward) }}<span class="u">/yr</span></span></div>
+      <div class="ss"><span class="ss-k">Risk</span><span class="ss-v neg" [class.txt]="c.riskPct == null">{{ c.riskPct != null ? pct(c.riskPct) : c.riskLabel }}</span></div>
+      <div class="ss" *ngIf="c.incomePays"><span class="ss-k">Income</span><span class="ss-v">{{ inr(c.rentMonthly) }}<span class="u">/mo</span></span></div>
+      <div class="ss" *ngIf="!c.incomePays"><span class="ss-k">Type</span><span class="ss-v txt">Pure growth</span></div>
+      <div class="ss"><span class="ss-k">Reward/risk</span><span class="ss-v" [class.pos]="(c.rrRatio ?? 0) >= 0.9">{{ c.rrRatio !== null ? (c.rrRatio | number:'1.2-2') : '—' }}</span></div>
+    </div>
+    <p class="sheet-verdict">{{ c.verdict }}</p>
+    <button class="sheet-cta" type="button" (click)="viewFull()">View full details →</button>
   </div>
 </main>

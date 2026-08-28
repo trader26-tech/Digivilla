@@ -13,6 +13,7 @@
   [property]="detail.property"
   [initialVariant]="detail.variant"
   (back)="closeDetail()"
+  (openDetail)="openFromMap($event)"
 ></app-risk-map>
 
 <!-- Land keeps its own dedicated detail page. -->

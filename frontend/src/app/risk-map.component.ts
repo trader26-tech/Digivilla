@@ -57,13 +57,30 @@ export class RiskMapComponent implements OnInit {
   @Input() property: PropertyKey = 'flat';
   @Input() initialVariant: VariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
+  /** "View full page" on the info card → open that plot's detail page. */
+  @Output() openDetail = new EventEmitter<{ property: PropertyKey; variant: VariantKey }>();
 
   private api = inject(PropertyDetailService);
 
   readonly PACKAGES = PACKAGES;
 
-  /** Which pin is selected (defaults to the tapped scheme). */
-  selected = signal<{ property: PropertyKey; variant: VariantKey }>({ property: 'flat', variant: 'balanced' });
+  /** Which pin is selected. null = no card showing (nothing tapped yet). */
+  selected = signal<{ property: PropertyKey; variant: VariantKey } | null>(null);
+
+  /** ── Pan / zoom (Google-Maps style) ─────────────────────────────────── */
+  tx = signal(0);      // pan translate x
+  ty = signal(0);      // pan translate y
+  scale = signal(1);   // zoom
+  readonly minScale = 1;
+  readonly maxScale = 3.5;
+
+  private dragging = false;
+  private moved = false;
+  private startX = 0; private startY = 0;
+  private startTx = 0; private startTy = 0;
+  // pinch
+  private pinchDist = 0;
+  private startScale = 1;
 
   /** Measured metrics per scheme key ('property:variant'), for real volatility. */
   metrics = signal<Record<string, BasketMetrics>>({});
@@ -76,6 +93,10 @@ export class RiskMapComponent implements OnInit {
   readonly padR = 40;
   readonly padT = 56;
   readonly padB = 84;
+
+  /** Grid lines ('streets') for the map look. */
+  readonly gridX: number[] = Array.from({ length: 9 }, (_, i) => (this.W / 9) * (i + 1));
+  readonly gridY: number[] = Array.from({ length: 7 }, (_, i) => (this.H / 7) * (i + 1));
 
   ngOnInit(): void {
     this.selected.set({ property: this.property, variant: this.initialVariant });
@@ -143,7 +164,7 @@ export class RiskMapComponent implements OnInit {
         cx: this.padL + rx * innerW,
         cy: this.padT + (1 - ry) * innerH,
         labelAbove: true,
-        isSelected: r.property === sel.property && r.variant === sel.variant,
+        isSelected: r.property === sel?.property && r.variant === sel?.variant,
       };
     });
 
@@ -198,8 +219,85 @@ export class RiskMapComponent implements OnInit {
   });
 
   select(p: MapPin): void {
+    if (this.moved) return;   // ignore taps that were really a drag
     this.selected.set({ property: p.property, variant: p.variant });
   }
+  closeCard(): void { this.selected.set(null); }
+  viewFull(): void {
+    const s = this.selected();
+    if (s) this.openDetail.emit(s);
+  }
+
+  /** Rich detail for the info card of the selected plot. */
+  card = computed(() => {
+    const pin = this.selectedPin();
+    if (!pin) return null;
+    const pkg = PACKAGES[pin.property];
+    const v = pkg.variants[pin.variant];
+    return {
+      name: pin.name,
+      propName: pin.propName,
+      riskLabel: pin.riskLabel,
+      color: pin.color,
+      locality: schemeLocality(pin.property, pin.variant),
+      price: pkg.price,
+      reward: v.targetGrowth,
+      riskPct: pin.riskPct,
+      rentMonthly: v.rentMonthly,
+      incomePays: pkg.incomePays,
+      rrRatio: this.rewardPerRisk(),
+      verdict: this.verdict(),
+    };
+  });
+
+  // ── Pan / zoom handlers ───────────────────────────────────────────────
+  onPointerDown(e: PointerEvent): void {
+    this.dragging = true; this.moved = false;
+    this.startX = e.clientX; this.startY = e.clientY;
+    this.startTx = this.tx(); this.startTy = this.ty();
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+  }
+  onPointerMove(e: PointerEvent): void {
+    if (!this.dragging) return;
+    const dx = e.clientX - this.startX, dy = e.clientY - this.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this.moved = true;
+    this.tx.set(this.startTx + dx);
+    this.ty.set(this.startTy + dy);
+  }
+  onPointerUp(): void { this.dragging = false; }
+
+  onWheel(e: WheelEvent): void {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    this.zoomBy(factor);
+  }
+  onTouchStart(e: TouchEvent): void {
+    if (e.touches.length === 2) {
+      this.pinchDist = this.touchDist(e);
+      this.startScale = this.scale();
+    }
+  }
+  onTouchMove(e: TouchEvent): void {
+    if (e.touches.length === 2 && this.pinchDist > 0) {
+      e.preventDefault();
+      const d = this.touchDist(e);
+      this.setScale(this.startScale * (d / this.pinchDist));
+    }
+  }
+  onTouchEnd(e: TouchEvent): void { if (e.touches.length < 2) this.pinchDist = 0; }
+  private touchDist(e: TouchEvent): number {
+    const [a, b] = [e.touches[0], e.touches[1]];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  }
+  zoomIn(): void { this.zoomBy(1.3); }
+  zoomOut(): void { this.zoomBy(1 / 1.3); }
+  resetView(): void { this.tx.set(0); this.ty.set(0); this.scale.set(1); }
+  private zoomBy(f: number): void { this.setScale(this.scale() * f); }
+  private setScale(s: number): void {
+    this.scale.set(Math.max(this.minScale, Math.min(this.maxScale, s)));
+  }
+  /** The transform string for the pan/zoom group. */
+  mapTransform = computed(() => `translate(${this.tx()} ${this.ty()}) scale(${this.scale()})`);
 
   /** Legend colour for a property. */
   colorOf(p: PropertyKey): string { return PROP_COLOR[p]; }
@@ -215,6 +313,22 @@ export class RiskMapComponent implements OnInit {
   pct(v: number | null | undefined, dp = 1): string {
     if (v == null) return '—';
     return v.toFixed(dp) + '%';
+  }
+  inr(v: number | null | undefined): string {
+    if (v == null) return '—';
+    return '₹' + Math.round(v).toLocaleString('en-IN');
+  }
+  compact(v: number | null | undefined): string {
+    if (v == null) return '—';
+    if (v >= 1_00_00_000) {
+      const cr = v / 1_00_00_000;
+      return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr';
+    }
+    if (v >= 1_00_000) {
+      const l = v / 1_00_000;
+      return '₹' + (l % 1 === 0 ? l : l.toFixed(1).replace(/\.0$/, '')) + 'L';
+    }
+    return '₹' + Math.round(v).toLocaleString('en-IN');
   }
   trackPin = (_: number, p: MapPin): string => `${p.property}:${p.variant}`;
 }
