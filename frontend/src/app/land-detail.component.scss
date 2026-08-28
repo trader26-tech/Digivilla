@@ -22,68 +22,85 @@
 }
 @keyframes reveal { to { opacity: 1; transform: none; } }
 
-/* ---------- loading screen: plot + rotating benefits ---------- */
+/* ---------- loading screen: minimal, centred, animated ---------- */
 .loading-screen {
-  padding: 0.4rem 0 2rem;
-  animation: reveal 0.4s ease both;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 5rem);
 }
-.loading-screen .hero-kicker { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.55; margin-bottom: 0.3rem; }
-.loading-screen .hero-name {
-  font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(2rem, 8.5vw, 2.8rem); line-height: 1.02; letter-spacing: -0.02em;
-  margin: 0; color: var(--ink);
-}
-.loading-screen .hero-value {
-  font-family: var(--font-display); font-weight: 700; font-size: 2rem;
-  line-height: 1; color: var(--ink); margin-top: 0.7rem;
+.load-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 30ch;
+  padding-bottom: 8vh;   /* optical centring, sits a touch above middle */
 }
 
-.benefit-stage {
-  margin-top: 1.8rem;
-  min-height: 210px;
-  display: flex;
-  flex-direction: column;
+/* breathing land mark that draws itself once */
+.load-mark { width: 88px; height: 88px; margin-bottom: 1.6rem; animation: breathe 3s ease-in-out infinite; }
+.load-mark svg { width: 100%; height: 100%; display: block; }
+.lm-plot {
+  stroke: var(--brass); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none;
+  stroke-dasharray: 320; stroke-dashoffset: 320;
+  animation: draw 1.1s ease forwards 0.15s;
 }
-.benefit-card {
-  flex: 1;
-  padding: 1.4rem;
-  border: 1px solid var(--survey);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--brass) 5%, var(--paper));
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  /* re-key the animation each time the index changes → cross-fade + rise */
-  animation: benefitIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+.lm-node {
+  fill: var(--brass); opacity: 0;
+  animation: fadeNode 0.4s ease forwards 1s;
 }
-@keyframes benefitIn {
-  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+@keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes fadeNode { to { opacity: 1; } }
+
+.load-kicker {
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--ink); opacity: 0;
+  animation: rise 0.6s cubic-bezier(0.2,0.7,0.2,1) forwards 0.5s;
+}
+.load-name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(2.2rem, 9vw, 3rem); line-height: 1.04; letter-spacing: -0.02em;
+  margin: 0.35rem 0 0; color: var(--ink);
+  opacity: 0;
+  animation: rise 0.7s cubic-bezier(0.2,0.7,0.2,1) forwards 0.62s;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* one rotating benefit line, cross-fades each tick */
+.load-benefit {
+  margin: 1.5rem 0 0;
+  min-height: 2.8em;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--positive);
+  animation: benefitSwap 0.55s cubic-bezier(0.2,0.7,0.2,1) both;
+}
+@keyframes benefitSwap {
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
-.benefit-ic {
-  width: 48px; height: 48px;
-  display: grid; place-items: center;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--brass) 12%, var(--paper));
-  color: var(--brass);
-}
-.benefit-title {
-  font-family: var(--font-display); font-weight: 700;
-  font-size: 1.3rem; line-height: 1.15; margin: 0.2rem 0 0; color: var(--ink);
-}
-.benefit-body { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--ink); opacity: 0.75; }
-.benefit-dots { display: flex; gap: 0.4rem; justify-content: center; margin-top: 1rem; }
-.bdot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--survey);
-  transition: background 0.3s ease, width 0.3s ease;
-}
-.bdot.on { background: var(--brass); width: 20px; border-radius: 4px; }
 
-.loading-foot {
-  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  margin-top: 1.6rem;
-  font-size: 0.82rem; font-weight: 500; color: var(--ink); opacity: 0.55;
+/* thin indeterminate progress bar */
+.load-bar {
+  width: 128px; height: 3px; margin-top: 1.8rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--survey) 70%, transparent);
+  overflow: hidden;
+  opacity: 0;
+  animation: rise 0.5s ease forwards 0.9s;
+}
+.load-bar span {
+  display: block; height: 100%; width: 40%;
+  border-radius: 3px;
+  background: var(--brass);
+  animation: slide 1.3s ease-in-out infinite;
+}
+@keyframes slide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(340%); }
 }
 
 /* ---------- top bar ---------- */
@@ -449,6 +466,10 @@
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .reveal { animation: none; opacity: 1; transform: none; }
+  .load-mark { animation: none; }
+  .lm-plot { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+  .lm-node, .load-kicker, .load-name, .load-benefit, .load-bar { animation: none; opacity: 1; transform: none; }
+  .load-bar span { animation: slide 1.6s linear infinite; }   /* keep the progress hint moving */
   .g-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .bar-stack { animation: none; }
   .alloc-seg { transition: none; }
