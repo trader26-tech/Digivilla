@@ -57,27 +57,6 @@
   animation: fadeIn 2s ease forwards;
 }
 
-/* light rays sweeping up */
-.ray {
-  position: absolute;
-  left: 50%;
-  bottom: 32%;
-  width: 3px;
-  height: 60vh;
-  transform-origin: bottom center;
-  background: linear-gradient(to top, rgba(166, 124, 46, 0.42), transparent 70%);
-  opacity: 0;
-  animation: rayIn 2.4s ease forwards;
-}
-.r1 { transform: translateX(-50%) rotate(-26deg); animation-delay: 0.5s; }
-.r2 { transform: translateX(-50%) rotate(0deg); animation-delay: 0.65s; }
-.r3 { transform: translateX(-50%) rotate(26deg); animation-delay: 0.8s; }
-@keyframes rayIn {
-  0% { opacity: 0; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.35; }
-}
-
 /* layered silhouetted hills for depth */
 .hills {
   position: absolute;
@@ -164,7 +143,7 @@
   letter-spacing: -0.02em;
   line-height: 0.98;
   font-size: clamp(2.6rem, 12vw, 6rem);
-  text-shadow: 0 4px 26px rgba(250, 248, 243, 0.85), 0 1px 2px rgba(250, 248, 243, 0.9);
+  text-shadow: 0 1px 1px rgba(22, 48, 43, 0.12);
 }
 .freedom .w {
   display: block;
@@ -174,16 +153,12 @@
   animation: wordIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .freedom .w:nth-child(1) { animation-delay: 0.55s; }
+/* Emphasis word: solid, high-contrast terracotta so it reads crisply
+   on the warm paper — no transparent gradient fill (that made it faint). */
 .freedom .w.em {
-  background: linear-gradient(100deg, #C69A44 0%, #A67C2E 45%, #8C4A32 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #8C4A32;
   animation-delay: 0.9s;
 }
-/* The gradient word can't use text-shadow (transparent fill), and wordIn
-   animates `filter`, so its glow is baked into the wordInEm end-frame. */
-.freedom .w.em { animation-name: wordInEm; }
 .rule {
   display: block;
   width: 0;
@@ -196,15 +171,6 @@
 @keyframes wordIn {
   to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
-/* same motion as wordIn but ends with a soft glow that persists (forwards) */
-@keyframes wordInEm {
-  from { opacity: 0; transform: translateY(0.5em); filter: blur(10px); }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0) drop-shadow(0 2px 10px rgba(166, 124, 46, 0.35));
-  }
-}
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -214,7 +180,7 @@
 
 /* --------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .sun, .glow, .ray, .hill, .kicker, .freedom .w, .rule {
+  .sun, .glow, .hill, .kicker, .freedom .w, .rule {
     animation-duration: 0.01s !important;
     animation-delay: 0s !important;
     opacity: 1 !important;
