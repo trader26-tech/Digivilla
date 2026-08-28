@@ -225,14 +225,29 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   windowReadout = computed<{ from: number; to: number; pct: number; startDate: string } | null>(() => {
     const w = this.windowedGrowth();
     if (w.length < 2) return null;
-    // Base the readout on the ACTUAL amount invested (the ticket price), not a
-    // generic ₹10,000 — so it reads "₹10,00,000 → ₹14,00,000".
     const base = this.amount();
     const first = w[0].value, last = w[w.length - 1].value;
     if (first <= 0) return null;
     const to = base * (last / first);
     return { from: base, to, pct: (last / first - 1) * 100, startDate: w[0].date };
   });
+
+  /** Annualised return (CAGR) over the selected window — the headline number. */
+  windowCagr = computed<number | null>(() => {
+    const w = this.windowedGrowth();
+    if (w.length < 2) return null;
+    const first = w[0].value, last = w[w.length - 1].value;
+    if (first <= 0) return null;
+    const years = (w.length - 1) / 12;
+    if (years <= 0) return null;
+    return (Math.pow(last / first, 1 / years) - 1) * 100;
+  });
+  /** Number of years the window spans, for the "over N years" label. */
+  windowYears = computed<number>(() => Math.max(1, Math.round((this.windowedGrowth().length - 1) / 12)));
+
+  /** The jargon readout stays hidden until the user taps to reveal it. */
+  ppInfoOpen = signal(false);
+  togglePpInfo(): void { this.ppInfoOpen.update(v => !v); }
 
   ngOnInit(): void {
     this.variants = variantsFor(this.property);

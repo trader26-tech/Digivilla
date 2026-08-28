@@ -51,7 +51,8 @@
 }
 .load-mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
-/* the plot boundary draws itself, then breathes gently */
+/* everything one colour (brass). plot draws, corner nodes pop, pin drops,
+   then a gentle breathe keeps it alive — no radar ripples. */
 .lm-plot {
   fill: none;
   stroke: var(--brass);
@@ -61,7 +62,7 @@
   transform-origin: 60px 60px;
   animation:
     draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.15s,
-    plotBreathe 3s ease-in-out infinite 1.2s;
+    plotBreathe 2.8s ease-in-out infinite 1.3s;
 }
 /* corner survey nodes pop in one by one */
 .lm-node { fill: var(--brass); opacity: 0; animation: nodePop 0.4s cubic-bezier(0.34,1.5,0.5,1) forwards; }
@@ -70,41 +71,26 @@
 .lm-node:nth-of-type(3) { animation-delay: 1s; }
 .lm-node:nth-of-type(4) { animation-delay: 1.15s; }
 
-/* soft radar ripple from the pin — loops, keeps the scene alive */
-.lm-ripple {
-  fill: none;
-  stroke: var(--brass);
-  stroke-width: 1.6;
-  transform-origin: 60px 60px;
-  opacity: 0;
-  animation: ripple 2.2s ease-out infinite 1.5s;
-}
-.lm-ripple.r2 { animation-delay: 2.6s; }
-
-/* location pin drops into the centre, then bobs softly */
+/* location pin drops into the centre, then bobs softly — brass, one colour */
 .lm-pin {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--brass);
   stroke-width: 2.2;
   stroke-linejoin: round;
   opacity: 0;
   transform-origin: 60px 76px;
   animation:
     pinDrop 0.55s cubic-bezier(0.34, 1.6, 0.5, 1) forwards 1.25s,
-    pinBob 2.4s ease-in-out infinite 1.9s;
+    pinBob 2.6s ease-in-out infinite 2s;
 }
 .lm-pin-dot { fill: var(--brass); opacity: 0; animation: fadeNode 0.3s ease forwards 1.55s; }
 
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes fadeNode { to { opacity: 1; } }
 @keyframes nodePop { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
-@keyframes plotBreathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.97); opacity: 0.82; } }
+@keyframes plotBreathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.97); opacity: 0.85; } }
 @keyframes pinDrop { from { opacity: 0; transform: translateY(-12px) scale(0.7); } to { opacity: 1; transform: none; } }
 @keyframes pinBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
-@keyframes ripple {
-  0%   { opacity: 0.5; transform: scale(0.15); }
-  100% { opacity: 0;   transform: scale(1); }
-}
 
 .load-kicker {
   font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em;
@@ -647,7 +633,6 @@
   .sb-stack { animation: none; transform: none; }
   .lm-plot { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
   .lm-node, .lm-pin, .lm-pin-dot, .load-kicker, .load-name, .load-benefit, .load-bar { animation: none; opacity: 1; transform: none; }
-  .lm-ripple { display: none; }
   .load-bar span { animation: slide 1.6s linear infinite; }   /* keep the progress hint moving */
   .g-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .bar-stack { animation: none; }

@@ -62,11 +62,17 @@
         </label>
       </div>
 
-      <!-- plain-English readout, right under the title (subordinate to it) -->
-      <p class="pp-readout" *ngIf="windowReadout() as r">
-        {{ compact(r.from) }} invested {{ rangeWords() }} would be worth
-        <b>{{ compact(r.to) }}</b> today
-        <span class="ppr-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
+      <!-- clean headline: CAGR + total growth over the window. Tap for detail. -->
+      <div class="pp-head" *ngIf="windowReadout() as r">
+        <div class="pp-nums">
+          <span class="pp-cagr" [class.pos]="(windowCagr() ?? 0) >= 0" [class.neg]="(windowCagr() ?? 0) < 0">{{ pct(windowCagr()) }}<span class="pp-u">/yr</span></span>
+          <span class="pp-sub">CAGR · {{ pct(r.pct, 0) }} total over {{ windowYears() }} {{ windowYears() === 1 ? 'year' : 'years' }}</span>
+        </div>
+        <button class="pp-i" type="button" (click)="togglePpInfo()" [class.on]="ppInfoOpen()" [attr.aria-expanded]="ppInfoOpen()" aria-label="What this means">?</button>
+      </div>
+      <p class="pp-detail" *ngIf="ppInfoOpen() && windowReadout() as r">
+        {{ compact(r.from) }} invested {{ rangeWords() }} would be worth <b>{{ compact(r.to) }}</b> today —
+        a {{ pct(windowCagr()) }} annual compound return, computed from these funds' real NAV history.
       </p>
 
       <!-- time-range tabs -->
