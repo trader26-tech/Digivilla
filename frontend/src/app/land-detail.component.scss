@@ -22,18 +22,9 @@
 }
 @keyframes reveal { to { opacity: 1; transform: none; } }
 
-/* reveal-on-scroll: cards fill in as they enter the viewport */
-.reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
-              transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
-  will-change: opacity, transform;
-}
-.reveal-on-scroll.revealed { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  .reveal-on-scroll { opacity: 1; transform: none; transition: none; }
-}
+/* reveal-on-scroll: disabled — content shows immediately, no animation */
+.reveal-on-scroll,
+.reveal-on-scroll.revealed { opacity: 1; transform: none; transition: none; }
 
 /* ---------- loading screen: minimal, centred, animated ---------- */
 .loading-screen {
@@ -226,15 +217,16 @@
 .spinner.sm { width: 14px; height: 14px; border-width: 2px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---------- generic card — one self-contained component ---------- */
+/* ---------- section — no box, just title + content, divided by a hairline ---------- */
 .card {
-  margin-bottom: 1.1rem;
-  padding: 1.25rem 1.2rem;
-  border: 1px solid color-mix(in srgb, var(--survey) 80%, transparent);
-  border-radius: 18px;
-  background: var(--paper);
-  box-shadow: 0 1px 2px rgba(22, 48, 43, 0.04), 0 8px 24px -18px rgba(22, 48, 43, 0.25);
+  margin: 0;
+  padding: 1.6rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--survey) 70%, transparent);
 }
+.card:first-of-type { border-top: none; }
 .card-head {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem;

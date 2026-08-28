@@ -7,18 +7,9 @@
   (openProperty)="openProperty($event)"
 ></app-storefront>
 
-<!-- Risk × Reward map — a dedicated page (any tile's risk label opens this). -->
-<app-risk-map
-  *ngIf="!intro && detail && detail.focus === 'map'"
-  [property]="detail.property"
-  [initialVariant]="detail.variant"
-  (back)="closeDetail()"
-  (openDetail)="openFromMap($event)"
-></app-risk-map>
-
 <!-- Land keeps its own dedicated detail page. -->
 <app-land-detail
-  *ngIf="!intro && detail && detail.focus !== 'map' && detail.property === 'land'"
+  *ngIf="!intro && detail && detail.property === 'land'"
   [initialVariant]="detail.variant"
   (back)="closeDetail()"
 ></app-land-detail>
@@ -26,7 +17,7 @@
 <!-- Flat / Apartment / Duplex — income-tier detail page (Land template +
      monthly-income bucket mechanics + tax note; no Monte Carlo). -->
 <app-estate-detail
-  *ngIf="!intro && detail && detail.focus !== 'map' && detail.property !== 'land'"
+  *ngIf="!intro && detail && detail.property !== 'land'"
   [property]="detail.property"
   [initialVariant]="detail.variant"
   (back)="closeDetail()"

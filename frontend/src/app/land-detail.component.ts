@@ -439,15 +439,20 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
   });
 
-  /** Y-axis ticks: 4 evenly spaced ₹ amounts across the windowed range. */
+  /** Y-axis ticks: 4 evenly spaced ₹ amounts — labelled in the INVESTOR's money
+   *  (their invested amount grown), not the raw fund NAV, so ₹10L reads as ₹10L. */
   yTicks = computed<{ y: number; label: string }[]>(() => {
     const b = this.vBounds();
-    if (!b) return [];
+    const w = this.windowedGrowth();
+    if (!b || !w.length) return [];
+    const start = w[0].value || 1;          // NAV at the window start
+    const invested = this.amount();          // what the customer put in
     const n = 4;
     const out: { y: number; label: string }[] = [];
     for (let i = 0; i <= n; i++) {
-      const v = b.lo + (i / n) * (b.hi - b.lo);
-      out.push({ y: this.yAt(v, b.lo, b.hi), label: this.compact(v) });
+      const v = b.lo + (i / n) * (b.hi - b.lo);      // raw NAV at this gridline
+      const worth = invested * (v / start);          // → investor rupees
+      out.push({ y: this.yAt(v, b.lo, b.hi), label: this.compact(worth) });
     }
     return out;
   });
