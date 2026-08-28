@@ -246,15 +246,15 @@
     <!-- ===== CTA ===== -->
     <section class="cta-row">
       <div class="cta-figs">
-        <span class="cta-k">{{ plots() }} × {{ activeVariant().name }} Land</span>
-        <span class="cta-v">{{ inr(amount()) }}</span>
+        <span class="cta-k">{{ activeVariant().name }} {{ propName }}</span>
+        <span class="cta-v">{{ inr(ticketPrice) }}</span>
       </div>
-      <button class="cta-btn" type="button">Reserve {{ plots() === 1 ? 'this plot' : plots() + ' plots' }}</button>
+      <button class="cta-btn" type="button">Reserve this {{ propName.toLowerCase() }}</button>
     </section>
   </ng-container>
 
   <p class="disclaimer">
     <span class="star">*</span> Past growth, from each fund's real NAV history — similar may be expected ahead,
-    but is not guaranteed. Capital appreciation only; no rental income. Subject to market risk.
+    but is not guaranteed. Subject to market risk.
   </p>
 </main>
