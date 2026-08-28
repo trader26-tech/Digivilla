@@ -352,6 +352,23 @@ export function schemeLocality(property: PropertyKey, variant: VariantKey): stri
   return SCHEME_META[property][variant].locality;
 }
 
+/** The storefront's property-world variant keys. */
+export type StoreVariantKey = 'ready' | 'construction' | 'prelaunch';
+
+/** Map a storefront variant key → the risk profile it represents. Single source
+ *  of truth for this mapping so the storefront and detail page never drift. */
+export const RISK_OF_STORE: Record<StoreVariantKey, VariantKey> = {
+  ready: 'conservative',
+  construction: 'balanced',
+  prelaunch: 'aggressive',
+};
+
+/** Unique dev name from a storefront (property, store-variant) pair — the
+ *  helper the storefront uses so its tiles match the detail-page hero. */
+export function storeSchemeName(property: PropertyKey, storeVariant: StoreVariantKey): string {
+  return schemeName(property, RISK_OF_STORE[storeVariant]);
+}
+
 /** Every (property, variant) pair, for building the risk-reward map. */
 export const ALL_SCHEMES: { property: PropertyKey; variant: VariantKey }[] =
   (Object.keys(PACKAGES) as PropertyKey[]).flatMap((p) =>
