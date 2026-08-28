@@ -1,23 +1,34 @@
-<main class="ed">
+<main class="ld">
+  <!-- ===== top bar ===== -->
   <header class="topbar">
     <button class="back" type="button" (click)="goBack()" aria-label="Back to properties">
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       <span>Properties</span>
     </button>
     <span class="plate"><span class="plate-mark" aria-hidden="true">◈</span>PropertyNest</span>
   </header>
 
-  <!-- ===== loading ===== -->
+  <!-- ===== loading: minimal, centred, animated ===== -->
   <section class="loading-screen" *ngIf="loading() && !error()">
     <div class="load-center">
+      <!-- soft breathing land mark that self-draws -->
       <div class="load-mark" aria-hidden="true">
         <svg viewBox="0 0 120 120" fill="none">
-          <rect class="lm-plot" x="26" y="30" width="68" height="64" rx="4"/>
-          <path class="lm-plot" d="M26 52 H94 M60 52 V94 M26 30 L60 14 L94 30"/>
+          <path class="lm-plot" d="M14 84 L64 22 L106 52 L58 100 Z"/>
+          <circle class="lm-node" cx="14" cy="84" r="3.5"/><circle class="lm-node" cx="64" cy="22" r="3.5"/>
+          <circle class="lm-node" cx="106" cy="52" r="3.5"/><circle class="lm-node" cx="58" cy="100" r="3.5"/>
         </svg>
       </div>
+
+      <!-- plot identity — known instantly -->
       <h1 class="load-name">{{ plotName() }}</h1>
-      <p class="load-benefit" *ngFor="let _ of [benefitIdx()]">{{ benefits[benefitIdx()] }}</p>
+
+      <!-- one rotating benefit line — re-rendered each tick so it animates -->
+      <p class="load-benefit" *ngFor="let _ of [benefitIdx()]">{{ benefits[benefitIdx()].title }}</p>
+
+      <!-- thin indeterminate progress -->
       <div class="load-bar" aria-hidden="true"><span></span></div>
     </div>
   </section>
@@ -25,93 +36,17 @@
   <div class="state err" *ngIf="error()">{{ error() }}</div>
 
   <ng-container *ngIf="!loading() && !error() && activeMetrics() as m">
-    <!-- ===== hero ===== -->
+    <!-- ===== hero: just the plot name, then value + growth on one line ===== -->
     <section class="hero">
-      <h1 class="hero-name">{{ plotName() }}</h1>
-      <div class="hero-line">
+      <h1 class="hero-name reveal" style="--s:0">{{ plotName() }}</h1>
+      <div class="hero-line reveal" style="--s:1">
         <span class="hero-value">{{ inr(ticketPrice) }}</span>
         <span class="hero-sep" aria-hidden="true">·</span>
-        <span class="hero-grow-line"><span class="hg-pct">{{ inr(rentMonthly()) }}/mo</span> income + growth<span class="star">*</span></span>
+        <span class="hero-grow-line">grown <span class="hg-pct">{{ pct(m.return_3y) }}/yr</span> over 3 years<span class="star">*</span></span>
       </div>
     </section>
 
-    <!-- ===== variant pills ===== -->
-    <nav class="pills" role="tablist" aria-label="Risk level">
-      <button *ngFor="let vk of variantKeys; trackBy: trackVar" class="pill" type="button" role="tab"
-              [class.on]="active() === vk" [attr.aria-selected]="active() === vk" (click)="select(vk)">
-        {{ RISK_SHORT[vk] }}
-      </button>
-    </nav>
-
-    <!-- ===== 1 · HOW YOUR MONTHLY INCOME REACHES YOU (the bucket machine) ===== -->
-    <section class="card income-card">
-      <div class="card-head">
-        <h2 class="card-title">How the monthly income reaches you</h2>
-      </div>
-
-      <!-- payout headline -->
-      <div class="payout">
-        <span class="payout-v">{{ inr(rentMonthly()) }}<span class="pu">/mo</span></span>
-        <span class="payout-k">from month 13 · no tenant, no chasing rent</span>
-      </div>
-
-      <!-- minimal visual flow: growth → income sleeve → you, + liquid branch -->
-      <div class="flow">
-        <div class="flow-node growth" *ngIf="hasGrowth()">
-          <span class="fn-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <span class="fn-t">Growth engine</span>
-          <span class="fn-s">appreciates all year</span>
-        </div>
-
-        <div class="flow-arrow" *ngIf="hasGrowth()">
-          <svg viewBox="0 0 40 24" width="40" height="18" aria-hidden="true"><path d="M2 12h30M26 6l7 6-7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="fa-lbl">once-a-year switch</span>
-        </div>
-
-        <div class="flow-node income">
-          <span class="fn-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-          </span>
-          <span class="fn-t">Income sleeve</span>
-          <span class="fn-s">arbitrage · your SWP is drawn here</span>
-        </div>
-
-        <div class="flow-arrow">
-          <svg viewBox="0 0 40 24" width="40" height="18" aria-hidden="true"><path d="M2 12h30M26 6l7 6-7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="fa-lbl">monthly</span>
-        </div>
-
-        <div class="flow-node you">
-          <span class="fn-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </span>
-          <span class="fn-t">You</span>
-          <span class="fn-s">{{ inr(rentMonthly()) }} every month</span>
-        </div>
-      </div>
-
-      <!-- runway + liquid buffer, one quiet line each -->
-      <div class="flow-notes">
-        <div class="fnote" *ngIf="runwayMonths() as rw">
-          <span class="fnote-dot income"></span>
-          Income sleeve holds <strong>{{ compact(incomeSleeve()) }}</strong> — over <strong>{{ runwayYears() }} years</strong> of rent, so a weak market never forces a sale.
-        </div>
-        <div class="fnote" *ngIf="hasLiquid()">
-          <span class="fnote-dot liquid"></span>
-          A liquid reserve covers an emergency month, refilled from growth later.
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 2 · why it's tax-efficient ===== -->
-    <section class="card tax-card">
-      <div class="card-head"><h2 class="card-title">Why the income is tax-light</h2></div>
-      <p class="tax-body">{{ taxNote }}</p>
-    </section>
-
-    <!-- ===== 3 · past performance (windowed chart) ===== -->
+    <!-- ===== 1 · Past performance — one bounded card ===== -->
     <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
       <div class="card-head">
         <h2 class="card-title">Past performance</h2>
@@ -123,105 +58,203 @@
         </label>
       </div>
 
+      <!-- plain-English readout, right under the title (subordinate to it) -->
+      <p class="pp-readout" *ngIf="windowReadout() as r">
+        {{ compact(r.from) }} invested {{ rangeWords() }} would be worth
+        <b>{{ compact(r.to) }}</b> today
+        <span class="ppr-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
+      </p>
+
+      <!-- time-range tabs -->
+      <div class="range-tabs" role="tablist" aria-label="Time range">
+        <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
+                [class.on]="chartRange() === r.key" [attr.aria-selected]="chartRange() === r.key"
+                (click)="setRange(r.key)">{{ r.label }}</button>
+      </div>
+
       <div class="chart-loading" *ngIf="chartLoading()"><span class="spinner sm"></span> loading this fund…</div>
 
       <ng-container *ngIf="!chartLoading()">
-        <p class="ro-line" *ngIf="windowReadout() as r">
-          {{ compact(r.from) }} invested would be worth
-          <strong>{{ compact(r.to) }}</strong>
-          <span class="ro-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
-        </p>
-
-        <div class="range-tabs" role="tablist" aria-label="Time range">
-          <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
-                  [class.on]="chartRange() === r.key" (click)="setRange(r.key)">{{ r.label }}</button>
-        </div>
-
+        <!-- re-keyed on range so the line re-draws when the window changes -->
         <div class="chart-wrap" *ngFor="let _ of [chartRange() + chartSource()]">
-          <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img" aria-label="Growth over time"
+          <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
+               aria-label="Growth over time"
                (mousemove)="onChartMove($event)" (mouseleave)="onChartLeave()">
             <defs>
-              <linearGradient id="edfill" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.20"/>
                 <stop offset="100%" stop-color="var(--positive)" stop-opacity="0"/>
               </linearGradient>
             </defs>
-            <g class="axis">
+            <g class="axis y-axis">
               <ng-container *ngFor="let t of yTicks()">
                 <line class="grid" [attr.x1]="padL" [attr.x2]="chartW - padR" [attr.y1]="t.y" [attr.y2]="t.y"/>
                 <text class="tick-lbl y-lbl" [attr.x]="padL - 8" [attr.y]="t.y + 3">{{ t.label }}</text>
               </ng-container>
             </g>
-            <path class="g-area" [attr.d]="growthArea()" fill="url(#edfill)"/>
+            <path class="g-area" [attr.d]="growthArea()" fill="url(#gfill)"/>
             <path class="g-line" [attr.d]="growthPath()"/>
-            <g class="axis">
+            <g class="axis x-axis">
               <text *ngFor="let t of xTicks()" class="tick-lbl x-lbl" [attr.x]="t.x" [attr.y]="chartH - 8">{{ t.label }}</text>
             </g>
-            <g *ngIf="hover() as h">
+            <g class="hover-g" *ngIf="hover() as h">
               <line class="hover-line" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="padT" [attr.y2]="chartH - padB"/>
               <circle class="hover-dot" [attr.cx]="h.x" [attr.cy]="h.y" r="4"/>
             </g>
           </svg>
-          <div class="tip" *ngIf="hover() as h" [style.left.%]="(h.x / chartW) * 100" [class.flip]="(h.x / chartW) > 0.62">
+
+          <div class="tip" *ngIf="hover() as h"
+               [style.left.%]="(h.x / chartW) * 100"
+               [class.flip]="(h.x / chartW) > 0.62">
             <span class="tip-date">{{ h.date }}</span>
             <span class="tip-val">{{ compact(h.worth) }}</span>
-            <span class="tip-grow" [class.pos]="h.growthPct >= 0" [class.neg]="h.growthPct < 0">{{ h.growthPct >= 0 ? '+' : '' }}{{ h.growthPct | number:'1.0-0' }}% vs start</span>
+            <span class="tip-grow" [class.pos]="h.growthPct >= 0" [class.neg]="h.growthPct < 0">
+              {{ h.growthPct >= 0 ? '+' : '' }}{{ h.growthPct | number:'1.0-0' }}% vs start
+            </span>
           </div>
         </div>
+
       </ng-container>
     </section>
 
-    <!-- ===== 4 · where your money sits ===== -->
+    <!-- ===== 2 · if you'd invested N years ago (backward comparison) ===== -->
+    <section class="card proj-card">
+      <div class="card-head">
+        <h2 class="card-title">How your plot would have grown</h2>
+      </div>
+
+      <div class="ago-row" role="tablist" aria-label="Years ago">
+        <button *ngFor="let n of agoOptions" type="button" class="ago-tab" role="tab"
+                [class.on]="yearsAgo() === n" [attr.aria-selected]="yearsAgo() === n"
+                (click)="setYearsAgo(n)">{{ n }}y ago</button>
+      </div>
+
+      <p class="proj-headline">
+        <strong>{{ compact(ticketPrice) }}</strong> invested {{ yearsAgo() }} years ago →
+        <strong class="grow">{{ compact(pastNowValue()) }}</strong>
+        <span class="mult">≈ {{ pastMultiple() | number:'1.1-1' }}×</span>
+      </p>
+
+      <div class="bars">
+        <div class="bar-col" *ngFor="let r of pastProjection()">
+          <span class="pb-v">{{ compact(r.value) }}</span>
+          <div class="pb-track"><div class="pb-fill" [style.height.%]="(r.value / pastNowValue()) * 100"></div></div>
+          <div class="bar-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3 · ASSET ALLOCATION (look-through, interactive) ===== -->
     <section class="card alloc-card">
-      <div class="card-head"><h2 class="card-title">Where your money sits</h2><span class="card-sub">true split, through every fund</span></div>
+      <div class="card-head">
+        <h2 class="card-title">Where your money sits</h2>
+        <span class="card-sub">tap a slice to see its funds</span>
+      </div>
       <div class="alloc-bar">
-        <span *ngFor="let s of allocation()" class="alloc-seg" [attr.data-k]="s.key" [style.width.%]="s.pct" [attr.title]="s.label + ' ' + (s.pct | number:'1.0-0') + '%'"></span>
+        <button *ngFor="let s of allocation()" type="button"
+          class="alloc-seg" [attr.data-k]="s.key"
+          [class.dim]="selectedAsset() && selectedAsset() !== s.key"
+          [style.width.%]="s.pct"
+          (click)="selectAsset(s.key)"
+          [attr.aria-label]="s.label + ' ' + (s.pct | number:'1.0-0') + '%' + ', tap to see funds'"></button>
       </div>
       <ul class="alloc-legend">
-        <li *ngFor="let s of allocation()"><span class="a-dot" [attr.data-k]="s.key"></span><span class="a-label">{{ s.label }}</span><span class="a-pct">{{ s.pct | number:'1.0-0' }}%</span></li>
+        <li *ngFor="let s of allocation()">
+          <button type="button" class="a-chip" [class.on]="selectedAsset() === s.key" (click)="selectAsset(s.key)">
+            <span class="a-dot" [attr.data-k]="s.key"></span>
+            <span class="a-label">{{ s.label }}</span>
+            <span class="a-pct">{{ s.pct | number:'1.0-0' }}%</span>
+          </button>
+        </li>
       </ul>
     </section>
 
-    <!-- ===== 5 · the funds inside, grouped by role, tap to expand ===== -->
+    <!-- ===== 3 · THE FUNDS INSIDE (filtered by tapped asset; tap a fund for detail) ===== -->
     <section class="card funds-card">
-      <div class="card-head"><h2 class="card-title">The funds inside</h2><span class="card-sub">{{ compact(ticketPrice) }} · tap a fund</span></div>
+      <div class="card-head">
+        <h2 class="card-title">The funds inside</h2>
+        <span class="card-sub" *ngIf="!selectedAsset()">{{ compact(ticketPrice) }} · {{ activeVariant().legs.length }} funds · tap a fund</span>
+        <button class="card-sub link" type="button" *ngIf="selectedAsset() as sel" (click)="selectAsset(sel)">
+          showing {{ sel === 'cash' ? 'cash / arbitrage' : sel }} funds · clear ✕
+        </button>
+      </div>
       <ul class="fund-list">
-        <li class="fund" *ngFor="let leg of activeVariant().legs" [class.open]="openFund() === leg.scheme_code">
-          <button class="fund-row" type="button" (click)="toggleFund(leg.scheme_code)">
-            <span class="fund-w">{{ (leg.weight * 100) | number:'1.0-0' }}%</span>
-            <span class="fund-name">{{ leg.label }}</span>
-            <span class="fund-role" [attr.data-r]="leg.role">{{ roleLabel(leg.role) }}</span>
-            <span class="fund-amt">{{ compact(ticketPrice * leg.weight) }}</span>
-            <svg class="fund-chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <li class="fund" *ngFor="let f of shownFunds()" [class.open]="expandedFund() === f.code">
+          <button class="fund-top" type="button" (click)="toggleFund(f.code)" [attr.aria-expanded]="expandedFund() === f.code">
+            <span class="fund-w">{{ f.weightPct | number:'1.0-0' }}%</span>
+            <span class="fund-name">{{ f.label }}</span>
+            <span class="fund-amt">
+              {{ f.inAsset != null ? compact(f.inAsset) : compact(f.amount) }}
+              <svg class="fund-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
           </button>
-          <div class="fund-detail" *ngIf="openFund() === leg.scheme_code">
-            <p class="fd-note">{{ leg.note }}</p>
-            <p class="fd-swp" *ngIf="leg.withdrawMonthly > 0">Pays <strong>{{ inr(leg.withdrawMonthly) }}/mo</strong> of your income (headroom to {{ inr(leg.withdrawMax) }}).</p>
+          <div class="weight-bar"><span [style.width.%]="f.weightPct"></span></div>
+
+          <!-- detail: only when this fund is tapped -->
+          <div class="fund-detail" *ngIf="expandedFund() === f.code">
+            <p class="fd-role">{{ f.role }}</p>
+            <div class="fd-invested">Invested here <b>{{ compact(f.amount) }}</b> ({{ f.weightPct | number:'1.0-0' }}%)</div>
+            <ul class="fd-look">
+              <li *ngFor="let r of lookRows(f.look)">
+                <span class="fdl-dot" [attr.data-k]="r.key"></span>
+                <span class="fdl-label">{{ r.label }}</span>
+                <span class="fdl-pct">{{ r.pct | number:'1.0-0' }}%</span>
+              </li>
+            </ul>
           </div>
         </li>
       </ul>
     </section>
 
-    <!-- ===== 6 · the withdrawal rules ===== -->
-    <section class="card rules-card">
-      <div class="card-head"><h2 class="card-title">The rules, plainly</h2></div>
-      <ul class="rules">
-        <li *ngFor="let r of withdrawalRules">{{ r }}</li>
-      </ul>
+    <!-- ===== 4 · COMBINED performance (tap ratios to learn what they mean) ===== -->
+    <section class="card perf-card">
+      <div class="card-head">
+        <h2 class="card-title">How the whole basket has done</h2>
+        <span class="card-sub">all {{ activeVariant().legs.length }} funds together, not one alone</span>
+      </div>
+      <div class="perf-panel">
+        <div class="pp-row"><span class="pp-k">Past 3-yr combined return</span><span class="pp-v pos">{{ pct(m.return_3y) }}</span></div>
+        <div class="pp-row"><span class="pp-k">Past 5-yr combined return</span><span class="pp-v pos">{{ pct(m.return_5y) }}</span></div>
+        <div class="pp-row"><span class="pp-k">Combined max drawdown</span><span class="pp-v neg">{{ pct(m.max_drawdown) }}</span></div>
+        <div class="pp-row"><span class="pp-k">Combined volatility</span><span class="pp-v">{{ pct(m.volatility) }}</span></div>
+
+        <!-- tappable rows: explain what the ratio means -->
+        <div class="pp-item" [class.open]="openRatio() === 'sharpe'">
+          <button class="pp-row tappable" type="button" (click)="toggleRatio('sharpe')" [attr.aria-expanded]="openRatio() === 'sharpe'">
+            <span class="pp-k">Sharpe ratio <span class="info-i" aria-hidden="true">?</span></span>
+            <span class="pp-v">{{ sharpe(m) !== null ? (sharpe(m) | number:'1.2-2') : '—' }}</span>
+          </button>
+          <p class="pp-info" *ngIf="openRatio() === 'sharpe'">{{ ratioInfo['sharpe'] }}</p>
+        </div>
+        <div class="pp-item" [class.open]="openRatio() === 'beta'">
+          <button class="pp-row tappable" type="button" (click)="toggleRatio('beta')" [attr.aria-expanded]="openRatio() === 'beta'">
+            <span class="pp-k">Beta vs market <span class="info-i" aria-hidden="true">?</span></span>
+            <span class="pp-v">{{ beta(m) !== null ? (beta(m) | number:'1.2-2') : '—' }}</span>
+          </button>
+          <p class="pp-info" *ngIf="openRatio() === 'beta'">{{ ratioInfo['beta'] }}</p>
+        </div>
+        <div class="pp-item" [class.open]="openRatio() === 'history'">
+          <button class="pp-row tappable" type="button" (click)="toggleRatio('history')" [attr.aria-expanded]="openRatio() === 'history'">
+            <span class="pp-k">History measured <span class="info-i" aria-hidden="true">?</span></span>
+            <span class="pp-v">{{ m.history_years }} yrs</span>
+          </button>
+          <p class="pp-info" *ngIf="openRatio() === 'history'">{{ ratioInfo['history'] }}</p>
+        </div>
+      </div>
     </section>
 
     <!-- ===== CTA ===== -->
     <section class="cta-row">
       <div class="cta-figs">
-        <span class="cta-k">{{ RISK_SHORT[active()] }} {{ pkg.name }}</span>
-        <span class="cta-v">{{ inr(ticketPrice) }}</span>
+        <span class="cta-k">{{ plots() }} × {{ activeVariant().name }} Land</span>
+        <span class="cta-v">{{ inr(amount()) }}</span>
       </div>
-      <button class="cta-btn" type="button">Reserve this {{ pkg.name.toLowerCase() }}</button>
+      <button class="cta-btn" type="button">Reserve {{ plots() === 1 ? 'this plot' : plots() + ' plots' }}</button>
     </section>
   </ng-container>
 
   <p class="disclaimer">
-    <span class="star">*</span> Rent starts month 13. Figures from each fund's real NAV history —
-    similar may be expected ahead, but is not guaranteed. Subject to market risk.
+    <span class="star">*</span> Past growth, from each fund's real NAV history — similar may be expected ahead,
+    but is not guaranteed. Capital appreciation only; no rental income. Subject to market risk.
   </p>
 </main>

@@ -1,122 +1,275 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
 import {
-  PACKAGES, PropertyKey, VariantKey, Leg, LegRole, ROLE_LABEL,
-  RISK_SHORT, WITHDRAWAL_RULES, TAX_NOTE, schemeName, schemeLocality,
+  PACKAGES, PropertyKey, VariantKey, LegRole, RISK_SHORT,
+  schemeName, schemeLocality,
 } from './property-package.data';
+import { RevealDirective } from './reveal.directive';
 
-interface AllocSlice { key: 'equity' | 'debt' | 'gold' | 'cash'; label: string; pct: number; }
-interface ChartSource { id: string; label: string; }
+export type LandVariantKey = VariantKey;
 
-/** Look-through by role: what asset class a leg mostly holds. Keeps the "where
- *  your money sits" split honest for income tiers without per-fund look data. */
-const ROLE_LOOK: Record<LegRole, { equity: number; debt: number; cash: number }> = {
-  income: { equity: 0.05, debt: 0.10, cash: 0.85 },  // arbitrage / equity-savings ≈ cash-like
-  growth: { equity: 0.95, debt: 0.00, cash: 0.05 },
-  hedge:  { equity: 0.50, debt: 0.35, cash: 0.15 },  // BAF / multi-asset
-  liquid: { equity: 0.00, debt: 0.15, cash: 0.85 },
+/** True underlying asset-class split for a fund (look-through), as fractions
+ *  that sum to 1. */
+interface LookThrough {
+  equity: number;
+  debt: number;
+  gold: number;
+  cash: number;   // arbitrage / cash & equivalents
+}
+
+/** One fund leg. */
+interface Leg {
+  scheme_code: number;
+  label: string;
+  weight: number;
+  role: string;
+  look: LookThrough;
+}
+
+interface LandVariant {
+  key: LandVariantKey;
+  name: string;          // risk word shown to the customer
+  blurb: string;
+  targetGrowth: number;
+  legs: Leg[];
+}
+
+/** Look-through by role — what asset class a leg mostly holds, for income tiers. */
+const ROLE_LOOK: Record<LegRole, LookThrough> = {
+  income: { equity: 0.05, debt: 0.10, gold: 0, cash: 0.85 },
+  growth: { equity: 0.95, debt: 0.00, gold: 0, cash: 0.05 },
+  hedge:  { equity: 0.50, debt: 0.35, gold: 0, cash: 0.15 },
+  liquid: { equity: 0.00, debt: 0.15, gold: 0, cash: 0.85 },
 };
 
-/**
- * The income-tier detail page (Flat / Apartment / Duplex) — the SAME clean,
- * minimal template as Land, PLUS the bit Land doesn't have: how the monthly
- * amount actually reaches you (the bucket machine) and why it is tax-efficient.
- * No Monte Carlo — just real measured history + the withdrawal mechanics.
- */
+interface ProjRow {
+  year: number;
+  low: number;
+  mid: number;
+  high: number;
+}
+
+/** A slice of the rolled-up look-through allocation. */
+interface AllocSlice {
+  key: 'equity' | 'debt' | 'gold' | 'cash';
+  label: string;
+  pct: number;   // 0..100
+}
+
+/** Build the variant list for a property from the shared PACKAGES data, deriving
+ *  each leg's asset look-through from its bucket role. Keeps flat/apt/duplex on
+ *  the SAME page as Land, just with their own funds + ticket. */
+function variantsFor(property: PropertyKey): LandVariant[] {
+  const pkg = PACKAGES[property];
+  return (['conservative', 'balanced', 'aggressive'] as VariantKey[]).map(vk => {
+    const v = pkg.variants[vk];
+    return {
+      key: vk,
+      name: RISK_SHORT[vk],
+      blurb: v.blurb,
+      targetGrowth: v.targetGrowth,
+      legs: v.legs.map(l => ({
+        scheme_code: l.scheme_code,
+        label: l.label,
+        weight: l.weight,
+        role: l.note,
+        look: ROLE_LOOK[l.role],
+      })),
+    };
+  });
+}
+
+const HORIZONS = [1, 3, 5, 10, 20];
+
+/** One selectable line on the "how it moved" chart: the blend, or a single fund. */
+interface ChartSource {
+  id: string;         // 'blend' | scheme_code as string
+  label: string;
+}
+
 @Component({
   selector: 'app-estate-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RevealDirective],
   templateUrl: './estate-detail.component.html',
   styleUrl: './estate-detail.component.scss',
 })
 export class EstateDetailComponent implements OnInit, OnDestroy {
   @Input() property: PropertyKey = 'flat';
-  @Input() initialVariant: VariantKey = 'balanced';
+  @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
 
   private api = inject(LandDetailService);
 
-  readonly variantKeys: VariantKey[] = ['conservative', 'balanced', 'aggressive'];
-  readonly RISK_SHORT = RISK_SHORT;
-  readonly ROLE_LABEL = ROLE_LABEL;
-  readonly withdrawalRules = WITHDRAWAL_RULES;
-  readonly taxNote = TAX_NOTE;
+  readonly horizons = HORIZONS;
+  /** Variants + ticket for the tapped property (set in ngOnInit from @Input). */
+  variants: LandVariant[] = variantsFor('flat');
+  ticketPrice = PACKAGES['flat'].price;
 
-  active = signal<VariantKey>('balanced');
+  active = signal<LandVariantKey>('balanced');
 
-  get pkg() { return PACKAGES[this.property]; }
-  get ticketPrice() { return this.pkg.price; }
+  /** How many plots the customer is buying (each plot = one ₹10L ticket). */
+  plots = signal<number>(1);
+  /** The invested amount derived from the number of plots. */
+  amount = computed<number>(() => this.plots() * this.ticketPrice);
 
-  activeVariant = computed(() => this.pkg.variants[this.active()]);
-  plotName = computed(() => `${schemeName(this.property, this.active())} ${this.pkg.name}`);
-  plotLocality = computed(() => schemeLocality(this.property, this.active()));
+  /** Which ratio row is expanded to show its plain-English meaning (or null). */
+  openRatio = signal<string | null>(null);
+  toggleRatio(key: string): void {
+    this.openRatio.update(cur => (cur === key ? null : key));
+  }
 
-  /** Total monthly income this variant targets (₹). */
-  rentMonthly = computed(() => this.activeVariant().rentMonthly);
+  /** Plain-English meaning for each ratio, shown when its row is tapped. */
+  readonly ratioInfo: Record<string, string> = {
+    sharpe: 'Return earned for each unit of risk taken. Higher is better — it means the basket is paying you well for the ups and downs it puts you through. Above ~0.5 is solid for an equity mix.',
+    beta: 'How much this basket moves versus the whole market (market = 1.0). Below 1.0 means it swings less than the market; above 1.0 means it swings more. Lower beta = a calmer ride.',
+    history: 'How many years of real fund history these numbers are measured over. More years means the returns and the worst drawdown have been tested through more market cycles — so you can trust them more.',
+  };
 
-  // ── data load ────────────────────────────────────────────────────────────────
+  /** Blended metrics per variant. */
   metrics = signal<Record<string, BasketMetrics>>({});
+  /** Per-fund metrics cache, keyed by scheme_code. */
   fundMetrics = signal<Record<number, BasketMetrics>>({});
   loading = signal(true);
   error = signal<string | null>(null);
+
+  /** Which line the growth chart is showing: 'blend' or a scheme_code. */
   chartSource = signal<string>('blend');
 
-  activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
-
-  // ── range tabs ───────────────────────────────────────────────────────────────
-  readonly ranges = [
+  /** Time-range windows for the Past-performance chart (months). Default 3Y. */
+  readonly ranges: { key: string; label: string; months: number }[] = [
     { key: '1y', label: '1Y', months: 12 },
     { key: '2y', label: '2Y', months: 24 },
     { key: '3y', label: '3Y', months: 36 },
     { key: '5y', label: '5Y', months: 60 },
   ];
   chartRange = signal<string>('3y');
-  setRange(k: string): void { this.chartRange.set(k); }
+  setRange(key: string): void { this.chartRange.set(key); }
 
-  // ── loading benefits (income-flavoured) ──────────────────────────────────────
-  readonly benefits = [
-    'A monthly income, without a tenant',
-    'Rent taxed like equity, not your slab',
-    'Growth quietly refills your income',
-    'Liquid — redeem in days, not months',
-    'Real fund history, no glossy promises',
+  /** "3 years ago" etc., for the plain-English performance readout. */
+  rangeWords(): string {
+    const n = parseInt(this.chartRange(), 10) || 3;
+    return n === 1 ? '1 year ago' : `${n} years ago`;
+  }
+
+  activeVariant = computed(() => this.variants.find(v => v.key === this.active())!);
+  activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
+
+  /** The name EXACTLY as the tapped tile shows it: "<scheme> <Property>". */
+  plotName = computed(() => `${schemeName(this.property, this.active())} ${PACKAGES[this.property].name}`);
+  plotLocality = computed(() => schemeLocality(this.property, this.active()));
+
+  /** Hero growth ratios are hidden until tapped. */
+  heroDetailsOpen = signal(false);
+  toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }
+
+  /** Benefits shown, one at a time, while the fund data loads — so the wait
+   *  feels useful and the screen never looks like a blank spinner. */
+  readonly benefits: { icon: string; title: string; body: string }[] = [
+    { icon: 'growth', title: 'Own land, minus the paperwork',
+      body: 'No registration runs, no broker, no encroachment risk — your ₹10L is a curated basket of India\'s steadiest growth funds.' },
+    { icon: 'shield', title: 'Diversified, not one bet',
+      body: 'Three funds move together so a bad year in one is cushioned by the others — a smoother ride than any single fund.' },
+    { icon: 'liquid', title: 'Liquid when you need it',
+      body: 'Unlike a physical plot that can take months to sell, you can redeem in a few working days — no buyer to find.' },
+    { icon: 'clock', title: 'Built to compound',
+      body: 'Capital appreciation only — every rupee stays invested and grows, tested across real market cycles.' },
+    { icon: 'eye', title: 'Fully transparent',
+      body: 'Real NAV history, real drawdowns, real ratios — you\'ll see exactly how this mix behaved, no glossy promises.' },
   ];
   benefitIdx = signal(0);
   private benefitTimer: any = null;
 
+  /** Total growth of ₹10,000 over the whole measured history, for the summary. */
+  totalGrowthPct = computed<number | null>(() => {
+    const m = this.activeMetrics();
+    if (!m || !m.growth.length) return null;
+    const first = m.growth[0].value, last = m.growth[m.growth.length - 1].value;
+    return first > 0 ? (last / first - 1) * 100 : null;
+  });
+
+  /** Dropdown options for the chart: the blend + each fund of the active variant. */
+  chartSources = computed<ChartSource[]>(() => {
+    const opts: ChartSource[] = [{ id: 'blend', label: 'Combined basket' }];
+    for (const leg of this.activeVariant().legs) {
+      opts.push({ id: String(leg.scheme_code), label: leg.label });
+    }
+    return opts;
+  });
+
+  /** Metrics currently feeding the chart (blend or the picked single fund). */
+  chartMetrics = computed<BasketMetrics | null>(() => {
+    const src = this.chartSource();
+    if (src === 'blend') return this.activeMetrics();
+    return this.fundMetrics()[Number(src)] ?? null;
+  });
+
+  /** The chart series sliced to the selected time range (last N months). */
+  windowedGrowth = computed(() => {
+    const m = this.chartMetrics();
+    if (!m || !m.growth.length) return [];
+    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 36;
+    const pts = m.growth;
+    // +1 so a 36-month window spans 36 intervals (37 monthly points).
+    const start = Math.max(0, pts.length - (months + 1));
+    return pts.slice(start);
+  });
+
+  /** ₹10,000 rebased to the START of the selected window → value now, and the
+   *  % move over that window. Keeps the readout honest to the chosen range. */
+  windowReadout = computed<{ from: number; to: number; pct: number; startDate: string } | null>(() => {
+    const w = this.windowedGrowth();
+    if (w.length < 2) return null;
+    // Base the readout on the ACTUAL amount invested (the ticket price), not a
+    // generic ₹10,000 — so it reads "₹10,00,000 → ₹14,00,000".
+    const base = this.amount();
+    const first = w[0].value, last = w[w.length - 1].value;
+    if (first <= 0) return null;
+    const to = base * (last / first);
+    return { from: base, to, pct: (last / first - 1) * 100, startDate: w[0].date };
+  });
+
   ngOnInit(): void {
+    this.variants = variantsFor(this.property);
+    this.ticketPrice = PACKAGES[this.property].price;
     this.active.set(this.initialVariant);
     this.startBenefits();
     this.loadAll();
   }
+
   ngOnDestroy(): void { this.stopBenefits(); }
 
+  /** Rotate the benefit cards every ~2.6s while loading. */
   private startBenefits(): void {
     this.stopBenefits();
-    this.benefitTimer = setInterval(() => this.benefitIdx.update(i => (i + 1) % this.benefits.length), 2600);
+    this.benefitTimer = setInterval(() => {
+      this.benefitIdx.update(i => (i + 1) % this.benefits.length);
+    }, 2600);
   }
-  private stopBenefits(): void { if (this.benefitTimer) { clearInterval(this.benefitTimer); this.benefitTimer = null; } }
+  private stopBenefits(): void {
+    if (this.benefitTimer) { clearInterval(this.benefitTimer); this.benefitTimer = null; }
+  }
 
   loadAll(): void {
     this.loading.set(true);
     this.error.set(null);
-    let remaining = this.variantKeys.length;
+    let remaining = this.variants.length;
     let anyOk = false;
-    for (const vk of this.variantKeys) {
-      const v = this.pkg.variants[vk];
+    for (const v of this.variants) {
       const items = v.legs.map(l => ({ scheme_code: l.scheme_code, weight: l.weight }));
       this.api.analyze(items).subscribe({
         next: m => {
-          this.metrics.update(cur => ({ ...cur, [vk]: m }));
+          this.metrics.update(cur => ({ ...cur, [v.key]: m }));
           anyOk = true;
           if (--remaining === 0) { this.loading.set(false); this.stopBenefits(); }
         },
         error: () => {
           if (--remaining === 0) {
-            this.loading.set(false); this.stopBenefits();
+            this.loading.set(false);
+            this.stopBenefits();
             if (!anyOk) this.error.set('Could not reach the fund engine. Is the backend running?');
           }
         },
@@ -124,6 +277,7 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Lazily fetch a single fund's own series the first time it's picked. */
   private ensureFund(code: number): void {
     if (this.fundMetrics()[code]) return;
     this.api.analyze([{ scheme_code: code, weight: 1 }]).subscribe({
@@ -132,153 +286,246 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  chartSources = computed<ChartSource[]>(() => {
-    const opts: ChartSource[] = [{ id: 'blend', label: 'Combined basket' }];
-    for (const leg of this.activeVariant().legs) opts.push({ id: String(leg.scheme_code), label: leg.label });
-    return opts;
-  });
-  pickChartSource(id: string): void { this.chartSource.set(id); if (id !== 'blend') this.ensureFund(Number(id)); }
+  pickChartSource(id: string): void {
+    this.chartSource.set(id);
+    if (id !== 'blend') this.ensureFund(Number(id));
+  }
 
-  select(k: VariantKey): void { this.active.set(k); this.chartSource.set('blend'); }
+  select(k: LandVariantKey): void {
+    this.active.set(k);
+    this.chartSource.set('blend');   // reset the chart picker to the new blend
+  }
   goBack(): void { this.back.emit(); }
 
-  chartMetrics = computed<BasketMetrics | null>(() => {
-    const src = this.chartSource();
-    if (src === 'blend') return this.activeMetrics();
-    return this.fundMetrics()[Number(src)] ?? null;
-  });
-  chartLoading = computed<boolean>(() => this.chartSource() !== 'blend' && !this.chartMetrics());
-
-  windowedGrowth = computed(() => {
-    const m = this.chartMetrics();
-    if (!m || !m.growth.length) return [];
-    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 36;
-    return m.growth.slice(Math.max(0, m.growth.length - (months + 1)));
-  });
-
-  windowReadout = computed<{ from: number; to: number; pct: number } | null>(() => {
-    const w = this.windowedGrowth();
-    if (w.length < 2) return null;
-    const base = this.ticketPrice;
-    const first = w[0].value, last = w[w.length - 1].value;
-    if (first <= 0) return null;
-    return { from: base, to: base * (last / first), pct: (last / first - 1) * 100 };
-  });
-
-  // ── look-through allocation ──────────────────────────────────────────────────
+  // ── Look-through asset allocation (rolled up to true asset classes) ──────────
   allocation = computed<AllocSlice[]>(() => {
+    const legs = this.activeVariant().legs;
     const acc = { equity: 0, debt: 0, gold: 0, cash: 0 };
-    for (const l of this.activeVariant().legs) {
-      const look = ROLE_LOOK[l.role];
-      acc.equity += l.weight * look.equity;
-      acc.debt += l.weight * look.debt;
-      acc.cash += l.weight * look.cash;
+    for (const l of legs) {
+      acc.equity += l.weight * l.look.equity;
+      acc.debt += l.weight * l.look.debt;
+      acc.gold += l.weight * l.look.gold;
+      acc.cash += l.weight * l.look.cash;
     }
     const total = acc.equity + acc.debt + acc.gold + acc.cash || 1;
-    const LABELS: Record<AllocSlice['key'], string> = { equity: 'Equity', debt: 'Debt', gold: 'Gold', cash: 'Cash / arbitrage' };
+    const LABELS: Record<AllocSlice['key'], string> = {
+      equity: 'Equity', debt: 'Debt', gold: 'Gold', cash: 'Cash / arbitrage',
+    };
     return (['equity', 'debt', 'gold', 'cash'] as const)
       .map(k => ({ key: k, label: LABELS[k], pct: (acc[k] / total) * 100 }))
       .filter(s => s.pct >= 0.5);
   });
 
-  // ── the funds inside (tap to expand) ─────────────────────────────────────────
-  openFund = signal<number | null>(null);
-  toggleFund(code: number): void { this.openFund.update(c => (c === code ? null : code)); }
+  // ── Interactive allocation → funds ──────────────────────────────────────────
+  /** Which asset class is selected in the split bar. null = show all funds. */
+  selectedAsset = signal<AllocSlice['key'] | null>(null);
+  /** Which fund row is expanded to show its detail. null = none. */
+  expandedFund = signal<number | null>(null);
 
-  // ── THE BUCKET MACHINE — the income story, minimal + visual ───────────────────
-  legsByRole(role: LegRole): Leg[] { return this.activeVariant().legs.filter(l => l.role === role); }
-
-  incomeLegs = computed(() => this.activeVariant().legs.filter(l => l.role === 'income'));
-  growthLegs = computed(() => this.activeVariant().legs.filter(l => l.role === 'growth'));
-  hedgeLegs = computed(() => this.activeVariant().legs.filter(l => l.role === 'hedge'));
-  liquidLegs = computed(() => this.activeVariant().legs.filter(l => l.role === 'liquid'));
-  hasGrowth = computed(() => this.growthLegs().length > 0 || this.hedgeLegs().length > 0);
-  hasLiquid = computed(() => this.liquidLegs().length > 0);
-
-  /** ₹ sitting in the income sleeve, and how many months of rent that is. */
-  incomeSleeve = computed(() => {
-    const w = this.incomeLegs().reduce((s, l) => s + l.weight, 0);
-    return this.ticketPrice * w;
-  });
-  runwayMonths = computed<number | null>(() => {
-    const rent = this.rentMonthly();
-    if (!rent) return null;
-    return Math.round(this.incomeSleeve() / rent);
-  });
-  runwayYears = computed<number | null>(() => {
-    const m = this.runwayMonths();
-    return m == null ? null : Math.floor(m / 12);
-  });
-
-  // ── formatting ───────────────────────────────────────────────────────────────
-  inr(v: number | null | undefined): string { return v == null ? '—' : '₹' + Math.round(v).toLocaleString('en-IN'); }
-  compact(v: number | null | undefined): string {
-    if (v == null) return '—';
-    if (v >= 1_00_00_000) { const cr = v / 1_00_00_000; return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr'; }
-    if (v >= 1_00_000) { const l = v / 1_00_000; return '₹' + (l % 1 === 0 ? l : l.toFixed(2).replace(/\.?0+$/, '')) + 'L'; }
-    return '₹' + Math.round(v).toLocaleString('en-IN');
+  selectAsset(key: AllocSlice['key']): void {
+    this.selectedAsset.update(cur => (cur === key ? null : key));
+    this.expandedFund.set(null);
   }
-  pct(v: number | null | undefined, dp = 1): string { return v == null ? '—' : v.toFixed(dp) + '%'; }
-  roleLabel(r: LegRole): string { return ROLE_LABEL[r]; }
+  toggleFund(code: number): void {
+    this.expandedFund.update(cur => (cur === code ? null : code));
+  }
 
-  // ── SVG chart geometry (windowed, with axes + hover) ─────────────────────────
-  readonly chartW = 680; readonly chartH = 260;
-  readonly padL = 58; readonly padR = 10; readonly padT = 12; readonly padB = 30;
+  /** Funds shown in the list: all of them, or — when an asset class is picked —
+   *  only the funds that hold that class, with the ₹ each puts into it. */
+  shownFunds = computed(() => {
+    const legs = this.activeVariant().legs;
+    const sel = this.selectedAsset();
+    const ticket = this.ticketPrice;
+    if (!sel) {
+      return legs.map(l => ({
+        code: l.scheme_code, label: l.label, role: l.role,
+        weightPct: l.weight * 100, amount: ticket * l.weight, look: l.look, inAsset: null as number | null,
+      }));
+    }
+    return legs
+      .filter(l => l.look[sel] > 0)
+      .map(l => ({
+        code: l.scheme_code, label: l.label, role: l.role,
+        weightPct: l.weight * 100, amount: ticket * l.weight, look: l.look,
+        // ₹ this fund contributes to the selected class
+        inAsset: ticket * l.weight * l.look[sel],
+      }))
+      .sort((a, b) => (b.inAsset ?? 0) - (a.inAsset ?? 0));
+  });
+
+  /** Per-fund look-through as a small list for the expanded detail. */
+  lookRows(look: LookThrough): { key: string; label: string; pct: number }[] {
+    const LABELS: Record<string, string> = { equity: 'Equity', debt: 'Debt', gold: 'Gold', cash: 'Cash / arbitrage' };
+    return (['equity', 'debt', 'gold', 'cash'] as const)
+      .map(k => ({ key: k, label: LABELS[k], pct: look[k] * 100 }))
+      .filter(r => r.pct >= 0.5);
+  }
+
+  // ── Projection (editable amount, credible band) ─────────────────────────────
+  projection = computed<ProjRow[]>(() => {
+    const m = this.activeMetrics();
+    const amt = this.amount();
+    if (!m || !amt || amt <= 0) return [];
+    const er = (m.expected_return ?? 11) / 100;
+    const vol = (m.volatility ?? 14) / 100;
+    return this.horizons.map(y => {
+      const mid = amt * Math.pow(1 + er, y);
+      const spread = Math.min(vol / Math.sqrt(y), 0.9);
+      const low = amt * Math.pow(1 + Math.max(er - spread, -0.15), y);
+      const high = amt * Math.pow(1 + er + spread, y);
+      return { year: y, low, mid, high };
+    });
+  });
+
+  finalMultiple = computed<number | null>(() => {
+    const rows = this.projection();
+    if (!rows.length) return null;
+    const last = rows[rows.length - 1];
+    const amt = this.amount();
+    return amt > 0 ? last.mid / amt : null;
+  });
+
+  // ── "If you'd invested N years ago" — backward look on the rolling-average
+  //    growth, so the customer can compare against their own property. ──────────
+  readonly agoOptions = [3, 5, 10, 20];
+  yearsAgo = signal<number>(5);
+  setYearsAgo(n: number): void { this.yearsAgo.set(n); }
+
+  /** The basket's rolling-average annual growth (from real past data). */
+  private avgGrowthRate(): number {
+    const m = this.activeMetrics();
+    if (!m) return 0.11;
+    // prefer the longest real track record for a stable rolling average
+    const pick = m.return_5y ?? m.return_3y ?? m.expected_return ?? 11;
+    return pick / 100;
+  }
+
+  /** Year-by-year path of ₹(ticket) compounded at the average rate, from
+   *  `yearsAgo` in the past up to today — for the comparison bars. */
+  pastProjection = computed<{ year: number; value: number }[]>(() => {
+    const amt = this.ticketPrice;
+    const rate = this.avgGrowthRate();
+    const years = this.yearsAgo();
+    const out: { year: number; value: number }[] = [];
+    // ~5 evenly spaced milestone points from start (year 0) to now (year N)
+    const steps = Math.min(years, 5);
+    for (let s = 0; s <= steps; s++) {
+      const y = Math.round((s / steps) * years);
+      out.push({ year: y, value: amt * Math.pow(1 + rate, y) });
+    }
+    return out;
+  });
+
+  /** What ₹(ticket) invested `yearsAgo` would be worth today. */
+  pastNowValue = computed<number>(() => {
+    const rows = this.pastProjection();
+    return rows.length ? rows[rows.length - 1].value : this.ticketPrice;
+  });
+  pastMultiple = computed<number>(() => {
+    return this.pastNowValue() / this.ticketPrice;
+  });
+
+  // ── SVG geometry for the growth curve (with real X/Y axes + hover) ──────────
+  readonly chartW = 680;
+  readonly chartH = 260;
+  readonly padL = 58;   // room for the ₹ Y-axis labels
+  readonly padR = 10;
+  readonly padT = 12;
+  readonly padB = 30;   // room for the year X-axis labels
+
   private get plotW() { return this.chartW - this.padL - this.padR; }
   private get plotH() { return this.chartH - this.padT - this.padB; }
 
+  /** Value bounds of the windowed series. */
   private vBounds = computed<{ lo: number; hi: number } | null>(() => {
     const w = this.windowedGrowth();
     if (!w.length) return null;
     const vals = w.map(g => g.value);
     return { lo: Math.min(...vals), hi: Math.max(...vals) };
   });
-  private xAt(i: number, n: number) { return this.padL + (n <= 1 ? 0 : (i / (n - 1)) * this.plotW); }
-  private yAt(v: number, lo: number, hi: number) { const s = hi - lo || 1; return this.padT + (1 - (v - lo) / s) * this.plotH; }
+
+  private xAt(i: number, n: number): number {
+    return this.padL + (n <= 1 ? 0 : (i / (n - 1)) * this.plotW);
+  }
+  private yAt(v: number, lo: number, hi: number): number {
+    const span = hi - lo || 1;
+    return this.padT + (1 - (v - lo) / span) * this.plotH;
+  }
 
   growthPath = computed<string>(() => {
     const w = this.windowedGrowth(); const b = this.vBounds();
     if (!w.length || !b) return '';
-    return w.map((g, i) => `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`).join(' ');
+    return w.map((g, i) =>
+      `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`
+    ).join(' ');
   });
+
   growthArea = computed<string>(() => {
-    const line = this.growthPath(); const w = this.windowedGrowth();
+    const line = this.growthPath();
+    const w = this.windowedGrowth();
     if (!line || !w.length) return '';
     const baseY = this.chartH - this.padB;
-    return `${line} L${this.xAt(w.length - 1, w.length).toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
+    const lastX = this.xAt(w.length - 1, w.length);
+    return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
   });
-  yTicks = computed(() => {
-    const b = this.vBounds(); if (!b) return [];
+
+  /** Y-axis ticks: 4 evenly spaced ₹ amounts — labelled in the INVESTOR's money
+   *  (their invested amount grown), not the raw fund NAV, so ₹10L reads as ₹10L. */
+  yTicks = computed<{ y: number; label: string }[]>(() => {
+    const b = this.vBounds();
+    const w = this.windowedGrowth();
+    if (!b || !w.length) return [];
+    const start = w[0].value || 1;          // NAV at the window start
+    const invested = this.amount();          // what the customer put in
+    const n = 4;
     const out: { y: number; label: string }[] = [];
-    for (let i = 0; i <= 4; i++) { const v = b.lo + (i / 4) * (b.hi - b.lo); out.push({ y: this.yAt(v, b.lo, b.hi), label: this.compact(v) }); }
-    return out;
-  });
-  xTicks = computed(() => {
-    const w = this.windowedGrowth(); if (!w.length) return [];
-    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 36;
-    const short = months <= 24;
-    const count = Math.min(5, w.length);
-    const out: { x: number; label: string }[] = [];
-    for (let i = 0; i < count; i++) {
-      const idx = Math.round((i / (count - 1)) * (w.length - 1));
-      const d = w[idx].date || '';
-      out.push({ x: this.xAt(idx, w.length), label: short ? this.monLabel(d) : d.slice(0, 4) });
+    for (let i = 0; i <= n; i++) {
+      const v = b.lo + (i / n) * (b.hi - b.lo);      // raw NAV at this gridline
+      const worth = invested * (v / start);          // → investor rupees
+      out.push({ y: this.yAt(v, b.lo, b.hi), label: this.compact(worth) });
     }
     return out;
   });
-  private monLabel(ym: string) {
+
+  /** X-axis ticks: ~5 dates spread across the windowed series (Y-M for short ranges). */
+  xTicks = computed<{ x: number; label: string }[]>(() => {
+    const w = this.windowedGrowth();
+    if (!w.length) return [];
+    const n = w.length;
+    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 36;
+    const shortRange = months <= 24;
+    const count = Math.min(5, n);
+    const out: { x: number; label: string }[] = [];
+    for (let i = 0; i < count; i++) {
+      const idx = Math.round((i / (count - 1)) * (n - 1));
+      const d = w[idx].date || '';
+      // short ranges show "Mon 'YY", longer ranges just the year
+      out.push({ x: this.xAt(idx, n), label: shortRange ? this.monLabel(d) : d.slice(0, 4) });
+    }
+    return out;
+  });
+
+  private monLabel(ym: string): string {
     const [y, mo] = ym.split('-');
     const MON = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return mo ? `${MON[+mo] || ''} '${(y || '').slice(2)}` : (y || '');
   }
+
   growthEndpoints = computed(() => {
-    const w = this.windowedGrowth(); if (!w.length) return null;
-    return { startVal: w[0].value, endVal: w[w.length - 1].value, startDate: w[0].date, endDate: w[w.length - 1].date };
+    const w = this.windowedGrowth();
+    if (!w.length) return null;
+    const first = w[0], last = w[w.length - 1];
+    return { startVal: first.value, endVal: last.value, startDate: first.date, endDate: last.date };
   });
 
+  chartLoading = computed<boolean>(() => this.chartSource() !== 'blend' && !this.chartMetrics());
+
+  // ── Hover ────────────────────────────────────────────────────────────────────
   hoverIdx = signal<number | null>(null);
+
   onChartMove(ev: MouseEvent): void {
-    const rect = (ev.currentTarget as SVGSVGElement).getBoundingClientRect();
+    const svg = (ev.currentTarget as SVGSVGElement);
+    const rect = svg.getBoundingClientRect();
     const w = this.windowedGrowth();
     if (!w.length || rect.width === 0) return;
     const xView = ((ev.clientX - rect.left) / rect.width) * this.chartW;
@@ -286,15 +533,70 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     this.hoverIdx.set(Math.round(frac * (w.length - 1)));
   }
   onChartLeave(): void { this.hoverIdx.set(null); }
+
   hover = computed(() => {
-    const i = this.hoverIdx(); const w = this.windowedGrowth(); const b = this.vBounds();
+    const i = this.hoverIdx();
+    const w = this.windowedGrowth(); const b = this.vBounds();
     if (i == null || !w.length || !b || !w[i]) return null;
     const g = w[i];
-    const base = this.ticketPrice, wStart = w[0].value;
-    const worth = wStart > 0 ? base * (g.value / wStart) : base;
-    const growthPct = wStart > 0 ? (g.value / wStart - 1) * 100 : 0;
-    return { x: this.xAt(i, w.length), y: this.yAt(g.value, b.lo, b.hi), worth, date: g.date, growthPct };
+    const x = this.xAt(i, w.length);
+    const y = this.yAt(g.value, b.lo, b.hi);
+    const base = w[0]?.value ?? g.value;   // % vs the window's own start
+    const growthPct = base > 0 ? (g.value / base - 1) * 100 : 0;
+    // The investor's money: the amount they'd invest (ticket) grown to this
+    // point, so the tip shows real rupees, not a raw NAV.
+    const invested = this.amount();
+    const worth = base > 0 ? invested * (g.value / base) : invested;
+    return { x, y, value: g.value, invested, worth, date: g.date, growthPct, drawdown: g.drawdown };
   });
 
-  trackVar = (_: number, k: VariantKey) => k;
+  projMax = computed<number>(() => {
+    const rows = this.projection();
+    return rows.length ? Math.max(...rows.map(r => r.high)) : 1;
+  });
+
+  barHeight(v: number): number {
+    const max = this.projMax();
+    return max > 0 ? (v / max) * 100 : 0;
+  }
+
+  // ── Formatting ──────────────────────────────────────────────────────────────
+  inr(v: number | null | undefined): string {
+    if (v == null) return '—';
+    return '₹' + Math.round(v).toLocaleString('en-IN');
+  }
+
+  compact(v: number | null | undefined): string {
+    if (v == null) return '—';
+    if (v >= 1_00_00_000) {
+      const cr = v / 1_00_00_000;
+      return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr';
+    }
+    if (v >= 1_00_000) {
+      const l = v / 1_00_000;
+      return '₹' + (l % 1 === 0 ? l : l.toFixed(2).replace(/\.?0+$/, '')) + 'L';
+    }
+    return '₹' + Math.round(v).toLocaleString('en-IN');
+  }
+
+  pct(v: number | null | undefined, dp = 1): string {
+    if (v == null) return '—';
+    return v.toFixed(dp) + '%';
+  }
+
+  sharpe(m: BasketMetrics | null): number | null {
+    if (!m || m.expected_return == null || !m.volatility) return null;
+    return (m.expected_return - 6.5) / m.volatility;
+  }
+
+  beta(m: BasketMetrics | null): number | null {
+    if (!m) return null;
+    const eq = m.asset_mix?.['equity'] ?? 0;
+    const hyb = m.asset_mix?.['hybrid'] ?? 0;
+    return (eq * 1.0 + hyb * 0.55) / 100;
+  }
+
+  /** The plot choices offered: buy 1, 2 or 3 plots. */
+  readonly plotOptions = [1, 2, 3];
+  setPlots(n: number): void { this.plots.set(n); }
 }

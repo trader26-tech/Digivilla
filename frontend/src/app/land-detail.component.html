@@ -47,7 +47,7 @@
     </section>
 
     <!-- ===== 1 · Past performance — one bounded card ===== -->
-    <section class="card chart-card" *ngIf="growthPath() || chartLoading()" appReveal>
+    <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
       <div class="card-head">
         <h2 class="card-title">Past performance</h2>
         <label class="src-pick">
@@ -117,8 +117,35 @@
       </ng-container>
     </section>
 
-    <!-- ===== 2 · ASSET ALLOCATION (look-through, interactive) ===== -->
-    <section class="card alloc-card" appReveal>
+    <!-- ===== 2 · if you'd invested N years ago (backward comparison) ===== -->
+    <section class="card proj-card">
+      <div class="card-head">
+        <h2 class="card-title">How your plot would have grown</h2>
+      </div>
+
+      <div class="ago-row" role="tablist" aria-label="Years ago">
+        <button *ngFor="let n of agoOptions" type="button" class="ago-tab" role="tab"
+                [class.on]="yearsAgo() === n" [attr.aria-selected]="yearsAgo() === n"
+                (click)="setYearsAgo(n)">{{ n }}y ago</button>
+      </div>
+
+      <p class="proj-headline">
+        <strong>{{ compact(ticketPrice) }}</strong> invested {{ yearsAgo() }} years ago →
+        <strong class="grow">{{ compact(pastNowValue()) }}</strong>
+        <span class="mult">≈ {{ pastMultiple() | number:'1.1-1' }}×</span>
+      </p>
+
+      <div class="bars">
+        <div class="bar-col" *ngFor="let r of pastProjection()">
+          <span class="pb-v">{{ compact(r.value) }}</span>
+          <div class="pb-track"><div class="pb-fill" [style.height.%]="(r.value / pastNowValue()) * 100"></div></div>
+          <div class="bar-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3 · ASSET ALLOCATION (look-through, interactive) ===== -->
+    <section class="card alloc-card">
       <div class="card-head">
         <h2 class="card-title">Where your money sits</h2>
         <span class="card-sub">tap a slice to see its funds</span>
@@ -143,7 +170,7 @@
     </section>
 
     <!-- ===== 3 · THE FUNDS INSIDE (filtered by tapped asset; tap a fund for detail) ===== -->
-    <section class="card funds-card" appReveal>
+    <section class="card funds-card">
       <div class="card-head">
         <h2 class="card-title">The funds inside</h2>
         <span class="card-sub" *ngIf="!selectedAsset()">{{ compact(ticketPrice) }} · {{ activeVariant().legs.length }} funds · tap a fund</span>
@@ -180,7 +207,7 @@
     </section>
 
     <!-- ===== 4 · COMBINED performance (tap ratios to learn what they mean) ===== -->
-    <section class="card perf-card" appReveal>
+    <section class="card perf-card">
       <div class="card-head">
         <h2 class="card-title">How the whole basket has done</h2>
         <span class="card-sub">all {{ activeVariant().legs.length }} funds together, not one alone</span>

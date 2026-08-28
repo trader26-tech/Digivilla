@@ -438,45 +438,34 @@
 .tip-dd { font-size: 0.68rem; font-weight: 600; color: color-mix(in srgb, var(--terracotta) 55%, var(--paper)); opacity: 0.9; }
 
 /* ---------- projection: buy-by-the-plot ---------- */
-.plots-row { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
-.plot-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  padding: 0.7rem 0.4rem;
-  border: 1.5px solid var(--survey);
-  border-radius: 11px;
-  background: var(--paper);
-  cursor: pointer;
-  font-family: var(--font-body);
-  color: var(--ink);
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+/* "years ago" selector */
+.ago-row { display: flex; gap: 0.45rem; margin-bottom: 1rem; }
+.ago-tab {
+  flex: 1; min-height: 40px;
+  border: 1px solid var(--survey); border-radius: 999px;
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.plot-btn:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); }
-.plot-btn:active { transform: scale(0.98); }
-.plot-btn.on { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 9%, var(--paper)); }
-.plot-n { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; line-height: 1; color: var(--ink); }
-.plot-btn.on .plot-n { color: var(--brass); }
-.plot-lbl { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.55; }
-.plot-amt { font-size: 0.82rem; font-weight: 700; color: var(--ink); opacity: 0.75; margin-top: 0.15rem; }
+.ago-tab:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); }
+.ago-tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-.proj-headline { margin: 0 0 1rem; font-size: 0.95rem; line-height: 1.45; color: var(--ink); }
-.proj-headline strong { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+/* short headline */
+.proj-headline { margin: 0 0 1.1rem; font-size: 0.95rem; line-height: 1.5; color: var(--ink); opacity: 0.8; }
+.proj-headline strong { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; opacity: 1; }
 .proj-headline strong.grow { color: var(--positive); }
 .proj-headline .mult { display: inline-block; margin-left: 0.3rem; font-weight: 700; font-size: 0.85rem; color: var(--positive); }
 
-.bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; align-items: end; height: 210px; padding-top: 0.5rem; }
-.bar-col { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.3rem; }
-.bar-stack { position: relative; width: 60%; max-width: 44px; min-height: 6px; border-radius: 6px 6px 0 0; background: color-mix(in srgb, var(--brass) 18%, var(--paper)); border: 1px solid color-mix(in srgb, var(--brass) 35%, var(--survey)); overflow: hidden; animation: grow 0.55s cubic-bezier(0.2,0.7,0.2,1) both; }
-@keyframes grow { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); } }
-.bar-band { position: absolute; left: 0; right: 0; top: 0; background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--brass) 24%, transparent) 0 4px, transparent 4px 8px); }
-.bar-mid { position: absolute; left: 0; right: 0; height: 2.5px; background: var(--brass); }
-.bar-vals { display: flex; flex-direction: column; align-items: center; gap: 0.05rem; line-height: 1.1; }
-.bar-mid-v { font-family: var(--font-display); font-weight: 600; font-size: 0.8rem; color: var(--ink); }
-.bar-band-v { font-size: 0.58rem; font-weight: 600; color: var(--ink); opacity: 0.45; white-space: nowrap; }
-.bar-yr { font-size: 0.76rem; font-weight: 700; color: var(--ink); opacity: 0.6; }
+/* growth bars: then → now */
+.bars { display: flex; gap: 0.5rem; align-items: end; height: 180px; }
+.bar-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.35rem; }
+.pb-v { font-family: var(--font-display); font-weight: 600; font-size: 0.72rem; color: var(--ink); opacity: 0.75; white-space: nowrap; }
+.pb-track { width: 60%; max-width: 40px; flex: 1; display: flex; align-items: flex-end; }
+.pb-fill {
+  width: 100%; min-height: 4px; border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--positive), color-mix(in srgb, var(--positive) 55%, var(--paper)));
+}
+.bar-yr { font-size: 0.74rem; font-weight: 700; color: var(--ink); opacity: 0.6; }
 
 /* ---------- funds (filtered by asset, tap to expand) ---------- */
 .funds-card .card-title { margin-bottom: 0.2rem; }
