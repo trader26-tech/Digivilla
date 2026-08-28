@@ -51,6 +51,9 @@ export class StorefrontComponent {
   @Output() openProperty = new EventEmitter<{
     property: Property['key'];
     variant: 'conservative' | 'balanced' | 'aggressive';
+    /** When 'map', the detail page opens scrolled to the risk–reward map,
+     *  highlighting this scheme (set by the tile's location pin). */
+    focus?: 'map';
   }>();
 
   /** Map the storefront's property-world variant names onto the basket risk
@@ -130,12 +133,11 @@ export class StorefrontComponent {
   }
 
   /** Tapping a tile's location pin: open the detail page focused on the
-   *  risk–reward map for this plot. The `focus` hook (read by the shell /
-   *  property-detail to scroll to + highlight this scheme) is being finalised
-   *  with the nav-wiring owner; until then this opens the detail page normally. */
+   *  risk–reward map for this plot. `focus: 'map'` tells the shell /
+   *  property-detail to scroll to #mapCard and highlight this scheme. */
   openMap(p: Property, vk: VariantKey): void {
     const variant = StorefrontComponent.RISK_OF[vk];
-    this.openProperty.emit({ property: p.key, variant });
+    this.openProperty.emit({ property: p.key, variant, focus: 'map' });
   }
 
   /** The unique development name for a tile, e.g. "Marina Rise".
