@@ -75,23 +75,19 @@
     <div class="rm-hint" *ngIf="!card()">Drag to explore · pinch to zoom · tap a pin</div>
   </div>
 
-  <!-- slide-up info card -->
+  <!-- minimal slide-up info card -->
   <div class="rm-sheet" [class.open]="card()" *ngIf="card() as c" [style.--c]="c.color">
     <button class="sheet-x" type="button" (click)="closeCard()" aria-label="Close">×</button>
-    <div class="sheet-head">
-      <span class="sheet-badge">{{ c.propName }}</span>
-      <h2 class="sheet-name">{{ c.name }}</h2>
-      <p class="sheet-loc">{{ c.locality }}</p>
+    <div class="sheet-row">
+      <span class="sheet-name">{{ c.name }}</span>
+      <span class="sheet-tag">{{ c.propName }} · {{ c.riskLabel }}</span>
     </div>
-    <div class="sheet-stats">
-      <div class="ss"><span class="ss-k">Price</span><span class="ss-v">{{ compact(c.price) }}</span></div>
-      <div class="ss"><span class="ss-k">Reward</span><span class="ss-v pos">{{ pct(c.reward) }}<span class="u">/yr</span></span></div>
-      <div class="ss"><span class="ss-k">Risk</span><span class="ss-v neg" [class.txt]="c.riskPct == null">{{ c.riskPct != null ? pct(c.riskPct) : c.riskLabel }}</span></div>
-      <div class="ss" *ngIf="c.incomePays"><span class="ss-k">Income</span><span class="ss-v">{{ inr(c.rentMonthly) }}<span class="u">/mo</span></span></div>
-      <div class="ss" *ngIf="!c.incomePays"><span class="ss-k">Type</span><span class="ss-v txt">Pure growth</span></div>
-      <div class="ss"><span class="ss-k">Reward/risk</span><span class="ss-v" [class.pos]="(c.rrRatio ?? 0) >= 0.9">{{ c.rrRatio !== null ? (c.rrRatio | number:'1.2-2') : '—' }}</span></div>
+    <div class="sheet-figs">
+      <span class="sf"><b class="pos">{{ pct(c.reward) }}</b> return</span>
+      <span class="sf" *ngIf="c.incomePays"><b>{{ inr(c.rentMonthly) }}</b>/mo</span>
+      <span class="sf" *ngIf="!c.incomePays"><b>Growth</b> only</span>
+      <span class="sf"><b>{{ compact(c.price) }}</b> ticket</span>
     </div>
-    <p class="sheet-verdict">{{ c.verdict }}</p>
-    <button class="sheet-cta" type="button" (click)="viewFull()">View full details →</button>
+    <button class="sheet-cta" type="button" (click)="viewFull()">View details →</button>
   </div>
 </main>

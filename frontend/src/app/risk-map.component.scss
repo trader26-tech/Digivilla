@@ -8,17 +8,21 @@
   position: absolute; inset: 0;
   overflow: hidden;
   cursor: grab; touch-action: none;
-  background: color-mix(in srgb, var(--survey) 18%, var(--paper));
   display: grid; place-items: center;
   animation: rmIn 0.4s ease both;
+  /* the terrain also paints the viewport itself, so any area a pan exposes is
+     still "map" — never blank paper bleeding in. */
+  background: linear-gradient(38deg, #DDECE0 0%, #FAF8F3 50%, #F2E1D8 100%);
 }
 .rm-viewport:active { cursor: grabbing; }
 @keyframes rmIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── the pan/zoom board ────────────────────────────────────────── */
+/* Board is sized to COVER the viewport (max of the two ratios) so the map
+   surface always fills the screen — no empty margins. */
 .rm-board {
   position: relative;
-  width: min(150vw, 190vh);      /* board is large so there's room to explore */
+  width: max(132vw, 183vh);       /* cover: whichever dimension needs more */
   aspect-ratio: 1000 / 720;
   container-type: inline-size;    /* enables cqw units for the axis labels */
   transform-origin: center center;
@@ -28,8 +32,7 @@
 }
 .rm-bg {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  border-radius: 20px;
-  box-shadow: 0 12px 50px -20px color-mix(in srgb, var(--ink) 45%, transparent);
+  /* full-bleed — no card border/shadow so it reads as a map, not a boxed chart */
 }
 .rm-grid line { stroke: color-mix(in srgb, var(--ink) 8%, transparent); stroke-width: 1.5; }
 .rm-diag { stroke: color-mix(in srgb, var(--brass) 36%, transparent); stroke-width: 3; stroke-dasharray: 9 11; stroke-linecap: round; }
@@ -136,52 +139,37 @@
 }
 @keyframes hintFade { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 0.92; transform: translateX(-50%); } }
 
-/* ── info card (bottom sheet) ──────────────────────────────────── */
+/* ── minimal info card (small bottom sheet, never covers the map) ── */
 .rm-sheet {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 7;
-  max-width: 640px; margin: 0 auto;
-  padding: 1.1rem 1.2rem calc(1.3rem + env(safe-area-inset-bottom));
-  background: var(--paper); border-radius: 22px 22px 0 0;
-  border: 1px solid var(--survey); border-bottom: none;
-  box-shadow: 0 -12px 40px -16px color-mix(in srgb, var(--ink) 45%, transparent);
-  transform: translateY(110%);
-  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  position: absolute; left: 0.6rem; right: 0.6rem; z-index: 7;
+  bottom: calc(0.6rem + env(safe-area-inset-bottom));
+  max-width: 460px; margin: 0 auto;
+  padding: 0.7rem 0.85rem;
+  background: var(--paper); border-radius: 16px;
+  border: 1px solid var(--survey);
+  border-left: 3px solid var(--c, var(--brass));
+  box-shadow: 0 8px 28px -10px color-mix(in srgb, var(--ink) 45%, transparent);
+  transform: translateY(calc(100% + 1.2rem));
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .rm-sheet.open { transform: translateY(0); }
-.rm-sheet::before {
-  content: ""; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-  width: 40px; height: 4px; border-radius: 999px; background: var(--survey);
-}
 .sheet-x {
-  position: absolute; top: 0.7rem; right: 0.9rem; width: 32px; height: 32px;
-  border: none; border-radius: 50%; background: color-mix(in srgb, var(--survey) 30%, var(--paper));
-  color: var(--ink); font-size: 1.2rem; line-height: 1; cursor: pointer;
+  position: absolute; top: 0.4rem; right: 0.5rem; width: 30px; height: 30px;
+  border: none; border-radius: 50%; background: transparent;
+  color: var(--ink); opacity: 0.5; font-size: 1.25rem; line-height: 1; cursor: pointer;
 }
-.sheet-head { margin: 0.5rem 0 0.9rem; }
-.sheet-badge {
-  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
-  background: color-mix(in srgb, var(--c, var(--brass)) 16%, var(--paper));
-  color: color-mix(in srgb, var(--c, var(--brass)) 72%, var(--ink));
-  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
-}
-.sheet-name { margin: 0.4rem 0 0.15rem; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; line-height: 1.05; color: var(--ink); }
-.sheet-loc { margin: 0; font-size: 0.86rem; color: var(--ink); opacity: 0.6; }
-.sheet-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.9rem; }
-.ss {
-  display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.7rem; border-radius: 10px;
-  background: color-mix(in srgb, var(--survey) 14%, var(--paper)); border: 1px solid var(--survey);
-}
-.ss-k { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.55; }
-.ss-v { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.ss-v.pos { color: var(--positive); }
-.ss-v.neg { color: var(--terracotta); }
-.ss-v.txt { font-size: 0.95rem; line-height: 1.15; }
-.u { font-size: 0.6rem; font-weight: 600; opacity: 0.7; }
-.sheet-verdict { margin: 0 0 1rem; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+.sheet-x:hover { opacity: 0.9; }
+.sheet-row { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; padding-right: 1.8rem; }
+.sheet-name { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 1.1; color: var(--ink); }
+.sheet-tag { font-size: 0.74rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
+.sheet-figs { display: flex; flex-wrap: wrap; gap: 0.15rem 0.9rem; margin: 0.4rem 0 0.6rem; }
+.sf { font-size: 0.82rem; color: var(--ink); opacity: 0.75; font-variant-numeric: tabular-nums; }
+.sf b { font-weight: 800; opacity: 1; }
+.sf b.pos { color: var(--positive); }
 .sheet-cta {
-  width: 100%; border: none; border-radius: 12px; cursor: pointer;
-  padding: 0.95rem 1rem; background: var(--ink); color: var(--paper);
-  font-family: var(--font-body); font-weight: 700; font-size: 1rem;
+  width: 100%; min-height: 44px; border: none; border-radius: 10px; cursor: pointer;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--font-body); font-weight: 700; font-size: 0.92rem;
   transition: transform 0.12s ease, opacity 0.15s ease;
 }
 .sheet-cta:active { transform: scale(0.98); }
