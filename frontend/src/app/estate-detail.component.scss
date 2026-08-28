@@ -484,12 +484,37 @@
 .ago-tab:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--survey)); }
 .ago-tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
+/* ── plots picker (main control) + horizon (side control) ───────────────── */
+.horizon-pick { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
+.horizon-pick select {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--survey); border-radius: 8px; background: var(--paper);
+  color: var(--ink); font-family: var(--font-body); font-weight: 700; font-size: 0.8rem;
+  padding: 0.3rem 1.5rem 0.3rem 0.6rem; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--brass) 50%), linear-gradient(135deg, var(--brass) 50%, transparent 50%);
+  background-position: calc(100% - 14px) center, calc(100% - 9px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.plots-row { display: flex; gap: 0.5rem; margin: 0.2rem 0 1.2rem; }
+.plot-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+  padding: 0.7rem 0.4rem; border: 1.5px solid var(--survey); border-radius: 12px;
+  background: var(--paper); cursor: pointer; font-family: var(--font-body); color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.plot-tab:hover { border-color: color-mix(in srgb, var(--positive) 45%, var(--survey)); }
+.plot-tab:active { transform: scale(0.98); }
+.plot-tab.on { border-color: var(--positive); background: color-mix(in srgb, var(--positive) 8%, var(--paper)); }
+.pt-n { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--ink); }
+.plot-tab.on .pt-n { color: var(--positive); }
+.pt-l { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.55; }
+.pt-amt { font-size: 0.82rem; font-weight: 700; color: var(--ink); opacity: 0.75; margin-top: 0.1rem; }
+
 /* ── stacked growth bars: invested base + gain on top, year by year ─────── */
 .stack-legend { display: flex; gap: 1.2rem; margin: 0.4rem 0 1rem; }
 .sl-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.75; }
 .sl-dot { width: 11px; height: 11px; border-radius: 3px; }
-.sl-dot.invested { background: color-mix(in srgb, var(--ink) 30%, var(--paper)); }
-.sl-dot.gain { background: var(--brass); }
+.sl-dot.invested { background: color-mix(in srgb, var(--ink) 32%, var(--paper)); }
+.sl-dot.gain { background: var(--positive); }
 
 .stack-bars { display: flex; gap: 0.5rem; align-items: end; height: 200px; padding-top: 0.4rem; }
 .sb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.35rem; }
@@ -504,9 +529,14 @@
   box-shadow: 0 6px 14px -9px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 @keyframes gcGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-/* gain sits on TOP (golden), invested base BELOW (solid ink-grey) */
-.sb-gain { width: 100%; background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 94%, #fff), var(--brass) 60%); }
-.sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 26%, var(--paper)); }
+/* gain sits on TOP (green — distinct from the gold/brass depth), invested base
+   BELOW (calm slate). A soft sheen makes the growth pop. */
+.sb-gain {
+  position: relative; width: 100%;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--positive) 78%, #fff), var(--positive) 65%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 24%, var(--paper)); }
 .sb-col:nth-child(1) .sb-stack { animation-delay: 0.15s; }
 .sb-col:nth-child(2) .sb-stack { animation-delay: 0.24s; }
 .sb-col:nth-child(3) .sb-stack { animation-delay: 0.33s; }

@@ -121,43 +121,55 @@
       </ng-container>
     </section>
 
-    <!-- ===== 2 · How your plot would have grown — stacked: invested + gain ===== -->
+    <!-- ===== 2 · How your money would grow — plots picker + stacked bars ===== -->
     <section class="card grown-card">
       <div class="card-head">
-        <h2 class="card-title">How your plot would have grown</h2>
+        <h2 class="card-title">How your money would grow</h2>
+        <!-- horizon: secondary side control, default 20y -->
+        <label class="horizon-pick">
+          over
+          <select [value]="yearsAgo()" (change)="setYearsAgo(+$any($event.target).value)" aria-label="Time horizon">
+            <option *ngFor="let n of agoOptions" [value]="n">{{ n }} yrs</option>
+          </select>
+        </label>
       </div>
 
-      <div class="ago-row" role="tablist" aria-label="Years ago">
-        <button *ngFor="let n of agoOptions" type="button" class="ago-tab" role="tab"
-                [class.on]="yearsAgo() === n" [attr.aria-selected]="yearsAgo() === n"
-                (click)="setYearsAgo(n)">{{ n }}y ago</button>
+      <!-- how many plots — the main control, shows the real invested amount -->
+      <div class="plots-row">
+        <button *ngFor="let n of plotOptions" type="button" class="plot-tab"
+                [class.on]="plots() === n" (click)="setPlots(n)">
+          <span class="pt-n">{{ n }}</span>
+          <span class="pt-l">{{ n === 1 ? propName.toLowerCase() : propName.toLowerCase() + 's' }}</span>
+          <span class="pt-amt">{{ compact(n * ticketPrice) }}</span>
+        </button>
       </div>
 
-      <!-- legend: what the two parts of each bar mean -->
+      <!-- legend -->
       <div class="stack-legend">
-        <span class="sl-item"><span class="sl-dot invested"></span>Invested {{ compact(ticketPrice) }}</span>
+        <span class="sl-item"><span class="sl-dot invested"></span>Invested {{ compact(amount()) }}</span>
         <span class="sl-item"><span class="sl-dot gain"></span>Growth</span>
       </div>
 
-      <!-- each bar = invested base + the gain stacked on top, year by year -->
+      <!-- each bar = invested base + gain stacked on top, year by year -->
       <div class="stack-bars">
         <div class="sb-col" *ngFor="let r of pastProjection()">
           <span class="sb-v">{{ compact(r.value) }}</span>
           <div class="sb-track">
             <div class="sb-stack" [style.height.%]="(r.value / pastNowValue()) * 100">
-              <div class="sb-gain" [style.height.%]="((r.value - ticketPrice) / r.value) * 100"></div>
+              <div class="sb-gain" [style.height.%]="((r.value - amount()) / r.value) * 100"></div>
               <div class="sb-base"></div>
             </div>
           </div>
-          <div class="sb-yr">{{ r.year === 0 ? 'then' : (r.year === yearsAgo() ? 'now' : r.year + 'y') }}</div>
+          <div class="sb-yr">{{ r.year === 0 ? 'now' : '+' + r.year + 'y' }}</div>
         </div>
       </div>
 
       <p class="stack-foot">
-        {{ compact(ticketPrice) }} invested {{ yearsAgo() }} years ago would be
-        <strong class="pos">{{ compact(pastNowValue()) }}</strong> today
+        <strong>{{ compact(amount()) }}</strong> in {{ plots() }} {{ plots() === 1 ? propName.toLowerCase() : propName.toLowerCase() + 's' }} could be
+        <strong class="pos">{{ compact(pastNowValue()) }}</strong> in {{ yearsAgo() }} years
         <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
       </p>
+      <p class="stack-basis">Based on this basket's <strong>{{ pct(avgGrowthPct()) }}</strong> average annual return over the last 5 years.<span class="star">*</span></p>
     </section>
 
     <!-- ===== 3 · ASSET ALLOCATION (look-through, interactive) ===== -->

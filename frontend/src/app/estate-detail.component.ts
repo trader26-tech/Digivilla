@@ -401,29 +401,32 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     return amt > 0 ? last.mid / amt : null;
   });
 
-  // ── "If you'd invested N years ago" — backward look on the rolling-average
-  //    growth, so the customer can compare against their own property. ──────────
+  // ── "How your money would have grown" — over N years, for the chosen number
+  //    of plots, compounded at the basket's real 5-year average return. ─────────
+  /** How many units the customer models buying (1–3). */
+  plotOptions = [1, 2, 3];
+  setPlots(n: number): void { this.plots.set(n); }
+
+  /** Time horizon — secondary control, defaults to 20 years. */
   readonly agoOptions = [3, 5, 10, 20];
-  yearsAgo = signal<number>(5);
+  yearsAgo = signal<number>(20);
   setYearsAgo(n: number): void { this.yearsAgo.set(n); }
 
-  /** The basket's rolling-average annual growth (from real past data). */
-  private avgGrowthRate(): number {
+  /** The 5-year average annual return we base the projection on (real data). */
+  avgGrowthPct = computed<number>(() => {
     const m = this.activeMetrics();
-    if (!m) return 0.11;
-    // prefer the longest real track record for a stable rolling average
-    const pick = m.return_5y ?? m.return_3y ?? m.expected_return ?? 11;
-    return pick / 100;
-  }
+    if (!m) return 11;
+    return m.return_5y ?? m.return_3y ?? m.expected_return ?? 11;
+  });
+  private avgGrowthRate(): number { return this.avgGrowthPct() / 100; }
 
-  /** Year-by-year path of ₹(ticket) compounded at the average rate, from
-   *  `yearsAgo` in the past up to today — for the comparison bars. */
+  /** Year-by-year path of the invested amount (plots × ticket) compounded at
+   *  the 5-yr average rate, up to today — for the stacked bars. */
   pastProjection = computed<{ year: number; value: number }[]>(() => {
-    const amt = this.ticketPrice;
+    const amt = this.amount();               // plots × ticket price
     const rate = this.avgGrowthRate();
     const years = this.yearsAgo();
     const out: { year: number; value: number }[] = [];
-    // ~5 evenly spaced milestone points from start (year 0) to now (year N)
     const steps = Math.min(years, 5);
     for (let s = 0; s <= steps; s++) {
       const y = Math.round((s / steps) * years);
@@ -432,14 +435,11 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     return out;
   });
 
-  /** What ₹(ticket) invested `yearsAgo` would be worth today. */
   pastNowValue = computed<number>(() => {
     const rows = this.pastProjection();
-    return rows.length ? rows[rows.length - 1].value : this.ticketPrice;
+    return rows.length ? rows[rows.length - 1].value : this.amount();
   });
-  pastMultiple = computed<number>(() => {
-    return this.pastNowValue() / this.ticketPrice;
-  });
+  pastMultiple = computed<number>(() => this.pastNowValue() / this.amount());
 
   // ── SVG geometry for the growth curve (with real X/Y axes + hover) ──────────
   readonly chartW = 680;
