@@ -178,10 +178,6 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   heroDetailsOpen = signal(false);
   toggleHeroDetails(): void { this.heroDetailsOpen.update(v => !v); }
 
-  /** The "how we get the growth number" explainer is hidden until the eye is tapped. */
-  growthInfoOpen = signal(false);
-  toggleGrowthInfo(): void { this.growthInfoOpen.update(v => !v); }
-
   /** Long-run expected return assumption per asset class (%), matching the
    *  backend engine's priors — used to explain the forward growth figure. */
   private readonly ASSET_PRIOR: Record<string, number> = { equity: 12, hybrid: 10, gold: 8, debt: 6.8, cash: 6.8 };
