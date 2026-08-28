@@ -182,8 +182,9 @@
       </div>
     </section>
 
-    <!-- ===== How you get paid — concise monthly-income card (income tiers only) ===== -->
-    <section class="card paid-card" *ngIf="incomePays">
+    <!-- ===== How you get paid — header + boxless monthly-income block (income tiers only) ===== -->
+    <section class="paid-card" *ngIf="incomePays">
+      <h2 class="paid-title">Monthly payment</h2>
       <!-- compact header: label + the monthly figure inline, not a giant hero -->
       <div class="paid-head">
         <span class="paid-k">You get, every month</span>

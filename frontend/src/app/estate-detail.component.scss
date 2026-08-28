@@ -309,14 +309,22 @@
 }
 .card-sub { font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.5; }
 
-/* ===== "How you get paid" — income scheme card (a bounded highlighted box) ===== */
+/* ===== "How you get paid" — boxless: a "Monthly payment" header, then content.
+   No outer rectangle; sits under a hairline divider like the other sections. ===== */
 .paid-card {
-  border: 1px solid var(--survey) !important;
-  border-radius: 18px !important;
-  padding: 1.4rem 1.2rem !important;
-  background: color-mix(in srgb, var(--survey) 7%, var(--paper)) !important;
-  margin-bottom: 1.4rem !important;
-  border-top: 1px solid var(--survey) !important;
+  margin: 0;
+  padding: 1.7rem 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--survey) 60%, transparent);
+  opacity: 0;
+  transform: translateY(14px);
+  animation: cardIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.paid-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.3rem; line-height: 1.12; letter-spacing: -0.01em;
+  margin: 0 0 0.9rem; color: var(--ink);
 }
 /* compact income header — label on top, value inline (not a giant hero) */
 .paid-head {
@@ -648,15 +656,35 @@
 .sb-yr { font-size: 0.7rem; font-weight: 700; color: var(--ink); opacity: 0.55; }
 .sb-col:first-child .sb-yr { color: var(--ink); opacity: 0.75; }
 
-.stack-foot { margin: 1.1rem 0 0.35rem; font-size: 0.92rem; line-height: 1.45; color: var(--ink); opacity: 0.85; }
-.stack-foot strong { font-family: var(--font-display); font-weight: 700; }
-.stack-foot strong.pos { color: var(--positive); }
-.stack-foot strong.rent { color: var(--brass); }
-.stack-foot + .stack-foot { margin-top: 0.3rem; opacity: 0.8; }
-.sf-mult { display: inline-block; margin-left: 0.3rem; font-weight: 700; font-size: 0.82rem; color: var(--positive); }
-.stack-basis { margin: 0; font-size: 0.76rem; line-height: 1.4; color: var(--ink); opacity: 0.55; }
-.stack-basis strong { font-weight: 700; color: var(--ink); opacity: 1; }
-.stack-basis .star { color: var(--terracotta); font-weight: 700; }
+/* footer + always-visible breakdown — matches the Land "grow" section */
+.stack-foot {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin: 1.15rem 0 0;
+}
+.sf-line { display: inline-flex; align-items: baseline; gap: 0.5rem; }
+.sf-line strong.pos {
+  font-family: var(--font-display); font-weight: 700; font-size: 1.5rem;
+  line-height: 1; color: var(--brass);
+}
+.sf-mult { font-weight: 700; font-size: 0.9rem; color: var(--brass); opacity: 0.85; }
+.stack-explain {
+  margin-top: 0.9rem; padding: 1rem 1.05rem;
+  border: 1px solid var(--survey); border-radius: 14px;
+  background: color-mix(in srgb, var(--survey) 12%, var(--paper));
+}
+.se-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 0.4rem 0; font-size: 0.92rem; color: var(--ink);
+}
+.se-k { opacity: 0.7; }
+.se-v { font-family: var(--font-display); font-weight: 700; font-feature-settings: 'tnum' 1; }
+.se-v.pos { color: var(--brass); }
+.se-row.total {
+  border-top: 1px solid color-mix(in srgb, var(--survey) 60%, transparent);
+  margin-top: 0.15rem; padding-top: 0.55rem;
+}
+.se-row.total .se-v { font-size: 1.1rem; }
+.se-note { margin: 0.7rem 0 0; font-size: 0.72rem; letter-spacing: 0.01em; color: var(--ink); opacity: 0.45; }
 
 /* ---------- funds (filtered by asset, tap to expand) ---------- */
 .funds-card .card-title { margin-bottom: 0.2rem; }
