@@ -1,28 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, OnDestroy, computed, signal } from '@angular/core';
 
 import {
-  Leg,
   PACKAGES,
   PropertyKey,
-  TAX_NOTE,
   VariantKey,
-  runwayMonths,
   totalMonthlyIncome,
 } from './property-package.data';
 
 /**
- * "How you get paid" — a self-contained visual explainer for the monthly
- * income of an income-tier estate (Flat / Apartment / Duplex). Drop it into
- * any detail page with [property] + [variant]; every figure is read from the
- * shared PACKAGES data, so it auto-adjusts to the tier and risk variant.
- *
- * It answers, visually and step by step:
- *   1. HOW MUCH you get per month.
- *   2. WHICH fund it comes from (the arbitrage income sleeve).
- *   3. HOW it reaches you — an automatic SWP credited to your bank each month.
- *   4. HOW it keeps going — the annual growth→income top-up, and the
- *      emergency reserve / runway that protect the payout.
+ * "How you get paid" — a VISUAL, animated explainer for the monthly income of
+ * one income-tier estate. Drop in with [property] + [variant]; it shows only
+ * that estate. The money splits into three plain buckets (Rent / Growth /
+ * Safety), and a short animation shows rent dropping into your bank each month,
+ * the Growth bucket rising, and Growth topping the Rent bucket up once a year.
+ * Minimal words, no fund jargon — the picture does the explaining.
  */
 @Component({
   selector: 'app-income-flow',
@@ -31,48 +23,78 @@ import {
   templateUrl: './income-flow.component.html',
   styleUrl: './income-flow.component.scss',
 })
-export class IncomeFlowComponent {
+export class IncomeFlowComponent implements OnDestroy {
   @Input({ required: true }) property!: PropertyKey;
   @Input({ required: true }) variant!: VariantKey;
-
-  readonly taxNote = TAX_NOTE;
 
   pkg = computed(() => PACKAGES[this.property]);
   v = computed(() => PACKAGES[this.property].variants[this.variant]);
 
-  /** Total monthly income the customer receives. */
   monthly = computed<number>(() => totalMonthlyIncome(this.v()));
 
-  /** The income-sleeve legs (arbitrage / equity-savings) that the SWP runs on. */
-  incomeLegs = computed<Leg[]>(() => this.v().legs.filter(l => l.role === 'income'));
-  /** The single primary payer (largest monthly draw) — for the "from" line. */
-  primaryLeg = computed<Leg | null>(() => {
-    const legs = this.incomeLegs().filter(l => l.withdrawMonthly > 0);
-    if (!legs.length) return null;
-    return legs.reduce((a, b) => (b.withdrawMonthly > a.withdrawMonthly ? b : a));
+  /** Three simple buckets, in rupees — no fund names. */
+  buckets = computed(() => {
+    const price = this.pkg().price;
+    const legs = this.v().legs;
+    const rent = legs.filter(l => l.role === 'income').reduce((s, l) => s + l.weight * price, 0);
+    const growth = legs.filter(l => l.role === 'growth').reduce((s, l) => s + l.weight * price, 0);
+    const safety = legs.filter(l => l.role === 'liquid' || l.role === 'hedge').reduce((s, l) => s + l.weight * price, 0);
+    return {
+      total: price,
+      rent, growth, safety,
+      rentPct: Math.round((rent / price) * 100),
+      growthPct: Math.round((growth / price) * 100),
+      safetyPct: Math.round((safety / price) * 100),
+    };
   });
 
-  incomeCorpus = computed<number>(() =>
-    this.v().legs.filter(l => l.role === 'income').reduce((s, l) => s + l.weight * this.pkg().price, 0),
-  );
-  growthCorpus = computed<number>(() =>
-    this.v().legs.filter(l => l.role === 'growth').reduce((s, l) => s + l.weight * this.pkg().price, 0),
-  );
-  liquidCorpus = computed<number>(() =>
-    this.v().legs.filter(l => l.role === 'liquid').reduce((s, l) => s + l.weight * this.pkg().price, 0),
-  );
-  hasLiquid = computed<boolean>(() => this.liquidCorpus() > 0);
+  /** ── The 6 simple points (no jargon) ──────────────────────────── */
+  points = computed(() => {
+    const b = this.buckets();
+    const m = this.monthly();
+    return [
+      { icon: '🧺', text: `Your ${this.compact(b.total)} is split into 3 pots.` },
+      { icon: '🏦', text: `Every month, ${this.inr(m)} is sent straight to your bank.` },
+      { icon: '💧', text: `That monthly money comes from the Rent pot.` },
+      { icon: '📈', text: `The Growth pot keeps growing in the background.` },
+      { icon: '🔁', text: `Once a year, Growth tops the Rent pot back up.` },
+      { icon: '🛟', text: `A Safety pot covers you if a month goes bad.` },
+      { icon: '🧾', text: `You pay almost no tax on this income.` },
+    ];
+  });
 
-  /** Months of rent already sitting in the income sleeve = the runway. */
-  runway = computed<number>(() => runwayMonths(this.v(), this.pkg().price));
-  runwayPct = computed<number>(() => Math.min(100, (this.runway() / 24) * 100));
+  // ── Animation: step 0..4 ────────────────────────────────────────
+  step = signal(0);
+  playing = signal(false);
+  private timer?: ReturnType<typeof setInterval>;
+  readonly lastStep = 4;
 
-  /** Per-year top-up the growth engine sends the income sleeve (~1 year of rent). */
-  annualTopUp = computed<number>(() => this.monthly() * 12);
+  /** Growth-pot height grows a little at each later step (for the rising effect). */
+  growthLift = computed<number>(() => {
+    const s = this.step();
+    // 0% extra at step<=1, up to ~26% taller by the end
+    return s <= 1 ? 0 : Math.min(26, (s - 1) * 9);
+  });
+  /** Whether a coin is dropping to the bank (steps 2+). */
+  paying = computed<boolean>(() => this.step() >= 2);
+  /** Whether the yearly refill arrow shows (step 3+). */
+  refilling = computed<boolean>(() => this.step() >= 3);
 
-  /** Show/hide the "why it's tax-efficient" detail. */
-  taxOpen = signal(false);
-  toggleTax(): void { this.taxOpen.update(v => !v); }
+  play(): void {
+    if (this.playing()) { this.pause(); return; }
+    if (this.step() >= this.lastStep) this.step.set(0);
+    this.playing.set(true);
+    this.timer = setInterval(() => {
+      if (this.step() >= this.lastStep) { this.pause(); return; }
+      this.step.update(s => s + 1);
+    }, 1400);
+  }
+  pause(): void {
+    this.playing.set(false);
+    if (this.timer) { clearInterval(this.timer); this.timer = undefined; }
+  }
+  goToStep(n: number): void { this.pause(); this.step.set(n); }
+  ngOnDestroy(): void { this.pause(); }
 
   // formatting
   inr(v: number | null | undefined): string {
