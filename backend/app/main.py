@@ -266,7 +266,14 @@ def analyze_basket(payload: dict) -> dict:
     if not items:
         raise HTTPException(status_code=400, detail="No items to analyze")
     include_series = bool(payload.get("include_series", False))
-    return basket_analytics.analyze(items, include_series=include_series).model_dump()
+    invested = float(payload.get("invested", 0) or 0)
+    monthly_rent = float(payload.get("monthly_rent", 0) or 0)
+    return basket_analytics.analyze(
+        items,
+        include_series=include_series,
+        invested=invested,
+        monthly_rent=monthly_rent,
+    ).model_dump()
 
 
 @app.get("/dashboard/funds/{scheme_code}/info")
