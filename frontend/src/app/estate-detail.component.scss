@@ -309,6 +309,79 @@
 }
 .card-sub { font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.5; }
 
+/* ===== "How you get paid" — income scheme card (a bounded highlighted box) ===== */
+.paid-card {
+  border: 1px solid var(--survey) !important;
+  border-radius: 18px !important;
+  padding: 1.4rem 1.2rem !important;
+  background: color-mix(in srgb, var(--survey) 7%, var(--paper)) !important;
+  margin-bottom: 1.4rem !important;
+  border-top: 1px solid var(--survey) !important;
+}
+/* income hero */
+.paid-hero { text-align: center; padding-bottom: 1.2rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--survey); }
+.ph-k { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; }
+.ph-v { font-family: var(--font-display); font-weight: 700; font-size: 3.2rem; line-height: 1; color: var(--positive); margin: 0.3rem 0; }
+.ph-u { font-size: 0.9rem; font-weight: 600; opacity: 0.6; }
+/* three rows */
+.paid-rows { display: flex; flex-direction: column; gap: 0.7rem; }
+.pr { display: flex; align-items: center; gap: 0.9rem; }
+.pr-ic { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; }
+.pr-ic svg { width: 22px; height: 22px; }
+.pr.r1 .pr-ic { background: color-mix(in srgb, var(--positive) 12%, var(--paper)); color: var(--positive); }
+.pr.r2 .pr-ic { background: color-mix(in srgb, var(--brass) 12%, var(--paper)); color: var(--brass); }
+.pr.r3 .pr-ic { background: color-mix(in srgb, var(--positive) 12%, var(--paper)); color: var(--positive); }
+.pr-tx { flex: 1; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+.pr-tx small { display: block; font-size: 0.78rem; font-weight: 500; opacity: 0.55; }
+.pr-v { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; white-space: nowrap; }
+.pr-v small { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; opacity: 0.6; }
+.pr-v.muted { color: var(--ink); opacity: 0.6; font-size: 0.95rem; }
+/* tax expander */
+.tax-row {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+  margin-top: 1.1rem; padding: 0.75rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--positive) 30%, var(--survey)); border-radius: 12px;
+  background: color-mix(in srgb, var(--positive) 6%, var(--paper));
+  cursor: pointer; font-family: var(--font-body); color: var(--ink); text-align: left;
+}
+.tax-tx { font-size: 0.88rem; font-weight: 600; } .tax-tx b { color: var(--positive); }
+.tax-row svg { flex: none; color: var(--positive); transition: transform 0.2s ease; }
+.tax-row.open svg { transform: rotate(180deg); }
+.tax-open { animation: unfold 0.24s ease both; }
+.tax-pts { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.tax-pts li { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.85rem; line-height: 1.45; color: var(--ink); opacity: 0.85; }
+.tax-pts b { opacity: 1; }
+.tp-n { flex: none; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--positive); color: var(--paper); font-size: 0.66rem; font-weight: 800; margin-top: 0.05rem; }
+.tax-bar { margin-top: 0.9rem; }
+.tb-track { position: relative; height: 12px; border-radius: 6px; background: color-mix(in srgb, var(--survey) 40%, var(--paper)); overflow: hidden; }
+.tb-fill { display: block; height: 100%; background: var(--positive); border-radius: 6px; }
+.tb-line { position: absolute; top: -2px; bottom: -2px; right: 0; width: 2px; background: var(--terracotta); }
+.tb-labels { display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.72rem; font-weight: 600; opacity: 0.6; }
+/* if you'd done this 5 years ago */
+.paid-back { margin-top: 1.3rem; padding-top: 1.2rem; border-top: 1px solid var(--survey); }
+.pb-h { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; margin: 0 0 0.9rem; color: var(--ink); }
+.pb-top { display: flex; align-items: center; gap: 0.8rem; }
+.pb-fig { display: flex; flex-direction: column; gap: 0.15rem; }
+.pb-k { font-size: 0.74rem; font-weight: 600; opacity: 0.55; }
+.pb-fv { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--ink); }
+.pb-fv.grow { color: var(--positive); }
+.pb-arw { font-size: 1.2rem; color: var(--positive); opacity: 0.7; }
+.pb-sub { margin: 0.7rem 0 0; font-size: 0.88rem; color: var(--ink); opacity: 0.8; } .pb-sub b { color: var(--brass); }
+.pb-bars { display: flex; gap: 0.4rem; align-items: end; height: 150px; margin-top: 1rem; }
+.pbb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.3rem; }
+.pbb-v { font-family: var(--font-display); font-weight: 700; font-size: 0.68rem; opacity: 0.75; white-space: nowrap; }
+.pbb-track { width: 60%; max-width: 38px; flex: 1; display: flex; align-items: flex-end; }
+.pbb-fill { width: 100%; min-height: 4px; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--positive) 78%, #fff), var(--positive) 62%); transform-origin: bottom; animation: gcGrow 0.6s cubic-bezier(0.2,0.8,0.2,1) both; }
+.pbb-col:nth-child(1) .pbb-fill { animation-delay: 0.1s; }
+.pbb-col:nth-child(2) .pbb-fill { animation-delay: 0.18s; }
+.pbb-col:nth-child(3) .pbb-fill { animation-delay: 0.26s; }
+.pbb-col:nth-child(4) .pbb-fill { animation-delay: 0.34s; }
+.pbb-col:nth-child(5) .pbb-fill { animation-delay: 0.42s; }
+.pbb-col:nth-child(6) .pbb-fill { animation-delay: 0.50s; }
+.pbb-y { font-size: 0.7rem; font-weight: 700; opacity: 0.55; }
+.pb-note { margin: 0.9rem 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--ink); opacity: 0.75; } .pb-note b { color: var(--positive); opacity: 1; } .pb-note em { font-style: italic; font-weight: 600; color: var(--brass); }
+.paid-disc { margin: 1rem 0 0; font-size: 0.72rem; text-align: center; color: var(--ink); opacity: 0.5; }
+
 /* ---------- Past-performance card ---------- */
 .chart-card .card-head { margin-bottom: 0.6rem; }
 /* plain-English readout, sits under the title — subordinate to it */
