@@ -368,6 +368,10 @@ export const RISK_OF_STORE: Record<StoreVariantKey, VariantKey> = {
 export function storeSchemeName(property: PropertyKey, storeVariant: StoreVariantKey): string {
   return schemeName(property, RISK_OF_STORE[storeVariant]);
 }
+/** Locality line from a storefront (property, store-variant) pair. */
+export function storeSchemeLocality(property: PropertyKey, storeVariant: StoreVariantKey): string {
+  return schemeLocality(property, RISK_OF_STORE[storeVariant]);
+}
 
 /** Every (property, variant) pair, for building the risk-reward map. */
 export const ALL_SCHEMES: { property: PropertyKey; variant: VariantKey }[] =
