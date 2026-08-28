@@ -140,10 +140,17 @@ export class StorefrontComponent {
     this.openProperty.emit({ property: p.key, variant, focus: 'map' });
   }
 
-  /** The unique development name for a tile, e.g. "Marina Rise".
-   *  Uses retirement-57's store-key helper (maps ready→conservative etc.). */
+  /** Chennai locality + estate-word names, shown on the tiles. */
+  private static readonly CHENNAI_NAME: Record<Property['key'], Record<VariantKey, string>> = {
+    land:      { ready: 'Kelambakkam Grove', construction: 'Navalur Rise',      prelaunch: 'Siruseri Heights' },
+    flat:      { ready: 'Adyar Grove',       construction: 'Velachery Rise',    prelaunch: 'OMR Heights' },
+    apartment: { ready: 'Anna Nagar Court',  construction: 'Nungambakkam Vista', prelaunch: 'T. Nagar Heights' },
+    duplex:    { ready: 'Boat Club Terrace', construction: 'Poes Garden Manor', prelaunch: 'ECR Pinnacle' },
+  };
+
+  /** The development name for a tile — real Chennai localities. */
   schemeName(p: Property, vk: VariantKey): string {
-    return storeSchemeName(p.key, vk);
+    return StorefrontComponent.CHENNAI_NAME[p.key][vk];
   }
   /** The short locality/tagline for a scheme. */
   schemeLocality(p: Property, vk: VariantKey): string {
