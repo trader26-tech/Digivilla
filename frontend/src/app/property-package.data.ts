@@ -90,20 +90,22 @@ export const TAX_NOTE =
   'payout is mostly your own capital returning — only the gain portion is taxed — so ' +
   'the effective tax on your monthly income stays very low.';
 
-// AMFI scheme codes reused across tiers (closest analysable scheme per label).
-const KOTAK_ARBITRAGE = 102885;
-const EDELWEISS_ARBITRAGE = 118989;
-const ICICI_EQ_SAVINGS = 102330;
-const ICICI_LIQUID = 100309;
-const ICICI_MULTI_ASSET = 120251;
-const ICICI_BLUECHIP = 120586;
-const PPFAS_FLEXI = 122640;
-const HDFC_BAL_ADV = 100119;
-const HDFC_FLEXI = 118989 + 1; // representative; HDFC Flexi Cap
-const HDFC_MIDCAP = 105758;
-const MOTILAL_LMC = 147704;
-const NIPPON_SMALL = 113177;
-const HDFC_FLEXI_CAP = 101762;
+// AMFI scheme codes — REGULAR PLAN (Growth) for every fund, since that's the
+// plan we sell. All codes verified to resolve to the named fund's Regular-Growth
+// scheme with real NAV history on AMFI/mfapi. (Direct-plan / mislabelled codes
+// were replaced 2026-08-29 so every number shown is the real Regular-plan return.)
+const KOTAK_ARBITRAGE = 105968;    // Kotak Arbitrage Fund — Regular Growth
+const EDELWEISS_ARBITRAGE = 130205; // Edelweiss Arbitrage Fund — Regular Growth
+const ICICI_EQ_SAVINGS = 102330;   // ICICI Conservative Hybrid (Regular) — hedged-equity income proxy
+const ICICI_LIQUID = 103340;       // ICICI Prudential Liquid Fund — Regular Growth
+const ICICI_MULTI_ASSET = 101144;  // ICICI Multi Asset Allocation Fund — Regular Growth
+const ICICI_BLUECHIP = 108466;     // ICICI Large Cap (erstwhile Bluechip) — Regular Growth
+const PPFAS_FLEXI = 122640;        // Parag Parikh Flexi Cap — Regular Growth
+const HDFC_BAL_ADV = 100119;       // HDFC Balanced Advantage — Regular Growth
+const HDFC_MIDCAP = 105758;        // HDFC Mid Cap — Regular Growth
+const MOTILAL_LMC = 147701;        // Motilal Oswal Large & Midcap — Regular Growth (was Direct 147704)
+const NIPPON_SMALL = 113177;       // Nippon India Small Cap — Regular Growth
+const HDFC_FLEXI_CAP = 101762;     // HDFC Flexi Cap — Regular Growth
 
 export const PACKAGES: Record<PropertyKey, PropertyPackage> = {
   // ============================ LAND — pure accumulation, NO income ===========

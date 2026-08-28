@@ -161,12 +161,24 @@
         </div>
       </div>
 
-      <p class="stack-foot">
-        <strong>{{ compact(amount()) }}</strong> in {{ plots() }} {{ plots() === 1 ? 'plot' : 'plots' }} could be
-        <strong class="pos">{{ compact(pastNowValue()) }}</strong> in {{ yearsAgo() }} years
-        <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
-      </p>
-      <p class="stack-basis">Based on this basket's <strong>{{ pct(avgGrowthPct()) }}</strong> average annual return over the last 5 years.<span class="star">*</span></p>
+      <div class="stack-foot">
+        <span class="sf-line">
+          <strong class="pos">{{ compact(pastNowValue()) }}</strong>
+          <span class="sf-mult">{{ pastMultiple() | number:'1.1-1' }}×</span>
+        </span>
+        <button type="button" class="sf-info" [class.on]="growthInfoOpen()"
+                (click)="toggleGrowthInfo()" aria-label="How this is worked out">
+          <svg *ngIf="!growthInfoOpen()" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 17v-5M12 8.5h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <svg *ngIf="growthInfoOpen()" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="stack-explain" *ngIf="growthInfoOpen()">
+        <div class="se-row"><span class="se-k">You put in</span><span class="se-v">{{ compact(amount()) }}</span></div>
+        <div class="se-row"><span class="se-k">Growth over {{ yearsAgo() }} years</span><span class="se-v pos">+{{ compact(pastNowValue() - amount()) }}</span></div>
+        <div class="se-row total"><span class="se-k">Worth today</span><span class="se-v">{{ compact(pastNowValue()) }}</span></div>
+        <p class="se-note">Based on this basket's <strong>{{ pct(avgGrowthPct()) }}</strong> average annual return over the last 5&nbsp;years. Illustrative, not guaranteed.</p>
+      </div>
     </section>
 
     <!-- ===== 3 · ASSET ALLOCATION (look-through, interactive) ===== -->
