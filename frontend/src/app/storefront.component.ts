@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Output } from '@angular/core';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
+export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
 
 /** A risk variant of a property, named in property terms rather than fund jargon:
  *   ready        = Ready-to-move  → income now, steadier (conservative)
@@ -12,17 +13,15 @@ export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export interface Variant {
   key: VariantKey;
   label: string;              // property-world name
-  note: string;               // one short plain-English hint
-  appreciationLow: number;    // tentative annual appreciation %, low
-  appreciationHigh: number;   // tentative annual appreciation %, high
-  monthlyIncome: number | null; // illustrative monthly SWP payout — null for pure-growth (Land)
+  growthPct: number;          // expected annual growth %, p.a. (illustrative)
+  past3y: number;             // past 3-year return, annualised % (illustrative)
+  monthlyIncome: number | null; // illustrative monthly rent/SWP — null for pure-growth (Land)
 }
 
 /** One property tier in the storefront. */
 export interface Property {
   key: 'land' | 'flat' | 'apartment' | 'duplex';
   name: string;
-  tagline: string;
   price: number;              // ticket size in rupees
   /** Land is pure growth — it pays no monthly income (no SWP). */
   incomePays: boolean;
@@ -56,42 +55,66 @@ export class StorefrontComponent {
     prelaunch: 'aggressive',
   };
 
-  /** Currently-selected property chip. */
-  activeKey: Property['key'] = 'land';
+  /** Selected property chip. 'all' shows every property's variants. */
+  activeKey: Property['key'] | 'all' = 'all';
   /** Search text. */
   query = '';
 
-  get active(): Property {
-    return this.properties.find((p) => p.key === this.activeKey) ?? this.properties[0];
+  /** Filter by need. */
+  filterOpen = false;
+  filter: FilterKey = 'all';
+  readonly filterOptions: { key: FilterKey; label: string }[] = [
+    { key: 'all', label: 'All estates' },
+    { key: 'income', label: 'Monthly income' },
+    { key: 'growth', label: 'Pure growth' },
+    { key: 'ready', label: 'Ready-to-move' },
+    { key: 'construction', label: 'Under construction' },
+    { key: 'prelaunch', label: 'Pre-launch' },
+  ];
+  get filterLabel(): string {
+    return this.filterOptions.find((o) => o.key === this.filter)?.label ?? 'Filter';
   }
 
-  /** Variant tiles for the active property, filtered by the search text. */
+  /** All variant tiles, after chip + search + filter. */
   get tiles(): { p: Property; v: Variant }[] {
-    const p = this.active;
     const q = this.query.trim().toLowerCase();
-    return this.variantOrder
-      .map((vk) => ({ p, v: p.variants[vk] }))
-      .filter((t) => !q || (`${t.v.label} ${p.name}`).toLowerCase().includes(q));
+    const out: { p: Property; v: Variant }[] = [];
+    for (const p of this.properties) {
+      if (this.activeKey !== 'all' && p.key !== this.activeKey) continue;
+      if (this.filter === 'income' && !p.incomePays) continue;
+      if (this.filter === 'growth' && p.incomePays) continue;
+      for (const vk of this.variantOrder) {
+        if (['ready', 'construction', 'prelaunch'].includes(this.filter) && this.filter !== vk) continue;
+        const v = p.variants[vk];
+        if (q && !(`${v.label} ${p.name}`).toLowerCase().includes(q)) continue;
+        out.push({ p, v });
+      }
+    }
+    return out;
   }
 
-  /** Chips that match the search (so search can also narrow the chip row). */
-  get chips(): Property[] {
+  /** Chips: 'All' plus each property; those matching the search stay visible. */
+  get chips(): (Property | { key: 'all'; name: string })[] {
     const q = this.query.trim().toLowerCase();
-    if (!q) return this.properties;
-    return this.properties.filter((p) => p.name.toLowerCase().includes(q));
+    const props = q ? this.properties.filter((p) => p.name.toLowerCase().includes(q)) : this.properties;
+    return [{ key: 'all', name: 'All' }, ...props];
   }
 
-  selectChip(p: Property): void {
-    this.activeKey = p.key;
+  selectChip(key: Property['key'] | 'all'): void {
+    this.activeKey = key;
   }
 
   onQuery(v: string): void {
     this.query = v;
-    // if the active chip no longer matches, jump to the first matching one
     const chips = this.chips;
-    if (chips.length && !chips.some((p) => p.key === this.activeKey)) {
-      this.activeKey = chips[0].key;
+    if (this.activeKey !== 'all' && !chips.some((c) => c.key === this.activeKey)) {
+      this.activeKey = 'all';
     }
+  }
+
+  pickFilter(key: FilterKey): void {
+    this.filter = key;
+    this.filterOpen = false;
   }
 
   /** Land is the one tier with a full detail page; other tiers stay inert for now. */
@@ -100,53 +123,51 @@ export class StorefrontComponent {
     this.openLand.emit(vk ? StorefrontComponent.LAND_VARIANT[vk] : 'balanced');
   }
 
+  // Figures from the PropertyNest package data. growthPct = expected p.a.;
+  // past3y = illustrative trailing 3-yr return; monthlyIncome = rent (null = Land).
   readonly properties: Property[] = [
     {
       key: 'land',
       name: 'Land',
-      tagline: 'A surveyed plot to start with',
       price: 10_00_000,
-      incomePays: false,   // Land is pure growth — no monthly income
+      incomePays: false,   // accumulation only — no monthly withdrawal
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Steadiest growth, lowest risk', appreciationLow: 8,  appreciationHigh: 10, monthlyIncome: null },
-        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced growth',               appreciationLow: 10, appreciationHigh: 13, monthlyIncome: null },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Highest growth potential',      appreciationLow: 13, appreciationHigh: 17, monthlyIncome: null },
+        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 10.2, past3y: 13.4, monthlyIncome: null },
+        construction: { key: 'construction', label: 'Under construction', growthPct: 11.8, past3y: 15.6, monthlyIncome: null },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 12.9, past3y: 18.2, monthlyIncome: null },
       },
     },
     {
       key: 'flat',
       name: 'Flat',
-      tagline: 'A compact home, balanced and liquid',
       price: 25_00_000,
       incomePays: true,
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 8,  appreciationHigh: 10, monthlyIncome: 15_000 },
-        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 9,  appreciationHigh: 12, monthlyIncome: 13_500 },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 11, appreciationHigh: 14, monthlyIncome: 10_500 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 5_000 },
+        construction: { key: 'construction', label: 'Under construction', growthPct: 9.6,  past3y: 12.4, monthlyIncome: 6_250 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 10.3, past3y: 13.8, monthlyIncome: 7_500 },
       },
     },
     {
       key: 'apartment',
       name: 'Apartment',
-      tagline: 'A larger residence with room to grow',
       price: 50_00_000,
       incomePays: true,
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 9,  appreciationHigh: 11, monthlyIncome: 32_000 },
-        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 10, appreciationHigh: 13, monthlyIncome: 29_000 },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 12, appreciationHigh: 15, monthlyIncome: 23_000 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 10_000 },
+        construction: { key: 'construction', label: 'Under construction', growthPct: 9.5,  past3y: 12.4, monthlyIncome: 12_500 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 10.5, past3y: 14.0, monthlyIncome: 15_000 },
       },
     },
     {
       key: 'duplex',
       name: 'Duplex',
-      tagline: 'A two-storey estate, built to appreciate',
-      price: 1_00_00_000,
+      price: 99_00_000,
       incomePays: true,
       variants: {
-        ready:        { key: 'ready',        label: 'Ready-to-move',       note: 'Highest income, steadiest',     appreciationLow: 10, appreciationHigh: 12, monthlyIncome: 68_000 },
-        construction: { key: 'construction', label: 'Under construction',  note: 'Balanced income and growth',    appreciationLow: 11, appreciationHigh: 14, monthlyIncome: 62_500 },
-        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',          note: 'Most growth, less income now',  appreciationLow: 13, appreciationHigh: 16, monthlyIncome: 50_000 },
+        ready:        { key: 'ready',        label: 'Ready-to-move',      growthPct: 8.3,  past3y: 10.6, monthlyIncome: 19_800 },
+        construction: { key: 'construction', label: 'Under construction', growthPct: 9.5,  past3y: 12.4, monthlyIncome: 24_750 },
+        prelaunch:    { key: 'prelaunch',    label: 'Pre-launch',         growthPct: 10.6, past3y: 14.1, monthlyIncome: 29_700 },
       },
     },
   ];
