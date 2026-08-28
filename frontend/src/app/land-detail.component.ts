@@ -150,6 +150,16 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   /** Which line the growth chart is showing: 'blend' or a scheme_code. */
   chartSource = signal<string>('blend');
 
+  /** Time-range windows for the Past-performance chart (months). Default 3Y. */
+  readonly ranges: { key: string; label: string; months: number }[] = [
+    { key: '1y', label: '1Y', months: 12 },
+    { key: '2y', label: '2Y', months: 24 },
+    { key: '3y', label: '3Y', months: 36 },
+    { key: '5y', label: '5Y', months: 60 },
+  ];
+  chartRange = signal<string>('3y');
+  setRange(key: string): void { this.chartRange.set(key); }
+
   activeVariant = computed(() => this.variants.find(v => v.key === this.active())!);
   activeMetrics = computed<BasketMetrics | null>(() => this.metrics()[this.active()] ?? null);
 
