@@ -318,19 +318,26 @@
   margin-bottom: 1.4rem !important;
   border-top: 1px solid var(--survey) !important;
 }
-/* income hero */
-.paid-hero { text-align: center; padding-bottom: 1.2rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--survey); }
-.ph-k { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; }
-.ph-v { font-family: var(--font-display); font-weight: 700; font-size: 3.2rem; line-height: 1; color: var(--positive); margin: 0.3rem 0; }
-.ph-u { font-size: 0.9rem; font-weight: 600; opacity: 0.6; }
+/* compact income header — label on top, value inline (not a giant hero) */
+.paid-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+  padding-bottom: 0.9rem; margin-bottom: 0.95rem;
+  border-bottom: 1px solid var(--survey);
+}
+.paid-k { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.5; }
+.paid-v {
+  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; line-height: 1; color: var(--positive);
+}
+.paid-v small { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; color: var(--ink); opacity: 0.55; white-space: nowrap; }
 /* three rows */
 .paid-rows { display: flex; flex-direction: column; gap: 0.7rem; }
 .pr { display: flex; align-items: center; gap: 0.9rem; }
 .pr-ic { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; }
 .pr-ic svg { width: 22px; height: 22px; }
-.pr.r1 .pr-ic { background: color-mix(in srgb, var(--positive) 12%, var(--paper)); color: var(--positive); }
-.pr.r2 .pr-ic { background: color-mix(in srgb, var(--brass) 12%, var(--paper)); color: var(--brass); }
-.pr.r3 .pr-ic { background: color-mix(in srgb, var(--positive) 12%, var(--paper)); color: var(--positive); }
+.pr:nth-child(1) .pr-ic { background: color-mix(in srgb, var(--positive) 12%, var(--paper)); color: var(--positive); }
+.pr:nth-child(2) .pr-ic { background: color-mix(in srgb, var(--brass) 12%, var(--paper)); color: var(--brass); }
+.pr:nth-child(3) .pr-ic { background: color-mix(in srgb, var(--positive) 12%, var(--paper)); color: var(--positive); }
 .pr-tx { flex: 1; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
 .pr-tx small { display: block; font-size: 0.78rem; font-weight: 500; opacity: 0.55; }
 .pr-v { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; white-space: nowrap; }
@@ -357,29 +364,6 @@
 .tb-fill { display: block; height: 100%; background: var(--positive); border-radius: 6px; }
 .tb-line { position: absolute; top: -2px; bottom: -2px; right: 0; width: 2px; background: var(--terracotta); }
 .tb-labels { display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.72rem; font-weight: 600; opacity: 0.6; }
-/* if you'd done this 5 years ago */
-.paid-back { margin-top: 1.3rem; padding-top: 1.2rem; border-top: 1px solid var(--survey); }
-.pb-h { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; margin: 0 0 0.9rem; color: var(--ink); }
-.pb-top { display: flex; align-items: center; gap: 0.8rem; }
-.pb-fig { display: flex; flex-direction: column; gap: 0.15rem; }
-.pb-k { font-size: 0.74rem; font-weight: 600; opacity: 0.55; }
-.pb-fv { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--ink); }
-.pb-fv.grow { color: var(--positive); }
-.pb-arw { font-size: 1.2rem; color: var(--positive); opacity: 0.7; }
-.pb-sub { margin: 0.7rem 0 0; font-size: 0.88rem; color: var(--ink); opacity: 0.8; } .pb-sub b { color: var(--brass); }
-.pb-bars { display: flex; gap: 0.4rem; align-items: end; height: 150px; margin-top: 1rem; }
-.pbb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 0.3rem; }
-.pbb-v { font-family: var(--font-display); font-weight: 700; font-size: 0.68rem; opacity: 0.75; white-space: nowrap; }
-.pbb-track { width: 60%; max-width: 38px; flex: 1; display: flex; align-items: flex-end; }
-.pbb-fill { width: 100%; min-height: 4px; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--positive) 78%, #fff), var(--positive) 62%); transform-origin: bottom; animation: gcGrow 0.6s cubic-bezier(0.2,0.8,0.2,1) both; }
-.pbb-col:nth-child(1) .pbb-fill { animation-delay: 0.1s; }
-.pbb-col:nth-child(2) .pbb-fill { animation-delay: 0.18s; }
-.pbb-col:nth-child(3) .pbb-fill { animation-delay: 0.26s; }
-.pbb-col:nth-child(4) .pbb-fill { animation-delay: 0.34s; }
-.pbb-col:nth-child(5) .pbb-fill { animation-delay: 0.42s; }
-.pbb-col:nth-child(6) .pbb-fill { animation-delay: 0.50s; }
-.pbb-y { font-size: 0.7rem; font-weight: 700; opacity: 0.55; }
-.pb-note { margin: 0.9rem 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--ink); opacity: 0.75; } .pb-note b { color: var(--positive); opacity: 1; } .pb-note em { font-style: italic; font-weight: 600; color: var(--brass); }
 .paid-disc { margin: 1rem 0 0; font-size: 0.72rem; text-align: center; color: var(--ink); opacity: 0.5; }
 
 /* ---------- Past-performance card ---------- */
