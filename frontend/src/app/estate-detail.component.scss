@@ -568,14 +568,14 @@
   box-shadow: 0 6px 14px -9px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 @keyframes gcGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-/* gain sits on TOP (green — distinct from the gold/brass depth), invested base
-   BELOW (calm slate). A soft sheen makes the growth pop. */
+/* gain sits on TOP (neutral ASH — no clash with the equity/debt/cash colours),
+   invested base BELOW (darker slate). A soft sheen makes the growth pop. */
 .sb-gain {
   position: relative; width: 100%;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--positive) 78%, #fff), var(--positive) 65%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 14%, #fff), color-mix(in srgb, var(--ink) 26%, var(--paper)));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
 }
-.sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 24%, var(--paper)); }
+.sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 55%, var(--paper)); }
 .sb-col:nth-child(1) .sb-stack { animation-delay: 0.15s; }
 .sb-col:nth-child(2) .sb-stack { animation-delay: 0.24s; }
 .sb-col:nth-child(3) .sb-stack { animation-delay: 0.33s; }
