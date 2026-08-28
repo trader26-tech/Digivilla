@@ -46,9 +46,9 @@
       </div>
     </section>
 
-    <!-- ===== 1 · how it actually moved (axes + hover, combined stats) — boxless ===== -->
-    <section class="chart-open" *ngIf="growthPath() || chartLoading()">
-      <div class="card-head reveal" style="--s:2">
+    <!-- ===== 1 · Past performance — one bounded card ===== -->
+    <section class="card chart-card" *ngIf="growthPath() || chartLoading()" appReveal>
+      <div class="card-head">
         <h2 class="card-title">Past performance</h2>
         <label class="src-pick">
           <select [value]="chartSource()" (change)="pickChartSource($any($event.target).value)" aria-label="Choose what to chart">
@@ -58,8 +58,14 @@
         </label>
       </div>
 
+      <!-- concise readout, right under the title (subordinate to it) -->
+      <div class="pp-readout" *ngIf="windowReadout() as r">
+        <span class="ppr-nums">{{ compact(r.from) }} <span class="ppr-arrow" aria-hidden="true">→</span> {{ compact(r.to) }}</span>
+        <span class="ppr-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
+      </div>
+
       <!-- time-range tabs -->
-      <div class="range-tabs reveal" style="--s:3" role="tablist" aria-label="Time range">
+      <div class="range-tabs" role="tablist" aria-label="Time range">
         <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
                 [class.on]="chartRange() === r.key" [attr.aria-selected]="chartRange() === r.key"
                 (click)="setRange(r.key)">{{ r.label }}</button>
@@ -69,7 +75,7 @@
 
       <ng-container *ngIf="!chartLoading()">
         <!-- re-keyed on range so the line re-draws when the window changes -->
-        <div class="chart-wrap reveal" style="--s:4" *ngFor="let _ of [chartRange() + chartSource()]">
+        <div class="chart-wrap" *ngFor="let _ of [chartRange() + chartSource()]">
           <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
                aria-label="Growth over time"
                (mousemove)="onChartMove($event)" (mouseleave)="onChartLeave()">
@@ -107,13 +113,6 @@
           </div>
         </div>
 
-        <!-- clean readout: invested amount → ₹X  with a small +Y% for the window -->
-        <div class="readout reveal" style="--s:5" *ngIf="windowReadout() as r">
-          <span class="ro-from">{{ compact(r.from) }}</span>
-          <span class="ro-arrow" aria-hidden="true">→</span>
-          <span class="ro-to">{{ compact(r.to) }}</span>
-          <span class="ro-pct" [class.pos]="r.pct >= 0" [class.neg]="r.pct < 0">{{ r.pct >= 0 ? '+' : '' }}{{ r.pct | number:'1.0-0' }}%</span>
-        </div>
       </ng-container>
     </section>
 

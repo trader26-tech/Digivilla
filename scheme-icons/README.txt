@@ -1,23 +1,13 @@
-PropertyNest scheme icons — drop one image (PNG/JPG) per scheme.
-4 categories x 3 risk types = 12 images.
+Drop ONE image per scheme here. 4 categories x 3 risk levels = 12 images.
+Name each file by RISK LEVEL (low / medium / high), any image extension:
 
-land/
-  kelambakkam-grove.png   (conservative) = Kelambakkam Grove Land
-  navalur-rise.png   (balanced) = Navalur Rise Land
-  siruseri-heights.png   (aggressive) = Siruseri Heights Land
+  land/low.png       land/medium.png       land/high.png
+  flat/low.png       flat/medium.png       flat/high.png
+  apartment/low.png  apartment/medium.png  apartment/high.png
+  duplex/low.png     duplex/medium.png     duplex/high.png
 
-flat/
-  adyar-grove.png   (conservative) = Adyar Grove Flat
-  velachery-rise.png   (balanced) = Velachery Rise Flat
-  omr-heights.png   (aggressive) = OMR Heights Flat
+low = conservative (e.g. Kelambakkam Grove Land)
+medium = balanced   (e.g. Navalur Rise Land)
+high = aggressive   (e.g. Siruseri Heights Land)
 
-apartment/
-  anna-nagar-court.png   (conservative) = Anna Nagar Court Apartment
-  nungambakkam-vista.png   (balanced) = Nungambakkam Vista Apartment
-  t.-nagar-heights.png   (aggressive) = T. Nagar Heights Apartment
-
-duplex/
-  boat-club-terrace.png   (conservative) = Boat Club Terrace Duplex
-  poes-garden-manor.png   (balanced) = Poes Garden Manor Duplex
-  ecr-pinnacle.png   (aggressive) = ECR Pinnacle Duplex
-
+Then run:  python3 upload_scheme_icons.py   (from the retirement/ folder)
