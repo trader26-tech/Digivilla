@@ -1,104 +1,78 @@
 <main class="deed">
-  <!-- ===== masthead: minimal ===== -->
+  <!-- ===== brand plate ===== -->
   <header class="masthead reveal" style="--s:0">
     <span class="plate"><span class="plate-mark" aria-hidden="true">◈</span>PropertyNest</span>
-    <h1 class="lede">Own property, without&nbsp;the property.</h1>
   </header>
 
-  <!-- ===== catalogue: each variant is its own row, grouped by property ===== -->
-  <div class="catalogue">
-    <section class="group" *ngFor="let p of properties; let gi = index">
-      <!-- property heading (Land opens its detail page) -->
-      <div class="group-head reveal" [class.linked]="p.key === 'land'"
-           [style.--s]="gi * 3 + 1"
-           (click)="open(p)"
-           [attr.role]="p.key === 'land' ? 'button' : null"
-           [attr.tabindex]="p.key === 'land' ? 0 : null"
-           (keydown.enter)="open(p)">
-        <span class="g-thumb" [ngSwitch]="p.key" aria-hidden="true">
-          <svg *ngSwitchCase="'land'" class="art" viewBox="0 0 120 120" fill="none">
-            <path class="stroke" d="M14 84 L64 22 L106 52 L58 100 Z" />
-            <path class="stroke d1" d="M14 84 L58 100 M64 22 L106 52" stroke-dasharray="4 5" />
-            <circle class="node" cx="14" cy="84" r="3" /><circle class="node" cx="64" cy="22" r="3" />
-            <circle class="node" cx="106" cy="52" r="3" /><circle class="node" cx="58" cy="100" r="3" />
-          </svg>
-          <svg *ngSwitchCase="'flat'" class="art" viewBox="0 0 120 120" fill="none">
-            <rect class="stroke" x="16" y="24" width="88" height="72" rx="1" />
-            <path class="stroke" d="M60 24 L60 60 M60 60 L104 60 M16 60 L44 60 M44 60 L44 96" />
-            <rect class="node" x="76" y="32" width="16" height="9" rx="1" />
-          </svg>
-          <svg *ngSwitchCase="'apartment'" class="art" viewBox="0 0 120 120" fill="none">
-            <rect class="stroke" x="34" y="20" width="52" height="86" rx="1" />
-            <path class="stroke" d="M34 20 L60 8 L86 20" />
-            <g class="stroke d1">
-              <rect x="42" y="30" width="12" height="11" rx="1" /><rect x="66" y="30" width="12" height="11" rx="1" />
-              <rect x="42" y="50" width="12" height="11" rx="1" /><rect x="66" y="50" width="12" height="11" rx="1" />
-              <rect x="42" y="70" width="12" height="11" rx="1" /><rect x="66" y="70" width="12" height="11" rx="1" />
-            </g>
-            <rect class="node" x="54" y="86" width="12" height="20" rx="1" />
-          </svg>
-          <svg *ngSwitchCase="'duplex'" class="art" viewBox="0 0 120 120" fill="none">
-            <path class="stroke" d="M20 104 L20 44 L60 16 L100 44 L100 104" />
-            <path class="stroke" d="M20 60 L100 60" />
-            <path class="stroke d1" d="M60 60 L60 104" />
-            <path class="stroke d2" d="M68 104 L68 82 L92 82 L92 104" />
-          </svg>
-        </span>
-        <span class="g-name">{{ p.name }}</span>
-        <span class="g-price">from {{ compact(p.price) }}</span>
-        <span class="g-open" *ngIf="p.key === 'land'">
-          View details
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </div>
-
-      <!-- three variant rows -->
-      <ul class="rows">
-        <li
-          class="row reveal"
-          *ngFor="let vk of variantOrder; let vi = index"
-          [style.--s]="gi * 3 + vi + 2"
-        >
-          <button class="row-btn" type="button"
-            (click)="open(p, vk)"
-            [attr.aria-label]="p.variants[vk].label + ' ' + p.name">
-            <!-- per-variant badge/logo -->
-            <span class="r-badge" [attr.data-v]="vk" aria-hidden="true" [ngSwitch]="vk">
-              <!-- ready-to-move = key -->
-              <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="18" height="18"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-              <!-- under construction = building/crane -->
-              <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="18" height="18"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <!-- pre-launch = growth arrow -->
-              <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="18" height="18"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-
-            <span class="r-main">
-              <span class="r-label">{{ p.variants[vk].label }}</span>
-              <span class="r-note">{{ p.variants[vk].note }}</span>
-            </span>
-
-            <!-- figures: Land shows growth only; others show income + growth -->
-            <span class="r-figs" *ngIf="p.incomePays; else growthOnly">
-              <span class="r-income">{{ inr(p.variants[vk].monthlyIncome!) }}<span class="u">/mo</span></span>
-              <span class="r-growth">+{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%*</span>
-            </span>
-            <ng-template #growthOnly>
-              <span class="r-figs">
-                <span class="r-income growth">{{ p.variants[vk].appreciationLow }}–{{ p.variants[vk].appreciationHigh }}%<span class="u">/yr*</span></span>
-                <span class="r-growth muted">growth only</span>
-              </span>
-            </ng-template>
-
-            <svg class="r-chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </li>
-      </ul>
-    </section>
+  <!-- ===== search ===== -->
+  <div class="search reveal" style="--s:1">
+    <svg class="search-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <input
+      class="search-in"
+      type="search"
+      inputmode="search"
+      placeholder="Search estates"
+      autocomplete="off"
+      [ngModel]="query"
+      (ngModelChange)="onQuery($event)"
+      aria-label="Search estates"
+    />
   </div>
 
-  <!-- ===== footnote for the whole list ===== -->
+  <!-- ===== property chips ===== -->
+  <div class="chips reveal" style="--s:2" role="tablist" aria-label="Property type">
+    <button
+      *ngFor="let c of chips"
+      class="chip"
+      type="button"
+      role="tab"
+      [class.on]="activeKey === c.key"
+      [attr.aria-selected]="activeKey === c.key"
+      (click)="selectChip(c)"
+    >
+      <span class="chip-ic" [ngSwitch]="c.key" aria-hidden="true">
+        <svg *ngSwitchCase="'land'" viewBox="0 0 24 24" width="17" height="17"><path d="M3 17l7-8 5 4 6-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 20h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <svg *ngSwitchCase="'flat'" viewBox="0 0 24 24" width="17" height="17"><rect x="4" y="5" width="16" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 12h16M12 5v14" stroke="currentColor" stroke-width="1.7"/></svg>
+        <svg *ngSwitchCase="'apartment'" viewBox="0 0 24 24" width="17" height="17"><rect x="7" y="4" width="10" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 8h1M13 8h1M10 12h1M13 12h1M11 20v-3h2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg *ngSwitchCase="'duplex'" viewBox="0 0 24 24" width="17" height="17"><path d="M4 20V10l8-5 8 5v10M4 14h16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      {{ c.name }}
+    </button>
+  </div>
+
+  <!-- ===== variant tiles for the active property ===== -->
+  <div class="tiles">
+    <button
+      *ngFor="let t of tiles; let i = index"
+      class="tile reveal"
+      type="button"
+      [style.--s]="i + 3"
+      (click)="open(t.p, t.v.key)"
+      [attr.aria-label]="t.v.label + ' ' + t.p.name"
+    >
+      <span class="tile-ic" [attr.data-v]="t.v.key" aria-hidden="true" [ngSwitch]="t.v.key">
+        <svg *ngSwitchCase="'ready'" viewBox="0 0 24 24" width="22" height="22"><circle cx="8" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <svg *ngSwitchCase="'construction'" viewBox="0 0 24 24" width="22" height="22"><path d="M5 20h14M7 20V9l5-3 5 3v11M10 20v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg *ngSwitchCase="'prelaunch'" viewBox="0 0 24 24" width="22" height="22"><path d="M4 18L10 12l4 4 6-8M20 8h-4M20 8v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+
+      <span class="tile-body">
+        <span class="tile-name">{{ t.v.label }} {{ t.p.name }}</span>
+        <span class="tile-fig" *ngIf="t.p.incomePays">{{ inr(t.v.monthlyIncome!) }}<span class="u">/mo</span></span>
+        <span class="tile-fig" *ngIf="!t.p.incomePays">{{ t.v.appreciationLow }}–{{ t.v.appreciationHigh }}%<span class="u">/yr*</span></span>
+      </span>
+
+      <svg class="tile-chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <p class="no-match" *ngIf="!tiles.length">No estates match “{{ query }}”.</p>
+  </div>
+
+  <!-- ===== footnote ===== -->
   <p class="disclaimer">
-    <span class="star">*</span> Tentative, based on past fund returns — illustrative,
-    not guaranteed. Future returns are not assured. Subject to market risk.
+    <span class="star">*</span> Illustrative — not guaranteed. Subject to market risk.
   </p>
 </main>

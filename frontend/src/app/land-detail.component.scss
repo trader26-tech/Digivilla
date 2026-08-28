@@ -445,7 +445,7 @@
 .mix-seg.equity, .dot.equity { background: var(--positive); }
 .mix-seg.hybrid, .dot.hybrid { background: var(--brass); }
 .mix-seg.debt, .dot.debt { background: color-mix(in srgb, var(--ink) 55%, var(--paper)); }
-.mix-seg.gold, .dot.gold { background: #C9A227; }
+.mix-seg.gold, .dot.gold { background: color-mix(in srgb, var(--brass) 75%, var(--positive)); }
 .mix-legend { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.45rem; }
 .mix-leg { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--ink); opacity: 0.75; }
 .dot { width: 9px; height: 9px; border-radius: 50%; }
