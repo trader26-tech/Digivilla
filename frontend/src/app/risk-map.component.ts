@@ -17,16 +17,27 @@ interface MapPin {
   property: PropertyKey;
   variant: VariantKey;
   name: string;
+  shortName: string;     // compact label, e.g. 'Adyar'
   propName: string;      // 'Flat', 'Land', …
+  color: string;         // css var, coloured by property
   riskLabel: string;     // 'Low risk' | 'Medium risk' | 'High risk'
   reward: number;        // expected growth %
   riskPct: number | null; // measured volatility %, if loaded
   rx: number;            // 0..1 normalised risk
   ry: number;            // 0..1 normalised reward
-  cx: number;            // px
+  cx: number;            // px (after de-overlap nudging)
   cy: number;            // px
+  labelAbove: boolean;   // place the label above (true) or below the dot
   isSelected: boolean;
 }
+
+/** A distinct hue per property so the four tiers are tellable apart. */
+const PROP_COLOR: Record<PropertyKey, string> = {
+  land: 'var(--positive)',
+  flat: 'var(--brass)',
+  apartment: '#3E6C8E',   // slate blue
+  duplex: 'var(--terracotta)',
+};
 
 /**
  * A clean, dedicated risk × reward map page. X = risk (swing), Y = reward
@@ -105,7 +116,7 @@ export class RiskMapComponent implements OnInit {
     return { reward, risk, measured };
   }
 
-  /** All 12 schemes as plotted pins. */
+  /** All 12 schemes as plotted pins, nudged apart so none overlap. */
   pins = computed<MapPin[]>(() => {
     const sel = this.selected();
     const raws = ALL_SCHEMES.map(s => ({ ...s, ...this.raw(s.property, s.variant) }));
@@ -115,22 +126,57 @@ export class RiskMapComponent implements OnInit {
     const rSpan = rHi - rLo || 1, wSpan = wHi - wLo || 1;
     const innerW = this.W - this.padL - this.padR;
     const innerH = this.H - this.padT - this.padB;
-    return raws.map(r => {
+
+    const pins: MapPin[] = raws.map(r => {
       const rx = (r.risk - rLo) / rSpan;
       const ry = (r.reward - wLo) / wSpan;
       return {
         property: r.property, variant: r.variant,
         name: schemeName(r.property, r.variant),
+        shortName: schemeName(r.property, r.variant).split(' ')[0],
         propName: PACKAGES[r.property].name,
+        color: PROP_COLOR[r.property],
         riskLabel: RISK_SHORT[r.variant],
         reward: r.reward,
         riskPct: r.measured ? r.risk : null,
         rx, ry,
         cx: this.padL + rx * innerW,
         cy: this.padT + (1 - ry) * innerH,
+        labelAbove: true,
         isSelected: r.property === sel.property && r.variant === sel.variant,
       };
     });
+
+    // De-overlap: push apart any two dots closer than MIN_D, clamping to the
+    // plot box each pass so they settle spread-out AND inside the frame.
+    const MIN_D = 60;
+    const minX = this.padL + 16, maxX = this.W - this.padR - 16;
+    const minY = this.padT + 30, maxY = this.H - this.padB - 16;
+    for (let iter = 0; iter < 120; iter++) {
+      let moved = false;
+      for (let i = 0; i < pins.length; i++) {
+        for (let j = i + 1; j < pins.length; j++) {
+          const a = pins[i], b = pins[j];
+          let dx = b.cx - a.cx, dy = b.cy - a.cy;
+          let d = Math.hypot(dx, dy);
+          if (d < MIN_D) {
+            if (d < 0.01) { dx = (i - j) || 1; dy = 1; d = Math.hypot(dx, dy); }
+            const push = (MIN_D - d) / 2;
+            const ux = dx / d, uy = dy / d;
+            a.cx -= ux * push; a.cy -= uy * push;
+            b.cx += ux * push; b.cy += uy * push;
+            moved = true;
+          }
+        }
+      }
+      for (const p of pins) {
+        p.cx = Math.max(minX, Math.min(maxX, p.cx));
+        p.cy = Math.max(minY, Math.min(maxY, p.cy));
+      }
+      if (!moved) break;
+    }
+    for (const p of pins) p.labelAbove = p.cy > this.padT + 48;
+    return pins;
   });
 
   selectedPin = computed<MapPin | null>(() => this.pins().find(p => p.isSelected) ?? null);
@@ -154,6 +200,12 @@ export class RiskMapComponent implements OnInit {
   select(p: MapPin): void {
     this.selected.set({ property: p.property, variant: p.variant });
   }
+
+  /** Legend colour for a property. */
+  colorOf(p: PropertyKey): string { return PROP_COLOR[p]; }
+  /** Properties in legend order. */
+  readonly legendProps: PropertyKey[] = ['land', 'flat', 'apartment', 'duplex'];
+  propName(p: PropertyKey): string { return PACKAGES[p].name; }
 
   /** The diagonal "fair value" line endpoints (bottom-left → top-right). */
   get diag() {

@@ -46,39 +46,45 @@
 }
 
 .rm-axis { stroke: var(--survey); stroke-width: 2; }
-.rm-diag { stroke: color-mix(in srgb, var(--brass) 42%, transparent); stroke-width: 2; stroke-dasharray: 7 8; }
-.rm-diag-lab { fill: var(--brass); font-size: 15px; font-weight: 600; opacity: 0.75; }
-.rm-axlab { fill: var(--ink); opacity: 0.55; font-size: 17px; font-weight: 700; letter-spacing: 0.04em; }
-.rm-hint { fill: var(--ink); opacity: 0.35; font-size: 14px; font-weight: 500; font-style: italic; }
+.rm-diag { stroke: color-mix(in srgb, var(--ink) 14%, transparent); stroke-width: 2; stroke-dasharray: 6 9; }
+.rm-axlab { fill: var(--ink); opacity: 0.5; font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
 
-/* pins — pop in, staggered */
+/* pins — coloured by property, every one labelled, popped in staggered */
 .rm-pin { cursor: pointer; outline: none; }
-.rm-halo { fill: color-mix(in srgb, var(--ink) 8%, transparent); opacity: 0; transition: opacity 0.15s ease; }
+.rm-halo { fill: var(--c, var(--brass)); opacity: 0; transition: opacity 0.15s ease; }
 .rm-dot {
-  fill: color-mix(in srgb, var(--ink) 42%, var(--paper));
-  stroke: var(--paper); stroke-width: 3;
+  fill: var(--c, var(--ink));
+  stroke: var(--paper); stroke-width: 3.5;
   transform-box: fill-box; transform-origin: center;
   transform: scale(0);
   animation: pinPop 0.5s cubic-bezier(0.22, 1.4, 0.4, 1) both;
   animation-delay: var(--d, 0s);
-  transition: fill 0.15s ease;
+  transition: r 0.15s ease;
 }
 @keyframes pinPop { to { transform: scale(1); } }
+/* every label is always visible now, with a paper outline so it reads over dots */
 .rm-plab {
-  fill: var(--ink); font-size: 15px; font-weight: 600;
-  opacity: 0; transition: opacity 0.15s ease; pointer-events: none;
-  paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round;
+  fill: var(--ink); font-size: 16px; font-weight: 600;
+  opacity: 0.9; pointer-events: none;
+  paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round;
+  transition: opacity 0.15s ease, font-weight 0.15s ease;
 }
-.rm-pin:hover .rm-halo, .rm-pin:focus .rm-halo { opacity: 1; }
+.rm-pin:hover .rm-halo, .rm-pin:focus .rm-halo { opacity: 0.16; }
 .rm-pin:hover .rm-plab, .rm-pin:focus .rm-plab { opacity: 1; }
 
-/* selected pin stands out */
-.rm-pin.sel .rm-dot { fill: var(--brass); r: 12; }
-.rm-pin.sel .rm-halo { opacity: 1; fill: color-mix(in srgb, var(--brass) 20%, transparent); }
-.rm-pin.sel .rm-plab { opacity: 1; font-weight: 800; }
-/* a soft pulse ring on the selected pin */
-.rm-pin.sel .rm-halo { animation: selPulse 2s ease-in-out infinite; }
-@keyframes selPulse { 0%, 100% { r: 26px; } 50% { r: 30px; } }
+/* selected pin stands out — bigger, pulsing ring, bold full name */
+.rm-pin.sel .rm-dot { r: 13; }
+.rm-pin.sel .rm-halo { opacity: 0.22; animation: selPulse 2s ease-in-out infinite; }
+.rm-pin.sel .rm-plab { opacity: 1; font-weight: 800; font-size: 18px; }
+@keyframes selPulse { 0%, 100% { r: 24px; } 50% { r: 30px; } }
+
+/* legend */
+.rm-legend {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem;
+  justify-content: center; margin-top: 0.7rem;
+}
+.lg { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--ink); opacity: 0.8; }
+.lg-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c, var(--brass)); }
 
 /* readout */
 .rm-read {
@@ -97,7 +103,9 @@
   background: var(--paper); border: 1px solid var(--survey);
 }
 .rr-k { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.55; }
-.rr-v { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rr-v { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; line-height: 1.05; color: var(--ink); font-variant-numeric: tabular-nums; }
+/* text values like "Low risk" get a smaller, tidy size so they don't wrap ugly */
+.rr-v.txt { font-size: 1.05rem; line-height: 1.15; }
 .rr-v.pos { color: var(--positive); }
 .rr-v.neg { color: var(--terracotta); }
 .u { font-size: 0.62rem; font-weight: 600; opacity: 0.7; }
