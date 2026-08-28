@@ -76,7 +76,7 @@ const VARIANTS: LandVariant[] = [
         look: { equity: 0.50, debt: 0.35, gold: 0, cash: 0.15 } },
       { scheme_code: 122640, label: 'Parag Parikh Flexi Cap', weight: 0.45, role: 'Core diversified compounder',
         look: { equity: 0.80, debt: 0.05, gold: 0, cash: 0.15 } },
-      { scheme_code: 147704, label: 'Motilal Oswal Large and Midcap', weight: 0.35, role: 'A midcap tilt for the extra growth',
+      { scheme_code: 147701, label: 'Motilal Oswal Large and Midcap', weight: 0.35, role: 'A midcap tilt for the extra growth',
         look: { equity: 0.98, debt: 0, gold: 0, cash: 0.02 } },
     ],
   },

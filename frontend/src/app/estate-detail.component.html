@@ -64,19 +64,19 @@
           <span class="pp-cagr" [class.pos]="(windowCagr() ?? 0) >= 0" [class.neg]="(windowCagr() ?? 0) < 0">{{ pct(windowCagr()) }}<span class="pp-u">/yr</span></span>
           <span class="pp-sub">CAGR · {{ pct(r.pct, 0) }} total over {{ windowYears() }} {{ windowYears() === 1 ? 'year' : 'years' }}</span>
         </div>
+      </div>
+
+      <!-- time-range tabs, with the "what does this mean?" toggle on the same line -->
+      <div class="range-tabs" role="tablist" aria-label="Time range">
+        <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
+                [class.on]="chartRange() === r.key" [attr.aria-selected]="chartRange() === r.key"
+                (click)="setRange(r.key)">{{ r.label }}</button>
         <button class="pp-i" type="button" (click)="togglePpInfo()" [class.on]="ppInfoOpen()" [attr.aria-expanded]="ppInfoOpen()" aria-label="What this means">?</button>
       </div>
       <p class="pp-detail" *ngIf="ppInfoOpen() && windowReadout() as r">
         {{ compact(r.from) }} invested {{ rangeWords() }} would be worth <b>{{ compact(r.to) }}</b> today —
         a {{ pct(windowCagr()) }} annual compound return, computed from these funds' real NAV history.
       </p>
-
-      <!-- time-range tabs -->
-      <div class="range-tabs" role="tablist" aria-label="Time range">
-        <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
-                [class.on]="chartRange() === r.key" [attr.aria-selected]="chartRange() === r.key"
-                (click)="setRange(r.key)">{{ r.label }}</button>
-      </div>
 
       <div class="chart-loading" *ngIf="chartLoading()"><span class="spinner sm"></span> loading this fund…</div>
 

@@ -378,7 +378,7 @@
 .pp-cagr .pp-u { font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; opacity: 0.55; margin-left: 0.1rem; }
 .pp-sub { font-size: 0.8rem; font-weight: 600; color: var(--ink); opacity: 0.6; }
 .pp-i {
-  flex: none; width: 22px; height: 22px; margin-top: 0.1rem;
+  flex: none; width: 22px; height: 22px;
   display: grid; place-items: center; border-radius: 50%;
   border: 1.4px solid color-mix(in srgb, var(--brass) 55%, var(--survey));
   background: var(--paper); color: var(--brass);
@@ -461,9 +461,12 @@
 /* time-range tabs */
 .range-tabs {
   display: flex;
+  align-items: center;
   gap: 0.3rem;
   margin: 0.2rem 0 0.7rem;
 }
+/* the "?" toggle sits at the right end of the same row as the range tabs */
+.range-tabs .pp-i { margin-left: auto; }
 .range-tab {
   border: 1px solid var(--survey);
   border-radius: 8px;

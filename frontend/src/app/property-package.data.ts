@@ -317,30 +317,32 @@ export const VARIANT_ORDER: VariantKey[] = ['conservative', 'balanced', 'aggress
          _expected_return). This is WHERE the "grows ~X%/yr" figure
          comes from — the real history of these funds, not a target.
    Regenerate by running the analyze engine over each basket's legs.
-   (Snapshot 2026-08-29, REGULAR PLAN NAV history.)
+   (Snapshot 2026-08-29, REGULAR PLAN NAV history. r3/r5 computed from
+   EXACT daily NAV on the 3y/5y anniversary date — the same method public
+   sites like Groww / Value Research use — so our numbers match theirs.)
    ================================================================== */
 export interface RealMetric { r3: number; r5: number; exp: number; }
 
 export const REAL_METRICS: Record<PropertyKey, Record<VariantKey, RealMetric>> = {
   land: {
-    conservative: { r3: 11.7, r5: 12.0, exp: 12.5 },
-    balanced:     { r3: 16.4, r5: 14.6, exp: 15.0 },
-    aggressive:   { r3: 15.7, r5: 16.3, exp: 16.2 },
+    conservative: { r3: 12.0, r5: 12.5, exp: 12.5 },
+    balanced:     { r3: 16.7, r5: 15.2, exp: 15.0 },
+    aggressive:   { r3: 16.2, r5: 17.1, exp: 16.2 },
   },
   flat: {
-    conservative: { r3: 9.3,  r5: 8.9,  exp: 10.6 },
-    balanced:     { r3: 12.4, r5: 10.7, exp: 12.3 },
-    aggressive:   { r3: 12.6, r5: 12.3, exp: 12.9 },
+    conservative: { r3: 9.4,  r5: 9.2,  exp: 10.6 },
+    balanced:     { r3: 12.7, r5: 11.3, exp: 12.3 },
+    aggressive:   { r3: 13.0, r5: 13.1, exp: 12.9 },
   },
   apartment: {
-    conservative: { r3: 9.3,  r5: 8.8,  exp: 10.6 },
-    balanced:     { r3: 12.1, r5: 10.8, exp: 12.1 },
-    aggressive:   { r3: 12.8, r5: 12.8, exp: 13.2 },
+    conservative: { r3: 9.3,  r5: 9.1,  exp: 10.6 },
+    balanced:     { r3: 12.4, r5: 11.4, exp: 12.1 },
+    aggressive:   { r3: 13.1, r5: 13.6, exp: 13.2 },
   },
   duplex: {
-    conservative: { r3: 9.6,  r5: 9.5,  exp: 10.2 },
-    balanced:     { r3: 12.5, r5: 11.6, exp: 12.1 },
-    aggressive:   { r3: 13.3, r5: 13.8, exp: 13.2 },
+    conservative: { r3: 9.7,  r5: 10.0, exp: 10.2 },
+    balanced:     { r3: 12.8, r5: 12.3, exp: 12.1 },
+    aggressive:   { r3: 13.6, r5: 14.6, exp: 13.2 },
   },
 };
 
