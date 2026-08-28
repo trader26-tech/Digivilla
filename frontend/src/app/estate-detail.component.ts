@@ -611,8 +611,4 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     const hyb = m.asset_mix?.['hybrid'] ?? 0;
     return (eq * 1.0 + hyb * 0.55) / 100;
   }
-
-  /** The plot choices offered: buy 1, 2 or 3 plots. */
-  readonly plotOptions = [1, 2, 3];
-  setPlots(n: number): void { this.plots.set(n); }
 }
