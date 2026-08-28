@@ -1,0 +1,88 @@
+<main class="rm">
+  <!-- top bar -->
+  <header class="rm-top">
+    <button class="rm-back" type="button" (click)="goBack()" aria-label="Back to properties">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Back</span>
+    </button>
+    <span class="rm-title">Risk <span class="x">×</span> Reward</span>
+    <span class="rm-loading" *ngIf="loading()">measuring…</span>
+  </header>
+
+  <p class="rm-lede">Every estate, placed by how much <strong>risk</strong> it takes for its <strong>reward</strong>. Tap any point.</p>
+
+  <!-- the map -->
+  <div class="rm-wrap">
+    <svg class="rm-svg" [attr.viewBox]="'0 0 ' + W + ' ' + H" role="img" aria-label="Risk versus reward map of every estate">
+      <defs>
+        <linearGradient id="rmGlow" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.04"/>
+          <stop offset="100%" stop-color="var(--positive)" stop-opacity="0.14"/>
+        </linearGradient>
+      </defs>
+
+      <!-- plot background -->
+      <rect [attr.x]="padL" [attr.y]="padT" [attr.width]="W - padL - padR" [attr.height]="H - padT - padB" rx="14" fill="url(#rmGlow)"/>
+
+      <!-- axes -->
+      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="H - padB" [attr.x2]="W - padR" [attr.y2]="H - padB"/>
+      <line class="rm-axis" [attr.x1]="padL" [attr.y1]="padT" [attr.x2]="padL" [attr.y2]="H - padB"/>
+
+      <!-- fair-value diagonal -->
+      <line class="rm-diag" [attr.x1]="diag.x1" [attr.y1]="diag.y1" [attr.x2]="diag.x2" [attr.y2]="diag.y2"/>
+      <text class="rm-diag-lab" [attr.x]="W - padR - 8" [attr.y]="padT + 26" text-anchor="end">reward keeps pace with risk →</text>
+
+      <!-- axis labels -->
+      <text class="rm-axlab" [attr.x]="padL + (W - padL - padR) / 2" [attr.y]="H - 30" text-anchor="middle">RISK  —  how much it swings  →</text>
+      <text class="rm-axlab" [attr.x]="26" [attr.y]="padT + (H - padT - padB) / 2" text-anchor="middle" [attr.transform]="'rotate(-90 26 ' + (padT + (H - padT - padB) / 2) + ')'">REWARD  —  expected growth  →</text>
+
+      <!-- corner hints -->
+      <text class="rm-hint" [attr.x]="padL + 6" [attr.y]="H - padB - 12">calmer · steadier</text>
+      <text class="rm-hint" [attr.x]="W - padR - 6" [attr.y]="padT + 16" text-anchor="end">racier · higher growth</text>
+
+      <!-- pins -->
+      <g *ngFor="let pin of pins(); let i = index; trackBy: trackPin"
+         class="rm-pin"
+         [class.sel]="pin.isSelected"
+         [style.--d]="i * 0.04 + 's'"
+         (click)="select(pin)"
+         tabindex="0"
+         role="button"
+         [attr.aria-label]="pin.name + ' ' + pin.propName + ', ' + pin.riskLabel + ', reward ' + pin.reward + '%'">
+        <circle class="rm-halo" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="26"/>
+        <circle class="rm-dot" [attr.cx]="pin.cx" [attr.cy]="pin.cy" r="9"/>
+        <text class="rm-plab" [attr.x]="pin.cx" [attr.y]="pin.cy - 18" text-anchor="middle">{{ pin.name }}</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- readout for the selected scheme -->
+  <section class="rm-read" *ngIf="selectedPin() as pin">
+    <div class="rr-head">
+      <span class="rr-name">{{ pin.name }}</span>
+      <span class="rr-prop">{{ pin.propName }} · {{ pin.riskLabel }}</span>
+    </div>
+    <div class="rr-figs">
+      <div class="rr-fig">
+        <span class="rr-k">Reward</span>
+        <span class="rr-v pos">{{ pct(pin.reward) }}<span class="u">/yr</span></span>
+        <span class="rr-foot">expected growth</span>
+      </div>
+      <div class="rr-fig">
+        <span class="rr-k">Risk</span>
+        <span class="rr-v neg">{{ pin.riskPct != null ? pct(pin.riskPct) : pin.riskLabel }}</span>
+        <span class="rr-foot">{{ pin.riskPct != null ? 'measured swing' : 'typical swing' }}</span>
+      </div>
+      <div class="rr-fig">
+        <span class="rr-k">Reward / risk</span>
+        <span class="rr-v" [class.pos]="(rewardPerRisk() ?? 0) >= 0.9">{{ rewardPerRisk() !== null ? (rewardPerRisk() | number:'1.2-2') : '—' }}</span>
+        <span class="rr-foot">growth per unit of swing</span>
+      </div>
+    </div>
+    <p class="rr-verdict">{{ verdict() }}</p>
+  </section>
+
+  <p class="rm-note">Risk is each mix's real measured volatility where available, else its typical tier swing. Illustrative — not a promise.</p>
+</main>
