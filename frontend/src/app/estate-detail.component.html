@@ -47,7 +47,7 @@
     <!-- ===== How you get paid — moved BELOW "How your money would grow" ===== -->
 
     <!-- ===== 1 · Past performance — one bounded card ===== -->
-    <section class="card chart-card" *ngIf="growthPath() || chartLoading()">
+    <section class="card chart-card">
       <div class="card-head">
         <h2 class="card-title">Past performance</h2>
         <label class="src-pick">
@@ -80,7 +80,16 @@
 
       <div class="chart-loading" *ngIf="chartLoading()"><span class="spinner sm"></span> loading this fund…</div>
 
-      <ng-container *ngIf="!chartLoading()">
+      <!-- metrics still loading — a calm placeholder, never a blank gap -->
+      <div class="chart-loading" *ngIf="!chartLoading() && !growthPath() && !activeMetrics()">
+        <span class="spinner sm"></span> building the chart…
+      </div>
+      <!-- metrics loaded but this fund/blend has no NAV history to plot -->
+      <div class="chart-empty" *ngIf="!chartLoading() && !growthPath() && activeMetrics()">
+        Price history isn't available for this basket yet — the projection below still applies.
+      </div>
+
+      <ng-container *ngIf="!chartLoading() && growthPath()">
         <!-- re-keyed on range so the line re-draws when the window changes -->
         <div class="chart-wrap" *ngFor="let _ of [chartRange() + chartSource()]">
           <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"

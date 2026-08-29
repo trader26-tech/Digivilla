@@ -379,8 +379,10 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
         next: m => {
           this.metrics.update(cur => ({ ...cur, [v.key]: m }));
           anyOk = true;
-          // Reveal as soon as the ACTIVE variant's graph data is in — the other
-          // variants keep loading in the background and fill in seamlessly.
+          // Reveal once the ACTIVE variant's metrics are in. Those carry the NAV
+          // growth series when history exists; when it doesn't, the chart card
+          // shows its own "not available" state rather than a blank gap, so the
+          // page is never empty. Other variants keep loading in the background.
           if (v.key === this.active()) this.finishLoading();
           else if (--remaining === 0) this.finishLoading();
         },
