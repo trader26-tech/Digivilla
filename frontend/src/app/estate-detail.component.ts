@@ -334,18 +334,21 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     if (this.benefitTimer) { clearInterval(this.benefitTimer); this.benefitTimer = null; }
   }
 
-  /** Keep the loader short: snap in as soon as data is ready, and NEVER hold
-   *  the page longer than the hard cap — so opening a tile always feels fast. */
-  private readonly MIN_LOAD_MS = 400;
-  private readonly MAX_LOAD_MS = 2300;
+  /** Hold the loading animation until the DATA the page needs — the active
+   *  variant's blended metrics that drive the NAV graph — has actually arrived,
+   *  so the page never reveals with an empty chart. A small floor keeps fast
+   *  loads from flashing; a generous ceiling only guards against a dead backend. */
+  private readonly MIN_LOAD_MS = 500;   // never flash faster than this
+  private readonly MAX_LOAD_MS = 20000; // safety net: don't spin forever
   private loadStart = 0;
   private capTimer: ReturnType<typeof setTimeout> | null = null;
 
   private finishLoading(errMsg?: string): void {
-    if (!this.loading()) return; // already revealed (e.g. by the hard cap)
+    if (!this.loading()) return; // already revealed
     const elapsed = Date.now() - this.loadStart;
     const wait = Math.max(0, this.MIN_LOAD_MS - elapsed);
     setTimeout(() => {
+      if (!this.loading()) return;
       if (this.capTimer) { clearTimeout(this.capTimer); this.capTimer = null; }
       if (errMsg) this.error.set(errMsg);
       this.loading.set(false);
@@ -357,10 +360,12 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
     this.loadStart = Date.now();
-    // Hard cap: reveal the page within MAX_LOAD_MS no matter how slow (or dead)
-    // the backend is. Any metrics still in flight populate their sections live.
+    // Safety net only: if the backend is unreachable, stop spinning after the
+    // ceiling and show an error instead of an eternal loader.
     if (this.capTimer) clearTimeout(this.capTimer);
     this.capTimer = setTimeout(() => {
+      if (!this.loading()) return;
+      this.error.set(this.metrics()[this.active()] ? null : 'Could not reach the fund engine. Is the backend running?');
       this.loading.set(false);
       this.stopBenefits();
       this.capTimer = null;
@@ -374,7 +379,10 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
         next: m => {
           this.metrics.update(cur => ({ ...cur, [v.key]: m }));
           anyOk = true;
-          if (--remaining === 0) this.finishLoading();
+          // Reveal as soon as the ACTIVE variant's graph data is in — the other
+          // variants keep loading in the background and fill in seamlessly.
+          if (v.key === this.active()) this.finishLoading();
+          else if (--remaining === 0) this.finishLoading();
         },
         error: () => {
           if (--remaining === 0) {
