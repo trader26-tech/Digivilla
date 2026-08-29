@@ -311,7 +311,10 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     this.loadAll();
   }
 
-  ngOnDestroy(): void { this.stopBenefits(); }
+  ngOnDestroy(): void {
+    this.stopBenefits();
+    if (this.capTimer) { clearTimeout(this.capTimer); this.capTimer = null; }
+  }
 
   /** Rotate the benefit cards every ~2.6s while loading. */
   private startBenefits(): void {
@@ -324,16 +327,20 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     if (this.benefitTimer) { clearInterval(this.benefitTimer); this.benefitTimer = null; }
   }
 
-  /** Minimum time the loading screen stays up, so the animation plays fully and
-   *  the user can read the message — no snapping to the page even if data is fast. */
-  private readonly MIN_LOAD_MS = 3000;
+  /** Keep the loader short: snap in as soon as data is ready, and NEVER hold
+   *  the page longer than the hard cap — so opening a tile always feels fast. */
+  private readonly MIN_LOAD_MS = 400;
+  private readonly MAX_LOAD_MS = 2300;
   private loadStart = 0;
+  private capTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Flip loading off, but never before MIN_LOAD_MS has elapsed. */
   private finishLoading(errMsg?: string): void {
+    if (!this.loading()) return; // already revealed (e.g. by the hard cap)
     const elapsed = Date.now() - this.loadStart;
     const wait = Math.max(0, this.MIN_LOAD_MS - elapsed);
     setTimeout(() => {
+      if (this.capTimer) { clearTimeout(this.capTimer); this.capTimer = null; }
       if (errMsg) this.error.set(errMsg);
       this.loading.set(false);
       this.stopBenefits();
@@ -344,6 +351,15 @@ export class LandDetailComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
     this.loadStart = Date.now();
+    // Hard cap: reveal the page within MAX_LOAD_MS no matter how slow (or dead)
+    // the backend is. Any metrics still in flight populate their sections live.
+    if (this.capTimer) clearTimeout(this.capTimer);
+    this.capTimer = setTimeout(() => {
+      this.loading.set(false);
+      this.stopBenefits();
+      this.capTimer = null;
+    }, this.MAX_LOAD_MS);
+
     let remaining = this.variants.length;
     let anyOk = false;
     for (const v of this.variants) {
