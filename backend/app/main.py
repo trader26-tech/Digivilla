@@ -346,6 +346,76 @@ def auth_me(authorization: Optional[str] = Header(default=None)) -> dict:
     return user
 
 
+# --- Consultation bookings (plot reservation) ----------------------------
+from app import bookings as bookings_svc  # noqa: E402
+from app import admin_auth  # noqa: E402
+from app.schemas import (  # noqa: E402
+    AdminLoginRequest,
+    AdminLoginResponse,
+    Booking,
+    BookingCreate,
+    BookingStatusUpdate,
+)
+
+
+def _require_admin(authorization: Optional[str]) -> None:
+    token = authorization.replace("Bearer ", "", 1) if authorization else ""
+    if not admin_auth.is_valid_token(token):
+        raise HTTPException(status_code=401, detail="Admin login required")
+
+
+@app.post("/bookings", response_model=Booking)
+def create_booking(payload: BookingCreate) -> Booking:
+    """A user requests a consultation slot when reserving a plot."""
+    return bookings_svc.create_booking(payload)
+
+
+@app.get("/bookings/taken")
+def taken_slots() -> dict:
+    """Public: ISO slots already confirmed, so the picker can grey them out."""
+    return {"slots": bookings_svc.confirmed_slots()}
+
+
+@app.post("/admin/login", response_model=AdminLoginResponse)
+def admin_login(payload: AdminLoginRequest) -> AdminLoginResponse:
+    if not admin_auth.check_credentials(payload.username, payload.password):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    return AdminLoginResponse(token=admin_auth.issue_token())
+
+
+@app.get("/admin/bookings", response_model=list[Booking])
+def admin_list_bookings(
+    authorization: Optional[str] = Header(default=None),
+) -> list[Booking]:
+    _require_admin(authorization)
+    return bookings_svc.list_bookings()
+
+
+@app.post("/admin/bookings/{booking_id}/status", response_model=Booking)
+def admin_set_status(
+    booking_id: str,
+    payload: BookingStatusUpdate,
+    authorization: Optional[str] = Header(default=None),
+) -> Booking:
+    _require_admin(authorization)
+    updated = bookings_svc.set_status(booking_id, payload.status)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return updated
+
+
+@app.delete("/admin/bookings/{booking_id}")
+def admin_delete_booking(
+    booking_id: str,
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    ok = bookings_svc.delete_booking(booking_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return {"status": "deleted"}
+
+
 # Serve the built Angular SPA (combined single-service deploy). Must be last
 # so the catch-all route does not shadow the API endpoints above.
 from app.static_spa import mount_spa  # noqa: E402

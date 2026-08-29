@@ -335,9 +335,20 @@
         <span class="cta-k">{{ activeVariant().name }} {{ propName }}</span>
         <span class="cta-v">{{ inr(ticketPrice) }}</span>
       </div>
-      <button class="cta-btn" type="button">Reserve this {{ propName.toLowerCase() }}</button>
+      <button class="cta-btn" type="button" (click)="openBooking()">Reserve this {{ propName.toLowerCase() }}</button>
     </section>
   </ng-container>
+
+  <!-- Reserve → book a free consultation slot. -->
+  <app-booking-sheet
+    *ngIf="booking()"
+    [property]="property"
+    [variant]="active()"
+    [variantName]="activeVariant().name + ' ' + propName"
+    [plots]="plots()"
+    [amount]="amount()"
+    (close)="booking.set(false)"
+  ></app-booking-sheet>
 
   <p class="disclaimer">
     <span class="star">*</span> Past growth, from each fund's real NAV history — similar may be expected ahead,

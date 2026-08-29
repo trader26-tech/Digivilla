@@ -260,3 +260,35 @@ class AuthUser(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user: AuthUser
+
+
+# --- Bookings / Admin -----------------------------------------------------
+class BookingCreate(BaseModel):
+    """A consultation request a user submits when reserving a plot."""
+    name: str
+    phone: str
+    property: str = "land"        # which tier they're reserving
+    variant: str = ""             # conservative | balanced | aggressive
+    plots: int = 1
+    amount: float = 0
+    slot: str                     # ISO-8601 datetime of the requested slot
+    note: str = ""
+
+
+class Booking(BookingCreate):
+    id: str
+    status: str = "requested"     # requested | confirmed | declined
+    created_at: str
+
+
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AdminLoginResponse(BaseModel):
+    token: str
+
+
+class BookingStatusUpdate(BaseModel):
+    status: str                   # confirmed | declined

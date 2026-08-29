@@ -1,0 +1,120 @@
+<!-- ============ LOGIN ============ -->
+<div class="login" *ngIf="!loggedIn()">
+  <div class="login-card">
+    <div class="brand"><span class="logo">◆</span> MyLakshyas <span class="tag">Admin</span></div>
+    <h1>Consultation desk</h1>
+    <p class="sub">Sign in to see who's requested a call and confirm their slot.</p>
+
+    <label class="field">
+      <span>Username</span>
+      <input type="text" [ngModel]="username()" (ngModelChange)="username.set($event)" (keydown.enter)="doLogin()" autocomplete="username" />
+    </label>
+    <label class="field">
+      <span>Password</span>
+      <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" (keydown.enter)="doLogin()" autocomplete="current-password" />
+    </label>
+
+    <p class="err" *ngIf="loginError()">{{ loginError() }}</p>
+
+    <button class="cta" [disabled]="loggingIn()" (click)="doLogin()">
+      {{ loggingIn() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div class="dash" *ngIf="loggedIn()">
+  <header class="top">
+    <div class="brand"><span class="logo">◆</span> MyLakshyas <span class="tag">Admin</span></div>
+    <div class="top-right">
+      <button class="ghost" (click)="refresh()" [disabled]="loading()" title="Refresh">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="ghost" (click)="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- summary -->
+    <div class="stats">
+      <div class="stat pending">
+        <b>{{ requestedCount }}</b>
+        <span>Awaiting you</span>
+      </div>
+      <div class="stat confirmed">
+        <b>{{ confirmedCount }}</b>
+        <span>Confirmed</span>
+      </div>
+      <div class="stat total">
+        <b>{{ bookings().length }}</b>
+        <span>Total requests</span>
+      </div>
+    </div>
+
+    <div class="loading" *ngIf="loading()">Loading requests…</div>
+    <p class="err" *ngIf="loadError()">{{ loadError() }}</p>
+
+    <!-- empty -->
+    <div class="empty" *ngIf="!loading() && !bookings().length">
+      <div class="empty-icon">🗓️</div>
+      <h2>No consultation requests yet</h2>
+      <p>When someone reserves a plot and picks a time, it shows up here for you to confirm.</p>
+    </div>
+
+    <!-- calendar: one block per day -->
+    <div class="cal" *ngIf="!loading() && bookings().length">
+      <section class="day" *ngFor="let d of days()">
+        <div class="day-head">
+          <h2>{{ d.label }}</h2>
+          <span class="today-pill" *ngIf="d.isToday">Today</span>
+        </div>
+
+        <div class="slots">
+          <div
+            class="slot"
+            *ngFor="let s of d.slots"
+            [class.free]="!s.booking"
+            [class.requested]="s.booking?.status === 'requested'"
+            [class.confirmed]="s.booking?.status === 'confirmed'"
+            [class.declined]="s.booking?.status === 'declined'"
+          >
+            <div class="slot-time">{{ s.label }}</div>
+
+            <!-- free slot -->
+            <div class="slot-free" *ngIf="!s.booking">Open</div>
+
+            <!-- a booking -->
+            <ng-container *ngIf="s.booking as b">
+              <div class="slot-body">
+                <div class="who">
+                  <b class="who-name">{{ b.name }}</b>
+                  <a class="who-phone" [href]="'tel:+91' + b.phone">+91 {{ b.phone }}</a>
+                </div>
+                <div class="what">{{ propLabel(b) }} · {{ money(b.amount) }}</div>
+              </div>
+
+              <!-- status / actions -->
+              <div class="slot-actions">
+                <span class="badge ok" *ngIf="b.status === 'confirmed'">
+                  <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Booked
+                </span>
+                <span class="badge no" *ngIf="b.status === 'declined'">Declined</span>
+
+                <ng-container *ngIf="b.status === 'requested'">
+                  <button class="act ok" [disabled]="busyId() === b.id" (click)="confirm(b)">
+                    <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Confirm
+                  </button>
+                  <button class="act no" [disabled]="busyId() === b.id" (click)="decline(b)">Decline</button>
+                </ng-container>
+
+                <button class="act reopen" *ngIf="b.status !== 'requested'" [disabled]="busyId() === b.id" (click)="reopen(b)">Undo</button>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, computed, in
 import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
+import { BookingSheetComponent } from './booking-sheet.component';
 import { schemeName, schemeLocality } from './property-package.data';
 import { RevealDirective } from './reveal.directive';
 
@@ -107,11 +108,17 @@ interface ChartSource {
 @Component({
   selector: 'app-land-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RevealDirective],
+  imports: [CommonModule, FormsModule, RevealDirective, BookingSheetComponent],
   templateUrl: './land-detail.component.html',
   styleUrl: './land-detail.component.scss',
 })
 export class LandDetailComponent implements OnInit, OnDestroy {
+  /** Whether the "reserve → book a consultation" sheet is open. */
+  booking = signal(false);
+  openBooking(): void {
+    this.booking.set(true);
+    if (navigator.vibrate) navigator.vibrate(5);
+  }
   @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
 

@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, computed, in
 import { FormsModule } from '@angular/forms';
 
 import { BasketMetrics, LandDetailService } from './land-detail.service';
+import { BookingSheetComponent } from './booking-sheet.component';
 import {
   PACKAGES, PropertyKey, VariantKey, LegRole, RISK_SHORT,
   schemeName, schemeLocality, past3y, past5y,
@@ -95,7 +96,7 @@ interface ChartSource {
 @Component({
   selector: 'app-estate-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RevealDirective],
+  imports: [CommonModule, FormsModule, RevealDirective, BookingSheetComponent],
   templateUrl: './estate-detail.component.html',
   styleUrl: './estate-detail.component.scss',
 })
@@ -103,6 +104,13 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   @Input() property: PropertyKey = 'flat';
   @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
+
+  /** Whether the "reserve → book a consultation" sheet is open. */
+  booking = signal(false);
+  openBooking(): void {
+    this.booking.set(true);
+    if (navigator.vibrate) navigator.vibrate(5);
+  }
 
   private api = inject(LandDetailService);
 

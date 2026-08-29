@@ -17,6 +17,7 @@
 
 -- ---- DROP EVERYTHING (safe re-run) ----------------------------------------
 DROP TABLE IF EXISTS goals            CASCADE;
+DROP TABLE IF EXISTS bookings         CASCADE;
 DROP TABLE IF EXISTS baskets          CASCADE;
 DROP TABLE IF EXISTS dashboard_funds  CASCADE;
 DROP TABLE IF EXISTS funds            CASCADE;
@@ -66,6 +67,29 @@ CREATE TABLE goals (
     created_at         text NOT NULL                  -- ISO-8601 string (app-generated)
 );
 CREATE INDEX goals_owner_idx ON goals (owner);
+
+
+-- ============================================================================
+--  bookings
+--  Consultation requests from the plot-reservation flow. The admin dashboard
+--  lists these and confirms/declines each. `status` is requested|confirmed|
+--  declined. To add this table to an EXISTING database without wiping data,
+--  run just this CREATE (and its index) in the Supabase SQL editor.
+-- ============================================================================
+CREATE TABLE bookings (
+    id          text PRIMARY KEY,                     -- uuid4 hex
+    name        text NOT NULL,
+    phone       text NOT NULL,
+    property    text NOT NULL DEFAULT 'land',         -- tier being reserved
+    variant     text DEFAULT '',                      -- conservative|balanced|aggressive
+    plots       integer NOT NULL DEFAULT 1,
+    amount      double precision NOT NULL DEFAULT 0,
+    slot        text NOT NULL,                         -- ISO-8601 requested datetime
+    note        text DEFAULT '',
+    status      text NOT NULL DEFAULT 'requested',     -- requested|confirmed|declined
+    created_at  text NOT NULL                          -- ISO-8601 string (app-generated)
+);
+CREATE INDEX bookings_slot_idx ON bookings (slot);
 
 
 -- ============================================================================

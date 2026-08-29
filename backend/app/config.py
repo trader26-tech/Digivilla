@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     # Admin isn't configured, to trust the client-supplied phone instead.
     allow_unverified_phone: bool = False
 
+    # --- Admin dashboard login (consultation bookings) ---
+    # Credentials for the separate admin app. Set ADMIN_USER / ADMIN_PASSWORD in
+    # the admin service's Railway env. The dev defaults let it run out of the box.
+    admin_user: str = "admin"
+    admin_password: str = "admin123"
+    # Secret used to sign admin session tokens (distinct from user auth_secret).
+    admin_token_secret: str = "dev-admin-insecure-change-me"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property

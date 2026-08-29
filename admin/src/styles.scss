@@ -1,0 +1,26 @@
+:root {
+  --bg: #08060f;
+  --surface: #141220;
+  --surface-2: #1e1b2e;
+  --border: #2a2740;
+  --text: #f2eefc;
+  --muted: #a99fce;
+  --accent: #a370ff;
+  --accent-2: #7a3ea8;
+  --purple: #a370ff;
+  --orange: #ff9a4a;
+  --good: #4be3a1;
+  --warn: #ffb84d;
+  --low: #ff6f7d;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+  min-height: 100vh;
+}
