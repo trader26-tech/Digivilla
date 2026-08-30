@@ -127,11 +127,11 @@
               <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 32, 0.18, 20)" />
               <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 32, 0.18, 20)" />
               <!-- clock face set INTO the tower's right wall -->
-              <circle class="clock" [attr.cx]="c.x + 6" [attr.cy]="c.y - 43" r="5" />
-              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 43"
-                    [attr.x2]="c.x + 6" [attr.y2]="c.y - 46" />
-              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 43"
-                    [attr.x2]="c.x + 8.2" [attr.y2]="c.y - 42.3" />
+              <circle class="clock" [attr.cx]="c.x + 6" [attr.cy]="c.y - 41" r="6" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 41"
+                    [attr.x2]="c.x + 6" [attr.y2]="c.y - 44.5" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 41"
+                    [attr.x2]="c.x + 8.6" [attr.y2]="c.y - 40.2" />
               <!-- tower cornice, then the roof lantern -->
               <path class="tower-cap-l" [attr.d]="boxLeft(c.x, c.y - 52, 0.22, 3.5)" />
               <path class="tower-cap-r" [attr.d]="boxRight(c.x, c.y - 52, 0.22, 3.5)" />
@@ -296,7 +296,7 @@
                 <!-- Rent coin. Sits directly above THIS villa's roof (the
                      villa art is drawn at 1.25x, so the offset is scaled to
                      match) — never over a neighbouring parcel. -->
-                <g class="coin-wrap" [attr.transform]="'translate(' + (c.x + 2) + ',' + (c.y - 62) + ')'">
+                <g class="coin-wrap" [attr.transform]="'translate(' + (c.x + 2) + ',' + (c.y - 74) + ')'">
                   <ellipse class="coin-shadow" cx="0" cy="11" rx="6" ry="2.2" />
                   <circle class="coin-face" cx="0" cy="0" r="9" />
                   <circle class="coin-ring" cx="0" cy="0" r="6" />
