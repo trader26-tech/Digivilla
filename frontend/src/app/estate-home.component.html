@@ -173,22 +173,20 @@
               <!-- lawn top -->
               <path class="lawn" [attr.d]="diamond(c.x, c.y)" />
 
-              <!-- LAND: grass only. Each blade is a curve that sways in the
-                   wind, staggered so the whole meadow ripples. Nothing else —
-                   the calm is the point. -->
-              <g *ngIf="t.type === 'land'" class="meadow">
-                <g *ngFor="let g of tufts(t.id, 30)" class="clump"
-                   [style.--sway.s]="3 + g.s * 1.4"
-                   [style.--delay.s]="(g.x + g.y) * 0.012">
-                  <path class="blade"
-                        [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
-                                  ' q-' + (1.1 * g.s) + ',-' + (2.2 * g.s) + ' -' + (1.5 * g.s) + ',-' + (3.6 * g.s)" />
-                  <path class="blade"
-                        [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
-                                  ' q' + (0.3 * g.s) + ',-' + (2.6 * g.s) + ' ' + (0.1 * g.s) + ',-' + (4.6 * g.s)" />
-                  <path class="blade"
-                        [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
-                                  ' q' + (1.2 * g.s) + ',-' + (2.2 * g.s) + ' ' + (1.6 * g.s) + ',-' + (3.5 * g.s)" />
+              <!-- LAND: bare lawn. Nothing on it — the plot itself is the
+                   asset, and an empty parcel reads as room to build. -->
+              <g *ngIf="t.type === 'land'">
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back', 0.94, [4, 8])" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back', 0.94, 4)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
+                </g>
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front', 0.94, [4, 8])" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front', 0.94, 4)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
               </g>
 
@@ -197,11 +195,11 @@
                    posts and rails as the finished plots. -->
               <g *ngIf="t.type === 'building'">
                 <!-- BACK fence -->
-                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back')" />
-                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back')">
-                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
-                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
-                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back', 0.94, [4, 8])" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back', 0.94, 4)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
 
                 <!-- grey pad + a stack of materials -->
@@ -229,84 +227,81 @@
                 <path class="rail" [attr.d]="frameRing(c.x + 4, c.y - 12, 0.44, 16)" />
 
                 <!-- FRONT fence -->
-                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front')" />
-                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front')">
-                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
-                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
-                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front', 0.94, [4, 8])" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front', 0.94, 4)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
               </g>
 
-              <!-- VILLA — mapped from the reference piece by piece:
-                   flat white roof + rooftop disc, two-tone body with a brown
-                   accent panel, blue windows, pool, cube bushes, grey driveway
-                   pad, and a post-and-rail fence on all four sides. -->
+              <!-- VILLA — ported from the supplied reference SVG. The
+                   polygons below are the reference's own coordinates, scaled
+                   from its parcel (W=311.8 @ 410,250) onto our tile (W=64 @ 0,0)
+                   and offset to the cell centre. Three values per material:
+                   top lightest, right lit, left shaded. Painted back-to-front. -->
               <g *ngIf="t.type === 'villa'">
-                <!-- BACK fence first, so it sits behind everything -->
-                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back')" />
-                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back')">
-                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
-                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
-                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
+                <!-- BACK fence -->
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back', 0.94, [4, 8])" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back', 0.94, 4)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
 
-                <!-- grey driveway pad -->
-                <path class="drive" [attr.d]="diamondAt(c.x + 30, c.y + 2, 0.20)" />
+                <!-- tree (behind the house) -->
+                <polygon class="ref-tree-l" [attr.points]="(c.x + 33.07) + ',' + (c.y + -17.24) + ' ' + (c.x + 42.65) + ',' + (c.y + -11.70) + ' ' + (c.x + 42.65) + ',' + (c.y + -1.23) + ' ' + (c.x + 33.07) + ',' + (c.y + -6.77)" />
+                <polygon class="ref-tree-r" [attr.points]="(c.x + 52.26) + ',' + (c.y + -17.24) + ' ' + (c.x + 42.65) + ',' + (c.y + -11.70) + ' ' + (c.x + 42.65) + ',' + (c.y + -1.23) + ' ' + (c.x + 52.26) + ',' + (c.y + -6.77)" />
+                <polygon class="ref-tree-t" [attr.points]="(c.x + 42.65) + ',' + (c.y + -22.78) + ' ' + (c.x + 52.26) + ',' + (c.y + -17.24) + ' ' + (c.x + 42.65) + ',' + (c.y + -11.70) + ' ' + (c.x + 33.07) + ',' + (c.y + -17.24)" />
 
-                <!-- POOL: pale surround + blue water -->
-                <path class="pool-rim" [attr.d]="diamondAt(c.x - 22, c.y + 12, 0.28)" />
-                <path class="pool" [attr.d]="diamondAt(c.x - 22, c.y + 12, 0.21)" />
+                <!-- pool deck + water -->
+                <polygon class="ref-deck-l" [attr.points]="(c.x + -10.67) + ',' + (c.y + 12.52) + ' ' + (c.x + -35.20) + ',' + (c.y + -1.64) + ' ' + (c.x + -35.20) + ',' + (c.y + -0.41) + ' ' + (c.x + -10.67) + ',' + (c.y + 13.75)" />
+                <polygon class="ref-deck-r" [attr.points]="(c.x + 2.13) + ',' + (c.y + 5.13) + ' ' + (c.x + -10.67) + ',' + (c.y + 12.52) + ' ' + (c.x + -10.67) + ',' + (c.y + 13.75) + ' ' + (c.x + 2.13) + ',' + (c.y + 6.36)" />
+                <polygon class="ref-deck-t" [attr.points]="(c.x + -22.39) + ',' + (c.y + -9.03) + ' ' + (c.x + 2.13) + ',' + (c.y + 5.13) + ' ' + (c.x + -10.67) + ',' + (c.y + 12.52) + ' ' + (c.x + -35.20) + ',' + (c.y + -1.64)" />
+                <polygon class="ref-water" [attr.points]="(c.x + -23.46) + ',' + (c.y + -5.67) + ' ' + (c.x + -10.67) + ',' + (c.y + 1.72) + ' ' + (c.x + -18.12) + ',' + (c.y + 6.03) + ' ' + (c.x + -30.93) + ',' + (c.y + -1.35)" />
 
-                <!-- cube bushes -->
-                <g *ngFor="let b of villaBushes(c.x, c.y)">
-                  <path class="bush-l" [attr.d]="boxLeft(b.x, b.y, 0.10, 11)" />
-                  <path class="bush-r" [attr.d]="boxRight(b.x, b.y, 0.10, 11)" />
-                  <path class="bush-t" [attr.d]="boxTop(b.x, b.y, 0.10, 11)" />
-                </g>
+                <!-- main house block -->
+                <polygon class="ref-house-l" [attr.points]="(c.x + 2.13) + ',' + (c.y + -16.01) + ' ' + (c.x + -22.39) + ',' + (c.y + -30.17) + ' ' + (c.x + -22.39) + ',' + (c.y + -8.01) + ' ' + (c.x + 2.13) + ',' + (c.y + 6.16)" />
+                <polygon class="ref-house-r" [attr.points]="(c.x + 23.46) + ',' + (c.y + -28.33) + ' ' + (c.x + 2.13) + ',' + (c.y + -16.01) + ' ' + (c.x + 2.13) + ',' + (c.y + 6.16) + ' ' + (c.x + 23.46) + ',' + (c.y + -6.16)" />
+                <!-- windows -->
+                <polygon class="ref-win-l" [attr.points]="(c.x + -20.26) + ',' + (c.y + -20.94) + ' ' + (c.x + -12.25) + ',' + (c.y + -16.32) + ' ' + (c.x + -12.25) + ',' + (c.y + -6.47) + ' ' + (c.x + -20.26) + ',' + (c.y + -11.08)" />
+                <polygon class="ref-win-l" [attr.points]="(c.x + -20.26) + ',' + (c.y + -27.09) + ' ' + (c.x + -4.80) + ',' + (c.y + -18.17) + ' ' + (c.x + -4.80) + ',' + (c.y + -13.24) + ' ' + (c.x + -20.26) + ',' + (c.y + -22.17)" />
+                <polygon class="ref-win-r" [attr.points]="(c.x + 19.19) + ',' + (c.y + -19.70) + ' ' + (c.x + 10.67) + ',' + (c.y + -14.78) + ' ' + (c.x + 10.67) + ',' + (c.y + -4.93) + ' ' + (c.x + 19.19) + ',' + (c.y + -9.85)" />
+                <polygon class="ref-win-r" [attr.points]="(c.x + 7.47) + ',' + (c.y + -12.93) + ' ' + (c.x + 3.20) + ',' + (c.y + -10.47) + ' ' + (c.x + 3.20) + ',' + (c.y + -0.62) + ' ' + (c.x + 7.47) + ',' + (c.y + -3.08)" />
+                <!-- timber door panel -->
+                <polygon class="ref-door" [attr.points]="(c.x + -9.61) + ',' + (c.y + -11.08) + ' ' + (c.x + -4.80) + ',' + (c.y + -8.31) + ' ' + (c.x + -4.80) + ',' + (c.y + 2.16) + ' ' + (c.x + -9.61) + ',' + (c.y + -0.62)" />
+                <!-- roof slab -->
+                <polygon class="ref-roof-l" [attr.points]="(c.x + 2.13) + ',' + (c.y + -15.03) + ' ' + (c.x + -26.66) + ',' + (c.y + -31.65) + ' ' + (c.x + -26.66) + ',' + (c.y + -30.17) + ' ' + (c.x + 2.13) + ',' + (c.y + -13.55)" />
+                <polygon class="ref-roof-r" [attr.points]="(c.x + 27.73) + ',' + (c.y + -29.80) + ' ' + (c.x + 2.13) + ',' + (c.y + -15.03) + ' ' + (c.x + 2.13) + ',' + (c.y + -13.55) + ' ' + (c.x + 27.73) + ',' + (c.y + -28.33)" />
+                <polygon class="ref-roof-t" [attr.points]="(c.x + 1.07) + ',' + (c.y + -46.43) + ' ' + (c.x + 27.73) + ',' + (c.y + -29.80) + ' ' + (c.x + 2.13) + ',' + (c.y + -15.03) + ' ' + (c.x + -26.66) + ',' + (c.y + -31.65)" />
 
-                <!-- ===== HOUSE: single clean volume ===== -->
-                <path class="villa-l" [attr.d]="boxLeft(c.x + 6, c.y - 2, 0.42, 30)" />
-                <path class="villa-r" [attr.d]="boxRight(c.x + 6, c.y - 2, 0.42, 30)" />
-                <path class="villa-top" [attr.d]="boxTop(c.x + 6, c.y - 2, 0.42, 30)" />
+                <!-- lower annex -->
+                <polygon class="ref-anx-l" [attr.points]="(c.x + 12.27) + ',' + (c.y + 3.39) + ' ' + (c.x + -1.60) + ',' + (c.y + -4.62) + ' ' + (c.x + -1.60) + ',' + (c.y + 8.31) + ' ' + (c.x + 12.27) + ',' + (c.y + 16.32)" />
+                <polygon class="ref-anx-r" [attr.points]="(c.x + 29.87) + ',' + (c.y + -6.77) + ' ' + (c.x + 12.27) + ',' + (c.y + 3.39) + ' ' + (c.x + 12.27) + ',' + (c.y + 16.32) + ' ' + (c.x + 29.87) + ',' + (c.y + 6.16)" />
+                <polygon class="ref-anx-t" [attr.points]="(c.x + 15.99) + ',' + (c.y + -14.78) + ' ' + (c.x + 29.87) + ',' + (c.y + -6.77) + ' ' + (c.x + 12.27) + ',' + (c.y + 3.39) + ' ' + (c.x + -1.60) + ',' + (c.y + -4.62)" />
+                <polygon class="ref-win-r" [attr.points]="(c.x + 26.66) + ',' + (c.y + -2.46) + ' ' + (c.x + 15.99) + ',' + (c.y + 3.69) + ' ' + (c.x + 15.99) + ',' + (c.y + 10.47) + ' ' + (c.x + 26.66) + ',' + (c.y + 4.31)" />
 
-                <!-- brown accent panel down the right face, as in the reference -->
-                <path class="accent" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 3, 0.02, 0.30)" />
+                <!-- hedges -->
+                <polygon class="ref-hedge-l" [attr.points]="(c.x + -10.45) + ',' + (c.y + 9.98) + ' ' + (c.x + -14.72) + ',' + (c.y + 7.51) + ' ' + (c.x + -14.72) + ',' + (c.y + 12.44) + ' ' + (c.x + -10.45) + ',' + (c.y + 14.90)" />
+                <polygon class="ref-hedge-r" [attr.points]="(c.x + -6.18) + ',' + (c.y + 7.51) + ' ' + (c.x + -10.45) + ',' + (c.y + 9.98) + ' ' + (c.x + -10.45) + ',' + (c.y + 14.90) + ' ' + (c.x + -6.18) + ',' + (c.y + 12.44)" />
+                <polygon class="ref-hedge-t" [attr.points]="(c.x + -10.45) + ',' + (c.y + 5.05) + ' ' + (c.x + -6.18) + ',' + (c.y + 7.51) + ' ' + (c.x + -10.45) + ',' + (c.y + 9.98) + ' ' + (c.x + -14.72) + ',' + (c.y + 7.51)" />
+                <polygon class="ref-hedge-l" [attr.points]="(c.x + -22.93) + ',' + (c.y + -9.34) + ' ' + (c.x + -27.20) + ',' + (c.y + -11.80) + ' ' + (c.x + -27.20) + ',' + (c.y + -6.88) + ' ' + (c.x + -22.93) + ',' + (c.y + -4.41)" />
+                <polygon class="ref-hedge-r" [attr.points]="(c.x + -18.66) + ',' + (c.y + -11.80) + ' ' + (c.x + -22.93) + ',' + (c.y + -9.34) + ' ' + (c.x + -22.93) + ',' + (c.y + -4.41) + ' ' + (c.x + -18.66) + ',' + (c.y + -6.88)" />
+                <polygon class="ref-hedge-t" [attr.points]="(c.x + -22.93) + ',' + (c.y + -14.27) + ' ' + (c.x + -18.66) + ',' + (c.y + -11.80) + ' ' + (c.x + -22.93) + ',' + (c.y + -9.34) + ' ' + (c.x + -27.20) + ',' + (c.y + -11.80)" />
 
-                <!-- blue windows: two per face, discrete -->
-                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 8, 0.16, 0.26)" />
-                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 8, 0.56, 0.26)" />
-                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 8, 0.38, 0.26)" />
-                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 8, 0.70, 0.26)" />
-                <!-- lower band of windows -->
-                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 20, 0.16, 0.26)" />
-                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 20, 0.56, 0.26)" />
-                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 20, 0.70, 0.26)" />
-
-                <!-- door -->
-                <path class="door" [attr.d]="'M' + (c.x + 14) + ',' + (c.y + 11) +
-                                              ' L' + (c.x + 22) + ',' + (c.y + 7) +
-                                              ' L' + (c.x + 22) + ',' + (c.y - 3) +
-                                              ' L' + (c.x + 14) + ',' + (c.y + 1) + ' Z'" />
-
-                <!-- flat white roof slab with a thin lip + rooftop disc -->
-                <path class="roofw-l" [attr.d]="boxLeft(c.x + 6, c.y - 32, 0.48, 4)" />
-                <path class="roofw-r" [attr.d]="boxRight(c.x + 6, c.y - 32, 0.48, 4)" />
-                <path class="roofw-t" [attr.d]="boxTop(c.x + 6, c.y - 32, 0.48, 4)" />
-                <ellipse class="roof-disc" [attr.cx]="c.x + 6" [attr.cy]="c.y - 37" rx="8" ry="4" />
-
-                <!-- FRONT fence, drawn last so it reads in front -->
-                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front')" />
-                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front')">
-                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
-                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
-                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
+                <!-- FRONT fence -->
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front', 0.94, [4, 8])" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front', 0.94, 4)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
 
                 <!-- floating rent coin -->
                 <g class="coin-wrap">
-                  <ellipse class="coin-shadow" [attr.cx]="c.x + 6" [attr.cy]="c.y - 46" rx="6" ry="2.2" />
-                  <circle class="villa-coin" [attr.cx]="c.x + 6" [attr.cy]="c.y - 58" r="8.5" />
-                  <text class="villa-coin-t" [attr.x]="c.x + 6" [attr.y]="c.y - 54.5">₹</text>
+                  <ellipse class="coin-shadow" [attr.cx]="c.x" [attr.cy]="c.y - 52" rx="6" ry="2.2" />
+                  <circle class="villa-coin" [attr.cx]="c.x" [attr.cy]="c.y - 64" r="8.5" />
+                  <text class="villa-coin-t" [attr.x]="c.x" [attr.y]="c.y - 60.5">₹</text>
                 </g>
               </g>
             </g>
