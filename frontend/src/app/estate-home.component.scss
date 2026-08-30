@@ -15,8 +15,8 @@
 .estate-top {
   position: relative;
   /* the map owns the whole top half of the screen */
-  height: 52vh;
-  min-height: 320px;
+  height: 56vh;
+  min-height: 340px;
   padding: 0;
   overflow: hidden;
   background:
@@ -93,8 +93,21 @@
   transition: fill 0.2s, stroke 0.2s;
 }
 .cell.open:hover .plot-open { fill: rgba(166, 124, 46, 0.10); stroke: var(--brass); }
-.plot-plus { fill: rgba(150,140,120,0.6); font-size: 17px; font-weight: 700; text-anchor: middle; pointer-events: none; }
-.cell.open:hover .plot-plus { fill: var(--brass); }
+.peg { fill: rgba(150,140,120,0.55); }
+.plot-cta { opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
+.plot-ring {
+  fill: rgba(166,124,46,0.12);
+  stroke: var(--brass);
+  stroke-width: 1.3;
+  stroke-dasharray: 3 3;
+}
+.plot-ico { fill: none; stroke: var(--brass); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.cell.open:hover .plot-cta,
+.cell.open:focus-visible .plot-cta { opacity: 1; }
+/* on touch there is no hover — keep a soft always-on hint */
+@media (hover: none) {
+  .plot-cta { opacity: 0.45; }
+}
 
 .lawn { fill: url(#lawn); stroke: #2f6127; stroke-width: 1; }
 .soil-l { fill: #6b4f2b; }
@@ -165,6 +178,15 @@
 .wing-t    { fill: #F7F3E9; }
 .wing-l    { fill: #E4DCC7; }
 .wing-r    { fill: #CCC0A4; }
+
+/* discrete window panes — small separate openings, not one long strip */
+.pane      { fill: #3C7FA8; opacity: 0.95; }
+.pane.dim  { fill: #4E8FB4; opacity: 0.8; }
+
+/* flat white roof (reference style) */
+.roofw-t { fill: #FDFBF5; }
+.roofw-l { fill: #EDE5D2; }
+.roofw-r { fill: #D6CAB0; }
 
 /* glazing */
 .win     { fill: #3C7FA8; opacity: 0.95; }

@@ -29,7 +29,7 @@ interface Cell {
  *  directions, so the town can keep growing outward from the hall. */
 const TILE_W = 128;   // full diamond width
 const TILE_H = 64;    // full diamond height
-const GRID = 5;       // 5×5 board — roomy but never bleak; scrolls to reach it all
+const GRID = 11;      // a wide board — feels boundless; the viewport scrolls freely
 
 @Component({
   selector: 'app-estate-home',
@@ -184,6 +184,38 @@ export class EstateHomeComponent implements AfterViewInit {
     return `M${bx},${yTop + hh} L${bx + hw},${yTop} L${bx + hw},${yTop + band} L${bx},${yTop + hh + band} Z`;
   }
 
+  // ---- DISCRETE window panes (not one long strip) --------------------------
+  // Each pane is a small parallelogram sitting on a face, placed at a fraction
+  // `f` (0..1) along that face — so windows read as separate openings toward
+  // the ends of the wall, the way the reference art does.
+
+  /** One pane on the left (-x) face at position f along it. */
+  paneLeft(bx: number, by: number, w: number, h: number, t: number, f: number, pw = 0.2): string {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    // walk from the left corner (-hw, 0) toward the centre (0, +hh)
+    const x0 = bx - hw + hw * f;
+    const y0 = by - h + t + hh * f;
+    const x1 = bx - hw + hw * (f + pw);
+    const y1 = by - h + t + hh * (f + pw);
+    const band = 8;
+    return `M${x0},${y0} L${x1},${y1} L${x1},${y1 + band} L${x0},${y0 + band} Z`;
+  }
+  /** One pane on the right (+x) face at position f along it. */
+  paneRight(bx: number, by: number, w: number, h: number, t: number, f: number, pw = 0.2): string {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    // walk from the centre (0, +hh) toward the right corner (+hw, 0)
+    const x0 = bx + hw * f;
+    const y0 = by - h + t + hh * (1 - f);
+    const x1 = bx + hw * (f + pw);
+    const y1 = by - h + t + hh * (1 - f - pw);
+    const band = 8;
+    return `M${x0},${y0} L${x1},${y1} L${x1},${y1 + band} L${x0},${y0 + band} Z`;
+  }
+  /** Pane positions for a wall: two openings set toward the ends. */
+  readonly paneSpots = [0.14, 0.62];
+
   /** Fence posts + rail along the two far edges of a tile (back-left, back-right). */
   fencePath(x: number, y: number): string {
     const hw = TILE_W / 2;
@@ -265,15 +297,41 @@ export class EstateHomeComponent implements AfterViewInit {
     return out;
   }
 
-  /** Four trees framing the town-hall plaza — fixed, so the centre always
-   *  looks like a real town square even before anything is built. */
-  hallGreens(x: number, y: number): { x: number; y: number }[] {
-    return [
-      { x: x - 46, y: y + 2 },
-      { x: x + 46, y: y + 2 },
-      { x: x - 22, y: y + 20 },
-      { x: x + 22, y: y + 20 },
+  // ---- perimeter fence: posts + rails around the whole plot ----------------
+  /** Rails around all four edges of a tile, at the given height. */
+  perimeterRails(x: number, y: number, inset = 0.88, t = 10): string {
+    const hw = (TILE_W / 2) * inset;
+    const hh = (TILE_H / 2) * inset;
+    const ring = (dy: number) =>
+      `M${x - hw},${y - dy} L${x},${y - hh - dy} L${x + hw},${y - dy} L${x},${y + hh - dy} Z`;
+    return `${ring(2)} ${ring(2 + t)}`;
+  }
+  /** Fence posts spaced around all four edges. */
+  perimeterPosts(
+    x: number,
+    y: number,
+    inset = 0.88,
+    t = 12,
+  ): { x1: number; y1: number; x2: number; y2: number }[] {
+    const hw = (TILE_W / 2) * inset;
+    const hh = (TILE_H / 2) * inset;
+    const corners = [
+      { x: x - hw, y: y },
+      { x: x, y: y - hh },
+      { x: x + hw, y: y },
+      { x: x, y: y + hh },
     ];
+    const out: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    for (let i = 0; i < 4; i++) {
+      const a = corners[i];
+      const b = corners[(i + 1) % 4];
+      for (const f of [0, 0.5]) {
+        const px = a.x + (b.x - a.x) * f;
+        const py = a.y + (b.y - a.y) * f;
+        out.push({ x1: px, y1: py - 2, x2: px, y2: py - 2 - t });
+      }
+    }
+    return out;
   }
 
   /** A couple of soft bushes — sparse, just enough to feel alive. */
@@ -337,11 +395,11 @@ export class EstateHomeComponent implements AfterViewInit {
     const el = this.scroller?.nativeElement;
     if (!el) return;
     const mid = Math.floor(GRID / 2);
-    // the hall's centre in board coordinates (col===row===mid -> x offset 0)
+    // hall sits at (col,row) = (mid,mid): x offset 0, y = (mid+mid)*TILE_H/2
     const hallX = this.offX;
-    const hallY = this.offY + mid * TILE_H;
-    el.scrollLeft = Math.max(0, hallX - el.clientWidth / 2);
-    el.scrollTop = Math.max(0, hallY - el.clientHeight / 2);
+    const hallY = this.offY + (mid + mid) * (TILE_H / 2);
+    el.scrollLeft = Math.round(hallX - el.clientWidth / 2);
+    el.scrollTop = Math.round(hallY - el.clientHeight / 2);
   }
 
   // ---------------- interaction ----------------
