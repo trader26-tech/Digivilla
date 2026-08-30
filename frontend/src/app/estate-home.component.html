@@ -64,25 +64,64 @@
               <!-- lawn top -->
               <path class="lawn" [attr.d]="diamond(c.x, c.y)" />
 
-              <!-- LAND: just lawn + a little sprout -->
-              <text *ngIf="t.type === 'land'" class="sprout" [attr.x]="c.x" [attr.y]="c.y + 5">🌱</text>
-
-              <!-- BUILDING: scaffold that fills with build progress -->
-              <g *ngIf="t.type === 'building'">
-                <rect class="bld-frame" [attr.x]="c.x - 20" [attr.y]="c.y - 34" width="40" height="42" rx="3" />
-                <rect class="bld-fill" [attr.x]="c.x - 20"
-                      [attr.y]="c.y - 34 + (42 * (1 - est.buildProgress(t)))"
-                      width="40" [attr.height]="42 * est.buildProgress(t)" rx="3" />
-                <text class="bld-ico" [attr.x]="c.x" [attr.y]="c.y - 40">🏗️</text>
+              <!-- LAND: bare lawn, a light patio square and a couple of hedges -->
+              <g *ngIf="t.type === 'land'">
+                <path class="patio" [attr.d]="diamondAt(c.x, c.y, 0.34)" />
+                <g *ngFor="let h of hedges(c.x, c.y)">
+                  <path class="hedge-top" [attr.d]="boxTop(h.x, h.y, 0.13, 9)" />
+                  <path class="hedge-l" [attr.d]="boxLeft(h.x, h.y, 0.13, 9)" />
+                  <path class="hedge-r" [attr.d]="boxRight(h.x, h.y, 0.13, 9)" />
+                </g>
               </g>
 
-              <!-- VILLA: a raised house block + roof + coin -->
+              <!-- BUILDING: fenced site, a frame that fills as the SIP accrues -->
+              <g *ngIf="t.type === 'building'">
+                <path class="site" [attr.d]="diamondAt(c.x, c.y, 0.62)" />
+                <!-- the finished-volume ghost -->
+                <path class="ghost-top" [attr.d]="boxTop(c.x, c.y + 6, 0.52, 34)" />
+                <path class="ghost-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.52, 34)" />
+                <path class="ghost-r" [attr.d]="boxRight(c.x, c.y + 6, 0.52, 34)" />
+                <!-- built-so-far solid volume, height = progress -->
+                <g *ngIf="est.buildProgress(t) > 0.02">
+                  <path class="bld-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.52, 34 * est.buildProgress(t))" />
+                  <path class="bld-r" [attr.d]="boxRight(c.x, c.y + 6, 0.52, 34 * est.buildProgress(t))" />
+                  <path class="bld-top" [attr.d]="boxTop(c.x, c.y + 6, 0.52, 34 * est.buildProgress(t))" />
+                </g>
+                <!-- fence around the site -->
+                <path class="fence-rail" [attr.d]="fencePath(c.x, c.y)" />
+                <line *ngFor="let p of fencePosts(c.x, c.y)" class="fence-post"
+                      [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
+              </g>
+
+              <!-- VILLA: iso cube + brass roof slab + window bands + pool + hedges -->
               <g *ngIf="t.type === 'villa'">
-                <rect class="villa-body" [attr.x]="c.x - 22" [attr.y]="c.y - 40" width="44" height="46" rx="4" />
-                <path class="villa-roof" [attr.d]="'M' + (c.x - 26) + ',' + (c.y - 40) + ' L' + c.x + ',' + (c.y - 58) + ' L' + (c.x + 26) + ',' + (c.y - 40) + ' Z'" />
-                <rect class="villa-door" [attr.x]="c.x - 6" [attr.y]="c.y - 16" width="12" height="22" rx="2" />
-                <circle class="villa-coin" [attr.cx]="c.x" [attr.cy]="c.y - 70" r="10" />
-                <text class="villa-coin-t" [attr.x]="c.x" [attr.y]="c.y - 66">₹</text>
+                <!-- pool + patio on the lawn -->
+                <path class="pool" [attr.d]="diamondAt(c.x - 22, c.y + 12, 0.20)" />
+                <!-- hedges -->
+                <g *ngFor="let h of hedges(c.x, c.y)">
+                  <path class="hedge-top" [attr.d]="boxTop(h.x, h.y, 0.13, 9)" />
+                  <path class="hedge-l" [attr.d]="boxLeft(h.x, h.y, 0.13, 9)" />
+                  <path class="hedge-r" [attr.d]="boxRight(h.x, h.y, 0.13, 9)" />
+                </g>
+                <!-- house body -->
+                <path class="villa-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.5, 34)" />
+                <path class="villa-r" [attr.d]="boxRight(c.x, c.y + 6, 0.5, 34)" />
+                <path class="villa-top" [attr.d]="boxTop(c.x, c.y + 6, 0.5, 34)" />
+                <!-- window bands -->
+                <path class="win" [attr.d]="windowLeft(c.x, c.y + 6, 0.5, 34, 12)" />
+                <path class="win" [attr.d]="windowRight(c.x, c.y + 6, 0.5, 34, 12)" />
+                <!-- roof slab (thin brass box on top) -->
+                <path class="roof-l" [attr.d]="boxLeft(c.x, c.y - 28, 0.56, 6)" />
+                <path class="roof-r" [attr.d]="boxRight(c.x, c.y - 28, 0.56, 6)" />
+                <path class="roof-top" [attr.d]="boxTop(c.x, c.y - 28, 0.56, 6)" />
+                <!-- rooftop disc -->
+                <ellipse class="roof-disc" [attr.cx]="c.x" [attr.cy]="c.y - 36" rx="9" ry="4.5" />
+                <!-- floating rent coin -->
+                <g class="coin-wrap">
+                  <ellipse class="coin-shadow" [attr.cx]="c.x" [attr.cy]="c.y - 44" rx="7" ry="2.5" />
+                  <circle class="villa-coin" [attr.cx]="c.x" [attr.cy]="c.y - 64" r="10" />
+                  <text class="villa-coin-t" [attr.x]="c.x" [attr.y]="c.y - 60">₹</text>
+                </g>
               </g>
             </g>
           </ng-container>

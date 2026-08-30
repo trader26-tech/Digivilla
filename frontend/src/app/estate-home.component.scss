@@ -91,20 +91,49 @@
 .plot-plus { fill: var(--muted); font-size: 20px; font-weight: 700; text-anchor: middle; pointer-events: none; }
 
 .lawn { fill: url(#lawn); stroke: #2f6127; stroke-width: 1; }
-.soil-l { fill: #5f4526; }
-.soil-r { fill: #4a351d; }
-.sprout { font-size: 18px; text-anchor: middle; }
+.soil-l { fill: #6b4f2b; }
+.soil-r { fill: #513a1e; }
 
-/* building (under construction) */
-.bld-frame { fill: rgba(255,255,255,0.35); stroke: #8a6b3f; stroke-width: 1.5; stroke-dasharray: 3 3; }
-.bld-fill { fill: rgba(166, 124, 46, 0.55); transition: y 0.5s cubic-bezier(0.22,1,0.36,1), height 0.5s cubic-bezier(0.22,1,0.36,1); }
-.bld-ico { font-size: 15px; text-anchor: middle; }
+/* ground details */
+.patio { fill: rgba(255,255,255,0.20); stroke: rgba(255,255,255,0.35); stroke-width: 0.8; }
+.site  { fill: rgba(255,255,255,0.14); stroke: rgba(255,255,255,0.28); stroke-width: 0.8; }
+.pool  { fill: #4FA8D8; stroke: #eaf6fb; stroke-width: 1.2; }
 
-/* villa */
-.villa-body { fill: url(#wall); stroke: #cbb98f; stroke-width: 1; }
-.villa-roof { fill: #b98a4a; stroke: #8a6534; stroke-width: 1; }
-.villa-door { fill: #6b4f2b; }
-.villa-coin { fill: radial-gradient(#F4CE6E, #C79A34); fill: #F0C860; stroke: #a67c2e; stroke-width: 1.5; animation: bob 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+/* hedges — small green cubes */
+.hedge-top { fill: #6FBF52; }
+.hedge-l   { fill: #4E9138; }
+.hedge-r   { fill: #3E7A2C; }
+
+/* wooden fence */
+.fence-rail { fill: none; stroke: #9A6B3A; stroke-width: 2; stroke-linecap: round; }
+.fence-post { stroke: #9A6B3A; stroke-width: 2.4; stroke-linecap: round; }
+
+/* villa — cream cube, brass roof slab, blue windows */
+.villa-top { fill: #FBF8F0; }
+.villa-l   { fill: #E7DFCC; }
+.villa-r   { fill: #D4C9B0; }
+.win       { fill: #3E7FA8; opacity: 0.92; }
+.roof-top  { fill: #C99A4E; }
+.roof-l    { fill: #A87B36; }
+.roof-r    { fill: #8E6529; }
+.roof-disc { fill: #E9E1CE; stroke: #b9a77f; stroke-width: 0.8; }
+
+/* under-construction volume */
+.ghost-top, .ghost-l, .ghost-r {
+  fill: rgba(255,255,255,0.10);
+  stroke: rgba(154,107,58,0.55);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.bld-top { fill: #EFE7D6; }
+.bld-l   { fill: #D8CDB6; }
+.bld-r   { fill: #C3B79C; }
+.bld-top, .bld-l, .bld-r { transition: d 0.5s cubic-bezier(0.22,1,0.36,1); }
+
+/* floating rent coin */
+.coin-wrap { animation: bob 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.coin-shadow { fill: rgba(22,48,43,0.18); }
+.villa-coin { fill: #F0C860; stroke: #a67c2e; stroke-width: 1.5; }
 .villa-coin-t { fill: #6b4f13; font-size: 10px; font-weight: 800; text-anchor: middle; }
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 

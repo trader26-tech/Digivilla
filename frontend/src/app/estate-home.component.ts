@@ -96,6 +96,100 @@ export class EstateHomeComponent {
     return `M${x},${y - hh} L${x + hw},${y} L${x},${y + hh} L${x - hw},${y} Z`;
   }
 
+  /** A smaller diamond, inset by `k` (0..1) — for pools, patios, driveways. */
+  diamondAt(x: number, y: number, k: number): string {
+    const hw = (TILE_W / 2) * k;
+    const hh = (TILE_H / 2) * k;
+    return `M${x},${y - hh} L${x + hw},${y} L${x},${y + hh} L${x - hw},${y} Z`;
+  }
+
+  // ============ isometric box primitives ============
+  // An iso box is drawn as three faces from a base centre (bx,by):
+  //   top    — a diamond raised by `h`
+  //   left   — the -x face
+  //   right  — the +x face
+  // `w` is the half-width in iso units (1 = a full tile).
+
+  /** Top face of an iso box of half-width w, raised h above the base point. */
+  boxTop(bx: number, by: number, w: number, h: number): string {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    const y = by - h;
+    return `M${bx},${y - hh} L${bx + hw},${y} L${bx},${y + hh} L${bx - hw},${y} Z`;
+  }
+  /** Left (-x) vertical face. */
+  boxLeft(bx: number, by: number, w: number, h: number): string {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    return `M${bx - hw},${by - h} L${bx},${by - h + hh} L${bx},${by + hh} L${bx - hw},${by} Z`;
+  }
+  /** Right (+x) vertical face. */
+  boxRight(bx: number, by: number, w: number, h: number): string {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    return `M${bx},${by - h + hh} L${bx + hw},${by - h} L${bx + hw},${by} L${bx},${by + hh} Z`;
+  }
+
+  /** Window band on the left face (a thin horizontal strip). */
+  windowLeft(bx: number, by: number, w: number, h: number, t: number): string {
+    const hw = (TILE_W / 2) * w * 0.72;
+    const hh = (TILE_H / 2) * w * 0.72;
+    const yTop = by - h + t;
+    const band = 7;
+    return `M${bx - hw},${yTop} L${bx},${yTop + hh} L${bx},${yTop + hh + band} L${bx - hw},${yTop + band} Z`;
+  }
+  /** Window band on the right face. */
+  windowRight(bx: number, by: number, w: number, h: number, t: number): string {
+    const hw = (TILE_W / 2) * w * 0.72;
+    const hh = (TILE_H / 2) * w * 0.72;
+    const yTop = by - h + t;
+    const band = 7;
+    return `M${bx},${yTop + hh} L${bx + hw},${yTop} L${bx + hw},${yTop + band} L${bx},${yTop + hh + band} Z`;
+  }
+
+  /** Fence posts + rail along the two far edges of a tile (back-left, back-right). */
+  fencePath(x: number, y: number): string {
+    const hw = TILE_W / 2;
+    const hh = TILE_H / 2;
+    const inset = 0.9;
+    const t = 9; // rail height
+    // back-left edge: from left corner to top corner; back-right: top to right
+    return (
+      `M${x - hw * inset},${y - 2} L${x},${y - hh * inset - 2} ` +
+      `M${x},${y - hh * inset - 2} L${x + hw * inset},${y - 2} ` +
+      `M${x - hw * inset},${y - 2 - t} L${x},${y - hh * inset - 2 - t} ` +
+      `M${x},${y - hh * inset - 2 - t} L${x + hw * inset},${y - 2 - t}`
+    );
+  }
+  /** Vertical fence posts along the same two edges. */
+  fencePosts(x: number, y: number): { x1: number; y1: number; x2: number; y2: number }[] {
+    const hw = TILE_W / 2;
+    const hh = TILE_H / 2;
+    const inset = 0.9;
+    const t = 11;
+    const out: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    for (const f of [0, 0.5, 1]) {
+      // back-left edge
+      const lx = -hw * inset + (hw * inset) * f;
+      const ly = -2 - (hh * inset) * f;
+      out.push({ x1: x + lx, y1: y + ly, x2: x + lx, y2: y + ly - t });
+      // back-right edge
+      const rx = (hw * inset) * f;
+      const ry = -hh * inset - 2 + (hh * inset) * f;
+      out.push({ x1: x + rx, y1: y + ry, x2: x + rx, y2: y + ry - t });
+    }
+    return out;
+  }
+
+  /** Hedge cube positions around a villa. */
+  hedges(x: number, y: number): { x: number; y: number }[] {
+    return [
+      { x: x + 34, y: y - 2 },
+      { x: x + 22, y: y + 8 },
+      { x: x - 34, y: y + 2 },
+    ];
+  }
+
   // ---------------- interaction ----------------
   tapCell(c: Cell): void {
     if (navigator.vibrate) navigator.vibrate(4);
