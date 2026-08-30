@@ -15,8 +15,8 @@
 .estate-top {
   position: relative;
   /* the map owns the whole top half of the screen */
-  height: 56vh;
-  min-height: 340px;
+  height: 62vh;
+  min-height: 380px;
   padding: 0;
   overflow: hidden;
   background:
@@ -86,9 +86,19 @@
 .board-scroll:active { cursor: grabbing; }
 .board { display: block; max-width: none; }
 /* at the base 3x3 the whole estate is framed to fit — no scrolling at all */
-.board-scroll.fit { overflow: hidden; display: grid; place-items: center; padding: 0.5rem; }
-/* let the SVG scale down to fit the viewport while keeping its aspect */
-.board-scroll.fit .board { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+/* Fitted mode: the whole 3x3 board is contained in the panel, centred, and
+   scaled up to fill it. preserveAspectRatio="xMidYMid meet" on the SVG does
+   the containing, so the artwork is never cropped. */
+.board-scroll.fit {
+  overflow: hidden;
+  display: block;
+  padding: 0;
+}
+.board-scroll.fit .board {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 
 /* cells */
 .cell { cursor: pointer; }
@@ -567,23 +577,18 @@
 /* town-hall parcel: paved border band around the civic plaza */
 .plaza-border { fill: #DDD3B8; stroke: #c6bb9c; stroke-width: 1; }
 
-/* ============ rent coin — the reference recipe ============
-   1) off-centre highlight  2) four gradient stops
-   3) rim darker than the darkest face  4) warm inset bounce underneath */
-.coin-wrap {
-  animation: coinBob 2.4s ease-in-out infinite;
-}
+
+/* ============ rent coin ============
+   The earlier flat-gold look, which read better on the board than the
+   heavily-milled version. Kept the off-centre highlight and dark rim. */
+.coin-wrap { animation: coinBob 2.4s ease-in-out infinite; }
 @keyframes coinBob {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50%      { transform: translateY(-3.5px) rotate(-4deg); }
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
 }
-.coin-shadow { fill: #0b0d16; opacity: 0.3; }
-.coin-face   { fill: url(#coinGold); stroke: #8d5a10; stroke-width: 1.1; }
-.coin-ring   { fill: none; stroke: #b8902f; stroke-width: 0.5; }
-.tick-a      { stroke: #b8902f; stroke-width: 0.5; }
-.tick-b      { stroke: #8d5a10; stroke-width: 0.5; }
-.coin-glyph-under { fill: #8d5a10; font-size: 7.5px; font-weight: 600; text-anchor: middle; }
-.coin-glyph       { fill: #fff3c9; font-size: 7.5px; font-weight: 600; text-anchor: middle; }
-.coin-glint  { fill: #fff; opacity: 0.5; }
+.coin-shadow { fill: #16302B; opacity: 0.22; }
+.coin-face   { fill: #E9C15C; stroke: #B8902F; stroke-width: 2; }
+.coin-ring   { fill: none; stroke: #B8902F; stroke-width: 1.2; }
+.coin-glyph  { fill: #6B5111; font-size: 9px; font-weight: 600; text-anchor: middle; }
 
 @media (prefers-reduced-motion: reduce) { .coin-wrap { animation: none; } }

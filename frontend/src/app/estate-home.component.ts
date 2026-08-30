@@ -248,11 +248,22 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     // in FRONT of the hall (higher col+row draws later / nearer the viewer).
     // The hall is tall, so anything placed behind it would be hidden — this
     // keeps new builds in clear view.
+    // The cell DIRECTLY behind the hall is filled last: the hall is the
+    // tallest thing on the board, so anything there (and its floating coin)
+    // would read as sitting on top of the hall.
+    // In this projection screen-y = (col+row); the smallest sum sits highest
+    // on screen, directly above the hall's tower. Anything built there — and
+    // its floating coin — reads as perched on top of the hall.
+    const behindHall = (c: { col: number; row: number }) => c.col + c.row === 0;
+
     all.sort((p, q) => {
+      const pb = behindHall(p) ? 1 : 0;
+      const qb = behindHall(q) ? 1 : 0;
+      if (pb !== qb) return pb - qb;    // the hidden cell goes last
       if (p.d !== q.d) return p.d - q.d;
       const pf = p.col + p.row;
       const qf = q.col + q.row;
-      if (pf !== qf) return qf - pf;   // front-most first
+      if (pf !== qf) return qf - pf;    // front-most first
       return p.a - q.a;
     });
 
@@ -284,13 +295,18 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   });
 
   /** Intrinsic board size (viewBox units) — the full board, unscaled. */
+  /** Headroom above the topmost tile centre for the hall tower / coins. */
+  private readonly TOP_PAD = 150;
+  /** Skirt below the bottom tile for the soil depth. */
+  private readonly BOT_PAD = 40;
+
   get boardW(): number {
-    // the diamond spans (grid) tiles across at its widest
-    return this.grid * TILE_W + 40;
+    // the diamond is exactly grid*TILE_W wide at its waist; a small side margin
+    // keeps the left/right points and their fences from touching the edge
+    return this.grid * TILE_W + 24;
   }
   get boardH(): number {
-    // (grid) rows of half-height, plus headroom for roofs/towers/coins
-    return this.grid * TILE_H + 170;
+    return this.grid * TILE_H + this.TOP_PAD + this.BOT_PAD;
   }
 
   /** Rendered size = intrinsic × zoom. The SVG is drawn bigger/smaller than its
@@ -309,10 +325,10 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   }
   /** Shift so the leftmost diamond isn't clipped. */
   get offX(): number {
-    return (this.grid - 1) * (TILE_W / 2) + 40;
+    return (this.grid - 1) * (TILE_W / 2) + TILE_W / 2 + 12;
   }
   get offY(): number {
-    return 120; // room above for coins / villa roofs / the hall tower
+    return this.TOP_PAD;
   }
 
   /** Diamond path for a cell centre (x,y). */
