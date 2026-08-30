@@ -254,7 +254,10 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     // In this projection screen-y = (col+row); the smallest sum sits highest
     // on screen, directly above the hall's tower. Anything built there — and
     // its floating coin — reads as perched on top of the hall.
-    const behindHall = (c: { col: number; row: number }) => c.col + c.row === 0;
+    // Cell (0,0) shares the hall's x and renders far above it, so anything
+    // built there — and its floating coin — appears to sit on the hall's
+    // tower. Keep it empty until every other cell is taken.
+    const behindHall = (c: { col: number; row: number }) => c.col === 0 && c.row === 0;
 
     all.sort((p, q) => {
       const pb = behindHall(p) ? 1 : 0;
