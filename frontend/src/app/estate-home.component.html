@@ -5,6 +5,7 @@
          in both directions so the town can keep growing. -->
     <div
       class="board-scroll"
+      [class.fit]="!canZoom"
       #scroller
       (touchstart)="onTouchStart($event)"
       (touchmove)="onTouchMove($event)"
@@ -33,6 +34,13 @@
             <stop offset="0%" stop-color="#8a6b3f" />
             <stop offset="100%" stop-color="#6b4f2b" />
           </linearGradient>
+          <!-- coin gold: four stops, highlight off-centre at 34% 28% -->
+          <radialGradient id="coinGold" cx="34%" cy="28%" r="72%">
+            <stop offset="0%"   stop-color="#ffe9a3" />
+            <stop offset="38%"  stop-color="#f6c445" />
+            <stop offset="72%"  stop-color="#dc9a1f" />
+            <stop offset="100%" stop-color="#a86b12" />
+          </radialGradient>
           <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#FBFAF6" />
             <stop offset="100%" stop-color="#E9E3D4" />
@@ -284,15 +292,49 @@
                 </g>
 
                 <!-- floating rent coin -->
-                <!-- Rent marker. Sits low, just clear of this villa's own roof
-                     and well inside its tile, so it never drifts into the
-                     airspace of the plot behind. A slow pulse ring reads as
-                     "something to collect" without needing height. -->
-                <g class="coin-wrap">
-                  <circle class="coin-pulse" [attr.cx]="c.x + 2" [attr.cy]="c.y - 46" r="8" />
-                  <ellipse class="coin-shadow" [attr.cx]="c.x + 2" [attr.cy]="c.y - 38" rx="5" ry="1.8" />
-                  <circle class="villa-coin" [attr.cx]="c.x + 2" [attr.cy]="c.y - 46" r="7" />
-                  <text class="villa-coin-t" [attr.x]="c.x + 2" [attr.y]="c.y - 43">₹</text>
+                <!-- Rent coin, built to the reference recipe: an off-centre
+                     four-stop gold gradient, a rim darker than the darkest face
+                     value, a milled edge of 24 ticks, a struck ₹ (drawn twice),
+                     a concentric inset ring and a specular glint. -->
+                <g class="coin-wrap" [attr.transform]="'translate(' + (c.x + 2) + ',' + (c.y - 46) + ')'">
+                  <ellipse class="coin-shadow" cx="0" cy="17" rx="9" ry="3.2" />
+                  <g class="coin-body" transform="scale(1.9)">
+                    <circle class="coin-face" cx="0" cy="0" r="7" />
+                    <!-- milled edge -->
+                    <g class="milling">
+                    <line class="tick-a" x1="6.10" y1="0.00" x2="7.00" y2="0.00" />
+                    <line class="tick-b" x1="5.89" y1="1.58" x2="6.76" y2="1.81" />
+                    <line class="tick-a" x1="5.28" y1="3.05" x2="6.06" y2="3.50" />
+                    <line class="tick-b" x1="4.31" y1="4.31" x2="4.95" y2="4.95" />
+                    <line class="tick-a" x1="3.05" y1="5.28" x2="3.50" y2="6.06" />
+                    <line class="tick-b" x1="1.58" y1="5.89" x2="1.81" y2="6.76" />
+                    <line class="tick-a" x1="0.00" y1="6.10" x2="0.00" y2="7.00" />
+                    <line class="tick-b" x1="-1.58" y1="5.89" x2="-1.81" y2="6.76" />
+                    <line class="tick-a" x1="-3.05" y1="5.28" x2="-3.50" y2="6.06" />
+                    <line class="tick-b" x1="-4.31" y1="4.31" x2="-4.95" y2="4.95" />
+                    <line class="tick-a" x1="-5.28" y1="3.05" x2="-6.06" y2="3.50" />
+                    <line class="tick-b" x1="-5.89" y1="1.58" x2="-6.76" y2="1.81" />
+                    <line class="tick-a" x1="-6.10" y1="0.00" x2="-7.00" y2="0.00" />
+                    <line class="tick-b" x1="-5.89" y1="-1.58" x2="-6.76" y2="-1.81" />
+                    <line class="tick-a" x1="-5.28" y1="-3.05" x2="-6.06" y2="-3.50" />
+                    <line class="tick-b" x1="-4.31" y1="-4.31" x2="-4.95" y2="-4.95" />
+                    <line class="tick-a" x1="-3.05" y1="-5.28" x2="-3.50" y2="-6.06" />
+                    <line class="tick-b" x1="-1.58" y1="-5.89" x2="-1.81" y2="-6.76" />
+                    <line class="tick-a" x1="-0.00" y1="-6.10" x2="-0.00" y2="-7.00" />
+                    <line class="tick-b" x1="1.58" y1="-5.89" x2="1.81" y2="-6.76" />
+                    <line class="tick-a" x1="3.05" y1="-5.28" x2="3.50" y2="-6.06" />
+                    <line class="tick-b" x1="4.31" y1="-4.31" x2="4.95" y2="-4.95" />
+                    <line class="tick-a" x1="5.28" y1="-3.05" x2="6.06" y2="-3.50" />
+                    <line class="tick-b" x1="5.89" y1="-1.58" x2="6.76" y2="-1.81" />
+                    </g>
+                    <!-- concentric inset ring at r * 0.66 -->
+                    <circle class="coin-ring" cx="0" cy="0" r="4.6" />
+                    <!-- struck relief: shadow glyph under, light glyph over -->
+                    <text class="coin-glyph-under" x="0" y="3.4">₹</text>
+                    <text class="coin-glyph" x="0" y="2.8">₹</text>
+                    <!-- specular glint at ~30% 24% -->
+                    <ellipse class="coin-glint" cx="-2.1" cy="-2.6" rx="1.9" ry="1.2" />
+                  </g>
                 </g>
               </g>
             </g>
@@ -302,7 +344,7 @@
     </div>
 
     <!-- zoom controls -->
-    <div class="zoom-ctl">
+    <div class="zoom-ctl" *ngIf="canZoom">
       <button class="zb" (click)="zoomIn()" [disabled]="!canZoomIn" aria-label="Zoom in">
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       </button>

@@ -28,9 +28,16 @@ interface Cell {
 
 /** Isometric tile footprint. The board is large and scrollable in both
  *  directions, so the town can keep growing outward from the hall. */
-const TILE_W = 176;   // full diamond width — roomy plots, no crowding
-const TILE_H = 88;    // full diamond height (2:1 isometric)
-const GRID = 11;      // a wide board — feels boundless; the viewport scrolls freely
+/** Tile geometry from the grid reference: half-width 93.6, half-height 54
+ *  (the 1.733:1 ratio must hold), so the full diamond is 187.2 x 108. */
+const TILE_W = 187.2;
+const TILE_H = 108;
+
+/** The board starts as a fixed 3x3 — nine parcels, no scrolling, the whole
+ *  estate in one comprehensive view. It only grows (5x5, 7x7, ...) once the
+ *  user actually owns more plots than the current ring can hold, so expanding
+ *  the view always means something. */
+const BASE_GRID = 3;
 
 @Component({
   selector: 'app-estate-home',
@@ -87,8 +94,11 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   }
   zoomIn(): void { this.zoomBy(1.5); }
   zoomOut(): void { this.zoomBy(1 / 1.5); }
-  get canZoomIn(): boolean { return this.zoom() < this.MAX_ZOOM - 0.001; }
-  get canZoomOut(): boolean { return this.zoom() > this.MIN_ZOOM + 0.001; }
+  /** Zoom is only meaningful once the town has outgrown the base 3x3 board;
+   *  until then the nine parcels are framed to fit and the controls hide. */
+  get canZoom(): boolean { return this.grid > BASE_GRID; }
+  get canZoomIn(): boolean { return this.canZoom && this.zoom() < this.MAX_ZOOM - 0.001; }
+  get canZoomOut(): boolean { return this.canZoom && this.zoom() > this.MIN_ZOOM + 0.001; }
 
   // ================= touch gestures (mobile-first PWA) =================
   private pinchStartDist = 0;
@@ -200,17 +210,29 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     this.zoomBy(ev.deltaY < 0 ? 1.1 : 1 / 1.1);
   }
 
+  /** How many cells per side right now. Stays at the base 3x3 until the user
+   *  owns more plots than that ring can hold (8 around the hall), then steps
+   *  up two at a time. Expanding the view therefore only ever happens because
+   *  the town genuinely outgrew it. */
+  get grid(): number {
+    const owned = this.est.tiles().length;
+    let g = BASE_GRID;
+    while (g * g - 1 < owned) g += 2;
+    return g;
+  }
+
   /** The board: a town hall dead centre, with plots filling outward from it
    *  ring by ring, so the town always grows around the landmark. */
   cells = computed<Cell[]>(() => {
     const tiles = this.est.tiles();
-    const mid = Math.floor(GRID / 2);
+    const mid = Math.floor(this.grid / 2);
 
     // Every cell, sorted by distance from the hall (then clockwise-ish) so
     // owned tiles cluster tightly around the centre instead of scattering.
     const all: { col: number; row: number; d: number; a: number }[] = [];
-    for (let row = 0; row < GRID; row++) {
-      for (let col = 0; col < GRID; col++) {
+    const G = this.grid;
+    for (let row = 0; row < G; row++) {
+      for (let col = 0; col < G; col++) {
         if (col === mid && row === mid) continue; // reserved for the hall
         const dc = col - mid;
         const dr = row - mid;
@@ -263,10 +285,12 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
 
   /** Intrinsic board size (viewBox units) — the full board, unscaled. */
   get boardW(): number {
-    return GRID * TILE_W + 80;
+    // the diamond spans (grid) tiles across at its widest
+    return this.grid * TILE_W + 40;
   }
   get boardH(): number {
-    return GRID * TILE_H + 200; // headroom for roofs, cranes and coins
+    // (grid) rows of half-height, plus headroom for roofs/towers/coins
+    return this.grid * TILE_H + 170;
   }
 
   /** Rendered size = intrinsic × zoom. The SVG is drawn bigger/smaller than its
@@ -285,10 +309,10 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   }
   /** Shift so the leftmost diamond isn't clipped. */
   get offX(): number {
-    return (GRID - 1) * (TILE_W / 2) + 40;
+    return (this.grid - 1) * (TILE_W / 2) + 40;
   }
   get offY(): number {
-    return 110; // room above for coins / villa roofs
+    return 120; // room above for coins / villa roofs / the hall tower
   }
 
   /** Diamond path for a cell centre (x,y). */
@@ -680,7 +704,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     if (!el || !el.clientWidth) return;
 
     // bounding box (viewBox units) of the hall + every owned tile
-    const mid = Math.floor(GRID / 2);
+    const mid = Math.floor(this.grid / 2);
     let minX = 0, maxX = 0, minY = 0, maxY = 0; // hall is at local (0, mid*TILE_H)
     const hallY = (mid + mid) * (TILE_H / 2);
     minY = maxY = hallY;
