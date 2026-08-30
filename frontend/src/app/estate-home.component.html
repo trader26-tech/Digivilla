@@ -142,9 +142,6 @@
               <path class="sq-wall" [attr.d]="perimeterRails(c.x, c.y, 0.74, 6)" />
               <line *ngFor="let p of perimeterPosts(c.x, c.y, 0.74, 8)" class="sq-post"
                     [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
-
-              <!-- name plate, clear of the building -->
-              <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y - 100">{{ estateName() }}</text>
             </g>
 
             <!-- OPEN plot: a surveyed lot with corner pegs — reads as "land
@@ -287,10 +284,15 @@
                 </g>
 
                 <!-- floating rent coin -->
+                <!-- Rent marker. Sits low, just clear of this villa's own roof
+                     and well inside its tile, so it never drifts into the
+                     airspace of the plot behind. A slow pulse ring reads as
+                     "something to collect" without needing height. -->
                 <g class="coin-wrap">
-                  <ellipse class="coin-shadow" [attr.cx]="c.x" [attr.cy]="c.y - 52" rx="6" ry="2.2" />
-                  <circle class="villa-coin" [attr.cx]="c.x" [attr.cy]="c.y - 64" r="8.5" />
-                  <text class="villa-coin-t" [attr.x]="c.x" [attr.y]="c.y - 60.5">₹</text>
+                  <circle class="coin-pulse" [attr.cx]="c.x + 2" [attr.cy]="c.y - 46" r="8" />
+                  <ellipse class="coin-shadow" [attr.cx]="c.x + 2" [attr.cy]="c.y - 38" rx="5" ry="1.8" />
+                  <circle class="villa-coin" [attr.cx]="c.x + 2" [attr.cy]="c.y - 46" r="7" />
+                  <text class="villa-coin-t" [attr.x]="c.x + 2" [attr.y]="c.y - 43">₹</text>
                 </g>
               </g>
             </g>

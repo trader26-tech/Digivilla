@@ -246,11 +246,25 @@
 .sand  { fill: #DCC48C; }
 
 /* floating rent coin */
-.coin-wrap { animation: bob 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.coin-wrap { animation: bob 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.coin-pulse {
+  fill: none;
+  stroke: #E0B94A;
+  stroke-width: 1.4;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: coinPulse 2.6s ease-out infinite;
+}
+@keyframes coinPulse {
+  0%   { opacity: 0.55; transform: scale(0.7); }
+  70%  { opacity: 0;    transform: scale(1.5); }
+  100% { opacity: 0;    transform: scale(1.5); }
+}
 .coin-shadow { fill: rgba(22,48,43,0.18); }
 .villa-coin { fill: #F0C860; stroke: #a67c2e; stroke-width: 1.5; }
 .villa-coin-t { fill: #6b4f13; font-size: 10px; font-weight: 800; text-anchor: middle; }
-@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
 
 /* ============ BOTTOM HALF ============ */
 .estate-bottom {
@@ -569,3 +583,8 @@
 
 /* town-hall parcel: paved border band around the civic plaza */
 .plaza-border { fill: #DDD3B8; stroke: #c6bb9c; stroke-width: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .coin-wrap, .coin-pulse { animation: none; }
+  .coin-pulse { opacity: 0; }
+}
