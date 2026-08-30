@@ -58,9 +58,6 @@ export class StorefrontComponent {
   @Output() openProperty = new EventEmitter<{
     property: Property['key'];
     variant: 'conservative' | 'balanced' | 'aggressive';
-    /** When 'map', the detail page opens scrolled to the risk–reward map,
-     *  highlighting this scheme (set by the tile's location pin). */
-    focus?: 'map';
   }>();
 
   /** Back to the estate home. */
