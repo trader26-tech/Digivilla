@@ -26,8 +26,8 @@
       >
         <defs>
           <linearGradient id="lawn" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#5FA34A" />
-            <stop offset="100%" stop-color="#3E7D33" />
+            <stop offset="0%" stop-color="#5CB542" />
+            <stop offset="100%" stop-color="#48A035" />
           </linearGradient>
           <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#8a6b3f" />
@@ -46,37 +46,45 @@
               <path class="soil-l" [attr.d]="'M' + (c.x - TILE_W/2) + ',' + c.y + ' L' + c.x + ',' + (c.y + TILE_H/2) + ' L' + c.x + ',' + (c.y + TILE_H/2 + 12) + ' L' + (c.x - TILE_W/2) + ',' + (c.y + 12) + ' Z'" />
               <path class="soil-r" [attr.d]="'M' + c.x + ',' + (c.y + TILE_H/2) + ' L' + (c.x + TILE_W/2) + ',' + c.y + ' L' + (c.x + TILE_W/2) + ',' + (c.y + 12) + ' L' + c.x + ',' + (c.y + TILE_H/2 + 12) + ' Z'" />
               <path class="plaza" [attr.d]="diamond(c.x, c.y)" />
-              <path class="plaza-in" [attr.d]="diamondAt(c.x, c.y, 0.78)" />
+              <path class="plaza-in" [attr.d]="diamondAt(c.x, c.y, 0.86)" />
+
+              <!-- civic square boundary on all four sides. The BACK half is
+                   drawn first so it sits behind the hall, the FRONT half after
+                   the building (below), so nothing crosses it. -->
+              <path class="sq-wall" [attr.d]="backRails(c.x, c.y, 0.94, 6)" />
+              <line *ngFor="let p of backPosts(c.x, c.y, 0.94, 8)" class="sq-post"
+                    [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
 
               <!-- ENTRANCE STEPS at the front corner, leading up to the door -->
-              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 20, 0.30)" />
-              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 16, 0.26)" />
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 18, 0.28)" />
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 15, 0.24)" />
 
-              <!-- ===== MAIN BLOCK: one solid two-storey civic building ===== -->
-              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.56, 40)" />
-              <path class="hall-r" [attr.d]="boxRight(c.x, c.y + 6, 0.56, 40)" />
-              <path class="hall-t" [attr.d]="boxTop(c.x, c.y + 6, 0.56, 40)" />
+              <!-- ===== MAIN BLOCK: kept low and wide so it reads as a civic
+                   landmark without towering over its neighbours ===== -->
+              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y + 4, 0.50, 30)" />
+              <path class="hall-r" [attr.d]="boxRight(c.x, c.y + 4, 0.50, 30)" />
+              <path class="hall-t" [attr.d]="boxTop(c.x, c.y + 4, 0.50, 30)" />
 
               <!-- string course dividing the two storeys -->
-              <path class="course" [attr.d]="boxTop(c.x, c.y + 6, 0.56, 21)" />
+              <path class="course" [attr.d]="boxTop(c.x, c.y + 4, 0.50, 16)" />
 
               <!-- evenly spaced windows: upper and lower storey, both faces -->
               <path *ngFor="let f of hallWinSpots" class="pane"
-                    [attr.d]="paneLeft(c.x, c.y + 6, 0.56, 40, 7, f, 0.14)" />
+                    [attr.d]="paneLeft(c.x, c.y + 4, 0.50, 30, 5, f, 0.13)" />
               <path *ngFor="let f of hallWinSpots" class="pane"
-                    [attr.d]="paneRight(c.x, c.y + 6, 0.56, 40, 7, f, 0.14)" />
+                    [attr.d]="paneRight(c.x, c.y + 4, 0.50, 30, 5, f, 0.13)" />
               <path *ngFor="let f of hallWinSpots" class="pane dim"
-                    [attr.d]="paneLeft(c.x, c.y + 6, 0.56, 40, 26, f, 0.14)" />
+                    [attr.d]="paneLeft(c.x, c.y + 4, 0.50, 30, 19, f, 0.13)" />
               <path *ngFor="let f of hallWinSpots" class="pane dim"
-                    [attr.d]="paneRight(c.x, c.y + 6, 0.56, 40, 26, f, 0.14)" />
+                    [attr.d]="paneRight(c.x, c.y + 4, 0.50, 30, 19, f, 0.13)" />
 
               <!-- ===== PORTICO at the front corner: columns carrying a roof,
                    sheltering the entrance. Drawn AFTER the block so it reads as
                    standing in front of it. ===== -->
               <!-- portico roof slab -->
-              <path class="portico-r" [attr.d]="boxRight(c.x, c.y + 22, 0.30, 26)" />
-              <path class="portico-l" [attr.d]="boxLeft(c.x, c.y + 22, 0.30, 26)" />
-              <path class="portico-t" [attr.d]="boxTop(c.x, c.y + 22, 0.30, 26)" />
+              <path class="portico-r" [attr.d]="boxRight(c.x, c.y + 20, 0.28, 22)" />
+              <path class="portico-l" [attr.d]="boxLeft(c.x, c.y + 20, 0.28, 22)" />
+              <path class="portico-t" [attr.d]="boxTop(c.x, c.y + 20, 0.28, 22)" />
               <!-- the doorway, recessed under the portico -->
               <path class="hall-door" [attr.d]="'M' + (c.x - 9) + ',' + (c.y + 15) +
                                                  ' L' + c.x + ',' + (c.y + 20) +
@@ -87,47 +95,52 @@
                                                  ' L' + (c.x + 9) + ',' + (c.y + 1) +
                                                  ' L' + c.x + ',' + (c.y + 6) + ' Z'" />
               <!-- four columns actually holding the portico roof up -->
-              <line class="column" [attr.x1]="c.x - 17" [attr.y1]="c.y + 14"
-                    [attr.x2]="c.x - 17" [attr.y2]="c.y - 6" />
-              <line class="column" [attr.x1]="c.x - 6" [attr.y1]="c.y + 20"
-                    [attr.x2]="c.x - 6" [attr.y2]="c.y" />
-              <line class="column" [attr.x1]="c.x + 6" [attr.y1]="c.y + 20"
-                    [attr.x2]="c.x + 6" [attr.y2]="c.y" />
-              <line class="column" [attr.x1]="c.x + 17" [attr.y1]="c.y + 14"
-                    [attr.x2]="c.x + 17" [attr.y2]="c.y - 6" />
+              <line class="column" [attr.x1]="c.x - 17" [attr.y1]="c.y + 13"
+                    [attr.x2]="c.x - 17" [attr.y2]="c.y - 2" />
+              <line class="column" [attr.x1]="c.x - 6" [attr.y1]="c.y + 18"
+                    [attr.x2]="c.x - 6" [attr.y2]="c.y + 3" />
+              <line class="column" [attr.x1]="c.x + 6" [attr.y1]="c.y + 18"
+                    [attr.x2]="c.x + 6" [attr.y2]="c.y + 3" />
+              <line class="column" [attr.x1]="c.x + 17" [attr.y1]="c.y + 13"
+                    [attr.x2]="c.x + 17" [attr.y2]="c.y - 2" />
 
               <!-- ===== MAIN ROOF: a cornice sitting on the block ===== -->
-              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 34, 0.62, 7)" />
-              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 34, 0.62, 7)" />
-              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 34, 0.62, 7)" />
+              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 26, 0.56, 6)" />
+              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 26, 0.56, 6)" />
+              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 26, 0.56, 6)" />
 
               <!-- ===== CLOCK TOWER standing on the roof ===== -->
-              <path class="tower-l" [attr.d]="boxLeft(c.x, c.y - 41, 0.20, 26)" />
-              <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 41, 0.20, 26)" />
-              <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 41, 0.20, 26)" />
+              <path class="tower-l" [attr.d]="boxLeft(c.x, c.y - 32, 0.18, 20)" />
+              <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 32, 0.18, 20)" />
+              <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 32, 0.18, 20)" />
               <!-- clock face set INTO the tower's right wall -->
-              <circle class="clock" [attr.cx]="c.x + 6" [attr.cy]="c.y - 56" r="6" />
-              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 56"
-                    [attr.x2]="c.x + 6" [attr.y2]="c.y - 59.5" />
-              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 56"
-                    [attr.x2]="c.x + 8.6" [attr.y2]="c.y - 55" />
+              <circle class="clock" [attr.cx]="c.x + 6" [attr.cy]="c.y - 43" r="5" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 43"
+                    [attr.x2]="c.x + 6" [attr.y2]="c.y - 46" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 43"
+                    [attr.x2]="c.x + 8.2" [attr.y2]="c.y - 42.3" />
               <!-- tower cornice, then the roof lantern -->
-              <path class="tower-cap-l" [attr.d]="boxLeft(c.x, c.y - 67, 0.24, 4)" />
-              <path class="tower-cap-r" [attr.d]="boxRight(c.x, c.y - 67, 0.24, 4)" />
-              <path class="tower-cap-t" [attr.d]="boxTop(c.x, c.y - 67, 0.24, 4)" />
+              <path class="tower-cap-l" [attr.d]="boxLeft(c.x, c.y - 52, 0.22, 3.5)" />
+              <path class="tower-cap-r" [attr.d]="boxRight(c.x, c.y - 52, 0.22, 3.5)" />
+              <path class="tower-cap-t" [attr.d]="boxTop(c.x, c.y - 52, 0.22, 3.5)" />
               <!-- pyramid roof capping the tower -->
-              <path class="tower-roof-l" [attr.d]="'M' + (c.x - 15) + ',' + (c.y - 71) +
-                                                    ' L' + c.x + ',' + (c.y - 63.5) +
-                                                    ' L' + c.x + ',' + (c.y - 92) + ' Z'" />
-              <path class="tower-roof-r" [attr.d]="'M' + c.x + ',' + (c.y - 63.5) +
-                                                    ' L' + (c.x + 15) + ',' + (c.y - 71) +
-                                                    ' L' + c.x + ',' + (c.y - 92) + ' Z'" />
+              <path class="tower-roof-l" [attr.d]="'M' + (c.x - 13) + ',' + (c.y - 55.5) +
+                                                    ' L' + c.x + ',' + (c.y - 49) +
+                                                    ' L' + c.x + ',' + (c.y - 74) + ' Z'" />
+              <path class="tower-roof-r" [attr.d]="'M' + c.x + ',' + (c.y - 49) +
+                                                    ' L' + (c.x + 13) + ',' + (c.y - 55.5) +
+                                                    ' L' + c.x + ',' + (c.y - 74) + ' Z'" />
               <!-- flag on the apex -->
-              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 92" [attr.x2]="c.x" [attr.y2]="c.y - 108" />
-              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 108) + ' L' + (c.x + 14) + ',' + (c.y - 104) + ' L' + c.x + ',' + (c.y - 100) + ' Z'" />
+              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 74" [attr.x2]="c.x" [attr.y2]="c.y - 88" />
+              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 88) + ' L' + (c.x + 13) + ',' + (c.y - 84.5) + ' L' + c.x + ',' + (c.y - 81) + ' Z'" />
+
+              <!-- front half of the civic square wall -->
+              <path class="sq-wall" [attr.d]="perimeterRails(c.x, c.y, 0.94, 6)" />
+              <line *ngFor="let p of perimeterPosts(c.x, c.y, 0.94, 8)" class="sq-post"
+                    [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
 
               <!-- name plate, clear of the building -->
-              <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y - 122">{{ estateName() }}</text>
+              <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y - 100">{{ estateName() }}</text>
             </g>
 
             <!-- OPEN plot: a surveyed lot with corner pegs — reads as "land
@@ -164,150 +177,136 @@
                    wind, staggered so the whole meadow ripples. Nothing else —
                    the calm is the point. -->
               <g *ngIf="t.type === 'land'" class="meadow">
-                <path *ngFor="let g of tufts(t.id, 22)" class="blade"
-                      [style.--sway.s]="2.6 + g.s"
-                      [style.--delay.s]="g.x * 0.02"
-                      [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
-                                ' q' + (1.6 * g.s) + ',-' + (4 * g.s) + ' ' + (0.4 * g.s) + ',-' + (7.5 * g.s)" />
+                <g *ngFor="let g of tufts(t.id, 30)" class="clump"
+                   [style.--sway.s]="3 + g.s * 1.4"
+                   [style.--delay.s]="(g.x + g.y) * 0.012">
+                  <path class="blade"
+                        [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
+                                  ' q-' + (1.1 * g.s) + ',-' + (2.2 * g.s) + ' -' + (1.5 * g.s) + ',-' + (3.6 * g.s)" />
+                  <path class="blade"
+                        [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
+                                  ' q' + (0.3 * g.s) + ',-' + (2.6 * g.s) + ' ' + (0.1 * g.s) + ',-' + (4.6 * g.s)" />
+                  <path class="blade"
+                        [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) +
+                                  ' q' + (1.2 * g.s) + ',-' + (2.2 * g.s) + ' ' + (1.6 * g.s) + ',-' + (3.5 * g.s)" />
+                </g>
               </g>
 
-              <!-- BUILDING: a real site — dirt pad, part-built storeys with
-                   floor slabs, scaffolding, a tower crane, and site materials. -->
+              <!-- UNDER CONSTRUCTION — mapped from the reference: an open
+                   timber frame standing on a beige floor slab, with the same
+                   posts and rails as the finished plots. -->
               <g *ngIf="t.type === 'building'">
-                <!-- graded dirt pad -->
-                <path class="pad" [attr.d]="diamondAt(c.x, c.y, 0.72)" />
-
-                <!-- ghost of the finished villa -->
-                <path class="ghost-top" [attr.d]="boxTop(c.x, c.y + 6, 0.52, 36)" />
-                <path class="ghost-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.52, 36)" />
-                <path class="ghost-r" [attr.d]="boxRight(c.x, c.y + 6, 0.52, 36)" />
-
-                <!-- built-so-far concrete volume -->
-                <g *ngIf="est.buildProgress(t) > 0.03">
-                  <path class="bld-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.52, 36 * est.buildProgress(t))" />
-                  <path class="bld-r" [attr.d]="boxRight(c.x, c.y + 6, 0.52, 36 * est.buildProgress(t))" />
-                  <path class="bld-top" [attr.d]="boxTop(c.x, c.y + 6, 0.52, 36 * est.buildProgress(t))" />
-                  <!-- storey lines -->
-                  <path *ngFor="let s of floorSlabs(c.x, c.y, 36 * est.buildProgress(t), 2)"
-                        class="slab" [attr.d]="s" />
+                <!-- BACK fence -->
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back')" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back')">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
                 </g>
 
-                <!-- scaffolding: rings + poles -->
-                <path *ngFor="let r of scaffoldRings(c.x, c.y, 36)" class="scaf-ring" [attr.d]="r" />
-                <line *ngFor="let p of scaffold(c.x, c.y, 36)" class="scaf-pole"
-                      [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
+                <!-- grey pad + a stack of materials -->
+                <path class="drive" [attr.d]="diamondAt(c.x + 30, c.y + 4, 0.18)" />
 
-                <!-- tower crane -->
-                <g class="crane">
-                  <line class="crane-mast" [attr.x1]="c.x + 30" [attr.y1]="c.y + 8"
-                        [attr.x2]="c.x + 30" [attr.y2]="c.y - 62" />
-                  <line class="crane-jib" [attr.x1]="c.x + 4" [attr.y1]="c.y - 60"
-                        [attr.x2]="c.x + 50" [attr.y2]="c.y - 66" />
-                  <line class="crane-tie" [attr.x1]="c.x + 30" [attr.y1]="c.y - 72"
-                        [attr.x2]="c.x + 8" [attr.y2]="c.y - 60" />
-                  <line class="crane-tie" [attr.x1]="c.x + 30" [attr.y1]="c.y - 72"
-                        [attr.x2]="c.x + 48" [attr.y2]="c.y - 65" />
-                  <line class="crane-cable" [attr.x1]="c.x + 14" [attr.y1]="c.y - 61"
-                        [attr.x2]="c.x + 14" [attr.y2]="c.y - 40" />
-                  <rect class="crane-load" [attr.x]="c.x + 10" [attr.y]="c.y - 40" width="8" height="6" rx="1" />
+                <!-- beige floor slab: the finished ground floor -->
+                <path class="slab-l" [attr.d]="boxLeft(c.x + 4, c.y - 2, 0.44, 10)" />
+                <path class="slab-r" [attr.d]="boxRight(c.x + 4, c.y - 2, 0.44, 10)" />
+                <path class="slab-t" [attr.d]="boxTop(c.x + 4, c.y - 2, 0.44, 10)" />
+
+                <!-- part-built wall stub, height follows the SIP progress -->
+                <g *ngIf="est.buildProgress(t) > 0.05">
+                  <path class="stub-l" [attr.d]="boxLeft(c.x + 4, c.y - 12, 0.44, 22 * est.buildProgress(t))" />
+                  <path class="stub-r" [attr.d]="boxRight(c.x + 4, c.y - 12, 0.44, 22 * est.buildProgress(t))" />
+                  <path class="stub-t" [attr.d]="boxTop(c.x + 4, c.y - 12, 0.44, 22 * est.buildProgress(t))" />
                 </g>
 
-                <!-- site materials: brick stack + sand pile -->
-                <path class="mat-r" [attr.d]="boxRight(c.x - 30, c.y + 14, 0.11, 6)" />
-                <path class="mat-l" [attr.d]="boxLeft(c.x - 30, c.y + 14, 0.11, 6)" />
-                <path class="mat-t" [attr.d]="boxTop(c.x - 30, c.y + 14, 0.11, 6)" />
-                <ellipse class="sand" [attr.cx]="c.x - 14" [attr.cy]="c.y + 20" rx="9" ry="4" />
+                <!-- open timber frame: four corner columns + a top ring -->
+                <g *ngFor="let p of frameColumns(c.x + 4, c.y - 12, 0.44)">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.03, 30)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.03, 30)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.03, 30)" />
+                </g>
+                <path class="rail" [attr.d]="frameRing(c.x + 4, c.y - 12, 0.44, 30)" />
+                <path class="rail" [attr.d]="frameRing(c.x + 4, c.y - 12, 0.44, 16)" />
 
-                <!-- safety fence -->
-                <path class="fence-rail" [attr.d]="fencePath(c.x, c.y)" />
-                <line *ngFor="let p of fencePosts(c.x, c.y)" class="fence-post"
-                      [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
+                <!-- FRONT fence -->
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front')" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front')">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
+                </g>
               </g>
 
-              <!-- VILLA: modelled on the reference — a white flat-roof house
-                   with a rooftop disc, discrete windows set toward the ends,
-                   a pool, hedges, and a post-and-rail fence around the plot. -->
-              <!-- VILLA: few parts, each finished. A paved forecourt leads to a
-                   two-storey home with a recessed entrance under a canopy; a
-                   pool sits on the deck beside it. -->
+              <!-- VILLA — mapped from the reference piece by piece:
+                   flat white roof + rooftop disc, two-tone body with a brown
+                   accent panel, blue windows, pool, cube bushes, grey driveway
+                   pad, and a post-and-rail fence on all four sides. -->
               <g *ngIf="t.type === 'villa'">
-                <!-- paved forecourt at the front corner -->
-                <path class="paving" [attr.d]="diamondAt(c.x - 4, c.y + 18, 0.34)" />
-
-                <!-- POOL: rim, water, and a soft highlight -->
-                <path class="pool-rim" [attr.d]="diamondAt(c.x - 30, c.y + 6, 0.30)" />
-                <path class="pool" [attr.d]="diamondAt(c.x - 30, c.y + 6, 0.23)" />
-                <path class="pool-hi" [attr.d]="diamondAt(c.x - 33, c.y + 4, 0.09)" />
-
-                <!-- a single pair of trimmed hedges, framing the entrance -->
-                <g *ngFor="let b of villaBushes(c.x, c.y)">
-                  <ellipse class="shade" [attr.cx]="b.x" [attr.cy]="b.y + 1" rx="6" ry="2.4" />
-                  <path class="bush-r" [attr.d]="boxRight(b.x, b.y, 0.09, 7)" />
-                  <path class="bush-l" [attr.d]="boxLeft(b.x, b.y, 0.09, 7)" />
-                  <path class="bush-t" [attr.d]="boxTop(b.x, b.y, 0.09, 7)" />
+                <!-- BACK fence first, so it sits behind everything -->
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'back')" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'back')">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
                 </g>
 
-                <!-- ===== PLINTH: the house sits on a low base, not on grass ===== -->
-                <path class="plinth-l" [attr.d]="boxLeft(c.x + 8, c.y + 4, 0.48, 5)" />
-                <path class="plinth-r" [attr.d]="boxRight(c.x + 8, c.y + 4, 0.48, 5)" />
-                <path class="plinth-t" [attr.d]="boxTop(c.x + 8, c.y + 4, 0.48, 5)" />
+                <!-- grey driveway pad -->
+                <path class="drive" [attr.d]="diamondAt(c.x + 30, c.y + 2, 0.20)" />
 
-                <!-- ===== GROUND FLOOR ===== -->
-                <path class="villa-l" [attr.d]="boxLeft(c.x + 8, c.y - 1, 0.44, 20)" />
-                <path class="villa-r" [attr.d]="boxRight(c.x + 8, c.y - 1, 0.44, 20)" />
-                <path class="villa-top" [attr.d]="boxTop(c.x + 8, c.y - 1, 0.44, 20)" />
-                <!-- one generous picture window per face, with a frame -->
-                <path class="win-frame" [attr.d]="paneLeft(c.x + 8, c.y - 1, 0.44, 20, 5, 0.30, 0.42)" />
-                <path class="pane" [attr.d]="paneLeft(c.x + 8, c.y - 1, 0.44, 20, 6.4, 0.33, 0.36)" />
-                <path class="win-frame" [attr.d]="paneRight(c.x + 8, c.y - 1, 0.44, 20, 5, 0.30, 0.42)" />
-                <path class="pane" [attr.d]="paneRight(c.x + 8, c.y - 1, 0.44, 20, 6.4, 0.33, 0.36)" />
+                <!-- POOL: pale surround + blue water -->
+                <path class="pool-rim" [attr.d]="diamondAt(c.x - 22, c.y + 12, 0.28)" />
+                <path class="pool" [attr.d]="diamondAt(c.x - 22, c.y + 12, 0.21)" />
 
-                <!-- recessed entrance on the front-right face -->
-                <path class="door-recess" [attr.d]="'M' + (c.x + 8) + ',' + (c.y + 12) +
-                                                     ' L' + (c.x + 21) + ',' + (c.y + 5.5) +
-                                                     ' L' + (c.x + 21) + ',' + (c.y - 7) +
-                                                     ' L' + (c.x + 8) + ',' + (c.y - 0.5) + ' Z'" />
-                <path class="door" [attr.d]="'M' + (c.x + 11) + ',' + (c.y + 9) +
-                                              ' L' + (c.x + 18) + ',' + (c.y + 5.5) +
-                                              ' L' + (c.x + 18) + ',' + (c.y - 4) +
-                                              ' L' + (c.x + 11) + ',' + (c.y - 0.5) + ' Z'" />
-                <!-- entrance canopy -->
-                <path class="canopy" [attr.d]="'M' + (c.x + 6) + ',' + (c.y - 1) +
-                                                ' L' + (c.x + 24) + ',' + (c.y - 10) +
-                                                ' L' + (c.x + 24) + ',' + (c.y - 13) +
-                                                ' L' + (c.x + 6) + ',' + (c.y - 4) + ' Z'" />
+                <!-- cube bushes -->
+                <g *ngFor="let b of villaBushes(c.x, c.y)">
+                  <path class="bush-l" [attr.d]="boxLeft(b.x, b.y, 0.10, 11)" />
+                  <path class="bush-r" [attr.d]="boxRight(b.x, b.y, 0.10, 11)" />
+                  <path class="bush-t" [attr.d]="boxTop(b.x, b.y, 0.10, 11)" />
+                </g>
 
-                <!-- ===== UPPER FLOOR: set back, with a terrace on the freed roof ===== -->
-                <path class="terrace" [attr.d]="boxTop(c.x + 8, c.y - 21, 0.44, 0)" />
-                <path class="villa-l" [attr.d]="boxLeft(c.x + 2, c.y - 21, 0.34, 19)" />
-                <path class="villa-r" [attr.d]="boxRight(c.x + 2, c.y - 21, 0.34, 19)" />
-                <path class="villa-top" [attr.d]="boxTop(c.x + 2, c.y - 21, 0.34, 19)" />
-                <!-- upper windows, framed to match -->
-                <path class="win-frame" [attr.d]="paneLeft(c.x + 2, c.y - 21, 0.34, 19, 5, 0.28, 0.44)" />
-                <path class="pane" [attr.d]="paneLeft(c.x + 2, c.y - 21, 0.34, 19, 6.4, 0.31, 0.38)" />
-                <path class="win-frame" [attr.d]="paneRight(c.x + 2, c.y - 21, 0.34, 19, 5, 0.28, 0.44)" />
-                <path class="pane" [attr.d]="paneRight(c.x + 2, c.y - 21, 0.34, 19, 6.4, 0.31, 0.38)" />
-                <!-- terrace railing along the open edge -->
-                <path class="rail-glass" [attr.d]="'M' + (c.x + 8) + ',' + (c.y - 17) +
-                                                    ' L' + (c.x + 32) + ',' + (c.y - 29) +
-                                                    ' L' + (c.x + 32) + ',' + (c.y - 36) +
-                                                    ' L' + (c.x + 8) + ',' + (c.y - 24) + ' Z'" />
+                <!-- ===== HOUSE: single clean volume ===== -->
+                <path class="villa-l" [attr.d]="boxLeft(c.x + 6, c.y - 2, 0.42, 30)" />
+                <path class="villa-r" [attr.d]="boxRight(c.x + 6, c.y - 2, 0.42, 30)" />
+                <path class="villa-top" [attr.d]="boxTop(c.x + 6, c.y - 2, 0.42, 30)" />
 
-                <!-- flat roof with a slim parapet -->
-                <path class="parapet-l" [attr.d]="boxLeft(c.x + 2, c.y - 40, 0.37, 4)" />
-                <path class="parapet-r" [attr.d]="boxRight(c.x + 2, c.y - 40, 0.37, 4)" />
-                <path class="roofw-t" [attr.d]="boxTop(c.x + 2, c.y - 40, 0.37, 4)" />
+                <!-- brown accent panel down the right face, as in the reference -->
+                <path class="accent" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 3, 0.02, 0.30)" />
 
-                <!-- post-and-rail fence around the plot (front edges only) -->
-                <path class="fence-rail" [attr.d]="perimeterRails(c.x, c.y)" />
-                <line *ngFor="let p of perimeterPosts(c.x, c.y)" class="fence-post"
-                      [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
+                <!-- blue windows: two per face, discrete -->
+                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 8, 0.16, 0.26)" />
+                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 8, 0.56, 0.26)" />
+                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 8, 0.38, 0.26)" />
+                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 8, 0.70, 0.26)" />
+                <!-- lower band of windows -->
+                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 20, 0.16, 0.26)" />
+                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 2, 0.42, 30, 20, 0.56, 0.26)" />
+                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 2, 0.42, 30, 20, 0.70, 0.26)" />
+
+                <!-- door -->
+                <path class="door" [attr.d]="'M' + (c.x + 14) + ',' + (c.y + 11) +
+                                              ' L' + (c.x + 22) + ',' + (c.y + 7) +
+                                              ' L' + (c.x + 22) + ',' + (c.y - 3) +
+                                              ' L' + (c.x + 14) + ',' + (c.y + 1) + ' Z'" />
+
+                <!-- flat white roof slab with a thin lip + rooftop disc -->
+                <path class="roofw-l" [attr.d]="boxLeft(c.x + 6, c.y - 32, 0.48, 4)" />
+                <path class="roofw-r" [attr.d]="boxRight(c.x + 6, c.y - 32, 0.48, 4)" />
+                <path class="roofw-t" [attr.d]="boxTop(c.x + 6, c.y - 32, 0.48, 4)" />
+                <ellipse class="roof-disc" [attr.cx]="c.x + 6" [attr.cy]="c.y - 37" rx="8" ry="4" />
+
+                <!-- FRONT fence, drawn last so it reads in front -->
+                <path class="rail" [attr.d]="fenceRailPath(c.x, c.y, 'front')" />
+                <g *ngFor="let p of fencePostBoxes(c.x, c.y, 'front')">
+                  <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.035, 15)" />
+                  <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.035, 15)" />
+                  <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.035, 15)" />
+                </g>
 
                 <!-- floating rent coin -->
                 <g class="coin-wrap">
-                  <ellipse class="coin-shadow" [attr.cx]="c.x + 2" [attr.cy]="c.y - 48" rx="6" ry="2.2" />
-                  <circle class="villa-coin" [attr.cx]="c.x + 2" [attr.cy]="c.y - 60" r="8.5" />
-                  <text class="villa-coin-t" [attr.x]="c.x + 2" [attr.y]="c.y - 56.5">₹</text>
+                  <ellipse class="coin-shadow" [attr.cx]="c.x + 6" [attr.cy]="c.y - 46" rx="6" ry="2.2" />
+                  <circle class="villa-coin" [attr.cx]="c.x + 6" [attr.cy]="c.y - 58" r="8.5" />
+                  <text class="villa-coin-t" [attr.x]="c.x + 6" [attr.y]="c.y - 54.5">₹</text>
                 </g>
               </g>
             </g>

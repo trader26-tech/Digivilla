@@ -176,15 +176,15 @@
 .fence-post { stroke: #8A5E31; stroke-width: 2.2; stroke-linecap: round; }
 
 /* ---- villa: warm white volumes, lit top-left ---- */
-.villa-top { fill: #FDFBF5; }
-.villa-l   { fill: #EBE3D0; }
-.villa-r   { fill: #D3C7AC; }
+.villa-top { fill: #F2EFE4; }
+.villa-l   { fill: #E4DFCF; }
+.villa-r   { fill: #CFC7B0; }
 .wing-t    { fill: #F7F3E9; }
 .wing-l    { fill: #E4DCC7; }
 .wing-r    { fill: #CCC0A4; }
 
 /* discrete window panes — small separate openings, not one long strip */
-.pane      { fill: #3C7FA8; opacity: 0.95; }
+.pane      { fill: #4A87B5; opacity: 1; }
 .pane.dim  { fill: #4E8FB4; opacity: 0.8; }
 
 /* flat white roof (reference style) */
@@ -212,7 +212,7 @@
 .roof2-t   { fill: #C6974F; }
 .roof2-l   { fill: #A17431; }
 .roof2-r   { fill: #856024; }
-.roof-disc { fill: #4E9138; stroke: #3b6f2a; stroke-width: 0.8; }
+.roof-disc { fill: #C9C6BC; stroke: #ADA99D; stroke-width: 0.8; }
 
 /* chimney */
 .chim-t { fill: #EFE7D6; }
@@ -403,9 +403,9 @@
 
 /* pool rim + cube bushes (reference villa) */
 .pool-rim { fill: #EFE7D3; }
-.bush-t { fill: #6FBF52; }
-.bush-l { fill: #4E9138; }
-.bush-r { fill: #3E7A2C; }
+.bush-t { fill: #57A83F; }
+.bush-l { fill: #438A31; }
+.bush-r { fill: #356E26; }
 
 /* zoom controls */
 .zoom-ctl {
@@ -456,20 +456,24 @@
 .tower-roof-l  { fill: #2E6B4F; }
 .tower-roof-r  { fill: #24563F; }
 
-/* ---- wind-blown grass on land plots ---- */
-.blade {
-  fill: none;
-  stroke: #3B7A2F;
-  stroke-width: 1.5;
-  stroke-linecap: round;
+/* ---- turf: small clumps of blades that sway together in the wind ---- */
+.clump {
   transform-box: fill-box;
   transform-origin: bottom center;
   animation: sway var(--sway, 3s) ease-in-out infinite alternate;
   animation-delay: var(--delay, 0s);
 }
+.blade {
+  fill: none;
+  stroke: #2F6B27;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+/* a gentle lean, not a wiggle */
 @keyframes sway {
-  from { transform: rotate(-7deg) skewX(3deg); }
-  to   { transform: rotate(7deg) skewX(-3deg); }
+  from { transform: rotate(-2.5deg); }
+  to   { transform: rotate(2.5deg); }
 }
 
 /* ---- villa: crafted parts ---- */
@@ -486,5 +490,30 @@
 .parapet-r   { fill: #CDC1A6; }
 
 @media (prefers-reduced-motion: reduce) {
-  .blade { animation: none; }
+  .clump { animation: none; }
 }
+
+/* civic square boundary around the town hall */
+.sq-wall { fill: none; stroke: #C3B085; stroke-width: 1.6; stroke-linecap: round; }
+.sq-post { stroke: #AE9A6D; stroke-width: 2; stroke-linecap: round; }
+
+/* ================= reference-mapped assets ================= */
+/* fence: chunky brown posts + two horizontal rails */
+.rail   { fill: none; stroke: #9A6B3A; stroke-width: 2; stroke-linecap: round; }
+.post-t { fill: #B07E45; }
+.post-l { fill: #8F6231; }
+.post-r { fill: #6F4B24; }
+
+/* villa body: warm off-white with a brown accent panel */
+.accent { fill: #8C6239; }
+
+/* grey driveway pad */
+.drive  { fill: #B9BCC2; stroke: #a3a6ad; stroke-width: 0.7; }
+
+/* under-construction: beige slab + part-built stub */
+.slab-t { fill: #E4DCC6; }
+.slab-l { fill: #CFC5AB; }
+.slab-r { fill: #B5AA8C; }
+.stub-t { fill: #EFEADC; }
+.stub-l { fill: #DCD5C2; }
+.stub-r { fill: #C2BAA3; }

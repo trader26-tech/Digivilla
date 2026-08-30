@@ -60,13 +60,13 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
 
-  /** Zoom: 1 = the default framing, where the hall plus its eight neighbours
-   *  (nine tiles) fill the view. Deliberately tight limits — one step in shows
-   *  about four tiles, one step out returns to nine. Never more, so the map
-   *  never becomes a sea of empty grid. */
+  /** Zoom. The DEFAULT is the closest framing — a comprehensive view of the
+   *  town where everything you own reads clearly. That is also the maximum;
+   *  the user may step out exactly once to see more of the surrounding plots.
+   *  Deliberately tight so the map never becomes a sea of empty grid. */
   readonly MIN_ZOOM = 1;
   readonly MAX_ZOOM = 1.5;
-  zoom = signal(1);
+  zoom = signal(1.5);
 
   /** Zoom about the centre of the viewport, keeping that point steady. */
   private zoomBy(factor: number): void {
@@ -477,6 +477,16 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
       `M${x - hw},${y - dy} L${x},${y + hh - dy} L${x + hw},${y - dy}`;
     return `${rail(2)} ${rail(2 + t)}`;
   }
+  /** Two rails along the two BACK edges (left→top and top→right). Drawn before
+   *  the buildings so the far fence sits behind them, never across them. */
+  backRails(x: number, y: number, inset = 0.9, t = 9): string {
+    const hw = (TILE_W / 2) * inset;
+    const hh = (TILE_H / 2) * inset;
+    const rail = (dy: number) =>
+      `M${x - hw},${y - dy} L${x},${y - hh - dy} L${x + hw},${y - dy}`;
+    return `${rail(2)} ${rail(2 + t)}`;
+  }
+
   /** Posts along the two FRONT edges only. */
   perimeterPosts(
     x: number,
@@ -489,8 +499,29 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     const left = { x: x - hw, y: y };
     const bottom = { x: x, y: y + hh };
     const right = { x: x + hw, y: y };
+    return this.postsAlong([[left, bottom], [bottom, right]], t);
+  }
+  /** Posts along the two BACK edges only. */
+  backPosts(
+    x: number,
+    y: number,
+    inset = 0.9,
+    t = 11,
+  ): { x1: number; y1: number; x2: number; y2: number }[] {
+    const hw = (TILE_W / 2) * inset;
+    const hh = (TILE_H / 2) * inset;
+    const left = { x: x - hw, y: y };
+    const top = { x: x, y: y - hh };
+    const right = { x: x + hw, y: y };
+    return this.postsAlong([[left, top], [top, right]], t);
+  }
+
+  private postsAlong(
+    edges: readonly (readonly [{ x: number; y: number }, { x: number; y: number }])[],
+    t: number,
+  ): { x1: number; y1: number; x2: number; y2: number }[] {
     const out: { x1: number; y1: number; x2: number; y2: number }[] = [];
-    for (const [a, b] of [[left, bottom], [bottom, right]] as const) {
+    for (const [a, b] of edges) {
       for (const f of [0, 0.5, 1]) {
         const px = a.x + (b.x - a.x) * f;
         const py = a.y + (b.y - a.y) * f;
@@ -498,6 +529,65 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
       }
     }
     return out;
+  }
+
+  /** Four corner columns of an open construction frame. */
+  frameColumns(x: number, y: number, w: number): { x: number; y: number }[] {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    return [
+      { x: x - hw, y },
+      { x, y: y - hh },
+      { x: x + hw, y },
+      { x, y: y + hh },
+    ];
+  }
+  /** A horizontal ring tying the frame columns at a given height. */
+  frameRing(x: number, y: number, w: number, h: number): string {
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    return `M${x - hw},${y - h} L${x},${y - hh - h} L${x + hw},${y - h} L${x},${y + hh - h} Z`;
+  }
+
+  // ---- reference-style fence: chunky posts with two horizontal rails -------
+  /** Fence posts along an edge, as small upright boxes (not hairlines). */
+  fencePostBoxes(
+    x: number,
+    y: number,
+    side: 'front' | 'back',
+    inset = 0.92,
+    n = 4,
+  ): { x: number; y: number }[] {
+    const hw = (TILE_W / 2) * inset;
+    const hh = (TILE_H / 2) * inset;
+    const left = { x: x - hw, y: y };
+    const right = { x: x + hw, y: y };
+    const near = side === 'front' ? { x, y: y + hh } : { x, y: y - hh };
+    const out: { x: number; y: number }[] = [];
+    for (const [a, b] of [[left, near], [near, right]] as const) {
+      for (let i = 0; i <= n; i++) {
+        const f = i / n;
+        // skip the shared corner on the second edge to avoid doubling up
+        if (b === right && i === 0) continue;
+        out.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+      }
+    }
+    return out;
+  }
+  /** Two horizontal rails spanning an edge pair, at the given heights. */
+  fenceRailPath(
+    x: number,
+    y: number,
+    side: 'front' | 'back',
+    inset = 0.92,
+    heights: number[] = [6, 12],
+  ): string {
+    const hw = (TILE_W / 2) * inset;
+    const hh = (TILE_H / 2) * inset;
+    const nearY = side === 'front' ? y + hh : y - hh;
+    return heights
+      .map((h) => `M${x - hw},${y - h} L${x},${nearY - h} L${x + hw},${y - h}`)
+      .join(' ');
   }
 
   /** Cube bushes at the plot corners of a villa, as in the reference art. */
