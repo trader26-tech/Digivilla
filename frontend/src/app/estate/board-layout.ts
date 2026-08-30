@@ -107,8 +107,7 @@ export function buildCells(tiles: Tile[]): Cell[] {
     hall: true,
   });
 
-  const usable = fillOrder(grid).filter(({ col, row }) => !(col === 0 && row === 0));
-  usable.forEach(({ col, row }, i) => {
+  fillOrder(grid).forEach(({ col, row }, i) => {
     out.push({
       col,
       row,
