@@ -455,3 +455,36 @@
 .tower-cap-r   { fill: #B9AC8B; }
 .tower-roof-l  { fill: #2E6B4F; }
 .tower-roof-r  { fill: #24563F; }
+
+/* ---- wind-blown grass on land plots ---- */
+.blade {
+  fill: none;
+  stroke: #3B7A2F;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: sway var(--sway, 3s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes sway {
+  from { transform: rotate(-7deg) skewX(3deg); }
+  to   { transform: rotate(7deg) skewX(-3deg); }
+}
+
+/* ---- villa: crafted parts ---- */
+.paving      { fill: #E7DFCB; stroke: #d3c8ae; stroke-width: 0.7; }
+.plinth-t    { fill: #E9E1CE; }
+.plinth-l    { fill: #D3C8AE; }
+.plinth-r    { fill: #B9AC8C; }
+.win-frame   { fill: #F4EFE2; }
+.door-recess { fill: #C9BDA2; }
+.canopy      { fill: #EFE9DA; stroke: #d8cdb4; stroke-width: 0.6; }
+.terrace     { fill: #E4DCC7; }
+.rail-glass  { fill: rgba(120,180,210,0.34); stroke: rgba(255,255,255,0.75); stroke-width: 0.7; }
+.parapet-l   { fill: #E4DCC7; }
+.parapet-r   { fill: #CDC1A6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .blade { animation: none; }
+}

@@ -60,10 +60,12 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
 
-  /** Zoom: 1 = default (about nine tiles fill the view). Clamped both ways so
-   *  the town never gets uselessly tiny or absurdly huge. */
-  readonly MIN_ZOOM = 0.55;
-  readonly MAX_ZOOM = 2.2;
+  /** Zoom: 1 = the default framing, where the hall plus its eight neighbours
+   *  (nine tiles) fill the view. Deliberately tight limits — one step in shows
+   *  about four tiles, one step out returns to nine. Never more, so the map
+   *  never becomes a sea of empty grid. */
+  readonly MIN_ZOOM = 1;
+  readonly MAX_ZOOM = 1.5;
   zoom = signal(1);
 
   /** Zoom about the centre of the viewport, keeping that point steady. */
@@ -83,8 +85,8 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
       el.scrollTop = cy * k - el.clientHeight / 2;
     });
   }
-  zoomIn(): void { this.zoomBy(1.25); }
-  zoomOut(): void { this.zoomBy(1 / 1.25); }
+  zoomIn(): void { this.zoomBy(1.5); }
+  zoomOut(): void { this.zoomBy(1 / 1.5); }
   get canZoomIn(): boolean { return this.zoom() < this.MAX_ZOOM - 0.001; }
   get canZoomOut(): boolean { return this.zoom() > this.MIN_ZOOM + 0.001; }
 
@@ -220,7 +222,17 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
         });
       }
     }
-    all.sort((p, q) => (p.d - q.d) || (p.a - q.a));
+    // Fill order: nearest ring first, and WITHIN a ring prefer plots that sit
+    // in FRONT of the hall (higher col+row draws later / nearer the viewer).
+    // The hall is tall, so anything placed behind it would be hidden — this
+    // keeps new builds in clear view.
+    all.sort((p, q) => {
+      if (p.d !== q.d) return p.d - q.d;
+      const pf = p.col + p.row;
+      const qf = q.col + q.row;
+      if (pf !== qf) return qf - pf;   // front-most first
+      return p.a - q.a;
+    });
 
     const out: Cell[] = [];
     // the hall itself
@@ -491,9 +503,8 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   /** Cube bushes at the plot corners of a villa, as in the reference art. */
   villaBushes(x: number, y: number): { x: number; y: number }[] {
     return [
-      { x: x + 40, y: y + 4 },
-      { x: x + 26, y: y + 16 },
-      { x: x - 8, y: y + 22 },
+      { x: x + 34, y: y + 14 },
+      { x: x + 14, y: y + 24 },
     ];
   }
 
@@ -503,7 +514,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   }
   /** A light sprinkle of grass tufts. Kept deliberately sparse. */
   tufts(seed: string, n = 5): { x: number; y: number; s: number }[] {
-    return this.scatter(seed + '|tuft', n, 0.2, 0.88);
+    return this.scatter(seed + '|tuft', n, 0.05, 0.94);
   }
   /** Stepping-stone path points from the tile's front corner to the house. */
   pathStones(x: number, y: number): { x: number; y: number }[] {
