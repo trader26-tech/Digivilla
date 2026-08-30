@@ -25,8 +25,9 @@ export interface Tile {
 const STORE_KEY = 'estate_tiles_v1';
 const RENT_KEY = 'estate_rent_collected_v1';
 
-/** How many plots the estate offers in total (owned + open). */
-export const TOTAL_PLOTS = 9;
+/** Plots available around the town hall on the 5×5 board (25 cells minus the
+ *  hall itself). The map scrolls, so there's always room to keep building. */
+export const TOTAL_PLOTS = 24;
 
 @Injectable({ providedIn: 'root' })
 export class EstateService {

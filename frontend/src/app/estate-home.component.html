@@ -1,28 +1,9 @@
 <section class="estate">
   <!-- ============ TOP: swipeable estate canvas (top half) ============ -->
   <div class="estate-top">
-    <!-- title -->
-    <div class="title">
-      <span class="title-cap">Your estate</span>
-      <h1>{{ estateName() }}</h1>
-    </div>
-
-    <!-- currency chips -->
-    <div class="chips">
-      <button class="chip rent" (click)="collect()" [class.live]="est.rentIn > 0" [disabled]="est.rentIn <= 0">
-        <span class="chip-dot coin"></span>
-        <span class="chip-k">Rent in</span>
-        <b class="chip-v">{{ compact(est.rentIn) }}</b>
-      </button>
-      <div class="chip build">
-        <span class="chip-dot sip"></span>
-        <span class="chip-k">Build cost</span>
-        <b class="chip-v">{{ compact(est.buildCost) }}</b>
-      </div>
-    </div>
-
-    <!-- the isometric board — pan/scroll horizontally to see all plots -->
-    <div class="board-scroll">
+    <!-- the isometric town — the ONLY thing in the top half. Scrolls freely
+         in both directions so the town can keep growing. -->
+    <div class="board-scroll" #scroller>
       <svg
         class="board"
         [attr.viewBox]="'0 0 ' + boardW + ' ' + boardH"
@@ -48,8 +29,61 @@
 
         <g [attr.transform]="'translate(' + offX + ',' + offY + ')'">
           <ng-container *ngFor="let c of cells()">
+            <!-- ===== TOWN HALL: the landmark at the centre of town ===== -->
+            <g *ngIf="c.hall" class="cell hall">
+              <path class="soil-l" [attr.d]="'M' + (c.x - TILE_W/2) + ',' + c.y + ' L' + c.x + ',' + (c.y + TILE_H/2) + ' L' + c.x + ',' + (c.y + TILE_H/2 + 12) + ' L' + (c.x - TILE_W/2) + ',' + (c.y + 12) + ' Z'" />
+              <path class="soil-r" [attr.d]="'M' + c.x + ',' + (c.y + TILE_H/2) + ' L' + (c.x + TILE_W/2) + ',' + c.y + ' L' + (c.x + TILE_W/2) + ',' + (c.y + 12) + ' L' + c.x + ',' + (c.y + TILE_H/2 + 12) + ' Z'" />
+              <path class="plaza" [attr.d]="diamond(c.x, c.y)" />
+              <path class="plaza-in" [attr.d]="diamondAt(c.x, c.y, 0.78)" />
+
+              <!-- steps up to the hall -->
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 4, 0.66)" />
+
+              <!-- hall body -->
+              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y + 2, 0.58, 42)" />
+              <path class="hall-r" [attr.d]="boxRight(c.x, c.y + 2, 0.58, 42)" />
+              <path class="hall-t" [attr.d]="boxTop(c.x, c.y + 2, 0.58, 42)" />
+              <!-- glazing bands -->
+              <path class="hall-win" [attr.d]="windowLeft(c.x, c.y + 2, 0.58, 42, 12)" />
+              <path class="hall-win" [attr.d]="windowRight(c.x, c.y + 2, 0.58, 42, 12)" />
+              <path class="hall-win dim" [attr.d]="windowLeft(c.x, c.y + 2, 0.58, 42, 28)" />
+              <path class="hall-win dim" [attr.d]="windowRight(c.x, c.y + 2, 0.58, 42, 28)" />
+              <!-- grand entrance -->
+              <path class="hall-door" [attr.d]="'M' + c.x + ',' + (c.y + 18) +
+                                                 ' L' + (c.x + 13) + ',' + (c.y + 11.5) +
+                                                 ' L' + (c.x + 13) + ',' + (c.y - 2) +
+                                                 ' L' + c.x + ',' + (c.y + 4.5) + ' Z'" />
+              <!-- deep roof slab -->
+              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 40, 0.70, 9)" />
+              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 40, 0.70, 9)" />
+              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 40, 0.70, 9)" />
+              <!-- clock tower -->
+              <path class="tower-l" [attr.d]="boxLeft(c.x, c.y - 49, 0.19, 30)" />
+              <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 49, 0.19, 30)" />
+              <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 49, 0.19, 30)" />
+              <circle class="clock" [attr.cx]="c.x" [attr.cy]="c.y - 86" r="6.5" />
+              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 86" [attr.x2]="c.x" [attr.y2]="c.y - 90" />
+              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 86" [attr.x2]="c.x + 3" [attr.y2]="c.y - 85" />
+              <!-- spire + flag -->
+              <path class="spire" [attr.d]="'M' + (c.x - 8) + ',' + (c.y - 94) + ' L' + c.x + ',' + (c.y - 114) + ' L' + (c.x + 8) + ',' + (c.y - 94) + ' Z'" />
+              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 114" [attr.x2]="c.x" [attr.y2]="c.y - 128" />
+              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 128) + ' L' + (c.x + 15) + ',' + (c.y - 124) + ' L' + c.x + ',' + (c.y - 120) + ' Z'" />
+
+              <!-- a few trees + lamps around the plaza so the town feels alive
+                   from the very first launch -->
+              <g *ngFor="let tr of hallGreens(c.x, c.y)">
+                <ellipse class="shade" [attr.cx]="tr.x" [attr.cy]="tr.y + 1" rx="6" ry="2.5" />
+                <rect class="trunk" [attr.x]="tr.x - 1.2" [attr.y]="tr.y - 9" width="2.4" height="9" rx="1.1" />
+                <circle class="leaf-d" [attr.cx]="tr.x - 2.4" [attr.cy]="tr.y - 12" r="4.6" />
+                <circle class="leaf-l" [attr.cx]="tr.x" [attr.cy]="tr.y - 16" r="4.8" />
+              </g>
+
+              <!-- name plate, clear of the building -->
+              <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y + TILE_H/2 + 22">{{ estateName() }}</text>
+            </g>
+
             <!-- OPEN plot: faint dashed diamond, tap to buy -->
-            <g *ngIf="!c.tile" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
+            <g *ngIf="!c.hall && !c.tile" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
                [attr.aria-label]="'Open plot ' + (c.index + 1)">
               <path class="plot-open" [attr.d]="diamond(c.x, c.y)" />
               <text class="plot-plus" [attr.x]="c.x" [attr.y]="c.y + 6">+</text>
@@ -64,29 +98,18 @@
               <!-- lawn top -->
               <path class="lawn" [attr.d]="diamond(c.x, c.y)" />
 
-              <!-- LAND: a lush, planted plot — grass tufts, tree clusters, a
-                   surveyor's stone marker. Reads as prepared land, not empty. -->
+              <!-- LAND: kept sparse — a light sprinkle of grass and a couple of
+                   soft bushes. Just enough to feel alive, never cluttered. -->
               <g *ngIf="t.type === 'land'">
-                <!-- grass tufts across the lawn -->
-                <path *ngFor="let g of tufts(t.id, 14)" class="tuft"
-                      [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l-2.5,-' + (4 * g.s) +
-                                ' M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l0,-' + (5.5 * g.s) +
-                                ' M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l2.5,-' + (4 * g.s)" />
-                <!-- tree clusters: trunk + two leaf blobs, back-to-front -->
-                <g *ngFor="let tr of trees(t.id, 5)" class="tree">
-                  <ellipse class="shade" [attr.cx]="c.x + tr.x" [attr.cy]="c.y + tr.y + 1"
-                           [attr.rx]="7 * tr.s" [attr.ry]="3 * tr.s" />
-                  <rect class="trunk" [attr.x]="c.x + tr.x - 1.3" [attr.y]="c.y + tr.y - 9 * tr.s"
-                        width="2.6" [attr.height]="9 * tr.s" rx="1.2" />
-                  <circle class="leaf-d" [attr.cx]="c.x + tr.x - 3 * tr.s" [attr.cy]="c.y + tr.y - 12 * tr.s" [attr.r]="5.4 * tr.s" />
-                  <circle class="leaf-m" [attr.cx]="c.x + tr.x + 3 * tr.s" [attr.cy]="c.y + tr.y - 13 * tr.s" [attr.r]="5 * tr.s" />
-                  <circle class="leaf-l" [attr.cx]="c.x + tr.x" [attr.cy]="c.y + tr.y - 17 * tr.s" [attr.r]="5.6 * tr.s" />
-                </g>
-                <!-- stone plot marker -->
-                <g>
-                  <path class="stone-r" [attr.d]="boxRight(c.x + 6, c.y + 12, 0.07, 9)" />
-                  <path class="stone-l" [attr.d]="boxLeft(c.x + 6, c.y + 12, 0.07, 9)" />
-                  <path class="stone-t" [attr.d]="boxTop(c.x + 6, c.y + 12, 0.07, 9)" />
+                <path *ngFor="let g of tufts(t.id, 5)" class="tuft"
+                      [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l-2.2,-' + (3.4 * g.s) +
+                                ' M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l0,-' + (4.8 * g.s) +
+                                ' M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l2.2,-' + (3.4 * g.s)" />
+                <g *ngFor="let b of bushes(t.id, 2)">
+                  <ellipse class="shade" [attr.cx]="c.x + b.x" [attr.cy]="c.y + b.y + 1"
+                           [attr.rx]="6 * b.s" [attr.ry]="2.4 * b.s" />
+                  <circle class="leaf-d" [attr.cx]="c.x + b.x - 2.6 * b.s" [attr.cy]="c.y + b.y - 4 * b.s" [attr.r]="4.2 * b.s" />
+                  <circle class="leaf-l" [attr.cx]="c.x + b.x + 1.6 * b.s" [attr.cy]="c.y + b.y - 5.6 * b.s" [attr.r]="4.6 * b.s" />
                 </g>
               </g>
 
@@ -141,98 +164,46 @@
                 <path class="fence-rail" [attr.d]="fencePath(c.x, c.y)" />
                 <line *ngFor="let p of fencePosts(c.x, c.y)" class="fence-post"
                       [attr.x1]="p.x1" [attr.y1]="p.y1" [attr.x2]="p.x2" [attr.y2]="p.y2" />
-
-                <!-- build-progress badge -->
-                <g class="prog-badge">
-                  <rect [attr.x]="c.x - 22" [attr.y]="c.y - 78" width="44" height="17" rx="8.5" />
-                  <text [attr.x]="c.x" [attr.y]="c.y - 66">{{ (est.buildProgress(t) * 100) | number:'1.0-0' }}% built</text>
-                </g>
               </g>
 
-              <!-- VILLA: a designed two-volume house — main block + side wing,
-                   roof overhangs with fascia, balcony with glass railing,
-                   chimney, garden, pool with deck, stone path and trees. -->
+              <!-- VILLA: one clean, confident volume — roof slab, two glazing
+                   bands, a door, and a couple of bushes. Nothing more. -->
               <g *ngIf="t.type === 'villa'">
-                <!-- garden greenery behind the house -->
-                <path *ngFor="let g of tufts(t.id, 8)" class="tuft"
-                      [attr.d]="'M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l-2,-' + (3.4 * g.s) +
-                                ' M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l0,-' + (4.6 * g.s) +
-                                ' M' + (c.x + g.x) + ',' + (c.y + g.y) + ' l2,-' + (3.4 * g.s)" />
-
-                <!-- pool with a pale deck -->
-                <path class="deck" [attr.d]="diamondAt(c.x - 24, c.y + 13, 0.30)" />
-                <path class="pool" [attr.d]="diamondAt(c.x - 24, c.y + 13, 0.20)" />
-                <path class="pool-hi" [attr.d]="diamondAt(c.x - 26, c.y + 12, 0.09)" />
-
-                <!-- stepping-stone path to the door -->
-                <ellipse *ngFor="let s of pathStones(c.x, c.y)" class="stone"
-                         [attr.cx]="s.x" [attr.cy]="s.y" rx="4.5" ry="2.4" />
-
-                <!-- ===== side wing (lower, behind-left) ===== -->
-                <path class="wing-l" [attr.d]="boxLeft(c.x - 20, c.y - 2, 0.26, 20)" />
-                <path class="wing-r" [attr.d]="boxRight(c.x - 20, c.y - 2, 0.26, 20)" />
-                <path class="wing-t" [attr.d]="boxTop(c.x - 20, c.y - 2, 0.26, 20)" />
-                <path class="win-sm" [attr.d]="windowRight(c.x - 20, c.y - 2, 0.26, 20, 7)" />
-                <!-- wing roof cap -->
-                <path class="roof2-l" [attr.d]="boxLeft(c.x - 20, c.y - 22, 0.30, 4)" />
-                <path class="roof2-r" [attr.d]="boxRight(c.x - 20, c.y - 22, 0.30, 4)" />
-                <path class="roof2-t" [attr.d]="boxTop(c.x - 20, c.y - 22, 0.30, 4)" />
-
-                <!-- ===== main block ===== -->
-                <path class="villa-l" [attr.d]="boxLeft(c.x + 4, c.y + 6, 0.46, 36)" />
-                <path class="villa-r" [attr.d]="boxRight(c.x + 4, c.y + 6, 0.46, 36)" />
-                <path class="villa-top" [attr.d]="boxTop(c.x + 4, c.y + 6, 0.46, 36)" />
-
-                <!-- ground-floor glazing + upper windows -->
-                <path class="win" [attr.d]="windowLeft(c.x + 4, c.y + 6, 0.46, 36, 8)" />
-                <path class="win" [attr.d]="windowRight(c.x + 4, c.y + 6, 0.46, 36, 8)" />
-                <path class="win dim" [attr.d]="windowLeft(c.x + 4, c.y + 6, 0.46, 36, 22)" />
-                <path class="win dim" [attr.d]="windowRight(c.x + 4, c.y + 6, 0.46, 36, 22)" />
-
-                <!-- entrance door + step -->
-                <path class="door" [attr.d]="'M' + (c.x + 4) + ',' + (c.y + 20) +
-                                              ' L' + (c.x + 15) + ',' + (c.y + 14) +
-                                              ' L' + (c.x + 15) + ',' + (c.y + 2) +
-                                              ' L' + (c.x + 4) + ',' + (c.y + 8) + ' Z'" />
-                <path class="step" [attr.d]="diamondAt(c.x + 10, c.y + 20, 0.13)" />
-
-                <!-- balcony slab + glass railing on the right face -->
-                <path class="balc-slab" [attr.d]="boxTop(c.x + 14, c.y - 6, 0.24, 2)" />
-                <path class="balc-glass" [attr.d]="'M' + (c.x + 4) + ',' + (c.y - 4) +
-                                                    ' L' + (c.x + 28) + ',' + (c.y - 16) +
-                                                    ' L' + (c.x + 28) + ',' + (c.y - 25) +
-                                                    ' L' + (c.x + 4) + ',' + (c.y - 13) + ' Z'" />
-                <line class="balc-rail" [attr.x1]="c.x + 4" [attr.y1]="c.y - 13"
-                      [attr.x2]="c.x + 28" [attr.y2]="c.y - 25" />
-
-                <!-- ===== roof: overhanging slab with fascia ===== -->
-                <path class="roof-l" [attr.d]="boxLeft(c.x + 4, c.y - 30, 0.54, 7)" />
-                <path class="roof-r" [attr.d]="boxRight(c.x + 4, c.y - 30, 0.54, 7)" />
-                <path class="roof-top" [attr.d]="boxTop(c.x + 4, c.y - 30, 0.54, 7)" />
-                <!-- inner roof deck (lighter inset) -->
-                <path class="roof-deck" [attr.d]="boxTop(c.x + 4, c.y - 37, 0.40, 0)" />
-                <!-- chimney -->
-                <path class="chim-l" [attr.d]="boxLeft(c.x + 18, c.y - 37, 0.07, 12)" />
-                <path class="chim-r" [attr.d]="boxRight(c.x + 18, c.y - 37, 0.07, 12)" />
-                <path class="chim-t" [attr.d]="boxTop(c.x + 18, c.y - 37, 0.07, 12)" />
-                <!-- rooftop terrace disc (planter) -->
-                <ellipse class="roof-disc" [attr.cx]="c.x - 4" [attr.cy]="c.y - 40" rx="7" ry="3.4" />
-
-                <!-- trees flanking the villa -->
-                <g *ngFor="let tr of trees(t.id, 3)" class="tree">
-                  <ellipse class="shade" [attr.cx]="c.x + tr.x" [attr.cy]="c.y + tr.y + 1"
-                           [attr.rx]="6 * tr.s" [attr.ry]="2.6 * tr.s" />
-                  <rect class="trunk" [attr.x]="c.x + tr.x - 1.2" [attr.y]="c.y + tr.y - 8 * tr.s"
-                        width="2.4" [attr.height]="8 * tr.s" rx="1.1" />
-                  <circle class="leaf-d" [attr.cx]="c.x + tr.x - 2.6 * tr.s" [attr.cy]="c.y + tr.y - 11 * tr.s" [attr.r]="4.8 * tr.s" />
-                  <circle class="leaf-l" [attr.cx]="c.x + tr.x" [attr.cy]="c.y + tr.y - 15 * tr.s" [attr.r]="5 * tr.s" />
+                <!-- a little greenery beside the house -->
+                <g *ngFor="let b of bushes(t.id, 2)">
+                  <ellipse class="shade" [attr.cx]="c.x + b.x" [attr.cy]="c.y + b.y + 1"
+                           [attr.rx]="5.4 * b.s" [attr.ry]="2.2 * b.s" />
+                  <circle class="leaf-d" [attr.cx]="c.x + b.x - 2.2 * b.s" [attr.cy]="c.y + b.y - 3.6 * b.s" [attr.r]="3.8 * b.s" />
+                  <circle class="leaf-l" [attr.cx]="c.x + b.x + 1.4 * b.s" [attr.cy]="c.y + b.y - 5 * b.s" [attr.r]="4.2 * b.s" />
                 </g>
+
+                <!-- house body -->
+                <path class="villa-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.5, 36)" />
+                <path class="villa-r" [attr.d]="boxRight(c.x, c.y + 6, 0.5, 36)" />
+                <path class="villa-top" [attr.d]="boxTop(c.x, c.y + 6, 0.5, 36)" />
+
+                <!-- two clean glazing bands -->
+                <path class="win" [attr.d]="windowLeft(c.x, c.y + 6, 0.5, 36, 9)" />
+                <path class="win" [attr.d]="windowRight(c.x, c.y + 6, 0.5, 36, 9)" />
+                <path class="win dim" [attr.d]="windowLeft(c.x, c.y + 6, 0.5, 36, 23)" />
+                <path class="win dim" [attr.d]="windowRight(c.x, c.y + 6, 0.5, 36, 23)" />
+
+                <!-- entrance -->
+                <path class="door" [attr.d]="'M' + c.x + ',' + (c.y + 21) +
+                                              ' L' + (c.x + 11) + ',' + (c.y + 15.5) +
+                                              ' L' + (c.x + 11) + ',' + (c.y + 4) +
+                                              ' L' + c.x + ',' + (c.y + 9.5) + ' Z'" />
+
+                <!-- roof slab with a slight overhang -->
+                <path class="roof-l" [attr.d]="boxLeft(c.x, c.y - 30, 0.57, 7)" />
+                <path class="roof-r" [attr.d]="boxRight(c.x, c.y - 30, 0.57, 7)" />
+                <path class="roof-top" [attr.d]="boxTop(c.x, c.y - 30, 0.57, 7)" />
 
                 <!-- floating rent coin -->
                 <g class="coin-wrap">
-                  <ellipse class="coin-shadow" [attr.cx]="c.x + 4" [attr.cy]="c.y - 48" rx="7" ry="2.5" />
-                  <circle class="villa-coin" [attr.cx]="c.x + 4" [attr.cy]="c.y - 68" r="10" />
-                  <text class="villa-coin-t" [attr.x]="c.x + 4" [attr.y]="c.y - 64">₹</text>
+                  <ellipse class="coin-shadow" [attr.cx]="c.x" [attr.cy]="c.y - 46" rx="7" ry="2.5" />
+                  <circle class="villa-coin" [attr.cx]="c.x" [attr.cy]="c.y - 66" r="10" />
+                  <text class="villa-coin-t" [attr.x]="c.x" [attr.y]="c.y - 62">₹</text>
                 </g>
               </g>
             </g>
@@ -242,13 +213,28 @@
     </div>
   </div>
 
-  <!-- ============ BOTTOM: figures + legend ============ -->
+  <!-- ============ BOTTOM: everything textual lives here ============ -->
   <div class="estate-bottom">
+    <!-- income chips -->
+    <div class="chips">
+      <button class="chip rent" (click)="collect()" [class.live]="est.rentIn > 0" [disabled]="est.rentIn <= 0">
+        <span class="chip-dot coin"></span>
+        <span class="chip-k">Rent in</span>
+        <b class="chip-v">{{ compact(est.rentIn) }}</b>
+      </button>
+      <div class="chip build">
+        <span class="chip-dot sip"></span>
+        <span class="chip-k">Build cost</span>
+        <b class="chip-v">{{ compact(est.buildCost) }}</b>
+      </div>
+    </div>
+
     <div class="collected">
       <span class="col-k">Rent collected to date</span>
       <b class="col-v">{{ compact(est.rentCollected()) }}</b>
-      <span class="col-hint" *ngIf="est.rentIn > 0">tap the coin to collect {{ compact(est.rentIn) }}</span>
+      <span class="col-hint" *ngIf="est.rentIn > 0">tap “Rent in” to collect {{ compact(est.rentIn) }}</span>
       <span class="col-hint" *ngIf="est.rentIn <= 0 && hasAny">build a villa to start earning rent</span>
+      <span class="col-hint" *ngIf="!hasAny">tap a plot around the town hall to start building</span>
     </div>
 
     <div class="legend" *ngIf="hasAny">
@@ -256,11 +242,6 @@
       <span class="lg"><i class="sw land"></i>{{ lands }} plot{{ lands === 1 ? '' : 's' }}</span>
       <span class="lg"><i class="sw bld"></i>{{ buildings }} building</span>
       <span class="lg"><i class="sw open"></i>{{ open }} open</span>
-    </div>
-
-    <!-- empty state: nothing owned yet -->
-    <div class="empty" *ngIf="!hasAny">
-      <p>You own nothing yet. Tap an open plot above to <b>buy your first land</b>.</p>
     </div>
 
     <p class="foot-note">

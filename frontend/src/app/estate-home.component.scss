@@ -11,24 +11,27 @@
   position: relative;
 }
 
-/* ============ TOP HALF: the estate canvas ============ */
+/* ============ TOP HALF: the map, and nothing else ============ */
 .estate-top {
   position: relative;
-  padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem 1rem;
-  /* a soft "sky" wash behind the estate, in paper tones */
+  /* the map owns the whole top half of the screen */
+  height: 52vh;
+  min-height: 320px;
+  padding: 0;
+  overflow: hidden;
   background:
     radial-gradient(120% 80% at 50% -10%, rgba(166, 124, 46, 0.10), transparent 55%),
     linear-gradient(180deg, #FFFDF8, var(--paper));
   border-bottom: 1px solid var(--survey);
 }
 
-/* currency chips — a row under the title so they never overlap or clip */
+/* income chips — now in the bottom half, under the map */
 .chips {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.2rem;
+  margin-bottom: 1.1rem;
 }
 .chip {
   display: inline-flex;
@@ -64,35 +67,70 @@
   color: var(--ink);
 }
 
-/* the board — horizontally pannable */
+/* the map viewport — scrolls freely in BOTH directions so the town can
+   keep growing outward from the hall */
 .board-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding: 0.5rem 0 0.75rem;
-  display: flex;
-  justify-content: center;
+  overscroll-behavior: contain;
+  cursor: grab;
 }
 .board-scroll::-webkit-scrollbar { display: none; }
-.board { display: block; margin: 0 auto; max-width: none; }
+.board-scroll:active { cursor: grabbing; }
+.board { display: block; max-width: none; }
 
 /* cells */
 .cell { cursor: pointer; }
 .cell:focus-visible { outline: none; }
 .plot-open {
-  fill: rgba(22, 48, 43, 0.03);
-  stroke: var(--survey);
-  stroke-width: 1.5;
-  stroke-dasharray: 5 4;
-  transition: fill 0.2s;
+  fill: rgba(22, 48, 43, 0.018);
+  stroke: rgba(200, 190, 165, 0.55);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 5;
+  transition: fill 0.2s, stroke 0.2s;
 }
 .cell.open:hover .plot-open { fill: rgba(166, 124, 46, 0.10); stroke: var(--brass); }
-.plot-plus { fill: var(--muted); font-size: 20px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+.plot-plus { fill: rgba(150,140,120,0.6); font-size: 17px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+.cell.open:hover .plot-plus { fill: var(--brass); }
 
 .lawn { fill: url(#lawn); stroke: #2f6127; stroke-width: 1; }
 .soil-l { fill: #6b4f2b; }
 .soil-r { fill: #513a1e; }
+
+/* ---- TOWN HALL: the landmark at the centre ---- */
+.plaza    { fill: #CFC3A4; stroke: #b7a984; stroke-width: 1; }
+.plaza-in { fill: #DCD2B7; }
+.hall-t   { fill: #FDFBF5; }
+.hall-l   { fill: #EDE5D2; }
+.hall-r   { fill: #D5C9AE; }
+.hall-win { fill: #3C7FA8; opacity: 0.9; }
+.hall-win.dim { fill: #4E8FB4; opacity: 0.72; }
+.hall-step { fill: #E0D6BA; stroke: #cabfa0; stroke-width: 0.8; }
+.hall-door { fill: #6B4A28; }
+.hall-roof-t { fill: #2E6B4F; }
+.hall-roof-l { fill: #24563F; }
+.hall-roof-r { fill: #1C4432; }
+.tower-t  { fill: #FBF7EC; }
+.tower-l  { fill: #E9E0CB; }
+.tower-r  { fill: #D0C4A7; }
+.clock    { fill: #FBF7EC; stroke: #A67C2E; stroke-width: 1.6; }
+.clock-h  { stroke: #16302B; stroke-width: 1.1; stroke-linecap: round; }
+.spire    { fill: #2E6B4F; }
+.flag-pole{ stroke: #8a7a5c; stroke-width: 1.2; }
+.flag     { fill: #A67C2E; }
+.hall-name {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  text-anchor: middle;
+  letter-spacing: 0.2px;
+  paint-order: stroke;
+  stroke: rgba(250,248,243,0.9);
+  stroke-width: 3px;
+}
 
 /* ---- ground details ---- */
 .deck  { fill: #EFE7D3; stroke: #dcd0b4; stroke-width: 0.7; }

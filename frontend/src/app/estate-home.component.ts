@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  AfterViewInit,
   Component,
+  ElementRef,
   EventEmitter,
   Output,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -18,14 +21,15 @@ interface Cell {
   x: number;   // screen centre
   y: number;
   tile: Tile | null;
-  index: number;
+  index: number;   // ring order — which plot slot this is
+  hall: boolean;   // the central town hall occupies one cell
 }
 
-/** Isometric tile footprint. Tuned so 9 plots fit a 3×3 board that pans. */
+/** Isometric tile footprint. The board is large and scrollable in both
+ *  directions, so the town can keep growing outward from the hall. */
 const TILE_W = 128;   // full diamond width
 const TILE_H = 64;    // full diamond height
-const COLS = 3;
-const ROWS = 3;
+const GRID = 5;       // 5×5 board — roomy but never bleak; scrolls to reach it all
 
 @Component({
   selector: 'app-estate-home',
@@ -34,7 +38,9 @@ const ROWS = 3;
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
-export class EstateHomeComponent {
+export class EstateHomeComponent implements AfterViewInit {
+  @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
+
   /** Tapping a built tile asks the shell to open its detail page. */
   @Output() openTile = new EventEmitter<Tile>();
   /** Explore / Progress tab taps bubble up (shell owns navigation). */
@@ -53,40 +59,71 @@ export class EstateHomeComponent {
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
 
-  /** The board cells: fill owned tiles into a stable grid, rest are open. */
+  /** The board: a town hall dead centre, with plots filling outward from it
+   *  ring by ring, so the town always grows around the landmark. */
   cells = computed<Cell[]>(() => {
     const tiles = this.est.tiles();
-    const out: Cell[] = [];
-    let i = 0;
-    for (let row = 0; row < ROWS; row++) {
-      for (let col = 0; col < COLS; col++) {
-        out.push({
+    const mid = Math.floor(GRID / 2);
+
+    // Every cell, sorted by distance from the hall (then clockwise-ish) so
+    // owned tiles cluster tightly around the centre instead of scattering.
+    const all: { col: number; row: number; d: number; a: number }[] = [];
+    for (let row = 0; row < GRID; row++) {
+      for (let col = 0; col < GRID; col++) {
+        if (col === mid && row === mid) continue; // reserved for the hall
+        const dc = col - mid;
+        const dr = row - mid;
+        all.push({
           col,
           row,
-          x: (col - row) * (TILE_W / 2),
-          y: (col + row) * (TILE_H / 2),
-          tile: tiles[i] ?? null,
-          index: i,
+          d: Math.max(Math.abs(dc), Math.abs(dr)), // ring number
+          a: Math.atan2(dr, dc),
         });
-        i++;
       }
     }
+    all.sort((p, q) => (p.d - q.d) || (p.a - q.a));
+
+    const out: Cell[] = [];
+    // the hall itself
+    out.push({
+      col: mid,
+      row: mid,
+      x: (mid - mid) * (TILE_W / 2),
+      y: (mid + mid) * (TILE_H / 2),
+      tile: null,
+      index: -1,
+      hall: true,
+    });
+    all.forEach((c, i) => {
+      out.push({
+        col: c.col,
+        row: c.row,
+        x: (c.col - c.row) * (TILE_W / 2),
+        y: (c.col + c.row) * (TILE_H / 2),
+        tile: tiles[i] ?? null,
+        index: i,
+        hall: false,
+      });
+    });
+    // paint back-to-front so nearer tiles overlap farther ones correctly
+    out.sort((p, q) => (p.col + p.row) - (q.col + q.row));
     return out;
   });
 
-  /** SVG viewBox sized to the board plus margin for raised structures. */
+  /** SVG canvas sized to the whole 7×7 board plus margin for tall structures.
+   *  It's bigger than the viewport on purpose — the container scrolls. */
   get boardW(): number {
-    return (COLS + ROWS) * (TILE_W / 2) + 40;
+    return GRID * TILE_W + 80;
   }
   get boardH(): number {
-    return (COLS + ROWS) * (TILE_H / 2) + 140; // extra headroom for tall villas
+    return GRID * TILE_H + 200; // headroom for roofs, cranes and coins
   }
   /** Shift so the leftmost diamond isn't clipped. */
   get offX(): number {
-    return (ROWS - 1) * (TILE_W / 2) + 20;
+    return (GRID - 1) * (TILE_W / 2) + 40;
   }
   get offY(): number {
-    return 90; // room above for coins / villa roofs
+    return 110; // room above for coins / villa roofs
   }
 
   /** Diamond path for a cell centre (x,y). */
@@ -228,13 +265,24 @@ export class EstateHomeComponent {
     return out;
   }
 
-  /** Tree / bush cluster placements for a tile. */
-  trees(seed: string, n = 5): { x: number; y: number; s: number }[] {
-    return this.scatter(seed + '|tree', n, 0.5, 0.9);
+  /** Four trees framing the town-hall plaza — fixed, so the centre always
+   *  looks like a real town square even before anything is built. */
+  hallGreens(x: number, y: number): { x: number; y: number }[] {
+    return [
+      { x: x - 46, y: y + 2 },
+      { x: x + 46, y: y + 2 },
+      { x: x - 22, y: y + 20 },
+      { x: x + 22, y: y + 20 },
+    ];
   }
-  /** Small grass tufts sprinkled across the lawn. */
-  tufts(seed: string, n = 10): { x: number; y: number; s: number }[] {
-    return this.scatter(seed + '|tuft', n, 0.15, 0.92);
+
+  /** A couple of soft bushes — sparse, just enough to feel alive. */
+  bushes(seed: string, n = 2): { x: number; y: number; s: number }[] {
+    return this.scatter(seed + '|bush', n, 0.5, 0.82);
+  }
+  /** A light sprinkle of grass tufts. Kept deliberately sparse. */
+  tufts(seed: string, n = 5): { x: number; y: number; s: number }[] {
+    return this.scatter(seed + '|tuft', n, 0.2, 0.88);
   }
   /** Stepping-stone path points from the tile's front corner to the house. */
   pathStones(x: number, y: number): { x: number; y: number }[] {
@@ -276,6 +324,24 @@ export class EstateHomeComponent {
       out.push(`M${x - hw},${y + 6 - dy} L${x},${y + hh + 6 - dy} L${x + hw},${y + 6 - dy}`);
     }
     return out;
+  }
+
+  /** Open centred on the town hall, so the landmark greets you first. */
+  ngAfterViewInit(): void {
+    this.centreOnHall();
+    // re-centre once layout has settled (fonts/sizing can shift it)
+    setTimeout(() => this.centreOnHall(), 0);
+  }
+
+  private centreOnHall(): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    const mid = Math.floor(GRID / 2);
+    // the hall's centre in board coordinates (col===row===mid -> x offset 0)
+    const hallX = this.offX;
+    const hallY = this.offY + mid * TILE_H;
+    el.scrollLeft = Math.max(0, hallX - el.clientWidth / 2);
+    el.scrollTop = Math.max(0, hallY - el.clientHeight / 2);
   }
 
   // ---------------- interaction ----------------
