@@ -59,6 +59,23 @@ export class EstateHomeComponent implements AfterViewInit {
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
 
+  /** Zoom: 1 = default (about nine tiles fill the view). Clamped both ways so
+   *  the town never gets uselessly tiny or absurdly huge. */
+  readonly MIN_ZOOM = 0.55;
+  readonly MAX_ZOOM = 2.2;
+  zoom = signal(1);
+
+  zoomIn(): void {
+    this.zoom.update((z) => Math.min(this.MAX_ZOOM, +(z * 1.25).toFixed(3)));
+    setTimeout(() => this.centreOnHall(), 0);
+  }
+  zoomOut(): void {
+    this.zoom.update((z) => Math.max(this.MIN_ZOOM, +(z / 1.25).toFixed(3)));
+    setTimeout(() => this.centreOnHall(), 0);
+  }
+  get canZoomIn(): boolean { return this.zoom() < this.MAX_ZOOM - 0.001; }
+  get canZoomOut(): boolean { return this.zoom() > this.MIN_ZOOM + 0.001; }
+
   /** The board: a town hall dead centre, with plots filling outward from it
    *  ring by ring, so the town always grows around the landmark. */
   cells = computed<Cell[]>(() => {
@@ -110,13 +127,27 @@ export class EstateHomeComponent implements AfterViewInit {
     return out;
   });
 
-  /** SVG canvas sized to the whole 7×7 board plus margin for tall structures.
-   *  It's bigger than the viewport on purpose — the container scrolls. */
+  /** Intrinsic board size (viewBox units) — the full board, unscaled. */
   get boardW(): number {
     return GRID * TILE_W + 80;
   }
   get boardH(): number {
     return GRID * TILE_H + 200; // headroom for roofs, cranes and coins
+  }
+
+  /** Rendered size = intrinsic × zoom. The SVG is drawn bigger/smaller than its
+   *  viewBox, so the scroll container shows a zoomed slice of the town.
+   *  ZOOM_BASE is tuned so that at zoom 1 roughly a 3×3 patch fills the view. */
+  private readonly ZOOM_BASE = 1.12;
+  get renderW(): number {
+    return this.boardW * this.ZOOM_BASE * this.zoom();
+  }
+  get renderH(): number {
+    return this.boardH * this.ZOOM_BASE * this.zoom();
+  }
+  /** Scale factor from viewBox units to rendered pixels. */
+  private get scale(): number {
+    return this.ZOOM_BASE * this.zoom();
   }
   /** Shift so the leftmost diamond isn't clipped. */
   get offX(): number {
@@ -334,6 +365,30 @@ export class EstateHomeComponent implements AfterViewInit {
     return out;
   }
 
+  /** Column positions across the town hall's two visible faces. */
+  hallColumns(x: number, y: number): { x: number; y: number }[] {
+    const w = 0.54;
+    const hw = (TILE_W / 2) * w;
+    const hh = (TILE_H / 2) * w;
+    const out: { x: number; y: number }[] = [];
+    for (const f of [0.12, 0.34, 0.56, 0.78]) {
+      // left face: from left corner toward centre
+      out.push({ x: x - hw + hw * f, y: y + hh * f });
+      // right face: from centre toward right corner
+      out.push({ x: x + hw * f, y: y + hh * (1 - f) });
+    }
+    return out;
+  }
+
+  /** Cube bushes at the plot corners of a villa, as in the reference art. */
+  villaBushes(x: number, y: number): { x: number; y: number }[] {
+    return [
+      { x: x + 40, y: y + 4 },
+      { x: x + 26, y: y + 16 },
+      { x: x - 8, y: y + 22 },
+    ];
+  }
+
   /** A couple of soft bushes — sparse, just enough to feel alive. */
   bushes(seed: string, n = 2): { x: number; y: number; s: number }[] {
     return this.scatter(seed + '|bush', n, 0.5, 0.82);
@@ -395,9 +450,9 @@ export class EstateHomeComponent implements AfterViewInit {
     const el = this.scroller?.nativeElement;
     if (!el) return;
     const mid = Math.floor(GRID / 2);
-    // hall sits at (col,row) = (mid,mid): x offset 0, y = (mid+mid)*TILE_H/2
-    const hallX = this.offX;
-    const hallY = this.offY + (mid + mid) * (TILE_H / 2);
+    // hall centre in viewBox units, then converted to rendered pixels
+    const hallX = (this.offX) * this.scale;
+    const hallY = (this.offY + (mid + mid) * (TILE_H / 2)) * this.scale;
     el.scrollLeft = Math.round(hallX - el.clientWidth / 2);
     el.scrollTop = Math.round(hallY - el.clientHeight / 2);
   }

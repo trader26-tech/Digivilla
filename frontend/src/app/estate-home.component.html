@@ -7,8 +7,8 @@
       <svg
         class="board"
         [attr.viewBox]="'0 0 ' + boardW + ' ' + boardH"
-        [attr.width]="boardW"
-        [attr.height]="boardH"
+        [attr.width]="renderW"
+        [attr.height]="renderH"
         role="img"
         aria-label="Your estate map"
       >
@@ -36,42 +36,60 @@
               <path class="plaza" [attr.d]="diamond(c.x, c.y)" />
               <path class="plaza-in" [attr.d]="diamondAt(c.x, c.y, 0.78)" />
 
-              <!-- steps up to the hall -->
-              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 4, 0.66)" />
+              <!-- broad ceremonial steps -->
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 8, 0.80)" />
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 4, 0.70)" />
 
-              <!-- hall body -->
-              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y + 2, 0.58, 42)" />
-              <path class="hall-r" [attr.d]="boxRight(c.x, c.y + 2, 0.58, 42)" />
-              <path class="hall-t" [attr.d]="boxTop(c.x, c.y + 2, 0.58, 42)" />
-              <!-- DISCRETE windows, set toward the ends of each wall -->
-              <path *ngFor="let f of paneSpots" class="pane"
-                    [attr.d]="paneLeft(c.x, c.y + 2, 0.58, 42, 12, f, 0.17)" />
-              <path *ngFor="let f of paneSpots" class="pane"
-                    [attr.d]="paneRight(c.x, c.y + 2, 0.58, 42, 12, f, 0.17)" />
-              <path *ngFor="let f of paneSpots" class="pane dim"
-                    [attr.d]="paneLeft(c.x, c.y + 2, 0.58, 42, 28, f, 0.17)" />
-              <path *ngFor="let f of paneSpots" class="pane dim"
-                    [attr.d]="paneRight(c.x, c.y + 2, 0.58, 42, 28, f, 0.17)" />
-              <!-- grand entrance -->
-              <path class="hall-door" [attr.d]="'M' + c.x + ',' + (c.y + 18) +
-                                                 ' L' + (c.x + 13) + ',' + (c.y + 11.5) +
-                                                 ' L' + (c.x + 13) + ',' + (c.y - 2) +
-                                                 ' L' + c.x + ',' + (c.y + 4.5) + ' Z'" />
-              <!-- deep roof slab -->
-              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 40, 0.70, 9)" />
-              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 40, 0.70, 9)" />
-              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 40, 0.70, 9)" />
-              <!-- clock tower -->
-              <path class="tower-l" [attr.d]="boxLeft(c.x, c.y - 49, 0.19, 30)" />
-              <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 49, 0.19, 30)" />
-              <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 49, 0.19, 30)" />
-              <circle class="clock" [attr.cx]="c.x" [attr.cy]="c.y - 86" r="6.5" />
-              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 86" [attr.x2]="c.x" [attr.y2]="c.y - 90" />
-              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 86" [attr.x2]="c.x + 3" [attr.y2]="c.y - 85" />
-              <!-- spire + flag -->
-              <path class="spire" [attr.d]="'M' + (c.x - 8) + ',' + (c.y - 94) + ' L' + c.x + ',' + (c.y - 114) + ' L' + (c.x + 8) + ',' + (c.y - 94) + ' Z'" />
-              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 114" [attr.x2]="c.x" [attr.y2]="c.y - 128" />
-              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 128) + ' L' + (c.x + 15) + ',' + (c.y - 124) + ' L' + c.x + ',' + (c.y - 120) + ' Z'" />
+              <!-- ===== PODIUM: a wide stone base ===== -->
+              <path class="podium-l" [attr.d]="boxLeft(c.x, c.y + 2, 0.66, 12)" />
+              <path class="podium-r" [attr.d]="boxRight(c.x, c.y + 2, 0.66, 12)" />
+              <path class="podium-t" [attr.d]="boxTop(c.x, c.y + 2, 0.66, 12)" />
+
+              <!-- ===== MAIN HALL BODY ===== -->
+              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y - 10, 0.54, 36)" />
+              <path class="hall-r" [attr.d]="boxRight(c.x, c.y - 10, 0.54, 36)" />
+              <path class="hall-t" [attr.d]="boxTop(c.x, c.y - 10, 0.54, 36)" />
+
+              <!-- COLONNADE: a row of columns across each face -->
+              <g *ngFor="let col of hallColumns(c.x, c.y - 10)">
+                <line class="column" [attr.x1]="col.x" [attr.y1]="col.y"
+                      [attr.x2]="col.x" [attr.y2]="col.y - 26" />
+              </g>
+
+              <!-- tall arched windows between the columns -->
+              <path *ngFor="let f of [0.16, 0.58]" class="pane"
+                    [attr.d]="paneLeft(c.x, c.y - 10, 0.54, 36, 10, f, 0.24)" />
+              <path *ngFor="let f of [0.18, 0.60]" class="pane"
+                    [attr.d]="paneRight(c.x, c.y - 10, 0.54, 36, 10, f, 0.24)" />
+
+              <!-- grand entrance under a portico -->
+              <path class="hall-door" [attr.d]="'M' + c.x + ',' + (c.y + 4) +
+                                                 ' L' + (c.x + 15) + ',' + (c.y - 3.5) +
+                                                 ' L' + (c.x + 15) + ',' + (c.y - 20) +
+                                                 ' L' + c.x + ',' + (c.y - 12.5) + ' Z'" />
+
+              <!-- ===== PEDIMENT / DEEP ROOF ===== -->
+              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 46, 0.72, 10)" />
+              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 46, 0.72, 10)" />
+              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 46, 0.72, 10)" />
+
+              <!-- ===== DOME on a drum ===== -->
+              <path class="drum-l" [attr.d]="boxLeft(c.x, c.y - 56, 0.26, 16)" />
+              <path class="drum-r" [attr.d]="boxRight(c.x, c.y - 56, 0.26, 16)" />
+              <path class="drum-t" [attr.d]="boxTop(c.x, c.y - 56, 0.26, 16)" />
+              <!-- the dome itself -->
+              <path class="dome" [attr.d]="'M' + (c.x - 22) + ',' + (c.y - 72) +
+                                            ' A22,26 0 0 1 ' + (c.x + 22) + ',' + (c.y - 72) + ' Z'" />
+              <path class="dome-hi" [attr.d]="'M' + (c.x - 13) + ',' + (c.y - 75) +
+                                               ' A13,17 0 0 1 ' + (c.x + 1) + ',' + (c.y - 80) +
+                                               ' L' + (c.x - 5) + ',' + (c.y - 73) + ' Z'" />
+              <!-- gold finial + clock on the drum -->
+              <circle class="clock" [attr.cx]="c.x" [attr.cy]="c.y - 62" r="6.5" />
+              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 62" [attr.x2]="c.x" [attr.y2]="c.y - 66" />
+              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 62" [attr.x2]="c.x + 3" [attr.y2]="c.y - 61" />
+              <circle class="finial" [attr.cx]="c.x" [attr.cy]="c.y - 98" r="4" />
+              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 100" [attr.x2]="c.x" [attr.y2]="c.y - 120" />
+              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 120) + ' L' + (c.x + 16) + ',' + (c.y - 115.5) + ' L' + c.x + ',' + (c.y - 111) + ' Z'" />
 
               <!-- name plate, clear of the building -->
               <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y - 140">{{ estateName() }}</text>
@@ -183,41 +201,43 @@
                 <path class="pool" [attr.d]="diamondAt(c.x - 20, c.y + 15, 0.22)" />
                 <path class="pool-hi" [attr.d]="diamondAt(c.x - 22, c.y + 14, 0.10)" />
 
-                <!-- hedges beside the house -->
-                <g *ngFor="let b of bushes(t.id, 2)">
-                  <ellipse class="shade" [attr.cx]="c.x + b.x" [attr.cy]="c.y + b.y + 1"
-                           [attr.rx]="5.4 * b.s" [attr.ry]="2.2 * b.s" />
-                  <circle class="leaf-d" [attr.cx]="c.x + b.x - 2.2 * b.s" [attr.cy]="c.y + b.y - 3.6 * b.s" [attr.r]="3.8 * b.s" />
-                  <circle class="leaf-l" [attr.cx]="c.x + b.x + 1.4 * b.s" [attr.cy]="c.y + b.y - 5 * b.s" [attr.r]="4.2 * b.s" />
+                <!-- POOL: a neat teal rectangle inset on the lawn -->
+                <path class="pool-rim" [attr.d]="diamondAt(c.x - 26, c.y + 14, 0.30)" />
+                <path class="pool" [attr.d]="diamondAt(c.x - 26, c.y + 14, 0.24)" />
+
+                <!-- CUBE BUSHES at the plot corners, like the reference -->
+                <g *ngFor="let b of villaBushes(c.x, c.y)">
+                  <path class="bush-r" [attr.d]="boxRight(b.x, b.y, 0.10, 8)" />
+                  <path class="bush-l" [attr.d]="boxLeft(b.x, b.y, 0.10, 8)" />
+                  <path class="bush-t" [attr.d]="boxTop(b.x, b.y, 0.10, 8)" />
                 </g>
 
-                <!-- house body -->
-                <path class="villa-l" [attr.d]="boxLeft(c.x + 4, c.y + 4, 0.46, 34)" />
-                <path class="villa-r" [attr.d]="boxRight(c.x + 4, c.y + 4, 0.46, 34)" />
-                <path class="villa-top" [attr.d]="boxTop(c.x + 4, c.y + 4, 0.46, 34)" />
+                <!-- ===== GROUND FLOOR: wide box ===== -->
+                <path class="villa-l" [attr.d]="boxLeft(c.x + 6, c.y + 2, 0.44, 22)" />
+                <path class="villa-r" [attr.d]="boxRight(c.x + 6, c.y + 2, 0.44, 22)" />
+                <path class="villa-top" [attr.d]="boxTop(c.x + 6, c.y + 2, 0.44, 22)" />
+                <!-- big ground-floor windows -->
+                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y + 2, 0.44, 22, 6, 0.20, 0.30)" />
+                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y + 2, 0.44, 22, 6, 0.46, 0.30)" />
+                <!-- entrance door on the right face -->
+                <path class="door" [attr.d]="'M' + (c.x + 6) + ',' + (c.y + 16) +
+                                              ' L' + (c.x + 16) + ',' + (c.y + 11) +
+                                              ' L' + (c.x + 16) + ',' + (c.y + 1) +
+                                              ' L' + (c.x + 6) + ',' + (c.y + 6) + ' Z'" />
 
-                <!-- DISCRETE windows: two panes per face, set toward the ends -->
-                <path *ngFor="let f of paneSpots" class="pane"
-                      [attr.d]="paneLeft(c.x + 4, c.y + 4, 0.46, 34, 10, f)" />
-                <path *ngFor="let f of paneSpots" class="pane"
-                      [attr.d]="paneRight(c.x + 4, c.y + 4, 0.46, 34, 10, f)" />
-                <path *ngFor="let f of paneSpots" class="pane dim"
-                      [attr.d]="paneLeft(c.x + 4, c.y + 4, 0.46, 34, 24, f)" />
-                <path *ngFor="let f of paneSpots" class="pane dim"
-                      [attr.d]="paneRight(c.x + 4, c.y + 4, 0.46, 34, 24, f)" />
+                <!-- ===== UPPER FLOOR: narrower, set back ===== -->
+                <path class="villa-l" [attr.d]="boxLeft(c.x + 6, c.y - 20, 0.34, 20)" />
+                <path class="villa-r" [attr.d]="boxRight(c.x + 6, c.y - 20, 0.34, 20)" />
+                <path class="villa-top" [attr.d]="boxTop(c.x + 6, c.y - 20, 0.34, 20)" />
+                <!-- upper windows -->
+                <path class="pane" [attr.d]="paneLeft(c.x + 6, c.y - 20, 0.34, 20, 6, 0.18, 0.34)" />
+                <path class="pane" [attr.d]="paneRight(c.x + 6, c.y - 20, 0.34, 20, 6, 0.44, 0.34)" />
 
-                <!-- entrance -->
-                <path class="door" [attr.d]="'M' + (c.x + 4) + ',' + (c.y + 19) +
-                                              ' L' + (c.x + 14) + ',' + (c.y + 14) +
-                                              ' L' + (c.x + 14) + ',' + (c.y + 3) +
-                                              ' L' + (c.x + 4) + ',' + (c.y + 8) + ' Z'" />
-
-                <!-- flat white roof slab with a thin lip -->
-                <path class="roofw-l" [attr.d]="boxLeft(c.x + 4, c.y - 30, 0.52, 5)" />
-                <path class="roofw-r" [attr.d]="boxRight(c.x + 4, c.y - 30, 0.52, 5)" />
-                <path class="roofw-t" [attr.d]="boxTop(c.x + 4, c.y - 30, 0.52, 5)" />
-                <!-- rooftop disc, as in the reference -->
-                <ellipse class="roof-disc" [attr.cx]="c.x + 4" [attr.cy]="c.y - 37" rx="8" ry="4" />
+                <!-- flat cream roof slab over the upper floor -->
+                <path class="roofw-l" [attr.d]="boxLeft(c.x + 6, c.y - 40, 0.40, 4)" />
+                <path class="roofw-r" [attr.d]="boxRight(c.x + 6, c.y - 40, 0.40, 4)" />
+                <path class="roofw-t" [attr.d]="boxTop(c.x + 6, c.y - 40, 0.40, 4)" />
+                <ellipse class="roof-disc" [attr.cx]="c.x + 6" [attr.cy]="c.y - 45" rx="6.5" ry="3.2" />
 
                 <!-- post-and-rail fence around the plot -->
                 <path class="fence-rail" [attr.d]="perimeterRails(c.x, c.y)" />
@@ -226,15 +246,25 @@
 
                 <!-- floating rent coin -->
                 <g class="coin-wrap">
-                  <ellipse class="coin-shadow" [attr.cx]="c.x + 4" [attr.cy]="c.y - 46" rx="7" ry="2.5" />
-                  <circle class="villa-coin" [attr.cx]="c.x + 4" [attr.cy]="c.y - 66" r="10" />
-                  <text class="villa-coin-t" [attr.x]="c.x + 4" [attr.y]="c.y - 62">₹</text>
+                  <ellipse class="coin-shadow" [attr.cx]="c.x + 6" [attr.cy]="c.y - 54" rx="7" ry="2.5" />
+                  <circle class="villa-coin" [attr.cx]="c.x + 6" [attr.cy]="c.y - 74" r="10" />
+                  <text class="villa-coin-t" [attr.x]="c.x + 6" [attr.y]="c.y - 70">₹</text>
                 </g>
               </g>
             </g>
           </ng-container>
         </g>
       </svg>
+    </div>
+
+    <!-- zoom controls -->
+    <div class="zoom-ctl">
+      <button class="zb" (click)="zoomIn()" [disabled]="!canZoomIn" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="zb" (click)="zoomOut()" [disabled]="!canZoomOut" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
     </div>
   </div>
 

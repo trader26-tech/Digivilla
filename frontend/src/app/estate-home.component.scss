@@ -396,3 +396,47 @@
   text-anchor: middle;
   letter-spacing: 0.2px;
 }
+
+/* pool rim + cube bushes (reference villa) */
+.pool-rim { fill: #EFE7D3; }
+.bush-t { fill: #6FBF52; }
+.bush-l { fill: #4E9138; }
+.bush-r { fill: #3E7A2C; }
+
+/* zoom controls */
+.zoom-ctl {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 4;
+}
+.zb {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--survey);
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(6px);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 6px 16px -10px rgba(22,48,43,0.5);
+  transition: transform 0.12s, border-color 0.2s, opacity 0.2s;
+}
+.zb:hover { border-color: var(--brass); }
+.zb:active { transform: scale(0.93); }
+.zb:disabled { opacity: 0.4; cursor: default; }
+
+/* ---- grand town hall ---- */
+.podium-t { fill: #E6DCC4; }
+.podium-l { fill: #D2C6A9; }
+.podium-r { fill: #B9AC8B; }
+.column   { stroke: #FBF7EC; stroke-width: 3.4; stroke-linecap: round; }
+.drum-t   { fill: #F7F2E4; }
+.drum-l   { fill: #E3D9C1; }
+.drum-r   { fill: #CABE9F; }
+.dome     { fill: #2E6B4F; }
+.dome-hi  { fill: rgba(255,255,255,0.18); }
+.finial   { fill: #C9A227; stroke: #9c7c1c; stroke-width: 1; }
