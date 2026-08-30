@@ -187,60 +187,41 @@
                    scaffold of four posts with two rails. Hammer + sparks last. -->
               <g *ngIf="t.type === 'building'">
                 <!-- brick courses -->
-                <polygon class="cx-brick-a" [attr.points]="(c.x + -52.8) + ',' + (c.y + -13.9) + ' ' + (c.x + -40.6) + ',' + (c.y + -6.9) + ' ' + (c.x + -48.7) + ',' + (c.y + -2.2) + ' ' + (c.x + -60.9) + ',' + (c.y + -9.2)" />
-                <polygon class="cx-brick-b" [attr.points]="(c.x + -40.6) + ',' + (c.y + -6.9) + ' ' + (c.x + -48.7) + ',' + (c.y + -2.2) + ' ' + (c.x + -48.7) + ',' + (c.y + -0.8) + ' ' + (c.x + -40.6) + ',' + (c.y + -5.5)" />
-                <polygon class="cx-brick-a" [attr.points]="(c.x + -52.8) + ',' + (c.y + -15.3) + ' ' + (c.x + -40.6) + ',' + (c.y + -8.3) + ' ' + (c.x + -48.7) + ',' + (c.y + -3.6) + ' ' + (c.x + -60.9) + ',' + (c.y + -10.6)" />
-                <polygon class="cx-brick-b" [attr.points]="(c.x + -40.6) + ',' + (c.y + -8.3) + ' ' + (c.x + -48.7) + ',' + (c.y + -3.6) + ' ' + (c.x + -48.7) + ',' + (c.y + -2.2) + ' ' + (c.x + -40.6) + ',' + (c.y + -6.9)" />
-                <polygon class="cx-brick-a" [attr.points]="(c.x + -52.8) + ',' + (c.y + -16.7) + ' ' + (c.x + -40.6) + ',' + (c.y + -9.7) + ' ' + (c.x + -48.7) + ',' + (c.y + -5.0) + ' ' + (c.x + -60.9) + ',' + (c.y + -12.0)" />
-                <polygon class="cx-brick-b" [attr.points]="(c.x + -40.6) + ',' + (c.y + -9.7) + ' ' + (c.x + -48.7) + ',' + (c.y + -5.0) + ' ' + (c.x + -48.7) + ',' + (c.y + -3.6) + ' ' + (c.x + -40.6) + ',' + (c.y + -8.3)" />
-                <polygon class="cx-brick-a" [attr.points]="(c.x + -52.8) + ',' + (c.y + -18.2) + ' ' + (c.x + -40.6) + ',' + (c.y + -11.1) + ' ' + (c.x + -48.7) + ',' + (c.y + -6.4) + ' ' + (c.x + -60.9) + ',' + (c.y + -13.5)" />
-                <polygon class="cx-brick-b" [attr.points]="(c.x + -40.6) + ',' + (c.y + -11.1) + ' ' + (c.x + -48.7) + ',' + (c.y + -6.4) + ' ' + (c.x + -48.7) + ',' + (c.y + -5.0) + ' ' + (c.x + -40.6) + ',' + (c.y + -9.7)" />
+                <polygon class="cx-brick-a" [attr.points]="(c.x + -41.2) + ',' + (c.y + -10.8) + ' ' + (c.x + -31.7) + ',' + (c.y + -5.4) + ' ' + (c.x + -38.0) + ',' + (c.y + -1.7) + ' ' + (c.x + -47.5) + ',' + (c.y + -7.2)" />
+                <polygon class="cx-brick-b" [attr.points]="(c.x + -31.7) + ',' + (c.y + -5.4) + ' ' + (c.x + -38.0) + ',' + (c.y + -1.7) + ' ' + (c.x + -38.0) + ',' + (c.y + -0.6) + ' ' + (c.x + -31.7) + ',' + (c.y + -4.3)" />
+                <polygon class="cx-brick-a" [attr.points]="(c.x + -41.2) + ',' + (c.y + -11.9) + ' ' + (c.x + -31.7) + ',' + (c.y + -6.5) + ' ' + (c.x + -38.0) + ',' + (c.y + -2.8) + ' ' + (c.x + -47.5) + ',' + (c.y + -8.3)" />
+                <polygon class="cx-brick-b" [attr.points]="(c.x + -31.7) + ',' + (c.y + -6.5) + ' ' + (c.x + -38.0) + ',' + (c.y + -2.8) + ' ' + (c.x + -38.0) + ',' + (c.y + -1.7) + ' ' + (c.x + -31.7) + ',' + (c.y + -5.4)" />
+                <polygon class="cx-brick-a" [attr.points]="(c.x + -41.2) + ',' + (c.y + -13.0) + ' ' + (c.x + -31.7) + ',' + (c.y + -7.6) + ' ' + (c.x + -38.0) + ',' + (c.y + -3.9) + ' ' + (c.x + -47.5) + ',' + (c.y + -9.4)" />
+                <polygon class="cx-brick-b" [attr.points]="(c.x + -31.7) + ',' + (c.y + -7.6) + ' ' + (c.x + -38.0) + ',' + (c.y + -3.9) + ' ' + (c.x + -38.0) + ',' + (c.y + -2.8) + ' ' + (c.x + -31.7) + ',' + (c.y + -6.5)" />
+                <polygon class="cx-brick-a" [attr.points]="(c.x + -41.2) + ',' + (c.y + -14.2) + ' ' + (c.x + -31.7) + ',' + (c.y + -8.7) + ' ' + (c.x + -38.0) + ',' + (c.y + -5.0) + ' ' + (c.x + -47.5) + ',' + (c.y + -10.5)" />
+                <polygon class="cx-brick-b" [attr.points]="(c.x + -31.7) + ',' + (c.y + -8.7) + ' ' + (c.x + -38.0) + ',' + (c.y + -5.0) + ' ' + (c.x + -38.0) + ',' + (c.y + -3.9) + ' ' + (c.x + -31.7) + ',' + (c.y + -7.6)" />
 
                 <!-- cement bag -->
-                <polygon class="cx-bag-t" [attr.points]="(c.x + 32.5) + ',' + (c.y + 7.2) + ' ' + (c.x + 40.6) + ',' + (c.y + 11.9) + ' ' + (c.x + 31.1) + ',' + (c.y + 17.4) + ' ' + (c.x + 23.0) + ',' + (c.y + 12.7)" />
-                <polygon class="cx-bag-f" [attr.points]="(c.x + 40.6) + ',' + (c.y + 11.9) + ' ' + (c.x + 31.1) + ',' + (c.y + 17.4) + ' ' + (c.x + 31.1) + ',' + (c.y + 22.7) + ' ' + (c.x + 40.6) + ',' + (c.y + 17.2)" />
+                <polygon class="cx-bag-t" [attr.points]="(c.x + 25.4) + ',' + (c.y + 5.6) + ' ' + (c.x + 31.7) + ',' + (c.y + 9.3) + ' ' + (c.x + 24.3) + ',' + (c.y + 13.6) + ' ' + (c.x + 17.9) + ',' + (c.y + 9.9)" />
+                <polygon class="cx-bag-f" [attr.points]="(c.x + 31.7) + ',' + (c.y + 9.3) + ' ' + (c.x + 24.3) + ',' + (c.y + 13.6) + ' ' + (c.x + 24.3) + ',' + (c.y + 17.7) + ' ' + (c.x + 31.7) + ',' + (c.y + 13.4)" />
 
                 <!-- half-built shell -->
-                <polygon class="cx-wall-l" [attr.points]="(c.x + 0.0) + ',' + (c.y + -2.3) + ' ' + (c.x + -35.2) + ',' + (c.y + -22.7) + ' ' + (c.x + -35.2) + ',' + (c.y + -4.7) + ' ' + (c.x + 0.0) + ',' + (c.y + 15.6)" />
-                <polygon class="cx-wall-r" [attr.points]="(c.x + 32.5) + ',' + (c.y + -21.1) + ' ' + (c.x + 0.0) + ',' + (c.y + -2.3) + ' ' + (c.x + 0.0) + ',' + (c.y + 15.6) + ' ' + (c.x + 32.5) + ',' + (c.y + -3.1)" />
-                <polygon class="cx-wall-t" [attr.points]="(c.x + -2.7) + ',' + (c.y + -41.4) + ' ' + (c.x + 32.5) + ',' + (c.y + -21.1) + ' ' + (c.x + 0.0) + ',' + (c.y + -2.3) + ' ' + (c.x + -35.2) + ',' + (c.y + -22.7)" />
-                <polygon class="cx-door" [attr.points]="(c.x + -10.8) + ',' + (c.y + -8.6) + ' ' + (c.x + -23.7) + ',' + (c.y + -16.0) + ' ' + (c.x + -23.7) + ',' + (c.y + 2.0) + ' ' + (c.x + -10.8) + ',' + (c.y + 9.4)" />
-                <polygon class="cx-win" [attr.points]="(c.x + 26.4) + ',' + (c.y + -12.9) + ' ' + (c.x + 15.6) + ',' + (c.y + -6.6) + ' ' + (c.x + 15.6) + ',' + (c.y + 2.0) + ' ' + (c.x + 26.4) + ',' + (c.y + -4.3)" />
+                <polygon class="cx-wall-l" [attr.points]="(c.x + 0.0) + ',' + (c.y + -1.8) + ' ' + (c.x + -27.5) + ',' + (c.y + -17.7) + ' ' + (c.x + -27.5) + ',' + (c.y + -3.7) + ' ' + (c.x + 0.0) + ',' + (c.y + 12.2)" />
+                <polygon class="cx-wall-r" [attr.points]="(c.x + 25.4) + ',' + (c.y + -16.5) + ' ' + (c.x + 0.0) + ',' + (c.y + -1.8) + ' ' + (c.x + 0.0) + ',' + (c.y + 12.2) + ' ' + (c.x + 25.4) + ',' + (c.y + -2.4)" />
+                <polygon class="cx-wall-t" [attr.points]="(c.x + -2.1) + ',' + (c.y + -32.3) + ' ' + (c.x + 25.4) + ',' + (c.y + -16.5) + ' ' + (c.x + 0.0) + ',' + (c.y + -1.8) + ' ' + (c.x + -27.5) + ',' + (c.y + -17.7)" />
+                <polygon class="cx-door" [attr.points]="(c.x + -8.4) + ',' + (c.y + -6.7) + ' ' + (c.x + -18.5) + ',' + (c.y + -12.5) + ' ' + (c.x + -18.5) + ',' + (c.y + 1.6) + ' ' + (c.x + -8.4) + ',' + (c.y + 7.3)" />
+                <polygon class="cx-win" [attr.points]="(c.x + 20.6) + ',' + (c.y + -10.1) + ' ' + (c.x + 12.2) + ',' + (c.y + -5.1) + ' ' + (c.x + 12.2) + ',' + (c.y + 1.6) + ' ' + (c.x + 20.6) + ',' + (c.y + -3.4)" />
 
                 <!-- floor joists along the open edge -->
-                <polygon class="cx-joist" [attr.points]="(c.x + -11.7) + ',' + (c.y + -8.6) + ' ' + (c.x + -10.0) + ',' + (c.y + -8.6) + ' ' + (c.x + -10.0) + ',' + (c.y + 9.4) + ' ' + (c.x + -11.7) + ',' + (c.y + 9.4)" />
-                <polygon class="cx-joist" [attr.points]="(c.x + -16.4) + ',' + (c.y + -11.3) + ' ' + (c.x + -14.7) + ',' + (c.y + -11.3) + ' ' + (c.x + -14.7) + ',' + (c.y + 6.7) + ' ' + (c.x + -16.4) + ',' + (c.y + 6.7)" />
-                <polygon class="cx-joist" [attr.points]="(c.x + -20.5) + ',' + (c.y + -13.7) + ' ' + (c.x + -18.8) + ',' + (c.y + -13.7) + ' ' + (c.x + -18.8) + ',' + (c.y + 4.3) + ' ' + (c.x + -20.5) + ',' + (c.y + 4.3)" />
-                <polygon class="cx-joist" [attr.points]="(c.x + -24.5) + ',' + (c.y + -16.0) + ' ' + (c.x + -22.8) + ',' + (c.y + -16.0) + ' ' + (c.x + -22.8) + ',' + (c.y + 2.0) + ' ' + (c.x + -24.5) + ',' + (c.y + 2.0)" />
+                <polygon class="cx-joist" [attr.points]="(c.x + -9.1) + ',' + (c.y + -6.7) + ' ' + (c.x + -7.8) + ',' + (c.y + -6.7) + ' ' + (c.x + -7.8) + ',' + (c.y + 7.3) + ' ' + (c.x + -9.1) + ',' + (c.y + 7.3)" />
+                <polygon class="cx-joist" [attr.points]="(c.x + -12.8) + ',' + (c.y + -8.8) + ' ' + (c.x + -11.5) + ',' + (c.y + -8.8) + ' ' + (c.x + -11.5) + ',' + (c.y + 5.2) + ' ' + (c.x + -12.8) + ',' + (c.y + 5.2)" />
+                <polygon class="cx-joist" [attr.points]="(c.x + -16.0) + ',' + (c.y + -10.7) + ' ' + (c.x + -14.7) + ',' + (c.y + -10.7) + ' ' + (c.x + -14.7) + ',' + (c.y + 3.4) + ' ' + (c.x + -16.0) + ',' + (c.y + 3.4)" />
+                <polygon class="cx-joist" [attr.points]="(c.x + -19.1) + ',' + (c.y + -12.5) + ' ' + (c.x + -17.8) + ',' + (c.y + -12.5) + ' ' + (c.x + -17.8) + ',' + (c.y + 1.6) + ' ' + (c.x + -19.1) + ',' + (c.y + 1.6)" />
 
                 <!-- scaffold: four posts, then two rails -->
-                <polygon class="cx-post" [attr.points]="(c.x + -3.9) + ',' + (c.y + -61.8) + ' ' + (c.x + -1.5) + ',' + (c.y + -61.8) + ' ' + (c.x + -1.5) + ',' + (c.y + -28.9) + ' ' + (c.x + -3.9) + ',' + (c.y + -28.9)" />
-                <polygon class="cx-post" [attr.points]="(c.x + 40.8) + ',' + (c.y + -36.0) + ' ' + (c.x + 43.1) + ',' + (c.y + -36.0) + ' ' + (c.x + 43.1) + ',' + (c.y + -3.1) + ' ' + (c.x + 40.8) + ',' + (c.y + -3.1)" />
-                <polygon class="cx-post" [attr.points]="(c.x + -1.2) + ',' + (c.y + -11.7) + ' ' + (c.x + 1.2) + ',' + (c.y + -11.7) + ' ' + (c.x + 1.2) + ',' + (c.y + 21.1) + ' ' + (c.x + -1.2) + ',' + (c.y + 21.1)" />
-                <polygon class="cx-post" [attr.points]="(c.x + -45.8) + ',' + (c.y + -37.5) + ' ' + (c.x + -43.5) + ',' + (c.y + -37.5) + ' ' + (c.x + -43.5) + ',' + (c.y + -4.7) + ' ' + (c.x + -45.8) + ',' + (c.y + -4.7)" />
-                <polyline class="cx-rail" [attr.points]="(c.x + -2.7) + ',' + (c.y + -43.8) + ' ' + (c.x + 42.0) + ',' + (c.y + -18.0) + ' ' + (c.x + 0.0) + ',' + (c.y + 6.3) + ' ' + (c.x + -44.6) + ',' + (c.y + -19.6) + ' ' + (c.x + -2.7) + ',' + (c.y + -43.8)" />
-                <polyline class="cx-rail" [attr.points]="(c.x + -2.7) + ',' + (c.y + -57.9) + ' ' + (c.x + 42.0) + ',' + (c.y + -32.1) + ' ' + (c.x + 0.0) + ',' + (c.y + -7.8) + ' ' + (c.x + -44.6) + ',' + (c.y + -33.6) + ' ' + (c.x + -2.7) + ',' + (c.y + -57.9)" />
-                <polygon class="cx-plate" [attr.points]="(c.x + -44.6) + ',' + (c.y + -33.6) + ' ' + (c.x + 0.0) + ',' + (c.y + -7.8) + ' ' + (c.x + 0.0) + ',' + (c.y + -5.8) + ' ' + (c.x + -44.7) + ',' + (c.y + -31.6)" />
+                <polygon class="cx-post" [attr.points]="(c.x + -3.0) + ',' + (c.y + -48.2) + ' ' + (c.x + -1.2) + ',' + (c.y + -48.2) + ' ' + (c.x + -1.2) + ',' + (c.y + -22.5) + ' ' + (c.x + -3.0) + ',' + (c.y + -22.5)" />
+                <polygon class="cx-post" [attr.points]="(c.x + 31.8) + ',' + (c.y + -28.1) + ' ' + (c.x + 33.6) + ',' + (c.y + -28.1) + ' ' + (c.x + 33.6) + ',' + (c.y + -2.4) + ' ' + (c.x + 31.8) + ',' + (c.y + -2.4)" />
+                <polygon class="cx-post" [attr.points]="(c.x + -0.9) + ',' + (c.y + -9.1) + ' ' + (c.x + 0.9) + ',' + (c.y + -9.1) + ' ' + (c.x + 0.9) + ',' + (c.y + 16.5) + ' ' + (c.x + -0.9) + ',' + (c.y + 16.5)" />
+                <polygon class="cx-post" [attr.points]="(c.x + -35.7) + ',' + (c.y + -29.2) + ' ' + (c.x + -33.9) + ',' + (c.y + -29.2) + ' ' + (c.x + -33.9) + ',' + (c.y + -3.7) + ' ' + (c.x + -35.7) + ',' + (c.y + -3.7)" />
+                <polyline class="cx-rail" [attr.points]="(c.x + -2.1) + ',' + (c.y + -34.2) + ' ' + (c.x + 32.8) + ',' + (c.y + -14.0) + ' ' + (c.x + 0.0) + ',' + (c.y + 4.9) + ' ' + (c.x + -34.8) + ',' + (c.y + -15.3) + ' ' + (c.x + -2.1) + ',' + (c.y + -34.2)" />
+                <polyline class="cx-rail" [attr.points]="(c.x + -2.1) + ',' + (c.y + -45.2) + ' ' + (c.x + 32.8) + ',' + (c.y + -25.0) + ' ' + (c.x + 0.0) + ',' + (c.y + -6.1) + ' ' + (c.x + -34.8) + ',' + (c.y + -26.2) + ' ' + (c.x + -2.1) + ',' + (c.y + -45.2)" />
+                <polygon class="cx-plate" [attr.points]="(c.x + -34.8) + ',' + (c.y + -26.2) + ' ' + (c.x + 0.0) + ',' + (c.y + -6.1) + ' ' + (c.x + 0.0) + ',' + (c.y + -4.5) + ' ' + (c.x + -34.9) + ',' + (c.y + -24.6)" />
 
-                <!-- hammer on a 1.15s loop, sparks at the strike frame -->
-                <g [attr.transform]="'translate(' + (c.x - 44.7) + ',' + (c.y - 5.9) + ')'">
-                  <g class="cx-hammer">
-                    <g transform="scale(0.30)">
-                      <rect x="-4.5" y="-56" width="9" height="58" rx="4" fill="#a97140" />
-                      <rect x="-4.5" y="-16" width="9" height="18" rx="4" fill="#8a5a2f" />
-                      <rect x="-17" y="-70" width="36" height="15" rx="4" fill="#aeb4bb" />
-                      <rect x="-17" y="-70" width="10" height="15" rx="4" fill="#868c93" />
-                      <rect x="14" y="-72" width="6" height="19" rx="3" fill="#7c8189" />
-                    </g>
-                  </g>
-                </g>
-                <g class="cx-spark" [attr.transform]="'translate(' + (c.x - 34.9) + ',' + (c.y - 22.2) + ')'">
-                  <g stroke="#f2dc9a" stroke-width="0.9" stroke-linecap="round">
-                    <line x1="0" y1="0" x2="-5.5" y2="-4.5" />
-                    <line x1="0" y1="0" x2="6" y2="-4" />
-                    <line x1="0" y1="0" x2="0.7" y2="-7.5" />
-                  </g>
-                </g>
               </g>
 
               <!-- VILLA — ported from the supplied reference SVG. The

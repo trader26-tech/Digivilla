@@ -28,8 +28,8 @@ interface Cell {
 
 /** Isometric tile footprint. The board is large and scrollable in both
  *  directions, so the town can keep growing outward from the hall. */
-const TILE_W = 128;   // full diamond width
-const TILE_H = 64;    // full diamond height
+const TILE_W = 176;   // full diamond width — roomy plots, no crowding
+const TILE_H = 88;    // full diamond height (2:1 isometric)
 const GRID = 11;      // a wide board — feels boundless; the viewport scrolls freely
 
 @Component({
@@ -272,7 +272,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   /** Rendered size = intrinsic × zoom. The SVG is drawn bigger/smaller than its
    *  viewBox, so the scroll container shows a zoomed slice of the town.
    *  ZOOM_BASE is tuned so that at zoom 1 roughly a 3×3 patch fills the view. */
-  private readonly ZOOM_BASE = 0.92;
+  private readonly ZOOM_BASE = 0.62;
   get renderW(): number {
     return this.boardW * this.ZOOM_BASE * this.zoom();
   }
