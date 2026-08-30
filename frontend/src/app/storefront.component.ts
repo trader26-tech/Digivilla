@@ -60,6 +60,9 @@ export class StorefrontComponent {
     focus?: 'map';
   }>();
 
+  /** Back to the estate home. */
+  @Output() back = new EventEmitter<void>();
+
   /** Map the storefront's property-world variant names onto the basket risk
    *  profiles. Same mapping for every tier. */
   private static readonly RISK_OF: Record<VariantKey, 'conservative' | 'balanced' | 'aggressive'> = {

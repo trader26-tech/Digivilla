@@ -1,0 +1,176 @@
+<section class="estate">
+  <!-- ============ TOP: swipeable estate canvas (top half) ============ -->
+  <div class="estate-top">
+    <!-- title -->
+    <div class="title">
+      <span class="title-cap">Your estate</span>
+      <h1>{{ estateName() }}</h1>
+    </div>
+
+    <!-- currency chips -->
+    <div class="chips">
+      <button class="chip rent" (click)="collect()" [class.live]="est.rentIn > 0" [disabled]="est.rentIn <= 0">
+        <span class="chip-dot coin"></span>
+        <span class="chip-k">Rent in</span>
+        <b class="chip-v">{{ compact(est.rentIn) }}</b>
+      </button>
+      <div class="chip build">
+        <span class="chip-dot sip"></span>
+        <span class="chip-k">Build cost</span>
+        <b class="chip-v">{{ compact(est.buildCost) }}</b>
+      </div>
+    </div>
+
+    <!-- the isometric board — pan/scroll horizontally to see all plots -->
+    <div class="board-scroll">
+      <svg
+        class="board"
+        [attr.viewBox]="'0 0 ' + boardW + ' ' + boardH"
+        [attr.width]="boardW"
+        [attr.height]="boardH"
+        role="img"
+        aria-label="Your estate map"
+      >
+        <defs>
+          <linearGradient id="lawn" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5FA34A" />
+            <stop offset="100%" stop-color="#3E7D33" />
+          </linearGradient>
+          <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8a6b3f" />
+            <stop offset="100%" stop-color="#6b4f2b" />
+          </linearGradient>
+          <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FBFAF6" />
+            <stop offset="100%" stop-color="#E9E3D4" />
+          </linearGradient>
+        </defs>
+
+        <g [attr.transform]="'translate(' + offX + ',' + offY + ')'">
+          <ng-container *ngFor="let c of cells()">
+            <!-- OPEN plot: faint dashed diamond, tap to buy -->
+            <g *ngIf="!c.tile" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
+               [attr.aria-label]="'Open plot ' + (c.index + 1)">
+              <path class="plot-open" [attr.d]="diamond(c.x, c.y)" />
+              <text class="plot-plus" [attr.x]="c.x" [attr.y]="c.y + 6">+</text>
+            </g>
+
+            <!-- OWNED tile -->
+            <g *ngIf="c.tile as t" class="cell owned" (click)="tapCell(c)" role="button" tabindex="0"
+               [attr.aria-label]="t.label">
+              <!-- soil side (left + right faces for depth) -->
+              <path class="soil-l" [attr.d]="'M' + (c.x - TILE_W/2) + ',' + c.y + ' L' + c.x + ',' + (c.y + TILE_H/2) + ' L' + c.x + ',' + (c.y + TILE_H/2 + 12) + ' L' + (c.x - TILE_W/2) + ',' + (c.y + 12) + ' Z'" />
+              <path class="soil-r" [attr.d]="'M' + c.x + ',' + (c.y + TILE_H/2) + ' L' + (c.x + TILE_W/2) + ',' + c.y + ' L' + (c.x + TILE_W/2) + ',' + (c.y + 12) + ' L' + c.x + ',' + (c.y + TILE_H/2 + 12) + ' Z'" />
+              <!-- lawn top -->
+              <path class="lawn" [attr.d]="diamond(c.x, c.y)" />
+
+              <!-- LAND: just lawn + a little sprout -->
+              <text *ngIf="t.type === 'land'" class="sprout" [attr.x]="c.x" [attr.y]="c.y + 5">🌱</text>
+
+              <!-- BUILDING: scaffold that fills with build progress -->
+              <g *ngIf="t.type === 'building'">
+                <rect class="bld-frame" [attr.x]="c.x - 20" [attr.y]="c.y - 34" width="40" height="42" rx="3" />
+                <rect class="bld-fill" [attr.x]="c.x - 20"
+                      [attr.y]="c.y - 34 + (42 * (1 - est.buildProgress(t)))"
+                      width="40" [attr.height]="42 * est.buildProgress(t)" rx="3" />
+                <text class="bld-ico" [attr.x]="c.x" [attr.y]="c.y - 40">🏗️</text>
+              </g>
+
+              <!-- VILLA: a raised house block + roof + coin -->
+              <g *ngIf="t.type === 'villa'">
+                <rect class="villa-body" [attr.x]="c.x - 22" [attr.y]="c.y - 40" width="44" height="46" rx="4" />
+                <path class="villa-roof" [attr.d]="'M' + (c.x - 26) + ',' + (c.y - 40) + ' L' + c.x + ',' + (c.y - 58) + ' L' + (c.x + 26) + ',' + (c.y - 40) + ' Z'" />
+                <rect class="villa-door" [attr.x]="c.x - 6" [attr.y]="c.y - 16" width="12" height="22" rx="2" />
+                <circle class="villa-coin" [attr.cx]="c.x" [attr.cy]="c.y - 70" r="10" />
+                <text class="villa-coin-t" [attr.x]="c.x" [attr.y]="c.y - 66">₹</text>
+              </g>
+            </g>
+          </ng-container>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ============ BOTTOM: figures + legend ============ -->
+  <div class="estate-bottom">
+    <div class="collected">
+      <span class="col-k">Rent collected to date</span>
+      <b class="col-v">{{ compact(est.rentCollected()) }}</b>
+      <span class="col-hint" *ngIf="est.rentIn > 0">tap the coin to collect {{ compact(est.rentIn) }}</span>
+      <span class="col-hint" *ngIf="est.rentIn <= 0 && hasAny">build a villa to start earning rent</span>
+    </div>
+
+    <div class="legend" *ngIf="hasAny">
+      <span class="lg"><i class="sw villa"></i>{{ villas }} villa{{ villas === 1 ? '' : 's' }}</span>
+      <span class="lg"><i class="sw land"></i>{{ lands }} plot{{ lands === 1 ? '' : 's' }}</span>
+      <span class="lg"><i class="sw bld"></i>{{ buildings }} building</span>
+      <span class="lg"><i class="sw open"></i>{{ open }} open</span>
+    </div>
+
+    <!-- empty state: nothing owned yet -->
+    <div class="empty" *ngIf="!hasAny">
+      <p>You own nothing yet. Tap an open plot above to <b>buy your first land</b>.</p>
+    </div>
+
+    <p class="foot-note">
+      Assets are a metaphor for tiers of a fund portfolio in your own name.
+      Values are units at NAV and move daily.
+    </p>
+  </div>
+
+  <!-- ============ bottom nav ============ -->
+  <nav class="tabbar">
+    <button class="tab" (click)="explore.emit()">
+      <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
+      <span>Explore</span>
+    </button>
+    <button class="tab active">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="tab" (click)="progress.emit()">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 19V10M12 19V5M19 19v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Progress</span>
+    </button>
+  </nav>
+
+  <!-- ============ BUY SHEET ============ -->
+  <div class="buy-backdrop" *ngIf="buying()" (click)="cancelBuy()"></div>
+  <div class="buy-sheet" *ngIf="buying()">
+    <div class="bs-grab"></div>
+    <h2>Build on this plot</h2>
+    <p class="bs-lead">Pick what to put here. You can add more plots anytime.</p>
+
+    <button class="buy-opt land" (click)="buy('land', 'balanced')">
+      <span class="bo-ico">🌱</span>
+      <div class="bo-main">
+        <b>Land · {{ compact(1000000) }}</b>
+        <span>Pure growth. No rent — your money compounds in an equity basket.</span>
+      </div>
+      <span class="bo-go">›</span>
+    </button>
+
+    <button class="buy-opt building" (click)="buy('building', 'balanced')">
+      <span class="bo-ico">🏗️</span>
+      <div class="bo-main">
+        <b>Villa (SIP) · {{ compact(2000000) }}</b>
+        <span>Invest monthly. When it's fully built, it starts paying rent.</span>
+      </div>
+      <span class="bo-go">›</span>
+    </button>
+
+    <button class="buy-opt villa" (click)="buy('villa', 'balanced')">
+      <span class="bo-ico">🏡</span>
+      <div class="bo-main">
+        <b>Villa · {{ compact(3000000) }}</b>
+        <span>Ready to earn. Pays rent every month from day one.</span>
+      </div>
+      <span class="bo-go">›</span>
+    </button>
+
+    <button class="bs-cancel" (click)="cancelBuy()">Cancel</button>
+  </div>
+
+  <!-- collect toast -->
+  <div class="toast" *ngIf="collected() > 0">＋ {{ compact(collected()) }} rent collected</div>
+</section>

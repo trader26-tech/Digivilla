@@ -416,3 +416,18 @@
   .reveal, .filter-menu { animation: none; opacity: 1; transform: none; }
   .tile:active { transform: none; }
 }
+
+/* back-to-estate button in the toolbar */
+.sf-back {
+  flex: none;
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--survey);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.12s;
+}
+.sf-back:hover { border-color: var(--brass); }
+.sf-back:active { transform: scale(0.94); }
