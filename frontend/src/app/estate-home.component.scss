@@ -541,3 +541,31 @@
 .ref-tree-r  { fill: #4b8f26; }
 .ref-tree-l  { fill: #3f7a20; }
 .ref-tree-t  { fill: #6cba36; }
+
+/* ============ construction ported from the reference SVG ============ */
+.cx-brick-a { fill: #b98553; }
+.cx-brick-b { fill: #8a5a2f; }
+.cx-bag-t   { fill: #b0b6bd; }
+.cx-bag-f   { fill: #7c8189; }
+.cx-wall-r  { fill: #efe6d7; }
+.cx-wall-l  { fill: #d3c5ab; }
+.cx-wall-t  { fill: #b9ab90; }
+.cx-door    { fill: #8b7f68; }
+.cx-win     { fill: #3a5f7a; }
+.cx-joist   { fill: #9a6636; }
+.cx-post    { fill: #7d5027; }
+.cx-rail    { fill: none; stroke: #a97140; stroke-width: 1.7; stroke-linejoin: round; }
+.cx-plate   { fill: #b98553; }
+
+/* hammer swing + strike sparks, exactly the reference's two keyframes */
+.cx-hammer { transform-origin: 0px 0px; animation: hammer 1.15s cubic-bezier(.4,0,.6,1) infinite; }
+.cx-spark  { animation: spark 1.15s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes hammer { 0%,100% { transform: rotate(-8deg); } 40% { transform: rotate(-72deg); } 62% { transform: rotate(6deg); } }
+@keyframes spark  { 0%,58% { opacity: 0; } 64% { opacity: 1; } 78%,100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-hammer, .cx-spark { animation: none; }
+}
+
+/* town-hall parcel: paved border band around the civic plaza */
+.plaza-border { fill: #DDD3B8; stroke: #c6bb9c; stroke-width: 1; }
