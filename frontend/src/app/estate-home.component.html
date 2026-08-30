@@ -127,11 +127,11 @@
               <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 32, 0.18, 20)" />
               <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 32, 0.18, 20)" />
               <!-- clock face set INTO the tower's right wall -->
-              <circle class="clock" [attr.cx]="c.x + 7" [attr.cy]="c.y - 42" r="4.2" />
-              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 42"
-                    [attr.x2]="c.x + 7" [attr.y2]="c.y - 44.6" />
-              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 42"
-                    [attr.x2]="c.x + 8.9" [attr.y2]="c.y - 41.3" />
+              <circle class="clock" [attr.cx]="c.x + 8" [attr.cy]="c.y - 40" r="6.5" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 40"
+                    [attr.x2]="c.x + 8" [attr.y2]="c.y - 44" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 40"
+                    [attr.x2]="c.x + 11" [attr.y2]="c.y - 39" />
               <!-- tower cornice, then the roof lantern -->
               <path class="tower-cap-l" [attr.d]="boxLeft(c.x, c.y - 52, 0.22, 3.5)" />
               <path class="tower-cap-r" [attr.d]="boxRight(c.x, c.y - 52, 0.22, 3.5)" />
@@ -292,12 +292,11 @@
                   <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
 
-                <!-- floating rent coin -->
-                <!-- Rent coin. Sits directly above THIS villa's roof (the
-                     villa art is drawn at 1.25x, so the offset is scaled to
-                     match) — never over a neighbouring parcel. -->
-                <g class="coin-wrap" [attr.transform]="'translate(' + c.x + ',' + (c.y - 64) + ')'">
-                  <ellipse class="coin-shadow" cx="0" cy="12" rx="6" ry="2.2" />
+                <!-- Rent coin, anchored to THIS villa's roof apex (the roof
+                     top polygon peaks at c.y-58), so it always rides its own
+                     house and can never drift over another tile. -->
+                <g class="coin-wrap" [attr.transform]="'translate(' + (c.x + 1) + ',' + (c.y - 70) + ')'">
+                  <ellipse class="coin-shadow" cx="0" cy="11" rx="6" ry="2.2" />
                   <circle class="coin-face" cx="0" cy="0" r="8.5" />
                   <circle class="coin-ring" cx="0" cy="0" r="5.6" />
                   <text class="coin-glyph" x="0" y="3.4">₹</text>
