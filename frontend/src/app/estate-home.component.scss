@@ -112,19 +112,19 @@
 }
 .cell.open:hover .plot-open { fill: rgba(166, 124, 46, 0.10); stroke: var(--brass); }
 .peg { fill: rgba(150,140,120,0.55); }
-.plot-cta { opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
+.plot-cta { opacity: 1; transition: opacity 0.2s ease; pointer-events: none; }
 .plot-ring {
   fill: rgba(166,124,46,0.12);
   stroke: var(--brass);
   stroke-width: 1.3;
   stroke-dasharray: 3 3;
 }
-.plot-ico { fill: none; stroke: var(--brass); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.plot-ico { fill: none; stroke: var(--brass); stroke-width: 2.4; stroke-linecap: round; }
 .cell.open:hover .plot-cta,
 .cell.open:focus-visible .plot-cta { opacity: 1; }
-/* on touch there is no hover — keep a soft always-on hint */
+/* the + is always visible on every open plot */
 @media (hover: none) {
-  .plot-cta { opacity: 0.45; }
+  .plot-cta { opacity: 1; }
 }
 
 .lawn { fill: url(#lawn); stroke: #2f6127; stroke-width: 1; }
