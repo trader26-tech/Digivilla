@@ -292,15 +292,6 @@
                   <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
                 </g>
 
-                <!-- Rent coin, anchored to THIS villa's roof apex (the roof
-                     top polygon peaks at c.y-58), so it always rides its own
-                     house and can never drift over another tile. -->
-                <g class="coin-wrap" [attr.transform]="'translate(' + (c.x + 1) + ',' + (c.y - 70) + ')'">
-                  <ellipse class="coin-shadow" cx="0" cy="11" rx="6" ry="2.2" />
-                  <circle class="coin-face" cx="0" cy="0" r="8.5" />
-                  <circle class="coin-ring" cx="0" cy="0" r="5.6" />
-                  <text class="coin-glyph" x="0" y="3.4">₹</text>
-                </g>
               </g>
             </g>
           </ng-container>

@@ -32,7 +32,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
 })
 export class AppComponent {
   /** The opening animation plays first; flips false when it finishes. */
-  intro = false;
+  intro = true;
 
   /** Which top-level view is showing under the home. */
   view: 'home' | 'storefront' = 'home';
