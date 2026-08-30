@@ -190,6 +190,94 @@ export class EstateHomeComponent {
     ];
   }
 
+  // ==========================================================================
+  //  RICH ASSET LIBRARY — deterministic, seeded per tile so the estate looks
+  //  hand-placed but never re-shuffles between renders.
+  // ==========================================================================
+
+  /** Deterministic pseudo-random in [0,1) from a string seed + index. */
+  private rnd(seed: string, i: number): number {
+    let h = 2166136261;
+    const s = seed + ':' + i;
+    for (let k = 0; k < s.length; k++) {
+      h ^= s.charCodeAt(k);
+      h = Math.imul(h, 16777619);
+    }
+    return ((h >>> 0) % 10000) / 10000;
+  }
+
+  /** Scatter n points inside the tile diamond, avoiding a central keep-out. */
+  private scatter(
+    seed: string,
+    n: number,
+    keepOut = 0.42,
+    spread = 0.86,
+  ): { x: number; y: number; s: number }[] {
+    const out: { x: number; y: number; s: number }[] = [];
+    for (let i = 0; i < n; i++) {
+      // isometric barycentric-ish placement: u,v along the two tile axes
+      let u = this.rnd(seed, i * 3) * 2 - 1;
+      let v = this.rnd(seed, i * 3 + 1) * 2 - 1;
+      const m = Math.abs(u) + Math.abs(v);
+      if (m > spread) { u *= spread / m; v *= spread / m; }
+      if (m < keepOut) { const k = keepOut / (m || 0.001); u *= k; v *= k; }
+      const x = (u + v) * (TILE_W / 4);
+      const y = (v - u) * (TILE_H / 4);
+      out.push({ x, y, s: 0.8 + this.rnd(seed, i * 3 + 2) * 0.5 });
+    }
+    return out;
+  }
+
+  /** Tree / bush cluster placements for a tile. */
+  trees(seed: string, n = 5): { x: number; y: number; s: number }[] {
+    return this.scatter(seed + '|tree', n, 0.5, 0.9);
+  }
+  /** Small grass tufts sprinkled across the lawn. */
+  tufts(seed: string, n = 10): { x: number; y: number; s: number }[] {
+    return this.scatter(seed + '|tuft', n, 0.15, 0.92);
+  }
+  /** Stepping-stone path points from the tile's front corner to the house. */
+  pathStones(x: number, y: number): { x: number; y: number }[] {
+    const out: { x: number; y: number }[] = [];
+    for (let i = 0; i < 4; i++) {
+      const t = 0.25 + i * 0.19;
+      out.push({ x: x - t * (TILE_W / 2) * 0.55, y: y + (1 - t) * (TILE_H / 2) * 0.8 });
+    }
+    return out;
+  }
+
+  /** Vertical scaffold poles around a construction volume. */
+  scaffold(x: number, y: number, h: number): { x1: number; y1: number; x2: number; y2: number }[] {
+    const hw = (TILE_W / 2) * 0.56;
+    const hh = (TILE_H / 2) * 0.56;
+    const corners = [
+      { cx: x - hw, cy: y },
+      { cx: x, cy: y - hh },
+      { cx: x + hw, cy: y },
+      { cx: x, cy: y + hh },
+    ];
+    return corners.map((c) => ({ x1: c.cx, y1: c.cy + 6, x2: c.cx, y2: c.cy + 6 - h - 8 }));
+  }
+  /** Horizontal scaffold rings at two heights. */
+  scaffoldRings(x: number, y: number, h: number): string[] {
+    const hw = (TILE_W / 2) * 0.56;
+    const hh = (TILE_H / 2) * 0.56;
+    const ring = (dy: number) =>
+      `M${x - hw},${y + 6 - dy} L${x},${y - hh + 6 - dy} L${x + hw},${y + 6 - dy} L${x},${y + hh + 6 - dy} Z`;
+    return [ring(h * 0.45 + 6), ring(h + 6)];
+  }
+  /** Floor-slab lines showing storeys inside the built volume. */
+  floorSlabs(x: number, y: number, h: number, n = 3): string[] {
+    const out: string[] = [];
+    const hw = (TILE_W / 2) * 0.52;
+    const hh = (TILE_H / 2) * 0.52;
+    for (let i = 1; i <= n; i++) {
+      const dy = (h / (n + 1)) * i;
+      out.push(`M${x - hw},${y + 6 - dy} L${x},${y + hh + 6 - dy} L${x + hw},${y + 6 - dy}`);
+    }
+    return out;
+  }
+
   // ---------------- interaction ----------------
   tapCell(c: Cell): void {
     if (navigator.vibrate) navigator.vibrate(4);

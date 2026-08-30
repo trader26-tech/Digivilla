@@ -94,41 +94,92 @@
 .soil-l { fill: #6b4f2b; }
 .soil-r { fill: #513a1e; }
 
-/* ground details */
-.patio { fill: rgba(255,255,255,0.20); stroke: rgba(255,255,255,0.35); stroke-width: 0.8; }
-.site  { fill: rgba(255,255,255,0.14); stroke: rgba(255,255,255,0.28); stroke-width: 0.8; }
-.pool  { fill: #4FA8D8; stroke: #eaf6fb; stroke-width: 1.2; }
+/* ---- ground details ---- */
+.deck  { fill: #EFE7D3; stroke: #dcd0b4; stroke-width: 0.7; }
+.pool  { fill: #3FA0D6; stroke: #eaf6fb; stroke-width: 1.1; }
+.pool-hi { fill: rgba(255,255,255,0.35); }
+.pad   { fill: #C9B893; stroke: #b3a077; stroke-width: 0.8; }
+.stone { fill: #E4DCC6; stroke: #cbbf9f; stroke-width: 0.6; }
 
-/* hedges — small green cubes */
-.hedge-top { fill: #6FBF52; }
-.hedge-l   { fill: #4E9138; }
-.hedge-r   { fill: #3E7A2C; }
+/* grass tufts */
+.tuft { stroke: #2F6B27; stroke-width: 1.1; stroke-linecap: round; fill: none; opacity: 0.75; }
+
+/* trees — trunk + layered leaf blobs, lit from top-left */
+.shade  { fill: rgba(20,50,25,0.22); }
+.trunk  { fill: #7A5326; }
+.leaf-d { fill: #2F6B2A; }
+.leaf-m { fill: #3C8034; }
+.leaf-l { fill: #56A343; }
+
+/* stone plot marker */
+.stone-t { fill: #E8E1CE; }
+.stone-l { fill: #CFC5AB; }
+.stone-r { fill: #B8AC8E; }
 
 /* wooden fence */
-.fence-rail { fill: none; stroke: #9A6B3A; stroke-width: 2; stroke-linecap: round; }
-.fence-post { stroke: #9A6B3A; stroke-width: 2.4; stroke-linecap: round; }
+.fence-rail { fill: none; stroke: #9A6B3A; stroke-width: 1.8; stroke-linecap: round; }
+.fence-post { stroke: #8A5E31; stroke-width: 2.2; stroke-linecap: round; }
 
-/* villa — cream cube, brass roof slab, blue windows */
-.villa-top { fill: #FBF8F0; }
-.villa-l   { fill: #E7DFCC; }
-.villa-r   { fill: #D4C9B0; }
-.win       { fill: #3E7FA8; opacity: 0.92; }
-.roof-top  { fill: #C99A4E; }
+/* ---- villa: warm white volumes, lit top-left ---- */
+.villa-top { fill: #FDFBF5; }
+.villa-l   { fill: #EBE3D0; }
+.villa-r   { fill: #D3C7AC; }
+.wing-t    { fill: #F7F3E9; }
+.wing-l    { fill: #E4DCC7; }
+.wing-r    { fill: #CCC0A4; }
+
+/* glazing */
+.win     { fill: #3C7FA8; opacity: 0.95; }
+.win.dim { fill: #4E8FB4; opacity: 0.78; }
+.win-sm  { fill: #4E8FB4; opacity: 0.85; }
+.door    { fill: #6B4A28; }
+.step    { fill: #E2D9C2; }
+
+/* balcony */
+.balc-slab  { fill: #EFE9DA; }
+.balc-glass { fill: rgba(120,180,210,0.42); stroke: rgba(255,255,255,0.6); stroke-width: 0.6; }
+.balc-rail  { stroke: #cfc7b2; stroke-width: 1.2; stroke-linecap: round; }
+
+/* roofs — brass slabs with darker fascia */
+.roof-top  { fill: #CFA057; }
 .roof-l    { fill: #A87B36; }
-.roof-r    { fill: #8E6529; }
-.roof-disc { fill: #E9E1CE; stroke: #b9a77f; stroke-width: 0.8; }
+.roof-r    { fill: #8A6127; }
+.roof-deck { fill: #DCC48C; }
+.roof2-t   { fill: #C6974F; }
+.roof2-l   { fill: #A17431; }
+.roof2-r   { fill: #856024; }
+.roof-disc { fill: #4E9138; stroke: #3b6f2a; stroke-width: 0.8; }
 
-/* under-construction volume */
+/* chimney */
+.chim-t { fill: #EFE7D6; }
+.chim-l { fill: #D6CBB2; }
+.chim-r { fill: #BCAF92; }
+
+/* ---- construction ---- */
 .ghost-top, .ghost-l, .ghost-r {
-  fill: rgba(255,255,255,0.10);
-  stroke: rgba(154,107,58,0.55);
-  stroke-width: 1;
+  fill: rgba(255,255,255,0.14);
+  stroke: rgba(140,110,60,0.5);
+  stroke-width: 0.9;
   stroke-dasharray: 3 3;
 }
-.bld-top { fill: #EFE7D6; }
-.bld-l   { fill: #D8CDB6; }
-.bld-r   { fill: #C3B79C; }
-.bld-top, .bld-l, .bld-r { transition: d 0.5s cubic-bezier(0.22,1,0.36,1); }
+.bld-top { fill: #D9D2C2; }
+.bld-l   { fill: #C2B9A2; }
+.bld-r   { fill: #A79C82; }
+.slab    { fill: none; stroke: rgba(90,74,48,0.55); stroke-width: 1.1; }
+
+.scaf-ring { fill: none; stroke: #C08A3E; stroke-width: 1; opacity: 0.85; }
+.scaf-pole { stroke: #C08A3E; stroke-width: 1.4; stroke-linecap: round; opacity: 0.9; }
+
+.crane-mast  { stroke: #D8A13F; stroke-width: 2.4; stroke-linecap: round; }
+.crane-jib   { stroke: #D8A13F; stroke-width: 2.2; stroke-linecap: round; }
+.crane-tie   { stroke: #D8A13F; stroke-width: 1; opacity: 0.8; }
+.crane-cable { stroke: #8a7a5c; stroke-width: 0.9; }
+.crane-load  { fill: #A87B36; }
+
+.mat-t { fill: #C97C57; }
+.mat-l { fill: #A65F3F; }
+.mat-r { fill: #8C4E33; }
+.sand  { fill: #DCC48C; }
 
 /* floating rent coin */
 .coin-wrap { animation: bob 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
@@ -271,4 +322,17 @@
 @media (prefers-reduced-motion: reduce) {
   .villa-coin, .buy-sheet, .toast, .buy-backdrop { animation: none; }
   .bld-fill { transition: none; }
+}
+
+/* build-progress badge on the construction tile */
+.prog-badge rect {
+  fill: #16302B;
+  opacity: 0.92;
+}
+.prog-badge text {
+  fill: #FAF8F3;
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+  letter-spacing: 0.2px;
 }
