@@ -11,6 +11,7 @@ import {
   riskOf,
   schemeName,
 } from './property-package.data';
+import { pct } from './shared/format.util';
 
 /** One plotted scheme on the risk × reward map. */
 interface Pin {
@@ -46,6 +47,7 @@ const PROP_COLOR: Record<PropertyKey, string> = {
   styleUrl: './risk-map.component.scss',
 })
 export class RiskMapComponent implements OnInit {
+  pct = pct;
   @Input() property: PropertyKey = 'flat';
   @Input() initialVariant: VariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
@@ -140,9 +142,5 @@ export class RiskMapComponent implements OnInit {
     return { x1: this.padL, y1: this.H - this.padB, x2: this.W - this.padR, y2: this.padT };
   }
 
-  pct(v: number | null | undefined, dp = 1): string {
-    if (v == null) return '—';
-    return v.toFixed(dp) + '%';
-  }
   trackPin = (_: number, p: Pin): string => `${p.property}:${p.variant}`;
 }

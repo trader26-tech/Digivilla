@@ -24,6 +24,7 @@ import {
 } from './estate/board-layout';
 import { MapGestures, MapViewport } from './estate/map-gestures';
 import * as iso from './estate/iso-draw';
+import { compact } from './shared/format.util';
 
 /** Ticket price for one parcel; villas and builds are multiples of it. */
 const PLOT_TICKET = 10_00_000;
@@ -244,11 +245,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return LOCALITIES[this.est.tiles().length % LOCALITIES.length];
   }
 
-  compact(v: number): string {
-    if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(2).replace(/\.?0+$/, '')} Cr`;
-    if (v >= 1_00_000) return `₹${(v / 1_00_000).toFixed(1).replace(/\.0$/, '')} L`;
-    return `₹${Math.round(v).toLocaleString('en-IN')}`;
-  }
+  compact = compact;
 
   get villas(): number { return this.est.countOf('villa'); }
   get buildings(): number { return this.est.countOf('building'); }

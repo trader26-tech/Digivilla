@@ -9,6 +9,7 @@ import {
   schemeName, schemeLocality, past3y, past5y,
 } from './property-package.data';
 import { RevealDirective } from './reveal.directive';
+import { inr, compact, pct } from './shared/format.util';
 
 export type LandVariantKey = VariantKey;
 
@@ -101,6 +102,9 @@ interface ChartSource {
   styleUrl: './estate-detail.component.scss',
 })
 export class EstateDetailComponent implements OnInit, OnDestroy {
+  inr = inr;
+  compact = compact;
+  pct = pct;
   @Input() property: PropertyKey = 'flat';
   @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
@@ -695,29 +699,6 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   }
 
   // ── Formatting ──────────────────────────────────────────────────────────────
-  inr(v: number | null | undefined): string {
-    if (v == null) return '—';
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
-
-  compact(v: number | null | undefined): string {
-    if (v == null) return '—';
-    if (v >= 1_00_00_000) {
-      const cr = v / 1_00_00_000;
-      return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr';
-    }
-    if (v >= 1_00_000) {
-      const l = v / 1_00_000;
-      return '₹' + (l % 1 === 0 ? l : l.toFixed(2).replace(/\.?0+$/, '')) + 'L';
-    }
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
-
-  pct(v: number | null | undefined, dp = 1): string {
-    if (v == null) return '—';
-    return v.toFixed(dp) + '%';
-  }
-
   sharpe(m: BasketMetrics | null): number | null {
     if (!m || m.expected_return == null || !m.volatility) return null;
     return (m.expected_return - 6.5) / m.volatility;

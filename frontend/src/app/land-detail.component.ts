@@ -6,6 +6,7 @@ import { BasketMetrics, LandDetailService } from './land-detail.service';
 import { BookingSheetComponent } from './booking-sheet.component';
 import { schemeName, schemeLocality } from './property-package.data';
 import { RevealDirective } from './reveal.directive';
+import { inr, compact, pct } from './shared/format.util';
 
 export type LandVariantKey = 'conservative' | 'balanced' | 'aggressive';
 
@@ -113,6 +114,9 @@ interface ChartSource {
   styleUrl: './land-detail.component.scss',
 })
 export class LandDetailComponent implements OnInit, OnDestroy {
+  inr = inr;
+  compact = compact;
+  pct = pct;
   /** Whether the "reserve → book a consultation" sheet is open. */
   booking = signal(false);
   openBooking(): void {
@@ -676,29 +680,6 @@ export class LandDetailComponent implements OnInit, OnDestroy {
   }
 
   // ── Formatting ──────────────────────────────────────────────────────────────
-  inr(v: number | null | undefined): string {
-    if (v == null) return '—';
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
-
-  compact(v: number | null | undefined): string {
-    if (v == null) return '—';
-    if (v >= 1_00_00_000) {
-      const cr = v / 1_00_00_000;
-      return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr';
-    }
-    if (v >= 1_00_000) {
-      const l = v / 1_00_000;
-      return '₹' + (l % 1 === 0 ? l : l.toFixed(2).replace(/\.?0+$/, '')) + 'L';
-    }
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
-
-  pct(v: number | null | undefined, dp = 1): string {
-    if (v == null) return '—';
-    return v.toFixed(dp) + '%';
-  }
-
   sharpe(m: BasketMetrics | null): number | null {
     if (!m || m.expected_return == null || !m.volatility) return null;
     return (m.expected_return - 6.5) / m.volatility;

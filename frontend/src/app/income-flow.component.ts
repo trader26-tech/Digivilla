@@ -7,6 +7,7 @@ import {
   VariantKey,
   totalMonthlyIncome,
 } from './property-package.data';
+import { inr, compact } from './shared/format.util';
 
 /**
  * "How you get paid" — a VISUAL, animated explainer for the monthly income of
@@ -24,6 +25,8 @@ import {
   styleUrl: './income-flow.component.scss',
 })
 export class IncomeFlowComponent implements OnDestroy {
+  inr = inr;
+  compact = compact;
   @Input({ required: true }) property!: PropertyKey;
   @Input({ required: true }) variant!: VariantKey;
 
@@ -97,20 +100,4 @@ export class IncomeFlowComponent implements OnDestroy {
   ngOnDestroy(): void { this.pause(); }
 
   // formatting
-  inr(v: number | null | undefined): string {
-    if (v == null) return '—';
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
-  compact(v: number | null | undefined): string {
-    if (v == null) return '—';
-    if (v >= 1_00_00_000) {
-      const cr = v / 1_00_00_000;
-      return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr';
-    }
-    if (v >= 1_00_000) {
-      const l = v / 1_00_000;
-      return '₹' + (l % 1 === 0 ? l : l.toFixed(1).replace(/\.0$/, '')) + 'L';
-    }
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
 }

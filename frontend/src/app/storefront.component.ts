@@ -7,6 +7,7 @@ import {
   expectedGrowth, past3y, RISK_OF_STORE,
   riskScore, RiskScore,
 } from './property-package.data';
+import { inr, compact } from './shared/format.util';
 
 export type VariantKey = 'ready' | 'construction' | 'prelaunch';
 export type FilterKey = 'all' | 'income' | 'growth' | 'ready' | 'construction' | 'prelaunch';
@@ -48,6 +49,8 @@ export interface Property {
   styleUrl: './storefront.component.scss',
 })
 export class StorefrontComponent {
+  inr = inr;
+  compact = compact;
   readonly variantOrder: VariantKey[] = ['ready', 'construction', 'prelaunch'];
 
   /** Fires when the customer opens a tier's detail page. Emits the property
@@ -225,21 +228,5 @@ export class StorefrontComponent {
   ];
 
   /** Indian-format rupees: ₹25,00,000. */
-  inr(v: number | null): string {
-    if (v == null) return '';
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
-
   /** Compact for tight spots: ₹10L, ₹1Cr. */
-  compact(v: number): string {
-    if (v >= 1_00_00_000) {
-      const cr = v / 1_00_00_000;
-      return '₹' + (cr % 1 === 0 ? cr : cr.toFixed(2).replace(/\.?0+$/, '')) + 'Cr';
-    }
-    if (v >= 1_00_000) {
-      const l = v / 1_00_000;
-      return '₹' + (l % 1 === 0 ? l : l.toFixed(1).replace(/\.0$/, '')) + 'L';
-    }
-    return '₹' + Math.round(v).toLocaleString('en-IN');
-  }
 }
