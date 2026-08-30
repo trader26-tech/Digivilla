@@ -32,9 +32,15 @@ export const TOTAL_PLOTS = 120;
 @Injectable({ providedIn: 'root' })
 export class EstateService {
   /** Owned tiles, newest last. A signal so the estate re-renders on change. */
-  readonly tiles = signal<Tile[]>(this.load());
+  readonly tiles = signal<Tile[]>(this.seedDemo());
   /** Lifetime rent collected (tapping the coin adds the pending rent). */
   readonly rentCollected = signal<number>(this.loadRent());
+
+  private seedDemo(): Tile[] {
+    const n = Date.now() - 8640000000;
+    const v = (id: string): Tile => ({ id, type:'villa', variant:'balanced', cost:3000000, sipMonthly:0, sipAccrued:0, rentMonthly:15000, boughtAt:n, label:id });
+    return [v('a'), v('b'), v('c')];
+  }
 
   // ---------------- persistence ----------------
   private load(): Tile[] {
