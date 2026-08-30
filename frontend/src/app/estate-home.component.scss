@@ -77,6 +77,10 @@
   scrollbar-width: none;
   overscroll-behavior: contain;
   cursor: grab;
+  /* we drive pan/pinch ourselves, so stop the browser hijacking the gestures */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .board-scroll::-webkit-scrollbar { display: none; }
 .board-scroll:active { cursor: grabbing; }
@@ -440,3 +444,14 @@
 .dome     { fill: #2E6B4F; }
 .dome-hi  { fill: rgba(255,255,255,0.18); }
 .finial   { fill: #C9A227; stroke: #9c7c1c; stroke-width: 1; }
+
+/* ---- town hall: functional civic building ---- */
+.course        { fill: #C9BC9C; }          /* string course between storeys */
+.portico-t     { fill: #F7F2E4; }
+.portico-l     { fill: #E3D9C1; }
+.portico-r     { fill: #CABE9F; }
+.tower-cap-t   { fill: #E6DCC4; }
+.tower-cap-l   { fill: #D2C6A9; }
+.tower-cap-r   { fill: #B9AC8B; }
+.tower-roof-l  { fill: #2E6B4F; }
+.tower-roof-r  { fill: #24563F; }

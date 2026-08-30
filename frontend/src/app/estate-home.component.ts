@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   AfterViewInit,
+  OnDestroy,
   Component,
   ElementRef,
   EventEmitter,
@@ -38,7 +39,7 @@ const GRID = 11;      // a wide board — feels boundless; the viewport scrolls 
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
-export class EstateHomeComponent implements AfterViewInit {
+export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
 
   /** Tapping a built tile asks the shell to open its detail page. */
@@ -65,16 +66,137 @@ export class EstateHomeComponent implements AfterViewInit {
   readonly MAX_ZOOM = 2.2;
   zoom = signal(1);
 
-  zoomIn(): void {
-    this.zoom.update((z) => Math.min(this.MAX_ZOOM, +(z * 1.25).toFixed(3)));
-    setTimeout(() => this.centreOnHall(), 0);
+  /** Zoom about the centre of the viewport, keeping that point steady. */
+  private zoomBy(factor: number): void {
+    const el = this.scroller?.nativeElement;
+    const before = this.zoom();
+    const after = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, +(before * factor).toFixed(3)));
+    if (after === before) return;
+    if (!el) { this.zoom.set(after); return; }
+    // keep the viewport centre anchored across the zoom
+    const cx = el.scrollLeft + el.clientWidth / 2;
+    const cy = el.scrollTop + el.clientHeight / 2;
+    const k = after / before;
+    this.zoom.set(after);
+    requestAnimationFrame(() => {
+      el.scrollLeft = cx * k - el.clientWidth / 2;
+      el.scrollTop = cy * k - el.clientHeight / 2;
+    });
   }
-  zoomOut(): void {
-    this.zoom.update((z) => Math.max(this.MIN_ZOOM, +(z / 1.25).toFixed(3)));
-    setTimeout(() => this.centreOnHall(), 0);
-  }
+  zoomIn(): void { this.zoomBy(1.25); }
+  zoomOut(): void { this.zoomBy(1 / 1.25); }
   get canZoomIn(): boolean { return this.zoom() < this.MAX_ZOOM - 0.001; }
   get canZoomOut(): boolean { return this.zoom() > this.MIN_ZOOM + 0.001; }
+
+  // ================= touch gestures (mobile-first PWA) =================
+  private pinchStartDist = 0;
+  private pinchStartZoom = 1;
+  private panStartX = 0;
+  private panStartY = 0;
+  private panScrollX = 0;
+  private panScrollY = 0;
+  private panning = false;
+  /** True while a pinch/pan is in flight, so a tap doesn't fire a buy sheet. */
+  private gestured = false;
+
+  private dist(t: TouchList): number {
+    const dx = t[0].clientX - t[1].clientX;
+    const dy = t[0].clientY - t[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  onTouchStart(ev: TouchEvent): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    if (ev.touches.length === 2) {
+      this.pinchStartDist = this.dist(ev.touches);
+      this.pinchStartZoom = this.zoom();
+      this.panning = false;
+      this.gestured = true;
+    } else if (ev.touches.length === 1) {
+      this.panning = true;
+      this.panStartX = ev.touches[0].clientX;
+      this.panStartY = ev.touches[0].clientY;
+      this.panScrollX = el.scrollLeft;
+      this.panScrollY = el.scrollTop;
+    }
+  }
+
+  onTouchMove(ev: TouchEvent): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+
+    if (ev.touches.length === 2 && this.pinchStartDist > 0) {
+      ev.preventDefault();
+      const ratio = this.dist(ev.touches) / this.pinchStartDist;
+      const target = Math.max(
+        this.MIN_ZOOM,
+        Math.min(this.MAX_ZOOM, +(this.pinchStartZoom * ratio).toFixed(3)),
+      );
+      const before = this.zoom();
+      if (target !== before) {
+        const cx = el.scrollLeft + el.clientWidth / 2;
+        const cy = el.scrollTop + el.clientHeight / 2;
+        const k = target / before;
+        this.zoom.set(target);
+        requestAnimationFrame(() => {
+          el.scrollLeft = cx * k - el.clientWidth / 2;
+          el.scrollTop = cy * k - el.clientHeight / 2;
+        });
+      }
+      this.gestured = true;
+      return;
+    }
+
+    if (this.panning && ev.touches.length === 1) {
+      const dx = ev.touches[0].clientX - this.panStartX;
+      const dy = ev.touches[0].clientY - this.panStartY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this.gestured = true;
+      el.scrollLeft = this.panScrollX - dx;
+      el.scrollTop = this.panScrollY - dy;
+      ev.preventDefault(); // we own the scroll, so the page never rubber-bands
+    }
+  }
+
+  onTouchEnd(ev: TouchEvent): void {
+    if (ev.touches.length === 0) {
+      this.panning = false;
+      this.pinchStartDist = 0;
+      // let the tap handler see the flag, then clear it
+      setTimeout(() => (this.gestured = false), 0);
+    }
+  }
+
+  /** Mouse drag-to-pan on desktop. */
+  onMouseDown(ev: MouseEvent): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    this.panning = true;
+    this.panStartX = ev.clientX;
+    this.panStartY = ev.clientY;
+    this.panScrollX = el.scrollLeft;
+    this.panScrollY = el.scrollTop;
+  }
+  onMouseMove(ev: MouseEvent): void {
+    const el = this.scroller?.nativeElement;
+    if (!el || !this.panning) return;
+    const dx = ev.clientX - this.panStartX;
+    const dy = ev.clientY - this.panStartY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this.gestured = true;
+    el.scrollLeft = this.panScrollX - dx;
+    el.scrollTop = this.panScrollY - dy;
+  }
+  onMouseUp(): void {
+    this.panning = false;
+    setTimeout(() => (this.gestured = false), 0);
+  }
+
+  /** Ctrl/⌘ + wheel zooms; plain wheel scrolls the map. */
+  onWheel(ev: WheelEvent): void {
+    if (!ev.ctrlKey && !ev.metaKey) return;
+    ev.preventDefault();
+    this.zoomBy(ev.deltaY < 0 ? 1.1 : 1 / 1.1);
+  }
 
   /** The board: a town hall dead centre, with plots filling outward from it
    *  ring by ring, so the town always grows around the landmark. */
@@ -138,7 +260,7 @@ export class EstateHomeComponent implements AfterViewInit {
   /** Rendered size = intrinsic × zoom. The SVG is drawn bigger/smaller than its
    *  viewBox, so the scroll container shows a zoomed slice of the town.
    *  ZOOM_BASE is tuned so that at zoom 1 roughly a 3×3 patch fills the view. */
-  private readonly ZOOM_BASE = 1.12;
+  private readonly ZOOM_BASE = 0.92;
   get renderW(): number {
     return this.boardW * this.ZOOM_BASE * this.zoom();
   }
@@ -246,6 +368,8 @@ export class EstateHomeComponent implements AfterViewInit {
   }
   /** Pane positions for a wall: two openings set toward the ends. */
   readonly paneSpots = [0.14, 0.62];
+  /** Evenly spaced window positions across a town-hall wall. */
+  readonly hallWinSpots = [0.10, 0.34, 0.58, 0.80];
 
   /** Fence posts + rail along the two far edges of a tile (back-left, back-right). */
   fencePath(x: number, y: number): string {
@@ -328,54 +452,38 @@ export class EstateHomeComponent implements AfterViewInit {
     return out;
   }
 
-  // ---- perimeter fence: posts + rails around the whole plot ----------------
-  /** Rails around all four edges of a tile, at the given height. */
-  perimeterRails(x: number, y: number, inset = 0.88, t = 10): string {
+  // ---- FRONT fence only: the two near edges -------------------------------
+  // In this isometric projection the two edges meeting at the BOTTOM corner
+  // (south) are the near ones. Drawing the back edges too made the fence run
+  // across the buildings, which looked wrong — so we only draw the front.
+
+  /** Two rails along the two FRONT edges (left→bottom and bottom→right). */
+  perimeterRails(x: number, y: number, inset = 0.9, t = 9): string {
     const hw = (TILE_W / 2) * inset;
     const hh = (TILE_H / 2) * inset;
-    const ring = (dy: number) =>
-      `M${x - hw},${y - dy} L${x},${y - hh - dy} L${x + hw},${y - dy} L${x},${y + hh - dy} Z`;
-    return `${ring(2)} ${ring(2 + t)}`;
+    const rail = (dy: number) =>
+      `M${x - hw},${y - dy} L${x},${y + hh - dy} L${x + hw},${y - dy}`;
+    return `${rail(2)} ${rail(2 + t)}`;
   }
-  /** Fence posts spaced around all four edges. */
+  /** Posts along the two FRONT edges only. */
   perimeterPosts(
     x: number,
     y: number,
-    inset = 0.88,
-    t = 12,
+    inset = 0.9,
+    t = 11,
   ): { x1: number; y1: number; x2: number; y2: number }[] {
     const hw = (TILE_W / 2) * inset;
     const hh = (TILE_H / 2) * inset;
-    const corners = [
-      { x: x - hw, y: y },
-      { x: x, y: y - hh },
-      { x: x + hw, y: y },
-      { x: x, y: y + hh },
-    ];
+    const left = { x: x - hw, y: y };
+    const bottom = { x: x, y: y + hh };
+    const right = { x: x + hw, y: y };
     const out: { x1: number; y1: number; x2: number; y2: number }[] = [];
-    for (let i = 0; i < 4; i++) {
-      const a = corners[i];
-      const b = corners[(i + 1) % 4];
-      for (const f of [0, 0.5]) {
+    for (const [a, b] of [[left, bottom], [bottom, right]] as const) {
+      for (const f of [0, 0.5, 1]) {
         const px = a.x + (b.x - a.x) * f;
         const py = a.y + (b.y - a.y) * f;
         out.push({ x1: px, y1: py - 2, x2: px, y2: py - 2 - t });
       }
-    }
-    return out;
-  }
-
-  /** Column positions across the town hall's two visible faces. */
-  hallColumns(x: number, y: number): { x: number; y: number }[] {
-    const w = 0.54;
-    const hw = (TILE_W / 2) * w;
-    const hh = (TILE_H / 2) * w;
-    const out: { x: number; y: number }[] = [];
-    for (const f of [0.12, 0.34, 0.56, 0.78]) {
-      // left face: from left corner toward centre
-      out.push({ x: x - hw + hw * f, y: y + hh * f });
-      // right face: from centre toward right corner
-      out.push({ x: x + hw * f, y: y + hh * (1 - f) });
     }
     return out;
   }
@@ -440,25 +548,56 @@ export class EstateHomeComponent implements AfterViewInit {
   }
 
   /** Open centred on the town hall, so the landmark greets you first. */
+  private ro?: ResizeObserver;
+
   ngAfterViewInit(): void {
     this.centreOnHall();
-    // re-centre once layout has settled (fonts/sizing can shift it)
-    setTimeout(() => this.centreOnHall(), 0);
+    requestAnimationFrame(() => this.centreOnHall());
+    // Re-centre the first time the container reports a real size (and on any
+    // later resize / rotate), which is more reliable than guessing timings.
+    const el = this.scroller?.nativeElement;
+    if (el && typeof ResizeObserver !== 'undefined') {
+      let settled = false;
+      this.ro = new ResizeObserver(() => {
+        if (!settled && el.clientWidth > 0) {
+          settled = true;
+          this.centreOnHall();
+        }
+      });
+      this.ro.observe(el);
+    }
   }
 
+  ngOnDestroy(): void {
+    this.ro?.disconnect();
+  }
+
+  /** Centre the view on the TOWN — the hall plus whatever has been built — so
+   *  the interesting part is always in frame, not a corner of empty grid. */
   private centreOnHall(): void {
     const el = this.scroller?.nativeElement;
-    if (!el) return;
+    if (!el || !el.clientWidth) return;
+
+    // bounding box (viewBox units) of the hall + every owned tile
     const mid = Math.floor(GRID / 2);
-    // hall centre in viewBox units, then converted to rendered pixels
-    const hallX = (this.offX) * this.scale;
-    const hallY = (this.offY + (mid + mid) * (TILE_H / 2)) * this.scale;
-    el.scrollLeft = Math.round(hallX - el.clientWidth / 2);
-    el.scrollTop = Math.round(hallY - el.clientHeight / 2);
+    let minX = 0, maxX = 0, minY = 0, maxY = 0; // hall is at local (0, mid*TILE_H)
+    const hallY = (mid + mid) * (TILE_H / 2);
+    minY = maxY = hallY;
+    for (const c of this.cells()) {
+      if (!c.tile && !c.hall) continue;
+      minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
+      minY = Math.min(minY, c.y); maxY = Math.max(maxY, c.y);
+    }
+    const cx = (this.offX + (minX + maxX) / 2) * this.scale;
+    const cy = (this.offY + (minY + maxY) / 2) * this.scale;
+
+    el.scrollLeft = Math.round(cx - el.clientWidth / 2);
+    el.scrollTop = Math.round(cy - el.clientHeight / 2);
   }
 
   // ---------------- interaction ----------------
   tapCell(c: Cell): void {
+    if (this.gestured) return; // it was a pan/pinch, not a tap
     if (navigator.vibrate) navigator.vibrate(4);
     if (c.tile) {
       // Land has no dedicated page distinct from detail; open detail for built.

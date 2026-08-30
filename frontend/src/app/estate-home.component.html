@@ -3,7 +3,19 @@
   <div class="estate-top">
     <!-- the isometric town — the ONLY thing in the top half. Scrolls freely
          in both directions so the town can keep growing. -->
-    <div class="board-scroll" #scroller>
+    <div
+      class="board-scroll"
+      #scroller
+      (touchstart)="onTouchStart($event)"
+      (touchmove)="onTouchMove($event)"
+      (touchend)="onTouchEnd($event)"
+      (touchcancel)="onTouchEnd($event)"
+      (mousedown)="onMouseDown($event)"
+      (mousemove)="onMouseMove($event)"
+      (mouseup)="onMouseUp()"
+      (mouseleave)="onMouseUp()"
+      (wheel)="onWheel($event)"
+    >
       <svg
         class="board"
         [attr.viewBox]="'0 0 ' + boardW + ' ' + boardH"
@@ -36,63 +48,86 @@
               <path class="plaza" [attr.d]="diamond(c.x, c.y)" />
               <path class="plaza-in" [attr.d]="diamondAt(c.x, c.y, 0.78)" />
 
-              <!-- broad ceremonial steps -->
-              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 8, 0.80)" />
-              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 4, 0.70)" />
+              <!-- ENTRANCE STEPS at the front corner, leading up to the door -->
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 20, 0.30)" />
+              <path class="hall-step" [attr.d]="diamondAt(c.x, c.y + 16, 0.26)" />
 
-              <!-- ===== PODIUM: a wide stone base ===== -->
-              <path class="podium-l" [attr.d]="boxLeft(c.x, c.y + 2, 0.66, 12)" />
-              <path class="podium-r" [attr.d]="boxRight(c.x, c.y + 2, 0.66, 12)" />
-              <path class="podium-t" [attr.d]="boxTop(c.x, c.y + 2, 0.66, 12)" />
+              <!-- ===== MAIN BLOCK: one solid two-storey civic building ===== -->
+              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y + 6, 0.56, 40)" />
+              <path class="hall-r" [attr.d]="boxRight(c.x, c.y + 6, 0.56, 40)" />
+              <path class="hall-t" [attr.d]="boxTop(c.x, c.y + 6, 0.56, 40)" />
 
-              <!-- ===== MAIN HALL BODY ===== -->
-              <path class="hall-l" [attr.d]="boxLeft(c.x, c.y - 10, 0.54, 36)" />
-              <path class="hall-r" [attr.d]="boxRight(c.x, c.y - 10, 0.54, 36)" />
-              <path class="hall-t" [attr.d]="boxTop(c.x, c.y - 10, 0.54, 36)" />
+              <!-- string course dividing the two storeys -->
+              <path class="course" [attr.d]="boxTop(c.x, c.y + 6, 0.56, 21)" />
 
-              <!-- COLONNADE: a row of columns across each face -->
-              <g *ngFor="let col of hallColumns(c.x, c.y - 10)">
-                <line class="column" [attr.x1]="col.x" [attr.y1]="col.y"
-                      [attr.x2]="col.x" [attr.y2]="col.y - 26" />
-              </g>
+              <!-- evenly spaced windows: upper and lower storey, both faces -->
+              <path *ngFor="let f of hallWinSpots" class="pane"
+                    [attr.d]="paneLeft(c.x, c.y + 6, 0.56, 40, 7, f, 0.14)" />
+              <path *ngFor="let f of hallWinSpots" class="pane"
+                    [attr.d]="paneRight(c.x, c.y + 6, 0.56, 40, 7, f, 0.14)" />
+              <path *ngFor="let f of hallWinSpots" class="pane dim"
+                    [attr.d]="paneLeft(c.x, c.y + 6, 0.56, 40, 26, f, 0.14)" />
+              <path *ngFor="let f of hallWinSpots" class="pane dim"
+                    [attr.d]="paneRight(c.x, c.y + 6, 0.56, 40, 26, f, 0.14)" />
 
-              <!-- tall arched windows between the columns -->
-              <path *ngFor="let f of [0.16, 0.58]" class="pane"
-                    [attr.d]="paneLeft(c.x, c.y - 10, 0.54, 36, 10, f, 0.24)" />
-              <path *ngFor="let f of [0.18, 0.60]" class="pane"
-                    [attr.d]="paneRight(c.x, c.y - 10, 0.54, 36, 10, f, 0.24)" />
+              <!-- ===== PORTICO at the front corner: columns carrying a roof,
+                   sheltering the entrance. Drawn AFTER the block so it reads as
+                   standing in front of it. ===== -->
+              <!-- portico roof slab -->
+              <path class="portico-r" [attr.d]="boxRight(c.x, c.y + 22, 0.30, 26)" />
+              <path class="portico-l" [attr.d]="boxLeft(c.x, c.y + 22, 0.30, 26)" />
+              <path class="portico-t" [attr.d]="boxTop(c.x, c.y + 22, 0.30, 26)" />
+              <!-- the doorway, recessed under the portico -->
+              <path class="hall-door" [attr.d]="'M' + (c.x - 9) + ',' + (c.y + 15) +
+                                                 ' L' + c.x + ',' + (c.y + 20) +
+                                                 ' L' + c.x + ',' + (c.y + 6) +
+                                                 ' L' + (c.x - 9) + ',' + (c.y + 1) + ' Z'" />
+              <path class="hall-door" [attr.d]="'M' + c.x + ',' + (c.y + 20) +
+                                                 ' L' + (c.x + 9) + ',' + (c.y + 15) +
+                                                 ' L' + (c.x + 9) + ',' + (c.y + 1) +
+                                                 ' L' + c.x + ',' + (c.y + 6) + ' Z'" />
+              <!-- four columns actually holding the portico roof up -->
+              <line class="column" [attr.x1]="c.x - 17" [attr.y1]="c.y + 14"
+                    [attr.x2]="c.x - 17" [attr.y2]="c.y - 6" />
+              <line class="column" [attr.x1]="c.x - 6" [attr.y1]="c.y + 20"
+                    [attr.x2]="c.x - 6" [attr.y2]="c.y" />
+              <line class="column" [attr.x1]="c.x + 6" [attr.y1]="c.y + 20"
+                    [attr.x2]="c.x + 6" [attr.y2]="c.y" />
+              <line class="column" [attr.x1]="c.x + 17" [attr.y1]="c.y + 14"
+                    [attr.x2]="c.x + 17" [attr.y2]="c.y - 6" />
 
-              <!-- grand entrance under a portico -->
-              <path class="hall-door" [attr.d]="'M' + c.x + ',' + (c.y + 4) +
-                                                 ' L' + (c.x + 15) + ',' + (c.y - 3.5) +
-                                                 ' L' + (c.x + 15) + ',' + (c.y - 20) +
-                                                 ' L' + c.x + ',' + (c.y - 12.5) + ' Z'" />
+              <!-- ===== MAIN ROOF: a cornice sitting on the block ===== -->
+              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 34, 0.62, 7)" />
+              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 34, 0.62, 7)" />
+              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 34, 0.62, 7)" />
 
-              <!-- ===== PEDIMENT / DEEP ROOF ===== -->
-              <path class="hall-roof-l" [attr.d]="boxLeft(c.x, c.y - 46, 0.72, 10)" />
-              <path class="hall-roof-r" [attr.d]="boxRight(c.x, c.y - 46, 0.72, 10)" />
-              <path class="hall-roof-t" [attr.d]="boxTop(c.x, c.y - 46, 0.72, 10)" />
-
-              <!-- ===== DOME on a drum ===== -->
-              <path class="drum-l" [attr.d]="boxLeft(c.x, c.y - 56, 0.26, 16)" />
-              <path class="drum-r" [attr.d]="boxRight(c.x, c.y - 56, 0.26, 16)" />
-              <path class="drum-t" [attr.d]="boxTop(c.x, c.y - 56, 0.26, 16)" />
-              <!-- the dome itself -->
-              <path class="dome" [attr.d]="'M' + (c.x - 22) + ',' + (c.y - 72) +
-                                            ' A22,26 0 0 1 ' + (c.x + 22) + ',' + (c.y - 72) + ' Z'" />
-              <path class="dome-hi" [attr.d]="'M' + (c.x - 13) + ',' + (c.y - 75) +
-                                               ' A13,17 0 0 1 ' + (c.x + 1) + ',' + (c.y - 80) +
-                                               ' L' + (c.x - 5) + ',' + (c.y - 73) + ' Z'" />
-              <!-- gold finial + clock on the drum -->
-              <circle class="clock" [attr.cx]="c.x" [attr.cy]="c.y - 62" r="6.5" />
-              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 62" [attr.x2]="c.x" [attr.y2]="c.y - 66" />
-              <line class="clock-h" [attr.x1]="c.x" [attr.y1]="c.y - 62" [attr.x2]="c.x + 3" [attr.y2]="c.y - 61" />
-              <circle class="finial" [attr.cx]="c.x" [attr.cy]="c.y - 98" r="4" />
-              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 100" [attr.x2]="c.x" [attr.y2]="c.y - 120" />
-              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 120) + ' L' + (c.x + 16) + ',' + (c.y - 115.5) + ' L' + c.x + ',' + (c.y - 111) + ' Z'" />
+              <!-- ===== CLOCK TOWER standing on the roof ===== -->
+              <path class="tower-l" [attr.d]="boxLeft(c.x, c.y - 41, 0.20, 26)" />
+              <path class="tower-r" [attr.d]="boxRight(c.x, c.y - 41, 0.20, 26)" />
+              <path class="tower-t" [attr.d]="boxTop(c.x, c.y - 41, 0.20, 26)" />
+              <!-- clock face set INTO the tower's right wall -->
+              <circle class="clock" [attr.cx]="c.x + 6" [attr.cy]="c.y - 56" r="6" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 56"
+                    [attr.x2]="c.x + 6" [attr.y2]="c.y - 59.5" />
+              <line class="clock-h" [attr.x1]="c.x + 6" [attr.y1]="c.y - 56"
+                    [attr.x2]="c.x + 8.6" [attr.y2]="c.y - 55" />
+              <!-- tower cornice, then the roof lantern -->
+              <path class="tower-cap-l" [attr.d]="boxLeft(c.x, c.y - 67, 0.24, 4)" />
+              <path class="tower-cap-r" [attr.d]="boxRight(c.x, c.y - 67, 0.24, 4)" />
+              <path class="tower-cap-t" [attr.d]="boxTop(c.x, c.y - 67, 0.24, 4)" />
+              <!-- pyramid roof capping the tower -->
+              <path class="tower-roof-l" [attr.d]="'M' + (c.x - 15) + ',' + (c.y - 71) +
+                                                    ' L' + c.x + ',' + (c.y - 63.5) +
+                                                    ' L' + c.x + ',' + (c.y - 92) + ' Z'" />
+              <path class="tower-roof-r" [attr.d]="'M' + c.x + ',' + (c.y - 63.5) +
+                                                    ' L' + (c.x + 15) + ',' + (c.y - 71) +
+                                                    ' L' + c.x + ',' + (c.y - 92) + ' Z'" />
+              <!-- flag on the apex -->
+              <line class="flag-pole" [attr.x1]="c.x" [attr.y1]="c.y - 92" [attr.x2]="c.x" [attr.y2]="c.y - 108" />
+              <path class="flag" [attr.d]="'M' + c.x + ',' + (c.y - 108) + ' L' + (c.x + 14) + ',' + (c.y - 104) + ' L' + c.x + ',' + (c.y - 100) + ' Z'" />
 
               <!-- name plate, clear of the building -->
-              <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y - 140">{{ estateName() }}</text>
+              <text class="hall-name" [attr.x]="c.x" [attr.y]="c.y - 122">{{ estateName() }}</text>
             </g>
 
             <!-- OPEN plot: a surveyed lot with corner pegs — reads as "land
