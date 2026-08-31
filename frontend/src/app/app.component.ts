@@ -4,10 +4,11 @@ import { Component } from '@angular/core';
 import { BuildPickerComponent } from './build/build-picker.component';
 import { ConstructionDetailComponent } from './construction/construction-detail.component';
 import { EstateDetailComponent } from './estate-detail.component';
+import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
 import { EstateHomeComponent } from './estate-home.component';
 import { IntroComponent } from './intro.component';
-import { LandDetailComponent as LandBuyComponent } from './land-detail.component';
+import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
@@ -29,13 +30,14 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     IntroComponent,
     EstateHomeComponent,
     StorefrontComponent,
-    LandBuyComponent,
+    LandStorefrontComponent,
     LandDetailComponent,
     EstateDetailComponent,
     VillaDetailComponent,
     ConstructionDetailComponent,
     BuildPickerComponent,
     VillaBuyComponent,
+    LandBuyComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -59,8 +61,8 @@ export class AppComponent {
   /** The under-construction tile whose detail page is open, or null. */
   construction: Tile | null = null;
 
-  /** Build flow: 'pick' shows the villa/land chooser, 'villa' the buy page. */
-  buildFlow: 'pick' | 'villa' | null = null;
+  /** Build flow: 'pick' shows the chooser, 'villa'/'land' the buy pages. */
+  buildFlow: 'pick' | 'villa' | 'land' | null = null;
 
   onIntroDone(): void {
     this.intro = false;
@@ -71,11 +73,9 @@ export class AppComponent {
     this.buildFlow = 'pick';
     window.scrollTo({ top: 0 });
   }
-  /** A choice on the pick screen. */
+  /** A choice on the pick screen -> the matching buy page. */
   pickBuild(kind: 'villa' | 'land'): void {
-    // land buying keeps the existing storefront land page; villa gets the new buy page
-    this.buildFlow = kind === 'villa' ? 'villa' : null;
-    if (kind === 'land') this.detail = { property: 'land', variant: 'balanced' };
+    this.buildFlow = kind;
     window.scrollTo({ top: 0 });
   }
   closeBuild(): void {

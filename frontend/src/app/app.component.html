@@ -22,6 +22,12 @@
   (back)="closeBuild()"
 ></app-villa-buy>
 
+<!-- Land buy page (from the pick screen). -->
+<app-land-buy
+  *ngIf="!intro && buildFlow === 'land'"
+  (back)="closeBuild()"
+></app-land-buy>
+
 <!-- The storefront (Explore): the four property tiers to browse/buy. -->
 <app-storefront
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && view === 'storefront'"
