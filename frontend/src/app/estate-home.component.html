@@ -151,7 +151,8 @@
               <use [attr.href]="'#tLocked'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
               <!-- the "build here" mark — always visible on every open plot -->
               <g class="plot-cta" [attr.transform]="'translate(' + c.x + ',' + c.y + ')'">
-                <path class="plot-ico" d="M0,-10 V10 M-10,0 H10"></path>
+                <circle class="plot-ring" r="17"></circle>
+                <path class="plot-ico" d="M0,-8 V8 M-8,0 H8"></path>
               </g>
             </g>
 

@@ -187,8 +187,13 @@
 .cell.open:hover .plot-open { fill: rgba(166, 124, 46, 0.10); stroke: var(--brass); }
 .peg { fill: rgba(150,140,120,0.55); }
 .plot-cta { opacity: 1; transition: opacity 0.2s ease; pointer-events: none; }
-/* just a clean + — no ring; the plot's own dashed edges frame the lot */
-.plot-ico { fill: none; stroke: var(--brass); stroke-width: 2.8; stroke-linecap: round; }
+/* a solid brass ring around the + (no dotted stroke) */
+.plot-ring {
+  fill: rgba(166,124,46,0.12);
+  stroke: var(--brass);
+  stroke-width: 1.6;
+}
+.plot-ico { fill: none; stroke: var(--brass); stroke-width: 2.4; stroke-linecap: round; }
 .cell.open:hover .plot-cta,
 .cell.open:focus-visible .plot-cta { opacity: 1; }
 /* the + is always visible on every open plot */

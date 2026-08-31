@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 
 import { CallScheduleComponent } from './shared/call-schedule.component';
+import { CallsService } from './shared/calls.service';
 import { EstateService, Tile, TileType, Variant } from './estate.service';
 import { BASE_GRID } from './estate/iso.model';
 import {
@@ -58,9 +59,30 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   @Output() progress = new EventEmitter<void>();
 
   readonly est = inject(EstateService);
+  private readonly callsSvc = inject(CallsService);
 
   /** Buy sheet state: the open plot being filled, or null. */
   buying = signal<Cell | null>(null);
+
+  // -- buying requires booking a fund-manager call; the user cannot create a
+  //    plot themselves. The chosen type + a small calendar flow live here. --
+  /** The asset type the user has asked to build (drives the call topic). */
+  requestType = signal<TileType | null>(null);
+  /** Book-a-call step: 1 pick date · 2 pick time · 3 request sent. */
+  bkStep = signal(1);
+  bkMonth = signal(this.firstOfMonth());
+  bkDay = signal<Date | null>(null);
+  bkSlot = signal<string | null>(null);
+  bkSent = signal(false);
+  readonly BK_SLOTS = ['10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '5:00 PM'];
+
+  private firstOfMonth(): Date {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }
+  private typeWord(t: TileType): string {
+    return t === 'villa' ? 'Villa' : t === 'building' ? 'Villa (SIP build)' : 'Land';
+  }
   /** Detail popup state: the tapped cell (owned tile or open plot), or null. */
   selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */
@@ -328,24 +350,83 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return Math.round(t.cost * Math.pow(1 + this.LAND_CAGR, years));
   }
 
-  /** Build the chosen asset on the pending plot. */
-  buy(type: TileType, variant: Variant): void {
-    const cost = this.costFor(type);
-    this.est.addTile({
-      type,
-      variant,
-      cost,
-      sipMonthly: type === 'building' ? Math.round(cost / 60) : 0,        // ~5yr build
-      sipAccrued: type === 'building' ? Math.round(cost * 0.12) : 0,      // a little in
-      rentMonthly: type === 'villa' ? Math.round((cost * 0.06) / 12) : 0, // ~6%/yr
-      label: this.nextName(type),
-    });
-    this.buying.set(null);
-    if (navigator.vibrate) navigator.vibrate([5, 30, 8]);
+  /** The user picked what to build. They cannot create it themselves — this
+   *  opens the fund-manager call booking. The plot appears only after the
+   *  manager approves the request; booking the call sends the request. */
+  buy(type: TileType, _variant: Variant): void {
+    this.requestType.set(type);
+    this.bkStep.set(1);
+    this.bkMonth.set(this.firstOfMonth());
+    this.bkDay.set(null);
+    this.bkSlot.set(null);
+    this.bkSent.set(false);
+    if (navigator.vibrate) navigator.vibrate(4);
   }
 
   cancelBuy(): void {
     this.buying.set(null);
+    this.requestType.set(null);
+  }
+
+  // ---- book-a-call calendar (buying) ----
+  get bkMonthLabel(): string {
+    return this.bkMonth().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  }
+  get bkCells(): (Date | null)[] {
+    const m = this.bkMonth();
+    const y = m.getFullYear(), mon = m.getMonth();
+    const lead = new Date(y, mon, 1).getDay();
+    const days = new Date(y, mon + 1, 0).getDate();
+    const cells: (Date | null)[] = [];
+    for (let i = 0; i < lead; i++) cells.push(null);
+    for (let d = 1; d <= days; d++) cells.push(new Date(y, mon, d));
+    return cells;
+  }
+  get bkCanPrev(): boolean { return this.bkMonth() > this.firstOfMonth(); }
+  bkPrevMonth(): void {
+    if (!this.bkCanPrev) return;
+    const m = this.bkMonth();
+    this.bkMonth.set(new Date(m.getFullYear(), m.getMonth() - 1, 1));
+  }
+  bkNextMonth(): void {
+    const m = this.bkMonth();
+    this.bkMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1));
+  }
+  bkSelectable(dt: Date): boolean {
+    const dow = dt.getDay();
+    if (dow === 0 || dow === 6) return false;
+    const min = new Date(); min.setHours(0, 0, 0, 0); min.setDate(min.getDate() + 2);
+    return dt.getTime() >= min.getTime();
+  }
+  bkIsDay(dt: Date): boolean {
+    const d = this.bkDay();
+    return !!d && d.getTime() === dt.getTime();
+  }
+  bkPickDay(dt: Date): void {
+    if (!this.bkSelectable(dt)) return;
+    this.bkDay.set(dt);
+    this.bkSlot.set(null);
+    this.bkStep.set(2);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+  /** Book the call with the fund manager — this SENDS the request. The plot is
+   *  not created; it stays pending until the manager approves. */
+  bkPickSlot(slot: string): void {
+    const type = this.requestType();
+    const day = this.bkDay();
+    if (!type || !day) return;
+    this.bkSlot.set(slot);
+    // combine day + slot into a real datetime and book via the shared service
+    const [hm, ap] = slot.split(' ');
+    let [h, m] = hm.split(':').map(Number);
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    const at = new Date(day);
+    at.setHours(h, m, 0, 0);
+    this.callsSvc.book(at, `Approve & build a ${this.typeWord(type)}`);
+    this.bkSent.set(true);
+    this.bkStep.set(3);
+    if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
   }
 
   collect(): void {
