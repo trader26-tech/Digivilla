@@ -12,111 +12,80 @@
 @keyframes page-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
 .xp.embedded { min-height: calc(100dvh - 4.5rem); animation: none; }
 
-/* top bar — back button + a small EXPLORE label, so the top has presence */
-.xp-top {
-  flex: none;
-  display: flex; align-items: center; gap: 0.7rem;
-  margin-bottom: 0.6rem;
-}
+/* top bar: back · EXPLORE label · cost-to-own pill */
+.xp-top { flex: none; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
 .xp-back {
-  width: 40px; height: 40px; flex: none; display: grid; place-items: center;
-  border-radius: 12px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
-  font-size: 1.5rem; line-height: 1; cursor: pointer; transition: transform 0.12s, border-color 0.2s;
+  width: 38px; height: 38px; flex: none; display: grid; place-items: center;
+  border-radius: 11px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  font-size: 1.4rem; line-height: 1; cursor: pointer; transition: transform 0.12s, border-color 0.2s;
   &:hover { border-color: var(--brass); }
   &:active { transform: scale(0.94); }
 }
-.xp-kicker { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); }
+.xp-kicker { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
 .xp-top-sp { flex: 1; }
+.xp-cost {
+  display: flex; flex-direction: column; align-items: flex-end;
+  padding: 0.4rem 0.75rem; border-radius: 12px;
+  border: 1px solid var(--survey); background: #fff;
+  box-shadow: 0 8px 20px -16px rgba(22, 48, 43, 0.5);
+}
+.xp-cost-k { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.xp-cost-v { font-family: var(--font-display); font-size: 1.1rem; font-weight: 850; letter-spacing: -0.4px; color: var(--ink); }
 
-/* the centred column fills the space above the Buy button */
+/* centred body */
 .xp-body {
   flex: 1 1 auto; min-height: 0;
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 0.2rem;
-  text-align: center;
+  justify-content: center; text-align: center;
 }
 
-/* title */
+/* the plot */
+.xp-art {
+  width: 100%; max-width: 380px; margin: 0 auto;
+  app-villa-art { display: block; width: 100%; height: auto; }
+}
+
 .xp-name {
-  margin: 0;
+  margin: 0.2rem 0 0;
   font-family: var(--font-display); font-size: 2.6rem; font-weight: 850; letter-spacing: -1px;
   color: var(--ink);
 }
+.xp-tag { margin: 0.15rem 0 0; font-size: 0.95rem; color: var(--muted); }
 
-/* CENTREPIECE — the plot, bigger, with a FOR SALE board staked on it */
-.xp-art {
-  position: relative;
-  width: 100%; max-width: 420px;
-  margin: 0.5rem auto 0.8rem;
-  app-villa-art { display: block; width: 100%; height: auto; }
+/* rent it pays */
+.xp-rent {
+  display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; justify-content: center;
+  margin-top: 1rem;
 }
-.xp-sale {
-  position: absolute; left: 30%; top: 44%; z-index: 2;
-  padding: 5px 9px; border-radius: 4px;
-  background: #fff; color: var(--ink);
-  font-size: 0.58rem; font-weight: 900; letter-spacing: 0.06em; line-height: 1.15; text-align: center;
-  border: 1px solid var(--survey);
-  box-shadow: 0 6px 14px -6px rgba(22, 48, 43, 0.5);
-  transform: rotate(-4deg);
-  &::after {
-    content: ''; position: absolute; left: 50%; bottom: -13px; margin-left: -1.5px;
-    width: 3px; height: 13px; background: #b08a52; border-radius: 0 0 1px 1px;
-  }
+.xp-rent-v { font-family: var(--font-display); font-size: 2.5rem; font-weight: 850; letter-spacing: -1.2px; line-height: 1; color: var(--ink); }
+.xp-rent-k { font-size: 0.92rem; font-weight: 600; color: var(--brass); }
+
+/* worth in 20 years */
+.xp-worth { display: flex; align-items: baseline; gap: 0.55rem; justify-content: center; margin-top: 1.3rem; }
+.xp-worth-k { font-size: 0.92rem; color: var(--muted); }
+.xp-worth-v { font-family: var(--font-display); font-size: 1.8rem; font-weight: 850; letter-spacing: -0.9px; color: var(--positive); }
+.xp-split { margin-top: 0.35rem; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  span { font-weight: 600; } .xp-dot { margin: 0 0.4rem; opacity: 0.6; }
 }
 
-/* price + rent, centred with a divider between them */
-.xp-figs {
-  display: flex; align-items: center; justify-content: center; gap: 1.4rem;
-  margin-top: 0.2rem;
+/* the 5/10/15/20-year timeline */
+.xp-tl {
+  position: relative; width: 100%; max-width: 360px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-top: 1.3rem; padding: 0 4px;
 }
-.xp-fig { display: flex; flex-direction: column; gap: 0.15rem; }
-.xp-fig-div { width: 1px; align-self: stretch; margin: 0.3rem 0; background: var(--survey); }
-.xp-fig-v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--ink); }
-.xp-fig-v.rent { color: var(--positive); }
-.xp-mo { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
-.xp-fig-k { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+.xp-tl-line { position: absolute; left: 8px; right: 8px; top: 6px; height: 2px; background: var(--survey); }
+.xp-tl-pt { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; z-index: 1; }
+.xp-tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--brass); box-shadow: 0 0 0 3px var(--paper); }
+.xp-tl-pt.last .xp-tl-dot { background: var(--positive); }
+.xp-tl-y { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+.xp-tl-pt.last .xp-tl-y { color: var(--ink); font-weight: 800; }
 
-/* ---- benefits carousel (same look + colours as the villa page) ---- */
-.xp-why { width: 100%; margin-top: 1.4rem; }
-.why-stage { position: relative; height: 124px; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
-.why-stage:active { cursor: grabbing; }
-.why-card {
-  --accent: var(--brass); --tint: rgba(166, 124, 46, 0.06);
-  position: absolute; inset: 0; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 1rem 1.1rem; border-radius: 20px; border: 1px solid var(--survey);
-  color: var(--ink); box-shadow: 0 14px 34px -24px rgba(22, 48, 43, 0.5);
-  background: linear-gradient(150deg, var(--tint), transparent 62%), #fff;
-  text-align: left;
-  opacity: 0; transform: translateX(30px) scale(0.97); pointer-events: none;
-  transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.why-card.prev { transform: translateX(-30px) scale(0.97); }
-.why-card.on { opacity: 1; transform: none; pointer-events: auto; }
-.why-card[data-theme="stamp"] { --accent: #a67c2e; --tint: rgba(166, 124, 46, 0.08); }
-.why-card[data-theme="rent"]  { --accent: #2e6b4f; --tint: rgba(46, 107, 79, 0.08); }
-.why-card[data-theme="care"]  { --accent: #c9a227; --tint: rgba(201, 162, 39, 0.10); }
-.why-card[data-theme="time"]  { --accent: #6f5aa0; --tint: rgba(111, 90, 160, 0.08); }
-.why-card[data-theme="cash"]  { --accent: #2f7d6e; --tint: rgba(47, 125, 110, 0.08); }
-.why-ico { position: absolute; right: 10px; top: 12px; width: 66px; height: 66px; color: var(--accent); opacity: 0.16; pointer-events: none; }
-.why-badge {
-  align-self: flex-start; padding: 2px 9px; margin-bottom: 0.4rem; border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
-  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
-}
-.why-stat-row { display: flex; align-items: baseline; gap: 0.5rem; }
-.why-stat { font-family: var(--font-display); font-size: 2.1rem; font-weight: 850; letter-spacing: -1px; line-height: 1; color: var(--accent); }
-.why-unit { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.why-line { margin: 0.5rem 0 0; font-size: 0.9rem; font-weight: 600; letter-spacing: -0.2px; color: var(--ink); }
-.why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.8rem; }
-.why-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: var(--survey); cursor: pointer; transition: width 0.35s cubic-bezier(0.22,1,0.36,1), background 0.3s; }
-.why-dot.on { width: 20px; background: var(--brass); }
-
-/* buy — pinned at the foot */
+/* tap to know more */
 .xp-buy {
   flex: none;
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  width: 100%; margin-top: 1.2rem; padding: 1rem;
+  width: 100%; margin-top: 1.3rem; padding: 1rem;
   border: 0; border-radius: 16px; background: var(--brass); color: #fff;
   font: inherit; font-size: 1rem; font-weight: 800; cursor: pointer;
   box-shadow: 0 14px 30px -14px rgba(166, 124, 46, 0.7);
@@ -126,8 +95,4 @@
   &:active { transform: scale(0.99); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .xp { animation: none; }
-  .why-card { transition: opacity 0.2s ease; transform: none; }
-  .why-card.prev { transform: none; }
-}
+@media (prefers-reduced-motion: reduce) { .xp { animation: none; } }

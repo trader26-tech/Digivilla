@@ -1,61 +1,55 @@
 <main class="xp" [class.embedded]="embedded">
 
-  <!-- top bar: a back button and a small label so the top isn't bleak -->
+  <!-- top bar: EXPLORE label, and the cost-to-own pill on the right -->
   <header class="xp-top">
     <button class="xp-back" (click)="onBack()" aria-label="Back">‹</button>
-    <span class="xp-kicker">EXPLORE</span>
+    <span class="xp-kicker">EXPLORE · VILLA</span>
     <span class="xp-top-sp"></span>
+    <span class="xp-cost">
+      <span class="xp-cost-k">Cost to own</span>
+      <b class="xp-cost-v">{{ compact(cost) }}</b>
+    </span>
   </header>
 
-  <!-- one centred column: title · plot · price+rent · perks · buy -->
   <div class="xp-body">
-
-    <!-- title -->
-    <h1 class="xp-name">Villa</h1>
-
-    <!-- CENTREPIECE: the villa plot with a FOR SALE board staked on it -->
+    <!-- the villa plot -->
     <div class="xp-art">
       <app-villa-art></app-villa-art>
-      <span class="xp-sale" aria-hidden="true">FOR<br>SALE</span>
     </div>
 
-    <!-- price + rent, side by side, centred under the plot -->
-    <div class="xp-figs">
-      <div class="xp-fig">
-        <b class="xp-fig-v">{{ compact(priceFrom) }}</b>
-        <span class="xp-fig-k">to buy · up to {{ compact(priceTo) }}</span>
-      </div>
-      <div class="xp-fig-div"></div>
-      <div class="xp-fig">
-        <b class="xp-fig-v rent">{{ compact(rentMonthly) }}<span class="xp-mo">/mo</span></b>
-        <span class="xp-fig-k">rent from day one</span>
-      </div>
+    <!-- title + the promise -->
+    <h1 class="xp-name">Villa</h1>
+    <p class="xp-tag">It pays you, every month.</p>
+
+    <!-- the rent it pays -->
+    <div class="xp-rent">
+      <b class="xp-rent-v">{{ compact(rentMonthly) }}</b>
+      <span class="xp-rent-k">paid to you every month</span>
     </div>
 
-    <!-- benefits of owning an eVilla — the swipeable carousel -->
-    <div class="xp-why">
-      <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
-           (pointercancel)="onPerkUp($event)">
-        <div class="why-card" *ngFor="let p of PERKS; let i = index"
-             [attr.data-theme]="p.theme" [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
-          <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="why-badge">eVilla</span>
-          <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
-          <p class="why-line">{{ p.vs }}</p>
-        </div>
-      </div>
-      <div class="why-dots">
-        <button class="why-dot" *ngFor="let p of PERKS; let i = index"
-                [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
+    <!-- worth in 20 years, with a short breakdown + timeline -->
+    <div class="xp-worth">
+      <span class="xp-worth-k">worth in 20 years</span>
+      <b class="xp-worth-v">{{ compact(worth20) }}</b>
+    </div>
+    <div class="xp-split">
+      <span>{{ compact(rentTotal20) }} rent</span>
+      <span class="xp-dot">·</span>
+      <span>{{ compact(growth20) }} growth</span>
+    </div>
+
+    <div class="xp-tl">
+      <div class="xp-tl-line"></div>
+      <div class="xp-tl-pt" *ngFor="let y of years; let last = last" [class.last]="last">
+        <span class="xp-tl-dot"></span>
+        <span class="xp-tl-y">{{ y }} yrs</span>
       </div>
     </div>
   </div>
 
-  <!-- buy, pinned at the foot -->
+  <!-- tap to know more -> the full villa page -->
   <button class="xp-buy" (click)="buy()">
-    Buy a villa
+    Tap to know more
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
 </main>
