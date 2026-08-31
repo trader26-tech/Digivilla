@@ -8,6 +8,7 @@ import { LandDetailComponent } from './land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
 import { Tile } from './estate.service';
+import { VillaDetailComponent } from './villa/villa-detail.component';
 
 type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
 
@@ -26,6 +27,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     StorefrontComponent,
     LandDetailComponent,
     EstateDetailComponent,
+    VillaDetailComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -40,17 +42,28 @@ export class AppComponent {
   /** null = no detail; otherwise the detail page for this property + variant. */
   detail: { property: PropertyKey; variant: RiskVariant } | null = null;
 
+  /** The villa whose dedicated detail page is open, or null. */
+  villa: Tile | null = null;
+
   onIntroDone(): void {
     this.intro = false;
   }
 
   /** A built tile on the estate was tapped -> open its detail page.
-   *  Map the tile's variant to a property tier: land tile -> land page,
-   *  villa/building -> the income (estate) detail page. */
+   *  villa -> the dedicated villa page; land -> land page; building -> estate. */
   openTile(t: Tile): void {
+    if (t.type === 'villa') {
+      this.villa = t;
+      window.scrollTo({ top: 0 });
+      return;
+    }
     const property: PropertyKey = t.type === 'land' ? 'land' : 'flat';
     this.detail = { property, variant: t.variant };
     window.scrollTo({ top: 0 });
+  }
+
+  closeVilla(): void {
+    this.villa = null;
   }
 
   /** Explore tab -> the storefront catalog to browse tiers. */
