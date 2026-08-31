@@ -61,12 +61,15 @@ export class VillaDetailComponent implements OnInit {
   /** Five punchy, number-led reasons an eVilla beats a real villa. Each card is
    *  ONE statement built around a big money/time figure, on its own themed
    *  background. `theme` selects the card's colour treatment in the SCSS. */
+  /** Each card: eVilla’s win as a big number/word, then the real-villa pain in
+   *  a few words. `won` = what eVilla gives you; `vs` = the real-villa problem. */
   readonly PERKS = [
-    { theme: 'stamp', icon: '🧾', stat: '₹2.1L', unit: 'saved',   line: 'Real villa: lost to stamp duty' },
-    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own', line: 'Real villa: 45 days of paperwork' },
-    { theme: 'care',  icon: '🛠️', stat: '₹40k',  unit: 'a year', line: 'Real villa: repairs eat it' },
-    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to exit', line: 'Real villa: 6 months to sell' },
-    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start', line: 'Real villa: ₹1 Cr+ upfront' },
+    { theme: 'stamp', icon: '🧾', stat: '₹0',     unit: 'to buy in',   won: 'No stamp duty or registration', vs: 'Real villa: ₹2 L+ in fees' },
+    { theme: 'rent',  icon: '💰', stat: 'Auto',   unit: 'rent',        won: 'Rent hits your account monthly',  vs: 'Real villa: chase tenants yourself' },
+    { theme: 'care',  icon: '🛠️', stat: '₹0',     unit: 'upkeep',      won: 'No repairs, ever',                vs: 'Real villa: ₹40k a year' },
+    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own',      won: 'Yours in seconds',                vs: 'Real villa: 45 days of paperwork' },
+    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to cash out', won: 'Sell in a tap',                   vs: 'Real villa: 6 months, brokers' },
+    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start',    won: 'Start small',                     vs: 'Real villa: ₹1 Cr+ upfront' },
   ];
   perk = signal(0);
 
