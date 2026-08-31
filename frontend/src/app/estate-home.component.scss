@@ -365,6 +365,51 @@
   padding: 1.2rem 1.25rem 5.5rem;
   text-align: center;
 }
+
+/* the two headline numbers — worth & yearly rent */
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-bottom: 1.1rem;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.95rem 0.6rem 0.85rem;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--survey);
+  box-shadow: 0 10px 26px -18px rgba(22, 48, 43, 0.5);
+}
+.stat-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-bottom: 0.35rem;
+}
+.stat.worth  .stat-icon { color: var(--brass); background: rgba(166, 124, 46, 0.12); }
+.stat.income .stat-icon { color: var(--positive); background: rgba(46, 107, 79, 0.12); }
+.stat-v {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.stat-k {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
 .collected { display: flex; flex-direction: column; gap: 0.15rem; align-items: center; }
 .col-k { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 .col-v { font-size: 2rem; font-weight: 850; letter-spacing: -1px; color: var(--brass); font-variant-numeric: tabular-nums; }

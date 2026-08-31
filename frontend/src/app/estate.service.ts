@@ -106,6 +106,20 @@ export class EstateService {
     return this.tiles().filter((t) => t.type === 'building').reduce((s, t) => s + t.sipMonthly, 0);
   }
 
+  /** Total worth of the estate today: finished villas and land at full value,
+   *  plus only what has actually accrued so far on villas still building. */
+  get estateValue(): number {
+    return this.tiles().reduce(
+      (s, t) => s + (t.type === 'building' ? t.sipAccrued : t.cost),
+      0,
+    );
+  }
+
+  /** Yearly rent as an income figure (12 x the monthly "rent in"). */
+  get rentYearly(): number {
+    return this.rentIn * 12;
+  }
+
   // ---------------- mutations ----------------
   addTile(input: Omit<Tile, 'id' | 'boughtAt'>): Tile {
     const tile: Tile = {
