@@ -1,47 +1,67 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
- * The AMFI-mandated mutual-fund risk disclaimer, plus a short note that the
- * "villa / rent / growth" figures shown across the app are ILLUSTRATIVE, not
- * guaranteed. Drop this on every money-facing screen.
+ * The AMFI-mandated mutual-fund risk disclaimer — but unobtrusive. By default
+ * it's a single quiet line ("Subject to market risks — tap for details"); the
+ * full disclosure (illustrative figures, read scheme documents) expands only on
+ * tap, so it stays present without cluttering the page.
  *
- * IMPORTANT: this component only surfaces the standard disclosure text. It does
- * NOT by itself make the product compliant — that depends on the entity's
- * ARN/RIA registration, KYC/RTA rails, and scheme documents, which are outside
- * the frontend.
+ * NOTE: surfacing this text does not by itself make the product compliant —
+ * that depends on ARN/RIA registration, KYC/RTA rails and scheme documents.
  */
 @Component({
   selector: 'app-mf-disclaimer',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <p class="mfd" [class.compact]="compact">
-      <span class="mfd-line">
-        Figures shown (rent, growth, projected worth) are <b>illustrative,
-        not guaranteed</b> — actual returns are market-linked and may be lower,
-        or negative. Assets are a metaphor for units of a mutual fund portfolio
+    <div class="mfd">
+      <button class="mfd-toggle" (click)="open.set(!open())" [attr.aria-expanded]="open()">
+        <svg class="mfd-i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+        <span>Subject to market risks</span>
+        <svg class="mfd-caret" [class.on]="open()" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="mfd-full" *ngIf="open()">
+        Figures shown (rent, growth, projected worth) are <b>illustrative, not
+        guaranteed</b> — actual returns are market-linked and may be lower, or
+        negative. Assets are a metaphor for units of a mutual fund portfolio
         held in your name, valued at NAV.
-      </span>
-      <span class="mfd-amfi">
-        Mutual fund investments are subject to market risks. Read all scheme
-        related documents carefully.
-      </span>
-    </p>
+        <span class="mfd-amfi">Mutual fund investments are subject to market
+        risks. Read all scheme related documents carefully.</span>
+      </div>
+    </div>
   `,
   styles: [`
     :host { display: block; }
-    .mfd {
-      margin: 0; padding: 0.6rem 0.2rem 0;
-      font-size: 0.68rem; line-height: 1.5; color: var(--muted);
-      text-align: center;
+    .mfd { text-align: center; padding-top: 0.4rem; }
+    .mfd-toggle {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      border: 0; background: none; padding: 0.3rem 0.4rem;
+      font: inherit; font-size: 0.68rem; font-weight: 600; color: var(--muted);
+      cursor: pointer; opacity: 0.75; transition: opacity 0.2s;
+      &:hover { opacity: 1; }
     }
-    .mfd.compact { font-size: 0.62rem; }
-    .mfd-line { display: block; b { color: var(--ink); font-weight: 800; } }
-    .mfd-amfi { display: block; margin-top: 0.35rem; font-weight: 700; color: var(--ink); opacity: 0.85; }
+    .mfd-i { flex: none; }
+    .mfd-caret { transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+    .mfd-caret.on { transform: rotate(180deg); }
+    .mfd-full {
+      max-width: 340px; margin: 0.35rem auto 0;
+      font-size: 0.66rem; line-height: 1.5; color: var(--muted);
+      animation: mfd-in 0.25s ease both;
+      b { color: var(--ink); font-weight: 800; }
+    }
+    .mfd-amfi { display: block; margin-top: 0.3rem; font-weight: 700; color: var(--ink); opacity: 0.85; }
+    @keyframes mfd-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   `],
 })
 export class MfDisclaimerComponent {
-  /** Smaller text when embedded under a card. */
+  /** Kept for API compatibility; the collapsed line is already compact. */
   @Input() compact = false;
+  open = signal(false);
 }
