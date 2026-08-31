@@ -15,6 +15,8 @@ import {
 
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { CallsService } from './shared/calls.service';
+import { VillaArtComponent } from './shared/villa-art.component';
+import { LandArtComponent } from './shared/land-art.component';
 import { EstateService, Tile, TileType, Variant } from './estate.service';
 import { BASE_GRID } from './estate/iso.model';
 import {
@@ -44,7 +46,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, VillaArtComponent, LandArtComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
