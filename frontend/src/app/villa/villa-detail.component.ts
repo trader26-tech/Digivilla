@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { VillaArtComponent } from '../shared/villa-art.component';
+import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { compact, compactK, inr } from '../shared/format.util';
 import {
   HoldingFund,
@@ -32,7 +33,7 @@ import {
 @Component({
   selector: 'app-villa-detail',
   standalone: true,
-  imports: [CommonModule, VillaArtComponent],
+  imports: [CommonModule, VillaArtComponent, MfDisclaimerComponent],
   templateUrl: './villa-detail.component.html',
   styleUrl: './villa-detail.component.scss',
 })

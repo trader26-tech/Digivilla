@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 
 import { LandArtComponent } from '../shared/land-art.component';
 import { VillaArtComponent } from '../shared/villa-art.component';
+import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { compact } from '../shared/format.util';
 import { villaPlan } from '../villa/villa-detail.model';
 
@@ -29,7 +30,7 @@ interface ExploreItem {
 @Component({
   selector: 'app-build-picker',
   standalone: true,
-  imports: [CommonModule, VillaArtComponent, LandArtComponent],
+  imports: [CommonModule, VillaArtComponent, LandArtComponent, MfDisclaimerComponent],
   templateUrl: './build-picker.component.html',
   styleUrl: './build-picker.component.scss',
 })
@@ -57,27 +58,28 @@ export class BuildPickerComponent {
     return [
       {
         kind: 'villa',
+        // wording softened to illustrative — no guaranteed-return claims
         label: 'VILLA',
         name: 'Villa',
-        tag: 'It pays you, every month.',
+        tag: 'Designed to pay you monthly.',
         cost: villaCost,
         headV: compact(vRent),
-        headK: 'paid to you every month',
+        headK: 'illustrative monthly payout*',
         worth20: vGrowth20 + vRent20,
-        splitA: `${compact(vRent20)} rent`,
+        splitA: `${compact(vRent20)} payout`,
         splitB: `${compact(vGrowth20)} growth`,
       },
       {
         kind: 'land',
         label: 'PLOT',
         name: 'Plot',
-        tag: 'Pure growth — it compounds.',
+        tag: 'Aims for pure growth.',
         cost: landCost,
-        headV: '12%',
-        headK: 'growth every year',
+        headV: '12%*',
+        headK: 'target growth p.a.*',
         worth20: lGrowth20,
         splitA: `${compact(landCost)} in`,
-        splitB: `${compact(lGrowth20)} out`,
+        splitB: `${compact(lGrowth20)} projected`,
       },
     ];
   }

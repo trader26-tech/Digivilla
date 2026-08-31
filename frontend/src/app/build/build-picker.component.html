@@ -37,7 +37,7 @@
         <div class="xp-stat-div"></div>
         <div class="xp-stat">
           <b class="xp-stat-v grow">{{ compact(it.worth20) }}</b>
-          <span class="xp-stat-k">worth in 20 years</span>
+          <span class="xp-stat-k">projected in 20 years*</span>
         </div>
       </div>
 
@@ -47,6 +47,7 @@
       </button>
 
       <span class="xp-swipe" *ngIf="i < items.length - 1" aria-hidden="true">Swipe up for more ↑</span>
+      <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
     </section>
   </div>
 </main>

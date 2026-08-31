@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 
 import { CallScheduleComponent } from './shared/call-schedule.component';
+import { MfDisclaimerComponent } from './shared/mf-disclaimer.component';
 import { CallsService } from './shared/calls.service';
 import { EstateService, Tile, TileType, Variant } from './estate.service';
 import { BASE_GRID } from './estate/iso.model';
@@ -44,7 +45,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, MfDisclaimerComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
