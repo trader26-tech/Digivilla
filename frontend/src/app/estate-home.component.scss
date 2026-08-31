@@ -42,13 +42,21 @@
     /* the base sky→paper→ground vertical wash */
     linear-gradient(180deg, #FFFDF8 0%, var(--paper) 46%, #F4F1E6 100%);
 }
-/* a faint vignette on the very edges so the scene feels contained, premium */
+/* a faint vignette on the very edges so the scene feels contained, premium.
+   z-index:0 sits it above the background but below all real content, so we
+   don't need to force position:relative on the children (which was dropping
+   the absolutely-positioned avatar into the flow). */
 .estate-top::after {
   content: '';
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(120% 120% at 50% 50%, transparent 68%, rgba(22, 48, 43, 0.05) 100%);
 }
-.estate-top > * { position: relative; z-index: 1; }
+/* lift the in-flow content above the vignette, but LEAVE absolutely-positioned
+   children (avatar, call button) exactly where they were. */
+.estate-top > .hero,
+.estate-top > .board-scroll,
+.estate-top > .stats,
+.estate-top > .stats-rule { position: relative; z-index: 1; }
 /* the town keeps its own height; the group is centred, not stretched */
 .estate-top .board-scroll { flex: none; }
 .estate-top .stats { flex: none; padding: 0 1.25rem; margin: 1.1rem 0 0; }
