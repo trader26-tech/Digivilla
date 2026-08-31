@@ -6,6 +6,8 @@
   animation: page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes page-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+/* as the Explore tab, the shell's fade/rise leads — skip the slide-in here */
+.pick.embedded { animation: none; }
 
 /* header — back button, then the title on the line below it */
 .pk-top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding-top: env(safe-area-inset-top); margin-bottom: 1.3rem; }
