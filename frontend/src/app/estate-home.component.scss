@@ -43,20 +43,26 @@
   );
   animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.hero-line {
-  margin: 0;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: -0.4px;
+.hero {
+  text-align: center;
 }
-.hero-name { color: var(--ink); }
-.hero-sep { color: var(--survey); font-weight: 600; }
-.hero-city { color: var(--brass); }
+.hero-kicker {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+.hero-title {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.05;
+  font-weight: 850;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+}
 
 @keyframes heroIn {
   from { opacity: 0; transform: translateY(-6px); }
