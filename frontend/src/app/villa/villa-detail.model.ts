@@ -95,3 +95,53 @@ export function assetColor(a: HoldingFund['assetClass']): string {
 export function assetLabel(a: HoldingFund['assetClass']): string {
   return { equity: 'Equity', hybrid: 'Hybrid', debt: 'Debt', gold: 'Gold' }[a];
 }
+
+/** One rent payment on the schedule (past = already paid). */
+export interface RentPayment {
+  date: Date;
+  amount: number;
+  paid: boolean;
+}
+
+/**
+ * The rent schedule for a villa: one payment on the same day each month from
+ * the purchase month up to (and including) the next upcoming one. Everything
+ * on or before `now` is marked paid; the first future entry is the "next".
+ */
+export function rentSchedule(
+  boughtAt: number,
+  rentMonthly: number,
+  now: Date,
+): { paid: RentPayment[]; next: RentPayment } {
+  const start = new Date(boughtAt);
+  const day = start.getDate();
+  const paid: RentPayment[] = [];
+
+  // walk month by month from the purchase month
+  const cursor = new Date(start.getFullYear(), start.getMonth(), day);
+  while (cursor <= now) {
+    paid.push({ date: new Date(cursor), amount: rentMonthly, paid: true });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  // `cursor` now sits on the first date strictly after now → the next payment
+  const next: RentPayment = { date: new Date(cursor), amount: rentMonthly, paid: false };
+
+  // newest first for display
+  paid.reverse();
+  return { paid, next };
+}
+
+/**
+ * Current market value of the holding given how long it has been held.
+ * Compounds the invested price at the blended CAGR for the fractional years
+ * elapsed since purchase.
+ */
+export function currentValue(
+  price: number,
+  cagr: number,
+  boughtAt: number,
+  now: Date,
+): number {
+  const yearsHeld = Math.max(0, (now.getTime() - boughtAt) / (365.25 * 24 * 3600 * 1000));
+  return price * (1 + cagr / 100) ** yearsHeld;
+}

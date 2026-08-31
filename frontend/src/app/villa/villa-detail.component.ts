@@ -9,115 +9,91 @@ import {
   signal,
 } from '@angular/core';
 
-import { BookingSheetComponent } from '../booking-sheet.component';
-import { compact, inr, pct } from '../shared/format.util';
+import { VillaArtComponent } from '../shared/villa-art.component';
+import { compact, inr } from '../shared/format.util';
 import {
   HoldingFund,
+  RentPayment,
   VillaPlan,
   assetColor,
   assetLabel,
+  currentValue,
+  rentSchedule,
   villaPlan,
 } from './villa-detail.model';
 
 /**
- * Standalone villa detail page. Opened when a villa is tapped or from a buy
- * flow. Shows the villa, what it costs, how the money grows over 20 years, the
- * rent it pays, a collapsible fund breakdown, and a CTA that opens booking.
+ * Villa detail page. Four components, in order:
+ *   1. the villa image (the exact map art), and nothing else
+ *   2. current value (left) vs invested + ₹ gain (right)
+ *   3. rental income — the next payment, with a history sheet behind a control
+ *   4. the funds this villa holds
  */
 @Component({
   selector: 'app-villa-detail',
   standalone: true,
-  imports: [CommonModule, BookingSheetComponent],
+  imports: [CommonModule, VillaArtComponent],
   templateUrl: './villa-detail.component.html',
   styleUrl: './villa-detail.component.scss',
 })
 export class VillaDetailComponent implements OnInit {
-  /** Villa price in rupees. */
+  /** Villa price in rupees (the invested amount). */
   @Input() price = 30_00_000;
   /** Display name for the villa. */
   @Input() name = 'Signature Villa';
+  /** When the villa was bought (epoch ms) — drives the rent schedule + growth. */
+  @Input() boughtAt = Date.now();
   @Output() back = new EventEmitter<void>();
-
-  // chart geometry (viewBox units)
-  readonly CW = 320;
-  readonly CH = 150;
 
   plan!: VillaPlan;
 
-  /** Funds panel starts collapsed, as requested. */
-  fundsOpen = signal(false);
-  /** Booking sheet open state. */
-  booking = signal(false);
+  /** Value figures. */
+  current = 0;
+  gain = 0;
+
+  /** Rent schedule. */
+  next!: RentPayment;
+  history: RentPayment[] = [];
+  historyOpen = signal(false);
 
   // format helpers for the template
   compact = compact;
   inr = inr;
-  pct = pct;
   assetColor = assetColor;
   assetLabel = assetLabel;
 
   ngOnInit(): void {
+    const now = new Date();
     this.plan = villaPlan(this.price, 20);
+    this.current = currentValue(this.price, this.plan.cagr, this.boughtAt, now);
+    this.gain = this.current - this.price;
+
+    const sched = rentSchedule(this.boughtAt, this.plan.rentMonthly, now);
+    this.next = sched.next;
+    this.history = sched.paid;
   }
 
-  toggleFunds(): void {
-    this.fundsOpen.update((v) => !v);
+  openHistory(): void {
+    this.historyOpen.set(true);
     if (navigator.vibrate) navigator.vibrate(4);
   }
-
-  openBooking(): void {
-    this.booking.set(true);
-    if (navigator.vibrate) navigator.vibrate(5);
+  closeHistory(): void {
+    this.historyOpen.set(false);
   }
 
   onBack(): void {
     this.back.emit();
   }
 
-  // ---------------- growth chart ----------------
-
-  private get vals(): number[] {
-    return this.plan.growth.map((g) => g.value);
-  }
-
-  /** Smooth area + line path for the growth curve. */
-  chartLine = computed(() => this.pathFor(false));
-  chartArea = computed(() => this.pathFor(true));
-
-  private pathFor(closed: boolean): string {
-    const vals = this.vals;
-    if (vals.length < 2) return '';
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
-    const span = max - min || 1;
-    const padT = 8;
-    const padB = 8;
-    const pts = vals.map((v, i) => {
-      const x = (i / (vals.length - 1)) * this.CW;
-      const y = padT + (1 - (v - min) / span) * (this.CH - padT - padB);
-      return [x, y] as const;
-    });
-    const line = pts
-      .map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
-      .join(' ');
-    if (!closed) return line;
-    return `${line} L${this.CW},${this.CH} L0,${this.CH} Z`;
-  }
-
-  /** Year markers along the x-axis. */
-  get xTicks(): { x: number; label: string }[] {
-    const yrs = [0, 5, 10, 15, 20];
-    return yrs.map((y) => ({
-      x: (y / this.plan.years) * this.CW,
-      label: y === 0 ? 'now' : `${y}y`,
-    }));
-  }
-
-  get growthMultiple(): number {
-    return this.plan.finalValue / this.plan.price;
+  /** Total rent received so far, for the history sheet header. */
+  get totalPaid(): number {
+    return this.history.reduce((s, p) => s + p.amount, 0);
   }
 
   trackFund(_i: number, f: HoldingFund): string {
     return f.name;
+  }
+  trackPay(_i: number, p: RentPayment): number {
+    return p.date.getTime();
   }
 }

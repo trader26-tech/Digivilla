@@ -6,131 +6,97 @@
     <span class="top-spacer"></span>
   </header>
 
-  <!-- ============ hero: villa image + price ============ -->
-  <section class="hero reveal" style="--i:0">
-    <svg class="villa-art" viewBox="0 0 200 170" aria-hidden="true">
-      <!-- ground -->
-      <polygon class="v-lawn" points="100,54 190,104 100,154 10,104" />
-      <polygon class="v-soil-l" points="10,104 100,154 100,164 10,114" />
-      <polygon class="v-soil-r" points="100,154 190,104 190,114 100,164" />
-      <!-- pool -->
-      <polygon class="v-pool" points="52,108 78,123 60,133 34,118" />
-      <!-- ground floor -->
-      <polygon class="v-wall-l" points="92,96 66,81 66,116 92,131" />
-      <polygon class="v-wall-r" points="140,96 92,124 92,131 140,103" transform="translate(0,-28)" />
-      <polygon class="v-wall-r" points="92,96 140,68 140,103 92,131" />
-      <polygon class="v-roof-t" points="92,60 140,88 92,116 44,88" />
-      <!-- windows -->
-      <polygon class="v-win" points="80,92 72,96 72,108 80,104" />
-      <polygon class="v-win" points="112,92 124,85 124,97 112,104" />
-      <!-- upper floor set back -->
-      <polygon class="v-wall-l2" points="96,64 78,54 78,78 96,88" />
-      <polygon class="v-wall-r2" points="96,64 130,45 130,69 96,88" />
-      <polygon class="v-roof2" points="96,36 130,55 96,74 62,55" />
-      <ellipse class="v-disc" cx="96" cy="40" rx="8" ry="4" />
-      <!-- hedges -->
-      <g *ngFor="let h of [{x:132,y:104},{x:120,y:116}]">
-        <polygon class="v-hedge-t" [attr.points]="(h.x) + ',' + (h.y-6) + ' ' + (h.x+7) + ',' + (h.y-2.5) + ' ' + (h.x) + ',' + (h.y+1) + ' ' + (h.x-7) + ',' + (h.y-2.5)" />
-      </g>
-    </svg>
+  <!-- ============ 1 · the villa image, and nothing else ============ -->
+  <section class="art reveal" style="--i:0">
+    <app-villa-art></app-villa-art>
+  </section>
 
-    <div class="hero-info">
-      <span class="hero-cap">Villa · own it from</span>
-      <h1 class="hero-price">{{ compact(price) }}</h1>
-      <span class="hero-sub">A curated fund basket in your name — it grows, and it pays you rent.</span>
+  <!-- ============ 2 · value: current (left) vs invested + ₹ gain (right) === -->
+  <section class="card value reveal" style="--i:1">
+    <div class="val-side">
+      <span class="val-k">Current value</span>
+      <b class="val-v now">{{ compact(current) }}</b>
+    </div>
+    <div class="val-div"></div>
+    <div class="val-side right">
+      <span class="val-k">Invested</span>
+      <b class="val-v">{{ compact(price) }}</b>
+      <span class="val-gain" [class.neg]="gain < 0">
+        <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
+          <path [attr.d]="gain < 0 ? 'M2 4l4 4 4-4' : 'M2 8l4-4 4 4'"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}
+      </span>
     </div>
   </section>
 
-  <!-- ============ growth chart ============ -->
-  <section class="card reveal" style="--i:1">
-    <div class="card-head">
-      <div>
-        <span class="card-cap">How {{ compact(price) }} could grow</span>
-        <span class="card-sub">over {{ plan.years }} years</span>
-      </div>
-      <span class="grow-mult">{{ growthMultiple | number:'1.1-1' }}×</span>
-    </div>
-
-    <div class="chart-wrap">
-      <svg class="chart" [attr.viewBox]="'0 0 ' + CW + ' ' + CH" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="villaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#2E6B4F" stop-opacity="0.28" />
-            <stop offset="100%" stop-color="#2E6B4F" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <path class="g-area" [attr.d]="chartArea()" fill="url(#villaFill)" />
-        <path class="g-line" [attr.d]="chartLine()" />
-      </svg>
-      <div class="chart-x">
-        <span *ngFor="let t of xTicks">{{ t.label }}</span>
-      </div>
-    </div>
-
-    <div class="grow-figs">
-      <div class="gf"><span>You invest</span><b>{{ compact(price) }}</b></div>
-      <div class="gf-div"></div>
-      <div class="gf"><span>Worth in {{ plan.years }}y</span><b class="pos">{{ compact(plan.finalValue) }}</b></div>
-      <div class="gf-div"></div>
-      <div class="gf"><span>Avg / yr</span><b>{{ pct(plan.cagr) }}</b></div>
-    </div>
-    <p class="disclaimer">Illustrative, based on the basket's blend. Not guaranteed.</p>
-  </section>
-
-  <!-- ============ rental income ============ -->
-  <section class="card rent-card reveal" style="--i:2">
-    <div class="rent-main">
+  <!-- ============ 3 · rental income — next payment + history control ======= -->
+  <section class="card rent reveal" style="--i:2">
+    <div class="rent-head">
       <span class="card-cap">Rental income</span>
-      <h2 class="rent-amt">{{ compact(plan.rentMonthly) }}<i>/month</i></h2>
-      <span class="rent-sub">≈ {{ compact(plan.rentYearly) }} a year · {{ pct(plan.rentYieldPct, 0) }} yield</span>
+      <button class="hist-btn" (click)="openHistory()" aria-label="See rent history">
+        History
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
-    <div class="rent-coin" aria-hidden="true">
-      <div class="coin-disc">₹</div>
+
+    <div class="rent-next">
+      <div class="rn-main">
+        <span class="rn-k">Next payment</span>
+        <b class="rn-amt">{{ compact(next.amount) }}</b>
+        <span class="rn-when">on {{ next.date | date:'d MMM y' }}</span>
+      </div>
+      <div class="rn-coin" aria-hidden="true">₹</div>
     </div>
   </section>
 
-  <!-- ============ what's inside (collapsed) ============ -->
-  <section class="card funds-card reveal" style="--i:3">
-    <button class="funds-toggle" (click)="toggleFunds()" [attr.aria-expanded]="fundsOpen()">
-      <div>
-        <span class="card-cap">What's inside</span>
-        <span class="card-sub">{{ plan.funds.length }} funds, weighted</span>
+  <!-- ============ 4 · the funds this villa holds ============ -->
+  <section class="card funds reveal" style="--i:3">
+    <div class="funds-head">
+      <span class="card-cap">Funds inside</span>
+      <span class="card-sub">{{ plan.funds.length }} funds</span>
+    </div>
+    <div class="fund" *ngFor="let f of plan.funds; trackBy: trackFund">
+      <div class="fund-row">
+        <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
+        <b class="fund-name">{{ f.name }}</b>
+        <span class="fund-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
       </div>
-      <i class="caret" [class.up]="fundsOpen()">›</i>
-    </button>
-
-    <div class="funds-body" *ngIf="fundsOpen()">
-      <div class="fund" *ngFor="let f of plan.funds; trackBy: trackFund">
-        <div class="fund-row">
-          <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
-          <b class="fund-name">{{ f.name }}</b>
-          <span class="fund-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
-        </div>
-        <div class="wt-track">
-          <span class="wt-fill" [style.width.%]="f.weight * 100" [style.background]="assetColor(f.assetClass)"></span>
-        </div>
-        <span class="fund-meta">{{ assetLabel(f.assetClass) }} · {{ pct(f.return3y) }} past 3y</span>
+      <div class="wt-track">
+        <span class="wt-fill" [style.width.%]="f.weight * 100" [style.background]="assetColor(f.assetClass)"></span>
       </div>
+      <span class="fund-meta">{{ assetLabel(f.assetClass) }} · {{ f.return3y | number:'1.1-1' }}% past 3y</span>
     </div>
   </section>
+</main>
 
-  <!-- ============ CTA ============ -->
-  <div class="cta-bar">
-    <div class="cta-figs">
-      <span class="cta-k">{{ name }}</span>
-      <span class="cta-v">{{ compact(price) }}</span>
+<!-- ============ rent history — slide-in sheet ============ -->
+<div class="sheet-backdrop" *ngIf="historyOpen()" (click)="closeHistory()"></div>
+<aside class="sheet" *ngIf="historyOpen()" role="dialog" aria-modal="true" aria-label="Rent history">
+  <div class="sheet-head">
+    <div>
+      <span class="sheet-cap">Rent paid to date</span>
+      <b class="sheet-total">{{ compact(totalPaid) }}</b>
+      <span class="sheet-sub">{{ history.length }} payment{{ history.length === 1 ? '' : 's' }}</span>
     </div>
-    <button class="cta-btn" (click)="openBooking()">Buy this villa</button>
+    <button class="sheet-close" (click)="closeHistory()" aria-label="Close">✕</button>
   </div>
 
-  <!-- booking sheet -->
-  <app-booking-sheet
-    *ngIf="booking()"
-    [property]="'villa'"
-    [variant]="'balanced'"
-    [variantName]="name"
-    [plots]="1"
-    [amount]="price"
-    (close)="booking.set(false)"
-  ></app-booking-sheet>
-</main>
+  <div class="sheet-list">
+    <div class="pay next-row">
+      <span class="pay-dot pending"></span>
+      <span class="pay-date">{{ next.date | date:'d MMM y' }}</span>
+      <span class="pay-tag">Upcoming</span>
+      <span class="pay-amt">{{ compact(next.amount) }}</span>
+    </div>
+    <div class="pay" *ngFor="let p of history; trackBy: trackPay">
+      <span class="pay-dot"></span>
+      <span class="pay-date">{{ p.date | date:'d MMM y' }}</span>
+      <span class="pay-tag paid">Paid</span>
+      <span class="pay-amt">{{ compact(p.amount) }}</span>
+    </div>
+  </div>
+</aside>

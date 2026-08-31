@@ -20,6 +20,7 @@
   *ngIf="!intro && villa"
   [price]="villa.cost"
   [name]="villa.label"
+  [boughtAt]="villa.boughtAt"
   (back)="closeVilla()"
 ></app-villa-detail>
 
