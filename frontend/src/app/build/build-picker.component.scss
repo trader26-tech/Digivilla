@@ -32,7 +32,8 @@
 .xp-stack { position: absolute; inset: 0; }
 .xp-card {
   position: absolute; inset: 0;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  justify-content: center; gap: 0.2rem;
   padding: calc(3.4rem + env(safe-area-inset-top)) 1.3rem calc(1.2rem + env(safe-area-inset-bottom));
   opacity: 0; transform: translateY(40px) scale(0.98); pointer-events: none;
   transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
@@ -40,44 +41,37 @@
 .xp-card.up { transform: translateY(-40px) scale(0.98); }
 .xp-card.on { opacity: 1; transform: none; pointer-events: auto; }
 
-/* cost-to-own pill, top-right of the card */
-.xp-cost-row { flex: none; display: flex; justify-content: flex-end; }
+/* name + cost to own, big and centred */
+.xp-head { display: flex; flex-direction: column; align-items: center; gap: 0.05rem; }
+.xp-name {
+  margin: 0;
+  font-family: var(--font-display); font-size: 2.4rem; font-weight: 850; letter-spacing: -1px; color: var(--ink);
+}
 .xp-cost {
-  display: flex; flex-direction: column; align-items: flex-end;
-  padding: 0.4rem 0.8rem; border-radius: 12px;
-  border: 1px solid var(--survey); background: #fff;
-  box-shadow: 0 8px 20px -16px rgba(22, 48, 43, 0.5);
+  font-family: var(--font-display); font-size: 1.9rem; font-weight: 850; letter-spacing: -0.8px; line-height: 1.05;
+  color: var(--brass);
 }
-.xp-cost-k { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.xp-cost-v { font-family: var(--font-display); font-size: 1.15rem; font-weight: 850; letter-spacing: -0.4px; color: var(--ink); }
+.xp-cost-k { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 
-/* centred body — content pulled toward the top, not floating low */
-.xp-body {
-  flex: 1 1 auto; min-height: 0;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; text-align: center;
-  padding-top: 0.4rem;
-}
+/* the asset */
 .xp-art {
-  width: 100%; max-width: 360px; margin: 0 auto;
+  width: 100%; max-width: 340px; margin: 0.5rem auto;
   app-villa-art, app-land-art { display: block; width: 100%; height: auto; }
 }
-.xp-name {
-  margin: 0.2rem 0 0;
-  font-family: var(--font-display); font-size: 2.6rem; font-weight: 850; letter-spacing: -1px; color: var(--ink);
-}
-.xp-tag { margin: 0.15rem 0 0; font-size: 0.95rem; color: var(--muted); }
 
-.xp-rent { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
-.xp-rent-v { font-family: var(--font-display); font-size: 2.4rem; font-weight: 850; letter-spacing: -1.2px; line-height: 1; color: var(--ink); }
-.xp-rent-k { font-size: 0.92rem; font-weight: 600; color: var(--brass); }
-
-.xp-worth { display: flex; align-items: baseline; gap: 0.55rem; justify-content: center; margin-top: 1.2rem; }
-.xp-worth-k { font-size: 0.92rem; color: var(--muted); }
-.xp-worth-v { font-family: var(--font-display); font-size: 1.7rem; font-weight: 850; letter-spacing: -0.9px; color: var(--positive); }
-.xp-split { margin-top: 0.35rem; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums;
-  span { font-weight: 600; } .xp-dot { margin: 0 0.4rem; opacity: 0.6; }
+/* two clean stat cells, split down the middle */
+.xp-stats {
+  display: flex; align-items: center; justify-content: center; gap: 1.4rem;
+  margin-top: 0.4rem;
 }
+.xp-stat { display: flex; flex-direction: column; gap: 0.2rem; }
+.xp-stat-div { width: 1px; align-self: stretch; margin: 0.3rem 0; background: var(--survey); }
+.xp-stat-v {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; line-height: 1;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.xp-stat-v.grow { color: var(--positive); }
+.xp-stat-k { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
 
 /* a centred pill under the figures, not a full-width bar at the foot */
 .xp-buy {

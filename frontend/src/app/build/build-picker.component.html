@@ -11,48 +11,40 @@
     </span>
   </header>
 
-  <!-- stacked full-screen cards; only the active one shows -->
   <div class="xp-stack">
     <section class="xp-card" *ngFor="let it of items; let i = index"
              [class.on]="index() === i" [class.up]="i < index()">
 
-      <!-- cost-to-own pill -->
-      <div class="xp-cost-row">
-        <span class="xp-cost">
-          <span class="xp-cost-k">Cost to own</span>
-          <b class="xp-cost-v">{{ compact(it.cost) }}</b>
-        </span>
-      </div>
-
-      <div class="xp-body">
-        <!-- the asset, same size for every card -->
-        <div class="xp-art">
-          <app-villa-art *ngIf="it.kind === 'villa'"></app-villa-art>
-          <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
-        </div>
-
+      <!-- name + cost to own, centred -->
+      <div class="xp-head">
         <h1 class="xp-name">{{ it.name }}</h1>
-        <p class="xp-tag">{{ it.tag }}</p>
-
-        <div class="xp-rent">
-          <b class="xp-rent-v">{{ it.headV }}</b>
-          <span class="xp-rent-k">{{ it.headK }}</span>
-        </div>
-
-        <div class="xp-worth">
-          <span class="xp-worth-k">worth in 20 years</span>
-          <b class="xp-worth-v">{{ compact(it.worth20) }}</b>
-        </div>
-        <div class="xp-split">
-          <span>{{ it.splitA }}</span><span class="xp-dot">·</span><span>{{ it.splitB }}</span>
-        </div>
-
-        <!-- centred pill, right under the figures -->
-        <button class="xp-buy" (click)="buy(it.kind)">
-          Tap to know more
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        <b class="xp-cost">{{ compact(it.cost) }}</b>
+        <span class="xp-cost-k">cost to own</span>
       </div>
+
+      <!-- the asset -->
+      <div class="xp-art">
+        <app-villa-art *ngIf="it.kind === 'villa'"></app-villa-art>
+        <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
+      </div>
+
+      <!-- two clean stat cells: what it pays · what it's worth -->
+      <div class="xp-stats">
+        <div class="xp-stat">
+          <b class="xp-stat-v">{{ it.headV }}</b>
+          <span class="xp-stat-k">{{ it.headK }}</span>
+        </div>
+        <div class="xp-stat-div"></div>
+        <div class="xp-stat">
+          <b class="xp-stat-v grow">{{ compact(it.worth20) }}</b>
+          <span class="xp-stat-k">worth in 20 years</span>
+        </div>
+      </div>
+
+      <button class="xp-buy" (click)="buy(it.kind)">
+        Tap to know more
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
 
       <span class="xp-swipe" *ngIf="i < items.length - 1" aria-hidden="true">Swipe up for more ↑</span>
     </section>
