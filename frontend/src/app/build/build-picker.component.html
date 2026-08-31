@@ -28,16 +28,11 @@
         <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
       </div>
 
-      <!-- two clean stat cells: what it pays · what it's worth -->
+      <!-- one honest cell: the SWP the user can set up. No forward projection. -->
       <div class="xp-stats">
         <div class="xp-stat">
           <b class="xp-stat-v">{{ it.headV }}</b>
           <span class="xp-stat-k">{{ it.headK }}</span>
-        </div>
-        <div class="xp-stat-div"></div>
-        <div class="xp-stat">
-          <b class="xp-stat-v grow">{{ compact(it.worth20) }}</b>
-          <span class="xp-stat-k">projected in 20 years*</span>
         </div>
       </div>
 

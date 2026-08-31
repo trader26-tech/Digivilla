@@ -28,10 +28,11 @@ import { CommonModule } from '@angular/common';
       </button>
 
       <div class="mfd-full" *ngIf="open()">
-        Figures shown (rent, growth, projected worth) are <b>illustrative, not
-        guaranteed</b> — actual returns are market-linked and may be lower, or
-        negative. Assets are a metaphor for units of a mutual fund portfolio
-        held in your name, valued at NAV.
+        A villa / plot is a <b>visualisation of mutual-fund units held in your
+        name at NAV</b>, not real property. A monthly “payout” is a <b>Systematic
+        Withdrawal Plan (SWP)</b> — you are redeeming your own units, which draws
+        down your capital and can deplete it. No returns are assured; unit value
+        is market-linked and can fall as well as rise.
         <span class="mfd-amfi">Mutual fund investments are subject to market
         risks. Read all scheme related documents carefully.</span>
       </div>

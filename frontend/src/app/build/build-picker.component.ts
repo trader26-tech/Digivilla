@@ -45,41 +45,39 @@ export class BuildPickerComponent {
   readonly items: ExploreItem[] = this.buildItems();
 
   private buildItems(): ExploreItem[] {
+    // NO forward return projections shown. The villa maps to an SWP the user
+    // sets up; the plot to a growth fund held at NAV. Figures below describe
+    // the SETUP the user chooses, not an expected return.
     const villaCost = 50_00_000;
-    const vplan = villaPlan(villaCost, 20);
-    const vRent = Math.round(vplan.rentMonthly);
-    const vRent20 = Math.round(vplan.rentYearly * 20);
-    const vGrowth20 = Math.round(vplan.finalValue);
+    const villaSwp = Math.round((villaCost * 0.06) / 12); // a 6%/yr SWP the user may set
 
     const landCost = 20_00_000;
-    const lplan = villaPlan(landCost, 20);
-    const lGrowth20 = Math.round(lplan.finalValue);
 
     return [
       {
         kind: 'villa',
-        // wording softened to illustrative — no guaranteed-return claims
         label: 'VILLA',
         name: 'Villa',
-        tag: 'Aims for regular income + growth.',
+        tag: 'A fund with a monthly SWP you set up.',
         cost: villaCost,
-        headV: compact(vRent),
-        headK: 'illustrative monthly payout*',
-        worth20: vGrowth20 + vRent20,
-        splitA: `${compact(vRent20)} payout`,
-        splitB: `${compact(vGrowth20)} growth`,
+        headV: compact(villaSwp),
+        headK: 'SWP you set — withdraws your own units*',
+        // legacy fields kept for the type; no longer shown
+        worth20: 0,
+        splitA: '',
+        splitB: '',
       },
       {
         kind: 'land',
         label: 'PLOT',
         name: 'Plot',
-        tag: 'Aims for pure growth.',
+        tag: 'A growth fund, held in your name at NAV.',
         cost: landCost,
-        headV: '12%*',
-        headK: 'target growth p.a.*',
-        worth20: lGrowth20,
-        splitA: `${compact(landCost)} in`,
-        splitB: `${compact(lGrowth20)} projected`,
+        headV: 'At NAV',
+        headK: 'value moves with the market*',
+        worth20: 0,
+        splitA: '',
+        splitB: '',
       },
     ];
   }
