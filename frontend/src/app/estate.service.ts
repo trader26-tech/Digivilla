@@ -176,6 +176,30 @@ export class EstateService {
     this.save();
   }
 
+  /**
+   * Start a SIP on a land plot to build a villa on it. The land becomes an
+   * under-construction tile: a monthly SIP accrues toward the target villa
+   * cost, and the plot renders as a build in progress on the map. The land's
+   * existing value carries over as the first accrual so nothing is lost.
+   */
+  convertLandToVilla(id: string, sipMonthly: number, targetCost: number): void {
+    this.tiles.update((list) =>
+      list.map((t) =>
+        t.id === id && t.type === 'land'
+          ? {
+              ...t,
+              type: 'building' as TileType,
+              sipMonthly,
+              sipAccrued: t.cost,   // the land's worth is the starting balance
+              cost: targetCost,     // the villa we're building toward
+              rentMonthly: 0,
+            }
+          : t,
+      ),
+    );
+    this.save();
+  }
+
   /** Collect the pending rent (all villas' monthly rent, once). */
   collectRent(): number {
     const amt = this.rentIn;

@@ -30,6 +30,21 @@
     </div>
   </section>
 
+  <!-- ============ build-a-villa CTA — the key land→construction move ======= -->
+  <button class="build-cta reveal" style="--i:3" (click)="openBuild()">
+    <span class="bc-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path d="M4 11l8-6 8 6M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
+        <path d="M12 12v5M9.5 14.5h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="bc-main">
+      <b class="bc-title">Build a villa here</b>
+      <span class="bc-sub">Invest {{ compactK(sipMonthly) }}/mo — villa in {{ BUILD_YEARS }} years, earning rent</span>
+    </span>
+    <span class="bc-go" aria-hidden="true">›</span>
+  </button>
+
   <!-- ============ 2½ · Your e-land perks ================================== -->
   <section class="why reveal" style="--i:3">
     <span class="sec-cap">Your e-land perks</span>

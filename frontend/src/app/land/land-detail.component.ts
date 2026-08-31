@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 
+import { EstateService } from '../estate.service';
 import { LandArtComponent } from '../shared/land-art.component';
 import { compact, compactK, inr } from '../shared/format.util';
 import {
@@ -33,6 +34,8 @@ import {
   styleUrl: '../villa/villa-detail.component.scss',
 })
 export class LandDetailComponent implements OnInit {
+  /** The tile's id — needed to convert this land into a build. */
+  @Input() tileId = '';
   /** Land price in rupees (the invested amount). */
   @Input() price = 30_00_000;
   /** Display name for the plot. */
@@ -40,12 +43,46 @@ export class LandDetailComponent implements OnInit {
   /** When it was bought (epoch ms) — drives the growth curve. */
   @Input() boughtAt = Date.now();
   @Output() back = new EventEmitter<void>();
+  /** Emitted after the land is converted, so the shell can close/refresh. */
+  @Output() converted = new EventEmitter<void>();
+
+  private readonly est = inject(EstateService);
 
   plan!: VillaPlan;
 
   /** Value figures. */
   current = 0;
   gain = 0;
+
+  // --- build-a-villa SIP ---
+  /** The villa we build toward — a bigger asset than the bare plot. */
+  villaTarget = 0;
+  /** Years the plan runs. */
+  readonly BUILD_YEARS = 5;
+  /** Suggested monthly SIP to reach the villa in BUILD_YEARS. */
+  sipMonthly = 0;
+  /** The convert sheet. */
+  buildOpen = signal(false);
+  buildDone = signal(false);
+
+  openBuild(): void {
+    this.buildOpen.set(true);
+    this.buildDone.set(false);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+  closeBuild(): void {
+    this.buildOpen.set(false);
+  }
+  /** Start the SIP: convert this land into an under-construction villa. */
+  confirmBuild(): void {
+    this.est.convertLandToVilla(this.tileId, this.sipMonthly, this.villaTarget);
+    this.buildDone.set(true);
+    if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
+  }
+  finishBuild(): void {
+    this.buildOpen.set(false);
+    this.converted.emit();
+  }
 
   // --- withdraw: a 4-step "book a call with the fund manager" flow ---
   withdrawOpen = signal(false);
@@ -192,6 +229,27 @@ export class LandDetailComponent implements OnInit {
     this.current = currentValue(this.price, this.plan.cagr, this.boughtAt, now);
     this.gain = this.current - this.price;
     this.buildPerks();
+
+    // A villa is a bigger asset than the bare plot — build toward ~1.5x the
+    // land's current value. The land itself is the starting balance; the SIP
+    // plus its growth closes the gap over BUILD_YEARS.
+    this.villaTarget = Math.round((this.current * 1.5) / 100000) * 100000;
+    this.sipMonthly = this.suggestSip(this.current, this.villaTarget, this.BUILD_YEARS);
+  }
+
+  /**
+   * Monthly SIP that, compounded at the fund CAGR alongside the land's own
+   * growth, reaches `target` in `years`. Rounded to a friendly ₹500 step.
+   */
+  private suggestSip(startValue: number, target: number, years: number): number {
+    const r = this.plan.cagr / 100 / 12;         // monthly rate
+    const n = years * 12;
+    const grownStart = startValue * (1 + r) ** n; // land keeps growing meanwhile
+    const gap = Math.max(0, target - grownStart);
+    // future value of a monthly SIP: sip * [((1+r)^n - 1) / r]
+    const factor = ((1 + r) ** n - 1) / r;
+    const raw = gap / factor;
+    return Math.max(500, Math.round(raw / 500) * 500);
   }
 
   onBack(): void {

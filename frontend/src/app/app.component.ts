@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
+import { ConstructionDetailComponent } from './construction/construction-detail.component';
 import { EstateDetailComponent } from './estate-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
 import { IntroComponent } from './intro.component';
@@ -30,6 +31,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     LandDetailComponent,
     EstateDetailComponent,
     VillaDetailComponent,
+    ConstructionDetailComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -50,6 +52,9 @@ export class AppComponent {
   /** The land plot whose dedicated detail page is open, or null. */
   land: Tile | null = null;
 
+  /** The under-construction tile whose detail page is open, or null. */
+  construction: Tile | null = null;
+
   onIntroDone(): void {
     this.intro = false;
   }
@@ -67,7 +72,8 @@ export class AppComponent {
       window.scrollTo({ top: 0 });
       return;
     }
-    this.detail = { property: 'flat', variant: t.variant };
+    // building → the dedicated under-construction detail page
+    this.construction = t;
     window.scrollTo({ top: 0 });
   }
 
@@ -77,6 +83,10 @@ export class AppComponent {
 
   closeLand(): void {
     this.land = null;
+  }
+
+  closeConstruction(): void {
+    this.construction = null;
   }
 
   /** Explore tab -> the storefront catalog to browse tiers. */
