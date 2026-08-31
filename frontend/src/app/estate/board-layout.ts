@@ -25,7 +25,7 @@ export interface Cell {
 }
 
 /** Headroom above the topmost tile centre for the hall tower and roofs. */
-export const TOP_PAD = 150;
+export const TOP_PAD = 96;
 /** Skirt below the bottom tile for the soil depth. */
 export const BOT_PAD = 40;
 
