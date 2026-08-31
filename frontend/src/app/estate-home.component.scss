@@ -503,9 +503,8 @@
   padding: 0;
   border-radius: 16px;
   overflow: hidden;
-  /* a solid green pad filling the whole square, so the villa's transparent
-     corners read as lawn — the image fills the tile like the reference. */
-  background: linear-gradient(160deg, #d8ecc4 0%, #c2e0a6 100%);
+  /* no pad — the villa sits directly on the row */
+  background: none;
 }
 .log-art svg { display: block; width: 100%; height: 100%; }
 
