@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnDestroy,
   OnInit,
   Output,
   computed,
@@ -36,7 +37,7 @@ import {
   templateUrl: './villa-detail.component.html',
   styleUrl: './villa-detail.component.scss',
 })
-export class VillaDetailComponent implements OnInit {
+export class VillaDetailComponent implements OnInit, OnDestroy {
   /** Villa price in rupees (the invested amount). */
   @Input() price = 30_00_000;
   /** Display name for the villa. */
@@ -57,6 +58,34 @@ export class VillaDetailComponent implements OnInit {
   history: RentPayment[] = [];
   historyOpen = signal(false);
 
+  // --- "why this beats owning direct" carousel ---
+  /** Five reasons this villa beats owning real estate directly. One per card,
+   *  kept minimal: an icon, a title, and the two-line Your-city vs Own-direct
+   *  contrast. */
+  readonly PERKS = [
+    { icon: '🧾', title: 'Tax you’ll enjoy',  ours: 'Smarter tax treatment', theirs: 'Taxed more, every year' },
+    { icon: '📝', title: 'No registration',   ours: 'Buy in one tap',        theirs: 'Stamp duty & paperwork' },
+    { icon: '🛋️', title: 'Zero hassle',       ours: 'Rent lands each month', theirs: 'Repairs, tenants, visits' },
+    { icon: '📈', title: 'Value, live',       ours: 'See it right here',     theirs: 'Wait for a valuer' },
+    { icon: '⚡', title: 'Cash out anytime',  ours: 'Sell in a tap',         theirs: 'Months, brokers, fees' },
+  ];
+  perk = signal(0);
+  private perkTimer?: ReturnType<typeof setInterval>;
+
+  goPerk(i: number): void {
+    this.perk.set(i);
+    this.startPerks();
+  }
+  private startPerks(): void {
+    this.stopPerks();
+    this.perkTimer = setInterval(() => {
+      this.perk.update((i) => (i + 1) % this.PERKS.length);
+    }, 4200);
+  }
+  private stopPerks(): void {
+    if (this.perkTimer) { clearInterval(this.perkTimer); this.perkTimer = undefined; }
+  }
+
   // format helpers for the template
   compact = compact;
   compactK = compactK;
@@ -74,6 +103,12 @@ export class VillaDetailComponent implements OnInit {
     const sched = rentSchedule(this.boughtAt, this.plan.rentMonthly, now);
     this.next = sched.next;
     this.history = sched.paid;
+
+    this.startPerks();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPerks();
   }
 
   openHistory(): void {

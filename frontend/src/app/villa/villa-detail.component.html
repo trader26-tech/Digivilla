@@ -56,8 +56,47 @@
 
   <div class="rule"></div>
 
+  <!-- ============ 3½ · why this beats owning real estate directly ==========
+       Five auto-advancing cards, each contrasting this villa with owning a
+       flat the old way. Dots below track and let you jump. -->
+  <section class="why reveal" style="--i:4">
+    <span class="sec-cap">Why this beats owning direct</span>
+    <div class="why-stage">
+      <div class="why-card" *ngFor="let p of PERKS; let i = index"
+           [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
+        <div class="why-top">
+          <span class="why-ico">{{ p.icon }}</span>
+          <b class="why-title">{{ p.title }}</b>
+        </div>
+        <div class="why-compare">
+          <div class="why-row ours">
+            <span class="why-mark ok">
+              <svg viewBox="0 0 24 24" width="13" height="13"><path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="why-who">This villa</span>
+            <span class="why-val">{{ p.ours }}</span>
+          </div>
+          <div class="why-row theirs">
+            <span class="why-mark no">
+              <svg viewBox="0 0 24 24" width="13" height="13"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+            </span>
+            <span class="why-who">Own direct</span>
+            <span class="why-val">{{ p.theirs }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="why-dots" role="tablist" aria-label="Why this beats owning direct">
+      <button class="why-dot" *ngFor="let p of PERKS; let i = index"
+              [class.on]="perk() === i" (click)="goPerk(i)"
+              [attr.aria-label]="p.title" [attr.aria-selected]="perk() === i"></button>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
   <!-- ============ 4 · the funds this villa holds ============ -->
-  <section class="funds reveal" style="--i:4">
+  <section class="funds reveal" style="--i:5">
     <div class="funds-head">
       <span class="sec-cap">Funds inside</span>
       <span class="sec-sub">{{ plan.funds.length }} funds</span>

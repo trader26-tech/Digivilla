@@ -74,37 +74,6 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   showBuildCost = signal(false);
   toggleRentFace(): void { this.showBuildCost.update((v) => !v); }
 
-  // ---------------------------------------------------- "why this" perks ---
-  /** Five reasons owning a plot here beats owning real estate directly. Each
-   *  is one card in the auto-advancing carousel below the headline numbers.
-   *  Kept deliberately minimal: an icon, a title, and the two-line contrast. */
-  readonly PERKS = [
-    { icon: '🧾', title: 'Tax you’ll enjoy',   ours: 'Smarter tax treatment', theirs: 'Taxed more, every year' },
-    { icon: '📝', title: 'No registration',    ours: 'Buy in one tap',        theirs: 'Stamp duty & paperwork' },
-    { icon: '🛋️', title: 'Zero hassle',        ours: 'Rent lands each month', theirs: 'Repairs, tenants, visits' },
-    { icon: '📈', title: 'Value, live',        ours: 'See it right here',     theirs: 'Wait for a valuer' },
-    { icon: '⚡', title: 'Cash out anytime',   ours: 'Sell in a tap',         theirs: 'Months, brokers, fees' },
-  ];
-  /** Which perk card is showing. */
-  perk = signal(0);
-  private perkTimer?: ReturnType<typeof setInterval>;
-
-  /** Jump to a perk card (dot tap) and restart the dwell timer. */
-  goPerk(i: number): void {
-    this.perk.set(i);
-    this.startPerks();
-  }
-  private startPerks(): void {
-    this.stopPerks();
-    // dwell a few seconds on each card, then advance, looping round
-    this.perkTimer = setInterval(() => {
-      this.perk.update((i) => (i + 1) % this.PERKS.length);
-    }, 4200);
-  }
-  private stopPerks(): void {
-    if (this.perkTimer) { clearInterval(this.perkTimer); this.perkTimer = undefined; }
-  }
-
   // -------------------------------------------------------- owner photo ----
 
   /** Open the OS photo picker (fired from the corner avatar). */
@@ -229,13 +198,10 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
       });
       this.ro.observe(el);
     }
-
-    this.startPerks();
   }
 
   ngOnDestroy(): void {
     this.ro?.disconnect();
-    this.stopPerks();
   }
 
   /** Centre the view on the hall plus everything built, so the interesting

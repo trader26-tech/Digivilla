@@ -119,6 +119,52 @@
 @keyframes grow-bar { from { width: 0 !important; } }
 .fund-meta { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 0.3rem; }
 
+/* ---------------- 3½ · why-this carousel ---------------- */
+.why { padding: 0.2rem 0.15rem; }
+.why .sec-cap { display: block; margin-bottom: 0.7rem; }
+.why-stage { position: relative; height: 132px; }
+.why-card {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: 0.95rem 1.05rem;
+  border-radius: 18px;
+  border: 1px solid var(--survey);
+  background:
+    radial-gradient(130% 120% at 100% 0%, rgba(46, 107, 79, 0.07), transparent 55%),
+    #fff;
+  box-shadow: 0 14px 34px -24px rgba(22, 48, 43, 0.55);
+  opacity: 0;
+  transform: translateX(28px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.why-card.prev { transform: translateX(-28px) scale(0.98); }
+.why-card.on { opacity: 1; transform: none; pointer-events: auto; }
+
+.why-top { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; }
+.why-ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: rgba(166, 124, 46, 0.12); font-size: 1rem; }
+.why-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px; color: var(--ink); }
+
+.why-compare { display: flex; flex-direction: column; gap: 0.4rem; }
+.why-row { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
+.why-mark { flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; color: #fff; }
+.why-mark.ok { background: var(--positive); }
+.why-mark.no { background: #c2b7a3; }
+.why-who { flex: none; width: 74px; font-weight: 700; color: var(--ink); }
+.why-row.theirs .why-who { color: var(--muted); font-weight: 600; }
+.why-val { color: var(--muted); }
+.why-row.ours .why-val { color: var(--ink); font-weight: 600; }
+
+.why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.85rem; }
+.why-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: var(--survey); cursor: pointer; transition: width 0.35s cubic-bezier(0.22,1,0.36,1), background 0.3s; }
+.why-dot.on { width: 20px; background: var(--brass); }
+
+@media (prefers-reduced-motion: reduce) {
+  .why-card { transition: opacity 0.25s ease; transform: none; }
+  .why-card.prev { transform: none; }
+  .why-dot { transition: background 0.2s; }
+}
+
 /* ---------------- rent history sheet ---------------- */
 .sheet-backdrop {
   position: fixed; inset: 0; z-index: 40;
