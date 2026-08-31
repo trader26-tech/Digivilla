@@ -19,14 +19,8 @@
     <!-- ===== FUND-MANAGER CALLS: top-right; a star appears if one is <24h away ===== -->
     <app-call-schedule></app-call-schedule>
 
-    <!-- ===== HERO GREETING: "YOUR ESTATE" over the estate name ===== -->
-    <header class="hero">
-      <span class="hero-kicker">YOUR ESTATE</span>
-      <h1 class="hero-title">{{ est.profile().name }}&rsquo;s City</h1>
-    </header>
-
-    <!-- the isometric town — sits in flow below the hero. Scrolls freely
-         in both directions so the town can keep growing. -->
+    <!-- the isometric town — the centrepiece; the hero sits below it. Scrolls
+         freely in both directions so the town can keep growing. -->
     <div
       class="board-scroll"
       [class.fit]="!canZoom"
@@ -180,8 +174,13 @@
       </button>
     </div>
 
-    <!-- ===== the two headline numbers — the last thing in the first screen:
-         City value (left) · Rent a month (right, taps to build cost). ===== -->
+    <!-- ===== HERO GREETING: below the town, centred ===== -->
+    <header class="hero">
+      <span class="hero-kicker">YOUR ESTATE</span>
+      <h1 class="hero-title">{{ est.profile().name }}&rsquo;s City</h1>
+    </header>
+
+    <!-- ===== the two headline numbers: City value · Rent a month ===== -->
     <div class="stats">
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}</b>
@@ -200,10 +199,19 @@
         </span>
       </button>
     </div>
+
+    <!-- ===== VIEW MORE: reveals the build + assets panel below ===== -->
+    <button class="more-btn" (click)="toggleMore()" [class.open]="showMore()"
+            [attr.aria-expanded]="showMore()">
+      {{ showMore() ? 'Hide details' : 'View more details' }}
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 
-  <!-- ============ BOTTOM: scrolls below the first screen ============ -->
-  <div class="estate-bottom">
+  <!-- ============ BOTTOM: build + assets, revealed on "View more" ======= -->
+  <div class="estate-bottom" *ngIf="showMore()">
 
     <!-- ===== ALWAYS-ON CTA: build a new asset. Sits at the top of the list
          so a user can invest straight away, whether or not they own any yet.

@@ -101,6 +101,18 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   showBuildCost = signal(false);
   toggleRentFace(): void { this.showBuildCost.update((v) => !v); }
 
+  /** "View more details" reveals the build + assets panel below the first
+   *  screen; tapping it also scrolls that panel into view. */
+  showMore = signal(false);
+  toggleMore(): void {
+    const opening = !this.showMore();
+    this.showMore.set(opening);
+    if (opening) {
+      // let the panel render, then bring it into view
+      setTimeout(() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' }), 60);
+    }
+  }
+
   // -------------------------------------------------------- owner photo ----
 
   /** Open the OS photo picker (fired from the corner avatar). */

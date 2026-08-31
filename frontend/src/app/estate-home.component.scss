@@ -17,24 +17,42 @@
      avatar → small gap → hero → gap → the town → (divider lives below) */
 .estate-top {
   position: relative;
-  /* the FIRST SCREEN: hero + map + the two figures fill the viewport, so the
-     "Build a new asset" row and the asset list start below the fold. */
+  /* the FIRST SCREEN: fills the viewport and centres its content — map, then
+     the hero, then the figures, then "View more details". */
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 0 0 1.1rem;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: calc(1rem + env(safe-area-inset-top)) 0 1.4rem;
   overflow: hidden;
   background:
     radial-gradient(140% 90% at 50% -20%, rgba(166, 124, 46, 0.16), transparent 60%),
     radial-gradient(120% 70% at 12% 4%, rgba(46, 107, 79, 0.10), transparent 55%),
     linear-gradient(180deg, #FFFDF8, var(--paper));
-  border-bottom: 1px solid var(--survey);
 }
-/* the town takes the space between the hero and the figures */
-.estate-top .board-scroll { flex: 1 1 auto; min-height: 0; }
-/* the headline figures sit at the foot of the first screen */
-.estate-top .stats { flex: none; padding: 0 1.25rem; margin: 0; }
+.estate-top .stats { flex: none; padding: 0 1.25rem; margin: 0.2rem 0 0; }
+
+/* "View more details" — the reveal control at the foot of the first screen */
+.more-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+  align-self: center; margin-top: 1.2rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px; border: 1px solid var(--survey); background: rgba(255,255,255,0.7);
+  font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--muted);
+  cursor: pointer; backdrop-filter: blur(4px);
+  transition: transform 0.12s, color 0.2s, border-color 0.2s;
+  svg { display: block; transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+  &:hover { color: var(--ink); border-color: var(--brass); }
+  &:active { transform: scale(0.96); }
+  &.open svg { transform: rotate(180deg); }
+}
+
+/* the revealed panel slides + fades in */
+.estate-bottom { animation: moreIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes moreIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .estate-bottom { animation: none; } }
 
 /* ===== owner avatar — top-left; the native file input is fully hidden and
    only reached by tapping the avatar button ===== */
@@ -93,15 +111,12 @@
   border: 0;
 }
 
-/* ===== hero greeting — in flow, ABOVE the town.
-   Rhythm: the avatar sits at the very top-left; the hero clears it with a
-   small gap, then the map gets a comfortable gap below the hero. ===== */
+/* ===== hero greeting — BELOW the town, centred ===== */
 .hero {
   position: relative;
   z-index: 3;
   text-align: center;
-  /* small gap under the logo row, then room to breathe before the town */
-  padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem 1.4rem;
+  padding: 0.6rem 1.1rem 0.4rem;
   animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .hero-kicker {
