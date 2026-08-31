@@ -120,40 +120,28 @@
   font-size: 0.8rem; font-weight: 600; color: var(--muted);
 }
 
-/* ---------------- 4 · funds — in a box; closed, opens to name + % ------- */
-.funds {
-  padding: 0.5rem 1rem;
-  border-radius: 16px;
-  border: 1px solid var(--survey);
-  background: #fff;
-  box-shadow: 0 12px 30px -22px rgba(22, 48, 43, 0.5);
-}
+/* ---------------- 4 · funds — always open, no box; name · amount · % ---- */
+.funds { padding: 0.2rem 0.15rem; }
 .funds-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
-  width: 100%; padding: 0.45rem 0; border: none; background: none; cursor: pointer;
-  font: inherit; text-align: left;
-  &:active { opacity: 0.85; }
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem;
+  margin-bottom: 0.5rem;
 }
-.funds-toggle { display: inline-flex; align-items: center; gap: 0.4rem; }
-.funds-caret { color: var(--muted); transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
-.funds-caret.open { transform: rotate(180deg); }
 
-.funds-body {
-  margin-top: 0.6rem;
-  display: flex; flex-direction: column;
-  animation: funds-open 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes funds-open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-
+.funds-body { display: flex; flex-direction: column; }
 .fund-line {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.65rem 0;
+  padding: 0.7rem 0;
   border-top: 1px solid var(--survey);
   &:first-child { border-top: none; }
 }
 .fund-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .fund-name { flex: 1; min-width: 0; font-size: 0.92rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fund-wt { font-size: 0.95rem; font-weight: 850; color: var(--ink); flex: none; font-variant-numeric: tabular-nums; }
+.fund-amt { font-size: 0.9rem; font-weight: 700; color: var(--muted); flex: none; font-variant-numeric: tabular-nums; }
+.fund-wt {
+  font-size: 0.95rem; font-weight: 850; color: var(--ink); flex: none;
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch; text-align: right;
+}
 
 /* ---------------- 3½ · why-this carousel ---------------- */
 .why { padding: 0.2rem 0.15rem; }

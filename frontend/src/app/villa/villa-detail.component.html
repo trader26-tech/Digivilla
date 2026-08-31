@@ -59,8 +59,6 @@
     </div>
   </section>
 
-  <div class="rule"></div>
-
   <!-- ============ 3 · next rent payment + history control ================= -->
   <section class="rent reveal" style="--i:4">
     <div class="rent-head">
@@ -81,22 +79,18 @@
     </div>
   </section>
 
-  <!-- ============ 4 · funds inside — boxed; closed, opens to name + % ====== -->
+  <!-- ============ 4 · funds inside — always open, no box; name · amount · % -->
   <section class="funds reveal" style="--i:5">
-    <button class="funds-head" (click)="toggleFunds()" [attr.aria-expanded]="fundsOpen()">
+    <div class="funds-head">
       <span class="sec-cap">Funds inside</span>
-      <span class="funds-toggle">
-        <span class="sec-sub">{{ plan.funds.length }} funds</span>
-        <svg class="funds-caret" [class.open]="fundsOpen()" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </span>
-    </button>
+      <span class="sec-sub">{{ plan.funds.length }} funds</span>
+    </div>
 
-    <div class="funds-body" *ngIf="fundsOpen()">
+    <div class="funds-body">
       <div class="fund-line" *ngFor="let f of plan.funds; trackBy: trackFund">
         <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
         <span class="fund-name">{{ f.name }}</span>
+        <span class="fund-amt">{{ compactK(f.weight * price) }}</span>
         <span class="fund-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
       </div>
     </div>
