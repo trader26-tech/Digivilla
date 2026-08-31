@@ -409,18 +409,8 @@
     radial-gradient(120% 90% at 50% 0%, rgba(166, 124, 46, 0.10), transparent 60%),
     linear-gradient(180deg, #FFFDF8, var(--paper));
 }
-.pv-lawn   { fill: url(#pv-lawn); stroke: #2f6127; stroke-width: 1.4; }
-.pv-soil-l { fill: #6b4f2b; }
-.pv-soil-r { fill: #513a1e; }
-.pv-peg    { fill: rgba(22,48,43,0.4); }
-.pv-wall-l { fill: #d3c5ab; }
-.pv-wall-r { fill: #efe6d7; }
-.pv-wall-t { fill: #b9ab90; }
-.pv-house-l{ fill: #d3c5ab; }
-.pv-house-r{ fill: #efe6d7; }
-.pv-roof   { fill: #2E6B4F; }
-.pv-ring   { fill: rgba(166,124,46,0.14); stroke: var(--brass); stroke-width: 2; stroke-dasharray: 4 4; }
-.pv-plus   { fill: none; stroke: var(--brass); stroke-width: 3.4; stroke-linecap: round; }
+/* the preview now <use>s the map's own #tLand / #tVilla / #tLocked symbols
+   (self-coloured), so no per-shape fills are needed here. */
 
 /* body */
 .pop-body { padding: 0.4rem 1.2rem 1.3rem; }

@@ -1,6 +1,24 @@
 <section class="estate">
   <!-- ============ TOP: swipeable estate canvas (top half) ============ -->
   <div class="estate-top">
+    <!-- ===== OWNER AVATAR: top-left, tap to attach a photo ===== -->
+    <button
+      class="avatar"
+      [class.has-photo]="!!est.profile().photo"
+      (click)="pickPhoto()"
+      [attr.aria-label]="est.profile().photo ? 'Change your photo' : 'Add your photo'"
+    >
+      <img *ngIf="est.profile().photo as p" class="avatar-img" [src]="p" alt="" />
+      <ng-container *ngIf="!est.profile().photo">
+        <svg class="avatar-ph" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" />
+          <path d="M5.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+        <span class="avatar-plus" aria-hidden="true">+</span>
+      </ng-container>
+    </button>
+    <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
+
     <!-- ===== HERO GREETING: "YOUR ESTATE" over the estate name ===== -->
     <header class="hero">
       <span class="hero-kicker">YOUR ESTATE</span>
@@ -214,46 +232,17 @@
   <div class="pop" *ngIf="selected() as c" role="dialog" aria-modal="true">
     <!-- preview: a small isometric tile matching the type -->
     <div class="pop-art">
-      <svg viewBox="0 0 200 150" width="100%" height="130" aria-hidden="true">
-        <defs>
-          <linearGradient id="pv-lawn" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#5CB542"/><stop offset="100%" stop-color="#48A035"/>
-          </linearGradient>
-        </defs>
-        <g transform="translate(100,60)">
-          <!-- soil sides -->
-          <path class="pv-soil-l" d="M-70,0 L0,35 L0,55 L-70,20 Z"/>
-          <path class="pv-soil-r" d="M0,35 L70,0 L70,20 L0,55 Z"/>
-          <!-- lawn top -->
-          <path class="pv-lawn" d="M0,-35 L70,0 L0,35 L-70,0 Z"/>
-
-          <!-- LAND: a couple of survey pegs -->
-          <ng-container *ngIf="c.tile?.type === 'land'">
-            <circle class="pv-peg" cx="-40" cy="0" r="3"/>
-            <circle class="pv-peg" cx="40" cy="0" r="3"/>
-            <circle class="pv-peg" cx="0" cy="-20" r="3"/>
-            <circle class="pv-peg" cx="0" cy="20" r="3"/>
-          </ng-container>
-
-          <!-- BUILDING: a simple half-height shell -->
-          <ng-container *ngIf="c.tile?.type === 'building'">
-            <path class="pv-wall-l" d="M0,-2 L-34,-20 L-34,4 L0,22 Z"/>
-            <path class="pv-wall-r" d="M34,-20 L0,-2 L0,22 L34,4 Z"/>
-            <path class="pv-wall-t" d="M0,-38 L34,-20 L0,-2 L-34,-20 Z"/>
-          </ng-container>
-
-          <!-- VILLA: a little roofed house -->
-          <ng-container *ngIf="c.tile?.type === 'villa'">
-            <path class="pv-house-l" d="M4,-14 L-30,-34 L-30,-4 L4,16 Z"/>
-            <path class="pv-house-r" d="M38,-32 L4,-14 L4,16 L38,-2 Z"/>
-            <path class="pv-roof" d="M2,-48 L40,-30 L4,-12 L-34,-32 Z"/>
-          </ng-container>
-
-          <!-- OPEN: a big brass + to invite building -->
-          <g *ngIf="!c.tile">
-            <circle class="pv-ring" cx="0" cy="0" r="18"/>
-            <path class="pv-plus" d="M-9,0 H9 M0,-9 V9"/>
-          </g>
+      <!-- The SAME estate-board symbols the map paints with (#tLand / #tVilla /
+           #tLocked), <use>d here so the popup preview is identical to the tile
+           on the map. The symbols live in the map SVG's <defs>, which is in the
+           same document, so #id references resolve. Authored around (120,80),
+           framed by a viewBox centred there. -->
+      <svg viewBox="20 -8 200 176" width="100%" height="150" aria-hidden="true">
+        <use [attr.href]="popSymbol(c)"></use>
+        <!-- a construction shell stands on the land while a villa builds,
+             re-anchored exactly as on the map -->
+        <g *ngIf="c.tile?.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
+          <use [attr.href]="'#tBuild'"></use>
         </g>
       </svg>
     </div>

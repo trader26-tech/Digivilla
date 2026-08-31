@@ -14,6 +14,8 @@ export type Variant = 'conservative' | 'balanced' | 'aggressive';
 export interface Profile {
   name: string;
   city: string;
+  /** Optional owner photo, stored as a data URL. Shown as the corner avatar. */
+  photo?: string;
 }
 
 export interface Tile {

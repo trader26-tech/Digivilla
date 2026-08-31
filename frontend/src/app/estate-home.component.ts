@@ -53,6 +53,8 @@ const LOCALITIES = [
 })
 export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
+  /** Hidden file picker behind the corner avatar. */
+  @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
 
   /** Tapping a built tile asks the shell to open its detail page. */
   @Output() openTile = new EventEmitter<Tile>();
@@ -67,6 +69,28 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
+
+  // -------------------------------------------------------- owner photo ----
+
+  /** Open the OS photo picker (fired from the corner avatar). */
+  pickPhoto(): void {
+    this.photoInput?.nativeElement.click();
+  }
+
+  /** Read the chosen image as a data URL and store it on the profile so it
+   *  persists and shows in the corner avatar. */
+  onPhotoChosen(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const photo = typeof reader.result === 'string' ? reader.result : undefined;
+      if (photo) this.est.setProfile({ photo });
+    };
+    reader.readAsDataURL(file);
+    input.value = ''; // allow re-picking the same file later
+  }
 
   // ------------------------------------------------------------- zooming ---
 
@@ -228,6 +252,16 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
 
   /** 1-based plot number, matching the fill order. */
   plotNo(c: Cell): number { return c.index + 1; }
+
+  /** Which estate-board symbol the popup preview should <use> — the SAME
+   *  symbols the map paints with, so the preview matches the tile exactly.
+   *  A building stands on bare land (with #tBuild layered on top). */
+  popSymbol(c: Cell): string {
+    const t = c.tile;
+    if (!t) return '#tLocked';
+    if (t.type === 'villa') return '#tVilla';
+    return '#tLand';
+  }
 
   /** Build progress as "<accrued-months> of <target-months>", reference-style. */
   buildStep(t: Tile): { done: number; total: number } {
