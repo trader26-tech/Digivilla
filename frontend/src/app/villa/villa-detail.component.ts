@@ -81,13 +81,13 @@ export class VillaDetailComponent implements OnInit {
     const liveVal = compact(this.current);                       // today's value, updates daily
     const I = VillaDetailComponent.ICO;
     this.PERKS = [
-      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: '7% stamp duty & registration' },
-      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'a month',     vs: 'Paid to you, hands-off' },
-      { theme: 'live',  ico: I['chart'], stat: liveVal,    unit: 'live value',  vs: 'Updates daily, not a valuer' },
-      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'No repairs, no upkeep' },
-      { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',      vs: 'Not 45 days of paperwork' },
-      { theme: 'cash',  ico: I['swap'],  stat: '2 days',   unit: 'to cash out', vs: 'Not 6+ months of brokers' },
-      { theme: 'entry', ico: I['door'],  stat: '₹10L',    unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
+      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: 'in stamp duty & registration' },
+      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'rent',        vs: 'in your account monthly' },
+      { theme: 'live',  ico: I['chart'], stat: liveVal,    unit: 'live value',  vs: 'you can check any time' },
+      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'no repairs, no upkeep' },
+      { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',      vs: 'not 45 days of paperwork' },
+      { theme: 'cash',  ico: I['swap'],  stat: '2 days',   unit: 'to cash out', vs: 'not 6+ months of brokers' },
+      { theme: 'entry', ico: I['door'],  stat: '₹10L',    unit: 'to start',    vs: 'not a ₹1 Cr down-payment' },
     ];
   }
   perk = signal(0);
