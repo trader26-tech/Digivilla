@@ -527,18 +527,16 @@
 .log-row:hover { border-color: var(--brass); box-shadow: 0 10px 22px -14px rgba(166, 124, 46, 0.55); }
 .log-row:active { transform: scale(0.99); }
 
-/* the asset image — a big square that fills the row height, so the house
-   reads large and clear (like the reference app's logos) */
+/* the asset image — sized to the villa's own proportions (wider than tall),
+   so there's no wasted space above or below and the house reads big & clear. */
 .log-art {
   flex: none;
-  width: 72px;
-  height: 72px;
-  aspect-ratio: 1 / 1;
+  width: 84px;
+  height: 62px;
   display: grid;
   place-items: center;
   padding: 0;
-  border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   /* no pad — the villa sits directly on the row */
   background: none;
 }
