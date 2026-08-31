@@ -211,7 +211,10 @@
         <b class="cta-title">Build a new asset</b>
         <span class="cta-sub">Grow your city — villa, build or land</span>
       </span>
-      <span class="cta-go" aria-hidden="true">›</span>
+      <!-- the invitation to tap: a solid brass + that gently breathes -->
+      <span class="cta-plus" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      </span>
     </button>
 
     <!-- ===== ASSET LOG: every asset the user has bought, newest first.
@@ -227,7 +230,7 @@
           <!-- Villa bbox is x:[26,214] y:[26,160]. The viewBox wraps it tightly
                and the box matches its wide-ish ratio, so the villa fills the
                thumbnail with no wasted space top or bottom, and nothing is cut. -->
-          <svg viewBox="22 22 196 142" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <svg viewBox="22 12 196 150" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
             <use [attr.href]="tileSymbol(t)"></use>
             <g *ngIf="t.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
               <use [attr.href]="'#tBuild'"></use>

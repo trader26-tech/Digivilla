@@ -459,8 +459,12 @@
   box-shadow: 0 10px 24px -18px rgba(166, 124, 46, 0.6);
   transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
 }
-.cta-row:hover { border-color: var(--brass); box-shadow: 0 12px 26px -16px rgba(166, 124, 46, 0.6); }
-.cta-row:active { transform: scale(0.99); }
+.cta-row:hover {
+  border-color: var(--brass);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px -16px rgba(166, 124, 46, 0.55);
+}
+.cta-row:active { transform: translateY(0) scale(0.99); }
 .cta-ico {
   flex: none;
   width: 44px;
@@ -474,7 +478,52 @@
 .cta-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
 .cta-title { font-size: 1rem; font-weight: 800; color: var(--ink); letter-spacing: -0.2px; }
 .cta-sub { font-size: 0.8rem; color: var(--muted); }
-.cta-go { flex: none; font-size: 1.2rem; line-height: 1; color: var(--survey); font-weight: 700; }
+
+/* ===== the plus button: the clear, inviting call to tap =====
+   A solid brass disc with a soft glowing ring that gently breathes, so the
+   eye is drawn to it. It spins-in a touch and presses down on tap. */
+.cta-plus {
+  flex: none;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: radial-gradient(120% 120% at 30% 25%, #d8ab54 0%, #b98a34 55%, #9c7226 100%);
+  box-shadow:
+    0 6px 14px -4px rgba(166, 124, 46, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 4px rgba(120, 84, 20, 0.4);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+}
+/* the breathing halo that says "tap me" */
+.cta-plus::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--brass);
+  opacity: 0.5;
+  animation: ctaPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes ctaPulse {
+  0%   { transform: scale(0.9); opacity: 0.55; }
+  70%  { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+.cta-row:hover .cta-plus {
+  transform: rotate(90deg) scale(1.08);
+  box-shadow:
+    0 10px 20px -4px rgba(166, 124, 46, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.cta-row:active .cta-plus { transform: rotate(90deg) scale(0.94); }
+@media (prefers-reduced-motion: reduce) {
+  .cta-plus::before { animation: none; }
+  .cta-plus, .cta-row:hover .cta-plus { transition: none; }
+}
 
 /* ============ ASSET LOG — a purchase history of everything built ============ */
 .log {
