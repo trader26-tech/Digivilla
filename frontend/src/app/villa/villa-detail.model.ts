@@ -82,6 +82,36 @@ export function villaPlan(price: number, years = 20): VillaPlan {
   };
 }
 
+/** One year's stacked bar: invested base + growth on top + rent collected. */
+export interface StackYear {
+  year: number;
+  invested: number;   // constant — the amount put in
+  growth: number;     // market value above the invested base
+  rent: number;       // cumulative rent received by this year
+  total: number;      // invested + growth + rent (bar height)
+}
+
+/**
+ * Year-by-year stacked projection for a lump-sum villa purchase: the invested
+ * base stays flat, growth compounds on top, and rent accumulates each year.
+ * Feeds the 3-part stacked bar chart on the buy page.
+ */
+export function stackedProjection(plan: VillaPlan): StackYear[] {
+  const out: StackYear[] = [];
+  for (const g of plan.growth) {
+    const growth = Math.max(0, g.value - plan.price);
+    const rent = plan.rentYearly * g.year;      // simple cumulative rent
+    out.push({
+      year: g.year,
+      invested: plan.price,
+      growth,
+      rent,
+      total: plan.price + growth + rent,
+    });
+  }
+  return out;
+}
+
 /** Brand colour for an asset class (matches the estate palette). */
 export function assetColor(a: HoldingFund['assetClass']): string {
   return {

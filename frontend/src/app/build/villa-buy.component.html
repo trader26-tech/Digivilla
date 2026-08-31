@@ -1,0 +1,139 @@
+<main class="villa" *ngIf="plan">
+  <!-- header -->
+  <header class="top reveal" style="--i:0">
+    <button class="back" (click)="onBack()" aria-label="Back">‹</button>
+    <h1 class="page-title">{{ name }}</h1>
+  </header>
+
+  <!-- 1 · big villa image -->
+  <section class="art reveal" style="--i:1">
+    <app-villa-art></app-villa-art>
+  </section>
+
+  <!-- 2 · investment amount + monthly rent -->
+  <section class="value reveal" style="--i:2">
+    <div class="val-cell">
+      <div class="val-big-row"><b class="val-big">{{ compactK(amount()) }}</b></div>
+      <span class="val-k">You invest</span>
+    </div>
+    <div class="val-cell right">
+      <div class="val-big-row"><b class="val-big rent">{{ compactK(plan.rentMonthly) }}</b></div>
+      <span class="val-k">Rent a month</span>
+    </div>
+  </section>
+
+  <!-- amount presets -->
+  <div class="amt-row reveal" style="--i:2">
+    <button class="amt-chip" *ngFor="let a of PRESETS" [class.on]="amount() === a" (click)="pickAmount(a)">
+      {{ compactK(a) }}
+    </button>
+  </div>
+
+  <!-- 3 · why this eVilla -->
+  <section class="why reveal" style="--i:3">
+    <span class="sec-cap">Why this eVilla</span>
+    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)" (pointercancel)="onPerkUp($event)">
+      <div class="why-card" *ngFor="let p of PERKS; let i = index" [attr.data-theme]="p.theme"
+           [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
+        <svg class="why-ico" viewBox="0 0 24 24"><path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="why-badge">eVilla</span>
+        <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
+        <p class="why-line">{{ p.vs }}</p>
+      </div>
+    </div>
+    <div class="why-dots">
+      <button class="why-dot" *ngFor="let p of PERKS; let i = index" [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-selected]="perk() === i"></button>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- 4 · 20-year stacked chart: invested + growth + rent -->
+  <section class="grow reveal" style="--i:4">
+    <div class="grow-head">
+      <span class="sec-cap">In 20 years</span>
+      <span class="grow-mult">{{ multiple | number:'1.1-1' }}×</span>
+    </div>
+    <p class="grow-lead">Invest {{ compactK(amount()) }} today → about <b>{{ compactK(finalTotal) }}</b>, value plus rent.</p>
+
+    <div class="stack-wrap">
+      <div class="stack-col" *ngFor="let b of bars; trackBy: trackYear">
+        <div class="stack-bar">
+          <span class="sb-rent"   [style.height.%]="(b.rent / chartMax) * 100"></span>
+          <span class="sb-growth" [style.height.%]="(b.growth / chartMax) * 100"></span>
+          <span class="sb-base"   [style.height.%]="(b.invested / chartMax) * 100"></span>
+        </div>
+        <span class="stack-yr">{{ b.year === 0 ? 'now' : b.year + 'y' }}</span>
+      </div>
+    </div>
+
+    <div class="stack-legend">
+      <span class="lg"><i class="sw base"></i>Invested</span>
+      <span class="lg"><i class="sw growth"></i>Growth</span>
+      <span class="lg"><i class="sw rent"></i>Rent</span>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- 5 · funds (expandable) -->
+  <section class="funds reveal" style="--i:5">
+    <button class="funds-head" (click)="toggleFunds()" [attr.aria-expanded]="fundsOpen()">
+      <span class="sec-cap">Funds inside</span>
+      <svg class="funds-caret" [class.open]="fundsOpen()" viewBox="0 0 24 24" width="18" height="18"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="funds-body" *ngIf="fundsOpen()">
+      <div class="fund-line" *ngFor="let f of plan.funds; trackBy: trackFund">
+        <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
+        <span class="fund-name">{{ f.name }}</span>
+        <span class="fund-amt">{{ compactK(f.weight * amount()) }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · book now -->
+  <button class="book-now reveal" style="--i:6" (click)="openBook()">Book now · {{ compactK(amount()) }}</button>
+</main>
+
+<!-- ============ book-now flow (pick day → time → confirmed) ============ -->
+<div class="sheet-backdrop" *ngIf="bookOpen()" (click)="closeBook()"></div>
+<aside class="sheet" *ngIf="bookOpen()" role="dialog" aria-modal="true" aria-label="Book your villa">
+  <span class="sheet-grab" aria-hidden="true"></span>
+
+  <ng-container *ngIf="bkStep() === 1">
+    <div class="sheet-head">
+      <span class="sheet-title">Pick a day to get started</span>
+      <button class="sheet-close" (click)="closeBook()" aria-label="Close">✕</button>
+    </div>
+    <div class="cs-monthbar">
+      <button class="cs-nav" (click)="bkPrev()" [disabled]="!bkCanPrev" aria-label="Previous month">‹</button>
+      <b class="cs-monthlbl">{{ bkMonthLabel }}</b>
+      <button class="cs-nav" (click)="bkNext()" aria-label="Next month">›</button>
+    </div>
+    <div class="cs-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div class="cs-grid">
+      <ng-container *ngFor="let c of bkCells">
+        <span class="cs-blank" *ngIf="!c"></span>
+        <button *ngIf="c" class="cs-cell" [class.sel]="bkIsDay(c)" [disabled]="!bkSelectable(c)" (click)="bkPickDay(c)">{{ c | date:'d' }}</button>
+      </ng-container>
+    </div>
+    <p class="cs-hint">A specialist will call to set up your villa.</p>
+  </ng-container>
+
+  <ng-container *ngIf="bkStep() === 2 && bkDay() as d">
+    <div class="sheet-head">
+      <span class="sheet-title">Pick a time</span>
+      <button class="sheet-close" (click)="closeBook()" aria-label="Close">✕</button>
+    </div>
+    <p class="cs-lead">Slots on <b>{{ d | date:'EEEE, d MMM' }}</b></p>
+    <div class="cs-slots"><button class="cs-slot" *ngFor="let s of SLOTS" (click)="bkPickSlot(s)">{{ s }}</button></div>
+    <button class="cs-back" (click)="bkStep.set(1)">‹ Change day</button>
+  </ng-container>
+
+  <div class="cs-done" *ngIf="bkStep() === 3 && bkDay() as d">
+    <div class="cs-tick" [class.pop]="justBooked()"><svg viewBox="0 0 52 52"><circle class="cs-tick-ring" cx="26" cy="26" r="24"/><path class="cs-tick-mark" d="M15 27l7 7 15-15"/></svg></div>
+    <b class="cs-done-title">Booked!</b>
+    <p class="cs-done-sub">We’ll call on<br><b>{{ d | date:'EEEE, d MMM y' }} at {{ bkSlot() }}</b><br>to set up your {{ compactK(amount()) }} villa.</p>
+    <button class="cs-done-btn" (click)="onBack()">Done</button>
+  </div>
+</aside>

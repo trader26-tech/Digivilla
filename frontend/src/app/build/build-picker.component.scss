@@ -1,0 +1,50 @@
+:host { display: block; min-height: 100vh; min-height: 100dvh; }
+
+.pick {
+  max-width: 460px; margin: 0 auto;
+  padding: 0.75rem 1.1rem calc(2rem + env(safe-area-inset-bottom));
+  animation: page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes page-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+.pk-top { display: flex; align-items: flex-start; gap: 0.6rem; padding-top: env(safe-area-inset-top); margin-bottom: 1.2rem; }
+.pk-back {
+  width: 40px; height: 40px; flex: none; display: grid; place-items: center;
+  border-radius: 12px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  font-size: 1.5rem; line-height: 1; cursor: pointer;
+  &:active { transform: scale(0.94); }
+}
+.pk-head { padding-top: 0.15rem; }
+.pk-kicker { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+.pk-title { margin: 0.2rem 0 0; font-family: var(--font-display); font-size: 1.7rem; font-weight: 850; letter-spacing: -0.6px; color: var(--ink); }
+
+.pk-grid { display: flex; flex-direction: column; gap: 1rem; }
+.pk-card {
+  display: block; width: 100%; text-align: left;
+  border-radius: 22px; border: 1px solid var(--survey); cursor: pointer;
+  padding: 0.6rem 1.1rem 1.1rem;
+  background: linear-gradient(180deg, #FFFDF8, #F4EFE4);
+  box-shadow: 0 16px 40px -28px rgba(22, 48, 43, 0.5);
+  transition: transform 0.14s, box-shadow 0.2s, border-color 0.2s;
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  &:nth-child(2) { animation-delay: 0.08s; }
+  &:hover { transform: translateY(-2px); box-shadow: 0 22px 46px -26px rgba(22, 48, 43, 0.55); }
+  &:active { transform: scale(0.99); }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.pk-card.villa { border-color: color-mix(in srgb, var(--positive) 30%, var(--survey)); }
+.pk-card.land  { border-color: color-mix(in srgb, var(--brass) 30%, var(--survey)); }
+
+.pk-art { height: 160px; }
+.pk-art app-villa-art, .pk-art app-land-art { display: block; width: 100%; height: 100%; }
+
+.pk-info { margin-top: 0.4rem; }
+.pk-name { display: block; font-size: 1.4rem; font-weight: 850; letter-spacing: -0.5px; color: var(--ink); }
+.pk-sub { font-size: 0.88rem; color: var(--muted); b { color: var(--ink); font-weight: 800; } }
+.pk-from {
+  display: inline-block; margin-top: 0.6rem;
+  font-size: 0.78rem; font-weight: 800; color: var(--brass);
+  padding: 0.25rem 0.6rem; border-radius: 999px; background: rgba(166, 124, 46, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) { .pick, .pk-card { animation: none; } }

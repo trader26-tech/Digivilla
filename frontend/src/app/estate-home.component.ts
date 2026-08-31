@@ -57,6 +57,8 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   @Output() openTile = new EventEmitter<Tile>();
   @Output() explore = new EventEmitter<void>();
   @Output() progress = new EventEmitter<void>();
+  /** "Build a new asset" -> open the villa/land pick screen. */
+  @Output() build = new EventEmitter<void>();
 
   readonly est = inject(EstateService);
   private readonly callsSvc = inject(CallsService);

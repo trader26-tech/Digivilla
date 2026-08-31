@@ -1,0 +1,31 @@
+<main class="pick">
+  <header class="pk-top">
+    <button class="pk-back" (click)="onBack()" aria-label="Back">‹</button>
+    <div class="pk-head">
+      <span class="pk-kicker">BUILD A NEW ASSET</span>
+      <h1 class="pk-title">What would you like?</h1>
+    </div>
+  </header>
+
+  <div class="pk-grid">
+    <!-- VILLA -->
+    <button class="pk-card villa" (click)="choose('villa')">
+      <div class="pk-art"><app-villa-art></app-villa-art></div>
+      <div class="pk-info">
+        <b class="pk-name">Villa</b>
+        <span class="pk-sub">Grows in value <b>and</b> pays you rent</span>
+      </div>
+      <span class="pk-from">from ₹10 L</span>
+    </button>
+
+    <!-- LAND -->
+    <button class="pk-card land" (click)="choose('land')">
+      <div class="pk-art"><app-land-art></app-land-art></div>
+      <div class="pk-info">
+        <b class="pk-name">Land</b>
+        <span class="pk-sub">Pure growth — build a villa on it later</span>
+      </div>
+      <span class="pk-from">from ₹10 L</span>
+    </button>
+  </div>
+</main>
