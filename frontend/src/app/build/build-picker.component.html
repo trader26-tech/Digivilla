@@ -1,64 +1,53 @@
-<main class="xp" [class.embedded]="embedded"
-      (pointerdown)="onDown($event)" (pointerup)="onUp($event)" (pointercancel)="onUp($event)"
-      (wheel)="onWheel($event)">
+<main class="xp" [class.embedded]="embedded">
 
   <button class="xp-back" *ngIf="!embedded" (click)="onBack()" aria-label="Back">‹</button>
 
-  <!-- vertical dots: which asset you're on -->
-  <div class="xp-dots" role="tablist" aria-label="Assets for sale">
-    <button class="xp-dot" *ngFor="let it of items; let i = index"
-            [class.on]="index() === i" (click)="goTo(i)" [attr.aria-label]="it.name"></button>
+  <!-- top: name + price range + rent -->
+  <header class="xp-head">
+    <b class="xp-name">Villa</b>
+    <div class="xp-figs">
+      <div class="xp-fig">
+        <b class="xp-fig-v">{{ compact(priceFrom) }}<span class="xp-to">–{{ compact(priceTo) }}</span></b>
+        <span class="xp-fig-k">to buy</span>
+      </div>
+      <div class="xp-fig right">
+        <b class="xp-fig-v rent">{{ compact(rentMonthly) }}<span class="xp-mo">/mo</span></b>
+        <span class="xp-fig-k">rent from day one</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- CENTREPIECE: the villa plot, centred like the home map, with a FOR SALE
+       board planted on the plot itself -->
+  <div class="xp-art">
+    <app-villa-art></app-villa-art>
+    <span class="xp-sale" aria-hidden="true">FOR<br>SALE</span>
   </div>
 
-  <!-- the stack: each card fills the screen, only the active one is shown -->
-  <div class="xp-stack">
-    <section class="xp-card" *ngFor="let it of items; let i = index"
-             [class.on]="index() === i" [class.up]="i < index()">
-
-      <!-- top: name + price + rent -->
-      <header class="xp-head">
-        <b class="xp-name">{{ it.name }}</b>
-        <div class="xp-figs">
-          <div class="xp-fig">
-            <b class="xp-fig-v">{{ compact(it.price) }}</b>
-            <span class="xp-fig-k">to buy</span>
-          </div>
-          <div class="xp-fig right">
-            <b class="xp-fig-v rent">{{ it.rent }}</b>
-            <span class="xp-fig-k">{{ it.rentK }}</span>
-          </div>
-        </div>
-      </header>
-
-      <!-- CENTREPIECE: the asset image, centred exactly like the home map, with
-           a small FOR SALE board -->
-      <div class="xp-art">
-        <span class="xp-sale">FOR SALE</span>
-        <app-villa-art *ngIf="it.kind === 'villa'"></app-villa-art>
-        <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
+  <!-- why an eVilla beats a real one — the same swipeable perks carousel -->
+  <div class="xp-why">
+    <span class="xp-why-cap">Why an eVilla, not a real one</span>
+    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
+         (pointercancel)="onPerkUp($event)">
+      <div class="why-card" *ngFor="let p of PERKS; let i = index"
+           [attr.data-theme]="p.theme" [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
+        <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="why-badge">eVilla</span>
+        <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
+        <p class="why-line">{{ p.vs }}</p>
       </div>
-
-      <!-- one-word eVilla vs real villa -->
-      <div class="xp-cmp">
-        <div class="xp-cmp-head">
-          <span></span>
-          <span class="xp-cmp-ours">eVilla</span>
-          <span class="xp-cmp-theirs">Real villa</span>
-        </div>
-        <div class="xp-cmp-row" *ngFor="let c of it.compare">
-          <span class="xp-cmp-k">{{ c.label }}</span>
-          <span class="xp-cmp-ours">{{ c.ours }}</span>
-          <span class="xp-cmp-theirs">{{ c.theirs }}</span>
-        </div>
-      </div>
-
-      <!-- buy -->
-      <button class="xp-buy" (click)="buy(it.kind)">
-        Buy {{ it.name }}
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-
-      <span class="xp-swipe" *ngIf="i < items.length - 1" aria-hidden="true">Swipe up for more ↑</span>
-    </section>
+    </div>
+    <div class="why-dots">
+      <button class="why-dot" *ngFor="let p of PERKS; let i = index"
+              [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
+    </div>
   </div>
+
+  <!-- buy -->
+  <button class="xp-buy" (click)="buy()">
+    Buy a villa
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
 </main>
