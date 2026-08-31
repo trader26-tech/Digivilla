@@ -95,14 +95,16 @@ export class BuildPickerComponent {
   // --- swipe down/up between full-screen cards ---
   private swipeY: number | null = null;
   onDown(e: PointerEvent): void {
+    // NOTE: no setPointerCapture here — capturing steals the pointerup from the
+    // Buy button and kills its click. We just note where the finger went down.
     this.swipeY = e.clientY;
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
   }
   onUp(e: PointerEvent): void {
     if (this.swipeY === null) return;
     const dy = e.clientY - this.swipeY;
     this.swipeY = null;
-    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+    // Only a real vertical drag counts as a swipe; a tap (tiny move) falls
+    // through so the button underneath receives its click normally.
     if (Math.abs(dy) > 50) this.goTo(this.index() + (dy < 0 ? 1 : -1)); // swipe up → next
   }
   onWheel(e: WheelEvent): void {
