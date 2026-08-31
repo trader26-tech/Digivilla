@@ -28,11 +28,27 @@
   justify-content: center;
   padding: calc(1rem + env(safe-area-inset-top)) 0 1.4rem;
   overflow: hidden;
+  /* an ambient "scene" the town sits inside — a soft warm sky up top, a green
+     estate glow rising from the ground, and a gentle vertical wash between, so
+     the empty space above and below reads as atmosphere, not a flat void. */
   background:
-    radial-gradient(140% 90% at 50% -20%, rgba(166, 124, 46, 0.16), transparent 60%),
-    radial-gradient(120% 70% at 12% 4%, rgba(46, 107, 79, 0.10), transparent 55%),
-    linear-gradient(180deg, #FFFDF8, var(--paper));
+    /* warm sun-glow filling the top void */
+    radial-gradient(120% 60% at 50% -8%, rgba(166, 124, 46, 0.20), transparent 62%),
+    /* a cool tint in the upper-left for depth */
+    radial-gradient(90% 55% at 8% 2%, rgba(46, 107, 79, 0.12), transparent 55%),
+    /* a broad green estate glow filling the bottom void, as if the town's
+       lawns light the ground beneath */
+    radial-gradient(130% 55% at 50% 108%, rgba(46, 107, 79, 0.16), transparent 60%),
+    /* the base sky→paper→ground vertical wash */
+    linear-gradient(180deg, #FFFDF8 0%, var(--paper) 46%, #F4F1E6 100%);
 }
+/* a faint vignette on the very edges so the scene feels contained, premium */
+.estate-top::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(120% 120% at 50% 50%, transparent 68%, rgba(22, 48, 43, 0.05) 100%);
+}
+.estate-top > * { position: relative; z-index: 1; }
 /* the town keeps its own height; the group is centred, not stretched */
 .estate-top .board-scroll { flex: none; }
 .estate-top .stats { flex: none; padding: 0 1.25rem; margin: 1.1rem 0 0; }
