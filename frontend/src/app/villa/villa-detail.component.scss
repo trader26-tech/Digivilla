@@ -55,8 +55,13 @@
 .value { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.35rem 0.15rem; }
 .val-cell { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .val-cell.right { text-align: right; align-items: flex-end; }
-/* current value and its change sit on one line */
-.val-big-row { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+/* current value and its change sit on one line. A fixed row height (the big
+   number's line box) keeps both cells' rows identical, so the labels beneath
+   line up exactly whether or not there's a gain figure. */
+.val-big-row {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  height: 2.35rem; line-height: 2.35rem;
+}
 .val-big {
   font-size: 2.35rem; font-weight: 850; letter-spacing: -1.5px; line-height: 1; color: var(--ink);
 }
