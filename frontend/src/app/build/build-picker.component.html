@@ -30,24 +30,25 @@
         </div>
       </header>
 
-      <!-- the asset image, with a small FOR SALE board -->
+      <!-- CENTREPIECE: the asset image, centred exactly like the home map, with
+           a small FOR SALE board -->
       <div class="xp-art">
         <span class="xp-sale">FOR SALE</span>
         <app-villa-art *ngIf="it.kind === 'villa'"></app-villa-art>
         <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
       </div>
 
-      <!-- five reasons it beats a real villa -->
-      <div class="xp-why">
-        <span class="xp-why-cap">Why eVilla, not a real one</span>
-        <div class="xp-perk" *ngFor="let p of it.perks">
-          <span class="xp-perk-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="18" height="18"><path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <div class="xp-perk-main">
-            <b><span class="xp-perk-stat">{{ p.stat }}</span> {{ p.unit }}</b>
-            <span>{{ p.vs }}</span>
-          </div>
+      <!-- one-word eVilla vs real villa -->
+      <div class="xp-cmp">
+        <div class="xp-cmp-head">
+          <span></span>
+          <span class="xp-cmp-ours">eVilla</span>
+          <span class="xp-cmp-theirs">Real villa</span>
+        </div>
+        <div class="xp-cmp-row" *ngFor="let c of it.compare">
+          <span class="xp-cmp-k">{{ c.label }}</span>
+          <span class="xp-cmp-ours">{{ c.ours }}</span>
+          <span class="xp-cmp-theirs">{{ c.theirs }}</span>
         </div>
       </div>
 

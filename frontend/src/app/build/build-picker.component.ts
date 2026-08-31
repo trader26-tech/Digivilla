@@ -6,6 +6,13 @@ import { VillaArtComponent } from '../shared/villa-art.component';
 import { compact } from '../shared/format.util';
 import { villaPlan } from '../villa/villa-detail.model';
 
+/** One row of the one-word eVilla-vs-real-villa comparison. */
+interface Compare {
+  label: string;   // what's being compared, e.g. "Setup"
+  ours: string;    // eVilla, one word — e.g. "Instant"
+  theirs: string;  // real villa, one word — e.g. "Months"
+}
+
 /** One full-screen asset in the Explore feed. */
 interface ExploreItem {
   kind: 'villa' | 'land';
@@ -13,7 +20,7 @@ interface ExploreItem {
   price: number;
   rent: string;         // "₹15,000/mo" or "—"
   rentK: string;        // label under the rent figure
-  perks: { ico: string; stat: string; unit: string; vs: string }[];
+  compare: Compare[];   // one-word eVilla vs real villa rows
 }
 
 /**
@@ -38,25 +45,22 @@ export class BuildPickerComponent {
   /** Which card is showing in the feed. */
   index = signal(0);
 
-  private static readonly ICO: Record<string, string> = {
-    tag:   'M4 13V4h9l7 7-9 9zM8 8h.01',
-    coin:  'M12 3v18M8 7h5a3 3 0 0 1 0 6H8m0 0h6',
-    chart: 'M4 20V6M4 20h16M8 20v-6M12 20V9M16 20v-9',
-    tool:  'M14 7a4 4 0 0 0-5 5l-5 5 2 2 5-5a4 4 0 0 0 5-5l-2 2-2-2z',
-    bolt:  'M13 3L5 13h5l-1 8 8-10h-5z',
-    swap:  'M4 8h13l-3-3M20 16H7l3 3',
-    door:  'M5 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M9 12h.5',
-  };
-
   readonly items: ExploreItem[] = this.buildItems();
 
   private buildItems(): ExploreItem[] {
-    const I = BuildPickerComponent.ICO;
     const villaPrice = 30_00_000;
     const landPrice = 10_00_000;
     const vplan = villaPlan(villaPrice, 20);
     const villaRent = Math.round(vplan.rentMonthly);
-    const stamp = (p: number) => compact(Math.round(p * 0.07));
+
+    // one-word eVilla vs real-villa comparison
+    const COMMON: Compare[] = [
+      { label: 'Setup',       ours: 'Instant',  theirs: 'Months' },
+      { label: 'Paperwork',   ours: 'None',     theirs: 'Endless' },
+      { label: 'Stamp duty',  ours: '₹0',       theirs: '7%' },
+      { label: 'Maintenance', ours: '₹0',       theirs: 'Yearly' },
+      { label: 'Selling',     ours: 'A tap',    theirs: 'Brokers' },
+    ];
 
     return [
       {
@@ -65,27 +69,15 @@ export class BuildPickerComponent {
         price: villaPrice,
         rent: `${compact(villaRent)}/mo`,
         rentK: 'rent from day one',
-        perks: [
-          { ico: I['coin'],  stat: `${compact(villaRent)}`, unit: 'rent',        vs: 'in your account monthly' },
-          { ico: I['tag'],   stat: stamp(villaPrice),        unit: 'saved',       vs: 'in 7% stamp duty & registration' },
-          { ico: I['tool'],  stat: '₹0',                     unit: 'maintenance', vs: 'no repairs, no upkeep' },
-          { ico: I['bolt'],  stat: '30 sec',                 unit: 'to own',      vs: 'not 45 days of paperwork' },
-          { ico: I['swap'],  stat: '2 days',                 unit: 'to cash out', vs: 'not 6+ months of brokers' },
-        ],
+        compare: COMMON,
       },
       {
         kind: 'land',
         name: 'Growth Plot',
         price: landPrice,
         rent: '12%',
-        rentK: 'expected yearly growth',
-        perks: [
-          { ico: I['chart'], stat: '12%',            unit: 'a year',      vs: 'pure compounding growth' },
-          { ico: I['tag'],   stat: stamp(landPrice), unit: 'saved',       vs: 'in 7% stamp duty & registration' },
-          { ico: I['door'],  stat: compact(landPrice), unit: 'to start',  vs: 'not a ₹1 Cr down-payment' },
-          { ico: I['tool'],  stat: '₹0',             unit: 'maintenance', vs: 'no fences, no caretaker' },
-          { ico: I['swap'],  stat: '2 days',         unit: 'to cash out', vs: 'not months with brokers' },
-        ],
+        rentK: 'yearly growth',
+        compare: COMMON,
       },
     ];
   }
