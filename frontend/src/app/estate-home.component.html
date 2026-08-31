@@ -224,7 +224,7 @@
         <span class="log-count">{{ ownedLog.length }}</span>
       </div>
 
-      <button class="log-row" *ngFor="let t of ownedLog" (click)="openTileDetail(t)">
+      <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
         <span class="log-art">
           <!-- Villa bbox is x:[26,214] y:[26,160]. The viewBox wraps it tightly
                and the box matches its wide-ish ratio, so the villa fills the
