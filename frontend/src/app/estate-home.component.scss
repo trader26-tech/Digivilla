@@ -43,13 +43,14 @@
   background: #fff;
   color: var(--muted);
   cursor: pointer;
-  overflow: hidden;
+  /* no overflow:hidden here — it was clipping the + badge. The photo is
+     clipped by its own border-radius instead. */
   box-shadow: 0 4px 12px -6px rgba(22, 48, 43, 0.4);
   transition: transform 0.12s, border-color 0.2s;
 }
 .avatar:active { transform: scale(0.94); }
 .avatar.has-photo { border-color: var(--brass); }
-.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .avatar-ph { display: block; }
 .avatar-plus {
   position: absolute;
@@ -125,35 +126,6 @@
   .hero { animation: none; }
 }
 
-/* income chips — now in the bottom half, under the map */
-.chips {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.1rem;
-}
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.4rem 0.7rem 0.4rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid var(--survey);
-  background: #fff;
-  box-shadow: 0 6px 16px -10px rgba(22, 48, 43, 0.4);
-  font: inherit;
-  cursor: default;
-}
-.chip.rent { cursor: pointer; transition: transform 0.12s, box-shadow 0.2s; }
-.chip.rent.live { border-color: var(--brass); box-shadow: 0 8px 20px -8px rgba(166, 124, 46, 0.5); }
-.chip.rent:active { transform: scale(0.96); }
-.chip.rent:disabled { opacity: 0.6; cursor: default; }
-.chip-dot { width: 16px; height: 16px; border-radius: 50%; flex: none; }
-.chip-dot.coin { background: radial-gradient(circle at 35% 30%, #F4CE6E, #C79A34); box-shadow: inset 0 0 0 1.5px #a67c2e; }
-.chip-dot.sip { background: radial-gradient(circle at 35% 30%, #b9a7e0, #7a5fb0); }
-.chip-k { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-.chip-v { font-size: 0.86rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* title */
 .title { text-align: center; margin-top: 0.5rem; }
@@ -367,53 +339,107 @@
 }
 
 /* the two headline numbers — worth & yearly rent */
+/* the two headline figures — value on the left, monthly rent on the right,
+   split by a hairline, mirroring the reference layout. */
 .stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.7rem;
-  margin-bottom: 1.1rem;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: center;
+  gap: 0 1rem;
+  margin: 0.2rem 0 1.4rem;
+}
+.stats::before {
+  content: '';
+  grid-column: 2;
+  align-self: stretch;
+  width: 1px;
+  margin: 0.35rem 0;
+  background: var(--survey);
 }
 .stat {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  padding: 0.95rem 0.6rem 0.85rem;
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid var(--survey);
-  box-shadow: 0 10px 26px -18px rgba(22, 48, 43, 0.5);
+  gap: 0.28rem;
+  /* left figure hugs the left, right figure hugs the right */
+  text-align: left;
+  /* reset button chrome for the tappable one */
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: default;
 }
-.stat-icon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  margin-bottom: 0.35rem;
-}
-.stat.worth  .stat-icon { color: var(--brass); background: rgba(166, 124, 46, 0.12); }
-.stat.income .stat-icon { color: var(--positive); background: rgba(46, 107, 79, 0.12); }
+.stat.worth  { grid-column: 1; align-items: flex-start; text-align: left; }
+.stat.income { grid-column: 3; align-items: flex-end; text-align: right; cursor: pointer;
+               border-radius: 12px; transition: transform 0.12s; }
+.stat.income:active { transform: scale(0.97); }
 .stat-v {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 850;
   line-height: 1;
-  letter-spacing: -0.6px;
+  letter-spacing: -0.9px;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
+.stat.income .stat-v { color: var(--positive); }
 .stat-k {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--muted);
 }
-.collected { display: flex; flex-direction: column; gap: 0.15rem; align-items: center; }
+.stat-more { color: var(--brass); font-weight: 800; }
+
+.collected {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.collected:active { transform: scale(0.98); }
+.collected:disabled { cursor: default; }
 .col-k { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 .col-v { font-size: 2rem; font-weight: 850; letter-spacing: -1px; color: var(--brass); font-variant-numeric: tabular-nums; }
 .col-hint { font-size: 0.8rem; color: var(--muted); }
+
+/* ---- build-cost sheet rows ---- */
+.bc-total { text-align: center; margin: 0.2rem 0 1rem; }
+.bc-total-v {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 850;
+  letter-spacing: -0.8px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bc-total-k { font-size: 0.82rem; color: var(--muted); }
+.bc-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.4rem; }
+.bc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid var(--survey);
+  background: #fff;
+  text-align: left;
+}
+.bc-ico { font-size: 1.2rem; flex: none; }
+.bc-main { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
+.bc-main b { font-size: 0.92rem; font-weight: 700; color: var(--ink); }
+.bc-main span { font-size: 0.76rem; color: var(--muted); }
+.bc-amt { font-size: 0.95rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; flex: none; }
+.bc-empty { font-size: 0.86rem; color: var(--muted); text-align: center; padding: 0.5rem 0.5rem 0.8rem; }
 
 .legend {
   display: flex;

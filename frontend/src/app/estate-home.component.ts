@@ -69,6 +69,16 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
+  /** Build-cost sheet open? Opened by tapping the monthly-rent figure. */
+  showBuildCost = signal(false);
+
+  openBuildCost(): void { this.showBuildCost.set(true); }
+  closeBuildCost(): void { this.showBuildCost.set(false); }
+
+  /** Villas still under construction — the rows of the build-cost sheet. */
+  get buildingTiles(): Tile[] {
+    return this.est.tiles().filter((t) => t.type === 'building');
+  }
 
   // -------------------------------------------------------- owner photo ----
 
