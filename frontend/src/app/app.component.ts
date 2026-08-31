@@ -76,8 +76,28 @@ export class AppComponent {
     if (Object.keys(patch).length) this.est.setProfile(patch);
   }
 
-  /** Which top-level view is showing under the home. */
-  view: 'home' | 'storefront' = 'home';
+  /** Which bottom-nav tab is active: the estate map, or the explore catalog. */
+  view: 'home' | 'explore' | 'storefront' = 'home';
+
+  /** True when a top-level tab (home/explore) is showing — the bottom nav is
+   *  only visible then, not on detail / buy / account pages. */
+  get onTab(): boolean {
+    return (
+      !this.intro && this.auth.signedIn() &&
+      this.detail === null && this.villa === null && this.land === null &&
+      this.construction === null && this.buildFlow === null && !this.accountOpen &&
+      (this.view === 'home' || this.view === 'explore')
+    );
+  }
+
+  goHome(): void {
+    this.view = 'home';
+    window.scrollTo({ top: 0 });
+  }
+  goExplore(): void {
+    this.view = 'explore';
+    window.scrollTo({ top: 0 });
+  }
 
   /** null = no detail; otherwise the detail page for this property + variant. */
   detail: { property: PropertyKey; variant: RiskVariant } | null = null;

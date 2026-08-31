@@ -4,3 +4,27 @@
   min-height: 100dvh;
   background: var(--paper);
 }
+
+/* ===== bottom nav — two tabs: Home & Explore ===== */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  max-width: 480px; margin: 0 auto;
+  display: flex;
+  padding: 0.4rem 0.6rem calc(0.4rem + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--survey);
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  padding: 0.5rem 0; border: none; background: none; cursor: pointer;
+  color: var(--muted); font: inherit;
+  transition: color 0.18s, transform 0.12s;
+  svg { display: block; }
+  span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.01em; }
+  &:active { transform: scale(0.94); }
+}
+.tab.active { color: var(--ink); }
+
+/* the top-level tabs leave room for the fixed nav */
+.has-nav { display: block; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }

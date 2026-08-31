@@ -119,6 +119,8 @@
   font-weight: 850;
   letter-spacing: -0.6px;
   color: var(--ink);
+  /* show the owner's name capitalised, however it's stored (e.g. "ranjeev") */
+  text-transform: capitalize;
 }
 
 @keyframes heroIn {

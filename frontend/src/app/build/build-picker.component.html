@@ -1,7 +1,7 @@
-<main class="pick">
+<main class="pick" [class.embedded]="embedded">
   <header class="pk-top">
-    <button class="pk-back" (click)="onBack()" aria-label="Back">‹</button>
-    <h1 class="pk-title">What would you like to build?</h1>
+    <button class="pk-back" *ngIf="!embedded" (click)="onBack()" aria-label="Back">‹</button>
+    <h1 class="pk-title">{{ embedded ? 'Explore assets' : 'What would you like to build?' }}</h1>
   </header>
 
 

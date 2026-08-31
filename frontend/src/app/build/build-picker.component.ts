@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { LandArtComponent } from '../shared/land-art.component';
 import { VillaArtComponent } from '../shared/villa-art.component';
@@ -16,6 +16,8 @@ import { VillaArtComponent } from '../shared/villa-art.component';
   styleUrl: './build-picker.component.scss',
 })
 export class BuildPickerComponent {
+  /** When true (as the Explore tab) the back button is hidden. */
+  @Input() embedded = false;
   @Output() back = new EventEmitter<void>();
   @Output() pick = new EventEmitter<'villa' | 'land'>();
 

@@ -8,11 +8,32 @@
 <!-- HOME: the isometric estate — the user's own map. Shown right after intro. -->
 <app-estate-home
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+  class="has-nav"
   (openTile)="openTile($event)"
-  (explore)="openStorefront()"
+  (explore)="goExplore()"
   (build)="openBuild()"
   (account)="openAccount()"
 ></app-estate-home>
+
+<!-- EXPLORE tab: browse the villa / land options. -->
+<app-build-picker
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'explore'"
+  class="has-nav"
+  [embedded]="true"
+  (pick)="pickBuild($event)"
+></app-build-picker>
+
+<!-- BOTTOM NAV: two tabs, Home and Explore. Only on the top-level tabs. -->
+<nav class="tabbar" *ngIf="onTab">
+  <button class="tab" [class.active]="view === 'home'" (click)="goHome()">
+    <svg viewBox="0 0 24 24" width="23" height="23"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="tab" [class.active]="view === 'explore'" (click)="goExplore()">
+    <svg viewBox="0 0 24 24" width="23" height="23"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
+    <span>Explore</span>
+  </button>
+</nav>
 
 <!-- ACCOUNT: profile + transactions, from the home avatar. -->
 <app-account
