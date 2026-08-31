@@ -33,7 +33,7 @@
 .xp-card {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
-  padding: calc(3.6rem + env(safe-area-inset-top)) 1.3rem calc(1.4rem + env(safe-area-inset-bottom));
+  padding: calc(3.4rem + env(safe-area-inset-top)) 1.3rem calc(1.2rem + env(safe-area-inset-bottom));
   opacity: 0; transform: translateY(40px) scale(0.98); pointer-events: none;
   transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -51,14 +51,15 @@
 .xp-cost-k { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .xp-cost-v { font-family: var(--font-display); font-size: 1.15rem; font-weight: 850; letter-spacing: -0.4px; color: var(--ink); }
 
-/* centred body */
+/* centred body — content pulled toward the top, not floating low */
 .xp-body {
   flex: 1 1 auto; min-height: 0;
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center;
+  justify-content: flex-start; text-align: center;
+  padding-top: 0.4rem;
 }
 .xp-art {
-  width: 100%; max-width: 380px; margin: 0 auto;
+  width: 100%; max-width: 360px; margin: 0 auto;
   app-villa-art, app-land-art { display: block; width: 100%; height: auto; }
 }
 .xp-name {
@@ -78,17 +79,17 @@
   span { font-weight: 600; } .xp-dot { margin: 0 0.4rem; opacity: 0.6; }
 }
 
+/* a centred pill under the figures, not a full-width bar at the foot */
 .xp-buy {
-  flex: none;
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  width: 100%; margin-top: 1.1rem; padding: 1rem;
-  border: 0; border-radius: 16px; background: var(--brass); color: #fff;
-  font: inherit; font-size: 1rem; font-weight: 800; cursor: pointer;
-  box-shadow: 0 14px 30px -14px rgba(166, 124, 46, 0.7);
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+  align-self: center; margin-top: 1.4rem; padding: 0.75rem 1.4rem;
+  border: 0; border-radius: 999px; background: var(--brass); color: #fff;
+  font: inherit; font-size: 0.92rem; font-weight: 800; cursor: pointer;
+  box-shadow: 0 12px 26px -12px rgba(166, 124, 46, 0.7);
   transition: transform 0.12s, filter 0.2s;
   svg { display: block; }
   &:hover { filter: brightness(1.05); }
-  &:active { transform: scale(0.99); }
+  &:active { transform: scale(0.97); }
 }
 .xp-swipe { flex: none; display: block; text-align: center; margin-top: 0.7rem; font-size: 0.76rem; color: var(--muted); animation: nudge 1.8s ease-in-out infinite; }
 @keyframes nudge { 0%, 100% { transform: translateY(0); opacity: 0.7; } 50% { transform: translateY(-3px); opacity: 1; } }

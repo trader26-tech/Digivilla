@@ -179,11 +179,8 @@
      SVG makes the town read bigger. overflow:hidden clips only the board's own
      empty top/bottom padding, so no house is ever cut. */
   height: auto;
-  /* A gentle vertical stretch pulls the diamond taller (toward equal diagonals)
-     without distorting the art into skyscrapers. The box aspect accounts for
-     the stretch so it hugs the content and never spills off-screen. */
-  aspect-ratio: 585.6 / 551;   /* 408 * 1.35 */
-  max-height: 74vh;
+  aspect-ratio: 585.6 / 408;   /* the board's natural ratio — no distortion */
+  max-height: 72vh;
   width: 100%;
   margin: 0 auto;
 }
@@ -191,8 +188,6 @@
   display: block;
   width: 100%;
   height: 100%;
-  transform: scaleY(1.35);
-  transform-origin: center center;
 }
 
 /* cells */
