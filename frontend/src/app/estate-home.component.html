@@ -225,8 +225,27 @@
       </button>
     </div>
 
+    <!-- ===== FIRST-TIME EMPTY STATE: a warm invitation to buy the first
+         asset. The whole card is tappable and drops straight into the buy
+         sheet on the first open plot. ===== -->
     <ng-template #empty>
-      <p class="log-empty">Tap a plot around the town hall to buy your first asset — it’ll show up here.</p>
+      <button class="first" (click)="buildFirst()">
+        <span class="first-art" aria-hidden="true">
+          <span class="first-glow"></span>
+          <svg class="first-tile" viewBox="26 -2 188 176" width="118" height="104">
+            <use href="#tVilla"></use>
+          </svg>
+          <span class="first-spark s1"></span>
+          <span class="first-spark s2"></span>
+          <span class="first-spark s3"></span>
+        </span>
+        <b class="first-title">Buy your first villa</b>
+        <span class="first-sub">Start your city — pick a villa, a build, or land.</span>
+        <span class="first-cta">
+          Get started
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
     </ng-template>
 
     <p class="foot-note">

@@ -529,11 +529,116 @@
   color: var(--survey);
   font-weight: 700;
 }
-.log-empty {
-  margin-top: 1.2rem;
+/* ============ FIRST-TIME EMPTY STATE ============ */
+.first {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 1.6rem 1.2rem 1.4rem;
+  border: 1px solid var(--survey);
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(166, 124, 46, 0.10), transparent 62%),
+    #fff;
+  box-shadow: 0 16px 40px -26px rgba(22, 48, 43, 0.55);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.14s, box-shadow 0.24s;
+  animation: firstIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.first:hover { box-shadow: 0 20px 44px -24px rgba(166, 124, 46, 0.5); }
+.first:active { transform: scale(0.985); }
+
+.first-art {
+  position: relative;
+  width: 130px;
+  height: 116px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.5rem;
+}
+/* soft pulsing halo behind the villa */
+.first-glow {
+  position: absolute;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108, 186, 54, 0.28) 0%, transparent 66%);
+  animation: firstGlow 3s ease-in-out infinite;
+}
+/* the villa gently bobs, as if inviting a tap */
+.first-tile {
+  position: relative;
+  display: block;
+  filter: drop-shadow(0 10px 12px rgba(22, 48, 43, 0.22));
+  animation: firstBob 2.8s ease-in-out infinite;
+}
+/* three little sparkles drifting up around it */
+.first-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brass);
+  opacity: 0;
+  animation: firstSpark 2.6s ease-in-out infinite;
+}
+.first-spark.s1 { left: 20%;  top: 24%; animation-delay: 0s;    }
+.first-spark.s2 { right: 18%; top: 32%; animation-delay: 0.9s; background: var(--positive); }
+.first-spark.s3 { left: 30%;  top: 12%; animation-delay: 1.7s; width: 5px; height: 5px; }
+
+.first-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 850;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+}
+.first-sub {
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
   color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.5;
+  max-width: 240px;
+}
+.first-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  background: var(--brass);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  box-shadow: 0 10px 22px -12px rgba(166, 124, 46, 0.8);
+}
+.first:hover .first-cta { filter: brightness(1.04); }
+
+@keyframes firstIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes firstBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@keyframes firstGlow {
+  0%, 100% { opacity: 0.7; transform: scale(0.96); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+@keyframes firstSpark {
+  0%       { opacity: 0; transform: translateY(4px) scale(0.6); }
+  30%      { opacity: 1; transform: translateY(-4px) scale(1); }
+  60%,100% { opacity: 0; transform: translateY(-14px) scale(0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .first, .first-tile, .first-glow, .first-spark { animation: none; }
+  .first-spark { opacity: 0; }
 }
 
 .foot-note {

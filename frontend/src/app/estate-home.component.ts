@@ -252,6 +252,14 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     this.buying.set(c);
   }
 
+  /** First-time empty state: open the buy sheet on the first open plot (the
+   *  one nearest the hall), so a new user goes straight into buying. */
+  buildFirst(): void {
+    const first = this.cells().find((c) => !c.hall && !c.tile);
+    if (first) this.buying.set(first);
+    if (navigator.vibrate) navigator.vibrate(6);
+  }
+
   // -------- detail popup: the numbers the card shows --------
 
   /** 1-based plot number, matching the fill order. */
