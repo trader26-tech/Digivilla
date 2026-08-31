@@ -297,6 +297,16 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return Math.max(0, total - done);
   }
 
+  /** Days left until a building completes (~30 days per remaining month). */
+  daysLeft(t: Tile): number {
+    return this.monthsLeft(t) * 30;
+  }
+
+  /** The date the building is expected to finish. */
+  completesOn(t: Tile): Date {
+    return new Date(Date.now() + this.daysLeft(t) * 86_400_000);
+  }
+
   /** The monthly rent a building will pay once it's finished (~6%/yr of cost),
    *  matching how a villa's rent is set when it's created. */
   futureRent(t: Tile): number {
