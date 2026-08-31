@@ -102,6 +102,7 @@
 }
 
 /* ---------------- 4 · funds ---------------- */
+.funds { padding: 0.2rem 0.15rem; }
 .funds-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.9rem; }
 .fund { margin-bottom: 0.85rem; &:last-child { margin-bottom: 0; } }
 .fund-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
