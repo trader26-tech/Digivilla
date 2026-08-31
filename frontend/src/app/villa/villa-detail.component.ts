@@ -73,8 +73,12 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
   private perkTimer?: ReturnType<typeof setInterval>;
 
   goPerk(i: number): void {
-    this.perk.set(i);
+    this.perk.set((i + this.PERKS.length) % this.PERKS.length);
     this.startPerks();
+  }
+  /** Step one card forward/back — used by swipe. */
+  stepPerk(dir: 1 | -1): void {
+    this.goPerk(this.perk() + dir);
   }
   private startPerks(): void {
     this.stopPerks();
@@ -84,6 +88,24 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
   }
   private stopPerks(): void {
     if (this.perkTimer) { clearInterval(this.perkTimer); this.perkTimer = undefined; }
+  }
+
+  // --- swipe/drag on the carousel (pointer events cover touch + mouse) ---
+  private swipeX: number | null = null;
+
+  onPerkDown(e: PointerEvent): void {
+    this.swipeX = e.clientX;
+    this.stopPerks();           // pause auto-advance while dragging
+  }
+  onPerkUp(e: PointerEvent): void {
+    if (this.swipeX === null) return;
+    const dx = e.clientX - this.swipeX;
+    this.swipeX = null;
+    if (Math.abs(dx) > 40) {
+      this.stepPerk(dx < 0 ? 1 : -1);   // drag left → next, right → prev
+    } else {
+      this.startPerks();                // not a swipe; resume auto-advance
+    }
   }
 
   // format helpers for the template

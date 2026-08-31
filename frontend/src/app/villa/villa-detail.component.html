@@ -35,7 +35,8 @@
        the heading alone sets it apart from the value figures. -->
   <section class="why reveal" style="--i:3">
     <span class="sec-cap">eVilla vs a real villa</span>
-    <div class="why-stage">
+    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
+         (pointercancel)="onPerkUp($event)">
       <div class="why-card" *ngFor="let p of PERKS; let i = index"
            [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
         <div class="why-top">

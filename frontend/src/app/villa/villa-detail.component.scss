@@ -122,7 +122,16 @@
 /* ---------------- 3½ · why-this carousel ---------------- */
 .why { padding: 0.2rem 0.15rem; }
 .why .sec-cap { display: block; margin-bottom: 0.7rem; }
-.why-stage { position: relative; height: 132px; }
+.why-stage {
+  position: relative;
+  height: 132px;
+  /* let horizontal drags drive the carousel while vertical still scrolls */
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.why-stage:active { cursor: grabbing; }
 .why-card {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
