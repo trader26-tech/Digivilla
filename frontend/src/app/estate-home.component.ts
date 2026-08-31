@@ -13,6 +13,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { AssetKeyComponent } from './shared/asset-key.component';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { CallsService } from './shared/calls.service';
 import { EstateService, Tile, TileType, Variant } from './estate.service';
@@ -44,7 +45,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, AssetKeyComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
