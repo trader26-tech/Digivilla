@@ -49,7 +49,7 @@
 }
 
 .rule { height: 1px; background: var(--survey); margin: 0.3rem 0.15rem; }
-.sec-cap { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.2px; color: var(--ink); }
+.sec-cap { font-size: 1.3rem; font-weight: 850; letter-spacing: -0.5px; color: var(--ink); }
 
 /* 2 · value figures */
 .value { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.35rem 0.15rem; }
@@ -226,3 +226,41 @@
   .wd-tick-ring, .wd-tick-mark { animation: none; stroke-dashoffset: 0; }
   .wd-tick.pop { animation: none; }
 }
+
+/* ---- why-this carousel (swipe-only) ---- */
+.why { padding: 0.2rem 0.15rem; }
+.why .sec-cap { display: block; margin-bottom: 0.7rem; }
+.why-stage { position: relative; height: 150px; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+.why-stage:active { cursor: grabbing; }
+.why-card {
+  --accent: var(--brass); --tint: rgba(166, 124, 46, 0.06);
+  position: absolute; inset: 0; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 1.1rem 1.2rem; border-radius: 20px; border: 1px solid var(--survey);
+  color: var(--ink); box-shadow: 0 14px 34px -24px rgba(22, 48, 43, 0.5);
+  background: linear-gradient(150deg, var(--tint), transparent 62%), #fff;
+  opacity: 0; transform: translateX(30px) scale(0.97); pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.why-card.prev { transform: translateX(-30px) scale(0.97); }
+.why-card.on { opacity: 1; transform: none; pointer-events: auto; }
+.why-card[data-theme="stamp"] { --accent: #a67c2e; --tint: rgba(166, 124, 46, 0.08); }
+.why-card[data-theme="rent"]  { --accent: #2e6b4f; --tint: rgba(46, 107, 79, 0.08); }
+.why-card[data-theme="live"]  { --accent: #3c7fa8; --tint: rgba(60, 127, 168, 0.08); }
+.why-card[data-theme="care"]  { --accent: #c9a227; --tint: rgba(201, 162, 39, 0.10); }
+.why-card[data-theme="time"]  { --accent: #6f5aa0; --tint: rgba(111, 90, 160, 0.08); }
+.why-card[data-theme="cash"]  { --accent: #2f7d6e; --tint: rgba(47, 125, 110, 0.08); }
+.why-card[data-theme="entry"] { --accent: #a05a44; --tint: rgba(160, 90, 68, 0.08); }
+.why-ico { position: absolute; right: 10px; top: 12px; width: 78px; height: 78px; color: var(--accent); opacity: 0.16; pointer-events: none; }
+.why-badge {
+  align-self: flex-start; padding: 2px 9px; margin-bottom: 0.4rem; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.why-stat-row { display: flex; align-items: baseline; gap: 0.5rem; }
+.why-stat { font-family: var(--font-display); font-size: 2.9rem; font-weight: 850; letter-spacing: -1.6px; line-height: 1; color: var(--accent); }
+.why-unit { font-size: 0.92rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.why-line { margin: 0.6rem 0 0; font-size: 0.92rem; font-weight: 600; letter-spacing: -0.2px; color: var(--ink); }
+.why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.9rem; }
+.why-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: var(--survey); cursor: pointer; transition: width 0.35s cubic-bezier(0.22,1,0.36,1), background 0.3s; }
+.why-dot.on { width: 20px; background: var(--brass); }

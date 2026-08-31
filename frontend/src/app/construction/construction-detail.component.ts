@@ -67,10 +67,59 @@ export class ConstructionDetailComponent implements OnInit {
     const d = new Date();
     d.setMonth(d.getMonth() + this.monthsLeft);
     this.completesOn = d;
+
+    this.buildPerks();
   }
 
   onBack(): void {
     this.back.emit();
+  }
+
+  // --- "why this beats a real villa" carousel (swipe-only) ---
+  PERKS: { theme: string; ico: string; stat: string; unit: string; vs: string }[] = [];
+  perk = signal(0);
+
+  private static readonly ICO: Record<string, string> = {
+    tag:   'M4 13V4h9l7 7-9 9zM8 8h.01',
+    coin:  'M12 3v18M8 7h5a3 3 0 0 1 0 6H8m0 0h6',
+    chart: 'M4 20V6M4 20h16M8 20v-6M12 20V9M16 20v-9',
+    tool:  'M14 7a4 4 0 0 0-5 5l-5 5 2 2 5-5a4 4 0 0 0 5-5l-2 2-2-2z',
+    bolt:  'M13 3L5 13h5l-1 8 8-10h-5z',
+    swap:  'M4 8h13l-3-3M20 16H7l3 3',
+    door:  'M5 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M9 12h.5',
+  };
+
+  private buildPerks(): void {
+    const I = ConstructionDetailComponent.ICO;
+    const rent = compact(this.rentWhenBuilt);
+    const stampSaved = compact(Math.round(this.cost * 0.07));
+    this.PERKS = [
+      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'rent soon', vs: 'starts the day it completes' },
+      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',     vs: 'in 7% stamp duty & registration' },
+      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'no repairs, no upkeep' },
+      { theme: 'live',  ico: I['chart'], stat: 'Live',     unit: 'progress',  vs: 'track the build any time' },
+      { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',    vs: 'not 45 days of paperwork' },
+      { theme: 'cash',  ico: I['swap'],  stat: '2 days',   unit: 'to cash out', vs: 'not 6+ months of brokers' },
+      { theme: 'entry', ico: I['door'],  stat: '₹10L',    unit: 'to start',  vs: 'not a ₹1 Cr down-payment' },
+    ];
+  }
+
+  goPerk(i: number): void { this.perk.set((i + this.PERKS.length) % this.PERKS.length); }
+  stepPerk(dir: 1 | -1): void { this.goPerk(this.perk() + dir); }
+
+  private swipeX: number | null = null;
+  onPerkDown(e: PointerEvent): void {
+    this.swipeX = e.clientX;
+    const el = e.currentTarget as HTMLElement;
+    try { el.setPointerCapture(e.pointerId); } catch {}
+  }
+  onPerkUp(e: PointerEvent): void {
+    if (this.swipeX === null) return;
+    const dx = e.clientX - this.swipeX;
+    this.swipeX = null;
+    const el = e.currentTarget as HTMLElement;
+    try { el.releasePointerCapture(e.pointerId); } catch {}
+    if (Math.abs(dx) > 40) this.stepPerk(dx < 0 ? 1 : -1);
   }
 
   trackFund(_i: number, f: HoldingFund): string {

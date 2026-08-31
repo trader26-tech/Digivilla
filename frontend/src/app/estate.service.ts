@@ -30,12 +30,15 @@ export interface Tile {
   label: string;           // e.g. "Kelambakkam Grove"
 }
 
-const STORE_KEY = 'estate_tiles_v1';
+// v2: reset the board once to the lean starter (the v1 store had accumulated
+// many test tiles). Bumping the key means old v1 tiles are ignored and the
+// starter seeds fresh on the next load.
+const STORE_KEY = 'estate_tiles_v2';
 const RENT_KEY = 'estate_rent_collected_v1';
 const PROFILE_KEY = 'estate_profile_v1';
 /** Set once the starter tiles have been seeded, so we never re-seed over a
  *  user who has since cleared their own plots. */
-const SEEDED_KEY = 'estate_seeded_v1';
+const SEEDED_KEY = 'estate_seeded_v2';
 
 /**
  * A small starter estate: one of each kind (villa, land, under-construction),

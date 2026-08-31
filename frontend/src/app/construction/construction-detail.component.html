@@ -3,21 +3,20 @@
   <header class="top reveal" style="--i:0">
     <button class="back" (click)="onBack()" aria-label="Back">‹</button>
     <h1 class="page-title">{{ name }}</h1>
-    <span class="page-tag">Under construction</span>
   </header>
 
-  <!-- 1 · the build image: bare land + the construction shell -->
+  <!-- 1 · the build image: bare land + the construction shell, centred -->
   <section class="art reveal" style="--i:1">
-    <svg viewBox="0 40 240 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Under construction">
+    <svg viewBox="20 30 200 152" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Under construction">
       <!-- land pad -->
-      <g transform="translate(120,90)">
+      <g transform="translate(120,88)">
         <polygon points="93.6,4 0,58 0,79.6 93.6,25.6" fill="#8a5a33"/>
         <polygon points="0,58 -93.6,4 -93.6,25.6 0,79.6" fill="#6d4527"/>
         <polygon points="0,-54 93.6,0 0,54 -93.6,0" fill="#6cba36"/>
         <polygon points="0,-54 93.6,0 0,54 -93.6,0" fill="none" stroke="#3f7a20" stroke-width="2.5"/>
       </g>
       <!-- construction shell (the same #tBuild geometry, re-anchored & scaled) -->
-      <g transform="translate(120,116) scale(0.30) translate(-640,-430)">
+      <g transform="translate(120,110) scale(0.30) translate(-640,-430)">
         <polygon points="484.8,389.1 520.6,409.8 496.7,423.6 460.9,402.9" fill="#a97140"/><polygon points="520.6,409.8 496.7,423.6 496.7,427.7 520.6,413.9" fill="#8a5a2f"/><polygon points="735.5,451.2 759.4,465.0 731.5,481.1 707.7,467.3" fill="#b0b6bd"/><polygon points="759.4,465.0 731.5,481.1 731.5,496.7 759.4,480.6" fill="#7c8189"/><polygon points="735.5,367.9 640.0,423.1 640.0,476.0 735.5,420.8" fill="#efe6d7"/><polygon points="640.0,423.1 536.5,363.3 536.5,416.2 640.0,476.0" fill="#d3c5ab"/><polygon points="632.0,308.1 735.5,367.9 640.0,423.1 536.5,363.3" fill="#b9ab90"/><polygon points="608.2,404.7 570.4,382.9 570.4,435.8 608.2,457.6" fill="#8b7f68"/><rect x="605.7" y="404.7" width="5" height="52.9" fill="#9a6636"/><rect x="591.7" y="396.7" width="5" height="52.9" fill="#9a6636"/><rect x="579.8" y="389.8" width="5" height="52.9" fill="#9a6636"/><rect x="567.9" y="382.9" width="5" height="52.9" fill="#9a6636"/><polygon points="717.6,392.0 685.8,410.5 685.8,435.8 717.6,417.3" fill="#3a5f7a"/><rect x="628.5" y="248.3" width="7" height="96.6" fill="#7d5027"/><rect x="759.9" y="324.2" width="7" height="96.6" fill="#8a5a2f"/><rect x="636.5" y="395.5" width="7" height="96.6" fill="#8a5a2f"/><rect x="505.2" y="319.6" width="7" height="96.6" fill="#7d5027"/><polyline points="632.0,301.2 763.4,377.1 640.0,448.4 508.7,372.5 632.0,301.2" fill="none" stroke="#a97140" stroke-width="5" stroke-linejoin="round"/><polyline points="632.0,259.8 763.4,335.7 640.0,407.0 508.7,331.1 632.0,259.8" fill="none" stroke="#a97140" stroke-width="5" stroke-linejoin="round"/></g>
     </svg>
   </section>
@@ -36,8 +35,21 @@
 
   <div class="rule"></div>
 
-  <!-- 3 · build progress -->
-  <section class="prog reveal" style="--i:3">
+  <!-- 3 · rent once built (above the progress, as the payoff) -->
+  <section class="reveal" style="--i:3">
+    <div class="cx-rent">
+      <div class="cx-rent-l">
+        <span class="cx-rent-k">Rent once built</span>
+        <span class="cx-rent-s">Starts when construction completes</span>
+      </div>
+      <b class="cx-rent-v">{{ compact(rentWhenBuilt) }}<span>/mo</span></b>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- 4 · build progress -->
+  <section class="prog reveal" style="--i:4">
     <div class="prog-head">
       <span class="sec-cap">Build progress</span>
       <b class="prog-pct">{{ pct }}%</b>
@@ -46,15 +58,6 @@
     <div class="prog-meta">
       <span>{{ monthsDone }} of {{ monthsTotal }} months paid</span>
       <span>Ready by {{ completesOn | date:'MMM y' }}</span>
-    </div>
-
-    <!-- rent once built -->
-    <div class="cx-rent">
-      <div class="cx-rent-l">
-        <span class="cx-rent-k">Rent once built</span>
-        <span class="cx-rent-s">Starts when construction completes</span>
-      </div>
-      <b class="cx-rent-v">{{ compact(rentWhenBuilt) }}<span>/mo</span></b>
     </div>
   </section>
 
@@ -72,8 +75,31 @@
     </div>
   </section>
 
-  <!-- 5 · withdraw -->
-  <button class="withdraw reveal" style="--i:5" (click)="openWithdraw()">
+  <!-- 5 · why this beats a real villa (swipeable) -->
+  <section class="why reveal" style="--i:5">
+    <span class="sec-cap">Your eVilla perks</span>
+    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
+         (pointercancel)="onPerkUp($event)">
+      <div class="why-card" *ngFor="let p of PERKS; let i = index"
+           [attr.data-theme]="p.theme" [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
+        <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="why-badge">eVilla</span>
+        <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
+        <p class="why-line">{{ p.vs }}</p>
+      </div>
+    </div>
+    <div class="why-dots">
+      <button class="why-dot" *ngFor="let p of PERKS; let i = index"
+              [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- 6 · withdraw -->
+  <button class="withdraw reveal" style="--i:6" (click)="openWithdraw()">
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
       <path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
