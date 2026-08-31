@@ -190,25 +190,29 @@
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}<sup class="star">*</sup></b>
         <span class="stat-k">City value</span>
-        <button class="tip-line" (click)="toggleTip('worth', $event)" [class.on]="tip() === 'worth'">
-          Linked to your mutual-fund value
-          <svg class="tip-i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
       </div>
       <button class="stat income" (click)="toggleRentFace()" [class.flipped]="showBuildCost()"
               [attr.aria-label]="showBuildCost() ? 'Build cost — tap to see monthly rent' : 'Monthly rent — tap to see build cost'">
         <span class="stat-face" [class.on]="!showBuildCost()">
           <b class="stat-v">{{ compact(est.rentIn) }}<sup class="star">*</sup></b>
           <span class="stat-k">Rent a month <span class="stat-more" aria-hidden="true">›</span></span>
-          <span class="tip-line" role="button" (click)="toggleTip('rent', $event)" [class.on]="tip() === 'rent'">
-            Payout carries mutual-fund risk
-            <svg class="tip-i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </span>
         </span>
         <span class="stat-face build" [class.on]="showBuildCost()">
           <b class="stat-v">{{ compact(est.buildCost) }}</b>
           <span class="stat-k">Build cost <span class="stat-more" aria-hidden="true">‹</span></span>
         </span>
+      </button>
+    </div>
+
+    <!-- the two ⓘ risk lines, on one shared row so they line up ── left · right -->
+    <div class="tip-row">
+      <button class="tip-line" (click)="toggleTip('worth', $event)" [class.on]="tip() === 'worth'">
+        Linked to your mutual-fund value
+        <svg class="tip-i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tip-line" (click)="toggleTip('rent', $event)" [class.on]="tip() === 'rent'">
+        Payout carries mutual-fund risk
+        <svg class="tip-i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
     </div>
 

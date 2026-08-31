@@ -67,12 +67,19 @@
 /* the small brass * on each figure */
 .star { font-size: 0.5em; font-weight: 800; color: var(--brass); vertical-align: super; margin-left: 1px; }
 
-/* the sub-label statement + ⓘ, on the line below each figure's label */
+/* the two ⓘ risk lines share one row so they line up left · right */
+.tip-row {
+  flex: none;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem;
+  padding: 0.35rem 1.25rem 0;
+}
 .tip-line {
   display: inline-flex; align-items: center; gap: 0.25rem;
-  margin-top: 0.25rem; padding: 0; border: 0; background: none;
+  padding: 0; border: 0; background: none;
   font: inherit; font-size: 0.68rem; font-weight: 600; color: var(--muted);
-  cursor: pointer; opacity: 0.8; transition: opacity 0.2s, color 0.2s;
+  cursor: pointer; opacity: 0.8; text-align: left;
+  transition: opacity 0.2s, color 0.2s;
+  &:last-child { text-align: right; }
   &:hover, &.on { opacity: 1; color: var(--brass); }
 }
 .tip-i { flex: none; display: block; }
