@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Output, ViewChild, computed, inject } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild, computed, inject, signal } from '@angular/core';
 
 import { EstateService, Tile } from '../estate.service';
 import { centreTile } from '../estate/board-layout';
@@ -28,10 +28,18 @@ interface Txn {
 })
 export class AccountComponent {
   @Output() back = new EventEmitter<void>();
+  /** Asks the shell to sign the user out. */
+  @Output() signOut = new EventEmitter<void>();
   @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
 
   readonly est = inject(EstateService);
   compact = compact;
+
+  /** Transactions are hidden until the user taps to reveal them. */
+  showTxns = signal(false);
+  toggleTxns(): void { this.showTxns.update((v) => !v); }
+
+  onSignOut(): void { this.signOut.emit(); }
 
   /** Transactions from every owned asset (incl. the founding villa), newest
    *  first. Each purchase is one debit. */

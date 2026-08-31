@@ -105,6 +105,12 @@ export class AppComponent {
     this.accountOpen = false;
   }
 
+  /** Log off from the account page — clears the session and returns home. */
+  onSignOut(): void {
+    this.auth.signOut();
+    this.accountOpen = false;
+  }
+
   onIntroDone(): void {
     this.intro = false;
   }

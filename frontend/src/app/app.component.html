@@ -18,6 +18,7 @@
 <app-account
   *ngIf="!intro && accountOpen"
   (back)="closeAccount()"
+  (signOut)="onSignOut()"
 ></app-account>
 
 <!-- BUILD A NEW ASSET: pick villa or land. -->

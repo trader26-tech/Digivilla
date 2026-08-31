@@ -47,24 +47,45 @@
     </div>
   </section>
 
-  <!-- transactions -->
-  <section class="ac-txns">
-    <span class="ac-sec-cap">Transactions</span>
-
-    <div class="ac-txn" *ngFor="let t of txns(); trackBy: trackTxn">
-      <span class="ac-txn-ico" [class.villa]="t.kind === 'villa'" [class.land]="t.kind === 'land'" [class.build]="t.kind === 'building'" aria-hidden="true">
-        <svg *ngIf="t.kind === 'villa'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <svg *ngIf="t.kind === 'land'" viewBox="0 0 24 24" width="20" height="20"><path d="M3 13l9-5 9 5-9 5-9-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <svg *ngIf="t.kind === 'building'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  <!-- ===== settings rows ===== -->
+  <section class="ac-rows">
+    <!-- Transactions: a row that expands to reveal the list on tap -->
+    <button class="ac-row" (click)="toggleTxns()" [attr.aria-expanded]="showTxns()">
+      <span class="ac-row-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h13l-3-3M20 17H7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
-      <div class="ac-txn-main">
-        <b class="ac-txn-name">{{ t.label }}</b>
-        <span class="ac-txn-sub">{{ kindLabel(t.kind) }} · {{ t.at ? (t.at | date:'d MMM y') : 'Founding villa' }}</span>
+      <div class="ac-row-main">
+        <b>Transactions</b>
+        <span>{{ txns().length }} in total</span>
       </div>
-      <div class="ac-txn-amt">
-        <b>−{{ compact(t.amount) }}</b>
-        <span>invested</span>
+      <svg class="ac-row-caret" [class.open]="showTxns()" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- the list, revealed only when Transactions is pressed -->
+    <div class="ac-txns" *ngIf="showTxns()">
+      <div class="ac-txn" *ngFor="let t of txns(); trackBy: trackTxn">
+        <span class="ac-txn-ico" [class.villa]="t.kind === 'villa'" [class.land]="t.kind === 'land'" [class.build]="t.kind === 'building'" aria-hidden="true">
+          <svg *ngIf="t.kind === 'villa'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <svg *ngIf="t.kind === 'land'" viewBox="0 0 24 24" width="20" height="20"><path d="M3 13l9-5 9 5-9 5-9-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <svg *ngIf="t.kind === 'building'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </span>
+        <div class="ac-txn-main">
+          <b class="ac-txn-name">{{ t.label }}</b>
+          <span class="ac-txn-sub">{{ kindLabel(t.kind) }} · {{ t.at ? (t.at | date:'d MMM y') : 'Founding villa' }}</span>
+        </div>
+        <div class="ac-txn-amt">
+          <b>−{{ compact(t.amount) }}</b>
+          <span>invested</span>
+        </div>
       </div>
     </div>
   </section>
+
+  <!-- ===== log off — the main action ===== -->
+  <button class="ac-logoff" (click)="onSignOut()">
+    <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M15 12H4m0 0l4-4m-4 4l4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Log off
+  </button>
 </main>
