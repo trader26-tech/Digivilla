@@ -230,10 +230,10 @@ export class LandDetailComponent implements OnInit {
     this.gain = this.current - this.price;
     this.buildPerks();
 
-    // A villa is a bigger asset than the bare plot — build toward ~1.5x the
-    // land's current value. The land itself is the starting balance; the SIP
-    // plus its growth closes the gap over BUILD_YEARS.
-    this.villaTarget = Math.round((this.current * 1.5) / 100000) * 100000;
+    // A villa is a much bigger asset than the bare plot — build toward ~2.2x
+    // the land's current value, so the SIP is a real, motivating monthly
+    // commitment (not a token amount the land's own growth would cover).
+    this.villaTarget = Math.round((this.current * 2.2) / 100000) * 100000;
     this.sipMonthly = this.suggestSip(this.current, this.villaTarget, this.BUILD_YEARS);
   }
 

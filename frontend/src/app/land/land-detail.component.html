@@ -178,3 +178,60 @@
     <button class="wd-done-btn" (click)="closeWithdraw()">Done</button>
   </div>
 </aside>
+
+<!-- ============ build-a-villa — confirm the SIP that converts the land ==== -->
+<div class="sheet-backdrop" *ngIf="buildOpen()" (click)="closeBuild()"></div>
+<aside class="sheet" *ngIf="buildOpen()" role="dialog" aria-modal="true" aria-label="Build a villa">
+  <span class="sheet-grab" aria-hidden="true"></span>
+
+  <!-- plan -->
+  <ng-container *ngIf="!buildDone()">
+    <div class="sheet-head">
+      <span class="sheet-title">Build a villa here</span>
+      <button class="sheet-close" (click)="closeBuild()" aria-label="Close">✕</button>
+    </div>
+
+    <!-- the SIP, up front -->
+    <div class="bld-sip">
+      <b class="bld-sip-amt">{{ compactK(sipMonthly) }}<i>/month</i></b>
+      <span class="bld-sip-k">Monthly SIP toward your villa</span>
+    </div>
+
+    <!-- land → villa, visualised -->
+    <div class="bld-flow">
+      <div class="bld-node">
+        <app-land-art class="bld-art"></app-land-art>
+        <span class="bld-node-k">This land</span>
+        <b class="bld-node-v">{{ compactK(current) }}</b>
+      </div>
+      <span class="bld-arrow" aria-hidden="true">→</span>
+      <div class="bld-node">
+        <span class="bld-yrs">{{ BUILD_YEARS }}y</span>
+        <span class="bld-node-k">A villa</span>
+        <b class="bld-node-v grow">{{ compactK(villaTarget) }}</b>
+      </div>
+    </div>
+
+    <ul class="bld-points">
+      <li><span class="bld-tick">✓</span> Your land keeps growing while the SIP builds on top</li>
+      <li><span class="bld-tick">✓</span> Once built, the villa pays you monthly rent</li>
+      <li><span class="bld-tick">✓</span> Pause or top up the SIP any time</li>
+    </ul>
+
+    <button class="bld-confirm" (click)="confirmBuild()">Start SIP · {{ compactK(sipMonthly) }}/mo</button>
+    <p class="bld-fine">Starts construction now. Illustrative; growth isn’t guaranteed.</p>
+  </ng-container>
+
+  <!-- done -->
+  <div class="wd-done" *ngIf="buildDone()">
+    <div class="wd-tick pop" aria-hidden="true">
+      <svg viewBox="0 0 52 52"><circle class="wd-tick-ring" cx="26" cy="26" r="24"/><path class="wd-tick-mark" d="M15 27l7 7 15-15"/></svg>
+    </div>
+    <b class="wd-done-title">Construction started</b>
+    <p class="wd-done-sub">
+      Your <b>{{ compactK(sipMonthly) }}/mo</b> SIP is building a villa here.<br>
+      It’ll start earning rent once complete.
+    </p>
+    <button class="wd-done-btn" (click)="finishBuild()">See it on the map</button>
+  </div>
+</aside>

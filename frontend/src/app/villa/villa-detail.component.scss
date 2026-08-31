@@ -446,3 +446,74 @@
   .wd-tick-ring, .wd-tick-mark { animation: none; stroke-dashoffset: 0; }
   .wd-tick.pop { animation: none; }
 }
+
+/* ============ build-a-villa CTA (land page) ============ */
+.build-cta {
+  display: flex; align-items: center; gap: 0.85rem;
+  width: 100%; margin: 0.2rem 0 0.3rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid var(--survey);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(46, 107, 79, 0.10), transparent 60%),
+    #fff;
+  font: inherit; text-align: left; cursor: pointer;
+  box-shadow: 0 10px 24px -18px rgba(46, 107, 79, 0.6);
+  transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
+  &:hover { border-color: var(--positive); transform: translateY(-1px); }
+  &:active { transform: scale(0.99); }
+}
+.bc-ico {
+  flex: none; width: 44px; height: 44px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: rgba(46, 107, 79, 0.12); color: var(--positive);
+  svg { display: block; }
+}
+.bc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.bc-title { font-size: 1rem; font-weight: 850; color: var(--ink); letter-spacing: -0.2px; }
+.bc-sub { font-size: 0.8rem; color: var(--muted); }
+.bc-go { flex: none; font-size: 1.25rem; line-height: 1; color: var(--survey); font-weight: 700; }
+.build-cta:hover .bc-go { color: var(--positive); }
+
+/* ============ build-a-villa sheet ============ */
+.bld-sip { text-align: center; margin: 0.4rem 0 1rem; }
+.bld-sip-amt {
+  font-size: 2.4rem; font-weight: 850; letter-spacing: -1.4px; line-height: 1; color: var(--positive);
+  i { font-style: normal; font-size: 0.42em; font-weight: 700; color: var(--muted); letter-spacing: 0; }
+}
+.bld-sip-k { display: block; margin-top: 0.3rem; font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+
+.bld-flow {
+  display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+  padding: 1rem; margin-bottom: 1rem;
+  border-radius: 16px; border: 1px solid var(--survey); background: #fff;
+}
+.bld-node { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; text-align: center; position: relative; }
+.bld-art { width: 70px; height: 52px; display: block; }
+.bld-yrs {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 1rem; font-weight: 850; color: var(--positive);
+  background: rgba(46, 107, 79, 0.1); border: 1.5px dashed var(--positive);
+}
+.bld-node-k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; }
+.bld-node-v { font-size: 1rem; font-weight: 850; color: var(--ink); }
+.bld-node-v.grow { color: var(--positive); }
+.bld-arrow { flex: none; font-size: 1.4rem; color: var(--brass); font-weight: 800; }
+
+.bld-points { list-style: none; margin: 0 0 1.2rem; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.bld-points li { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.88rem; color: var(--ink); line-height: 1.35; }
+.bld-tick {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.7rem; font-weight: 800;
+  background: rgba(46, 107, 79, 0.12); color: var(--positive);
+}
+.bld-confirm {
+  width: 100%; padding: 1rem; border-radius: 14px;
+  border: none; cursor: pointer; font: inherit; font-size: 1rem; font-weight: 850; color: #fff;
+  background: linear-gradient(120deg, #2E6B4F, #21563d);
+  box-shadow: 0 16px 34px -14px rgba(46, 107, 79, 0.7);
+  transition: transform 0.12s;
+  &:active { transform: scale(0.98); }
+}
+.bld-fine { margin: 0.7rem 0 0; font-size: 0.72rem; color: var(--muted); text-align: center; }
