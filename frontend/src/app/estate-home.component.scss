@@ -17,7 +17,13 @@
      avatar → small gap → hero → gap → the town → (divider lives below) */
 .estate-top {
   position: relative;
-  padding: 0;
+  /* the FIRST SCREEN: hero + map + the two figures fill the viewport, so the
+     "Build a new asset" row and the asset list start below the fold. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 1.1rem;
   overflow: hidden;
   background:
     radial-gradient(140% 90% at 50% -20%, rgba(166, 124, 46, 0.16), transparent 60%),
@@ -25,6 +31,10 @@
     linear-gradient(180deg, #FFFDF8, var(--paper));
   border-bottom: 1px solid var(--survey);
 }
+/* the town takes the space between the hero and the figures */
+.estate-top .board-scroll { flex: 1 1 auto; min-height: 0; }
+/* the headline figures sit at the foot of the first screen */
+.estate-top .stats { flex: none; padding: 0 1.25rem; margin: 0; }
 
 /* ===== owner avatar — top-left; the native file input is fully hidden and
    only reached by tapping the avatar button ===== */

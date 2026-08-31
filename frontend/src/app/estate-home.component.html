@@ -179,12 +179,9 @@
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       </button>
     </div>
-  </div>
 
-  <!-- ============ BOTTOM: everything textual lives here ============ -->
-  <div class="estate-bottom">
-    <!-- ===== the two headline numbers: value on the left; the right figure
-         morphs in place between monthly rent and build cost on tap. ===== -->
+    <!-- ===== the two headline numbers — the last thing in the first screen:
+         City value (left) · Rent a month (right, taps to build cost). ===== -->
     <div class="stats">
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}</b>
@@ -203,6 +200,10 @@
         </span>
       </button>
     </div>
+  </div>
+
+  <!-- ============ BOTTOM: scrolls below the first screen ============ -->
+  <div class="estate-bottom">
 
     <!-- ===== ALWAYS-ON CTA: build a new asset. Sits at the top of the list
          so a user can invest straight away, whether or not they own any yet.
