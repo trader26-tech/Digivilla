@@ -57,15 +57,34 @@ export class VillaDetailComponent implements OnInit {
   history: RentPayment[] = [];
   historyOpen = signal(false);
 
-  // --- withdraw: book a call with the fund manager ---
+  // --- withdraw: a 4-step "book a call with the fund manager" flow ---
   /** Withdraw sheet open? */
   withdrawOpen = signal(false);
-  /** The date the user picked to speak to the fund manager, or null. */
-  bookedDate = signal<Date | null>(null);
+  /** Which step of the flow: 0 intro · 1 pick date · 2 pick time · 3 booked. */
+  wdStep = signal(0);
+  /** The month the calendar is showing (1st of month). */
+  wdMonth = signal(this.firstOfThisMonth());
+  /** The day the user picked, or null. */
+  wdDay = signal<Date | null>(null);
+  /** The time slot the user picked, or null. */
+  wdSlot = signal<string | null>(null);
   /** True briefly after booking, to run the tick-mark confirm animation. */
   justBooked = signal(false);
 
+  /** Time slots the fund manager offers on a chosen day. */
+  readonly WD_SLOTS = ['10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '5:00 PM'];
+
+  private firstOfThisMonth(): Date {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }
+
   openWithdraw(): void {
+    this.wdStep.set(0);
+    this.wdMonth.set(this.firstOfThisMonth());
+    this.wdDay.set(null);
+    this.wdSlot.set(null);
+    this.justBooked.set(false);
     this.withdrawOpen.set(true);
     if (navigator.vibrate) navigator.vibrate(4);
   }
@@ -73,36 +92,67 @@ export class VillaDetailComponent implements OnInit {
     this.withdrawOpen.set(false);
   }
 
-  /** The fund manager's next available call dates — the soonest is 2 working
-   *  days out (a withdrawal call is never same-day), then a run of days. */
-  get callDates(): Date[] {
-    const out: Date[] = [];
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    let added = 0;
-    let offset = 0;
-    while (added < 14) {
-      offset++;
-      const cand = new Date(d.getTime() + offset * 86_400_000);
-      const dow = cand.getDay();
-      if (dow === 0 || dow === 6) continue;   // manager takes calls on weekdays
-      if (offset < 2) continue;               // never sooner than 2 days out
-      out.push(cand);
-      added++;
-    }
-    return out;
+  /** Move from the intro to the date picker. */
+  wdBegin(): void { this.wdStep.set(1); }
+
+  // -- calendar --
+  /** Label for the month being shown, e.g. "October 2026". */
+  get wdMonthLabel(): string {
+    return this.wdMonth().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  }
+  /** The cells of the month grid: leading blanks (null) then each day's Date. */
+  get wdCells(): (Date | null)[] {
+    const m = this.wdMonth();
+    const year = m.getFullYear();
+    const mon = m.getMonth();
+    const lead = new Date(year, mon, 1).getDay();          // 0=Sun blanks before day 1
+    const days = new Date(year, mon + 1, 0).getDate();     // last date of month
+    const cells: (Date | null)[] = [];
+    for (let i = 0; i < lead; i++) cells.push(null);
+    for (let d = 1; d <= days; d++) cells.push(new Date(year, mon, d));
+    return cells;
+  }
+  /** Can't page earlier than the current month. */
+  get wdCanPrev(): boolean {
+    const now = this.firstOfThisMonth();
+    return this.wdMonth() > now;
+  }
+  wdPrevMonth(): void {
+    if (!this.wdCanPrev) return;
+    const m = this.wdMonth();
+    this.wdMonth.set(new Date(m.getFullYear(), m.getMonth() - 1, 1));
+  }
+  wdNextMonth(): void {
+    const m = this.wdMonth();
+    this.wdMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1));
+  }
+  /** A day is bookable only if it's a weekday and at least 2 days out. */
+  wdSelectable(dt: Date): boolean {
+    const dow = dt.getDay();
+    if (dow === 0 || dow === 6) return false;
+    const min = new Date();
+    min.setHours(0, 0, 0, 0);
+    min.setDate(min.getDate() + 2);
+    return dt.getTime() >= min.getTime();
+  }
+  wdIsDay(dt: Date): boolean {
+    const d = this.wdDay();
+    return !!d && d.getTime() === dt.getTime();
+  }
+  wdPickDay(dt: Date): void {
+    if (!this.wdSelectable(dt)) return;
+    this.wdDay.set(dt);
+    this.wdSlot.set(null);
+    this.wdStep.set(2);
+    if (navigator.vibrate) navigator.vibrate(4);
   }
 
-  isBooked(dt: Date): boolean {
-    const b = this.bookedDate();
-    return !!b && b.getTime() === dt.getTime();
-  }
-
-  bookCall(dt: Date): void {
-    this.bookedDate.set(dt);
+  // -- time slot --
+  wdPickSlot(slot: string): void {
+    this.wdSlot.set(slot);
+    this.wdStep.set(3);
     this.justBooked.set(true);
     if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
-    // let the tick-mark animation play, then settle to the booked state
     setTimeout(() => this.justBooked.set(false), 1600);
   }
 

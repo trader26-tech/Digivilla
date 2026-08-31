@@ -134,40 +134,85 @@
   </div>
 </aside>
 
-<!-- ============ withdraw — book a call with the fund manager ============ -->
+<!-- ============ withdraw — 4-step book-a-call flow ============ -->
 <div class="sheet-backdrop" *ngIf="withdrawOpen()" (click)="closeWithdraw()"></div>
 <aside class="sheet wd-sheet" *ngIf="withdrawOpen()" role="dialog" aria-modal="true" aria-label="Withdraw">
   <span class="sheet-grab" aria-hidden="true"></span>
 
-  <!-- STATE A: not yet booked — explain + pick a date -->
-  <ng-container *ngIf="!bookedDate()">
+  <!-- STEP 0 · intro: how withdrawal works, in three steps -->
+  <ng-container *ngIf="wdStep() === 0">
     <div class="sheet-head">
-      <span class="sheet-title">Withdraw</span>
+      <span class="sheet-title">How withdrawal works</span>
       <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
     </div>
-    <p class="wd-lead">
-      Book a call with your fund manager to withdraw. Withdrawals aren’t instant —
-      they’re processed <b>within 2 working days</b> of your call.
-    </p>
-    <span class="wd-cap">Pick a slot with the fund manager</span>
-    <div class="wd-cal">
-      <button class="wd-day" *ngFor="let dt of callDates" (click)="bookCall(dt)">
-        <span class="wd-dow">{{ dt | date:'EEE' }}</span>
-        <b class="wd-num">{{ dt | date:'d' }}</b>
-        <span class="wd-mon">{{ dt | date:'MMM' }}</span>
-      </button>
-    </div>
+    <ol class="wd-steps">
+      <li>
+        <span class="wd-step-n">1</span>
+        <div class="wd-step-t"><b>Book a free slot</b><span>Pick a call with your fund manager</span></div>
+      </li>
+      <li>
+        <span class="wd-step-n">2</span>
+        <div class="wd-step-t"><b>Manager initiates payment</b><span>On the call, they start your withdrawal</span></div>
+      </li>
+      <li>
+        <span class="wd-step-n">3</span>
+        <div class="wd-step-t"><b>Money in your bank</b><span>Received within 2 working days</span></div>
+      </li>
+    </ol>
+    <button class="wd-done-btn" (click)="wdBegin()">Okay, book a slot</button>
   </ng-container>
 
-  <!-- STATE B: booked — the tick-mark confirmation -->
-  <div class="wd-done" *ngIf="bookedDate() as bd">
+  <!-- STEP 1 · pick a day from the full month calendar -->
+  <ng-container *ngIf="wdStep() === 1">
+    <div class="sheet-head">
+      <span class="sheet-title">Step 1 · Pick a slot</span>
+      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="wd-monthbar">
+      <button class="wd-nav" (click)="wdPrevMonth()" [disabled]="!wdCanPrev" aria-label="Previous month">‹</button>
+      <b class="wd-monthlbl">{{ wdMonthLabel }}</b>
+      <button class="wd-nav" (click)="wdNextMonth()" aria-label="Next month">›</button>
+    </div>
+
+    <div class="wd-dow-row" aria-hidden="true">
+      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+    </div>
+    <div class="wd-grid">
+      <ng-container *ngFor="let c of wdCells">
+        <span class="wd-blank" *ngIf="!c"></span>
+        <button *ngIf="c" class="wd-cell"
+                [class.sel]="wdIsDay(c)"
+                [disabled]="!wdSelectable(c)"
+                (click)="wdPickDay(c)">{{ c | date:'d' }}</button>
+      </ng-container>
+    </div>
+    <p class="wd-hint">Weekday slots, from 2 days out.</p>
+  </ng-container>
+
+  <!-- STEP 2 · pick a time slot for the chosen day -->
+  <ng-container *ngIf="wdStep() === 2 && wdDay() as day">
+    <div class="sheet-head">
+      <span class="sheet-title">Step 2 · Pick a time</span>
+      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
+    </div>
+    <p class="wd-lead">Slots with the fund manager on <b>{{ day | date:'EEEE, d MMM' }}</b></p>
+    <div class="wd-slots">
+      <button class="wd-slot" *ngFor="let s of WD_SLOTS" (click)="wdPickSlot(s)">{{ s }}</button>
+    </div>
+    <button class="wd-back" (click)="wdStep.set(1)">‹ Change date</button>
+  </ng-container>
+
+  <!-- STEP 3 · booked confirmation with the tick-mark animation -->
+  <div class="wd-done" *ngIf="wdStep() === 3 && wdDay() as day">
     <div class="wd-tick" [class.pop]="justBooked()" aria-hidden="true">
       <svg viewBox="0 0 52 52"><circle class="wd-tick-ring" cx="26" cy="26" r="24"/><path class="wd-tick-mark" d="M15 27l7 7 15-15"/></svg>
     </div>
-    <b class="wd-done-title">Call scheduled</b>
+    <b class="wd-done-title">Call booked</b>
     <p class="wd-done-sub">
       Your fund manager will call on<br>
-      <b>{{ bd | date:'EEEE, d MMM y' }}</b> to process the withdrawal.
+      <b>{{ day | date:'EEEE, d MMM y' }} at {{ wdSlot() }}</b><br>
+      to process your withdrawal.
     </p>
     <button class="wd-done-btn" (click)="closeWithdraw()">Done</button>
   </div>
