@@ -491,15 +491,17 @@
 .log-row:hover { border-color: var(--brass); box-shadow: 0 10px 22px -14px rgba(166, 124, 46, 0.55); }
 .log-row:active { transform: scale(0.99); }
 
-/* the asset image — big and clear, the way the reference logos read */
+/* the asset image — a big square that fills the row height, so the house
+   reads large and clear (like the reference app's logos) */
 .log-art {
   flex: none;
-  width: 58px;
-  height: 58px;
+  width: 72px;
+  height: 72px;
+  aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
-  padding: 4px;
-  border-radius: 14px;
+  padding: 0;
+  border-radius: 16px;
   overflow: hidden;
   /* a soft board-coloured ground so the iso tile pops */
   background:
