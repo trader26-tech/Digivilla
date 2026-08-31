@@ -35,14 +35,6 @@
 /* BOTTOM — the action, pinned low */
 .lg-bottom { flex: none; display: flex; flex-direction: column; gap: 0.9rem; }
 
-.lg-step {
-  margin: 0; font-family: var(--font-display);
-  font-size: 1.35rem; font-weight: 850; letter-spacing: -0.4px; line-height: 1.15; color: var(--ink);
-}
-/* the OTP step has no hero above it, so its title stays large */
-.lg-step.big { font-size: 2.1rem; letter-spacing: -1px; }
-.lg-substep { margin: -0.4rem 0 0.6rem; font-size: 0.98rem; color: var(--muted); }
-
 .lg-field { display: flex; flex-direction: column; gap: 0.4rem; }
 .lg-lbl { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .lg-input {
@@ -69,9 +61,10 @@
 
 /* OTP */
 .lg-edit {
-  align-self: flex-start; display: inline-flex; align-items: center; gap: 0.25rem;
+  display: inline-flex; align-items: center; gap: 0.25rem;
   border: none; background: none; cursor: pointer;
-  font: inherit; font-size: 0.9rem; font-weight: 800; color: var(--muted); padding: 0 0 0.3rem;
+  font: inherit; font-size: 0.9rem; font-weight: 800; color: var(--muted);
+  padding: 0; margin-bottom: 0.9rem;
   &:hover { color: var(--brass); }
 }
 .lg-otp {
@@ -85,7 +78,7 @@
 
 /* button */
 .lg-btn {
-  margin-top: 0.5rem; min-height: 56px;
+  min-height: 56px;
   display: grid; place-items: center;
   border: none; border-radius: 16px; cursor: pointer;
   font: inherit; font-size: 1.08rem; font-weight: 850; color: #fff;
