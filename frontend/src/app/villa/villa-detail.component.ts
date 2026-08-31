@@ -62,11 +62,11 @@ export class VillaDetailComponent implements OnInit {
    *  ONE statement built around a big money/time figure, on its own themed
    *  background. `theme` selects the card's colour treatment in the SCSS. */
   readonly PERKS = [
-    { theme: 'stamp', icon: '🧾', stat: '₹2.1L', unit: 'saved',   line: 'A real villa loses this to stamp duty & registration. An eVilla costs ₹0 to buy in.' },
-    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own', line: 'Own an eVilla in 30 seconds — a real villa takes 45+ days of paperwork.' },
-    { theme: 'care',  icon: '🛠️', stat: '₹40k',  unit: 'a year', line: 'What a real villa eats in repairs. An eVilla costs you ₹0 — it’s fully hands-off.' },
-    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to exit', line: 'Cash out an eVilla in ~2 days. Selling a real villa drags on 6 months with brokers.' },
-    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start', line: 'Start an eVilla from ₹10L — a real villa needs a ₹1Cr+ down-payment.' },
+    { theme: 'stamp', icon: '🧾', stat: '₹2.1L', unit: 'saved',   line: 'Real villa: lost to stamp duty' },
+    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own', line: 'Real villa: 45 days of paperwork' },
+    { theme: 'care',  icon: '🛠️', stat: '₹40k',  unit: 'a year', line: 'Real villa: repairs eat it' },
+    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to exit', line: 'Real villa: 6 months to sell' },
+    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start', line: 'Real villa: ₹1 Cr+ upfront' },
   ];
   perk = signal(0);
 
