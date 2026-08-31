@@ -10,30 +10,18 @@
     <app-villa-art></app-villa-art>
   </section>
 
-  <!-- ============ 2 · value: current value hero, then invested + rent ==== -->
+  <!-- ============ 2 · value: current value (left) · total rent paid (right) -->
   <section class="value reveal" style="--i:2">
-    <div class="val-hero">
-      <span class="val-k">Current value</span>
-      <div class="val-hero-row">
-        <b class="val-big">{{ compact(current) }}</b>
-        <span class="val-gain" [class.neg]="gain < 0">
-          <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
-            <path [attr.d]="gain < 0 ? 'M2 4l4 4 4-4' : 'M2 8l4-4 4 4'"
-                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          {{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}
-        </span>
-      </div>
+    <div class="val-cell">
+      <b class="val-big now">{{ compact(current) }}</b>
+      <span class="val-k">
+        Current value
+        <span class="val-gain" [class.neg]="gain < 0">{{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}</span>
+      </span>
     </div>
-    <div class="val-pair">
-      <div class="val-cell">
-        <span class="val-k">Invested</span>
-        <b class="val-v">{{ compact(price) }}</b>
-      </div>
-      <div class="val-cell">
-        <span class="val-k">Rent paid</span>
-        <b class="val-v rent">{{ compact(totalPaid) }}</b>
-      </div>
+    <div class="val-cell right">
+      <b class="val-big rent">{{ compact(totalPaid) }}</b>
+      <span class="val-k">Total rent paid</span>
     </div>
   </section>
 
