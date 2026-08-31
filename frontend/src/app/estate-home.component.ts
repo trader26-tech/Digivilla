@@ -483,5 +483,17 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   get buildings(): number { return this.est.countOf('building'); }
   get lands(): number { return this.est.countOf('land'); }
   get open(): number { return this.est.openPlots; }
+
+  /** A warm, time-aware greeting for the top of the home screen. */
+  get greeting(): string {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+  /** Total assets owned (villas + builds + lands + the founding villa). */
+  get assetCount(): number {
+    return this.villas + this.buildings + this.lands + 1; // +1 = founding villa
+  }
   get hasAny(): boolean { return this.est.tiles().length > 0; }
 }
