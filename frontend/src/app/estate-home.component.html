@@ -327,23 +327,49 @@
         <button class="pop-close" (click)="closeDetail()">Close ✕</button>
       </div>
 
-      <!-- ONE detail line per type -->
-      <p class="pop-sub" *ngIf="c.tile?.type === 'land'">
-        {{ c.tile!.label }} · growth plot
-      </p>
-      <p class="pop-sub" *ngIf="c.tile?.type === 'building'">
-        {{ c.tile!.label }} · {{ buildStep(c.tile!).done }} of {{ buildStep(c.tile!).total }} · {{ buildPct(c.tile!) }}% built
-      </p>
-      <p class="pop-sub" *ngIf="c.tile?.type === 'villa'">
-        {{ c.tile!.label }} · {{ compact(c.tile!.rentMonthly) }}/mo rent
-      </p>
-      <p class="pop-sub" *ngIf="!c.tile">
-        Empty plot — build to start growing here
-      </p>
+      <p class="pop-sub" *ngIf="c.tile">{{ c.tile.label }}</p>
+      <p class="pop-sub" *ngIf="!c.tile">Empty plot — build to start growing here</p>
 
-      <!-- progress bar for a building -->
-      <div class="pop-bar" *ngIf="c.tile?.type === 'building'">
-        <span class="pop-bar-fill" [style.width.%]="buildPct(c.tile!)"></span>
+      <!-- ===== VILLA: what you paid · monthly rent ===== -->
+      <div class="pop-stats" *ngIf="c.tile?.type === 'villa'">
+        <div class="pop-stat">
+          <span class="ps-k">Bought for</span>
+          <b class="ps-v">{{ compact(c.tile!.cost) }}</b>
+        </div>
+        <div class="pop-stat">
+          <span class="ps-k">Monthly rent</span>
+          <b class="ps-v rent">{{ compact(c.tile!.rentMonthly) }}</b>
+        </div>
+      </div>
+
+      <!-- ===== BUILDING: months left · rent once built, with progress ===== -->
+      <ng-container *ngIf="c.tile?.type === 'building'">
+        <div class="pop-stats">
+          <div class="pop-stat">
+            <span class="ps-k">Completes in</span>
+            <b class="ps-v">{{ monthsLeft(c.tile!) }} mo</b>
+          </div>
+          <div class="pop-stat">
+            <span class="ps-k">Rent when built</span>
+            <b class="ps-v rent">{{ compact(futureRent(c.tile!)) }}</b>
+          </div>
+        </div>
+        <div class="pop-bar">
+          <span class="pop-bar-fill" [style.width.%]="buildPct(c.tile!)"></span>
+        </div>
+        <span class="pop-barnote">{{ buildPct(c.tile!) }}% built</span>
+      </ng-container>
+
+      <!-- ===== LAND: invested · CAGR growth ===== -->
+      <div class="pop-stats" *ngIf="c.tile?.type === 'land'">
+        <div class="pop-stat">
+          <span class="ps-k">Invested</span>
+          <b class="ps-v">{{ compact(c.tile!.cost) }}</b>
+        </div>
+        <div class="pop-stat">
+          <span class="ps-k">Growing at</span>
+          <b class="ps-v grow">{{ landCagrPct() }}% <span class="ps-yr">CAGR</span></b>
+        </div>
       </div>
 
       <!-- primary action -->

@@ -815,12 +815,41 @@
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* two stat cells: label over a big value, split down the middle */
+.pop-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+.pop-stat {
+  display: flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--survey);
+  background: #fff;
+}
+.ps-k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; }
+.ps-v {
+  font-family: var(--font-display);
+  font-size: 1.3rem; font-weight: 850; letter-spacing: -0.5px; line-height: 1;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.ps-v.rent { color: var(--positive); }
+.ps-v.grow { color: var(--brass); }
+.ps-yr { font-size: 0.7rem; font-weight: 700; color: var(--muted); letter-spacing: 0.02em; }
+
 .pop-bar {
-  margin-top: 0.75rem;
+  margin-top: 0.8rem;
   height: 6px;
   border-radius: 999px;
   background: var(--survey);
   overflow: hidden;
+}
+.pop-barnote {
+  display: block; margin-top: 0.35rem;
+  font-size: 0.76rem; color: var(--muted); text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .pop-bar-fill {
   display: block; height: 100%;

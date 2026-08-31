@@ -297,6 +297,30 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return total > 0 ? Math.round((done / total) * 100) : 0;
   }
 
+  /** Whole months left until a building finishes and becomes a villa. */
+  monthsLeft(t: Tile): number {
+    const { done, total } = this.buildStep(t);
+    return Math.max(0, total - done);
+  }
+
+  /** The monthly rent a building will pay once it's finished (~6%/yr of cost),
+   *  matching how a villa's rent is set when it's created. */
+  futureRent(t: Tile): number {
+    return Math.round((t.cost * 0.06) / 12);
+  }
+
+  /** Representative annual growth (CAGR) for a land plot — a pure equity
+   *  basket. Fixed rate so the number is stable per session. */
+  private readonly LAND_CAGR = 0.12;
+  landCagrPct(): number {
+    return Math.round(this.LAND_CAGR * 100);
+  }
+  /** A land plot's value today, its cost grown at the CAGR since purchase. */
+  landValue(t: Tile): number {
+    const years = Math.max(0, (Date.now() - t.boughtAt) / (365.25 * 86_400_000));
+    return Math.round(t.cost * Math.pow(1 + this.LAND_CAGR, years));
+  }
+
   /** Build the chosen asset on the pending plot. */
   buy(type: TileType, variant: Variant): void {
     const cost = this.costFor(type);
