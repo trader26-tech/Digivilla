@@ -96,11 +96,17 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
   onPerkDown(e: PointerEvent): void {
     this.swipeX = e.clientX;
     this.stopPerks();           // pause auto-advance while dragging
+    // capture so pointermove/up keep coming to this element even as the finger
+    // travels off the card it started on
+    const el = e.currentTarget as HTMLElement;
+    try { el.setPointerCapture(e.pointerId); } catch {}
   }
   onPerkUp(e: PointerEvent): void {
     if (this.swipeX === null) return;
     const dx = e.clientX - this.swipeX;
     this.swipeX = null;
+    const el = e.currentTarget as HTMLElement;
+    try { el.releasePointerCapture(e.pointerId); } catch {}
     if (Math.abs(dx) > 40) {
       this.stepPerk(dx < 0 ? 1 : -1);   // drag left → next, right → prev
     } else {
