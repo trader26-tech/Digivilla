@@ -280,11 +280,6 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return t.type === 'villa' ? '#tVilla' : '#tLand';
   }
 
-  /** Human label for an owned tile's kind. */
-  tileKind(t: Tile): string {
-    return t.type === 'villa' ? 'Villa' : t.type === 'building' ? 'Building' : 'Land';
-  }
-
   /** Every asset the user has bought, newest purchase first — the log rows. */
   get ownedLog(): Tile[] {
     return [...this.est.tiles()].sort((a, b) => b.boughtAt - a.boughtAt);
