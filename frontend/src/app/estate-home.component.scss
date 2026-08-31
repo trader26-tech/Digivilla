@@ -440,43 +440,112 @@
   .stat-face.on { transform: none; filter: none; }
 }
 
-.collected {
+/* ============ ASSET LOG — a purchase history of everything built ============ */
+.log {
+  text-align: left;
+  margin-top: 0.4rem;
+}
+.log-head {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
   align-items: center;
-  width: 100%;
-  border: 0;
-  background: none;
-  font: inherit;
-  cursor: pointer;
-  transition: transform 0.12s;
+  justify-content: space-between;
+  margin: 0 0.15rem 0.7rem;
 }
-.collected:active { transform: scale(0.98); }
-.collected:disabled { cursor: default; }
-.col-k { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
-.col-v { font-size: 2rem; font-weight: 850; letter-spacing: -1px; color: var(--brass); font-variant-numeric: tabular-nums; }
-.col-hint { font-size: 0.8rem; color: var(--muted); }
-
-.legend {
+.log-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.log-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(166, 124, 46, 0.14);
+  color: var(--brass);
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.log-row {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.4rem 1rem;
-  margin-top: 1rem;
-  font-size: 0.82rem;
-  color: var(--ink);
-  font-weight: 600;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--survey);
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -16px rgba(22, 48, 43, 0.5);
+  transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
 }
-.lg { display: inline-flex; align-items: center; gap: 0.35rem; }
-.sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-.sw.villa { background: #E9E3D4; border: 1px solid #cbb98f; }
-.sw.land { background: #4E8A3C; }
-.sw.bld { background: rgba(166,124,46,0.6); }
-.sw.open { background: transparent; border: 1.5px dashed var(--survey); }
-
-.empty { margin-top: 1.2rem; }
-.empty p { color: var(--muted); font-size: 0.95rem; line-height: 1.5; b { color: var(--ink); } }
+.log-row:last-of-type { margin-bottom: 0; }
+.log-row:hover { border-color: var(--brass); box-shadow: 0 10px 22px -14px rgba(166, 124, 46, 0.55); }
+.log-row:active { transform: scale(0.99); }
+.log-art {
+  flex: none;
+  width: 54px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  /* a soft board-coloured ground so the tiny iso tile reads clearly */
+  background:
+    radial-gradient(120% 100% at 50% 20%, rgba(108, 186, 54, 0.14), transparent 70%),
+    #f6f3ea;
+}
+.log-art svg { display: block; }
+.log-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.log-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.log-kind {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--survey);
+  color: var(--ink);
+}
+.log-kind.villa { background: rgba(46, 107, 79, 0.14); color: var(--positive); }
+.log-kind.bld   { background: rgba(122, 95, 176, 0.16); color: #7a5fb0; }
+.log-kind.land  { background: rgba(78, 138, 60, 0.14); color: #4E8A3C; }
+.log-date {
+  flex: none;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.log-empty {
+  margin-top: 1.2rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
 
 .foot-note {
   margin: 1.6rem auto 0;

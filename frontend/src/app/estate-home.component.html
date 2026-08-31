@@ -200,20 +200,40 @@
       </button>
     </div>
 
-    <button class="collected" (click)="collect()" [disabled]="est.rentIn <= 0">
-      <span class="col-k">Rent collected to date</span>
-      <b class="col-v">{{ compact(est.rentCollected()) }}</b>
-      <span class="col-hint" *ngIf="est.rentIn > 0">tap to collect {{ compact(est.rentIn) }}</span>
-      <span class="col-hint" *ngIf="est.rentIn <= 0 && hasAny">build a villa to start earning rent</span>
-      <span class="col-hint" *ngIf="!hasAny">tap a plot around the town hall to start building</span>
-    </button>
+    <!-- ===== ASSET LOG: every asset the user has bought, newest first.
+         A small iso image, the name, its one detail, and the purchase date. -->
+    <div class="log" *ngIf="hasAny; else empty">
+      <div class="log-head">
+        <span class="log-title">Your assets</span>
+        <span class="log-count">{{ ownedLog.length }}</span>
+      </div>
 
-    <div class="legend" *ngIf="hasAny">
-      <span class="lg"><i class="sw villa"></i>{{ villas }} villa{{ villas === 1 ? '' : 's' }}</span>
-      <span class="lg"><i class="sw land"></i>{{ lands }} plot{{ lands === 1 ? '' : 's' }}</span>
-      <span class="lg"><i class="sw bld"></i>{{ buildings }} building</span>
-      <span class="lg"><i class="sw open"></i>{{ open }} open</span>
+      <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
+        <span class="log-art">
+          <svg viewBox="20 -8 200 176" width="52" height="46" aria-hidden="true">
+            <use [attr.href]="tileSymbol(t)"></use>
+            <g *ngIf="t.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
+              <use [attr.href]="'#tBuild'"></use>
+            </g>
+          </svg>
+        </span>
+        <span class="log-main">
+          <b class="log-name">{{ t.label }}</b>
+          <span class="log-sub">
+            <span class="log-kind" [class.villa]="t.type === 'villa'"
+                  [class.bld]="t.type === 'building'" [class.land]="t.type === 'land'">
+              {{ tileKind(t) }}
+            </span>
+            {{ tileLine(t) }}
+          </span>
+        </span>
+        <span class="log-date">{{ t.boughtAt | date:'d MMM yyyy' }}</span>
+      </button>
     </div>
+
+    <ng-template #empty>
+      <p class="log-empty">Tap a plot around the town hall to buy your first asset — it’ll show up here.</p>
+    </ng-template>
 
     <p class="foot-note">
       Assets are a metaphor for tiers of a fund portfolio in your own name.
