@@ -26,6 +26,59 @@
   border-bottom: 1px solid var(--survey);
 }
 
+/* ===== owner avatar — top-left; the native file input is fully hidden and
+   only reached by tapping the avatar button ===== */
+.avatar {
+  position: absolute;
+  top: calc(0.6rem + env(safe-area-inset-top));
+  left: 1rem;
+  z-index: 4;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--survey);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 4px 12px -6px rgba(22, 48, 43, 0.4);
+  transition: transform 0.12s, border-color 0.2s;
+}
+.avatar:active { transform: scale(0.94); }
+.avatar.has-photo { border-color: var(--brass); }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-ph { display: block; }
+.avatar-plus {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--brass);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  border: 1.5px solid var(--paper);
+}
+/* the raw <input type="file"> must never show — it was overlapping the title */
+.avatar-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ===== hero greeting — one compact line over the town ===== */
 .hero {
   position: absolute;
