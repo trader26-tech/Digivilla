@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
 
 import { VillaArtComponent } from '../shared/villa-art.component';
+import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { compact, compactK } from '../shared/format.util';
 import {
   HoldingFund,
@@ -22,7 +23,7 @@ import {
 @Component({
   selector: 'app-villa-buy',
   standalone: true,
-  imports: [CommonModule, VillaArtComponent],
+  imports: [CommonModule, VillaArtComponent, MfDisclaimerComponent],
   templateUrl: './villa-buy.component.html',
   styleUrls: ['../villa/villa-detail.component.scss', './villa-buy.component.scss'],
 })

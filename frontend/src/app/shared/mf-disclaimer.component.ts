@@ -63,5 +63,7 @@ import { CommonModule } from '@angular/common';
 export class MfDisclaimerComponent {
   /** Kept for API compatibility; the collapsed line is already compact. */
   @Input() compact = false;
+  /** Start expanded (e.g. on the home screen so users read it). */
+  @Input() set expanded(v: boolean) { this.open.set(v); }
   open = signal(false);
 }

@@ -17,7 +17,7 @@
       <span class="val-k">You invest</span>
     </div>
     <div class="val-cell right">
-      <div class="val-big-row"><b class="val-big rent">{{ compactK(plan.rentMonthly) }}</b></div>
+      <div class="val-big-row"><b class="val-big rent">{{ compactK(plan.rentMonthly) }}<sup class="star">*</sup></b></div>
       <span class="val-k">Rent a month</span>
     </div>
   </section>
@@ -52,9 +52,9 @@
   <section class="grow reveal" style="--i:4">
     <div class="grow-head">
       <span class="sec-cap">In 20 years</span>
-      <span class="grow-mult">{{ multiple | number:'1.1-1' }}×</span>
+      <span class="grow-mult">{{ multiple | number:'1.1-1' }}×<sup class="star">*</sup></span>
     </div>
-    <p class="grow-lead">Invest {{ compactK(amount()) }} today → about <b>{{ compactK(finalTotal) }}</b>, value plus rent.</p>
+    <p class="grow-lead">Invest {{ compactK(amount()) }} today → about <b>{{ compactK(finalTotal) }}<sup class="star">*</sup></b>, value plus rent (illustrative).</p>
 
     <div class="stack-wrap">
       <div class="stack-col" *ngFor="let b of bars; trackBy: trackYear">
@@ -92,6 +92,9 @@
 
   <!-- 6 · book now -->
   <button class="book-now reveal" style="--i:6" (click)="openBook()">Book now · {{ compactK(amount()) }}</button>
+
+  <!-- * figures are illustrative — the mandatory MF risk disclaimer -->
+  <app-mf-disclaimer [expanded]="true"></app-mf-disclaimer>
 </main>
 
 <!-- ============ book-now flow (pick day → time → confirmed) ============ -->

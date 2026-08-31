@@ -204,8 +204,9 @@
       </button>
     </div>
 
-    <!-- mandatory MF risk disclaimer + illustrative-figures note -->
-    <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
+    <!-- mandatory MF risk disclaimer — open by default so users read it. Pinned
+         at the foot so expanding it never shoves the centred group. -->
+    <app-mf-disclaimer class="home-disc" [expanded]="true"></app-mf-disclaimer>
   </div>
 
   <!-- ============ PLOT DETAIL POPUP ============

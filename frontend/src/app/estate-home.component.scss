@@ -64,6 +64,14 @@
 /* hairline under the town, before the figures */
 .stats-rule { flex: none; height: 1px; background: var(--survey); margin: 1rem 1.25rem 0; }
 
+/* the disclaimer is pinned to the foot of the first screen, OUTSIDE the centred
+   group — so opening/closing it never shifts the hero/town/figures. */
+.home-disc {
+  position: absolute; left: 0; right: 0; z-index: 2;
+  bottom: calc(0.8rem + env(safe-area-inset-bottom));
+  padding: 0 1rem;
+}
+
 /* ===== owner avatar — top-left; the native file input is fully hidden and
    only reached by tapping the avatar button ===== */
 .avatar {
