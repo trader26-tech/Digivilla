@@ -230,16 +230,33 @@ export class VillaDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const now = new Date();
+    // Guard the growth/rent math against a bad purchase date (0, missing, or in
+    // the future). Compounding from epoch 0 (1970) once produced absurd values
+    // like "₹98 Cr". Clamp to a sensible window so nothing ever blows up.
+    const bought = this.safeBoughtAt(now.getTime());
+
     this.plan = villaPlan(this.price, 20);
-    this.current = currentValue(this.price, this.plan.cagr, this.boughtAt, now);
+    this.current = currentValue(this.price, this.plan.cagr, bought, now);
     this.gain = this.current - this.price;
     this.gainPct = this.price > 0 ? (this.gain / this.price) * 100 : 0;
 
-    const sched = rentSchedule(this.boughtAt, this.plan.rentMonthly, now);
+    const sched = rentSchedule(bought, this.plan.rentMonthly, now);
     this.next = sched.next;
     this.history = sched.paid;
 
     this.buildPerks();
+  }
+
+  /** A safe purchase timestamp: never before 5 years ago, never in the future.
+   *  Anything outside that (0, NaN, garbage) falls back to ~6 months ago. */
+  private safeBoughtAt(nowMs: number): number {
+    const FIVE_YEARS = 5 * 365 * 86_400_000;
+    const min = nowMs - FIVE_YEARS;
+    const b = this.boughtAt;
+    if (!b || !Number.isFinite(b) || b < min || b > nowMs) {
+      return nowMs - 182 * 86_400_000; // ~6 months ago
+    }
+    return b;
   }
 
   openHistory(): void {

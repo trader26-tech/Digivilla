@@ -25,32 +25,60 @@
 }
 @keyframes nav-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
+/* one calm, professional easing shared across the morph */
+$nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
+
 .tab {
   border: none; background: none; cursor: pointer; padding: 0; font: inherit;
   border-radius: 999px;
-  transition: transform 0.12s;
-  &:active { transform: scale(0.95); }
+  transition: transform 0.15s ease;
+  &:active { transform: scale(0.96); }
 }
 .tab-in {
-  display: flex; align-items: center; gap: 0.45rem;
-  padding: 0.6rem 1.15rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.62rem 0.95rem;
   border-radius: 999px;
   color: var(--muted);
-  transition: background 0.22s, color 0.22s, padding 0.22s;
-  svg { display: block; }
+  /* the pill fill, colour and padding all morph together, slowly */
+  transition:
+    background 0.55s $nav-ease,
+    color 0.45s $nav-ease,
+    padding 0.55s $nav-ease,
+    box-shadow 0.55s $nav-ease;
+  svg { display: block; transition: transform 0.55s $nav-ease; }
 }
 .tab-lbl {
-  font-size: 0.85rem; font-weight: 800; letter-spacing: -0.2px;
+  font-size: 0.86rem; font-weight: 800; letter-spacing: -0.2px;
   max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0;
-  transition: max-width 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, margin 0.28s;
+  transform: translateX(-4px);
+  /* label reveals a touch after the pill starts opening — feels intentional */
+  transition:
+    max-width 0.55s $nav-ease,
+    opacity 0.4s ease 0.12s,
+    transform 0.45s $nav-ease 0.1s;
 }
 /* the active tab expands into a filled green pill with its label */
 .tab.active .tab-in {
   background: linear-gradient(120deg, #2E6B4F, #21563d);
   color: #fff;
-  box-shadow: 0 8px 18px -8px rgba(46, 107, 79, 0.7);
+  padding: 0.62rem 1.25rem;
+  box-shadow: 0 10px 22px -8px rgba(46, 107, 79, 0.65);
 }
-.tab.active .tab-lbl { max-width: 6rem; opacity: 1; }
+.tab.active .tab-in svg { transform: scale(1.06); }
+.tab.active .tab-lbl { max-width: 6rem; opacity: 1; transform: none; }
 
-/* the top-level tabs leave room for the floating nav */
-.has-nav { display: block; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+/* the top-level tabs leave room for the floating nav, and each fades/rises in
+   gently when its tab is selected */
+.has-nav {
+  display: block;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  animation: tab-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .has-nav, .tabbar-pill { animation: none; }
+  .tab-in, .tab-lbl, .tab-in svg { transition: none; }
+}

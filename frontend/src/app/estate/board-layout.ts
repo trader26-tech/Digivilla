@@ -36,7 +36,9 @@ export function centreTile(): Tile {
     sipMonthly: 0,
     sipAccrued: 0,
     rentMonthly: Math.round((CENTRE_COST * 0.06) / 12),
-    boughtAt: 0,
+    // A real recent purchase date — NOT epoch 0, which would compound growth
+    // from 1970 and produce absurd values (₹98 Cr). ~1 year ago.
+    boughtAt: Date.now() - 365 * 86_400_000,
     label: 'Signature Villa',
   };
 }

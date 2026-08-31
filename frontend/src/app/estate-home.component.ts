@@ -320,7 +320,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
 
   /** Every asset the user owns, newest purchase first — the log rows. Includes
    *  the founding centre villa, which is a real asset even though it lives in
-   *  the board layout rather than the tiles list. It sorts last (boughtAt 0). */
+   *  the board layout rather than the tiles list. */
   get ownedLog(): Tile[] {
     return [centreTile(), ...this.est.tiles()].sort((a, b) => b.boughtAt - a.boughtAt);
   }
@@ -367,7 +367,10 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   }
   /** A land plot's value today, its cost grown at the CAGR since purchase. */
   landValue(t: Tile): number {
-    const years = Math.max(0, (Date.now() - t.boughtAt) / (365.25 * 86_400_000));
+    // Clamp the holding period to a sane 0–5 years so a bad boughtAt (0/1970,
+    // future) can never compound into an absurd value.
+    const raw = (Date.now() - t.boughtAt) / (365.25 * 86_400_000);
+    const years = Math.min(5, Math.max(0, Number.isFinite(raw) ? raw : 0));
     return Math.round(t.cost * Math.pow(1 + this.LAND_CAGR, years));
   }
 
