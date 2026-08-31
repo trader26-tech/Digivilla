@@ -48,8 +48,9 @@
 /* ---------------- borderless section chrome ---------------- */
 /* everything but the villa is now open on the page, split by hairlines */
 .rule { height: 1px; background: var(--survey); margin: 0.3rem 0.15rem; }
-.sec-cap { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.2px; color: var(--ink); }
-.sec-sub { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+/* section headers — sized to lead their content, not whisper under it */
+.sec-cap { font-size: 1.3rem; font-weight: 850; letter-spacing: -0.5px; color: var(--ink); }
+.sec-sub { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
 
 /* ---------------- 2 · value: two headline figures, like the home row ----- */
 .value { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.35rem 0.15rem; }
@@ -104,20 +105,20 @@
 .rn-amt {
   grid-column: 1; grid-row: 1 / span 2;
   align-self: center;
-  font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1;
+  font-size: 1.75rem; font-weight: 850; letter-spacing: -0.8px; line-height: 1.05;
   color: var(--brass);
 }
 .rn-date {
   grid-column: 2; grid-row: 1;
   justify-self: end;
-  font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1;
+  font-size: 1.75rem; font-weight: 850; letter-spacing: -0.8px; line-height: 1.05;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 .rn-days {
   grid-column: 2; grid-row: 2;
   justify-self: end;
-  font-size: 0.8rem; font-weight: 600; color: var(--muted);
+  font-size: 0.85rem; font-weight: 600; color: var(--muted);
 }
 
 /* ---------------- 4 · funds — always open, no box; name · amount · % ---- */
