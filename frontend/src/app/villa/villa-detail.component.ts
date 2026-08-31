@@ -3,7 +3,6 @@ import {
   Component,
   EventEmitter,
   Input,
-  OnDestroy,
   OnInit,
   Output,
   computed,
@@ -37,7 +36,7 @@ import {
   templateUrl: './villa-detail.component.html',
   styleUrl: './villa-detail.component.scss',
 })
-export class VillaDetailComponent implements OnInit, OnDestroy {
+export class VillaDetailComponent implements OnInit {
   /** Villa price in rupees (the invested amount). */
   @Input() price = 30_00_000;
   /** Display name for the villa. */
@@ -70,24 +69,14 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
     { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start', line: 'Start an eVilla from ₹10L — a real villa needs a ₹1Cr+ down-payment.' },
   ];
   perk = signal(0);
-  private perkTimer?: ReturnType<typeof setInterval>;
 
+  /** Jump to a card (dot tap), clamped-wrapped to a valid index. */
   goPerk(i: number): void {
     this.perk.set((i + this.PERKS.length) % this.PERKS.length);
-    this.startPerks();
   }
   /** Step one card forward/back — used by swipe. */
   stepPerk(dir: 1 | -1): void {
     this.goPerk(this.perk() + dir);
-  }
-  private startPerks(): void {
-    this.stopPerks();
-    this.perkTimer = setInterval(() => {
-      this.perk.update((i) => (i + 1) % this.PERKS.length);
-    }, 4200);
-  }
-  private stopPerks(): void {
-    if (this.perkTimer) { clearInterval(this.perkTimer); this.perkTimer = undefined; }
   }
 
   // --- swipe/drag on the carousel (pointer events cover touch + mouse) ---
@@ -95,7 +84,6 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
 
   onPerkDown(e: PointerEvent): void {
     this.swipeX = e.clientX;
-    this.stopPerks();           // pause auto-advance while dragging
     // capture so pointermove/up keep coming to this element even as the finger
     // travels off the card it started on
     const el = e.currentTarget as HTMLElement;
@@ -109,8 +97,6 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
     try { el.releasePointerCapture(e.pointerId); } catch {}
     if (Math.abs(dx) > 40) {
       this.stepPerk(dx < 0 ? 1 : -1);   // drag left → next, right → prev
-    } else {
-      this.startPerks();                // not a swipe; resume auto-advance
     }
   }
 
@@ -131,12 +117,6 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
     const sched = rentSchedule(this.boughtAt, this.plan.rentMonthly, now);
     this.next = sched.next;
     this.history = sched.paid;
-
-    this.startPerks();
-  }
-
-  ngOnDestroy(): void {
-    this.stopPerks();
   }
 
   openHistory(): void {
