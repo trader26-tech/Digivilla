@@ -1,0 +1,165 @@
+<main class="villa" *ngIf="plan">
+  <!-- ============ header: back arrow, then the plot name below it ========= -->
+  <header class="top reveal" style="--i:0">
+    <button class="back" (click)="onBack()" aria-label="Back">‹</button>
+    <h1 class="page-title">{{ name }}</h1>
+  </header>
+
+  <!-- ============ 1 · the land image — in its box ============ -->
+  <section class="art reveal" style="--i:1">
+    <app-land-art></app-land-art>
+  </section>
+
+  <!-- ============ 2 · value: current value (left) · CAGR (right) ========== -->
+  <section class="value reveal" style="--i:2">
+    <div class="val-cell">
+      <div class="val-big-row">
+        <b class="val-big">{{ compactK(current) }}</b>
+        <span class="val-gain" [class.neg]="gain < 0">
+          <span class="val-arrow">{{ gain < 0 ? '▼' : '▲' }}</span>
+          {{ gain < 0 ? '−' : '+' }}{{ compactK(gain < 0 ? -gain : gain) }}
+        </span>
+      </div>
+      <span class="val-k">Current value</span>
+    </div>
+    <div class="val-cell right">
+      <div class="val-big-row">
+        <b class="val-big rent">{{ plan.cagr | number:'1.1-1' }}%</b>
+      </div>
+      <span class="val-k">CAGR</span>
+    </div>
+  </section>
+
+  <!-- ============ 2½ · Your e-land perks ================================== -->
+  <section class="why reveal" style="--i:3">
+    <span class="sec-cap">Your e-land perks</span>
+    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
+         (pointercancel)="onPerkUp($event)">
+      <div class="why-card" *ngFor="let p of PERKS; let i = index"
+           [attr.data-theme]="p.theme"
+           [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
+        <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="why-badge">e-land</span>
+        <div class="why-stat-row">
+          <b class="why-stat">{{ p.stat }}</b>
+          <span class="why-unit">{{ p.unit }}</span>
+        </div>
+        <p class="why-line">{{ p.vs }}</p>
+      </div>
+    </div>
+    <div class="why-dots" role="tablist" aria-label="Land versus e-land">
+      <button class="why-dot" *ngFor="let p of PERKS; let i = index"
+              [class.on]="perk() === i" (click)="goPerk(i)"
+              [attr.aria-label]="p.stat + ' ' + p.unit" [attr.aria-selected]="perk() === i"></button>
+    </div>
+  </section>
+
+  <!-- ============ 3 · funds inside — always open, no box; name · amount === -->
+  <section class="funds reveal" style="--i:4">
+    <div class="funds-head">
+      <span class="sec-cap">Funds inside</span>
+    </div>
+
+    <div class="funds-body">
+      <div class="fund-line" *ngFor="let f of plan.funds; trackBy: trackFund">
+        <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
+        <span class="fund-name">{{ f.name }}</span>
+        <span class="fund-amt">{{ compactK(f.weight * price) }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4 · withdraw ============ -->
+  <button class="withdraw reveal" style="--i:5" (click)="openWithdraw()">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Withdraw
+  </button>
+</main>
+
+<!-- ============ withdraw — 4-step book-a-call flow ============ -->
+<div class="sheet-backdrop" *ngIf="withdrawOpen()" (click)="closeWithdraw()"></div>
+<aside class="sheet wd-sheet" *ngIf="withdrawOpen()" role="dialog" aria-modal="true" aria-label="Withdraw">
+  <span class="sheet-grab" aria-hidden="true"></span>
+
+  <!-- STEP 0 · intro -->
+  <ng-container *ngIf="wdStep() === 0">
+    <div class="sheet-head">
+      <span class="sheet-title">How withdrawal works</span>
+      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
+    </div>
+    <ol class="wd-steps">
+      <li>
+        <span class="wd-step-n">1</span>
+        <div class="wd-step-t"><b>Book a free slot</b><span>Pick a call with your fund manager</span></div>
+      </li>
+      <li>
+        <span class="wd-step-n">2</span>
+        <div class="wd-step-t"><b>Manager initiates payment</b><span>On the call, they start your withdrawal</span></div>
+      </li>
+      <li>
+        <span class="wd-step-n">3</span>
+        <div class="wd-step-t"><b>Money in your bank</b><span>Received within 2 working days</span></div>
+      </li>
+    </ol>
+    <button class="wd-done-btn" (click)="wdBegin()">Okay, book a slot</button>
+  </ng-container>
+
+  <!-- STEP 1 · pick a day -->
+  <ng-container *ngIf="wdStep() === 1">
+    <div class="sheet-head">
+      <span class="sheet-title">Step 1 · Pick a slot</span>
+      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="wd-monthbar">
+      <button class="wd-nav" (click)="wdPrevMonth()" [disabled]="!wdCanPrev" aria-label="Previous month">‹</button>
+      <b class="wd-monthlbl">{{ wdMonthLabel }}</b>
+      <button class="wd-nav" (click)="wdNextMonth()" aria-label="Next month">›</button>
+    </div>
+
+    <div class="wd-dow-row" aria-hidden="true">
+      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+    </div>
+    <div class="wd-grid">
+      <ng-container *ngFor="let c of wdCells">
+        <span class="wd-blank" *ngIf="!c"></span>
+        <button *ngIf="c" class="wd-cell"
+                [class.sel]="wdIsDay(c)"
+                [disabled]="!wdSelectable(c)"
+                (click)="wdPickDay(c)">{{ c | date:'d' }}</button>
+      </ng-container>
+    </div>
+    <p class="wd-hint">Weekday slots, from 2 days out.</p>
+  </ng-container>
+
+  <!-- STEP 2 · pick a time -->
+  <ng-container *ngIf="wdStep() === 2 && wdDay() as day">
+    <div class="sheet-head">
+      <span class="sheet-title">Step 2 · Pick a time</span>
+      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
+    </div>
+    <p class="wd-lead">Slots with the fund manager on <b>{{ day | date:'EEEE, d MMM' }}</b></p>
+    <div class="wd-slots">
+      <button class="wd-slot" *ngFor="let s of WD_SLOTS" (click)="wdPickSlot(s)">{{ s }}</button>
+    </div>
+    <button class="wd-back" (click)="wdStep.set(1)">‹ Change date</button>
+  </ng-container>
+
+  <!-- STEP 3 · booked confirmation -->
+  <div class="wd-done" *ngIf="wdStep() === 3 && wdDay() as day">
+    <div class="wd-tick" [class.pop]="justBooked()" aria-hidden="true">
+      <svg viewBox="0 0 52 52"><circle class="wd-tick-ring" cx="26" cy="26" r="24"/><path class="wd-tick-mark" d="M15 27l7 7 15-15"/></svg>
+    </div>
+    <b class="wd-done-title">Call booked</b>
+    <p class="wd-done-sub">
+      Your fund manager will call on<br>
+      <b>{{ day | date:'EEEE, d MMM y' }} at {{ wdSlot() }}</b><br>
+      to process your withdrawal.
+    </p>
+    <button class="wd-done-btn" (click)="closeWithdraw()">Done</button>
+  </div>
+</aside>

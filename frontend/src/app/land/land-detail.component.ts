@@ -26,7 +26,7 @@ import {
  *   5. withdraw
  */
 @Component({
-  selector: 'app-land-detail',
+  selector: 'app-land-page',
   standalone: true,
   imports: [CommonModule, LandArtComponent],
   templateUrl: './land-detail.component.html',

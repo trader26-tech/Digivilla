@@ -4,7 +4,8 @@ import { Component } from '@angular/core';
 import { EstateDetailComponent } from './estate-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
 import { IntroComponent } from './intro.component';
-import { LandDetailComponent } from './land-detail.component';
+import { LandDetailComponent as LandBuyComponent } from './land-detail.component';
+import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
 import { Tile } from './estate.service';
@@ -25,6 +26,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     IntroComponent,
     EstateHomeComponent,
     StorefrontComponent,
+    LandBuyComponent,
     LandDetailComponent,
     EstateDetailComponent,
     VillaDetailComponent,
@@ -45,6 +47,9 @@ export class AppComponent {
   /** The villa whose dedicated detail page is open, or null. */
   villa: Tile | null = null;
 
+  /** The land plot whose dedicated detail page is open, or null. */
+  land: Tile | null = null;
+
   onIntroDone(): void {
     this.intro = false;
   }
@@ -57,13 +62,21 @@ export class AppComponent {
       window.scrollTo({ top: 0 });
       return;
     }
-    const property: PropertyKey = t.type === 'land' ? 'land' : 'flat';
-    this.detail = { property, variant: t.variant };
+    if (t.type === 'land') {
+      this.land = t;
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    this.detail = { property: 'flat', variant: t.variant };
     window.scrollTo({ top: 0 });
   }
 
   closeVilla(): void {
     this.villa = null;
+  }
+
+  closeLand(): void {
+    this.land = null;
   }
 
   /** Explore tab -> the storefront catalog to browse tiers. */

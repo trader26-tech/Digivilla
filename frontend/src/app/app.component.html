@@ -3,14 +3,14 @@
 
 <!-- HOME: the isometric estate — the user's own map. Shown right after intro. -->
 <app-estate-home
-  *ngIf="!intro && detail === null && villa === null && view === 'home'"
+  *ngIf="!intro && detail === null && villa === null && land === null && view === 'home'"
   (openTile)="openTile($event)"
   (explore)="openStorefront()"
 ></app-estate-home>
 
 <!-- The storefront (Explore): the four property tiers to browse/buy. -->
 <app-storefront
-  *ngIf="!intro && detail === null && villa === null && view === 'storefront'"
+  *ngIf="!intro && detail === null && villa === null && land === null && view === 'storefront'"
   (openProperty)="openProperty($event)"
   (back)="backToHome()"
 ></app-storefront>
@@ -24,9 +24,18 @@
   (back)="closeVilla()"
 ></app-villa-detail>
 
-<!-- Land keeps its own dedicated detail page. -->
+<!-- A land plot tapped on the estate -> its dedicated detail page (mirrors villa). -->
+<app-land-page
+  *ngIf="!intro && land"
+  [price]="land.cost"
+  [name]="land.label"
+  [boughtAt]="land.boughtAt"
+  (back)="closeLand()"
+></app-land-page>
+
+<!-- Land bought from the storefront keeps the buy/projection page. -->
 <app-land-detail
-  *ngIf="!intro && detail && detail.property === 'land'"
+  *ngIf="!intro && !land && detail && detail.property === 'land'"
   [initialVariant]="detail.variant"
   (back)="closeDetail()"
 ></app-land-detail>
