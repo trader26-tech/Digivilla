@@ -1,0 +1,106 @@
+<!-- soil side (left + right faces for depth) -->
+<path class="soil-l" [attr.d]="'M' + (cx - TILE_W/2) + ',' + cy + ' L' + cx + ',' + (cy + TILE_H/2) + ' L' + cx + ',' + (cy + TILE_H/2 + 12) + ' L' + (cx - TILE_W/2) + ',' + (cy + 12) + ' Z'" />
+<path class="soil-r" [attr.d]="'M' + cx + ',' + (cy + TILE_H/2) + ' L' + (cx + TILE_W/2) + ',' + cy + ' L' + (cx + TILE_W/2) + ',' + (cy + 12) + ' L' + cx + ',' + (cy + TILE_H/2 + 12) + ' Z'" />
+<!-- lawn top -->
+<path class="lawn" [attr.d]="diamond(cx, cy)" />
+
+<!-- LAND: a bare parcel. -->
+<ng-container *ngIf="tile.type === 'land'"></ng-container>
+
+<!-- UNDER CONSTRUCTION -->
+<g *ngIf="tile.type === 'building'">
+  <!-- brick courses -->
+  <polygon class="cx-brick-a" [attr.points]="(cx + -41.2) + ',' + (cy + -10.8) + ' ' + (cx + -31.7) + ',' + (cy + -5.4) + ' ' + (cx + -38.0) + ',' + (cy + -1.7) + ' ' + (cx + -47.5) + ',' + (cy + -7.2)" />
+  <polygon class="cx-brick-b" [attr.points]="(cx + -31.7) + ',' + (cy + -5.4) + ' ' + (cx + -38.0) + ',' + (cy + -1.7) + ' ' + (cx + -38.0) + ',' + (cy + -0.6) + ' ' + (cx + -31.7) + ',' + (cy + -4.3)" />
+  <polygon class="cx-brick-a" [attr.points]="(cx + -41.2) + ',' + (cy + -11.9) + ' ' + (cx + -31.7) + ',' + (cy + -6.5) + ' ' + (cx + -38.0) + ',' + (cy + -2.8) + ' ' + (cx + -47.5) + ',' + (cy + -8.3)" />
+  <polygon class="cx-brick-b" [attr.points]="(cx + -31.7) + ',' + (cy + -6.5) + ' ' + (cx + -38.0) + ',' + (cy + -2.8) + ' ' + (cx + -38.0) + ',' + (cy + -1.7) + ' ' + (cx + -31.7) + ',' + (cy + -5.4)" />
+  <polygon class="cx-brick-a" [attr.points]="(cx + -41.2) + ',' + (cy + -13.0) + ' ' + (cx + -31.7) + ',' + (cy + -7.6) + ' ' + (cx + -38.0) + ',' + (cy + -3.9) + ' ' + (cx + -47.5) + ',' + (cy + -9.4)" />
+  <polygon class="cx-brick-b" [attr.points]="(cx + -31.7) + ',' + (cy + -7.6) + ' ' + (cx + -38.0) + ',' + (cy + -3.9) + ' ' + (cx + -38.0) + ',' + (cy + -2.8) + ' ' + (cx + -31.7) + ',' + (cy + -6.5)" />
+  <polygon class="cx-brick-a" [attr.points]="(cx + -41.2) + ',' + (cy + -14.2) + ' ' + (cx + -31.7) + ',' + (cy + -8.7) + ' ' + (cx + -38.0) + ',' + (cy + -5.0) + ' ' + (cx + -47.5) + ',' + (cy + -10.5)" />
+  <polygon class="cx-brick-b" [attr.points]="(cx + -31.7) + ',' + (cy + -8.7) + ' ' + (cx + -38.0) + ',' + (cy + -5.0) + ' ' + (cx + -38.0) + ',' + (cy + -3.9) + ' ' + (cx + -31.7) + ',' + (cy + -7.6)" />
+
+  <!-- cement bag -->
+  <polygon class="cx-bag-t" [attr.points]="(cx + 25.4) + ',' + (cy + 5.6) + ' ' + (cx + 31.7) + ',' + (cy + 9.3) + ' ' + (cx + 24.3) + ',' + (cy + 13.6) + ' ' + (cx + 17.9) + ',' + (cy + 9.9)" />
+  <polygon class="cx-bag-f" [attr.points]="(cx + 31.7) + ',' + (cy + 9.3) + ' ' + (cx + 24.3) + ',' + (cy + 13.6) + ' ' + (cx + 24.3) + ',' + (cy + 17.7) + ' ' + (cx + 31.7) + ',' + (cy + 13.4)" />
+
+  <!-- half-built shell -->
+  <polygon class="cx-wall-l" [attr.points]="(cx + 0.0) + ',' + (cy + -1.8) + ' ' + (cx + -27.5) + ',' + (cy + -17.7) + ' ' + (cx + -27.5) + ',' + (cy + -3.7) + ' ' + (cx + 0.0) + ',' + (cy + 12.2)" />
+  <polygon class="cx-wall-r" [attr.points]="(cx + 25.4) + ',' + (cy + -16.5) + ' ' + (cx + 0.0) + ',' + (cy + -1.8) + ' ' + (cx + 0.0) + ',' + (cy + 12.2) + ' ' + (cx + 25.4) + ',' + (cy + -2.4)" />
+  <polygon class="cx-wall-t" [attr.points]="(cx + -2.1) + ',' + (cy + -32.3) + ' ' + (cx + 25.4) + ',' + (cy + -16.5) + ' ' + (cx + 0.0) + ',' + (cy + -1.8) + ' ' + (cx + -27.5) + ',' + (cy + -17.7)" />
+  <polygon class="cx-door" [attr.points]="(cx + -8.4) + ',' + (cy + -6.7) + ' ' + (cx + -18.5) + ',' + (cy + -12.5) + ' ' + (cx + -18.5) + ',' + (cy + 1.6) + ' ' + (cx + -8.4) + ',' + (cy + 7.3)" />
+  <polygon class="cx-win" [attr.points]="(cx + 20.6) + ',' + (cy + -10.1) + ' ' + (cx + 12.2) + ',' + (cy + -5.1) + ' ' + (cx + 12.2) + ',' + (cy + 1.6) + ' ' + (cx + 20.6) + ',' + (cy + -3.4)" />
+
+  <!-- floor joists along the open edge -->
+  <polygon class="cx-joist" [attr.points]="(cx + -9.1) + ',' + (cy + -6.7) + ' ' + (cx + -7.8) + ',' + (cy + -6.7) + ' ' + (cx + -7.8) + ',' + (cy + 7.3) + ' ' + (cx + -9.1) + ',' + (cy + 7.3)" />
+  <polygon class="cx-joist" [attr.points]="(cx + -12.8) + ',' + (cy + -8.8) + ' ' + (cx + -11.5) + ',' + (cy + -8.8) + ' ' + (cx + -11.5) + ',' + (cy + 5.2) + ' ' + (cx + -12.8) + ',' + (cy + 5.2)" />
+  <polygon class="cx-joist" [attr.points]="(cx + -16.0) + ',' + (cy + -10.7) + ' ' + (cx + -14.7) + ',' + (cy + -10.7) + ' ' + (cx + -14.7) + ',' + (cy + 3.4) + ' ' + (cx + -16.0) + ',' + (cy + 3.4)" />
+  <polygon class="cx-joist" [attr.points]="(cx + -19.1) + ',' + (cy + -12.5) + ' ' + (cx + -17.8) + ',' + (cy + -12.5) + ' ' + (cx + -17.8) + ',' + (cy + 1.6) + ' ' + (cx + -19.1) + ',' + (cy + 1.6)" />
+
+  <!-- scaffold: four posts, then two rails -->
+  <polygon class="cx-post" [attr.points]="(cx + -3.0) + ',' + (cy + -48.2) + ' ' + (cx + -1.2) + ',' + (cy + -48.2) + ' ' + (cx + -1.2) + ',' + (cy + -22.5) + ' ' + (cx + -3.0) + ',' + (cy + -22.5)" />
+  <polygon class="cx-post" [attr.points]="(cx + 31.8) + ',' + (cy + -28.1) + ' ' + (cx + 33.6) + ',' + (cy + -28.1) + ' ' + (cx + 33.6) + ',' + (cy + -2.4) + ' ' + (cx + 31.8) + ',' + (cy + -2.4)" />
+  <polygon class="cx-post" [attr.points]="(cx + -0.9) + ',' + (cy + -9.1) + ' ' + (cx + 0.9) + ',' + (cy + -9.1) + ' ' + (cx + 0.9) + ',' + (cy + 16.5) + ' ' + (cx + -0.9) + ',' + (cy + 16.5)" />
+  <polygon class="cx-post" [attr.points]="(cx + -35.7) + ',' + (cy + -29.2) + ' ' + (cx + -33.9) + ',' + (cy + -29.2) + ' ' + (cx + -33.9) + ',' + (cy + -3.7) + ' ' + (cx + -35.7) + ',' + (cy + -3.7)" />
+  <polyline class="cx-rail" [attr.points]="(cx + -2.1) + ',' + (cy + -34.2) + ' ' + (cx + 32.8) + ',' + (cy + -14.0) + ' ' + (cx + 0.0) + ',' + (cy + 4.9) + ' ' + (cx + -34.8) + ',' + (cy + -15.3) + ' ' + (cx + -2.1) + ',' + (cy + -34.2)" />
+  <polyline class="cx-rail" [attr.points]="(cx + -2.1) + ',' + (cy + -45.2) + ' ' + (cx + 32.8) + ',' + (cy + -25.0) + ' ' + (cx + 0.0) + ',' + (cy + -6.1) + ' ' + (cx + -34.8) + ',' + (cy + -26.2) + ' ' + (cx + -2.1) + ',' + (cy + -45.2)" />
+  <polygon class="cx-plate" [attr.points]="(cx + -34.8) + ',' + (cy + -26.2) + ' ' + (cx + 0.0) + ',' + (cy + -6.1) + ' ' + (cx + 0.0) + ',' + (cy + -4.5) + ' ' + (cx + -34.9) + ',' + (cy + -24.6)" />
+</g>
+
+<!-- VILLA -->
+<g *ngIf="tile.type === 'villa'">
+  <!-- BACK fence -->
+  <path class="rail" [attr.d]="fenceRailPath(cx, cy, 'back', 0.94, [4, 8])" />
+  <g *ngFor="let p of fencePostBoxes(cx, cy, 'back', 0.94, 4)">
+    <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+    <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+    <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
+  </g>
+
+  <!-- tree (behind the house) -->
+  <polygon class="ref-tree-l" [attr.points]="(cx + 41.34) + ',' + (cy + -21.55) + ' ' + (cx + 53.31) + ',' + (cy + -14.62) + ' ' + (cx + 53.31) + ',' + (cy + -1.54) + ' ' + (cx + 41.34) + ',' + (cy + -8.46)" />
+  <polygon class="ref-tree-r" [attr.points]="(cx + 65.33) + ',' + (cy + -21.55) + ' ' + (cx + 53.31) + ',' + (cy + -14.62) + ' ' + (cx + 53.31) + ',' + (cy + -1.54) + ' ' + (cx + 65.33) + ',' + (cy + -8.46)" />
+  <polygon class="ref-tree-t" [attr.points]="(cx + 53.31) + ',' + (cy + -28.48) + ' ' + (cx + 65.33) + ',' + (cy + -21.55) + ' ' + (cx + 53.31) + ',' + (cy + -14.62) + ' ' + (cx + 41.34) + ',' + (cy + -21.55)" />
+
+  <!-- pool deck + water -->
+  <polygon class="ref-deck-l" [attr.points]="(cx + -13.34) + ',' + (cy + 15.65) + ' ' + (cx + -44.00) + ',' + (cy + -2.05) + ' ' + (cx + -44.00) + ',' + (cy + -0.51) + ' ' + (cx + -13.34) + ',' + (cy + 17.19)" />
+  <polygon class="ref-deck-r" [attr.points]="(cx + 2.66) + ',' + (cy + 6.41) + ' ' + (cx + -13.34) + ',' + (cy + 15.65) + ' ' + (cx + -13.34) + ',' + (cy + 17.19) + ' ' + (cx + 2.66) + ',' + (cy + 7.95)" />
+  <polygon class="ref-deck-t" [attr.points]="(cx + -27.99) + ',' + (cy + -11.29) + ' ' + (cx + 2.66) + ',' + (cy + 6.41) + ' ' + (cx + -13.34) + ',' + (cy + 15.65) + ' ' + (cx + -44.00) + ',' + (cy + -2.05)" />
+  <polygon class="ref-water" [attr.points]="(cx + -29.33) + ',' + (cy + -7.09) + ' ' + (cx + -13.34) + ',' + (cy + 2.15) + ' ' + (cx + -22.65) + ',' + (cy + 7.54) + ' ' + (cx + -38.66) + ',' + (cy + -1.69)" />
+
+  <!-- main house block -->
+  <polygon class="ref-house-l" [attr.points]="(cx + 2.66) + ',' + (cy + -20.01) + ' ' + (cx + -27.99) + ',' + (cy + -37.71) + ' ' + (cx + -27.99) + ',' + (cy + -10.01) + ' ' + (cx + 2.66) + ',' + (cy + 7.70)" />
+  <polygon class="ref-house-r" [attr.points]="(cx + 29.33) + ',' + (cy + -35.41) + ' ' + (cx + 2.66) + ',' + (cy + -20.01) + ' ' + (cx + 2.66) + ',' + (cy + 7.70) + ' ' + (cx + 29.33) + ',' + (cy + -7.70)" />
+  <!-- windows -->
+  <polygon class="ref-win-l" [attr.points]="(cx + -25.33) + ',' + (cy + -26.18) + ' ' + (cx + -15.31) + ',' + (cy + -20.40) + ' ' + (cx + -15.31) + ',' + (cy + -8.09) + ' ' + (cx + -25.33) + ',' + (cy + -13.85)" />
+  <polygon class="ref-win-l" [attr.points]="(cx + -25.33) + ',' + (cy + -33.86) + ' ' + (cx + -6.00) + ',' + (cy + -22.71) + ' ' + (cx + -6.00) + ',' + (cy + -16.55) + ' ' + (cx + -25.33) + ',' + (cy + -27.71)" />
+  <polygon class="ref-win-r" [attr.points]="(cx + 23.99) + ',' + (cy + -24.62) + ' ' + (cx + 13.34) + ',' + (cy + -18.47) + ' ' + (cx + 13.34) + ',' + (cy + -6.16) + ' ' + (cx + 23.99) + ',' + (cy + -12.31)" />
+  <polygon class="ref-win-r" [attr.points]="(cx + 9.34) + ',' + (cy + -16.16) + ' ' + (cx + 4.00) + ',' + (cy + -13.09) + ' ' + (cx + 4.00) + ',' + (cy + -0.78) + ' ' + (cx + 9.34) + ',' + (cy + -3.85)" />
+  <!-- timber door panel -->
+  <polygon class="ref-door" [attr.points]="(cx + -12.01) + ',' + (cy + -13.85) + ' ' + (cx + -6.00) + ',' + (cy + -10.39) + ' ' + (cx + -6.00) + ',' + (cy + 2.70) + ' ' + (cx + -12.01) + ',' + (cy + -0.78)" />
+  <!-- roof slab -->
+  <polygon class="ref-roof-l" [attr.points]="(cx + 2.66) + ',' + (cy + -18.79) + ' ' + (cx + -33.33) + ',' + (cy + -39.56) + ' ' + (cx + -33.33) + ',' + (cy + -37.71) + ' ' + (cx + 2.66) + ',' + (cy + -16.94)" />
+  <polygon class="ref-roof-r" [attr.points]="(cx + 34.66) + ',' + (cy + -37.25) + ' ' + (cx + 2.66) + ',' + (cy + -18.79) + ' ' + (cx + 2.66) + ',' + (cy + -16.94) + ' ' + (cx + 34.66) + ',' + (cy + -35.41)" />
+  <polygon class="ref-roof-t" [attr.points]="(cx + 1.34) + ',' + (cy + -58.04) + ' ' + (cx + 34.66) + ',' + (cy + -37.25) + ' ' + (cx + 2.66) + ',' + (cy + -18.79) + ' ' + (cx + -33.33) + ',' + (cy + -39.56)" />
+
+  <!-- lower annex -->
+  <polygon class="ref-anx-l" [attr.points]="(cx + 15.34) + ',' + (cy + 4.24) + ' ' + (cx + -2.00) + ',' + (cy + -5.78) + ' ' + (cx + -2.00) + ',' + (cy + 10.39) + ' ' + (cx + 15.34) + ',' + (cy + 20.40)" />
+  <polygon class="ref-anx-r" [attr.points]="(cx + 37.34) + ',' + (cy + -8.46) + ' ' + (cx + 15.34) + ',' + (cy + 4.24) + ' ' + (cx + 15.34) + ',' + (cy + 20.40) + ' ' + (cx + 37.34) + ',' + (cy + 7.70)" />
+  <polygon class="ref-anx-t" [attr.points]="(cx + 19.99) + ',' + (cy + -18.47) + ' ' + (cx + 37.34) + ',' + (cy + -8.46) + ' ' + (cx + 15.34) + ',' + (cy + 4.24) + ' ' + (cx + -2.00) + ',' + (cy + -5.78)" />
+  <polygon class="ref-win-r" [attr.points]="(cx + 33.33) + ',' + (cy + -3.08) + ' ' + (cx + 19.99) + ',' + (cy + 4.61) + ' ' + (cx + 19.99) + ',' + (cy + 13.09) + ' ' + (cx + 33.33) + ',' + (cy + 5.39)" />
+
+  <!-- hedges -->
+  <polygon class="ref-hedge-l" [attr.points]="(cx + -13.06) + ',' + (cy + 12.48) + ' ' + (cx + -18.40) + ',' + (cy + 9.39) + ' ' + (cx + -18.40) + ',' + (cy + 15.55) + ' ' + (cx + -13.06) + ',' + (cy + 18.62)" />
+  <polygon class="ref-hedge-r" [attr.points]="(cx + -7.72) + ',' + (cy + 9.39) + ' ' + (cx + -13.06) + ',' + (cy + 12.48) + ' ' + (cx + -13.06) + ',' + (cy + 18.62) + ' ' + (cx + -7.72) + ',' + (cy + 15.55)" />
+  <polygon class="ref-hedge-t" [attr.points]="(cx + -13.06) + ',' + (cy + 6.31) + ' ' + (cx + -7.72) + ',' + (cy + 9.39) + ' ' + (cx + -13.06) + ',' + (cy + 12.48) + ' ' + (cx + -18.40) + ',' + (cy + 9.39)" />
+  <polygon class="ref-hedge-l" [attr.points]="(cx + -28.66) + ',' + (cy + -11.68) + ' ' + (cx + -34.00) + ',' + (cy + -14.75) + ' ' + (cx + -34.00) + ',' + (cy + -8.60) + ' ' + (cx + -28.66) + ',' + (cy + -5.51)" />
+  <polygon class="ref-hedge-r" [attr.points]="(cx + -23.32) + ',' + (cy + -14.75) + ' ' + (cx + -28.66) + ',' + (cy + -11.68) + ' ' + (cx + -28.66) + ',' + (cy + -5.51) + ' ' + (cx + -23.32) + ',' + (cy + -8.60)" />
+  <polygon class="ref-hedge-t" [attr.points]="(cx + -28.66) + ',' + (cy + -17.84) + ' ' + (cx + -23.32) + ',' + (cy + -14.75) + ' ' + (cx + -28.66) + ',' + (cy + -11.68) + ' ' + (cx + -34.00) + ',' + (cy + -14.75)" />
+
+  <!-- FRONT fence -->
+  <path class="rail" [attr.d]="fenceRailPath(cx, cy, 'front', 0.94, [4, 8])" />
+  <g *ngFor="let p of fencePostBoxes(cx, cy, 'front', 0.94, 4)">
+    <path class="post-l" [attr.d]="boxLeft(p.x, p.y, 0.022, 10)" />
+    <path class="post-r" [attr.d]="boxRight(p.x, p.y, 0.022, 10)" />
+    <path class="post-t" [attr.d]="boxTop(p.x, p.y, 0.022, 10)" />
+  </g>
+</g>
