@@ -14,13 +14,13 @@
 }
 .tabbar-pill {
   pointer-events: auto;
-  display: flex; gap: 0.3rem;
-  padding: 0.35rem;
+  display: flex; gap: 0.4rem;
+  padding: 0.45rem;
   border-radius: 999px;
-  background: color-mix(in srgb, #fff 78%, transparent);
+  background: color-mix(in srgb, #fff 80%, transparent);
   backdrop-filter: blur(18px) saturate(1.2);
   border: 1px solid color-mix(in srgb, var(--survey) 80%, transparent);
-  box-shadow: 0 18px 40px -16px rgba(22, 48, 43, 0.4), 0 2px 8px -4px rgba(22, 48, 43, 0.2);
+  box-shadow: 0 22px 46px -16px rgba(22, 48, 43, 0.42), 0 3px 10px -4px rgba(22, 48, 43, 0.22);
   animation: nav-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes nav-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -35,8 +35,8 @@ $nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
   &:active { transform: scale(0.96); }
 }
 .tab-in {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.62rem 0.95rem;
+  display: flex; align-items: center; gap: 0.55rem;
+  padding: 0.78rem 1.15rem;
   border-radius: 999px;
   color: var(--muted);
   /* the pill fill, colour and padding all morph together, slowly */
@@ -48,7 +48,7 @@ $nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
   svg { display: block; transition: transform 0.55s $nav-ease; }
 }
 .tab-lbl {
-  font-size: 0.86rem; font-weight: 800; letter-spacing: -0.2px;
+  font-size: 0.95rem; font-weight: 800; letter-spacing: -0.2px;
   max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0;
   transform: translateX(-4px);
   /* label reveals a touch after the pill starts opening — feels intentional */
@@ -61,8 +61,8 @@ $nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
 .tab.active .tab-in {
   background: linear-gradient(120deg, #2E6B4F, #21563d);
   color: #fff;
-  padding: 0.62rem 1.25rem;
-  box-shadow: 0 10px 22px -8px rgba(46, 107, 79, 0.65);
+  padding: 0.78rem 1.5rem;
+  box-shadow: 0 12px 26px -8px rgba(46, 107, 79, 0.65);
 }
 .tab.active .tab-in svg { transform: scale(1.06); }
 .tab.active .tab-lbl { max-width: 6rem; opacity: 1; transform: none; }
@@ -71,7 +71,7 @@ $nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
    gently when its tab is selected */
 .has-nav {
   display: block;
-  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
   animation: tab-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes tab-enter {
