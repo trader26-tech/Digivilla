@@ -229,6 +229,14 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     this.selected.set(c);
   }
 
+  /** Open the plot-detail popup for an owned tile (used by the asset log),
+   *  so a villa / land / under-construction row shows the SAME popup the map
+   *  tap opens — with its type-specific stats. */
+  openTileDetail(t: Tile): void {
+    const cell = this.cells().find((c) => c.tile?.id === t.id);
+    if (cell) this.selected.set(cell);
+  }
+
   /** Close the detail popup. */
   closeDetail(): void {
     this.selected.set(null);

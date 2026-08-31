@@ -224,7 +224,7 @@
         <span class="log-count">{{ ownedLog.length }}</span>
       </div>
 
-      <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
+      <button class="log-row" *ngFor="let t of ownedLog" (click)="openTileDetail(t)">
         <span class="log-art">
           <!-- Villa bbox is x:[26,214] y:[26,160]. The viewBox wraps it tightly
                and the box matches its wide-ish ratio, so the villa fills the
@@ -339,7 +339,7 @@
         <div class="pop-stats">
           <div class="pop-stat">
             <span class="ps-k">Completes in</span>
-            <b class="ps-v">{{ daysLeft(c.tile!) }} <span class="ps-yr">days</span></b>
+            <b class="ps-v">{{ monthsLeft(c.tile!) }} <span class="ps-yr">months</span></b>
           </div>
           <div class="pop-stat">
             <span class="ps-k">Rent once built</span>
