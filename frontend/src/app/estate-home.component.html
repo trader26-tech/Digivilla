@@ -19,24 +19,8 @@
     <!-- ===== FUND-MANAGER CALLS: top-right; a star appears if one is <24h away ===== -->
     <app-call-schedule></app-call-schedule>
 
-    <!-- ===== GREETING + AT-A-GLANCE: fills the top band with something useful:
-         a warm greeting and a quick snapshot of the estate. ===== -->
-    <div class="glance">
-      <span class="glance-hi">{{ greeting }}, {{ est.profile().name }}</span>
-      <div class="glance-chips">
-        <span class="glance-chip">
-          <b>{{ compact(est.estateValue) }}</b><span>net worth</span>
-        </span>
-        <span class="glance-chip green">
-          <b>{{ compact(est.rentIn) }}</b><span>rent / mo</span>
-        </span>
-        <span class="glance-chip">
-          <b>{{ assetCount }}</b><span>asset{{ assetCount === 1 ? '' : 's' }}</span>
-        </span>
-      </div>
-    </div>
-
-    <!-- ===== HERO GREETING: "YOUR ESTATE" over the estate name, at the top ===== -->
+    <!-- ===== HERO: "YOUR ESTATE" over the estate name. The value + rent are
+         shown once, below the town — not repeated up here. ===== -->
     <header class="hero">
       <span class="hero-kicker">YOUR ESTATE</span>
       <h1 class="hero-title">{{ est.profile().name }}&rsquo;s City</h1>

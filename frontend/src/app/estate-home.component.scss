@@ -40,32 +40,6 @@
 /* hairline under the town, before the figures */
 .stats-rule { flex: none; height: 1px; background: var(--survey); margin: 1rem 1.25rem 0; }
 
-/* ===== GREETING + AT-A-GLANCE — fills the top band above the hero ===== */
-.glance {
-  position: absolute;
-  top: calc(4.6rem + env(safe-area-inset-top));
-  left: 1rem; right: 1rem; z-index: 3;
-  display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
-  text-align: center;
-  animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.glance-hi {
-  font-family: var(--font-display);
-  font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px; color: var(--ink);
-  text-transform: capitalize;
-}
-.glance-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
-.glance-chip {
-  display: flex; flex-direction: column; align-items: center; gap: 0.05rem;
-  padding: 0.5rem 0.9rem; border-radius: 14px;
-  border: 1px solid var(--survey); background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(4px);
-  box-shadow: 0 8px 20px -16px rgba(22, 48, 43, 0.5);
-  b { font-family: var(--font-display); font-size: 1rem; font-weight: 850; letter-spacing: -0.4px; color: var(--ink); font-variant-numeric: tabular-nums; }
-  span { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
-}
-.glance-chip.green b { color: var(--positive); }
-
 /* ===== owner avatar — top-left; the native file input is fully hidden and
    only reached by tapping the avatar button ===== */
 .avatar {
