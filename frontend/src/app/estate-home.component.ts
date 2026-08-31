@@ -13,6 +13,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { CallScheduleComponent } from './shared/call-schedule.component';
 import { EstateService, Tile, TileType, Variant } from './estate.service';
 import { BASE_GRID } from './estate/iso.model';
 import {
@@ -28,12 +29,6 @@ import { compact } from './shared/format.util';
 /** Ticket price for one parcel; villas and builds are multiples of it. */
 const PLOT_TICKET = 10_00_000;
 
-/** Locality names cycled through as the town grows. */
-const LOCALITIES = [
-  'Kelambakkam Grove', 'Siruseri Rise', 'Navalur Court', 'OMR Meadows',
-  'Thaiyur Green', 'Padur Vista', 'Mahindra City Edge', 'Guduvancheri Park',
-];
-
 /**
  * The estate home screen.
  *
@@ -47,7 +42,7 @@ const LOCALITIES = [
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CallScheduleComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -330,7 +325,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
       sipMonthly: type === 'building' ? Math.round(cost / 60) : 0,        // ~5yr build
       sipAccrued: type === 'building' ? Math.round(cost * 0.12) : 0,      // a little in
       rentMonthly: type === 'villa' ? Math.round((cost * 0.06) / 12) : 0, // ~6%/yr
-      label: this.nextLocality(),
+      label: this.nextName(type),
     });
     this.buying.set(null);
     if (navigator.vibrate) navigator.vibrate([5, 30, 8]);
@@ -356,8 +351,12 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return PLOT_TICKET;
   }
 
-  private nextLocality(): string {
-    return LOCALITIES[this.est.tiles().length % LOCALITIES.length];
+  /** A consistent, numbered name per type: "Villa 1", "Land 1",
+   *  "Under Construction 1" — the next number for that type. */
+  private nextName(type: TileType): string {
+    const n = this.est.countOf(type) + 1;
+    const word = type === 'villa' ? 'Villa' : type === 'building' ? 'Under Construction' : 'Land';
+    return `${word} ${n}`;
   }
 
   compact = compact;

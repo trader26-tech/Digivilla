@@ -1,0 +1,109 @@
+<!-- ===== the button: top-right of the home screen ===== -->
+<button
+  class="call-btn"
+  [class.alert]="svc.hasImminent()"
+  (click)="openSheet()"
+  [attr.aria-label]="svc.next() ? 'Your fund-manager calls' : 'Schedule a call with your fund manager'"
+>
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <path d="M6.6 10.8a12 12 0 0 0 5.6 5.6l1.9-1.9a1 1 0 0 1 1-.24 9 9 0 0 0 2.8.45 1 1 0 0 1 1 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5a1 1 0 0 1 1-1h2.3a1 1 0 0 1 1 1 9 9 0 0 0 .45 2.8 1 1 0 0 1-.24 1z"
+          fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <!-- a call within 24h -> a star to draw the eye -->
+  <span class="call-star" *ngIf="svc.hasImminent()" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="11" height="11">
+      <path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z" fill="currentColor"/>
+    </svg>
+  </span>
+</button>
+
+<!-- ===== the sheet ===== -->
+<div class="sheet-backdrop" *ngIf="open()" (click)="close()"></div>
+<aside class="cs-sheet" *ngIf="open()" role="dialog" aria-modal="true" aria-label="Fund-manager calls">
+  <span class="cs-grab" aria-hidden="true"></span>
+
+  <!-- STEP 0 · overview: upcoming calls + a book button -->
+  <ng-container *ngIf="step() === 0">
+    <div class="cs-head">
+      <span class="cs-title">Your calls</span>
+      <button class="cs-close" (click)="close()" aria-label="Close">✕</button>
+    </div>
+
+    <!-- imminent banner -->
+    <div class="cs-soon" *ngIf="svc.hasImminent() && svc.next() as n">
+      <span class="cs-soon-star" aria-hidden="true">★</span>
+      <span>Coming up {{ countdown(n.at) }} — {{ n.at | date:'EEE d MMM, h:mm a' }}</span>
+    </div>
+
+    <div class="cs-list">
+      <div class="cs-call" *ngFor="let c of svc.upcoming(); trackBy: trackCall"
+           [class.soon]="countdown(c.at) === 'tomorrow' || countdown(c.at).includes('hour')">
+        <div class="cs-call-main">
+          <b class="cs-call-when">{{ c.at | date:'EEE, d MMM y' }}</b>
+          <span class="cs-call-time">{{ c.at | date:'h:mm a' }} · {{ c.topic }}</span>
+        </div>
+        <span class="cs-call-in">{{ countdown(c.at) }}</span>
+        <button class="cs-call-x" (click)="cancel(c.id)" aria-label="Cancel this call">✕</button>
+      </div>
+    </div>
+
+    <button class="cs-book-btn" (click)="startBooking()">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      Schedule a new call
+    </button>
+  </ng-container>
+
+  <!-- STEP 1 · pick a day -->
+  <ng-container *ngIf="step() === 1">
+    <div class="cs-head">
+      <span class="cs-title">Pick a day</span>
+      <button class="cs-close" (click)="close()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="cs-monthbar">
+      <button class="cs-nav" (click)="prevMonth()" [disabled]="!canPrev" aria-label="Previous month">‹</button>
+      <b class="cs-monthlbl">{{ monthLabel }}</b>
+      <button class="cs-nav" (click)="nextMonth()" aria-label="Next month">›</button>
+    </div>
+    <div class="cs-dow" aria-hidden="true">
+      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+    </div>
+    <div class="cs-grid">
+      <ng-container *ngFor="let c of cells">
+        <span class="cs-blank" *ngIf="!c"></span>
+        <button *ngIf="c" class="cs-cell" [class.sel]="isDay(c)"
+                [disabled]="!selectable(c)" (click)="pickDay(c)">{{ c | date:'d' }}</button>
+      </ng-container>
+    </div>
+    <p class="cs-hint">Weekday slots with your fund manager.</p>
+  </ng-container>
+
+  <!-- STEP 2 · pick a time -->
+  <ng-container *ngIf="step() === 2 && day() as d">
+    <div class="cs-head">
+      <span class="cs-title">Pick a time</span>
+      <button class="cs-close" (click)="close()" aria-label="Close">✕</button>
+    </div>
+    <p class="cs-lead">Slots on <b>{{ d | date:'EEEE, d MMM' }}</b></p>
+    <div class="cs-slots">
+      <button class="cs-slot" *ngFor="let s of SLOTS" (click)="pickSlot(s)">{{ s }}</button>
+    </div>
+    <button class="cs-back" (click)="step.set(1)">‹ Change day</button>
+  </ng-container>
+
+  <!-- STEP 3 · booked -->
+  <div class="cs-done" *ngIf="step() === 3 && day() as d">
+    <div class="cs-tick" [class.pop]="justBooked()" aria-hidden="true">
+      <svg viewBox="0 0 52 52"><circle class="cs-tick-ring" cx="26" cy="26" r="24"/><path class="cs-tick-mark" d="M15 27l7 7 15-15"/></svg>
+    </div>
+    <b class="cs-done-title">Call booked</b>
+    <p class="cs-done-sub">
+      Your fund manager will call on<br>
+      <b>{{ d | date:'EEEE, d MMM y' }} at {{ slot() }}</b>
+    </p>
+    <button class="cs-book-btn ghost" (click)="step.set(0)">See all calls</button>
+    <button class="cs-done-btn" (click)="close()">Done</button>
+  </div>
+</aside>

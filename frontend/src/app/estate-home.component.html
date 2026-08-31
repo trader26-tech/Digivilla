@@ -21,6 +21,9 @@
     </button>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
+    <!-- ===== FUND-MANAGER CALLS: top-right; a star appears if one is <24h away ===== -->
+    <app-call-schedule></app-call-schedule>
+
     <!-- ===== HERO GREETING: "YOUR ESTATE" over the estate name ===== -->
     <header class="hero">
       <span class="hero-kicker">YOUR ESTATE</span>
