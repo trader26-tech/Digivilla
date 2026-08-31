@@ -23,16 +23,22 @@
   (pick)="pickBuild($event)"
 ></app-build-picker>
 
-<!-- BOTTOM NAV: two tabs, Home and Explore. Only on the top-level tabs. -->
+<!-- BOTTOM NAV: a floating pill with two tabs, Home and Explore. -->
 <nav class="tabbar" *ngIf="onTab">
-  <button class="tab" [class.active]="view === 'home'" (click)="goHome()">
-    <svg viewBox="0 0 24 24" width="23" height="23"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-    <span>Home</span>
-  </button>
-  <button class="tab" [class.active]="view === 'explore'" (click)="goExplore()">
-    <svg viewBox="0 0 24 24" width="23" height="23"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
-    <span>Explore</span>
-  </button>
+  <div class="tabbar-pill">
+    <button class="tab" [class.active]="view === 'home'" (click)="goHome()" aria-label="Home">
+      <span class="tab-in">
+        <svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <span class="tab-lbl">Home</span>
+      </span>
+    </button>
+    <button class="tab" [class.active]="view === 'explore'" (click)="goExplore()" aria-label="Explore">
+      <span class="tab-in">
+        <svg viewBox="0 0 24 24" width="21" height="21"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
+        <span class="tab-lbl">Explore</span>
+      </span>
+    </button>
+  </div>
 </nav>
 
 <!-- ACCOUNT: profile + transactions, from the home avatar. -->

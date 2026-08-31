@@ -135,9 +135,9 @@ export class AppComponent {
     this.intro = false;
   }
 
-  /** "Build a new asset" -> open the pick screen. */
+  /** "Build a new asset" -> go to the Explore tab, where villa/land are chosen. */
   openBuild(): void {
-    this.buildFlow = 'pick';
+    this.view = 'explore';
     window.scrollTo({ top: 0 });
   }
   /** A choice on the pick screen -> the matching buy page. */
