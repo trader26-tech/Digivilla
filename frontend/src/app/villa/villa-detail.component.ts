@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 
 import { VillaArtComponent } from '../shared/villa-art.component';
-import { compact, inr } from '../shared/format.util';
+import { compact, compactK, inr } from '../shared/format.util';
 import {
   HoldingFund,
   RentPayment,
@@ -50,6 +50,7 @@ export class VillaDetailComponent implements OnInit {
   /** Value figures. */
   current = 0;
   gain = 0;
+  gainPct = 0;
 
   /** Rent schedule. */
   next!: RentPayment;
@@ -58,6 +59,7 @@ export class VillaDetailComponent implements OnInit {
 
   // format helpers for the template
   compact = compact;
+  compactK = compactK;
   inr = inr;
   assetColor = assetColor;
   assetLabel = assetLabel;
@@ -67,6 +69,7 @@ export class VillaDetailComponent implements OnInit {
     this.plan = villaPlan(this.price, 20);
     this.current = currentValue(this.price, this.plan.cagr, this.boughtAt, now);
     this.gain = this.current - this.price;
+    this.gainPct = this.price > 0 ? (this.gain / this.price) * 100 : 0;
 
     const sched = rentSchedule(this.boughtAt, this.plan.rentMonthly, now);
     this.next = sched.next;

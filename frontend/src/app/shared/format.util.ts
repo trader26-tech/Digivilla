@@ -19,6 +19,20 @@ export function compact(v: number): string {
   return `₹${Math.round(v).toLocaleString('en-IN')}`;
 }
 
+/**
+ * Like compact(), but also abbreviates thousands as "K" so nothing is ever
+ * written out in full: ₹1.8 Cr / ₹28.3 L / ₹30 K / ₹850.
+ */
+export function compactK(v: number): string {
+  const abs = Math.abs(v);
+  if (abs >= 1_00_000) return compact(v);
+  if (abs >= 1_000) {
+    const k = v / 1_000;
+    return `₹${k % 1 === 0 ? k : k.toFixed(1).replace(/\.0$/, '')} K`;
+  }
+  return `₹${Math.round(v).toLocaleString('en-IN')}`;
+}
+
 /** Full rupees with Indian digit grouping: ₹12,50,000. */
 export function inr(v: number | null | undefined): string {
   if (v == null) return '—';

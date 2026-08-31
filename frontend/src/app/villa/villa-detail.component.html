@@ -13,14 +13,16 @@
   <!-- ============ 2 · value: current value (left) · total rent paid (right) -->
   <section class="value reveal" style="--i:2">
     <div class="val-cell">
-      <b class="val-big now">{{ compact(current) }}</b>
-      <span class="val-k">
-        Current value
-        <span class="val-gain" [class.neg]="gain < 0">{{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}</span>
+      <b class="val-big">{{ compactK(current) }}</b>
+      <span class="val-gain" [class.neg]="gain < 0">
+        <span class="val-arrow">{{ gain < 0 ? '▼' : '▲' }}</span>
+        {{ gain < 0 ? '−' : '+' }}{{ compactK(gain < 0 ? -gain : gain) }}
+        ({{ gain < 0 ? '−' : '+' }}{{ (gainPct < 0 ? -gainPct : gainPct) | number:'1.2-2' }}%)
       </span>
+      <span class="val-k">Current value</span>
     </div>
     <div class="val-cell right">
-      <b class="val-big rent">{{ compact(totalPaid) }}</b>
+      <b class="val-big rent">{{ compactK(totalPaid) }}</b>
       <span class="val-k">Total rent paid</span>
     </div>
   </section>
