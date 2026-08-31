@@ -12,7 +12,7 @@ import { Component } from '@angular/core';
   template: `
     <svg
       class="land-art"
-      viewBox="90 60 640 400"
+      viewBox="88 60 644 468"
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label="Land plot"
