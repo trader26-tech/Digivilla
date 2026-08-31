@@ -1,17 +1,14 @@
 <main class="login">
-  <!-- minimal brand mark, top -->
-  <div class="lg-brand">
-    <span class="lg-mark" aria-hidden="true">L</span>
-    <span class="lg-kicker">MY LAKSHYAS</span>
-  </div>
+  <!-- STEP 1 · phone -->
+  <form *ngIf="step() === 'phone'" class="lg-flow" (ngSubmit)="sendCode()" novalidate>
+    <!-- top: title -->
+    <header class="lg-top">
+      <h1 class="lg-title">Sign in or create<br>your account</h1>
+      <p class="lg-sub">Enter your phone to continue.</p>
+    </header>
 
-  <!-- form — sign-in is the focus -->
-  <section class="lg-form">
-    <!-- STEP 1 · phone -->
-    <form *ngIf="step() === 'phone'" (ngSubmit)="sendCode()" novalidate>
-      <h1 class="lg-step big">Sign in or create<br>your account</h1>
-      <p class="lg-substep">Enter your phone to continue.</p>
-
+    <!-- middle: fields -->
+    <div class="lg-mid">
       <label class="lg-field">
         <span class="lg-lbl">Your name</span>
         <input class="lg-input" type="text" autocomplete="name" placeholder="Sanjeev"
@@ -20,7 +17,7 @@
 
       <label class="lg-field">
         <span class="lg-lbl">Phone number</span>
-        <div class="lg-phone" [class.filled]="phone()">
+        <div class="lg-phone">
           <span class="lg-cc">🇮🇳 +91</span>
           <input class="lg-input bare" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10"
                  placeholder="98765 43210"
@@ -29,40 +26,49 @@
       </label>
 
       <p class="lg-err" *ngIf="error()">{{ error() }}</p>
+    </div>
 
+    <!-- bottom: the action -->
+    <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
         <span *ngIf="!busy()">Get verification code</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
-
       <p class="lg-fine">
         We’ll text a 6-digit code to verify it’s you.
         <span *ngIf="!firebaseReady" class="lg-dev">Dev mode — use 123456.</span>
       </p>
-    </form>
+    </footer>
+  </form>
 
-    <!-- STEP 2 · OTP -->
-    <form *ngIf="step() === 'otp'" (ngSubmit)="verify()" novalidate>
+  <!-- STEP 2 · OTP -->
+  <form *ngIf="step() === 'otp'" class="lg-flow" (ngSubmit)="verify()" novalidate>
+    <!-- top: title -->
+    <header class="lg-top">
       <button class="lg-edit" type="button" (click)="editPhone()">
         <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         +91 {{ phone() }}
       </button>
-      <span class="lg-step big">Enter the code</span>
-      <span class="lg-substep">Sent to your phone by SMS</span>
+      <h1 class="lg-title">Enter the code</h1>
+      <p class="lg-sub">Sent to your phone by SMS.</p>
+    </header>
 
+    <!-- middle: the code -->
+    <div class="lg-mid">
       <input class="lg-otp" type="tel" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
              placeholder="––––––" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
-
       <p class="lg-err" *ngIf="error()">{{ error() }}</p>
+    </div>
 
+    <!-- bottom: the action -->
+    <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!codeValid || busy()">
         <span *ngIf="!busy()">Verify &amp; enter</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
-
       <button class="lg-resend" type="button" (click)="resend()">Didn’t get it? <b>Resend</b></button>
-    </form>
-  </section>
+    </footer>
+  </form>
 
   <!-- invisible reCAPTCHA mount for Firebase phone auth -->
   <div id="recaptcha-container"></div>

@@ -19,8 +19,14 @@
     <!-- ===== FUND-MANAGER CALLS: top-right; a star appears if one is <24h away ===== -->
     <app-call-schedule></app-call-schedule>
 
-    <!-- the isometric town — the centrepiece; the hero sits below it. Scrolls
-         freely in both directions so the town can keep growing. -->
+    <!-- ===== HERO GREETING: "YOUR ESTATE" over the estate name, at the top ===== -->
+    <header class="hero">
+      <span class="hero-kicker">YOUR ESTATE</span>
+      <h1 class="hero-title">{{ est.profile().name }}&rsquo;s City</h1>
+    </header>
+
+    <!-- the isometric town — below the hero. Scrolls freely in both
+         directions so the town can keep growing. -->
     <div
       class="board-scroll"
       [class.fit]="!canZoom"
@@ -174,11 +180,8 @@
       </button>
     </div>
 
-    <!-- ===== HERO GREETING: below the town, centred ===== -->
-    <header class="hero">
-      <span class="hero-kicker">YOUR ESTATE</span>
-      <h1 class="hero-title">{{ est.profile().name }}&rsquo;s City</h1>
-    </header>
+    <!-- divider between the town and the figures -->
+    <div class="stats-rule"></div>
 
     <!-- ===== the two headline numbers: City value · Rent a month ===== -->
     <div class="stats">

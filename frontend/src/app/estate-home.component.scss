@@ -17,21 +17,22 @@
      avatar → small gap → hero → gap → the town → (divider lives below) */
 .estate-top {
   position: relative;
-  /* the FIRST SCREEN: fills the viewport and centres its content — map, then
-     the hero, then the figures, then "View more details". */
+  /* the FIRST SCREEN: hero at the top, the town filling the middle, then a
+     divider, the figures, and "View more details" at the foot. */
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: calc(1rem + env(safe-area-inset-top)) 0 1.4rem;
+  padding: 0 0 1.4rem;
   overflow: hidden;
   background:
     radial-gradient(140% 90% at 50% -20%, rgba(166, 124, 46, 0.16), transparent 60%),
     radial-gradient(120% 70% at 12% 4%, rgba(46, 107, 79, 0.10), transparent 55%),
     linear-gradient(180deg, #FFFDF8, var(--paper));
 }
+/* the town takes the space between the hero and the figures */
+.estate-top .board-scroll { flex: 1 1 auto; min-height: 0; }
+.stats-rule { flex: none; height: 1px; background: var(--survey); margin: 0.6rem 1.25rem; }
 .estate-top .stats { flex: none; padding: 0 1.25rem; margin: 0.2rem 0 0; }
 
 /* "View more details" — the reveal control at the foot of the first screen */
@@ -111,12 +112,12 @@
   border: 0;
 }
 
-/* ===== hero greeting — BELOW the town, centred ===== */
+/* ===== hero greeting — at the TOP, centred, clearing the avatar/call row ===== */
 .hero {
   position: relative;
   z-index: 3;
   text-align: center;
-  padding: 0.6rem 1.1rem 0.4rem;
+  padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem 0.6rem;
   animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .hero-kicker {
