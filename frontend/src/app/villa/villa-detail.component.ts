@@ -84,7 +84,7 @@ export class VillaDetailComponent implements OnInit {
       { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: '7% stamp duty & registration' },
       { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'a month',     vs: 'Paid to you, hands-off' },
       { theme: 'live',  ico: I['chart'], stat: liveVal,    unit: 'live value',  vs: 'Updates daily, not a valuer' },
-      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'upkeep',      vs: 'Zero repairs, ever' },
+      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'No repairs, no upkeep' },
       { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',      vs: 'Not 45 days of paperwork' },
       { theme: 'cash',  ico: I['swap'],  stat: '2 days',   unit: 'to cash out', vs: 'Not 6+ months of brokers' },
       { theme: 'entry', ico: I['door'],  stat: '₹10L',    unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
