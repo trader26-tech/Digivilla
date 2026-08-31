@@ -59,10 +59,10 @@ export class AppComponent {
     this.syncProfileFromAuth();
   }
 
-  /** Called after phone verification succeeds — reveal the app (intro first). */
+  /** Called after phone verification succeeds — the intro already played
+   *  before login, so just reveal the app. */
   onLoggedIn(): void {
     this.syncProfileFromAuth();
-    this.intro = true;
   }
 
   /** Mirror the verified user's name + phone into the estate profile so the

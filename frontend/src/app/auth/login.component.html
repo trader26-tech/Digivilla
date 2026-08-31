@@ -1,65 +1,87 @@
 <main class="login">
-  <!-- brand -->
-  <div class="lg-brand">
-    <div class="lg-mark" aria-hidden="true">
-      <svg viewBox="0 0 48 48" width="46" height="46">
-        <path d="M8 24L24 10l16 14M12 22v14h24V22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-        <path d="M20 36v-8h8v8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
-      </svg>
+  <!-- immersive hero: brand over a soft isometric estate motif -->
+  <div class="lg-hero" aria-hidden="true">
+    <svg class="lg-scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice">
+      <!-- distant plots, faint -->
+      <g opacity="0.28">
+        <polygon points="200,120 300,175 200,230 100,175" fill="#ffffff"/>
+        <polygon points="90,168 150,203 90,238 30,203" fill="#ffffff" opacity="0.7"/>
+        <polygon points="310,168 370,203 310,238 250,203" fill="#ffffff" opacity="0.7"/>
+      </g>
+      <!-- a hero villa, centred -->
+      <g opacity="0.9">
+        <polygon points="200,150 258,184 200,218 142,184" fill="#5a9e6f"/>
+        <polygon points="200,150 258,184 200,218 142,184" fill="none" stroke="#7fc494" stroke-width="1.5"/>
+        <polygon points="182,150 182,124 216,124 216,150" fill="#f3ead6"/>
+        <polygon points="216,124 232,134 232,160 216,150" fill="#d8caae"/>
+        <polygon points="182,124 200,114 232,124 216,124 182,124" fill="#fbf6ea"/>
+        <polygon points="182,124 200,114 232,134 216,124" fill="#eaddc2"/>
+      </g>
+    </svg>
+    <div class="lg-hero-copy">
+      <span class="lg-kicker">MY LAKSHYAS</span>
+      <h1 class="lg-title">Own an estate,<br>in your name.</h1>
+      <p class="lg-tag">A curated fund portfolio — as villas, land and rent you can watch grow.</p>
     </div>
-    <span class="lg-kicker">MY LAKSHYAS</span>
-    <h1 class="lg-title">Your estate,<br>in your name.</h1>
   </div>
 
-  <!-- STEP 1 · phone -->
-  <form class="lg-card" *ngIf="step() === 'phone'" (ngSubmit)="sendCode()" novalidate>
-    <label class="lg-field">
-      <span class="lg-lbl">Your name</span>
-      <input class="lg-input" type="text" autocomplete="name" placeholder="Sanjeev"
-             [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
-    </label>
+  <!-- form sheet, flush with the page (no boxy card) -->
+  <section class="lg-form">
+    <!-- STEP 1 · phone -->
+    <form *ngIf="step() === 'phone'" (ngSubmit)="sendCode()" novalidate>
+      <span class="lg-step">Sign in or create your account</span>
 
-    <label class="lg-field">
-      <span class="lg-lbl">Phone number</span>
-      <div class="lg-phone">
-        <span class="lg-cc">+91</span>
-        <input class="lg-input" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10"
-               placeholder="98765 43210"
-               [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" />
-      </div>
-    </label>
+      <label class="lg-field">
+        <span class="lg-lbl">Your name</span>
+        <input class="lg-input" type="text" autocomplete="name" placeholder="Sanjeev"
+               [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+      </label>
 
-    <p class="lg-err" *ngIf="error()">{{ error() }}</p>
+      <label class="lg-field">
+        <span class="lg-lbl">Phone number</span>
+        <div class="lg-phone" [class.filled]="phone()">
+          <span class="lg-cc">🇮🇳 +91</span>
+          <input class="lg-input bare" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10"
+                 placeholder="98765 43210"
+                 [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" />
+        </div>
+      </label>
 
-    <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
-      <span *ngIf="!busy()">Send code</span>
-      <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
-    </button>
+      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
 
-    <p class="lg-fine">
-      We’ll text you a 6-digit code to verify it’s you.
-      <span *ngIf="!firebaseReady" class="lg-dev">Dev mode — use code 123456.</span>
-    </p>
-  </form>
+      <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
+        <span *ngIf="!busy()">Get verification code</span>
+        <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
+      </button>
 
-  <!-- STEP 2 · OTP -->
-  <form class="lg-card" *ngIf="step() === 'otp'" (ngSubmit)="verify()" novalidate>
-    <button class="lg-edit" type="button" (click)="editPhone()">‹ +91 {{ phone() }}</button>
-    <span class="lg-lbl big">Enter the code</span>
-    <span class="lg-sub">Sent to your phone by SMS</span>
+      <p class="lg-fine">
+        We’ll text a 6-digit code to verify it’s you.
+        <span *ngIf="!firebaseReady" class="lg-dev">Dev mode — use 123456.</span>
+      </p>
+    </form>
 
-    <input class="lg-otp" type="tel" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
-           placeholder="••••••" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+    <!-- STEP 2 · OTP -->
+    <form *ngIf="step() === 'otp'" (ngSubmit)="verify()" novalidate>
+      <button class="lg-edit" type="button" (click)="editPhone()">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        +91 {{ phone() }}
+      </button>
+      <span class="lg-step big">Enter the code</span>
+      <span class="lg-substep">Sent to your phone by SMS</span>
 
-    <p class="lg-err" *ngIf="error()">{{ error() }}</p>
+      <input class="lg-otp" type="tel" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+             placeholder="––––––" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
 
-    <button class="lg-btn" type="submit" [disabled]="!codeValid || busy()">
-      <span *ngIf="!busy()">Verify &amp; enter</span>
-      <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
-    </button>
+      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
 
-    <button class="lg-resend" type="button" (click)="resend()">Didn’t get it? Resend</button>
-  </form>
+      <button class="lg-btn" type="submit" [disabled]="!codeValid || busy()">
+        <span *ngIf="!busy()">Verify &amp; enter</span>
+        <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
+      </button>
+
+      <button class="lg-resend" type="button" (click)="resend()">Didn’t get it? <b>Resend</b></button>
+    </form>
+  </section>
 
   <!-- invisible reCAPTCHA mount for Firebase phone auth -->
   <div id="recaptcha-container"></div>

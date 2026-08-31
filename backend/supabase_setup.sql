@@ -39,7 +39,7 @@ on conflict (code) do update set
   description=excluded.description;
 
 
--- 2) users — WealthPath auth (already in your project; kept here for completeness).
+-- 2) users — auth (email/password AND phone/OTP share this table).
 create table if not exists public.users (
     id            text primary key,
     owner         text unique not null,   -- stable id that keys goals/baskets
@@ -49,6 +49,14 @@ create table if not exists public.users (
     password_hash text not null,
     created_at    timestamptz default now()
 );
+-- Phone/OTP sign-in: phone users have a phone (unique) and no password. These
+-- ALTERs make an existing email-only table work for phone accounts too.
+-- Idempotent — safe to re-run.
+alter table public.users add column if not exists phone text unique;
+alter table public.users alter column email drop not null;          -- phone users have no email
+alter table public.users alter column password_hash drop not null;  -- and no password
+alter table public.users alter column salt drop not null;
+create index if not exists users_phone_idx on public.users (phone);
 alter table public.users enable row level security;
 
 
