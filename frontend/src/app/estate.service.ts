@@ -10,6 +10,12 @@ import { Injectable, signal } from '@angular/core';
 export type TileType = 'land' | 'building' | 'villa';
 export type Variant = 'conservative' | 'balanced' | 'aggressive';
 
+/** Whose town this is. */
+export interface Profile {
+  name: string;
+  city: string;
+}
+
 export interface Tile {
   id: string;
   type: TileType;
@@ -24,6 +30,7 @@ export interface Tile {
 
 const STORE_KEY = 'estate_tiles_v1';
 const RENT_KEY = 'estate_rent_collected_v1';
+const PROFILE_KEY = 'estate_profile_v1';
 
 /** Plots available around the town hall. The board is large and the map
  *  scrolls freely, so there is always room to keep building. */
@@ -35,6 +42,8 @@ export class EstateService {
   readonly tiles = signal<Tile[]>(this.load());
   /** Lifetime rent collected (tapping the coin adds the pending rent). */
   readonly rentCollected = signal<number>(this.loadRent());
+  /** Whose town this is, and where. Used for the home greeting. */
+  readonly profile = signal<Profile>(this.loadProfile());
 
   // ---------------- persistence ----------------
   private load(): Tile[] {
@@ -60,6 +69,21 @@ export class EstateService {
   private saveRent(): void {
     try {
       localStorage.setItem(RENT_KEY, String(this.rentCollected()));
+    } catch {}
+  }
+  private loadProfile(): Profile {
+    const fallback: Profile = { name: 'Arjun', city: 'Chennai' };
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<Profile>) } : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  setProfile(p: Partial<Profile>): void {
+    this.profile.update((cur) => ({ ...cur, ...p }));
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(this.profile()));
     } catch {}
   }
 
