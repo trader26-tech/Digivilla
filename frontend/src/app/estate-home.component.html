@@ -210,7 +210,9 @@
 
       <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
         <span class="log-art">
-          <svg viewBox="40 -8 160 160" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- viewBox is the villa's tight bounding box so it fills the whole
+               square edge-to-edge (like the reference), no empty margins. -->
+          <svg viewBox="28 20 184 148" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
             <use [attr.href]="tileSymbol(t)"></use>
             <g *ngIf="t.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
               <use [attr.href]="'#tBuild'"></use>
