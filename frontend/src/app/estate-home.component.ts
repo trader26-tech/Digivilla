@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 
 import { EstateService, Tile, TileType, Variant } from './estate.service';
-import { BASE_GRID, TILE_W, TILE_H } from './estate/iso.model';
+import { BASE_GRID } from './estate/iso.model';
 import {
   Cell,
   boardOrigin,
@@ -23,7 +23,6 @@ import {
   gridSize,
 } from './estate/board-layout';
 import { MapGestures, MapViewport } from './estate/map-gestures';
-import * as iso from './estate/iso-draw';
 import { compact } from './shared/format.util';
 
 /** Ticket price for one parcel; villas and builds are multiples of it. */
@@ -38,9 +37,12 @@ const LOCALITIES = [
 /**
  * The estate home screen.
  *
- * This component is deliberately thin: geometry lives in estate/iso-draw,
- * board layout in estate/board-layout, and pointer handling in
- * estate/map-gestures. What remains here is view state and user intent.
+ * The board is the "estate board" reference: one 2:1 isometric diamond grid
+ * whose parcels are painted with three interchangeable SVG symbols —
+ * #tLocked (open tile), #tLand (bare land / building base) and #tVilla
+ * (finished villa). The heavy hand-drawn hall/villa geometry is gone; each
+ * cell is now a single <use> plus, for a build in progress, one construction
+ * group. Layout, zoom and pointer handling are unchanged.
  */
 @Component({
   selector: 'app-estate-home',
@@ -58,12 +60,6 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   @Output() progress = new EventEmitter<void>();
 
   readonly est = inject(EstateService);
-
-  // geometry the template needs
-  readonly TILE_W = TILE_W;
-  readonly TILE_H = TILE_H;
-  readonly paneSpots = iso.PANE_SPOTS;
-  readonly hallWinSpots = iso.HALL_WIN_SPOTS;
 
   /** Buy sheet state: the open plot being filled, or null. */
   buying = signal<Cell | null>(null);
@@ -125,33 +121,33 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   get renderW(): number { return this.boardW * this.scale; }
   get renderH(): number { return this.boardH * this.scale; }
 
-  // ---------------------------------------------------------- iso-draw -----
-  // Thin pass-throughs so the template can call the pure helpers directly.
+  // ---------------------------------------------------------- board glue ---
+  // The reference symbols are authored around their own local origin: #tLand /
+  // #tVilla / #tLocked centre on (120, 80). Our cell centres are (c.x, c.y).
+  // A <use> is placed at (c.x - 120, c.y - 80) so the symbol lands on the cell.
+  private readonly SYM_CX = 120;
+  private readonly SYM_CY = 80;
+  useX(c: Cell): number { return c.x - this.SYM_CX; }
+  useY(c: Cell): number { return c.y - this.SYM_CY; }
 
-  diamond = iso.diamond;
-  diamondAt = iso.diamondAt;
-  boxTop = iso.boxTop;
-  boxLeft = iso.boxLeft;
-  boxRight = iso.boxRight;
-  windowLeft = iso.windowLeft;
-  windowRight = iso.windowRight;
-  paneLeft = iso.paneLeft;
-  paneRight = iso.paneRight;
-  fenceRailPath = iso.fenceRailPath;
-  fencePostBoxes = iso.fencePostBoxes;
-  frameColumns = iso.frameColumns;
-  frameRing = iso.frameRing;
-  villaBushes = iso.villaBushes;
+  /** Which reference symbol paints this cell's ground. */
+  symbolFor(c: Cell): string {
+    if (c.hall) return '#tVilla';                 // the hall reads as the grandest villa
+    const t = c.tile;
+    if (!t) return '#tLocked';                    // open plot
+    if (t.type === 'villa') return '#tVilla';
+    return '#tLand';                              // land + building both stand on bare land
+  }
 
-  /** Rails/posts for one side of a plot, named the way the template reads. */
-  backRails = (x: number, y: number, inset?: number, t?: number) =>
-    iso.sideRails(x, y, 'back', inset, t);
-  perimeterRails = (x: number, y: number, inset?: number, t?: number) =>
-    iso.sideRails(x, y, 'front', inset, t);
-  backPosts = (x: number, y: number, inset?: number, t?: number) =>
-    iso.sidePosts(x, y, 'back', inset, t);
-  perimeterPosts = (x: number, y: number, inset?: number, t?: number) =>
-    iso.sidePosts(x, y, 'front', inset, t);
+  /** The construction group is drawn on top of #tLand while a villa builds. */
+  isBuilding(c: Cell): boolean { return c.tile?.type === 'building'; }
+
+  /** Transform placing the reference construction group on this cell. It is
+   *  authored in the reference at translate(x,y) scale(0.385) translate(-640,-430);
+   *  we re-anchor it to the cell centre and drop it slightly onto the land. */
+  buildTransform(c: Cell): string {
+    return `translate(${c.x},${c.y + 20}) scale(0.32) translate(-640,-430)`;
+  }
 
   // ------------------------------------------------------------ lifecycle --
 
@@ -205,6 +201,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
 
   tapCell(c: Cell): void {
     if (this.gestures.wasGesture) return; // a pan or pinch, not a tap
+    if (c.hall) return;                   // the hall is a landmark, not a plot
     if (navigator.vibrate) navigator.vibrate(4);
     // Every tap opens the detail popup — for a built tile OR an open plot.
     this.selected.set(c);
