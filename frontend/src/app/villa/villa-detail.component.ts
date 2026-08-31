@@ -57,6 +57,9 @@ export class VillaDetailComponent implements OnInit {
   history: RentPayment[] = [];
   historyOpen = signal(false);
 
+  /** Funds section starts closed; opens on tap to reveal name + %. */
+  fundsOpen = signal(false);
+
   // --- "Villa vs eVilla" carousel ---
   /** Each card: eVilla’s win as a big number, plus ONE line (5–6 words) naming
    *  the real-villa cost. Built in ngOnInit so the rent and stamp-duty figures
@@ -151,8 +154,19 @@ export class VillaDetailComponent implements OnInit {
     this.historyOpen.set(false);
   }
 
+  toggleFunds(): void {
+    this.fundsOpen.update((v) => !v);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+
   onBack(): void {
     this.back.emit();
+  }
+
+  /** Whole days from today until the next rent payment (never negative). */
+  get daysToNext(): number {
+    const ms = this.next.date.getTime() - Date.now();
+    return Math.max(0, Math.ceil(ms / 86_400_000));
   }
 
   /** Total rent received so far, for the history sheet header. */
