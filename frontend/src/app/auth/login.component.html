@@ -1,35 +1,16 @@
 <main class="login">
-  <!-- immersive hero: brand over a soft isometric estate motif -->
-  <div class="lg-hero" aria-hidden="true">
-    <svg class="lg-scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice">
-      <!-- distant plots, faint -->
-      <g opacity="0.28">
-        <polygon points="200,120 300,175 200,230 100,175" fill="#ffffff"/>
-        <polygon points="90,168 150,203 90,238 30,203" fill="#ffffff" opacity="0.7"/>
-        <polygon points="310,168 370,203 310,238 250,203" fill="#ffffff" opacity="0.7"/>
-      </g>
-      <!-- a hero villa, centred -->
-      <g opacity="0.9">
-        <polygon points="200,150 258,184 200,218 142,184" fill="#5a9e6f"/>
-        <polygon points="200,150 258,184 200,218 142,184" fill="none" stroke="#7fc494" stroke-width="1.5"/>
-        <polygon points="182,150 182,124 216,124 216,150" fill="#f3ead6"/>
-        <polygon points="216,124 232,134 232,160 216,150" fill="#d8caae"/>
-        <polygon points="182,124 200,114 232,124 216,124 182,124" fill="#fbf6ea"/>
-        <polygon points="182,124 200,114 232,134 216,124" fill="#eaddc2"/>
-      </g>
-    </svg>
-    <div class="lg-hero-copy">
-      <span class="lg-kicker">MY LAKSHYAS</span>
-      <h1 class="lg-title">Own an estate,<br>in your name.</h1>
-      <p class="lg-tag">A curated fund portfolio — as villas, land and rent you can watch grow.</p>
-    </div>
+  <!-- minimal brand mark, top -->
+  <div class="lg-brand">
+    <span class="lg-mark" aria-hidden="true">L</span>
+    <span class="lg-kicker">MY LAKSHYAS</span>
   </div>
 
-  <!-- form sheet, flush with the page (no boxy card) -->
+  <!-- form — the whole screen is the sign-in; copy is minimal -->
   <section class="lg-form">
     <!-- STEP 1 · phone -->
     <form *ngIf="step() === 'phone'" (ngSubmit)="sendCode()" novalidate>
-      <span class="lg-step">Sign in or create your account</span>
+      <h1 class="lg-step">Sign in or create<br>your account</h1>
+      <p class="lg-substep">Enter your phone to continue.</p>
 
       <label class="lg-field">
         <span class="lg-lbl">Your name</span>
