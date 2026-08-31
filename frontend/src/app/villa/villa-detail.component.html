@@ -26,7 +26,7 @@
       <div class="val-big-row">
         <b class="val-big rent">{{ compactK(totalPaid) }}</b>
       </div>
-      <span class="val-k">Total rent paid</span>
+      <span class="val-k">Income received*</span>
     </div>
   </section>
 
@@ -62,8 +62,8 @@
   <!-- ============ 3 · next rent payment + history control ================= -->
   <section class="rent reveal" style="--i:4">
     <div class="rent-head">
-      <span class="sec-cap">Next rent payment</span>
-      <button class="hist-arrow" (click)="openHistory()" aria-label="See rent history">
+      <span class="sec-cap">Next income payout*</span>
+      <button class="hist-arrow" (click)="openHistory()" aria-label="See income history">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -110,7 +110,7 @@
 <aside class="sheet" *ngIf="historyOpen()" role="dialog" aria-modal="true" aria-label="Rent history">
   <span class="sheet-grab" aria-hidden="true"></span>
   <div class="sheet-head">
-    <span class="sheet-title">Rent history</span>
+    <span class="sheet-title">Income history</span>
     <button class="sheet-close" (click)="closeHistory()" aria-label="Close">✕</button>
   </div>
 

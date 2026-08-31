@@ -192,10 +192,10 @@
         <span class="stat-k">City value</span>
       </div>
       <button class="stat income" (click)="toggleRentFace()" [class.flipped]="showBuildCost()"
-              [attr.aria-label]="showBuildCost() ? 'Build cost — tap to see monthly rent' : 'Monthly rent — tap to see build cost'">
+              [attr.aria-label]="showBuildCost() ? 'Monthly SIP — tap to see income potential' : 'Income potential — tap to see monthly SIP'">
         <span class="stat-face" [class.on]="!showBuildCost()">
           <b class="stat-v">{{ compact(est.rentIn) }}<sup class="star">*</sup></b>
-          <span class="stat-k">Rent a month <span class="stat-more" aria-hidden="true">›</span></span>
+          <span class="stat-k">Income / mo <span class="stat-more" aria-hidden="true">›</span></span>
         </span>
         <span class="stat-face build" [class.on]="showBuildCost()">
           <b class="stat-v">{{ compact(est.buildCost) }}</b>
@@ -222,8 +222,9 @@
       It rises and falls with the market every day and is not guaranteed — it can go down as well as up.
     </p>
     <p class="tip-note" *ngIf="tip() === 'rent'">
-      <b>Rent a month</b> is an illustrative payout from your fund holdings. It is market-linked and not
-      assured — the amount depends on how the underlying schemes perform.
+      <b>Income / mo</b> is an illustrative income the fund basket aims to pay out (e.g. via dividends or
+      an SWP). It is market-linked and <b>not assured</b> — the amount can vary or stop, depending on how
+      the underlying schemes perform.
     </p>
 
     <!-- the single mandatory AMFI line, always visible just above the nav -->
@@ -269,7 +270,7 @@
           <b class="ps-v">{{ compact(c.tile!.cost) }}</b>
         </div>
         <div class="pop-stat">
-          <span class="ps-k">Monthly rent</span>
+          <span class="ps-k">Income / mo*</span>
           <b class="ps-v rent">{{ compact(c.tile!.rentMonthly) }}</b>
         </div>
       </div>

@@ -61,7 +61,7 @@ export class BuildPickerComponent {
         // wording softened to illustrative — no guaranteed-return claims
         label: 'VILLA',
         name: 'Villa',
-        tag: 'Designed to pay you monthly.',
+        tag: 'Aims for regular income + growth.',
         cost: villaCost,
         headV: compact(vRent),
         headK: 'illustrative monthly payout*',

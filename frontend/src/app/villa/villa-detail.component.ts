@@ -182,7 +182,7 @@ export class VillaDetailComponent implements OnInit {
     const I = VillaDetailComponent.ICO;
     this.PERKS = [
       { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: 'in 7% stamp duty & registration' },
-      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'rent',        vs: 'in your account monthly' },
+      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'income*',     vs: 'targeted monthly payout, not guaranteed' },
       { theme: 'live',  ico: I['chart'], stat: liveVal,    unit: 'live value',  vs: 'you can check any time' },
       { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'no repairs, no upkeep' },
       { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',      vs: 'not 45 days of paperwork' },

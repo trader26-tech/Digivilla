@@ -100,7 +100,7 @@ export class VillaBuyComponent implements OnInit {
     const I = VillaBuyComponent.ICO;
     this.PERKS = [
       { theme: 'stamp', ico: I['tag'],   stat: compact(Math.round(this.amount() * 0.07)), unit: 'saved',      vs: 'in 7% stamp duty & registration' },
-      { theme: 'rent',  ico: I['coin'],  stat: compact(this.plan.rentMonthly),            unit: 'rent',       vs: 'in your account monthly' },
+      { theme: 'rent',  ico: I['coin'],  stat: compact(this.plan.rentMonthly),            unit: 'income*',    vs: 'targeted monthly payout, not guaranteed' },
       { theme: 'live',  ico: I['chart'], stat: compact(this.finalTotal),                  unit: 'in 20y',     vs: 'value + rent, growing daily' },
       { theme: 'care',  ico: I['tool'],  stat: '₹0',                                      unit: 'upkeep',     vs: 'no repairs, no maintenance' },
       { theme: 'time',  ico: I['bolt'],  stat: '30 sec',                                  unit: 'to own',     vs: 'not 45 days of paperwork' },

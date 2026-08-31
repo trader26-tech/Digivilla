@@ -15,11 +15,11 @@
     <section class="xp-card" *ngFor="let it of items; let i = index"
              [class.on]="index() === i" [class.up]="i < index()">
 
-      <!-- name + cost to own, centred -->
+      <!-- name + amount to invest, centred -->
       <div class="xp-head">
         <h1 class="xp-name">{{ it.name }}</h1>
         <b class="xp-cost">{{ compact(it.cost) }}</b>
-        <span class="xp-cost-k">cost to own</span>
+        <span class="xp-cost-k">amount to invest</span>
       </div>
 
       <!-- the asset -->
