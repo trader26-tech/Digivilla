@@ -172,11 +172,14 @@
   overflow: hidden;
   display: block;
   padding: 0;
-  /* Hug the board's own proportions (boardW:boardH ≈ 585.6 : 460) so the
-     panel is exactly as tall as the town needs — no empty band underneath. */
+  /* Hug the board's own proportions (boardW:boardH ≈ 585.6 : 460). The town is
+     the hero of the screen, so let it run edge-to-edge (a touch wider than the
+     text column) and grow taller to fill the space. */
   height: auto;
   aspect-ratio: 585.6 / 460;
-  max-height: 56vh;
+  max-height: 68vh;
+  width: 100vw;
+  max-width: 520px;
   margin: 0 auto;
 }
 .board-scroll.fit .board {
