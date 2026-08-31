@@ -133,3 +133,42 @@
     </div>
   </div>
 </aside>
+
+<!-- ============ withdraw — book a call with the fund manager ============ -->
+<div class="sheet-backdrop" *ngIf="withdrawOpen()" (click)="closeWithdraw()"></div>
+<aside class="sheet wd-sheet" *ngIf="withdrawOpen()" role="dialog" aria-modal="true" aria-label="Withdraw">
+  <span class="sheet-grab" aria-hidden="true"></span>
+
+  <!-- STATE A: not yet booked — explain + pick a date -->
+  <ng-container *ngIf="!bookedDate()">
+    <div class="sheet-head">
+      <span class="sheet-title">Withdraw</span>
+      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
+    </div>
+    <p class="wd-lead">
+      Book a call with your fund manager to withdraw. Withdrawals aren’t instant —
+      they’re processed <b>within 2 working days</b> of your call.
+    </p>
+    <span class="wd-cap">Pick a slot with the fund manager</span>
+    <div class="wd-cal">
+      <button class="wd-day" *ngFor="let dt of callDates" (click)="bookCall(dt)">
+        <span class="wd-dow">{{ dt | date:'EEE' }}</span>
+        <b class="wd-num">{{ dt | date:'d' }}</b>
+        <span class="wd-mon">{{ dt | date:'MMM' }}</span>
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- STATE B: booked — the tick-mark confirmation -->
+  <div class="wd-done" *ngIf="bookedDate() as bd">
+    <div class="wd-tick" [class.pop]="justBooked()" aria-hidden="true">
+      <svg viewBox="0 0 52 52"><circle class="wd-tick-ring" cx="26" cy="26" r="24"/><path class="wd-tick-mark" d="M15 27l7 7 15-15"/></svg>
+    </div>
+    <b class="wd-done-title">Call scheduled</b>
+    <p class="wd-done-sub">
+      Your fund manager will call on<br>
+      <b>{{ bd | date:'EEEE, d MMM y' }}</b> to process the withdrawal.
+    </p>
+    <button class="wd-done-btn" (click)="closeWithdraw()">Done</button>
+  </div>
+</aside>
