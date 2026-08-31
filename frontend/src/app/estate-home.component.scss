@@ -9,6 +9,8 @@
   flex-direction: column;
   background: var(--paper);
   position: relative;
+  /* hard guard: nothing may ever spill sideways off the screen */
+  overflow-x: hidden;
 }
 
 /* ============ TOP: avatar, hero line, then the map — in flow ============
@@ -173,13 +175,14 @@
   display: block;
   padding: 0;
   /* Hug the board's own proportions (boardW:boardH ≈ 585.6 : 460). The town is
-     the hero of the screen, so let it run edge-to-edge (a touch wider than the
-     text column) and grow taller to fill the space. */
+     the hero of the screen — as big as fits WITHOUT ever spilling past the
+     screen edges. width:100% keeps it inside the column; the SVG's
+     preserveAspectRatio="…meet" contains the art so nothing is clipped or
+     bleeds out. */
   height: auto;
   aspect-ratio: 585.6 / 460;
-  max-height: 68vh;
-  width: 100vw;
-  max-width: 520px;
+  max-height: 66vh;
+  width: 100%;
   margin: 0 auto;
 }
 .board-scroll.fit .board {
