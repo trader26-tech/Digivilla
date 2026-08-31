@@ -2,50 +2,53 @@
 
   <button class="xp-back" *ngIf="!embedded" (click)="onBack()" aria-label="Back">‹</button>
 
-  <!-- top: name + price range + rent -->
-  <header class="xp-head">
-    <b class="xp-name">Villa</b>
+  <!-- one centred column: title · plot · price+rent · perks · buy -->
+  <div class="xp-body">
+
+    <!-- title -->
+    <h1 class="xp-name">Villa</h1>
+
+    <!-- CENTREPIECE: the villa plot with a FOR SALE board staked on it -->
+    <div class="xp-art">
+      <app-villa-art></app-villa-art>
+      <span class="xp-sale" aria-hidden="true">FOR<br>SALE</span>
+    </div>
+
+    <!-- price + rent, side by side, centred under the plot -->
     <div class="xp-figs">
       <div class="xp-fig">
         <b class="xp-fig-v">{{ compact(priceFrom) }}<span class="xp-to">–{{ compact(priceTo) }}</span></b>
         <span class="xp-fig-k">to buy</span>
       </div>
-      <div class="xp-fig right">
+      <div class="xp-fig-div"></div>
+      <div class="xp-fig">
         <b class="xp-fig-v rent">{{ compact(rentMonthly) }}<span class="xp-mo">/mo</span></b>
         <span class="xp-fig-k">rent from day one</span>
       </div>
     </div>
-  </header>
 
-  <!-- CENTREPIECE: the villa plot, centred like the home map, with a FOR SALE
-       board planted on the plot itself -->
-  <div class="xp-art">
-    <app-villa-art></app-villa-art>
-    <span class="xp-sale" aria-hidden="true">FOR<br>SALE</span>
-  </div>
-
-  <!-- why an eVilla beats a real one — the same swipeable perks carousel -->
-  <div class="xp-why">
-    <span class="xp-why-cap">Why an eVilla, not a real one</span>
-    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
-         (pointercancel)="onPerkUp($event)">
-      <div class="why-card" *ngFor="let p of PERKS; let i = index"
-           [attr.data-theme]="p.theme" [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
-        <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span class="why-badge">eVilla</span>
-        <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
-        <p class="why-line">{{ p.vs }}</p>
+    <!-- benefits of owning an eVilla — the swipeable carousel -->
+    <div class="xp-why">
+      <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
+           (pointercancel)="onPerkUp($event)">
+        <div class="why-card" *ngFor="let p of PERKS; let i = index"
+             [attr.data-theme]="p.theme" [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
+          <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="why-badge">eVilla</span>
+          <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
+          <p class="why-line">{{ p.vs }}</p>
+        </div>
+      </div>
+      <div class="why-dots">
+        <button class="why-dot" *ngFor="let p of PERKS; let i = index"
+                [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
       </div>
     </div>
-    <div class="why-dots">
-      <button class="why-dot" *ngFor="let p of PERKS; let i = index"
-              [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
-    </div>
   </div>
 
-  <!-- buy -->
+  <!-- buy, pinned at the foot -->
   <button class="xp-buy" (click)="buy()">
     Buy a villa
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
