@@ -180,8 +180,10 @@
       </button>
     </div>
 
-    <!-- ===== the two headline numbers, right under the town:
-         City value · Rent a month ===== -->
+    <!-- line below the town, then the figures -->
+    <div class="stats-rule"></div>
+
+    <!-- ===== the two headline numbers: City value · Rent a month ===== -->
     <div class="stats">
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}</b>
@@ -200,90 +202,6 @@
         </span>
       </button>
     </div>
-
-    <!-- ===== VIEW MORE: reveals the build + assets panel below ===== -->
-    <button class="more-btn" (click)="toggleMore()" [class.open]="showMore()"
-            [attr.aria-expanded]="showMore()">
-      {{ showMore() ? 'Hide details' : 'View more details' }}
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-  </div>
-
-  <!-- ============ BOTTOM: build + assets, revealed on "View more" ======= -->
-  <div class="estate-bottom" *ngIf="showMore()">
-
-    <!-- ===== ALWAYS-ON CTA: build a new asset. Sits at the top of the list
-         so a user can invest straight away, whether or not they own any yet.
-         Opens the buy sheet on the next open plot beside the town hall. ===== -->
-    <button class="cta-row" (click)="build.emit()">
-      <!-- the affordance: one solid brass + disc that leads the row -->
-      <span class="cta-plus" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
-      </span>
-      <span class="cta-main">
-        <b class="cta-title">Build a new asset</b>
-        <span class="cta-sub">Grow your city — villa, build or land</span>
-      </span>
-      <span class="cta-go" aria-hidden="true">›</span>
-    </button>
-
-    <!-- ===== ASSET LOG: every asset the user has bought, newest first.
-         A clear iso image, the name, its kind, and the purchase date only. -->
-    <div class="log" *ngIf="hasAny; else empty">
-      <div class="log-head">
-        <span class="log-title">Your assets</span>
-        <span class="log-count">{{ ownedLog.length }}</span>
-      </div>
-
-      <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
-        <span class="log-art">
-          <!-- Villa bbox is x:[26,214] y:[26,160]. The viewBox wraps it tightly
-               and the box matches its wide-ish ratio, so the villa fills the
-               thumbnail with no wasted space top or bottom, and nothing is cut. -->
-          <svg viewBox="22 12 196 150" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <use [attr.href]="tileSymbol(t)"></use>
-            <g *ngIf="t.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
-              <use [attr.href]="'#tBuild'"></use>
-            </g>
-          </svg>
-        </span>
-        <span class="log-main">
-          <b class="log-name">{{ t.label }}</b>
-          <span class="log-sub">{{ t.boughtAt ? ('Purchased on ' + (t.boughtAt | date:'d MMM yyyy')) : 'Your founding villa' }}</span>
-        </span>
-        <span class="log-go" aria-hidden="true">›</span>
-      </button>
-    </div>
-
-    <!-- ===== FIRST-TIME EMPTY STATE: a warm invitation to buy the first
-         asset. The whole card is tappable and drops straight into the buy
-         sheet on the first open plot. ===== -->
-    <ng-template #empty>
-      <button class="first" (click)="build.emit()">
-        <span class="first-art" aria-hidden="true">
-          <span class="first-glow"></span>
-          <svg class="first-tile" viewBox="26 -2 188 176" width="118" height="104">
-            <use href="#tVilla"></use>
-          </svg>
-          <span class="first-spark s1"></span>
-          <span class="first-spark s2"></span>
-          <span class="first-spark s3"></span>
-        </span>
-        <b class="first-title">Buy your first villa</b>
-        <span class="first-sub">Start your city — pick a villa, a build, or land.</span>
-        <span class="first-cta">
-          Get started
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </button>
-    </ng-template>
-
-    <p class="foot-note">
-      Assets are a metaphor for tiers of a fund portfolio in your own name.
-      Values are units at NAV and move daily.
-    </p>
   </div>
 
   <!-- ============ PLOT DETAIL POPUP ============

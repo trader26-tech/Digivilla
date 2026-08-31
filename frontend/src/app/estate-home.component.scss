@@ -35,25 +35,8 @@
 .estate-top .board-scroll { flex: none; }
 .estate-top .stats { flex: none; padding: 0 1.25rem; margin: 1.1rem 0 0; }
 
-/* "View more details" — the reveal control at the foot of the first screen */
-.more-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
-  align-self: center; margin-top: 1.2rem;
-  padding: 0.6rem 1.1rem;
-  border-radius: 999px; border: 1px solid var(--survey); background: rgba(255,255,255,0.7);
-  font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--muted);
-  cursor: pointer; backdrop-filter: blur(4px);
-  transition: transform 0.12s, color 0.2s, border-color 0.2s;
-  svg { display: block; transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
-  &:hover { color: var(--ink); border-color: var(--brass); }
-  &:active { transform: scale(0.96); }
-  &.open svg { transform: rotate(180deg); }
-}
-
-/* the revealed panel slides + fades in */
-.estate-bottom { animation: moreIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
-@keyframes moreIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .estate-bottom { animation: none; } }
+/* hairline under the town, before the figures */
+.stats-rule { flex: none; height: 1px; background: var(--survey); margin: 1rem 1.25rem 0; }
 
 /* ===== owner avatar — top-left; the native file input is fully hidden and
    only reached by tapping the avatar button ===== */
