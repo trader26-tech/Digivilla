@@ -55,14 +55,15 @@
 .value { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.35rem 0.15rem; }
 .val-cell { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .val-cell.right { text-align: right; align-items: flex-end; }
+/* current value and its change sit on one line */
+.val-big-row { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
 .val-big {
   font-size: 2.35rem; font-weight: 850; letter-spacing: -1.5px; line-height: 1; color: var(--ink);
 }
 .val-big.rent { color: var(--brass); }
-/* the change line: no pill — just a coloured arrow + figure, like the ref */
+/* the change: no pill — just a coloured arrow + amount, beside the value */
 .val-gain {
-  display: inline-flex; align-items: baseline; gap: 0.28rem;
-  margin-top: 0.32rem;
+  display: inline-flex; align-items: baseline; gap: 0.22rem;
   font-size: 0.95rem; font-weight: 800; letter-spacing: -0.2px;
   color: var(--positive);
 }
