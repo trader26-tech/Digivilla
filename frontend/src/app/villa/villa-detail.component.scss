@@ -104,28 +104,20 @@
 .rn-amt {
   grid-column: 1; grid-row: 1 / span 2;
   align-self: center;
-  font-family: var(--font-display);
-  font-size: 2rem; font-weight: 850; letter-spacing: -1.1px; line-height: 1;
+  font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1;
   color: var(--brass);
 }
 .rn-date {
   grid-column: 2; grid-row: 1;
   justify-self: end;
-  font-family: var(--font-display);
-  font-size: 2rem; font-weight: 850; letter-spacing: -1.1px; line-height: 1;
+  font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 .rn-days {
   grid-column: 2; grid-row: 2;
   justify-self: end;
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  font-size: 0.78rem; font-weight: 600; color: var(--positive);
-}
-.rn-days-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--positive);
-  box-shadow: 0 0 0 3px rgba(46, 107, 79, 0.16);
+  font-size: 0.8rem; font-weight: 600; color: var(--muted);
 }
 
 /* ---------------- 4 · funds — in a box; closed, opens to name + % ------- */

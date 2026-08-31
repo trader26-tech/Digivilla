@@ -77,10 +77,7 @@
     <div class="rent-next">
       <b class="rn-amt">{{ compact(next.amount) }}</b>
       <span class="rn-date">{{ next.date | date:'d MMM y' }}</span>
-      <span class="rn-days">
-        <span class="rn-days-dot" aria-hidden="true"></span>
-        in {{ daysToNext }} day{{ daysToNext === 1 ? '' : 's' }}
-      </span>
+      <span class="rn-days">in {{ daysToNext }} day{{ daysToNext === 1 ? '' : 's' }}</span>
     </div>
   </section>
 
