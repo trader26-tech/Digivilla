@@ -124,7 +124,7 @@
 .why .sec-cap { display: block; margin-bottom: 0.7rem; }
 .why-stage {
   position: relative;
-  height: 132px;
+  height: 150px;
   /* let horizontal drags drive the carousel while vertical still scrolls */
   touch-action: pan-y;
   cursor: grab;
@@ -132,39 +132,69 @@
   -webkit-user-select: none;
 }
 .why-stage:active { cursor: grabbing; }
+
+/* each card: a big number-led statement on its own themed ground */
 .why-card {
   position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  padding: 0.95rem 1.05rem;
-  border-radius: 18px;
-  border: 1px solid var(--survey);
-  background:
-    radial-gradient(130% 120% at 100% 0%, rgba(46, 107, 79, 0.07), transparent 55%),
-    #fff;
-  box-shadow: 0 14px 34px -24px rgba(22, 48, 43, 0.55);
+  overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 1.1rem 1.2rem;
+  border-radius: 20px;
+  color: #fff;
+  box-shadow: 0 18px 40px -22px rgba(22, 48, 43, 0.6);
+  /* fallback ground; each theme overrides below */
+  background: linear-gradient(140deg, #3a6f57, #244d3c);
   opacity: 0;
-  transform: translateX(28px) scale(0.98);
+  transform: translateX(30px) scale(0.97);
   pointer-events: none;
   transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.why-card.prev { transform: translateX(-28px) scale(0.98); }
+.why-card.prev { transform: translateX(-30px) scale(0.97); }
 .why-card.on { opacity: 1; transform: none; pointer-events: auto; }
 
-.why-top { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; }
-.why-ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: rgba(166, 124, 46, 0.12); font-size: 1rem; }
-.why-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px; color: var(--ink); }
+/* per-theme grounds — distinct, rich, tied to the point being made */
+.why-card[data-theme="stamp"] { background: linear-gradient(140deg, #b98534 0%, #8a5f20 100%); }
+.why-card[data-theme="time"]  { background: linear-gradient(140deg, #7a5fb0 0%, #4e3b86 100%); }
+.why-card[data-theme="care"]  { background: linear-gradient(140deg, #2e6b4f 0%, #1c4432 100%); }
+.why-card[data-theme="cash"]  { background: linear-gradient(140deg, #3a7ea8 0%, #234e6b 100%); }
+.why-card[data-theme="entry"] { background: linear-gradient(140deg, #c06a52 0%, #8a3f30 100%); }
 
-.why-compare { display: flex; flex-direction: column; gap: 0.4rem; }
-.why-row { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
-.why-mark { flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; color: #fff; }
-.why-mark.ok { background: var(--positive); }
-.why-mark.no { background: #c2b7a3; }
-.why-who { flex: none; width: 74px; font-weight: 700; color: var(--ink); }
-.why-row.theirs .why-who { color: var(--muted); font-weight: 600; }
-.why-val { color: var(--muted); }
-.why-row.ours .why-val { color: var(--ink); font-weight: 600; }
+/* the emoji as a big soft watermark in the corner */
+.why-ico {
+  position: absolute;
+  right: -6px; top: -10px;
+  font-size: 5.2rem;
+  line-height: 1;
+  opacity: 0.16;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.why-stat-row { display: flex; align-items: baseline; gap: 0.45rem; }
+.why-stat {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 850;
+  letter-spacing: -1.4px;
+  line-height: 1;
+  color: #fff;
+}
+.why-unit {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.8);
+}
+.why-line {
+  margin: 0.55rem 0 0;
+  max-width: 88%;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
 
-.why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.85rem; }
+.why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.9rem; }
 .why-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; background: var(--survey); cursor: pointer; transition: width 0.35s cubic-bezier(0.22,1,0.36,1), background 0.3s; }
 .why-dot.on { width: 20px; background: var(--brass); }
 

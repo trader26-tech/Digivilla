@@ -58,16 +58,16 @@ export class VillaDetailComponent implements OnInit, OnDestroy {
   history: RentPayment[] = [];
   historyOpen = signal(false);
 
-  // --- "why this beats owning direct" carousel ---
-  /** Five reasons this villa beats owning real estate directly. One per card,
-   *  kept minimal: an icon, a title, and the two-line Your-city vs Own-direct
-   *  contrast. */
+  // --- "Villa vs eVilla" carousel ---
+  /** Five punchy, number-led reasons an eVilla beats a real villa. Each card is
+   *  ONE statement built around a big money/time figure, on its own themed
+   *  background. `theme` selects the card's colour treatment in the SCSS. */
   readonly PERKS = [
-    { icon: '🧾', title: 'Tax you’ll enjoy',  ours: 'Smarter tax treatment', theirs: 'Taxed more, every year' },
-    { icon: '📝', title: 'No registration',   ours: 'Buy in one tap',        theirs: 'Stamp duty & paperwork' },
-    { icon: '🛋️', title: 'Zero hassle',       ours: 'Rent lands each month', theirs: 'Repairs, tenants, visits' },
-    { icon: '📈', title: 'Value, live',       ours: 'See it right here',     theirs: 'Wait for a valuer' },
-    { icon: '⚡', title: 'Cash out anytime',  ours: 'Sell in a tap',         theirs: 'Months, brokers, fees' },
+    { theme: 'stamp', icon: '🧾', stat: '₹2.1L', unit: 'saved',   line: 'A real villa loses this to stamp duty & registration. An eVilla costs ₹0 to buy in.' },
+    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own', line: 'Own an eVilla in 30 seconds — a real villa takes 45+ days of paperwork.' },
+    { theme: 'care',  icon: '🛠️', stat: '₹40k',  unit: 'a year', line: 'What a real villa eats in repairs. An eVilla costs you ₹0 — it’s fully hands-off.' },
+    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to exit', line: 'Cash out an eVilla in ~2 days. Selling a real villa drags on 6 months with brokers.' },
+    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start', line: 'Start an eVilla from ₹10L — a real villa needs a ₹1Cr+ down-payment.' },
   ];
   perk = signal(0);
   private perkTimer?: ReturnType<typeof setInterval>;
