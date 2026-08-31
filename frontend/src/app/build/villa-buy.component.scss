@@ -117,3 +117,11 @@
   font-size: 0.76rem; line-height: 1.45; color: var(--muted); text-align: center;
   b { color: var(--ink); font-weight: 800; }
 }
+
+/* past-performance rows (SEBI format placeholder — no forward projection) */
+.pp-rows { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.8rem 0 0.5rem; }
+.pp-row { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid var(--survey); background: #fff;
+  span { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+  b { font-size: 0.95rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+}
+.pp-note { margin: 0.3rem 0 0; font-size: 0.68rem; color: var(--muted); }

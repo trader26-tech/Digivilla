@@ -24,7 +24,7 @@ import {
 @Component({
   selector: 'app-villa-buy',
   standalone: true,
-  imports: [CommonModule, VillaArtComponent, MfDisclaimerComponent],
+  imports: [CommonModule, VillaArtComponent, MfDisclaimerComponent, MfdDisclosureComponent],
   templateUrl: './villa-buy.component.html',
   styleUrls: ['../villa/villa-detail.component.scss', './villa-buy.component.scss'],
 })
