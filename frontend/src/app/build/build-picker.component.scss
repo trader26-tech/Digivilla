@@ -12,13 +12,21 @@
 @keyframes page-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
 .xp.embedded { min-height: calc(100dvh - 4.5rem); animation: none; }
 
+/* top bar — back button + a small EXPLORE label, so the top has presence */
+.xp-top {
+  flex: none;
+  display: flex; align-items: center; gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
 .xp-back {
-  position: absolute; top: calc(0.8rem + env(safe-area-inset-top)); left: 1rem; z-index: 5;
-  width: 40px; height: 40px; display: grid; place-items: center;
+  width: 40px; height: 40px; flex: none; display: grid; place-items: center;
   border-radius: 12px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
-  font-size: 1.5rem; line-height: 1; cursor: pointer;
+  font-size: 1.5rem; line-height: 1; cursor: pointer; transition: transform 0.12s, border-color 0.2s;
+  &:hover { border-color: var(--brass); }
   &:active { transform: scale(0.94); }
 }
+.xp-kicker { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); }
+.xp-top-sp { flex: 1; }
 
 /* the centred column fills the space above the Buy button */
 .xp-body {
@@ -31,15 +39,15 @@
 /* title */
 .xp-name {
   margin: 0;
-  font-family: var(--font-display); font-size: 2rem; font-weight: 850; letter-spacing: -0.7px;
+  font-family: var(--font-display); font-size: 2.6rem; font-weight: 850; letter-spacing: -1px;
   color: var(--ink);
 }
 
-/* CENTREPIECE — the plot, with a FOR SALE board staked on it */
+/* CENTREPIECE — the plot, bigger, with a FOR SALE board staked on it */
 .xp-art {
   position: relative;
-  width: 100%; max-width: 340px;
-  margin: 0.4rem auto 0.6rem;
+  width: 100%; max-width: 420px;
+  margin: 0.5rem auto 0.8rem;
   app-villa-art { display: block; width: 100%; height: auto; }
 }
 .xp-sale {
@@ -97,7 +105,7 @@
   font-size: 0.66rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .why-stat-row { display: flex; align-items: baseline; gap: 0.5rem; }
-.why-stat { font-family: var(--font-display); font-size: 2rem; font-weight: 850; letter-spacing: -0.9px; line-height: 1; color: var(--accent); }
+.why-stat { font-family: var(--font-display); font-size: 2.1rem; font-weight: 850; letter-spacing: -1px; line-height: 1; color: var(--accent); }
 .why-unit { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .why-line { margin: 0.5rem 0 0; font-size: 0.9rem; font-weight: 600; letter-spacing: -0.2px; color: var(--ink); }
 .why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.8rem; }

@@ -1,6 +1,11 @@
 <main class="xp" [class.embedded]="embedded">
 
-  <button class="xp-back" *ngIf="!embedded" (click)="onBack()" aria-label="Back">‹</button>
+  <!-- top bar: a back button and a small label so the top isn't bleak -->
+  <header class="xp-top">
+    <button class="xp-back" (click)="onBack()" aria-label="Back">‹</button>
+    <span class="xp-kicker">EXPLORE</span>
+    <span class="xp-top-sp"></span>
+  </header>
 
   <!-- one centred column: title · plot · price+rent · perks · buy -->
   <div class="xp-body">
