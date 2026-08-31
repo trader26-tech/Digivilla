@@ -19,12 +19,13 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="ak">
+      <!-- ALWAYS-VISIBLE truth line — the metaphor is never left unexplained -->
       <button class="ak-toggle" (click)="open.set(!open())" [attr.aria-expanded]="open()">
         <svg class="ak-i" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
           <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/>
           <path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
         </svg>
-        <span>These are mutual funds, shown as an estate — what each stands for</span>
+        <span>An estate view of your <b>mutual funds</b> — not real property. What each stands for</span>
         <svg class="ak-caret" [class.on]="open()" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
           <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>

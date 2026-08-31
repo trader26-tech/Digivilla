@@ -121,7 +121,7 @@
         <button *ngIf="c" class="cs-cell" [class.sel]="bkIsDay(c)" [disabled]="!bkSelectable(c)" (click)="bkPickDay(c)">{{ c | date:'d' }}</button>
       </ng-container>
     </div>
-    <p class="cs-hint">A specialist will call to set up your villa.</p>
+    <p class="cs-hint">This invests in a <b>mutual-fund basket</b>, executed on AssetPlus under our ARN. It is not a property purchase. A specialist will call to help you set it up.</p>
   </ng-container>
 
   <ng-container *ngIf="bkStep() === 2 && bkDay() as d">
@@ -137,7 +137,7 @@
   <div class="cs-done" *ngIf="bkStep() === 3 && bkDay() as d">
     <div class="cs-tick" [class.pop]="justBooked()"><svg viewBox="0 0 52 52"><circle class="cs-tick-ring" cx="26" cy="26" r="24"/><path class="cs-tick-mark" d="M15 27l7 7 15-15"/></svg></div>
     <b class="cs-done-title">Booked!</b>
-    <p class="cs-done-sub">We’ll call on<br><b>{{ d | date:'EEEE, d MMM y' }} at {{ bkSlot() }}</b><br>to set up your {{ compactK(amount()) }} villa.</p>
+    <p class="cs-done-sub">We’ll call on<br><b>{{ d | date:'EEEE, d MMM y' }} at {{ bkSlot() }}</b><br>to help you invest {{ compactK(amount()) }} in this mutual-fund basket (executed on AssetPlus).</p>
     <button class="cs-done-btn" (click)="onBack()">Done</button>
   </div>
 </aside>

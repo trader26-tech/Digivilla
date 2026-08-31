@@ -12,6 +12,7 @@ interface ExploreItem {
   kind: 'villa' | 'land';
   label: string;        // "VILLA" / "PLOT" — the top-bar word
   name: string;
+  fundType: string;     // the REAL mutual-fund category this picture stands for
   tag: string;          // the one-line promise
   cost: number;
   headV: string;        // the headline figure (rent/mo or growth)
@@ -58,6 +59,7 @@ export class BuildPickerComponent {
         kind: 'villa',
         label: 'VILLA',
         name: 'Villa',
+        fundType: 'Income funds · hybrid / arbitrage / debt',
         tag: 'A fund with a monthly SWP you set up.',
         cost: villaCost,
         headV: compact(villaSwp),
@@ -71,6 +73,7 @@ export class BuildPickerComponent {
         kind: 'land',
         label: 'PLOT',
         name: 'Plot',
+        fundType: 'Equity growth fund',
         tag: 'A growth fund, held in your name at NAV.',
         cost: landCost,
         headV: 'At NAV',
