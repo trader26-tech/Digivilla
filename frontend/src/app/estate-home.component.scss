@@ -174,14 +174,13 @@
   overflow: hidden;
   display: block;
   padding: 0;
-  /* Hug the board's own proportions (boardW:boardH ≈ 585.6 : 460). The town is
-     the hero of the screen — as big as fits WITHOUT ever spilling past the
-     screen edges. width:100% keeps it inside the column; the SVG's
-     preserveAspectRatio="…meet" contains the art so nothing is clipped or
-     bleeds out. */
+  /* The town is the hero. width:100% keeps it inside the screen (never spills
+     sideways), while a TALLER box than the art's natural ratio + a scaled-up
+     SVG makes the town read bigger. overflow:hidden clips only the board's own
+     empty top/bottom padding, so no house is ever cut. */
   height: auto;
-  aspect-ratio: 585.6 / 460;
-  max-height: 66vh;
+  aspect-ratio: 585.6 / 408;   /* matches the board after tighter TOP/BOT pad */
+  max-height: 72vh;
   width: 100%;
   margin: 0 auto;
 }

@@ -43,10 +43,11 @@ export function centreTile(): Tile {
   };
 }
 
-/** Headroom above the topmost tile centre for the hall tower and roofs. */
-export const TOP_PAD = 96;
+/** Headroom above the topmost tile centre for the hall tower and roofs.
+ *  Kept tight so the town fills the map rather than floating in empty pad. */
+export const TOP_PAD = 60;
 /** Skirt below the bottom tile for the soil depth. */
-export const BOT_PAD = 40;
+export const BOT_PAD = 24;
 
 /**
  * How many cells per side. Stays at the base 3x3 until the user owns more
