@@ -194,7 +194,7 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     const cy = (this.offY + (minY + maxY) / 2) * this.scale;
     // Bias the framing downward so the hero greeting (which floats over the
     // top of the map) never sits on top of the town.
-    const HERO_INSET = 96;
+    const HERO_INSET = 40;
     el.scrollLeft = Math.round(cx - el.clientWidth / 2);
     el.scrollTop = Math.round(cy - (el.clientHeight + HERO_INSET) / 2);
   }

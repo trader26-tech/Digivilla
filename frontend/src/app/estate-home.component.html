@@ -1,17 +1,13 @@
 <section class="estate">
   <!-- ============ TOP: swipeable estate canvas (top half) ============ -->
   <div class="estate-top">
-    <!-- ===== HERO GREETING: floats over the town, which is the backdrop ===== -->
+    <!-- ===== HERO GREETING: one compact line over the town ===== -->
     <header class="hero">
-      <span class="hero-eyebrow">Welcome back</span>
-      <h1 class="hero-name">{{ est.profile().name }}</h1>
-      <span class="hero-city">
-        <svg class="hero-pin" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-          <path d="M12 22s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          <circle cx="12" cy="10" r="2.4" fill="currentColor"/>
-        </svg>
-        Your city · {{ est.profile().city }}
-      </span>
+      <h1 class="hero-line">
+        <span class="hero-name">{{ est.profile().name }}</span>
+        <span class="hero-sep">·</span>
+        <span class="hero-city">{{ est.profile().city }} City</span>
+      </h1>
     </header>
 
     <!-- the isometric town — the backdrop the hero sits over. Scrolls freely
