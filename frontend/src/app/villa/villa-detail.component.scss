@@ -82,15 +82,15 @@
 /* ---------------- 3 · rent ---------------- */
 .rent { padding: 0.2rem 0.15rem; }
 .rent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.75rem; }
-.hist-btn {
-  display: inline-flex; align-items: center; gap: 0.15rem;
-  border: 1px solid var(--survey); background: #fff;
-  border-radius: 999px; padding: 0.32rem 0.5rem 0.32rem 0.7rem;
-  font: inherit; font-size: 0.78rem; font-weight: 700; color: var(--ink);
+/* just an arrow → opens the full rent history */
+.hist-arrow {
+  display: grid; place-items: center; flex: none;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--survey); background: #fff; color: var(--muted);
   cursor: pointer; transition: transform 0.12s, border-color 0.2s, color 0.2s;
-  svg { display: block; color: var(--muted); transition: transform 0.18s; }
-  &:hover { border-color: var(--brass); color: var(--brass); svg { color: var(--brass); transform: translateX(2px); } }
-  &:active { transform: scale(0.96); }
+  svg { display: block; }
+  &:hover { border-color: var(--brass); color: var(--brass); }
+  &:active { transform: scale(0.92); }
 }
 /* open on the page (no box) — amount left, date right at the SAME size, with
    "in X days" small beneath the date */
@@ -136,11 +136,9 @@
 }
 .fund-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .fund-name { flex: 1; min-width: 0; font-size: 0.92rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fund-amt { font-size: 0.9rem; font-weight: 700; color: var(--muted); flex: none; font-variant-numeric: tabular-nums; }
-.fund-wt {
+.fund-amt {
   font-size: 0.95rem; font-weight: 850; color: var(--ink); flex: none;
   font-variant-numeric: tabular-nums;
-  min-width: 3ch; text-align: right;
 }
 
 /* ---------------- 3½ · why-this carousel ---------------- */

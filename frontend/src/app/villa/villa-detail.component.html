@@ -63,10 +63,9 @@
   <section class="rent reveal" style="--i:4">
     <div class="rent-head">
       <span class="sec-cap">Next rent payment</span>
-      <button class="hist-btn" (click)="openHistory()" aria-label="See rent history">
-        History
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <button class="hist-arrow" (click)="openHistory()" aria-label="See rent history">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
     </div>
@@ -83,7 +82,6 @@
   <section class="funds reveal" style="--i:5">
     <div class="funds-head">
       <span class="sec-cap">Funds inside</span>
-      <span class="sec-sub">{{ plan.funds.length }} funds</span>
     </div>
 
     <div class="funds-body">
@@ -91,10 +89,17 @@
         <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
         <span class="fund-name">{{ f.name }}</span>
         <span class="fund-amt">{{ compactK(f.weight * price) }}</span>
-        <span class="fund-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
       </div>
     </div>
   </section>
+
+  <!-- ============ 5 · withdraw ============ -->
+  <button class="withdraw reveal" style="--i:6" (click)="openWithdraw()">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Withdraw
+  </button>
 </main>
 
 <!-- ============ rent history — slide-in sheet ============ -->

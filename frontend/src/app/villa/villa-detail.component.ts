@@ -57,6 +57,55 @@ export class VillaDetailComponent implements OnInit {
   history: RentPayment[] = [];
   historyOpen = signal(false);
 
+  // --- withdraw: book a call with the fund manager ---
+  /** Withdraw sheet open? */
+  withdrawOpen = signal(false);
+  /** The date the user picked to speak to the fund manager, or null. */
+  bookedDate = signal<Date | null>(null);
+  /** True briefly after booking, to run the tick-mark confirm animation. */
+  justBooked = signal(false);
+
+  openWithdraw(): void {
+    this.withdrawOpen.set(true);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+  closeWithdraw(): void {
+    this.withdrawOpen.set(false);
+  }
+
+  /** The fund manager's next available call dates — the soonest is 2 working
+   *  days out (a withdrawal call is never same-day), then a run of days. */
+  get callDates(): Date[] {
+    const out: Date[] = [];
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    let added = 0;
+    let offset = 0;
+    while (added < 14) {
+      offset++;
+      const cand = new Date(d.getTime() + offset * 86_400_000);
+      const dow = cand.getDay();
+      if (dow === 0 || dow === 6) continue;   // manager takes calls on weekdays
+      if (offset < 2) continue;               // never sooner than 2 days out
+      out.push(cand);
+      added++;
+    }
+    return out;
+  }
+
+  isBooked(dt: Date): boolean {
+    const b = this.bookedDate();
+    return !!b && b.getTime() === dt.getTime();
+  }
+
+  bookCall(dt: Date): void {
+    this.bookedDate.set(dt);
+    this.justBooked.set(true);
+    if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
+    // let the tick-mark animation play, then settle to the booked state
+    setTimeout(() => this.justBooked.set(false), 1600);
+  }
+
   // --- "Villa vs eVilla" carousel ---
   /** Each card: eVilla’s win as a big number, plus ONE line (5–6 words) naming
    *  the real-villa cost. Built in ngOnInit so the rent and stamp-duty figures
