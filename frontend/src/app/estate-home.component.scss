@@ -64,25 +64,32 @@
 /* hairline under the town, before the figures */
 .stats-rule { flex: none; height: 1px; background: var(--survey); margin: 1rem 1.25rem 0; }
 
-/* small ⓘ next to each figure's label */
-.tip-i {
-  display: inline-grid; place-items: center; vertical-align: middle;
-  width: 16px; height: 16px; margin-left: 0.15rem; padding: 0;
-  border: 0; background: none; color: var(--muted); cursor: pointer;
-  opacity: 0.6; transition: opacity 0.2s, color 0.2s;
-  &:hover { opacity: 1; color: var(--brass); }
-  svg { display: block; }
+/* the small brass * on each figure */
+.star { font-size: 0.5em; font-weight: 800; color: var(--brass); vertical-align: super; margin-left: 1px; }
+
+/* the sub-label statement + ⓘ, on the line below each figure's label */
+.tip-line {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  margin-top: 0.25rem; padding: 0; border: 0; background: none;
+  font: inherit; font-size: 0.68rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; opacity: 0.8; transition: opacity 0.2s, color 0.2s;
+  &:hover, &.on { opacity: 1; color: var(--brass); }
 }
-/* the expanding one-line note under the figures */
+.tip-i { flex: none; display: block; }
+
+/* the full explanation, shown when a ⓘ line is tapped */
 .tip-note {
-  flex: none; margin: 0.7rem auto 0; max-width: 320px; padding: 0 1.25rem;
-  font-size: 0.72rem; line-height: 1.45; color: var(--muted); text-align: center;
+  flex: none; margin: 0.8rem auto 0; max-width: 330px; padding: 0 1.25rem;
+  font-size: 0.74rem; line-height: 1.5; color: var(--muted); text-align: center;
   animation: heroIn 0.28s ease both;
+  b { color: var(--ink); font-weight: 800; }
 }
-/* the single mandatory AMFI line, pinned just above the bottom nav */
+
+/* the single mandatory AMFI line — always visible, sits just above the nav on
+   any phone (the pill nav is ~4.2rem tall; we clear it + the safe-area). */
 .home-amfi {
   position: absolute; left: 0; right: 0; z-index: 2;
-  bottom: calc(0.7rem + env(safe-area-inset-bottom));
+  bottom: calc(4.6rem + env(safe-area-inset-bottom));
   margin: 0; padding: 0 1.5rem;
   font-size: 0.66rem; line-height: 1.4; font-weight: 700;
   color: var(--muted); text-align: center;
