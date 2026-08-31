@@ -364,8 +364,10 @@
         </div>
       </div>
 
-      <!-- primary action -->
-      <button class="pop-cta" *ngIf="c.tile" (click)="openFull(c.tile!)">Open details</button>
+      <!-- primary action: only a finished villa has a full detail page. A
+           building/land shows everything it needs right here in the popup. -->
+      <button class="pop-cta" *ngIf="c.tile?.type === 'villa'" (click)="openFull(c.tile!)">Open details</button>
+      <button class="pop-cta" *ngIf="c.tile && c.tile.type !== 'villa'" (click)="closeDetail()">Got it</button>
       <button class="pop-cta build" *ngIf="!c.tile" (click)="startBuild(c)">Build here</button>
     </div>
   </div>
