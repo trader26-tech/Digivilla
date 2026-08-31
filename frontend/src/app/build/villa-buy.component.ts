@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular
 
 import { VillaArtComponent } from '../shared/villa-art.component';
 import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
+import { MfdDisclosureComponent } from '../shared/mfd-disclosure.component';
 import { compact, compactK } from '../shared/format.util';
 import {
   HoldingFund,

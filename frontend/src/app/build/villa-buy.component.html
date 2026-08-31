@@ -23,7 +23,7 @@
     </div>
     <div class="val-cell right">
       <div class="val-big-row"><b class="val-big rent">{{ compactK(plan.rentMonthly) }}<sup class="star">*</sup></b></div>
-      <span class="val-k">Income potential / mo</span>
+      <span class="val-k">Monthly SWP you set*</span>
     </div>
   </section>
 
@@ -53,26 +53,23 @@
 
   <div class="rule"></div>
 
-  <!-- 4 · 20-year stacked chart: invested + growth + rent -->
+  <!-- 4 · Past performance (SEBI format) — NO forward projection. Fill these
+       from the scheme factsheet before going live. -->
   <section class="grow reveal" style="--i:4">
     <div class="grow-head">
-      <span class="sec-cap">In 20 years</span>
-      <span class="grow-mult">{{ multiple | number:'1.1-1' }}×<sup class="star">*</sup></span>
+      <span class="sec-cap">Past performance</span>
     </div>
-    <p class="grow-lead">Invest {{ compactK(amount()) }} today → about <b>{{ compactK(finalTotal) }}<sup class="star">*</sup></b>, value plus rent (illustrative).</p>
-
-    <div class="stack-wrap">
-      <div class="stack-col" *ngFor="let b of bars; trackBy: trackYear">
-        <div class="stack-bar">
-          <span class="sb-rent"   [style.height.%]="(b.rent / chartMax) * 100"></span>
-          <span class="sb-growth" [style.height.%]="(b.growth / chartMax) * 100"></span>
-          <span class="sb-base"   [style.height.%]="(b.invested / chartMax) * 100"></span>
-        </div>
-        <span class="stack-yr">{{ b.year === 0 ? 'now' : b.year + 'y' }}</span>
-      </div>
+    <p class="grow-lead">
+      Trailing returns of the underlying scheme(s), as per the AMC factsheet.
+      <b>Past performance may not be sustained in future.</b>
+    </p>
+    <div class="pp-rows">
+      <div class="pp-row"><span>1 year</span><b>— %*</b></div>
+      <div class="pp-row"><span>3 years</span><b>— %*</b></div>
+      <div class="pp-row"><span>5 years</span><b>— %*</b></div>
     </div>
-
-    <div class="stack-legend">
+    <p class="pp-note">* To be populated with SEBI-format returns from the scheme factsheet.</p>
+    <div class="stack-legend" hidden>
       <span class="lg"><i class="sw base"></i>Invested</span>
       <span class="lg"><i class="sw growth"></i>Growth</span>
       <span class="lg"><i class="sw rent"></i>Rent</span>
@@ -98,8 +95,8 @@
   <!-- 6 · book now -->
   <button class="book-now reveal" style="--i:6" (click)="openBook()">Book now · {{ compactK(amount()) }}</button>
 
-  <!-- * figures are illustrative — the mandatory MF risk disclaimer -->
-  <app-mf-disclaimer [expanded]="true"></app-mf-disclaimer>
+  <!-- full MFD statutory disclosure (ARN placeholder, SWP, past-performance) -->
+  <app-mfd-disclosure></app-mfd-disclosure>
 </main>
 
 <!-- ============ book-now flow (pick day → time → confirmed) ============ -->
