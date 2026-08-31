@@ -184,18 +184,26 @@
     <!-- line below the town, then the figures -->
     <div class="stats-rule"></div>
 
-    <!-- ===== the two headline numbers: City value · Rent a month ===== -->
+    <!-- ===== the two headline numbers: City value · Rent a month. Each has a
+         small ⓘ that expands a one-line note on what it means / its risk. ===== -->
     <div class="stats">
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}</b>
-        <span class="stat-k">City value</span>
+        <span class="stat-k">City value
+          <button class="tip-i" (click)="toggleTip('worth', $event)" aria-label="About city value">
+            <svg viewBox="0 0 24 24" width="12" height="12"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </span>
       </div>
       <button class="stat income" (click)="toggleRentFace()" [class.flipped]="showBuildCost()"
               [attr.aria-label]="showBuildCost() ? 'Build cost — tap to see monthly rent' : 'Monthly rent — tap to see build cost'">
-        <!-- both faces stacked; only one is shown, they cross-fade in place -->
         <span class="stat-face" [class.on]="!showBuildCost()">
           <b class="stat-v">{{ compact(est.rentIn) }}</b>
-          <span class="stat-k">Rent a month <span class="stat-more" aria-hidden="true">›</span></span>
+          <span class="stat-k">Rent a month <span class="stat-more" aria-hidden="true">›</span>
+            <span class="tip-i" role="button" (click)="toggleTip('rent', $event)" aria-label="About rent">
+              <svg viewBox="0 0 24 24" width="12" height="12"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </span>
         </span>
         <span class="stat-face build" [class.on]="showBuildCost()">
           <b class="stat-v">{{ compact(est.buildCost) }}</b>
@@ -204,9 +212,16 @@
       </button>
     </div>
 
-    <!-- mandatory MF risk disclaimer — open by default so users read it. Pinned
-         at the foot so expanding it never shoves the centred group. -->
-    <app-mf-disclaimer class="home-disc" [expanded]="true"></app-mf-disclaimer>
+    <!-- the expanding one-line risk note for whichever figure was tapped -->
+    <p class="tip-note" *ngIf="tip() === 'worth'">
+      Today’s value of your fund units at NAV. It’s market-linked and moves daily — it can fall as well as rise.
+    </p>
+    <p class="tip-note" *ngIf="tip() === 'rent'">
+      Illustrative monthly payout from your holdings. Not guaranteed — it depends on scheme performance.
+    </p>
+
+    <!-- the single mandatory MF line, pinned just above the bottom nav -->
+    <p class="home-amfi">Mutual funds are subject to market risks. Read all scheme related documents carefully.</p>
   </div>
 
   <!-- ============ PLOT DETAIL POPUP ============

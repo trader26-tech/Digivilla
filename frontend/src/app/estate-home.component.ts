@@ -14,7 +14,6 @@ import {
 } from '@angular/core';
 
 import { CallScheduleComponent } from './shared/call-schedule.component';
-import { MfDisclaimerComponent } from './shared/mf-disclaimer.component';
 import { CallsService } from './shared/calls.service';
 import { EstateService, Tile, TileType, Variant } from './estate.service';
 import { BASE_GRID } from './estate/iso.model';
@@ -45,7 +44,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, MfDisclaimerComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -101,6 +100,13 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
    *  cost. Tapping morphs between them in place. */
   showBuildCost = signal(false);
   toggleRentFace(): void { this.showBuildCost.update((v) => !v); }
+
+  /** Which figure's risk tip is open ('worth' | 'rent' | null). */
+  tip = signal<string | null>(null);
+  toggleTip(k: string, ev?: Event): void {
+    ev?.stopPropagation();
+    this.tip.update((t) => (t === k ? null : k));
+  }
 
   /** "View more details" reveals the build + assets panel below the first
    *  screen; tapping it also scrolls that panel into view. */

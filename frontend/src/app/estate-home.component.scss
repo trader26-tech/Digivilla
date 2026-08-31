@@ -64,12 +64,28 @@
 /* hairline under the town, before the figures */
 .stats-rule { flex: none; height: 1px; background: var(--survey); margin: 1rem 1.25rem 0; }
 
-/* the disclaimer is pinned to the foot of the first screen, OUTSIDE the centred
-   group — so opening/closing it never shifts the hero/town/figures. */
-.home-disc {
+/* small ⓘ next to each figure's label */
+.tip-i {
+  display: inline-grid; place-items: center; vertical-align: middle;
+  width: 16px; height: 16px; margin-left: 0.15rem; padding: 0;
+  border: 0; background: none; color: var(--muted); cursor: pointer;
+  opacity: 0.6; transition: opacity 0.2s, color 0.2s;
+  &:hover { opacity: 1; color: var(--brass); }
+  svg { display: block; }
+}
+/* the expanding one-line note under the figures */
+.tip-note {
+  flex: none; margin: 0.7rem auto 0; max-width: 320px; padding: 0 1.25rem;
+  font-size: 0.72rem; line-height: 1.45; color: var(--muted); text-align: center;
+  animation: heroIn 0.28s ease both;
+}
+/* the single mandatory AMFI line, pinned just above the bottom nav */
+.home-amfi {
   position: absolute; left: 0; right: 0; z-index: 2;
-  bottom: calc(0.8rem + env(safe-area-inset-bottom));
-  padding: 0 1rem;
+  bottom: calc(0.7rem + env(safe-area-inset-bottom));
+  margin: 0; padding: 0 1.5rem;
+  font-size: 0.66rem; line-height: 1.4; font-weight: 700;
+  color: var(--muted); text-align: center;
 }
 
 /* ===== owner avatar — top-left; the native file input is fully hidden and
