@@ -81,7 +81,7 @@ export class VillaDetailComponent implements OnInit {
     const liveVal = compact(this.current);                       // today's value, updates daily
     const I = VillaDetailComponent.ICO;
     this.PERKS = [
-      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: 'in stamp duty & registration' },
+      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: 'in 7% stamp duty & registration' },
       { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'rent',        vs: 'in your account monthly' },
       { theme: 'live',  ico: I['chart'], stat: liveVal,    unit: 'live value',  vs: 'you can check any time' },
       { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'no repairs, no upkeep' },
