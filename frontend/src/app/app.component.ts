@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { AccountComponent } from './account/account.component';
+import { AuthService } from './auth/auth.service';
+import { LoginComponent } from './auth/login.component';
 import { BuildPickerComponent } from './build/build-picker.component';
 import { ConstructionDetailComponent } from './construction/construction-detail.component';
 import { EstateDetailComponent } from './estate-detail.component';
@@ -13,7 +15,7 @@ import { LandDetailComponent as LandStorefrontComponent } from './land-detail.co
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
-import { Tile } from './estate.service';
+import { EstateService, Tile } from './estate.service';
 import { VillaDetailComponent } from './villa/villa-detail.component';
 
 type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
@@ -40,13 +42,39 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     VillaBuyComponent,
     LandBuyComponent,
     AccountComponent,
+    LoginComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
+  readonly auth = inject(AuthService);
+  private readonly est = inject(EstateService);
+
   /** The opening animation plays first; flips false when it finishes. */
   intro = true;
+
+  constructor() {
+    // On a returning verified session, sync the profile from the auth user.
+    this.syncProfileFromAuth();
+  }
+
+  /** Called after phone verification succeeds — reveal the app (intro first). */
+  onLoggedIn(): void {
+    this.syncProfileFromAuth();
+    this.intro = true;
+  }
+
+  /** Mirror the verified user's name + phone into the estate profile so the
+   *  account page and greeting show the real, logged-in details. */
+  private syncProfileFromAuth(): void {
+    const u = this.auth.user();
+    if (!u) return;
+    const patch: { name?: string; phone?: string } = {};
+    if (u.name) patch.name = u.name;
+    if (u.phone) patch.phone = u.phone;
+    if (Object.keys(patch).length) this.est.setProfile(patch);
+  }
 
   /** Which top-level view is showing under the home. */
   view: 'home' | 'storefront' = 'home';

@@ -1,3 +1,7 @@
+<!-- GATE: nothing past here renders until the phone is verified. -->
+<app-login *ngIf="!auth.signedIn()" (done)="onLoggedIn()"></app-login>
+
+<ng-container *ngIf="auth.signedIn()">
 <!-- Opening animation, plays once on launch. -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
@@ -88,3 +92,4 @@
   [initialVariant]="detail.variant"
   (back)="closeDetail()"
 ></app-estate-detail>
+</ng-container>
