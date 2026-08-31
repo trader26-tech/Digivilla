@@ -1,47 +1,63 @@
-<main class="pick" [class.embedded]="embedded">
-  <header class="pk-top">
-    <button class="pk-back" *ngIf="!embedded" (click)="onBack()" aria-label="Back">‹</button>
-    <h1 class="pk-title">{{ embedded ? 'Explore assets' : 'What would you like to build?' }}</h1>
-  </header>
+<main class="xp" [class.embedded]="embedded"
+      (pointerdown)="onDown($event)" (pointerup)="onUp($event)" (pointercancel)="onUp($event)"
+      (wheel)="onWheel($event)">
 
+  <button class="xp-back" *ngIf="!embedded" (click)="onBack()" aria-label="Back">‹</button>
 
-  <div class="pk-grid">
-    <!-- VILLA -->
-    <button class="pk-card villa" (click)="choose('villa')">
-      <div class="pk-art">
-        <span class="pk-badge">Earns rent</span>
-        <app-villa-art></app-villa-art>
-      </div>
-      <div class="pk-foot">
-        <div class="pk-info">
-          <b class="pk-name">Villa</b>
-          <span class="pk-sub">Grows in value <b>and</b> pays you rent</span>
-        </div>
-        <div class="pk-cta">
-          <span class="pk-from">from <b>₹10 L</b></span>
-          <span class="pk-go" aria-hidden="true">›</span>
-        </div>
-      </div>
-    </button>
-
-    <!-- LAND -->
-    <button class="pk-card land" (click)="choose('land')">
-      <div class="pk-art">
-        <span class="pk-badge alt">Pure growth</span>
-        <app-land-art></app-land-art>
-      </div>
-      <div class="pk-foot">
-        <div class="pk-info">
-          <b class="pk-name">Land</b>
-          <span class="pk-sub">Compounds now — build a villa on it later</span>
-        </div>
-        <div class="pk-cta">
-          <span class="pk-from">from <b>₹10 L</b></span>
-          <span class="pk-go" aria-hidden="true">›</span>
-        </div>
-      </div>
-    </button>
+  <!-- vertical dots: which asset you're on -->
+  <div class="xp-dots" role="tablist" aria-label="Assets for sale">
+    <button class="xp-dot" *ngFor="let it of items; let i = index"
+            [class.on]="index() === i" (click)="goTo(i)" [attr.aria-label]="it.name"></button>
   </div>
 
-  <p class="pk-note">Your fund manager sets it up for you — no paperwork.</p>
+  <!-- the stack: each card fills the screen, only the active one is shown -->
+  <div class="xp-stack">
+    <section class="xp-card" *ngFor="let it of items; let i = index"
+             [class.on]="index() === i" [class.up]="i < index()">
+
+      <!-- top: name + price + rent -->
+      <header class="xp-head">
+        <b class="xp-name">{{ it.name }}</b>
+        <div class="xp-figs">
+          <div class="xp-fig">
+            <b class="xp-fig-v">{{ compact(it.price) }}</b>
+            <span class="xp-fig-k">to buy</span>
+          </div>
+          <div class="xp-fig right">
+            <b class="xp-fig-v rent">{{ it.rent }}</b>
+            <span class="xp-fig-k">{{ it.rentK }}</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- the asset image, with a small FOR SALE board -->
+      <div class="xp-art">
+        <span class="xp-sale">FOR SALE</span>
+        <app-villa-art *ngIf="it.kind === 'villa'"></app-villa-art>
+        <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
+      </div>
+
+      <!-- five reasons it beats a real villa -->
+      <div class="xp-why">
+        <span class="xp-why-cap">Why eVilla, not a real one</span>
+        <div class="xp-perk" *ngFor="let p of it.perks">
+          <span class="xp-perk-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <div class="xp-perk-main">
+            <b><span class="xp-perk-stat">{{ p.stat }}</span> {{ p.unit }}</b>
+            <span>{{ p.vs }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- buy -->
+      <button class="xp-buy" (click)="buy(it.kind)">
+        Buy {{ it.name }}
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <span class="xp-swipe" *ngIf="i < items.length - 1" aria-hidden="true">Swipe up for more ↑</span>
+    </section>
+  </div>
 </main>

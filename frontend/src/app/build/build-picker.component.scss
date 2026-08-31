@@ -1,89 +1,119 @@
-:host { display: block; min-height: 100vh; min-height: 100dvh; }
+:host { display: block; }
 
-.pick {
+.xp {
+  position: relative;
   max-width: 460px; margin: 0 auto;
-  padding: 0.75rem 1.1rem calc(2rem + env(safe-area-inset-bottom));
-  animation: page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
+  touch-action: pan-x;             /* we drive vertical swipes ourselves */
+  background: var(--paper);
 }
-@keyframes page-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-/* as the Explore tab, the shell's fade/rise leads — skip the slide-in here */
-.pick.embedded { animation: none; }
+/* as the Explore tab, leave room for the bottom nav */
+.xp.embedded { height: calc(100dvh - 4.5rem); }
 
-/* header — back button, then the title on the line below it */
-.pk-top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding-top: env(safe-area-inset-top); margin-bottom: 1.3rem; }
-.pk-back {
-  width: 40px; height: 40px; flex: none; display: grid; place-items: center;
+.xp-back {
+  position: absolute; top: calc(0.8rem + env(safe-area-inset-top)); left: 1rem; z-index: 5;
+  width: 40px; height: 40px; display: grid; place-items: center;
   border-radius: 12px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
-  font-size: 1.5rem; line-height: 1; cursor: pointer; transition: transform 0.12s, border-color 0.2s;
-  &:hover { border-color: var(--brass); }
+  font-size: 1.5rem; line-height: 1; cursor: pointer;
   &:active { transform: scale(0.94); }
 }
-.pk-title {
-  margin: 0; font-family: var(--font-display);
-  font-size: 1.55rem; font-weight: 850; letter-spacing: -0.6px; line-height: 1.1; color: var(--ink);
+
+/* the progress dots, down the right edge */
+.xp-dots {
+  position: absolute; top: 50%; right: 0.8rem; transform: translateY(-50%); z-index: 5;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.xp-dot {
+  width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px;
+  background: var(--survey); cursor: pointer;
+  transition: height 0.35s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s;
+}
+.xp-dot.on { height: 22px; background: var(--brass); }
+
+/* stacked full-screen cards */
+.xp-stack { position: absolute; inset: 0; }
+.xp-card {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: calc(1.2rem + env(safe-area-inset-top)) 1.5rem calc(1.4rem + env(safe-area-inset-bottom)) 1.1rem;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  opacity: 0; transform: translateY(40px) scale(0.98); pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.xp-card.up { transform: translateY(-40px) scale(0.98); }        /* already-seen exits up */
+.xp-card.on { opacity: 1; transform: none; pointer-events: auto; }
+
+/* top: name + the two figures */
+.xp-head { margin-bottom: 0.6rem; }
+.xp-name { display: block; font-family: var(--font-display); font-size: 1.7rem; font-weight: 850; letter-spacing: -0.6px; color: var(--ink); }
+.xp-figs { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-top: 0.6rem; }
+.xp-fig { display: flex; flex-direction: column; gap: 0.15rem; }
+.xp-fig.right { align-items: flex-end; text-align: right; }
+.xp-fig-v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--ink); }
+.xp-fig-v.rent { color: var(--positive); }
+.xp-fig-k { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+
+/* the image + a small FOR SALE board */
+.xp-art {
+  position: relative; flex: none;
+  height: 180px; margin: 0.4rem 0 0.9rem;
+  app-villa-art, app-land-art { display: block; width: 100%; height: 100%; }
+}
+.xp-sale {
+  position: absolute; left: 0.4rem; top: 0.2rem; z-index: 2;
+  padding: 4px 10px; border-radius: 6px;
+  background: #c23a2a; color: #fff;
+  font-size: 0.68rem; font-weight: 900; letter-spacing: 0.08em;
+  box-shadow: 0 4px 10px -4px rgba(194, 58, 42, 0.6);
+  transform: rotate(-6deg);
+  /* a tiny "signpost" nick under the board */
+  &::after {
+    content: ''; position: absolute; left: 12px; bottom: -8px;
+    width: 2px; height: 8px; background: #8a2a1e;
+  }
 }
 
-.pk-grid { display: flex; flex-direction: column; gap: 1.1rem; }
+/* five reasons */
+.xp-why { flex: 1 1 auto; }
+.xp-why-cap { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; margin-bottom: 0.5rem; }
+.xp-perk {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.5rem 0; border-top: 1px solid var(--survey);
+  &:first-of-type { border-top: none; }
+}
+.xp-perk-ico {
+  flex: none; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: rgba(46, 107, 79, 0.12); color: var(--positive);
+}
+.xp-perk-main { display: flex; flex-direction: column; gap: 0.05rem; min-width: 0;
+  b { font-size: 0.92rem; font-weight: 700; color: var(--ink); }
+  span { font-size: 0.78rem; color: var(--muted); }
+}
+.xp-perk-stat { color: var(--positive); font-weight: 850; }
 
-/* each card: a tinted art hero on top, then a clean footer strip */
-.pk-card {
-  --accent: var(--brass);
-  --tint: rgba(166, 124, 46, 0.12);
-  display: block; width: 100%; text-align: left; padding: 0;
-  border-radius: 24px; border: 1px solid var(--survey); background: #fff; cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 18px 44px -28px rgba(22, 48, 43, 0.55);
-  transition: transform 0.14s, box-shadow 0.24s, border-color 0.2s;
-  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  &:nth-child(2) { animation-delay: 0.08s; }
-  &:hover { transform: translateY(-3px); box-shadow: 0 26px 52px -26px rgba(22, 48, 43, 0.5); border-color: var(--accent); }
+/* buy */
+.xp-buy {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  width: 100%; margin-top: 1rem; padding: 1rem;
+  border: 0; border-radius: 16px; background: var(--brass); color: #fff;
+  font: inherit; font-size: 1rem; font-weight: 800; cursor: pointer;
+  box-shadow: 0 14px 30px -14px rgba(166, 124, 46, 0.7);
+  transition: transform 0.12s, filter 0.2s;
+  svg { display: block; }
+  &:hover { filter: brightness(1.05); }
   &:active { transform: scale(0.99); }
 }
-@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-.pk-card.villa { --accent: var(--positive); --tint: rgba(46, 107, 79, 0.12); }
-.pk-card.land  { --accent: var(--brass);   --tint: rgba(166, 124, 46, 0.12); }
+.xp-swipe {
+  display: block; text-align: center; margin-top: 0.8rem;
+  font-size: 0.76rem; color: var(--muted);
+  animation: nudge 1.8s ease-in-out infinite;
+}
+@keyframes nudge { 0%, 100% { transform: translateY(0); opacity: 0.7; } 50% { transform: translateY(-3px); opacity: 1; } }
 
-/* art hero — the background panel; badge floats in its corner */
-.pk-art {
-  position: relative;
-  height: 168px; padding: 0.6rem 1rem 0;
-  background:
-    radial-gradient(120% 100% at 50% 8%, var(--tint), transparent 62%),
-    linear-gradient(180deg, #FFFDF8, #F4EFE4);
-  border-bottom: 1px solid var(--survey);
+@media (prefers-reduced-motion: reduce) {
+  .xp-card { transition: opacity 0.2s ease; transform: none; }
+  .xp-card.up { transform: none; }
+  .xp-swipe { animation: none; }
 }
-.pk-art app-villa-art, .pk-art app-land-art { display: block; width: 100%; height: 100%; }
-.pk-badge {
-  position: absolute; left: 1rem; top: 0.9rem; z-index: 2;
-  padding: 3px 10px; border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 16%, #fff);
-  color: var(--accent);
-  font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-  box-shadow: 0 2px 8px -4px rgba(22, 48, 43, 0.3);
-}
-
-/* footer strip — name + benefit on the left, price CTA on the right */
-.pk-foot {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 0.9rem 1.1rem 1rem;
-}
-.pk-info { min-width: 0; }
-.pk-name { display: block; font-family: var(--font-display); font-size: 1.4rem; font-weight: 850; letter-spacing: -0.5px; color: var(--ink); }
-.pk-sub { font-size: 0.86rem; color: var(--muted); b { color: var(--ink); font-weight: 800; } }
-.pk-cta { display: flex; align-items: center; gap: 0.5rem; flex: none; }
-.pk-from {
-  font-size: 0.82rem; font-weight: 700; color: var(--muted);
-  b { color: var(--accent); font-weight: 850; font-size: 0.95rem; }
-}
-.pk-go {
-  width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
-  font-size: 1.1rem; font-weight: 700;
-}
-
-.pk-note {
-  margin: 1.3rem 0 0; text-align: center;
-  font-size: 0.8rem; color: var(--muted);
-}
-
-@media (prefers-reduced-motion: reduce) { .pick, .pk-card { animation: none; } }
