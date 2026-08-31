@@ -17,8 +17,8 @@
 .reveal { animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 80ms + 0.1s); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
-/* ---------------- header ---------------- */
-.top { display: flex; align-items: center; gap: 0.6rem; padding-top: env(safe-area-inset-top); }
+/* ---------------- header: back arrow, name below it ---------------- */
+.top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding-top: env(safe-area-inset-top); }
 .back {
   width: 40px; height: 40px; flex: none;
   display: grid; place-items: center;
@@ -27,18 +27,15 @@
   cursor: pointer; transition: transform 0.12s, border-color 0.2s;
   &:active { transform: scale(0.94); }
 }
-.top-title { flex: 1; text-align: center; font-weight: 800; letter-spacing: -0.3px; font-size: 1.05rem; color: var(--ink); }
-.top-spacer { width: 40px; flex: none; }
-
-/* ---------------- 1 · villa image only ---------------- */
-.art {
-  border-radius: 22px;
-  padding: 0.4rem 1rem 0.6rem;
-  background:
-    radial-gradient(120% 90% at 50% -10%, rgba(46, 107, 79, 0.12), transparent 55%),
-    linear-gradient(180deg, #FFFDF8, #F4EFE4);
-  border: 1px solid var(--survey);
+.page-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.9rem; font-weight: 850; letter-spacing: -0.8px; line-height: 1.05;
+  color: var(--ink);
 }
+
+/* ---------------- 1 · villa image — no box ---------------- */
+.art { padding: 0; }
 .art app-villa-art { display: block; width: 100%; height: 210px; }
 
 /* ---------------- shared card ---------------- */
@@ -52,21 +49,19 @@
 .card-cap { display: block; font-size: 0.9rem; font-weight: 800; letter-spacing: -0.2px; color: var(--ink); }
 .card-sub { font-size: 0.76rem; color: var(--muted); }
 
-/* ---------------- 2 · value ---------------- */
-.value { display: flex; align-items: stretch; gap: 0.4rem; }
-.val-side { flex: 1; display: flex; flex-direction: column; gap: 0.12rem; min-width: 0; }
-.val-side.right { text-align: right; align-items: flex-end; }
-.val-div { width: 1px; background: var(--survey); margin: 0.2rem 0; flex: none; }
-.val-k { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+/* ---------------- 2 · value: three figures ---------------- */
+.value { display: flex; align-items: stretch; gap: 0.2rem; }
+.val-cell { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; align-items: center; text-align: center; }
+.val-div { width: 1px; background: var(--survey); margin: 0.25rem 0; flex: none; }
+.val-k { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; }
 .val-v {
-  font-size: 1.55rem; font-weight: 850; letter-spacing: -0.8px; line-height: 1.05; color: var(--ink);
+  font-size: 1.32rem; font-weight: 850; letter-spacing: -0.6px; line-height: 1.05; color: var(--ink);
 }
 .val-v.now { color: var(--positive); }
+.val-v.rent { color: var(--brass); }
 .val-gain {
-  display: inline-flex; align-items: center; gap: 0.2rem;
-  margin-top: 0.15rem;
-  font-size: 0.9rem; font-weight: 800; color: var(--positive);
-  svg { display: block; }
+  margin-top: 0.1rem;
+  font-size: 0.78rem; font-weight: 800; color: var(--positive);
 }
 .val-gain.neg { color: #b0483a; }
 

@@ -1,33 +1,33 @@
 <main class="villa" *ngIf="plan">
-  <!-- ============ header ============ -->
-  <header class="top">
+  <!-- ============ header: back arrow, then the villa name below it ======= -->
+  <header class="top reveal" style="--i:0">
     <button class="back" (click)="onBack()" aria-label="Back">‹</button>
-    <span class="top-title">{{ name }}</span>
-    <span class="top-spacer"></span>
+    <h1 class="page-title">{{ name }}</h1>
   </header>
 
-  <!-- ============ 1 · the villa image, and nothing else ============ -->
-  <section class="art reveal" style="--i:0">
+  <!-- ============ 1 · the villa image — no box, just the art ============ -->
+  <section class="art reveal" style="--i:1">
     <app-villa-art></app-villa-art>
   </section>
 
-  <!-- ============ 2 · value: current (left) vs invested + ₹ gain (right) === -->
-  <section class="card value reveal" style="--i:1">
-    <div class="val-side">
-      <span class="val-k">Current value</span>
-      <b class="val-v now">{{ compact(current) }}</b>
-    </div>
-    <div class="val-div"></div>
-    <div class="val-side right">
+  <!-- ============ 2 · value: invested, current, total rent paid ========= -->
+  <section class="card value reveal" style="--i:2">
+    <div class="val-cell">
       <span class="val-k">Invested</span>
       <b class="val-v">{{ compact(price) }}</b>
+    </div>
+    <div class="val-div"></div>
+    <div class="val-cell">
+      <span class="val-k">Current value</span>
+      <b class="val-v now">{{ compact(current) }}</b>
       <span class="val-gain" [class.neg]="gain < 0">
-        <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
-          <path [attr.d]="gain < 0 ? 'M2 4l4 4 4-4' : 'M2 8l4-4 4 4'"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
         {{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}
       </span>
+    </div>
+    <div class="val-div"></div>
+    <div class="val-cell">
+      <span class="val-k">Rent paid</span>
+      <b class="val-v rent">{{ compact(totalPaid) }}</b>
     </div>
   </section>
 
