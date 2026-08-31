@@ -179,17 +179,24 @@
 
   <!-- ============ BOTTOM: everything textual lives here ============ -->
   <div class="estate-bottom">
-    <!-- ===== the two headline numbers: what it's worth, what it earns.
-         The rent figure is tappable — it opens the build-cost breakdown. ===== -->
+    <!-- ===== the two headline numbers: value on the left; the right figure
+         morphs in place between monthly rent and build cost on tap. ===== -->
     <div class="stats">
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}</b>
         <span class="stat-k">Estate value</span>
       </div>
-      <button class="stat income" (click)="openBuildCost()"
-              aria-label="Monthly rent — tap to see build cost">
-        <b class="stat-v">{{ compact(est.rentIn) }}</b>
-        <span class="stat-k">Rent a month <span class="stat-more" aria-hidden="true">›</span></span>
+      <button class="stat income" (click)="toggleRentFace()" [class.flipped]="showBuildCost()"
+              [attr.aria-label]="showBuildCost() ? 'Build cost — tap to see monthly rent' : 'Monthly rent — tap to see build cost'">
+        <!-- both faces stacked; only one is shown, they cross-fade in place -->
+        <span class="stat-face" [class.on]="!showBuildCost()">
+          <b class="stat-v">{{ compact(est.rentIn) }}</b>
+          <span class="stat-k">Rent a month <span class="stat-more" aria-hidden="true">›</span></span>
+        </span>
+        <span class="stat-face build" [class.on]="showBuildCost()">
+          <b class="stat-v">{{ compact(est.buildCost) }}</b>
+          <span class="stat-k">Build cost <span class="stat-more" aria-hidden="true">‹</span></span>
+        </span>
       </button>
     </div>
 
@@ -327,37 +334,6 @@
     </button>
 
     <button class="bs-cancel" (click)="cancelBuy()">Cancel</button>
-  </div>
-
-  <!-- ============ BUILD COST SHEET ============
-       Opens from tapping the monthly-rent figure. Shows how much SIP is going
-       into each villa still under construction, and the monthly total. -->
-  <div class="buy-backdrop" *ngIf="showBuildCost()" (click)="closeBuildCost()"></div>
-  <div class="buy-sheet" *ngIf="showBuildCost()">
-    <div class="bs-grab"></div>
-    <h2>Build cost</h2>
-    <p class="bs-lead">What you put in each month toward villas still building.</p>
-
-    <div class="bc-total">
-      <b class="bc-total-v">{{ compact(est.buildCost) }}</b>
-      <span class="bc-total-k">per month, across {{ buildings }} building{{ buildings === 1 ? '' : 's' }}</span>
-    </div>
-
-    <div class="bc-list" *ngIf="buildingTiles.length; else noBuilds">
-      <div class="bc-row" *ngFor="let t of buildingTiles">
-        <span class="bc-ico">🏗️</span>
-        <div class="bc-main">
-          <b>{{ t.label }}</b>
-          <span>{{ buildStep(t).done }} of {{ buildStep(t).total }} months · {{ buildPct(t) }}% built</span>
-        </div>
-        <b class="bc-amt">{{ compact(t.sipMonthly) }}</b>
-      </div>
-    </div>
-    <ng-template #noBuilds>
-      <p class="bc-empty">No villas are being built right now. Start one from an open plot to see its build cost here.</p>
-    </ng-template>
-
-    <button class="bs-cancel" (click)="closeBuildCost()">Close</button>
   </div>
 
   <!-- collect toast -->

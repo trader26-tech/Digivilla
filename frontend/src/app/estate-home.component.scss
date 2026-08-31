@@ -370,9 +370,36 @@
   cursor: default;
 }
 .stat.worth  { grid-column: 1; align-items: flex-start; text-align: left; }
-.stat.income { grid-column: 3; align-items: flex-end; text-align: right; cursor: pointer;
-               border-radius: 12px; transition: transform 0.12s; }
+
+/* the right figure is a morphing button: two faces occupy the same box and
+   cross-fade + slide when tapped, so the number changes in place. */
+.stat.income {
+  grid-column: 3;
+  position: relative;
+  /* reserve the height of one face so the box doesn't jump while morphing */
+  min-height: 2.9rem;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
 .stat.income:active { transform: scale(0.97); }
+.stat-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.28rem;
+  text-align: right;
+  /* hidden face: faded, nudged down, and non-interactive */
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.stat-face.on {
+  opacity: 1;
+  transform: none;
+}
 .stat-v {
   font-family: var(--font-display);
   font-size: 1.9rem;
@@ -382,7 +409,9 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.stat.income .stat-v { color: var(--positive); }
+.stat.worth .stat-v { color: var(--ink); }
+.stat-face .stat-v { color: var(--positive); }          /* rent — green */
+.stat-face.build .stat-v { color: var(--brass); }       /* build cost — brass */
 .stat-k {
   display: inline-flex;
   align-items: center;
@@ -392,6 +421,10 @@
   color: var(--muted);
 }
 .stat-more { color: var(--brass); font-weight: 800; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-face { transition: opacity 0.15s ease; transform: none; }
+}
 
 .collected {
   display: flex;
@@ -410,36 +443,6 @@
 .col-k { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 .col-v { font-size: 2rem; font-weight: 850; letter-spacing: -1px; color: var(--brass); font-variant-numeric: tabular-nums; }
 .col-hint { font-size: 0.8rem; color: var(--muted); }
-
-/* ---- build-cost sheet rows ---- */
-.bc-total { text-align: center; margin: 0.2rem 0 1rem; }
-.bc-total-v {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 850;
-  letter-spacing: -0.8px;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-.bc-total-k { font-size: 0.82rem; color: var(--muted); }
-.bc-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.4rem; }
-.bc-row {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 14px;
-  border: 1px solid var(--survey);
-  background: #fff;
-  text-align: left;
-}
-.bc-ico { font-size: 1.2rem; flex: none; }
-.bc-main { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
-.bc-main b { font-size: 0.92rem; font-weight: 700; color: var(--ink); }
-.bc-main span { font-size: 0.76rem; color: var(--muted); }
-.bc-amt { font-size: 0.95rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; flex: none; }
-.bc-empty { font-size: 0.86rem; color: var(--muted); text-align: center; padding: 0.5rem 0.5rem 0.8rem; }
 
 .legend {
   display: flex;
