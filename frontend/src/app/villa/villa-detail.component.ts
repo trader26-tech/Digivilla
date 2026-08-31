@@ -61,20 +61,33 @@ export class VillaDetailComponent implements OnInit {
   /** Each card: eVilla’s win as a big number, plus ONE line (5–6 words) naming
    *  the real-villa cost. Built in ngOnInit so the rent and stamp-duty figures
    *  are the villa’s real numbers. */
-  PERKS: { theme: string; icon: string; stat: string; unit: string; vs: string }[] = [];
+  PERKS: { theme: string; ico: string; stat: string; unit: string; vs: string }[] = [];
+
+  /** Simple line-icons (24×24 viewBox path data) drawn in each card's accent
+   *  colour, so the watermark always matches the number. */
+  private static readonly ICO: Record<string, string> = {
+    tag:    'M4 13V4h9l7 7-9 9zM8 8h.01',                                   // stamp/fees
+    coin:   'M12 3v18M8 7h5a3 3 0 0 1 0 6H8m0 0h6',                          // rent
+    chart:  'M4 20V6M4 20h16M8 20v-6M12 20V9M16 20v-9',                     // live value
+    tool:   'M14 7a4 4 0 0 0-5 5l-5 5 2 2 5-5a4 4 0 0 0 5-5l-2 2-2-2z',    // upkeep
+    bolt:   'M13 3L5 13h5l-1 8 8-10h-5z',                                    // fast to own
+    swap:   'M4 8h13l-3-3M20 16H7l3 3',                                      // cash out
+    door:   'M5 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M9 12h.5',            // entry
+  };
 
   private buildPerks(): void {
     const stampSaved = compact(Math.round(this.price * 0.07));   // ~7% duty + registration
     const rent = compact(this.plan.rentMonthly);
     const liveVal = compact(this.current);                       // today's value, updates daily
+    const I = VillaDetailComponent.ICO;
     this.PERKS = [
-      { theme: 'stamp', icon: '🧾', stat: stampSaved, unit: 'saved',       vs: '7% stamp duty & registration' },
-      { theme: 'rent',  icon: '💰', stat: rent,       unit: 'a month',     vs: 'Paid to you, hands-off' },
-      { theme: 'live',  icon: '📈', stat: liveVal,    unit: 'live value',  vs: 'Updates daily, not a valuer' },
-      { theme: 'care',  icon: '🛠️', stat: '₹0',       unit: 'upkeep',      vs: 'Zero repairs, ever' },
-      { theme: 'time',  icon: '⚡', stat: '30 sec',   unit: 'to own',      vs: 'Not 45 days of paperwork' },
-      { theme: 'cash',  icon: '💸', stat: '2 days',   unit: 'to cash out', vs: 'Not 6+ months of brokers' },
-      { theme: 'entry', icon: '🚪', stat: '₹10L',    unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
+      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',       vs: '7% stamp duty & registration' },
+      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'a month',     vs: 'Paid to you, hands-off' },
+      { theme: 'live',  ico: I['chart'], stat: liveVal,    unit: 'live value',  vs: 'Updates daily, not a valuer' },
+      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'upkeep',      vs: 'Zero repairs, ever' },
+      { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',      vs: 'Not 45 days of paperwork' },
+      { theme: 'cash',  ico: I['swap'],  stat: '2 days',   unit: 'to cash out', vs: 'Not 6+ months of brokers' },
+      { theme: 'entry', ico: I['door'],  stat: '₹10L',    unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
     ];
   }
   perk = signal(0);

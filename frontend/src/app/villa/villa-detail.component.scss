@@ -157,22 +157,23 @@
 
 /* per-theme accent — muted, drawn from the app palette. Only the badge, the
    big number and a faint corner tint carry the colour. */
-.why-card[data-theme="stamp"] { --accent: #a67c2e; --tint: rgba(166, 124, 46, 0.08); }
-.why-card[data-theme="rent"]  { --accent: #2e6b4f; --tint: rgba(46, 107, 79, 0.08); }
-.why-card[data-theme="live"]  { --accent: #2f7d6e; --tint: rgba(47, 125, 110, 0.07); }
-.why-card[data-theme="care"]  { --accent: #2e6b4f; --tint: rgba(46, 107, 79, 0.06); }
-.why-card[data-theme="time"]  { --accent: #6f5aa0; --tint: rgba(111, 90, 160, 0.07); }
-.why-card[data-theme="cash"]  { --accent: #3a6f8a; --tint: rgba(58, 111, 138, 0.07); }
-.why-card[data-theme="entry"] { --accent: #a05a44; --tint: rgba(160, 90, 68, 0.07); }
+/* seven distinct accents, all drawn from the villa/app palette */
+.why-card[data-theme="stamp"] { --accent: #a67c2e; --tint: rgba(166, 124, 46, 0.08); }   /* brass  */
+.why-card[data-theme="rent"]  { --accent: #2e6b4f; --tint: rgba(46, 107, 79, 0.08); }    /* green  */
+.why-card[data-theme="live"]  { --accent: #3c7fa8; --tint: rgba(60, 127, 168, 0.08); }   /* blue   */
+.why-card[data-theme="care"]  { --accent: #c9a227; --tint: rgba(201, 162, 39, 0.10); }   /* gold   */
+.why-card[data-theme="time"]  { --accent: #6f5aa0; --tint: rgba(111, 90, 160, 0.08); }   /* violet */
+.why-card[data-theme="cash"]  { --accent: #2f7d6e; --tint: rgba(47, 125, 110, 0.08); }   /* teal   */
+.why-card[data-theme="entry"] { --accent: #a05a44; --tint: rgba(160, 90, 68, 0.08); }    /* terracotta */
 
-/* the emoji as a faint watermark in the corner */
+/* the icon as a soft watermark in the corner, tinted to the card's accent so
+   the whole card reads as one colour */
 .why-ico {
   position: absolute;
-  right: -4px; top: -8px;
-  font-size: 4.6rem;
-  line-height: 1;
-  opacity: 0.10;
-  transform: rotate(-8deg);
+  right: 10px; top: 12px;
+  width: 78px; height: 78px;
+  color: var(--accent);
+  opacity: 0.16;
   pointer-events: none;
 }
 /* the winning side, small and confident above the number */
