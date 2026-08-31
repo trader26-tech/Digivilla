@@ -67,6 +67,8 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
 
   /** Buy sheet state: the open plot being filled, or null. */
   buying = signal<Cell | null>(null);
+  /** Detail popup state: the tapped cell (owned tile or open plot), or null. */
+  selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
 
@@ -204,8 +206,42 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   tapCell(c: Cell): void {
     if (this.gestures.wasGesture) return; // a pan or pinch, not a tap
     if (navigator.vibrate) navigator.vibrate(4);
-    if (c.tile) this.openTile.emit(c.tile);
-    else this.buying.set(c);
+    // Every tap opens the detail popup — for a built tile OR an open plot.
+    this.selected.set(c);
+  }
+
+  /** Close the detail popup. */
+  closeDetail(): void {
+    this.selected.set(null);
+  }
+
+  /** From the detail popup: open the full detail page for this tile. */
+  openFull(t: Tile): void {
+    this.selected.set(null);
+    this.openTile.emit(t);
+  }
+
+  /** From an open-plot popup: switch to the build chooser. */
+  startBuild(c: Cell): void {
+    this.selected.set(null);
+    this.buying.set(c);
+  }
+
+  // -------- detail popup: the numbers the card shows --------
+
+  /** 1-based plot number, matching the fill order. */
+  plotNo(c: Cell): number { return c.index + 1; }
+
+  /** Build progress as "<accrued-months> of <target-months>", reference-style. */
+  buildStep(t: Tile): { done: number; total: number } {
+    const total = t.sipMonthly > 0 ? Math.round(t.cost / t.sipMonthly) : 60;
+    const done = t.sipMonthly > 0 ? Math.round(t.sipAccrued / t.sipMonthly) : 0;
+    return { done: Math.min(done, total), total };
+  }
+
+  buildPct(t: Tile): number {
+    const { done, total } = this.buildStep(t);
+    return total > 0 ? Math.round((done / total) * 100) : 0;
   }
 
   /** Build the chosen asset on the pending plot. */

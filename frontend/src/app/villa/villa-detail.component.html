@@ -1,0 +1,136 @@
+<main class="villa" *ngIf="plan">
+  <!-- ============ header ============ -->
+  <header class="top">
+    <button class="back" (click)="onBack()" aria-label="Back">‹</button>
+    <span class="top-title">{{ name }}</span>
+    <span class="top-spacer"></span>
+  </header>
+
+  <!-- ============ hero: villa image + price ============ -->
+  <section class="hero reveal" style="--i:0">
+    <svg class="villa-art" viewBox="0 0 200 170" aria-hidden="true">
+      <!-- ground -->
+      <polygon class="v-lawn" points="100,54 190,104 100,154 10,104" />
+      <polygon class="v-soil-l" points="10,104 100,154 100,164 10,114" />
+      <polygon class="v-soil-r" points="100,154 190,104 190,114 100,164" />
+      <!-- pool -->
+      <polygon class="v-pool" points="52,108 78,123 60,133 34,118" />
+      <!-- ground floor -->
+      <polygon class="v-wall-l" points="92,96 66,81 66,116 92,131" />
+      <polygon class="v-wall-r" points="140,96 92,124 92,131 140,103" transform="translate(0,-28)" />
+      <polygon class="v-wall-r" points="92,96 140,68 140,103 92,131" />
+      <polygon class="v-roof-t" points="92,60 140,88 92,116 44,88" />
+      <!-- windows -->
+      <polygon class="v-win" points="80,92 72,96 72,108 80,104" />
+      <polygon class="v-win" points="112,92 124,85 124,97 112,104" />
+      <!-- upper floor set back -->
+      <polygon class="v-wall-l2" points="96,64 78,54 78,78 96,88" />
+      <polygon class="v-wall-r2" points="96,64 130,45 130,69 96,88" />
+      <polygon class="v-roof2" points="96,36 130,55 96,74 62,55" />
+      <ellipse class="v-disc" cx="96" cy="40" rx="8" ry="4" />
+      <!-- hedges -->
+      <g *ngFor="let h of [{x:132,y:104},{x:120,y:116}]">
+        <polygon class="v-hedge-t" [attr.points]="(h.x) + ',' + (h.y-6) + ' ' + (h.x+7) + ',' + (h.y-2.5) + ' ' + (h.x) + ',' + (h.y+1) + ' ' + (h.x-7) + ',' + (h.y-2.5)" />
+      </g>
+    </svg>
+
+    <div class="hero-info">
+      <span class="hero-cap">Villa · own it from</span>
+      <h1 class="hero-price">{{ compact(price) }}</h1>
+      <span class="hero-sub">A curated fund basket in your name — it grows, and it pays you rent.</span>
+    </div>
+  </section>
+
+  <!-- ============ growth chart ============ -->
+  <section class="card reveal" style="--i:1">
+    <div class="card-head">
+      <div>
+        <span class="card-cap">How {{ compact(price) }} could grow</span>
+        <span class="card-sub">over {{ plan.years }} years</span>
+      </div>
+      <span class="grow-mult">{{ growthMultiple | number:'1.1-1' }}×</span>
+    </div>
+
+    <div class="chart-wrap">
+      <svg class="chart" [attr.viewBox]="'0 0 ' + CW + ' ' + CH" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="villaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2E6B4F" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="#2E6B4F" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path class="g-area" [attr.d]="chartArea()" fill="url(#villaFill)" />
+        <path class="g-line" [attr.d]="chartLine()" />
+      </svg>
+      <div class="chart-x">
+        <span *ngFor="let t of xTicks">{{ t.label }}</span>
+      </div>
+    </div>
+
+    <div class="grow-figs">
+      <div class="gf"><span>You invest</span><b>{{ compact(price) }}</b></div>
+      <div class="gf-div"></div>
+      <div class="gf"><span>Worth in {{ plan.years }}y</span><b class="pos">{{ compact(plan.finalValue) }}</b></div>
+      <div class="gf-div"></div>
+      <div class="gf"><span>Avg / yr</span><b>{{ pct(plan.cagr) }}</b></div>
+    </div>
+    <p class="disclaimer">Illustrative, based on the basket's blend. Not guaranteed.</p>
+  </section>
+
+  <!-- ============ rental income ============ -->
+  <section class="card rent-card reveal" style="--i:2">
+    <div class="rent-main">
+      <span class="card-cap">Rental income</span>
+      <h2 class="rent-amt">{{ compact(plan.rentMonthly) }}<i>/month</i></h2>
+      <span class="rent-sub">≈ {{ compact(plan.rentYearly) }} a year · {{ pct(plan.rentYieldPct, 0) }} yield</span>
+    </div>
+    <div class="rent-coin" aria-hidden="true">
+      <div class="coin-disc">₹</div>
+    </div>
+  </section>
+
+  <!-- ============ what's inside (collapsed) ============ -->
+  <section class="card funds-card reveal" style="--i:3">
+    <button class="funds-toggle" (click)="toggleFunds()" [attr.aria-expanded]="fundsOpen()">
+      <div>
+        <span class="card-cap">What's inside</span>
+        <span class="card-sub">{{ plan.funds.length }} funds, weighted</span>
+      </div>
+      <i class="caret" [class.up]="fundsOpen()">›</i>
+    </button>
+
+    <div class="funds-body" *ngIf="fundsOpen()">
+      <div class="fund" *ngFor="let f of plan.funds; trackBy: trackFund">
+        <div class="fund-row">
+          <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
+          <b class="fund-name">{{ f.name }}</b>
+          <span class="fund-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
+        </div>
+        <div class="wt-track">
+          <span class="wt-fill" [style.width.%]="f.weight * 100" [style.background]="assetColor(f.assetClass)"></span>
+        </div>
+        <span class="fund-meta">{{ assetLabel(f.assetClass) }} · {{ pct(f.return3y) }} past 3y</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <div class="cta-bar">
+    <div class="cta-figs">
+      <span class="cta-k">{{ name }}</span>
+      <span class="cta-v">{{ compact(price) }}</span>
+    </div>
+    <button class="cta-btn" (click)="openBooking()">Buy this villa</button>
+  </div>
+
+  <!-- booking sheet -->
+  <app-booking-sheet
+    *ngIf="booking()"
+    [property]="'villa'"
+    [variant]="'balanced'"
+    [variantName]="name"
+    [plots]="1"
+    [amount]="price"
+    (close)="booking.set(false)"
+  ></app-booking-sheet>
+</main>

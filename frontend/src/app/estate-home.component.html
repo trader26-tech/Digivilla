@@ -363,6 +363,97 @@
     </button>
   </nav>
 
+  <!-- ============ PLOT DETAIL POPUP ============
+       Opens on tapping any cell. Shows what's on the plot (or that it's open)
+       with a mini iso preview, a title, a type badge and one detail line. -->
+  <div class="pop-backdrop" *ngIf="selected() as c" (click)="closeDetail()"></div>
+  <div class="pop" *ngIf="selected() as c" role="dialog" aria-modal="true">
+    <!-- preview: a small isometric tile matching the type -->
+    <div class="pop-art">
+      <svg viewBox="0 0 200 150" width="100%" height="130" aria-hidden="true">
+        <defs>
+          <linearGradient id="pv-lawn" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5CB542"/><stop offset="100%" stop-color="#48A035"/>
+          </linearGradient>
+        </defs>
+        <g transform="translate(100,60)">
+          <!-- soil sides -->
+          <path class="pv-soil-l" d="M-70,0 L0,35 L0,55 L-70,20 Z"/>
+          <path class="pv-soil-r" d="M0,35 L70,0 L70,20 L0,55 Z"/>
+          <!-- lawn top -->
+          <path class="pv-lawn" d="M0,-35 L70,0 L0,35 L-70,0 Z"/>
+
+          <!-- LAND: a couple of survey pegs -->
+          <ng-container *ngIf="c.tile?.type === 'land'">
+            <circle class="pv-peg" cx="-40" cy="0" r="3"/>
+            <circle class="pv-peg" cx="40" cy="0" r="3"/>
+            <circle class="pv-peg" cx="0" cy="-20" r="3"/>
+            <circle class="pv-peg" cx="0" cy="20" r="3"/>
+          </ng-container>
+
+          <!-- BUILDING: a simple half-height shell -->
+          <ng-container *ngIf="c.tile?.type === 'building'">
+            <path class="pv-wall-l" d="M0,-2 L-34,-20 L-34,4 L0,22 Z"/>
+            <path class="pv-wall-r" d="M34,-20 L0,-2 L0,22 L34,4 Z"/>
+            <path class="pv-wall-t" d="M0,-38 L34,-20 L0,-2 L-34,-20 Z"/>
+          </ng-container>
+
+          <!-- VILLA: a little roofed house -->
+          <ng-container *ngIf="c.tile?.type === 'villa'">
+            <path class="pv-house-l" d="M4,-14 L-30,-34 L-30,-4 L4,16 Z"/>
+            <path class="pv-house-r" d="M38,-32 L4,-14 L4,16 L38,-2 Z"/>
+            <path class="pv-roof" d="M2,-48 L40,-30 L4,-12 L-34,-32 Z"/>
+          </ng-container>
+
+          <!-- OPEN: a big brass + to invite building -->
+          <g *ngIf="!c.tile">
+            <circle class="pv-ring" cx="0" cy="0" r="18"/>
+            <path class="pv-plus" d="M-9,0 H9 M0,-9 V9"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="pop-body">
+      <div class="pop-head">
+        <div class="pop-title">
+          <h2>Plot {{ plotNo(c) | number:'2.0-0' }}</h2>
+          <span class="pop-badge"
+                [class.land]="c.tile?.type === 'land'"
+                [class.bld]="c.tile?.type === 'building'"
+                [class.villa]="c.tile?.type === 'villa'"
+                [class.open]="!c.tile">
+            {{ c.tile ? (c.tile.type === 'building' ? 'Building' : c.tile.type === 'villa' ? 'Villa' : 'Land') : 'Open' }}
+          </span>
+        </div>
+        <button class="pop-close" (click)="closeDetail()">Close ✕</button>
+      </div>
+
+      <!-- ONE detail line per type -->
+      <p class="pop-sub" *ngIf="c.tile?.type === 'land'">
+        {{ c.tile!.label }} · growth plot
+      </p>
+      <p class="pop-sub" *ngIf="c.tile?.type === 'building'">
+        {{ c.tile!.label }} · {{ buildStep(c.tile!).done }} of {{ buildStep(c.tile!).total }} · {{ buildPct(c.tile!) }}% built
+      </p>
+      <p class="pop-sub" *ngIf="c.tile?.type === 'villa'">
+        {{ c.tile!.label }} · {{ compact(c.tile!.rentMonthly) }}/mo rent
+      </p>
+      <p class="pop-sub" *ngIf="!c.tile">
+        Empty plot — build to start growing here
+      </p>
+
+      <!-- progress bar for a building -->
+      <div class="pop-bar" *ngIf="c.tile?.type === 'building'">
+        <span class="pop-bar-fill" [style.width.%]="buildPct(c.tile!)"></span>
+      </div>
+
+      <!-- primary action -->
+      <button class="pop-cta" *ngIf="c.tile" (click)="openFull(c.tile!)">Open details</button>
+      <button class="pop-cta build" *ngIf="!c.tile" (click)="startBuild(c)">Build here</button>
+    </div>
+  </div>
+
   <!-- ============ BUY SHEET ============ -->
   <div class="buy-backdrop" *ngIf="buying()" (click)="cancelBuy()"></div>
   <div class="buy-sheet" *ngIf="buying()">
