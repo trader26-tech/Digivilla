@@ -1,55 +1,60 @@
-<main class="xp" [class.embedded]="embedded">
+<main class="xp" [class.embedded]="embedded"
+      (pointerdown)="onDown($event)" (pointerup)="onUp($event)" (pointercancel)="onUp($event)"
+      (wheel)="onWheel($event)">
 
-  <!-- top bar: EXPLORE label, and the cost-to-own pill on the right -->
+  <!-- top bar: EXPLORE · <ASSET> · n OF N, and pagination dots -->
   <header class="xp-top">
     <button class="xp-back" (click)="onBack()" aria-label="Back">‹</button>
-    <span class="xp-kicker">EXPLORE · VILLA</span>
+    <span class="xp-kicker">EXPLORE · {{ items[index()].label }} · {{ index() + 1 }} OF {{ items.length }}</span>
     <span class="xp-top-sp"></span>
-    <span class="xp-cost">
-      <span class="xp-cost-k">Cost to own</span>
-      <b class="xp-cost-v">{{ compact(cost) }}</b>
+    <span class="xp-pages" aria-hidden="true">
+      <span class="xp-page" *ngFor="let it of items; let i = index" [class.on]="index() === i"></span>
     </span>
   </header>
 
-  <div class="xp-body">
-    <!-- the villa plot -->
-    <div class="xp-art">
-      <app-villa-art></app-villa-art>
-    </div>
+  <!-- stacked full-screen cards; only the active one shows -->
+  <div class="xp-stack">
+    <section class="xp-card" *ngFor="let it of items; let i = index"
+             [class.on]="index() === i" [class.up]="i < index()">
 
-    <!-- title + the promise -->
-    <h1 class="xp-name">Villa</h1>
-    <p class="xp-tag">It pays you, every month.</p>
-
-    <!-- the rent it pays -->
-    <div class="xp-rent">
-      <b class="xp-rent-v">{{ compact(rentMonthly) }}</b>
-      <span class="xp-rent-k">paid to you every month</span>
-    </div>
-
-    <!-- worth in 20 years, with a short breakdown + timeline -->
-    <div class="xp-worth">
-      <span class="xp-worth-k">worth in 20 years</span>
-      <b class="xp-worth-v">{{ compact(worth20) }}</b>
-    </div>
-    <div class="xp-split">
-      <span>{{ compact(rentTotal20) }} rent</span>
-      <span class="xp-dot">·</span>
-      <span>{{ compact(growth20) }} growth</span>
-    </div>
-
-    <div class="xp-tl">
-      <div class="xp-tl-line"></div>
-      <div class="xp-tl-pt" *ngFor="let y of years; let last = last" [class.last]="last">
-        <span class="xp-tl-dot"></span>
-        <span class="xp-tl-y">{{ y }} yrs</span>
+      <!-- cost-to-own pill -->
+      <div class="xp-cost-row">
+        <span class="xp-cost">
+          <span class="xp-cost-k">Cost to own</span>
+          <b class="xp-cost-v">{{ compact(it.cost) }}</b>
+        </span>
       </div>
-    </div>
-  </div>
 
-  <!-- tap to know more -> the full villa page -->
-  <button class="xp-buy" (click)="buy()">
-    Tap to know more
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
+      <div class="xp-body">
+        <!-- the asset, same size for every card -->
+        <div class="xp-art">
+          <app-villa-art *ngIf="it.kind === 'villa'"></app-villa-art>
+          <app-land-art *ngIf="it.kind === 'land'"></app-land-art>
+        </div>
+
+        <h1 class="xp-name">{{ it.name }}</h1>
+        <p class="xp-tag">{{ it.tag }}</p>
+
+        <div class="xp-rent">
+          <b class="xp-rent-v">{{ it.headV }}</b>
+          <span class="xp-rent-k">{{ it.headK }}</span>
+        </div>
+
+        <div class="xp-worth">
+          <span class="xp-worth-k">worth in 20 years</span>
+          <b class="xp-worth-v">{{ compact(it.worth20) }}</b>
+        </div>
+        <div class="xp-split">
+          <span>{{ it.splitA }}</span><span class="xp-dot">·</span><span>{{ it.splitB }}</span>
+        </div>
+      </div>
+
+      <button class="xp-buy" (click)="buy(it.kind)">
+        Tap to know more
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <span class="xp-swipe" *ngIf="i < items.length - 1" aria-hidden="true">Swipe up for more ↑</span>
+    </section>
+  </div>
 </main>
