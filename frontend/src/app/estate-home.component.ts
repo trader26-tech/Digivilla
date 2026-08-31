@@ -229,7 +229,6 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
 
   tapCell(c: Cell): void {
     if (this.gestures.wasGesture) return; // a pan or pinch, not a tap
-    if (c.hall) return;                   // the hall is a landmark, not a plot
     if (navigator.vibrate) navigator.vibrate(4);
     // Every tap opens the detail popup — for a built tile OR an open plot.
     this.selected.set(c);

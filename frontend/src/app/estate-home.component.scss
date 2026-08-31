@@ -775,15 +775,13 @@
   justify-content: space-between;
   gap: 0.6rem;
 }
-.pop-title { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
-.pop-title h2 {
+.pop-title-h {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 850;
   letter-spacing: -0.6px;
   color: var(--ink);
-  font-variant-numeric: tabular-nums;
 }
 .pop-badge {
   font-size: 0.68rem;

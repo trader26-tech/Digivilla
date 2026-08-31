@@ -138,8 +138,9 @@
         <g [attr.transform]="'translate(' + offX + ',' + offY + ')'">
           <ng-container *ngFor="let c of cells()">
             <!-- ===== THE HALL: painted as the grandest villa, dead centre.
-                 A landmark, not a plot — it isn't tappable. ===== -->
-            <g *ngIf="c.hall" class="cell hall">
+                 The founding villa — tappable like any other. ===== -->
+            <g *ngIf="c.hall" class="cell hall owned" (click)="tapCell(c)" role="button" tabindex="0"
+               [attr.aria-label]="c.tile?.label">
               <use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
             </g>
 
@@ -314,20 +315,12 @@
 
     <div class="pop-body">
       <div class="pop-head">
-        <div class="pop-title">
-          <h2>Plot {{ plotNo(c) | number:'2.0-0' }}</h2>
-          <span class="pop-badge"
-                [class.land]="c.tile?.type === 'land'"
-                [class.bld]="c.tile?.type === 'building'"
-                [class.villa]="c.tile?.type === 'villa'"
-                [class.open]="!c.tile">
-            {{ c.tile ? (c.tile.type === 'building' ? 'Building' : c.tile.type === 'villa' ? 'Villa' : 'Land') : 'Open' }}
-          </span>
-        </div>
+        <h2 class="pop-title-h">
+          {{ c.tile ? (c.tile.type === 'building' ? 'Building' : c.tile.type === 'villa' ? 'Villa' : 'Land') : 'Open plot' }}
+        </h2>
         <button class="pop-close" (click)="closeDetail()">Close ✕</button>
       </div>
 
-      <p class="pop-sub" *ngIf="c.tile">{{ c.tile.label }}</p>
       <p class="pop-sub" *ngIf="!c.tile">Empty plot — build to start growing here</p>
 
       <!-- ===== VILLA: what you paid · monthly rent ===== -->

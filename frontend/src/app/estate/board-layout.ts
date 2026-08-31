@@ -96,13 +96,26 @@ export function buildCells(tiles: Tile[]): Cell[] {
   const mid = Math.floor(grid / 2);
   const out: Cell[] = [];
 
-  // the hall, dead centre
+  // The centre villa — the founding villa of the city, dead centre. It is a
+  // real villa (tappable, with its own price + rent) but still flagged `hall`
+  // so it keeps its special centrepiece rendering and drives view centring.
+  const CENTRE_COST = 30_00_000;
   out.push({
     col: mid,
     row: mid,
     x: 0,
     y: mid * TILE_H,
-    tile: null,
+    tile: {
+      id: 'centre',
+      type: 'villa',
+      variant: 'balanced',
+      cost: CENTRE_COST,
+      sipMonthly: 0,
+      sipAccrued: 0,
+      rentMonthly: Math.round((CENTRE_COST * 0.06) / 12),
+      boughtAt: 0,
+      label: 'Signature Villa',
+    },
     index: -1,
     hall: true,
   });
