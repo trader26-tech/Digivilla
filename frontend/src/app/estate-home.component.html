@@ -210,10 +210,10 @@
 
       <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
         <span class="log-art">
-          <!-- a SQUARE viewBox centred on the villa, sized to its diamond so
-               the villa fills the square with only its own green pad in the
-               corners — matching the reference tile. -->
-          <svg viewBox="30 26 180 180" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- Villa bbox is x:[26,214] y:[26,160], centre (120,93). This square
+               viewBox is centred there so the villa sits dead-centre and, with
+               slice, fills the whole square edge-to-edge. -->
+          <svg viewBox="45 18 150 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
             <use [attr.href]="tileSymbol(t)"></use>
             <g *ngIf="t.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
               <use [attr.href]="'#tBuild'"></use>
