@@ -124,7 +124,7 @@
 .why .sec-cap { display: block; margin-bottom: 0.7rem; }
 .why-stage {
   position: relative;
-  height: 164px;
+  height: 150px;
   /* let horizontal drags drive the carousel while vertical still scrolls */
   touch-action: pan-y;
   cursor: grab;
@@ -199,22 +199,13 @@
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.82);
 }
-/* the eVilla win, stated plainly and bright */
-.why-won {
-  margin: 0.55rem 0 0;
-  font-size: 0.92rem;
+/* one short line — the eVilla win, plain and bright */
+.why-line {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #fff;
   letter-spacing: -0.2px;
-}
-/* the real-villa problem — smaller, dimmer, a struck-out "old way" */
-.why-vs {
-  margin: 0.2rem 0 0;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.62);
-  text-decoration: line-through;
-  text-decoration-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .why-dots { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.9rem; }

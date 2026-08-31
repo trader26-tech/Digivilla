@@ -61,15 +61,15 @@ export class VillaDetailComponent implements OnInit {
   /** Five punchy, number-led reasons an eVilla beats a real villa. Each card is
    *  ONE statement built around a big money/time figure, on its own themed
    *  background. `theme` selects the card's colour treatment in the SCSS. */
-  /** Each card: eVilla’s win as a big number/word, then the real-villa pain in
-   *  a few words. `won` = what eVilla gives you; `vs` = the real-villa problem. */
+  /** Each card: eVilla’s win as a big number, plus ONE line naming the real-
+   *  villa cost — 5–6 words max, nobody reads more. */
   readonly PERKS = [
-    { theme: 'stamp', icon: '🧾', stat: '₹0',     unit: 'to buy in',   won: 'No stamp duty or registration', vs: 'Real villa: ₹2 L+ in fees' },
-    { theme: 'rent',  icon: '💰', stat: 'Auto',   unit: 'rent',        won: 'Rent hits your account monthly',  vs: 'Real villa: chase tenants yourself' },
-    { theme: 'care',  icon: '🛠️', stat: '₹0',     unit: 'upkeep',      won: 'No repairs, ever',                vs: 'Real villa: ₹40k a year' },
-    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own',      won: 'Yours in seconds',                vs: 'Real villa: 45 days of paperwork' },
-    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to cash out', won: 'Sell in a tap',                   vs: 'Real villa: 6 months, brokers' },
-    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start',    won: 'Start small',                     vs: 'Real villa: ₹1 Cr+ upfront' },
+    { theme: 'stamp', icon: '🧾', stat: '₹0',     unit: 'to buy',      vs: 'No stamp duty or registration' },
+    { theme: 'rent',  icon: '💰', stat: 'Auto',   unit: 'rent',        vs: 'Paid monthly, hands-off' },
+    { theme: 'care',  icon: '🛠️', stat: '₹0',     unit: 'upkeep',      vs: 'Zero repairs, ever' },
+    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own',      vs: 'Not 45 days of paperwork' },
+    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to cash out', vs: 'Not 6 months of brokers' },
+    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
   ];
   perk = signal(0);
 
