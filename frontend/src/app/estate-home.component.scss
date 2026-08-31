@@ -134,7 +134,9 @@
    keep growing outward from the hall */
 .board-scroll {
   width: 100%;
-  height: 100%;
+  /* zoomable (grown) mode gets a tall scrollable viewport; the fitted base
+     mode overrides this with an aspect-ratio height just below. */
+  height: 56vh;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
