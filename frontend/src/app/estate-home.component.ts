@@ -83,6 +83,11 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   private typeWord(t: TileType): string {
     return t === 'villa' ? 'Villa' : t === 'building' ? 'Villa (SIP build)' : 'Land';
   }
+  /** The chosen type as a word, for the template. */
+  typeWordFor(): string {
+    const t = this.requestType();
+    return t ? this.typeWord(t) : 'asset';
+  }
   /** Detail popup state: the tapped cell (owned tile or open plot), or null. */
   selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */

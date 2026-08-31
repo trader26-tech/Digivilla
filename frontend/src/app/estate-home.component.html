@@ -375,41 +375,88 @@
     </div>
   </div>
 
-  <!-- ============ BUY SHEET ============ -->
+  <!-- ============ BUY SHEET — choose, then book a fund-manager call ====== -->
   <div class="buy-backdrop" *ngIf="buying()" (click)="cancelBuy()"></div>
   <div class="buy-sheet" *ngIf="buying()">
     <div class="bs-grab"></div>
-    <h2>Build on this plot</h2>
-    <p class="bs-lead">Pick what to put here. You can add more plots anytime.</p>
 
-    <button class="buy-opt land" (click)="buy('land', 'balanced')">
-      <span class="bo-ico">🌱</span>
-      <div class="bo-main">
-        <b>Land · {{ compact(1000000) }}</b>
-        <span>Pure growth. No rent — your money compounds in an equity basket.</span>
+    <!-- STEP 0 · choose what to build -->
+    <ng-container *ngIf="!requestType()">
+      <h2>Build on this plot</h2>
+      <p class="bs-lead">Your fund manager sets this up for you — pick what you’d like.</p>
+
+      <button class="buy-opt land" (click)="buy('land', 'balanced')">
+        <span class="bo-ico">🌱</span>
+        <div class="bo-main">
+          <b>Land · {{ compact(1000000) }}</b>
+          <span>Pure growth. No rent — your money compounds in an equity basket.</span>
+        </div>
+        <span class="bo-go">›</span>
+      </button>
+
+      <button class="buy-opt building" (click)="buy('building', 'balanced')">
+        <span class="bo-ico">🏗️</span>
+        <div class="bo-main">
+          <b>Villa (SIP) · {{ compact(2000000) }}</b>
+          <span>Invest monthly. When it's fully built, it starts paying rent.</span>
+        </div>
+        <span class="bo-go">›</span>
+      </button>
+
+      <button class="buy-opt villa" (click)="buy('villa', 'balanced')">
+        <span class="bo-ico">🏡</span>
+        <div class="bo-main">
+          <b>Villa · {{ compact(3000000) }}</b>
+          <span>Ready to earn. Pays rent every month from day one.</span>
+        </div>
+        <span class="bo-go">›</span>
+      </button>
+
+      <button class="bs-cancel" (click)="cancelBuy()">Cancel</button>
+    </ng-container>
+
+    <!-- STEP 1 · pick a day for the manager call -->
+    <ng-container *ngIf="requestType() && bkStep() === 1">
+      <h2>Book a call to set this up</h2>
+      <p class="bs-lead">You can’t buy on your own — your fund manager confirms and creates the plot. Pick a slot.</p>
+      <div class="bk-monthbar">
+        <button class="bk-nav" (click)="bkPrevMonth()" [disabled]="!bkCanPrev" aria-label="Previous month">‹</button>
+        <b class="bk-monthlbl">{{ bkMonthLabel }}</b>
+        <button class="bk-nav" (click)="bkNextMonth()" aria-label="Next month">›</button>
       </div>
-      <span class="bo-go">›</span>
-    </button>
-
-    <button class="buy-opt building" (click)="buy('building', 'balanced')">
-      <span class="bo-ico">🏗️</span>
-      <div class="bo-main">
-        <b>Villa (SIP) · {{ compact(2000000) }}</b>
-        <span>Invest monthly. When it's fully built, it starts paying rent.</span>
+      <div class="bk-dow" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="bk-grid">
+        <ng-container *ngFor="let c of bkCells">
+          <span class="bk-blank" *ngIf="!c"></span>
+          <button *ngIf="c" class="bk-cell" [class.sel]="bkIsDay(c)" [disabled]="!bkSelectable(c)" (click)="bkPickDay(c)">{{ c | date:'d' }}</button>
+        </ng-container>
       </div>
-      <span class="bo-go">›</span>
-    </button>
+      <button class="bs-cancel" (click)="cancelBuy()">Cancel</button>
+    </ng-container>
 
-    <button class="buy-opt villa" (click)="buy('villa', 'balanced')">
-      <span class="bo-ico">🏡</span>
-      <div class="bo-main">
-        <b>Villa · {{ compact(3000000) }}</b>
-        <span>Ready to earn. Pays rent every month from day one.</span>
+    <!-- STEP 2 · pick a time -->
+    <ng-container *ngIf="requestType() && bkStep() === 2 && bkDay() as day">
+      <h2>Pick a time</h2>
+      <p class="bs-lead">Slots with the fund manager on <b>{{ day | date:'EEEE, d MMM' }}</b></p>
+      <div class="bk-slots">
+        <button class="bk-slot" *ngFor="let s of BK_SLOTS" (click)="bkPickSlot(s)">{{ s }}</button>
       </div>
-      <span class="bo-go">›</span>
-    </button>
+      <button class="bs-cancel" (click)="bkStep.set(1)">‹ Change date</button>
+    </ng-container>
 
-    <button class="bs-cancel" (click)="cancelBuy()">Cancel</button>
+    <!-- STEP 3 · request sent, pending approval -->
+    <div class="bk-done" *ngIf="requestType() && bkStep() === 3 && bkDay() as day">
+      <div class="bk-tick" aria-hidden="true">
+        <svg viewBox="0 0 52 52"><circle class="bk-ring" cx="26" cy="26" r="24"/><path class="bk-mark" d="M15 27l7 7 15-15"/></svg>
+      </div>
+      <b class="bk-done-h">Request sent</b>
+      <p class="bk-done-s">
+        Your fund manager will call on<br>
+        <b>{{ day | date:'EEEE, d MMM y' }} at {{ bkSlot() }}</b><br>
+        and set up your {{ typeWordFor() }} once approved.
+      </p>
+      <button class="bs-cta" (click)="cancelBuy()">Done</button>
+    </div>
   </div>
 
   <!-- collect toast -->
