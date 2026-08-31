@@ -66,12 +66,14 @@ export class VillaDetailComponent implements OnInit {
   private buildPerks(): void {
     const stampSaved = compact(Math.round(this.price * 0.07));   // ~7% duty + registration
     const rent = compact(this.plan.rentMonthly);
+    const liveVal = compact(this.current);                       // today's value, updates daily
     this.PERKS = [
       { theme: 'stamp', icon: '🧾', stat: stampSaved, unit: 'saved',       vs: '7% stamp duty & registration' },
       { theme: 'rent',  icon: '💰', stat: rent,       unit: 'a month',     vs: 'Paid to you, hands-off' },
+      { theme: 'live',  icon: '📈', stat: liveVal,    unit: 'live value',  vs: 'Updates daily, not a valuer' },
       { theme: 'care',  icon: '🛠️', stat: '₹0',       unit: 'upkeep',      vs: 'Zero repairs, ever' },
       { theme: 'time',  icon: '⚡', stat: '30 sec',   unit: 'to own',      vs: 'Not 45 days of paperwork' },
-      { theme: 'cash',  icon: '💸', stat: '2 days',   unit: 'to cash out', vs: 'Not 6 months of brokers' },
+      { theme: 'cash',  icon: '💸', stat: '2 days',   unit: 'to cash out', vs: 'Not 6+ months of brokers' },
       { theme: 'entry', icon: '🚪', stat: '₹10L',    unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
     ];
   }
