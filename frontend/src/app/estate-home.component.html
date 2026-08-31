@@ -200,6 +200,20 @@
       </button>
     </div>
 
+    <!-- ===== ALWAYS-ON CTA: build a new asset. Sits at the top of the list
+         so a user can invest straight away, whether or not they own any yet.
+         Opens the buy sheet on the next open plot beside the town hall. ===== -->
+    <button class="cta-row" (click)="buildFirst()">
+      <span class="cta-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 12v5M9.5 14.5h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </span>
+      <span class="cta-main">
+        <b class="cta-title">Build a new asset</b>
+        <span class="cta-sub">Grow your city — villa, build or land</span>
+      </span>
+      <span class="cta-go" aria-hidden="true">›</span>
+    </button>
+
     <!-- ===== ASSET LOG: every asset the user has bought, newest first.
          A clear iso image, the name, its kind, and the purchase date only. -->
     <div class="log" *ngIf="hasAny; else empty">

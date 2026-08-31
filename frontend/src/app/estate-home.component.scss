@@ -440,6 +440,42 @@
   .stat-face.on { transform: none; filter: none; }
 }
 
+/* ============ ALWAYS-ON "build a new asset" CTA row ============ */
+.cta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  margin: 0.2rem 0 1.1rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid var(--survey);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(166, 124, 46, 0.10), transparent 60%),
+    #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -18px rgba(166, 124, 46, 0.6);
+  transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
+}
+.cta-row:hover { border-color: var(--brass); box-shadow: 0 12px 26px -16px rgba(166, 124, 46, 0.6); }
+.cta-row:active { transform: scale(0.99); }
+.cta-ico {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(166, 124, 46, 0.14);
+  color: var(--brass);
+}
+.cta-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.cta-title { font-size: 1rem; font-weight: 800; color: var(--ink); letter-spacing: -0.2px; }
+.cta-sub { font-size: 0.8rem; color: var(--muted); }
+.cta-go { flex: none; font-size: 1.2rem; line-height: 1; color: var(--survey); font-weight: 700; }
+
 /* ============ ASSET LOG — a purchase history of everything built ============ */
 .log {
   text-align: left;
