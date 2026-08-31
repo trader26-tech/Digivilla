@@ -118,7 +118,7 @@ export class EstateService {
     } catch {}
   }
   private loadProfile(): Profile {
-    const fallback: Profile = { name: 'Sanjeev', city: 'Chennai' };
+    const fallback: Profile = { name: 'Sanjeev', city: 'Chennai', phone: '+91 98765 43210' };
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
       return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<Profile>) } : fallback;

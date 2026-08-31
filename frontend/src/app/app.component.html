@@ -3,11 +3,18 @@
 
 <!-- HOME: the isometric estate — the user's own map. Shown right after intro. -->
 <app-estate-home
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && view === 'home'"
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
   (openTile)="openTile($event)"
   (explore)="openStorefront()"
   (build)="openBuild()"
+  (account)="openAccount()"
 ></app-estate-home>
+
+<!-- ACCOUNT: profile + transactions, from the home avatar. -->
+<app-account
+  *ngIf="!intro && accountOpen"
+  (back)="closeAccount()"
+></app-account>
 
 <!-- BUILD A NEW ASSET: pick villa or land. -->
 <app-build-picker

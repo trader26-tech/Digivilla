@@ -1,0 +1,70 @@
+<main class="acct">
+  <!-- header -->
+  <header class="ac-top">
+    <button class="ac-back" (click)="onBack()" aria-label="Back">‹</button>
+    <span class="ac-title">Account</span>
+    <span class="ac-spacer"></span>
+  </header>
+
+  <!-- profile -->
+  <section class="ac-profile">
+    <button class="ac-avatar" [class.has-photo]="!!est.profile().photo" (click)="pickPhoto()"
+            [attr.aria-label]="est.profile().photo ? 'Change your photo' : 'Add your photo'">
+      <img *ngIf="est.profile().photo as p" class="ac-av-img" [src]="p" alt="" />
+      <svg *ngIf="!est.profile().photo" class="ac-av-ph" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+        <circle cx="12" cy="8.5" r="3.8" fill="none" stroke="currentColor" stroke-width="1.6" />
+        <path d="M5 19c0-3.6 3-5.8 7-5.8s7 2.2 7 5.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      </svg>
+      <span class="ac-av-edit" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <input #photoInput type="file" accept="image/*" class="ac-input" (change)="onPhotoChosen($event)" />
+
+    <b class="ac-name">{{ est.profile().name }}</b>
+    <div class="ac-meta">
+      <span class="ac-meta-row">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6.6 10.8a12 12 0 0 0 5.6 5.6l1.9-1.9a1 1 0 0 1 1-.24 9 9 0 0 0 2.8.45 1 1 0 0 1 1 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5a1 1 0 0 1 1-1h2.3a1 1 0 0 1 1 1 9 9 0 0 0 .45 2.8 1 1 0 0 1-.24 1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {{ est.profile().phone || 'Add phone number' }}
+      </span>
+      <span class="ac-meta-row" *ngIf="est.profile().city">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        {{ est.profile().city }}
+      </span>
+    </div>
+  </section>
+
+  <!-- summary -->
+  <section class="ac-summary">
+    <div class="ac-sum-cell">
+      <b class="ac-sum-v">{{ compact(totalInvested) }}</b>
+      <span class="ac-sum-k">Total invested</span>
+    </div>
+    <div class="ac-sum-div"></div>
+    <div class="ac-sum-cell">
+      <b class="ac-sum-v">{{ txns().length }}</b>
+      <span class="ac-sum-k">Asset{{ txns().length === 1 ? '' : 's' }}</span>
+    </div>
+  </section>
+
+  <!-- transactions -->
+  <section class="ac-txns">
+    <span class="ac-sec-cap">Transactions</span>
+
+    <div class="ac-txn" *ngFor="let t of txns(); trackBy: trackTxn">
+      <span class="ac-txn-ico" [class.villa]="t.kind === 'villa'" [class.land]="t.kind === 'land'" [class.build]="t.kind === 'building'" aria-hidden="true">
+        <svg *ngIf="t.kind === 'villa'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <svg *ngIf="t.kind === 'land'" viewBox="0 0 24 24" width="20" height="20"><path d="M3 13l9-5 9 5-9 5-9-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <svg *ngIf="t.kind === 'building'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="ac-txn-main">
+        <b class="ac-txn-name">{{ t.label }}</b>
+        <span class="ac-txn-sub">{{ kindLabel(t.kind) }} · {{ t.at ? (t.at | date:'d MMM y') : 'Founding villa' }}</span>
+      </div>
+      <div class="ac-txn-amt">
+        <b>−{{ compact(t.amount) }}</b>
+        <span>invested</span>
+      </div>
+    </div>
+  </section>
+</main>

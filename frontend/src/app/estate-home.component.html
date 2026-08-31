@@ -5,8 +5,8 @@
     <button
       class="avatar"
       [class.has-photo]="!!est.profile().photo"
-      (click)="pickPhoto()"
-      [attr.aria-label]="est.profile().photo ? 'Change your photo' : 'Add your photo'"
+      (click)="account.emit()"
+      aria-label="Your account"
     >
       <img *ngIf="est.profile().photo as p" class="avatar-img" [src]="p" alt="" />
       <svg *ngIf="!est.profile().photo" class="avatar-ph" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -275,22 +275,6 @@
       Values are units at NAV and move daily.
     </p>
   </div>
-
-  <!-- ============ bottom nav ============ -->
-  <nav class="tabbar">
-    <button class="tab" (click)="explore.emit()">
-      <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
-      <span>Explore</span>
-    </button>
-    <button class="tab active">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-      <span>Home</span>
-    </button>
-    <button class="tab" (click)="progress.emit()">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 19V10M12 19V5M19 19v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>Progress</span>
-    </button>
-  </nav>
 
   <!-- ============ PLOT DETAIL POPUP ============
        Opens on tapping any cell. Shows what's on the plot (or that it's open)

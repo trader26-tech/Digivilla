@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
+import { AccountComponent } from './account/account.component';
 import { BuildPickerComponent } from './build/build-picker.component';
 import { ConstructionDetailComponent } from './construction/construction-detail.component';
 import { EstateDetailComponent } from './estate-detail.component';
@@ -38,6 +39,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     BuildPickerComponent,
     VillaBuyComponent,
     LandBuyComponent,
+    AccountComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -63,6 +65,17 @@ export class AppComponent {
 
   /** Build flow: 'pick' shows the chooser, 'villa'/'land' the buy pages. */
   buildFlow: 'pick' | 'villa' | 'land' | null = null;
+
+  /** The account page is open. */
+  accountOpen = false;
+
+  openAccount(): void {
+    this.accountOpen = true;
+    window.scrollTo({ top: 0 });
+  }
+  closeAccount(): void {
+    this.accountOpen = false;
+  }
 
   onIntroDone(): void {
     this.intro = false;
