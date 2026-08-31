@@ -58,19 +58,23 @@ export class VillaDetailComponent implements OnInit {
   historyOpen = signal(false);
 
   // --- "Villa vs eVilla" carousel ---
-  /** Five punchy, number-led reasons an eVilla beats a real villa. Each card is
-   *  ONE statement built around a big money/time figure, on its own themed
-   *  background. `theme` selects the card's colour treatment in the SCSS. */
-  /** Each card: eVilla’s win as a big number, plus ONE line naming the real-
-   *  villa cost — 5–6 words max, nobody reads more. */
-  readonly PERKS = [
-    { theme: 'stamp', icon: '🧾', stat: '₹0',     unit: 'to buy',      vs: 'No stamp duty or registration' },
-    { theme: 'rent',  icon: '💰', stat: 'Auto',   unit: 'rent',        vs: 'Paid monthly, hands-off' },
-    { theme: 'care',  icon: '🛠️', stat: '₹0',     unit: 'upkeep',      vs: 'Zero repairs, ever' },
-    { theme: 'time',  icon: '⚡', stat: '30 sec', unit: 'to own',      vs: 'Not 45 days of paperwork' },
-    { theme: 'cash',  icon: '💸', stat: '2 days', unit: 'to cash out', vs: 'Not 6 months of brokers' },
-    { theme: 'entry', icon: '🚪', stat: '₹10L',  unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
-  ];
+  /** Each card: eVilla’s win as a big number, plus ONE line (5–6 words) naming
+   *  the real-villa cost. Built in ngOnInit so the rent and stamp-duty figures
+   *  are the villa’s real numbers. */
+  PERKS: { theme: string; icon: string; stat: string; unit: string; vs: string }[] = [];
+
+  private buildPerks(): void {
+    const stampSaved = compact(Math.round(this.price * 0.07));   // ~7% duty + registration
+    const rent = compact(this.plan.rentMonthly);
+    this.PERKS = [
+      { theme: 'stamp', icon: '🧾', stat: stampSaved, unit: 'saved',       vs: '7% stamp duty & registration' },
+      { theme: 'rent',  icon: '💰', stat: rent,       unit: 'a month',     vs: 'Paid to you, hands-off' },
+      { theme: 'care',  icon: '🛠️', stat: '₹0',       unit: 'upkeep',      vs: 'Zero repairs, ever' },
+      { theme: 'time',  icon: '⚡', stat: '30 sec',   unit: 'to own',      vs: 'Not 45 days of paperwork' },
+      { theme: 'cash',  icon: '💸', stat: '2 days',   unit: 'to cash out', vs: 'Not 6 months of brokers' },
+      { theme: 'entry', icon: '🚪', stat: '₹10L',    unit: 'to start',    vs: 'Not a ₹1 Cr down-payment' },
+    ];
+  }
   perk = signal(0);
 
   /** Jump to a card (dot tap), clamped-wrapped to a valid index. */
@@ -120,6 +124,8 @@ export class VillaDetailComponent implements OnInit {
     const sched = rentSchedule(this.boughtAt, this.plan.rentMonthly, now);
     this.next = sched.next;
     this.history = sched.paid;
+
+    this.buildPerks();
   }
 
   openHistory(): void {
