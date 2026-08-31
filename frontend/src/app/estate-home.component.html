@@ -124,8 +124,11 @@
             </g>
           </g>
           <g id="tLocked">
-            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#242739"></polygon>
-            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3f424d" stroke-width="1.5" stroke-dasharray="6 5"></polygon>
+            <!-- an empty, buildable lot — light paper tones to match the page,
+                 with a soft brass dashed survey line -->
+            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#F1EADA"></polygon>
+            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#E8DFCB" opacity="0.5"></polygon>
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#C7A55C" stroke-width="1.6" stroke-dasharray="6 5"></polygon>
           </g>
           <!-- one construction shell, re-anchored per building cell -->
           <g id="tBuild">
@@ -238,7 +241,7 @@
         </span>
         <span class="log-main">
           <b class="log-name">{{ t.label }}</b>
-          <span class="log-sub">Purchased on {{ t.boughtAt | date:'d MMM yyyy' }}</span>
+          <span class="log-sub">{{ t.boughtAt ? ('Purchased on ' + (t.boughtAt | date:'d MMM yyyy')) : 'Your founding villa' }}</span>
         </span>
         <span class="log-go" aria-hidden="true">›</span>
       </button>

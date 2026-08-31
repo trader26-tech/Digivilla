@@ -21,6 +21,7 @@ import {
   boardOrigin,
   boardSize,
   buildCells,
+  centreTile,
   gridSize,
 } from './estate/board-layout';
 import { MapGestures, MapViewport } from './estate/map-gestures';
@@ -274,9 +275,11 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return t.type === 'villa' ? '#tVilla' : '#tLand';
   }
 
-  /** Every asset the user has bought, newest purchase first — the log rows. */
+  /** Every asset the user owns, newest purchase first — the log rows. Includes
+   *  the founding centre villa, which is a real asset even though it lives in
+   *  the board layout rather than the tiles list. It sorts last (boughtAt 0). */
   get ownedLog(): Tile[] {
-    return [...this.est.tiles()].sort((a, b) => b.boughtAt - a.boughtAt);
+    return [centreTile(), ...this.est.tiles()].sort((a, b) => b.boughtAt - a.boughtAt);
   }
 
   /** Build progress as "<accrued-months> of <target-months>", reference-style. */

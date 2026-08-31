@@ -24,6 +24,23 @@ export interface Cell {
   hall: boolean;
 }
 
+/** The founding villa at the centre of every estate — a real, owned villa
+ *  (counts as an asset) that also anchors the board. */
+export function centreTile(): Tile {
+  const CENTRE_COST = 30_00_000;
+  return {
+    id: 'centre',
+    type: 'villa',
+    variant: 'balanced',
+    cost: CENTRE_COST,
+    sipMonthly: 0,
+    sipAccrued: 0,
+    rentMonthly: Math.round((CENTRE_COST * 0.06) / 12),
+    boughtAt: 0,
+    label: 'Signature Villa',
+  };
+}
+
 /** Headroom above the topmost tile centre for the hall tower and roofs. */
 export const TOP_PAD = 96;
 /** Skirt below the bottom tile for the soil depth. */
@@ -99,23 +116,12 @@ export function buildCells(tiles: Tile[]): Cell[] {
   // The centre villa — the founding villa of the city, dead centre. It is a
   // real villa (tappable, with its own price + rent) but still flagged `hall`
   // so it keeps its special centrepiece rendering and drives view centring.
-  const CENTRE_COST = 30_00_000;
   out.push({
     col: mid,
     row: mid,
     x: 0,
     y: mid * TILE_H,
-    tile: {
-      id: 'centre',
-      type: 'villa',
-      variant: 'balanced',
-      cost: CENTRE_COST,
-      sipMonthly: 0,
-      sipAccrued: 0,
-      rentMonthly: Math.round((CENTRE_COST * 0.06) / 12),
-      boughtAt: 0,
-      label: 'Signature Villa',
-    },
+    tile: centreTile(),
     index: -1,
     hall: true,
   });
