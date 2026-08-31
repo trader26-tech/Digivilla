@@ -76,13 +76,12 @@
 
   <div class="rule"></div>
 
-  <!-- 5 · funds (expandable) -->
+  <!-- 5 · funds (always open) -->
   <section class="funds reveal" style="--i:5">
-    <button class="funds-head" (click)="toggleFunds()" [attr.aria-expanded]="fundsOpen()">
+    <div class="funds-head">
       <span class="sec-cap">Funds inside</span>
-      <svg class="funds-caret" [class.open]="fundsOpen()" viewBox="0 0 24 24" width="18" height="18"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <div class="funds-body" *ngIf="fundsOpen()">
+    </div>
+    <div class="funds-body">
       <div class="fund-line" *ngFor="let f of plan.funds; trackBy: trackFund">
         <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
         <span class="fund-name">{{ f.name }}</span>
