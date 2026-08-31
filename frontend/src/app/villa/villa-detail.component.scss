@@ -34,38 +34,48 @@
   color: var(--ink);
 }
 
-/* ---------------- 1 · villa image — no box ---------------- */
-.art { padding: 0; }
+/* ---------------- 1 · villa image — in its box ---------------- */
+.art {
+  border-radius: 22px;
+  padding: 0.4rem 1rem 0.6rem;
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(46, 107, 79, 0.12), transparent 55%),
+    linear-gradient(180deg, #FFFDF8, #F4EFE4);
+  border: 1px solid var(--survey);
+}
 .art app-villa-art { display: block; width: 100%; height: 210px; }
 
-/* ---------------- shared card ---------------- */
-.card {
-  background: #fff;
-  border: 1px solid var(--survey);
-  border-radius: 20px;
-  padding: 1rem 1.05rem;
-  box-shadow: 0 14px 36px -26px rgba(22, 48, 43, 0.5);
-}
-.card-cap { display: block; font-size: 0.9rem; font-weight: 800; letter-spacing: -0.2px; color: var(--ink); }
-.card-sub { font-size: 0.76rem; color: var(--muted); }
+/* ---------------- borderless section chrome ---------------- */
+/* everything but the villa is now open on the page, split by hairlines */
+.rule { height: 1px; background: var(--survey); margin: 0.3rem 0.15rem; }
+.sec-cap { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.2px; color: var(--ink); }
+.sec-sub { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
 
-/* ---------------- 2 · value: three figures ---------------- */
-.value { display: flex; align-items: stretch; gap: 0.2rem; }
-.val-cell { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; align-items: center; text-align: center; }
-.val-div { width: 1px; background: var(--survey); margin: 0.25rem 0; flex: none; }
-.val-k { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; }
-.val-v {
-  font-size: 1.32rem; font-weight: 850; letter-spacing: -0.6px; line-height: 1.05; color: var(--ink);
+/* ---------------- 2 · value ---------------- */
+.value { padding: 0.2rem 0.15rem; }
+.val-k { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+/* the hero figure: current value, big, with the gain riding beside it */
+.val-hero-row { display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0.1rem; }
+.val-big {
+  font-size: 2.5rem; font-weight: 850; letter-spacing: -1.6px; line-height: 1; color: var(--positive);
 }
-.val-v.now { color: var(--positive); }
-.val-v.rent { color: var(--brass); }
 .val-gain {
-  margin-top: 0.1rem;
-  font-size: 0.78rem; font-weight: 800; color: var(--positive);
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  font-size: 0.92rem; font-weight: 800; color: var(--positive);
+  padding: 0.18rem 0.5rem; border-radius: 999px;
+  background: rgba(46, 107, 79, 0.1);
+  svg { display: block; }
 }
-.val-gain.neg { color: #b0483a; }
+.val-gain.neg { color: #b0483a; background: rgba(176, 72, 58, 0.1); }
+/* the two supporting stats below */
+.val-pair { display: flex; margin-top: 1rem; }
+.val-cell { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
+.val-cell + .val-cell { border-left: 1px solid var(--survey); padding-left: 1rem; }
+.val-v { font-size: 1.35rem; font-weight: 850; letter-spacing: -0.6px; line-height: 1.05; color: var(--ink); }
+.val-v.rent { color: var(--brass); }
 
 /* ---------------- 3 · rent ---------------- */
+.rent { padding: 0.2rem 0.15rem; }
 .rent-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.75rem; }
 .hist-btn {
   display: inline-flex; align-items: center; gap: 0.15rem;

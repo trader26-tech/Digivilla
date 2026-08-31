@@ -5,36 +5,44 @@
     <h1 class="page-title">{{ name }}</h1>
   </header>
 
-  <!-- ============ 1 · the villa image — no box, just the art ============ -->
+  <!-- ============ 1 · the villa image — in its box ============ -->
   <section class="art reveal" style="--i:1">
     <app-villa-art></app-villa-art>
   </section>
 
-  <!-- ============ 2 · value: invested, current, total rent paid ========= -->
-  <section class="card value reveal" style="--i:2">
-    <div class="val-cell">
-      <span class="val-k">Invested</span>
-      <b class="val-v">{{ compact(price) }}</b>
-    </div>
-    <div class="val-div"></div>
-    <div class="val-cell">
+  <!-- ============ 2 · value: current value hero, then invested + rent ==== -->
+  <section class="value reveal" style="--i:2">
+    <div class="val-hero">
       <span class="val-k">Current value</span>
-      <b class="val-v now">{{ compact(current) }}</b>
-      <span class="val-gain" [class.neg]="gain < 0">
-        {{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}
-      </span>
+      <div class="val-hero-row">
+        <b class="val-big">{{ compact(current) }}</b>
+        <span class="val-gain" [class.neg]="gain < 0">
+          <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
+            <path [attr.d]="gain < 0 ? 'M2 4l4 4 4-4' : 'M2 8l4-4 4 4'"
+                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ gain < 0 ? '−' : '+' }}{{ compact(gain < 0 ? -gain : gain) }}
+        </span>
+      </div>
     </div>
-    <div class="val-div"></div>
-    <div class="val-cell">
-      <span class="val-k">Rent paid</span>
-      <b class="val-v rent">{{ compact(totalPaid) }}</b>
+    <div class="val-pair">
+      <div class="val-cell">
+        <span class="val-k">Invested</span>
+        <b class="val-v">{{ compact(price) }}</b>
+      </div>
+      <div class="val-cell">
+        <span class="val-k">Rent paid</span>
+        <b class="val-v rent">{{ compact(totalPaid) }}</b>
+      </div>
     </div>
   </section>
 
+  <div class="rule"></div>
+
   <!-- ============ 3 · rental income — next payment + history control ======= -->
-  <section class="card rent reveal" style="--i:2">
+  <section class="rent reveal" style="--i:3">
     <div class="rent-head">
-      <span class="card-cap">Rental income</span>
+      <span class="sec-cap">Rental income</span>
       <button class="hist-btn" (click)="openHistory()" aria-label="See rent history">
         History
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -53,11 +61,13 @@
     </div>
   </section>
 
+  <div class="rule"></div>
+
   <!-- ============ 4 · the funds this villa holds ============ -->
-  <section class="card funds reveal" style="--i:3">
+  <section class="funds reveal" style="--i:4">
     <div class="funds-head">
-      <span class="card-cap">Funds inside</span>
-      <span class="card-sub">{{ plan.funds.length }} funds</span>
+      <span class="sec-cap">Funds inside</span>
+      <span class="sec-sub">{{ plan.funds.length }} funds</span>
     </div>
     <div class="fund" *ngFor="let f of plan.funds; trackBy: trackFund">
       <div class="fund-row">
