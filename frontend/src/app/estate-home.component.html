@@ -9,15 +9,10 @@
       [attr.aria-label]="est.profile().photo ? 'Change your photo' : 'Add your photo'"
     >
       <img *ngIf="est.profile().photo as p" class="avatar-img" [src]="p" alt="" />
-      <ng-container *ngIf="!est.profile().photo">
-        <svg class="avatar-ph" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" />
-          <path d="M5.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-        </svg>
-        <span class="avatar-plus" aria-hidden="true">
-          <svg viewBox="0 0 12 12" width="9" height="9"><path d="M6 2v8M2 6h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </span>
-      </ng-container>
+      <svg *ngIf="!est.profile().photo" class="avatar-ph" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" />
+        <path d="M5.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
     </button>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 

@@ -12,14 +12,16 @@
   padding: 0;
   border: 1px solid var(--survey);
   background: #fff;
-  color: var(--ink);
+  /* same resting icon colour as the owner avatar, so the two top buttons
+     read as a matched pair */
+  color: var(--muted);
   cursor: pointer;
   box-shadow: 0 4px 12px -6px rgba(22, 48, 43, 0.4);
   transition: transform 0.12s, border-color 0.2s;
   svg { display: block; }
   &:active { transform: scale(0.94); }
 }
-.call-btn.alert { border-color: var(--brass); }
+.call-btn.alert { border-color: var(--brass); color: var(--ink); }
 
 /* the alert star — a call within 24h */
 .call-star {
