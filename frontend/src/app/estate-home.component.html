@@ -333,22 +333,23 @@
         </div>
       </div>
 
-      <!-- ===== BUILDING: months left · rent once built, with progress ===== -->
+      <!-- ===== BUILDING (under construction): days left to complete · the
+           rent it will pay once built · a clear progress bar. ===== -->
       <ng-container *ngIf="c.tile?.type === 'building'">
         <div class="pop-stats">
           <div class="pop-stat">
             <span class="ps-k">Completes in</span>
-            <b class="ps-v">{{ monthsLeft(c.tile!) }} mo</b>
+            <b class="ps-v">{{ daysLeft(c.tile!) }} <span class="ps-yr">days</span></b>
           </div>
           <div class="pop-stat">
-            <span class="ps-k">Rent when built</span>
-            <b class="ps-v rent">{{ compact(futureRent(c.tile!)) }}</b>
+            <span class="ps-k">Rent once built</span>
+            <b class="ps-v rent">{{ compact(futureRent(c.tile!)) }}<span class="ps-yr">/mo</span></b>
           </div>
         </div>
         <div class="pop-bar">
           <span class="pop-bar-fill" [style.width.%]="buildPct(c.tile!)"></span>
         </div>
-        <span class="pop-barnote">{{ buildPct(c.tile!) }}% built</span>
+        <span class="pop-barnote">{{ buildPct(c.tile!) }}% built · ready by {{ completesOn(c.tile!) | date:'MMM y' }}</span>
       </ng-container>
 
       <!-- ===== LAND: invested · CAGR growth ===== -->
