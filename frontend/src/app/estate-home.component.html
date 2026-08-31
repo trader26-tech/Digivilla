@@ -14,7 +14,9 @@
           <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" />
           <path d="M5.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
         </svg>
-        <span class="avatar-plus" aria-hidden="true">+</span>
+        <span class="avatar-plus" aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="9" height="9"><path d="M6 2v8M2 6h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
       </ng-container>
     </button>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
@@ -204,17 +206,15 @@
          so a user can invest straight away, whether or not they own any yet.
          Opens the buy sheet on the next open plot beside the town hall. ===== -->
     <button class="cta-row" (click)="buildFirst()">
-      <span class="cta-ico" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 12v5M9.5 14.5h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      <!-- the affordance: one solid brass + disc that leads the row -->
+      <span class="cta-plus" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
       </span>
       <span class="cta-main">
         <b class="cta-title">Build a new asset</b>
         <span class="cta-sub">Grow your city — villa, build or land</span>
       </span>
-      <!-- the invitation to tap: a solid brass + that gently breathes -->
-      <span class="cta-plus" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
-      </span>
+      <span class="cta-go" aria-hidden="true">›</span>
     </button>
 
     <!-- ===== ASSET LOG: every asset the user has bought, newest first.
