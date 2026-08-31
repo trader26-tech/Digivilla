@@ -185,9 +185,9 @@
       <div class="stack-explain">
         <div class="se-row"><span class="se-k">You put in</span><span class="se-v">{{ compact(amount()) }}</span></div>
         <div class="se-row"><span class="se-k">Growth over {{ yearsAgo() }} years</span><span class="se-v pos">+{{ compact(pastNowValue() - amount()) }}</span></div>
-        <div class="se-row" *ngIf="incomePays"><span class="se-k">Rent paid to you</span><span class="se-v pos">+{{ compact(pastRentPaid()) }}</span></div>
+        <div class="se-row" *ngIf="incomePays"><span class="se-k">Income paid out*</span><span class="se-v pos">+{{ compact(pastRentPaid()) }}</span></div>
         <div class="se-row total"><span class="se-k">Worth today</span><span class="se-v">{{ compact(pastNowValue()) }}</span></div>
-        <p class="se-note">{{ pct(avgGrowthPct()) }} avg<span *ngIf="incomePays"> · net of the rent paid out</span> · illustrative, not guaranteed</p>
+        <p class="se-note">{{ pct(avgGrowthPct()) }} avg<span *ngIf="incomePays"> · net of the income paid out</span> · illustrative, not guaranteed</p>
       </div>
     </section>
 
