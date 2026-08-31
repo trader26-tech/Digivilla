@@ -1,31 +1,46 @@
 <main class="pick">
   <header class="pk-top">
     <button class="pk-back" (click)="onBack()" aria-label="Back">‹</button>
-    <div class="pk-head">
-      <span class="pk-kicker">BUILD A NEW ASSET</span>
-      <h1 class="pk-title">What would you like?</h1>
-    </div>
+    <h1 class="pk-title">What would you like to build?</h1>
   </header>
 
   <div class="pk-grid">
     <!-- VILLA -->
     <button class="pk-card villa" (click)="choose('villa')">
-      <div class="pk-art"><app-villa-art></app-villa-art></div>
-      <div class="pk-info">
-        <b class="pk-name">Villa</b>
-        <span class="pk-sub">Grows in value <b>and</b> pays you rent</span>
+      <div class="pk-art">
+        <span class="pk-badge">Earns rent</span>
+        <app-villa-art></app-villa-art>
       </div>
-      <span class="pk-from">from ₹10 L</span>
+      <div class="pk-foot">
+        <div class="pk-info">
+          <b class="pk-name">Villa</b>
+          <span class="pk-sub">Grows in value <b>and</b> pays you rent</span>
+        </div>
+        <div class="pk-cta">
+          <span class="pk-from">from <b>₹10 L</b></span>
+          <span class="pk-go" aria-hidden="true">›</span>
+        </div>
+      </div>
     </button>
 
     <!-- LAND -->
     <button class="pk-card land" (click)="choose('land')">
-      <div class="pk-art"><app-land-art></app-land-art></div>
-      <div class="pk-info">
-        <b class="pk-name">Land</b>
-        <span class="pk-sub">Pure growth — build a villa on it later</span>
+      <div class="pk-art">
+        <span class="pk-badge alt">Pure growth</span>
+        <app-land-art></app-land-art>
       </div>
-      <span class="pk-from">from ₹10 L</span>
+      <div class="pk-foot">
+        <div class="pk-info">
+          <b class="pk-name">Land</b>
+          <span class="pk-sub">Compounds now — build a villa on it later</span>
+        </div>
+        <div class="pk-cta">
+          <span class="pk-from">from <b>₹10 L</b></span>
+          <span class="pk-go" aria-hidden="true">›</span>
+        </div>
+      </div>
     </button>
   </div>
+
+  <p class="pk-note">Your fund manager sets it up for you — no paperwork.</p>
 </main>
