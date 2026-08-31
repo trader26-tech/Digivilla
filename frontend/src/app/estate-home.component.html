@@ -201,7 +201,7 @@
     </div>
 
     <!-- ===== ASSET LOG: every asset the user has bought, newest first.
-         A small iso image, the name, its one detail, and the purchase date. -->
+         A clear iso image, the name, its kind, and the purchase date only. -->
     <div class="log" *ngIf="hasAny; else empty">
       <div class="log-head">
         <span class="log-title">Your assets</span>
@@ -210,7 +210,7 @@
 
       <button class="log-row" *ngFor="let t of ownedLog" (click)="openTile.emit(t)">
         <span class="log-art">
-          <svg viewBox="20 -8 200 176" width="52" height="46" aria-hidden="true">
+          <svg viewBox="26 -2 188 164" width="100%" height="100%" aria-hidden="true">
             <use [attr.href]="tileSymbol(t)"></use>
             <g *ngIf="t.type === 'building'" transform="translate(120,100) scale(0.32) translate(-640,-430)">
               <use [attr.href]="'#tBuild'"></use>
@@ -219,15 +219,9 @@
         </span>
         <span class="log-main">
           <b class="log-name">{{ t.label }}</b>
-          <span class="log-sub">
-            <span class="log-kind" [class.villa]="t.type === 'villa'"
-                  [class.bld]="t.type === 'building'" [class.land]="t.type === 'land'">
-              {{ tileKind(t) }}
-            </span>
-            {{ tileLine(t) }}
-          </span>
+          <span class="log-sub">{{ tileKind(t) }} · {{ t.boughtAt | date:'d MMM yyyy' }}</span>
         </span>
-        <span class="log-date">{{ t.boughtAt | date:'d MMM yyyy' }}</span>
+        <span class="log-go" aria-hidden="true">›</span>
       </button>
     </div>
 

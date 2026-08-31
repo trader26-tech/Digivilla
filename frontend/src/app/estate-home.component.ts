@@ -277,13 +277,6 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
     return t.type === 'villa' ? 'Villa' : t.type === 'building' ? 'Building' : 'Land';
   }
 
-  /** The one detail line each log row shows under the name. */
-  tileLine(t: Tile): string {
-    if (t.type === 'villa') return `${compact(t.rentMonthly)}/mo rent`;
-    if (t.type === 'building') return `${this.buildPct(t)}% built`;
-    return 'Growth plot';
-  }
-
   /** Every asset the user has bought, newest purchase first — the log rows. */
   get ownedLog(): Tile[] {
     return [...this.est.tiles()].sort((a, b) => b.boughtAt - a.boughtAt);
