@@ -92,31 +92,28 @@
   &:hover { border-color: var(--brass); color: var(--brass); svg { color: var(--brass); transform: translateX(2px); } }
   &:active { transform: scale(0.96); }
 }
-/* amount left · date right · "in X days" beneath the date */
+/* open on the page (no box) — amount left, date right at the SAME size, with
+   "in X days" small beneath the date */
 .rent-next {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 0.35rem 1rem;
-  padding: 1rem 1.1rem;
-  border-radius: 16px;
-  border: 1px solid var(--survey);
-  background:
-    radial-gradient(120% 130% at 0% 0%, rgba(166, 124, 46, 0.07), transparent 55%),
-    #fff;
-  box-shadow: 0 12px 30px -22px rgba(22, 48, 43, 0.5);
+  gap: 0.25rem 1rem;
+  padding: 0.2rem 0.15rem;
 }
 .rn-amt {
   grid-column: 1; grid-row: 1 / span 2;
   align-self: center;
   font-family: var(--font-display);
-  font-size: 2.2rem; font-weight: 850; letter-spacing: -1.2px; line-height: 1;
+  font-size: 2rem; font-weight: 850; letter-spacing: -1.1px; line-height: 1;
   color: var(--brass);
 }
 .rn-date {
   grid-column: 2; grid-row: 1;
   justify-self: end;
-  font-size: 0.92rem; font-weight: 700; color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 850; letter-spacing: -1.1px; line-height: 1;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 .rn-days {
@@ -131,11 +128,17 @@
   box-shadow: 0 0 0 3px rgba(46, 107, 79, 0.16);
 }
 
-/* ---------------- 4 · funds — closed; opens to name + % ---------------- */
-.funds { padding: 0.2rem 0.15rem; }
+/* ---------------- 4 · funds — in a box; closed, opens to name + % ------- */
+.funds {
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--survey);
+  background: #fff;
+  box-shadow: 0 12px 30px -22px rgba(22, 48, 43, 0.5);
+}
 .funds-head {
   display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
-  width: 100%; padding: 0.35rem 0; border: none; background: none; cursor: pointer;
+  width: 100%; padding: 0.45rem 0; border: none; background: none; cursor: pointer;
   font: inherit; text-align: left;
   &:active { opacity: 0.85; }
 }
