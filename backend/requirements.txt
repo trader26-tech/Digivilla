@@ -4,6 +4,10 @@ supabase==2.5.0
 pydantic==2.7.4
 pydantic-settings==2.3.4
 python-dotenv==1.0.1
+# Required by FastAPI for multipart form uploads (admin client-document attach).
+python-multipart==0.0.20
+# HTTP client used to send the admin sign-in code via Resend.
+httpx==0.27.2
 numpy==1.26.4
 # Optional: server-side verification of Firebase phone-OTP ID tokens. The code
 # imports it lazily, so the app still runs if it's absent (dev falls back to

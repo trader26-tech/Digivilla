@@ -128,3 +128,68 @@ create table if not exists public.baskets (
 alter table public.baskets enable row level security;
 create index if not exists baskets_owner_idx   on public.baskets (owner);
 create index if not exists baskets_goal_id_idx on public.baskets (goal_id);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- ADMIN APP: OTP→PIN sign-in, availability, and per-client documents
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 6) admin_otp — pending sign-in codes (one row per email; salted hash only).
+create table if not exists public.admin_otp (
+    email      text primary key,
+    code_hash  text not null,
+    expires_at text not null,
+    attempts   integer not null default 0,
+    created_at text not null
+);
+alter table public.admin_otp enable row level security;
+
+-- 7) admin_devices — trusted devices (30-day cookie), their PIN, auto-lock.
+--    Raw device token & PIN are never stored — only hashes.
+create table if not exists public.admin_devices (
+    device_id    text primary key,
+    email        text not null,
+    token_hash   text not null,
+    pin_hash     text,
+    pin_salt     text,
+    pin_attempts integer not null default 0,
+    lock_minutes integer not null default 30,
+    expires_at   text not null,
+    created_at   text not null,
+    last_used    text,
+    revoked      boolean not null default false
+);
+alter table public.admin_devices enable row level security;
+
+-- 8) admin_config — key/value settings (availability working window lives here).
+create table if not exists public.admin_config (
+    key   text primary key,
+    value jsonb not null default '{}'::jsonb
+);
+alter table public.admin_config enable row level security;
+
+-- 9) admin_blocked_slots — ISO slot strings the admin marked busy (hidden from clients).
+create table if not exists public.admin_blocked_slots (
+    slot text primary key
+);
+alter table public.admin_blocked_slots enable row level security;
+
+-- 10) admin_documents — per-client document metadata (files live in Storage bucket `client-docs`).
+create table if not exists public.admin_documents (
+    id           text primary key,
+    client       text not null,
+    filename     text,
+    size         integer default 0,
+    content_type text,
+    path         text,
+    placeholder  boolean not null default false,
+    created_at   text not null
+);
+alter table public.admin_documents enable row level security;
+create index if not exists admin_documents_client_idx on public.admin_documents (client);
+
+-- Storage bucket for client documents (private). The backend also tries to
+-- create this automatically on first upload; run here if you prefer.
+insert into storage.buckets (id, name, public)
+values ('client-docs', 'client-docs', false)
+on conflict (id) do nothing;

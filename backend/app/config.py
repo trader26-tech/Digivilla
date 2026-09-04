@@ -29,12 +29,24 @@ class Settings(BaseSettings):
     allow_unverified_phone: bool = False
 
     # --- Admin dashboard login (consultation bookings) ---
-    # Credentials for the separate admin app. Set ADMIN_USER / ADMIN_PASSWORD in
-    # the admin service's Railway env. The dev defaults let it run out of the box.
+    # Legacy username/password (kept for a fallback path; the primary admin
+    # login is now the email-OTP → PIN → trusted-device flow below).
     admin_user: str = "admin"
     admin_password: str = "admin123"
     # Secret used to sign admin session tokens (distinct from user auth_secret).
     admin_token_secret: str = "dev-admin-insecure-change-me"
+
+    # --- Admin OTP → PIN sign-in (mirrors the Networth flow) ---
+    # Comma-separated allowlist of emails permitted to request a sign-in code.
+    # The first entry is the default (single-admin: code always goes here).
+    otp_allowlist: str = "ranjeevfortrade@gmail.com"
+    # Resend API key for delivering the code; if unset, the code is printed to
+    # the server log (dev), so the flow is testable without credentials.
+    resend_api_key: Optional[str] = None
+    otp_from: str = "onboarding@resend.dev"
+    # Trusted-device lifetime (the httpOnly cookie) and idle auto-lock window.
+    device_ttl_days: int = 30
+    default_lock_minutes: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

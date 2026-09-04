@@ -1,89 +1,151 @@
-<!-- ============ LOGIN ============ -->
-<div class="login" *ngIf="!loggedIn()">
-  <div class="login-card">
+<!-- ═══════════════════════ LOCK SCREEN ═══════════════════════ -->
+<div class="lock" *ngIf="phase() !== 'unlocked'">
+  <div class="lock-card" *ngIf="phase() !== 'loading'">
     <div class="brand"><span class="logo">◆</span> MyLakshyas <span class="tag">Admin</span></div>
-    <h1>Consultation desk</h1>
-    <p class="sub">Sign in to see who's requested a call and confirm their slot.</p>
 
-    <label class="field">
-      <span>Username</span>
-      <input type="text" [ngModel]="username()" (ngModelChange)="username.set($event)" (keydown.enter)="doLogin()" autocomplete="username" />
-    </label>
-    <label class="field">
-      <span>Password</span>
-      <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" (keydown.enter)="doLogin()" autocomplete="current-password" />
-    </label>
+    <!-- email -->
+    <ng-container *ngIf="phase() === 'email'">
+      <h1>Consultation desk</h1>
+      <p class="sub">We’ll email a one-time code to<br><b>{{ signinEmail() || 'your admin email' }}</b>.</p>
+      <p class="err" *ngIf="authError()">{{ authError() }}</p>
+      <button class="cta" [disabled]="busy()" (click)="sendCode()">
+        {{ busy() ? 'Sending…' : 'Email me a code' }}
+      </button>
+    </ng-container>
 
-    <p class="err" *ngIf="loginError()">{{ loginError() }}</p>
+    <!-- otp -->
+    <ng-container *ngIf="phase() === 'otp'">
+      <h1>Enter the code</h1>
+      <p class="sub">Sent to <b>{{ maskedEmail() }}</b>. It expires in 5 minutes.</p>
+      <input class="code-input" inputmode="numeric" maxlength="6" placeholder="000000"
+        [ngModel]="otpCode()" (ngModelChange)="otpCode.set($event)" (keydown.enter)="verifyCode()" autofocus />
+      <p class="note" *ngIf="notice()">{{ notice() }}</p>
+      <p class="err" *ngIf="authError()">{{ authError() }}</p>
+      <button class="cta" [disabled]="busy()" (click)="verifyCode()">
+        {{ busy() ? 'Checking…' : 'Verify' }}
+      </button>
+      <button class="link" (click)="sendCode()" [disabled]="busy()">Resend code</button>
+    </ng-container>
 
-    <button class="cta" [disabled]="loggingIn()" (click)="doLogin()">
-      {{ loggingIn() ? 'Signing in…' : 'Sign in' }}
-    </button>
+    <!-- set pin -->
+    <ng-container *ngIf="phase() === 'setpin'">
+      <h1>Set a PIN</h1>
+      <p class="sub">Choose a 4–8 digit PIN. You’ll use it to unlock on this device for the next 30 days.</p>
+      <input class="code-input" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"
+        [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" autofocus />
+      <input class="code-input" type="password" inputmode="numeric" maxlength="8" placeholder="Repeat PIN"
+        [ngModel]="pin2Input()" (ngModelChange)="pin2Input.set($event)" (keydown.enter)="createPin()" />
+      <p class="err" *ngIf="authError()">{{ authError() }}</p>
+      <button class="cta" [disabled]="busy()" (click)="createPin()">
+        {{ busy() ? 'Saving…' : 'Save PIN & continue' }}
+      </button>
+    </ng-container>
+
+    <!-- pin unlock -->
+    <ng-container *ngIf="phase() === 'pin'">
+      <h1>Welcome back</h1>
+      <p class="sub">Enter your PIN to unlock.</p>
+      <input class="code-input" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"
+        [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" (keydown.enter)="doUnlock()" autofocus />
+      <p class="err" *ngIf="authError()">{{ authError() }}</p>
+      <button class="cta" [disabled]="busy()" (click)="doUnlock()">
+        {{ busy() ? 'Unlocking…' : 'Unlock' }}
+      </button>
+      <button class="link" (click)="useEmailInstead()">Sign in with email instead</button>
+    </ng-container>
   </div>
 </div>
 
-<!-- ============ DASHBOARD ============ -->
-<div class="dash" *ngIf="loggedIn()">
+<!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
+<div class="dash" *ngIf="phase() === 'unlocked'">
   <header class="top">
     <div class="brand"><span class="logo">◆</span> MyLakshyas <span class="tag">Admin</span></div>
     <div class="top-right">
-      <button class="ghost" (click)="refresh()" [disabled]="loading()" title="Refresh">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="ghost" (click)="logout()">Sign out</button>
+      <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">{{ lockCountdown() }}</span>
+      <button class="ghost" (click)="signOut()">Sign out</button>
     </div>
   </header>
 
-  <div class="wrap">
-    <!-- summary -->
+  <nav class="tabs">
+    <button [class.on]="tab() === 'calendar'" (click)="tab.set('calendar')">Calendar</button>
+    <button [class.on]="tab() === 'documents'" (click)="tab.set('documents')">Documents</button>
+  </nav>
+
+  <!-- ─────────── CALENDAR TAB ─────────── -->
+  <div class="wrap" *ngIf="tab() === 'calendar'">
     <div class="stats">
-      <div class="stat pending">
-        <b>{{ requestedCount }}</b>
-        <span>Awaiting you</span>
-      </div>
-      <div class="stat confirmed">
-        <b>{{ confirmedCount }}</b>
-        <span>Confirmed</span>
-      </div>
-      <div class="stat total">
-        <b>{{ bookings().length }}</b>
-        <span>Total requests</span>
-      </div>
+      <div class="stat pending"><b>{{ requestedCount }}</b><span>Awaiting you</span></div>
+      <div class="stat confirmed"><b>{{ confirmedCount }}</b><span>Confirmed</span></div>
+      <div class="stat total"><b>{{ bookings().length }}</b><span>Total requests</span></div>
     </div>
+
+    <!-- availability editor -->
+    <section class="panel">
+      <button class="panel-head" (click)="showAvailability.set(!showAvailability())">
+        <div>
+          <h2>My availability</h2>
+          <p>Split your working hours into 30-minute slots. Block any you’re busy — clients only see the free ones.</p>
+        </div>
+        <span class="chev" [class.open]="showAvailability()">▾</span>
+      </button>
+
+      <div class="panel-body" *ngIf="showAvailability()">
+        <div class="window-row">
+          <label>Start
+            <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
+          </label>
+          <label>End
+            <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
+          </label>
+        </div>
+        <div class="weekdays">
+          <button *ngFor="let wd of [0,1,2,3,4,5,6]" class="wd" [class.on]="isWeekdayOn(wd)"
+            (click)="toggleWeekday(wd)">{{ weekdayLabels[wd] }}</button>
+        </div>
+        <button class="save-window" [disabled]="avSavingCfg()" (click)="saveWindow()">
+          {{ avSavingCfg() ? 'Saving…' : 'Save working hours' }}
+        </button>
+
+        <div class="av-days">
+          <div class="av-day" *ngFor="let d of avDays()">
+            <div class="av-day-head">
+              <b>{{ dayLabel(d.date) }}</b>
+              <span>{{ freeCount(d) }} free</span>
+            </div>
+            <div class="chips">
+              <button class="chip" *ngFor="let s of d.slots"
+                [class.blocked]="s.blocked" [disabled]="avBusySlot() === s.slot"
+                (click)="toggleSlot(d, s)"
+                [title]="s.blocked ? 'Blocked — tap to free' : 'Free — tap to block'">
+                {{ timeLabel(s.time) }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="loading" *ngIf="loading()">Loading requests…</div>
     <p class="err" *ngIf="loadError()">{{ loadError() }}</p>
 
-    <!-- empty -->
     <div class="empty" *ngIf="!loading() && !bookings().length">
       <div class="empty-icon">🗓️</div>
       <h2>No consultation requests yet</h2>
       <p>When someone reserves a plot and picks a time, it shows up here for you to confirm.</p>
     </div>
 
-    <!-- calendar: one block per day -->
     <div class="cal" *ngIf="!loading() && bookings().length">
       <section class="day" *ngFor="let d of days()">
         <div class="day-head">
           <h2>{{ d.label }}</h2>
           <span class="today-pill" *ngIf="d.isToday">Today</span>
         </div>
-
         <div class="slots">
-          <div
-            class="slot"
-            *ngFor="let s of d.slots"
-            [class.free]="!s.booking"
+          <div class="slot" *ngFor="let s of d.slots"
             [class.requested]="s.booking?.status === 'requested'"
             [class.confirmed]="s.booking?.status === 'confirmed'"
-            [class.declined]="s.booking?.status === 'declined'"
-          >
+            [class.declined]="s.booking?.status === 'declined'">
             <div class="slot-time">{{ s.label }}</div>
-
-            <!-- free slot -->
-            <div class="slot-free" *ngIf="!s.booking">Open</div>
-
-            <!-- a booking -->
             <ng-container *ngIf="s.booking as b">
               <div class="slot-body">
                 <div class="who">
@@ -92,28 +154,70 @@
                 </div>
                 <div class="what">{{ propLabel(b) }} · {{ money(b.amount) }}</div>
               </div>
-
-              <!-- status / actions -->
               <div class="slot-actions">
-                <span class="badge ok" *ngIf="b.status === 'confirmed'">
-                  <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  Booked
-                </span>
+                <span class="badge ok" *ngIf="b.status === 'confirmed'">Booked</span>
                 <span class="badge no" *ngIf="b.status === 'declined'">Declined</span>
-
                 <ng-container *ngIf="b.status === 'requested'">
-                  <button class="act ok" [disabled]="busyId() === b.id" (click)="confirm(b)">
-                    <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Confirm
-                  </button>
+                  <button class="act ok" [disabled]="busyId() === b.id" (click)="confirm(b)">Confirm</button>
                   <button class="act no" [disabled]="busyId() === b.id" (click)="decline(b)">Decline</button>
                 </ng-container>
-
                 <button class="act reopen" *ngIf="b.status !== 'requested'" [disabled]="busyId() === b.id" (click)="reopen(b)">Undo</button>
               </div>
             </ng-container>
           </div>
         </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ─────────── DOCUMENTS TAB ─────────── -->
+  <div class="wrap docs" *ngIf="tab() === 'documents'">
+    <div class="doc-layout">
+      <!-- client list -->
+      <aside class="clients">
+        <div class="add-client">
+          <input placeholder="New client name"
+            [ngModel]="newClientName()" (ngModelChange)="newClientName.set($event)" (keydown.enter)="addClient()" />
+          <button (click)="addClient()" [disabled]="!newClientName().trim()">Add</button>
+        </div>
+        <div class="loading" *ngIf="docsLoading()">Loading…</div>
+        <button class="client-row" *ngFor="let c of clients()"
+          [class.on]="activeClient() === c.client" (click)="openClient(c.client)">
+          <span class="c-name">{{ c.client }}</span>
+          <span class="c-count">{{ c.count }}</span>
+        </button>
+        <p class="hint" *ngIf="!docsLoading() && !clients().length">Add a client to start attaching documents.</p>
+      </aside>
+
+      <!-- documents for active client -->
+      <section class="docs-panel">
+        <ng-container *ngIf="activeClient(); else pickClient">
+          <div class="docs-head">
+            <h2>{{ activeClient() }}</h2>
+            <label class="upload" [class.busy]="uploading()">
+              <input type="file" (change)="onFilePicked($event)" hidden [disabled]="uploading()" />
+              {{ uploading() ? 'Uploading…' : '+ Attach document' }}
+            </label>
+          </div>
+          <p class="err" *ngIf="docError()">{{ docError() }}</p>
+
+          <div class="doc-empty" *ngIf="!clientDocs().length">
+            <p>No documents yet for {{ activeClient() }}.</p>
+          </div>
+
+          <ul class="doc-list" *ngIf="clientDocs().length">
+            <li class="doc" *ngFor="let d of clientDocs()">
+              <button class="doc-open" (click)="openDoc(d)">
+                <span class="doc-name">{{ d.filename }}</span>
+                <span class="doc-meta">{{ fileSize(d.size) }}</span>
+              </button>
+              <button class="doc-del" (click)="removeDoc(d)" title="Delete">✕</button>
+            </li>
+          </ul>
+        </ng-container>
+        <ng-template #pickClient>
+          <div class="doc-empty"><p>Pick a client, or add one, to see their documents.</p></div>
+        </ng-template>
       </section>
     </div>
   </div>

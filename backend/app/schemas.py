@@ -255,11 +255,23 @@ class AuthUser(BaseModel):
     owner: str
     email: str
     name: str = ""
+    phone: str = ""
+    age: Optional[int] = None
+    city: str = ""
+    profile_complete: bool = False
 
 
 class AuthResponse(BaseModel):
     token: str
     user: AuthUser
+
+
+class ProfileRequest(BaseModel):
+    """Posted after phone sign-in to complete the user's profile."""
+    name: str
+    email: str
+    age: Optional[int] = None
+    city: str = ""
 
 
 # --- Bookings / Admin -----------------------------------------------------
@@ -292,3 +304,40 @@ class AdminLoginResponse(BaseModel):
 
 class BookingStatusUpdate(BaseModel):
     status: str                   # confirmed | declined
+
+
+# --- Admin OTP → PIN sign-in ---------------------------------------------
+class AdminOtpRequest(BaseModel):
+    email: str = ""               # optional — defaults to the allowlisted address
+
+
+class AdminOtpVerify(BaseModel):
+    email: str = ""
+    code: str
+
+
+class AdminPinBody(BaseModel):
+    pin: str
+
+
+class AdminLockBody(BaseModel):
+    lock_minutes: int
+
+
+# --- Admin availability --------------------------------------------------
+class AvailabilityConfig(BaseModel):
+    start: Optional[str] = None
+    end: Optional[str] = None
+    slot_minutes: Optional[int] = None
+    weekdays: Optional[list[int]] = None
+    tz_offset: Optional[str] = None
+
+
+class BlockSlotBody(BaseModel):
+    slot: str
+    blocked: bool = True
+
+
+# --- Admin client documents ----------------------------------------------
+class ClientCreate(BaseModel):
+    name: str

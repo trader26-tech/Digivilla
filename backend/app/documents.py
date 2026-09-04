@@ -1,0 +1,231 @@
+"""Per-client document vault.
+
+The admin keeps important documents (agreements, IDs, plans) grouped by client
+so they don't have to re-reference them each time. A "client" here is just a
+named folder; documents are files attached to it.
+
+Storage:
+  • File bytes → Supabase Storage bucket `client-docs` when configured, else a
+    local `app/data/client_docs/` directory.
+  • Metadata (client name, filename, size, type, storage path) → Supabase table
+    `admin_documents`, else `app/data/admin_documents.json`.
+
+Everything degrades to local disk so dev works with zero setup, mirroring the
+dual-store pattern used across the backend.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import uuid
+from datetime import datetime, timezone
+
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_FILES_DIR = os.path.join(_DATA_DIR, "client_docs")
+_META_JSON = os.path.join(_DATA_DIR, "admin_documents.json")
+
+_META_TABLE = "admin_documents"
+_BUCKET = "client-docs"
+
+
+# ── storage helpers ──────────────────────────────────────────────────────────
+def _use_supabase() -> bool:
+    try:
+        from app.supabase_client import get_supabase
+
+        get_supabase()
+        return True
+    except Exception:
+        return False
+
+
+def _load() -> list[dict]:
+    try:
+        with open(_META_JSON, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _save(rows: list[dict]) -> None:
+    os.makedirs(_DATA_DIR, exist_ok=True)
+    tmp = _META_JSON + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, _META_JSON)
+
+
+def _slug(name: str) -> str:
+    s = re.sub(r"[^a-zA-Z0-9]+", "-", (name or "").strip().lower()).strip("-")
+    return s or "client"
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ── operations ───────────────────────────────────────────────────────────────
+def list_clients() -> list[dict]:
+    """Every client that has at least one document, with counts. The admin can
+    also create empty clients (stored as a 0-byte marker row)."""
+    rows = _all_meta()
+    by_client: dict[str, dict] = {}
+    for r in rows:
+        name = r.get("client") or "Unnamed"
+        g = by_client.setdefault(name, {"client": name, "count": 0, "updated": ""})
+        if not r.get("placeholder"):
+            g["count"] += 1
+        if r.get("created_at", "") > g["updated"]:
+            g["updated"] = r.get("created_at", "")
+    return sorted(by_client.values(), key=lambda g: g["client"].lower())
+
+
+def create_client(name: str) -> dict:
+    """Register an (empty) client folder so it shows up before any upload."""
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Client name is required.")
+    existing = {c["client"].lower() for c in list_clients()}
+    if name.lower() in existing:
+        return {"client": name, "count": 0, "updated": ""}
+    row = {
+        "id": uuid.uuid4().hex, "client": name, "filename": "",
+        "size": 0, "content_type": "", "path": "",
+        "placeholder": True, "created_at": _now_iso(),
+    }
+    _insert(row)
+    return {"client": name, "count": 0, "updated": row["created_at"]}
+
+
+def list_documents(client: str) -> list[dict]:
+    rows = [r for r in _all_meta()
+            if (r.get("client") or "") == client and not r.get("placeholder")]
+    rows.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+    return [_public(r) for r in rows]
+
+
+def add_document(client: str, filename: str, content: bytes, content_type: str) -> dict:
+    client = (client or "").strip()
+    filename = (filename or "file").strip()
+    if not client:
+        raise ValueError("Client name is required.")
+    doc_id = uuid.uuid4().hex
+    path = f"{_slug(client)}/{doc_id}-{_slug(filename)[:60]}{_ext(filename)}"
+
+    if _use_supabase():
+        from app.supabase_client import get_supabase
+
+        cl = get_supabase()
+        _ensure_bucket(cl)
+        cl.storage.from_(_BUCKET).upload(
+            path, content,
+            {"content-type": content_type or "application/octet-stream", "upsert": "true"},
+        )
+    else:
+        os.makedirs(os.path.join(_FILES_DIR, _slug(client)), exist_ok=True)
+        with open(os.path.join(_FILES_DIR, path), "wb") as fh:
+            fh.write(content)
+
+    row = {
+        "id": doc_id, "client": client, "filename": filename,
+        "size": len(content), "content_type": content_type or "",
+        "path": path, "placeholder": False, "created_at": _now_iso(),
+    }
+    _insert(row)
+    return _public(row)
+
+
+def get_document(doc_id: str) -> tuple[dict, bytes] | None:
+    row = next((r for r in _all_meta() if r.get("id") == doc_id), None)
+    if not row or row.get("placeholder"):
+        return None
+    path = row.get("path", "")
+    if _use_supabase():
+        from app.supabase_client import get_supabase
+
+        try:
+            data = get_supabase().storage.from_(_BUCKET).download(path)
+        except Exception:
+            return None
+    else:
+        full = os.path.join(_FILES_DIR, path)
+        if not os.path.exists(full):
+            return None
+        with open(full, "rb") as fh:
+            data = fh.read()
+    return row, data
+
+
+def delete_document(doc_id: str) -> bool:
+    rows = _all_meta()
+    row = next((r for r in rows if r.get("id") == doc_id), None)
+    if not row:
+        return False
+    path = row.get("path", "")
+    if _use_supabase():
+        from app.supabase_client import get_supabase
+
+        cl = get_supabase()
+        try:
+            if path:
+                cl.storage.from_(_BUCKET).remove([path])
+        except Exception:
+            pass
+        cl.table(_META_TABLE).delete().eq("id", doc_id).execute()
+    else:
+        full = os.path.join(_FILES_DIR, path) if path else ""
+        if full and os.path.exists(full):
+            try:
+                os.remove(full)
+            except Exception:
+                pass
+        _save([r for r in rows if r.get("id") != doc_id])
+    return True
+
+
+# ── metadata store (Supabase table or JSON) ──────────────────────────────────
+def _all_meta() -> list[dict]:
+    if _use_supabase():
+        try:
+            from app.supabase_client import get_supabase
+
+            return get_supabase().table(_META_TABLE).select("*").execute().data or []
+        except Exception:
+            return []
+    return _load()
+
+
+def _insert(row: dict) -> None:
+    if _use_supabase():
+        from app.supabase_client import get_supabase
+
+        get_supabase().table(_META_TABLE).insert(row).execute()
+    else:
+        rows = _load()
+        rows.append(row)
+        _save(rows)
+
+
+def _ensure_bucket(cl) -> None:
+    try:
+        cl.storage.create_bucket(_BUCKET, options={"public": False})
+    except Exception:
+        pass  # already exists
+
+
+def _public(row: dict) -> dict:
+    return {
+        "id": row.get("id", ""),
+        "client": row.get("client", ""),
+        "filename": row.get("filename", ""),
+        "size": int(row.get("size", 0) or 0),
+        "content_type": row.get("content_type", ""),
+        "created_at": row.get("created_at", ""),
+    }
+
+
+def _ext(filename: str) -> str:
+    _, ext = os.path.splitext(filename or "")
+    return ext[:12]
