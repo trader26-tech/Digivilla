@@ -24,12 +24,22 @@ funds with a rationale**.
 - **Frontend** — Angular. Conversational step-by-step UI with an SVG projection
   chart, allocation breakdown, and fund cards.
 
+## Repo layout
+
+Two independently deployable apps in one repo:
+
+- **`client/`** — the main app: FastAPI backend (`client/backend`) + Angular PWA
+  (`client/frontend`). In production the backend serves the built frontend, so
+  they share one origin.
+- **`admin/`** — a standalone Angular admin app (the consultation desk) that
+  talks to the client's backend. See [admin/README.md](admin/README.md).
+
 ## Run locally
 
 **Backend** (`http://localhost:8000`)
 
 ```bash
-cd backend
+cd client/backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # optional: add Supabase keys
@@ -39,17 +49,25 @@ uvicorn app.main:app --reload --port 8000
 **Frontend** (`http://localhost:4200`)
 
 ```bash
-cd frontend
+cd client/frontend
 npm install
 npm start
 ```
 
 Open http://localhost:4200.
 
+**Admin app** (`http://localhost:4300`, optional)
+
+```bash
+cd admin
+npm install
+npm start
+```
+
 ## Deploy
 
-Single combined service on Railway — see [DEPLOYMENT.md](DEPLOYMENT.md).
-The `Dockerfile` builds Angular and serves it from FastAPI on one URL.
+Two Railway services — one for `client/`, one for `admin/` — each with its Root
+Directory set to that folder. Full steps in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## How the planning math works
 

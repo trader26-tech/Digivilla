@@ -1,21 +1,27 @@
 .DS_Store
 *.log
 
-# Backend
-backend/.venv/
-backend/__pycache__/
-backend/**/__pycache__/
-backend/.env
+# Backend (now under client/)
+client/backend/.venv/
+client/backend/__pycache__/
+client/backend/**/__pycache__/
+client/backend/.env
+**/.venv/
+**/__pycache__/
 
-# Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.angular/
+# Frontend (now under client/) + admin app
+client/frontend/node_modules/
+client/frontend/dist/
+client/frontend/.angular/
+admin/node_modules/
+admin/dist/
+admin/.angular/
+**/node_modules/
 
 # Claude local state
 .claude/
 
 # Firebase service-account keys — SECRET, never commit
 *firebase-adminsdk*.json
-backend/*firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
 serviceAccount*.json
