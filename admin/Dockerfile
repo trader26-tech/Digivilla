@@ -26,7 +26,10 @@ RUN printf 'server {\n\
 
 COPY --from=build /app/dist/admin/browser /usr/share/nginx/html
 
-# Railway provides $PORT; nginx templating substitutes it at container start.
-ENV PORT=8080
+# Railway provides $PORT; nginx's entrypoint runs envsubst on the template at
+# start. Restrict it to ONLY $PORT so nginx's own $uri / $host in try_files are
+# left untouched (otherwise envsubst would blank them and break SPA routing).
+ENV PORT=8080 \
+    NGINX_ENVSUBST_FILTER=PORT
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
