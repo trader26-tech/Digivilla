@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# No startCommand: Railway passes it to the container without a shell, so
+# ${PORT} wouldn't expand. The Dockerfile CMD wraps it in `sh -c` instead.
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

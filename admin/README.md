@@ -1,52 +1,48 @@
 # MyLakshyas — Admin (Consultation desk)
 
-A small standalone Angular app for the admin to see plot-reservation
-consultation requests on a calendar and confirm/decline each slot. It talks to
-the **same backend** as the main app (the `/admin/*` and `/bookings` endpoints).
+The admin app, split into two independently deployable pieces (mirrors `client/`):
+
+- **`frontend/`** — the Angular admin SPA (calendar of bookings, availability
+  editor, per-client documents). Served by nginx.
+- **`backend/`** — the FastAPI admin API (`/admin/*` + the public `/bookings`
+  endpoints). Shares the **same Supabase database** as the client backend, so a
+  booking confirmed here is instantly reflected in the client app.
 
 ## Run locally
 
 ```bash
-cd admin
+# Backend on :8001  (the client SPA's booking calls point here in dev)
+cd admin/backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # optional: add the shared Supabase keys
+uvicorn app.main:app --reload --port 8001
+
+# Frontend on :4300  (points at http://localhost:8001 by default)
+cd admin/frontend
 npm install
-npm start          # serves on http://localhost:4300
+npm start
 ```
 
-It points at the backend on `http://localhost:8000` by default. Start the
-backend too (`cd backend && uvicorn app.main:app --reload --port 8000`).
+Sign-in is email-OTP → PIN → trusted device. Without `RESEND_API_KEY`, the code
+is printed to the **admin backend's** server log so you can test the flow.
 
-Default login (dev): **admin / admin123**.
+## Deploy to Railway
 
-## Deploy to Railway (separate service)
+Two services, each with its Root Directory set:
 
-The admin is its own Railway service — a static SPA served by nginx.
+| Service        | Root Directory   | Key variable |
+|----------------|------------------|--------------|
+| Admin API      | `admin/backend`  | `SUPABASE_*` (same as client), `ADMIN_TOKEN_SECRET`, `OTP_ALLOWLIST`, `RESEND_API_KEY` |
+| Admin frontend | `admin/frontend` | `ADMIN_API_URL` = the Admin API's URL |
 
-1. In Railway: **New Project → Deploy from GitHub repo →** select this repo.
-2. **Set the service Root Directory to `admin`** (Settings → Root Directory).
-   Railway then uses `admin/Dockerfile` + `admin/railway.toml`.
-3. Add a **build arg** so the admin points at your deployed backend:
-   - Variable name: `ADMIN_API_URL`
-   - Value: your backend URL, e.g. `https://<backend>.up.railway.app`
-   (Railway passes service variables as Docker build args.)
-4. Deploy. Railway gives the admin its own URL, e.g.
-   `https://<admin>.up.railway.app`.
+Full walkthrough (including how the client's booking sheet is wired to this API)
+is in the repo's [DEPLOYMENT.md](../DEPLOYMENT.md).
 
-### Backend env vars (set on the BACKEND service)
+## First-time Supabase tables
 
-- `ADMIN_USER` — admin login username (default `admin`)
-- `ADMIN_PASSWORD` — admin login password (default `admin123` — **change this**)
-- `ADMIN_TOKEN_SECRET` — secret used to sign admin session tokens
-
-### Backend CORS
-
-The admin runs on a different origin, so the backend must allow it. The backend
-already allows any `https://*.up.railway.app` origin via `cors_origin_regex`, so
-a Railway-hosted admin works out of the box. For a custom domain, add it to
-`CORS_ORIGINS` on the backend service.
-
-### First-time table setup
-
-The bookings live in the `bookings` table. Create it once in Supabase:
-run `python backend/create_bookings_table.py` (it prints the SQL) and paste
-that into the Supabase SQL editor. Without Supabase, the backend stores bookings
-in a local JSON file automatically.
+The admin uses tables `bookings`, `admin_config`, `admin_blocked_slots`,
+`admin_documents`, `admin_otp`, `admin_devices`, and a storage bucket
+`client-docs`. Without Supabase configured, everything falls back to local JSON
+under `backend/app/data/` automatically (fine for dev; not durable across
+container restarts in production — set up Supabase for that).

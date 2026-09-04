@@ -24,7 +24,9 @@ export interface Booking extends BookingCreate {
 @Injectable({ providedIn: 'root' })
 export class BookingService {
   private http = inject(HttpClient);
-  private base = environment.apiUrl;
+  // Bookings are served by the admin backend (shared bookings DB), not the
+  // planner/funds API, so use bookingApiUrl.
+  private base = environment.bookingApiUrl;
 
   createBooking(payload: BookingCreate): Observable<Booking> {
     return this.http.post<Booking>(`${this.base}/bookings`, payload);

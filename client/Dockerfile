@@ -6,7 +6,9 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend/ ./
-# In the combined deploy the API is same-origin, so apiUrl = ''.
+# env.js is (re)generated at container startup from runtime env vars (see the
+# runtime stage below), so no need to bake real values in here. A minimal
+# same-origin default keeps a plain `npm run build` self-contained.
 RUN printf 'window.__env = { apiUrl: "" };\n' > public/assets/env.js
 RUN npm run build -- --configuration production
 
@@ -27,7 +29,14 @@ COPY backend/ ./
 # Copy the built Angular app to where static_spa.py expects it: backend/static
 COPY --from=frontend /fe/dist/frontend/browser ./static
 
+# Generate the runtime frontend config (window.__env) from environment vars at
+# container startup. This lets you set Firebase web config + apiUrl entirely
+# from the deploy platform's dashboard (Railway variables) with no rebuild.
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 # Railway provides $PORT at runtime.
 ENV PORT=8000
 EXPOSE 8000
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
