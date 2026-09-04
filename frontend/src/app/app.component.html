@@ -1,10 +1,11 @@
 <!-- Opening animation, plays first — before login. -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
-<!-- GATE: after the intro, nothing renders until the phone is verified. -->
-<app-login *ngIf="!intro && !auth.signedIn()" (done)="onLoggedIn()"></app-login>
+<!-- GATE: after the intro, nothing renders until the phone is verified AND the
+     profile is complete (new users fill in their details right after the OTP). -->
+<app-login *ngIf="!intro && !(auth.signedIn() && auth.profileComplete())" (done)="onLoggedIn()"></app-login>
 
-<ng-container *ngIf="!intro && auth.signedIn()">
+<ng-container *ngIf="!intro && auth.signedIn() && auth.profileComplete()">
 <!-- HOME: the isometric estate — the user's own map. Shown right after intro. -->
 <app-estate-home
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"

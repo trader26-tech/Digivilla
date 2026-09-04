@@ -149,7 +149,29 @@ def owner_from_token(token: str) -> str | None:
 # ---------------- public API ----------------
 
 def _public(user: dict) -> dict:
-    return {"owner": user["owner"], "email": user["email"], "name": user.get("name", "")}
+    """The user fields the client is allowed to see, plus a derived
+    `profile_complete` flag the login flow uses to decide whether to show the
+    'complete your details' step (name + email + age + city all present)."""
+    name = user.get("name", "") or ""
+    email = user.get("email", "") or ""
+    # phone accounts get a synthetic placeholder email; that doesn't count as a
+    # real, user-supplied email for profile-completeness.
+    real_email = email and not email.endswith("@mylakshyas.local")
+    age = user.get("age")
+    city = user.get("city", "") or ""
+    # Profile is "complete" once we have the essentials the app needs: a name and
+    # a real email. Age/city are captured too, but a DB that hasn't been migrated
+    # to store them must not trap the user on the details screen forever.
+    complete = bool(name.strip() and real_email)
+    return {
+        "owner": user["owner"],
+        "email": email,
+        "name": name,
+        "phone": user.get("phone", "") or "",
+        "age": age,
+        "city": city,
+        "profile_complete": complete,
+    }
 
 
 def signup(email: str, password: str, name: str = "") -> dict:
@@ -188,3 +210,70 @@ def me(token: str) -> dict | None:
         return None
     user = _find_by_owner(owner)
     return _public(user) if user else None
+
+
+def _update_fields(owner: str, fields: dict) -> None:
+    """Persist a partial update to a user row (Supabase or local JSON).
+
+    If the Supabase `users` table is missing an optional column (e.g. `age` or
+    `city` before the migration is run), we drop just that column and retry, so
+    the required identity fields (name, email) still save and the flow completes.
+    """
+    if _use_supabase():
+        from app.supabase_client import get_supabase
+
+        remaining = dict(fields)
+        for _ in range(len(fields) + 1):
+            try:
+                get_supabase().table("users").update(remaining).eq("owner", owner).execute()
+                return
+            except Exception as e:  # postgrest APIError, etc.
+                msg = str(e)
+                # "Could not find the 'age' column of 'users' ..."
+                dropped = None
+                for col in list(remaining.keys()):
+                    if f"'{col}'" in msg and "column" in msg:
+                        dropped = col
+                        break
+                if dropped is None or len(remaining) <= 1:
+                    raise
+                remaining.pop(dropped, None)
+    else:
+        rows = _read_local()
+        for r in rows:
+            if r.get("owner") == owner:
+                r.update(fields)
+        _write_local(rows)
+
+
+def save_profile(
+    owner: str, name: str, email: str, age: int | None, city: str
+) -> dict:
+    """Fill in a (usually phone-verified) user's profile after sign-in. Returns
+    the updated public user, incl. the refreshed `profile_complete` flag."""
+    user = _find_by_owner(owner)
+    if not user:
+        raise AuthError("Your session has expired. Please sign in again.")
+
+    name = (name or "").strip()
+    email = (email or "").strip().lower()
+    city = (city or "").strip()
+    if not name:
+        raise AuthError("Please enter your name.")
+    if not email or "@" not in email:
+        raise AuthError("Please enter a valid email.")
+    if age is not None and (age < 1 or age > 120):
+        raise AuthError("Please enter a valid age.")
+
+    # Don't let two accounts share a real email (phone placeholders excepted).
+    existing = _find_by_email(email)
+    if existing and existing.get("owner") != owner:
+        raise AuthError("That email is already used by another account.")
+
+    fields = {"name": name, "email": email, "city": city}
+    if age is not None:
+        fields["age"] = age
+    _update_fields(owner, fields)
+
+    updated = _find_by_owner(owner) or {**user, **fields}
+    return _public(updated)

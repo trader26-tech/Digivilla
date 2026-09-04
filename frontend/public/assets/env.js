@@ -1,14 +1,21 @@
-// Runtime configuration. Overwritten at container startup on deploy.
-// In local dev this file is a no-op and environment.ts falls back to :8000.
-window.__env = window.__env || {};
+// Runtime config, read by the app at startup via window.__env.
+// This file is served as a static asset (not bundled), so it can be edited
+// per-environment without rebuilding.
+window.__env = {
+  // Same-origin API by default ('' → the app calls /... on its own host).
+  // Set to e.g. 'http://localhost:8000' for a local split backend.
+  apiUrl: '',
 
-// Firebase web config (project: mylakshayas) — used by the phone-OTP login.
-window.__env.firebase = {
-  apiKey: "AIzaSyBtUWNbC4OB8sjJ3VXYyRb8AMzCPayzE48",
-  authDomain: "mylakshayas.firebaseapp.com",
-  projectId: "mylakshayas",
-  storageBucket: "mylakshayas.firebasestorage.app",
-  messagingSenderId: "572488679925",
-  appId: "1:572488679925:web:945d9047aa80946b0a60bc",
-  measurementId: "G-41V00XP3GC",
+  // ── Firebase web config — enables REAL phone-OTP SMS. ────────────────────
+  // Fill these from the Firebase Console:
+  //   Project Settings → General → Your apps → Web app → SDK setup & config.
+  // Until apiKey + appId are set, the app runs OTP in dev mode (code 123456).
+  // project_id is known ("mylakshayas"), so authDomain is pre-filled.
+  firebase: {
+    apiKey: '',                               // ← REQUIRED for real SMS
+    authDomain: 'mylakshayas.firebaseapp.com',
+    projectId: 'mylakshayas',
+    appId: '',                                // ← REQUIRED for real SMS
+    messagingSenderId: '',                    // optional
+  },
 };

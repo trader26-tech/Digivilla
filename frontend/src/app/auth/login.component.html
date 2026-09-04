@@ -10,12 +10,6 @@
     <!-- middle: fields -->
     <div class="lg-mid">
       <label class="lg-field">
-        <span class="lg-lbl">Your name</span>
-        <input class="lg-input" type="text" autocomplete="name" placeholder="Sanjeev"
-               [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
-      </label>
-
-      <label class="lg-field">
         <span class="lg-lbl">Phone number</span>
         <div class="lg-phone">
           <span class="lg-cc">🇮🇳 +91</span>
@@ -63,10 +57,51 @@
     <!-- bottom: the action -->
     <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!codeValid || busy()">
-        <span *ngIf="!busy()">Verify &amp; enter</span>
+        <span *ngIf="!busy()">Verify</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
       <button class="lg-resend" type="button" (click)="resend()">Didn’t get it? <b>Resend</b></button>
+    </footer>
+  </form>
+
+  <!-- STEP 3 · details (new users, after OTP) -->
+  <form *ngIf="step() === 'details'" class="lg-flow" (ngSubmit)="saveDetails()" novalidate>
+    <header class="lg-top">
+      <h1 class="lg-title">A few details</h1>
+      <p class="lg-sub">So we can set up your account.</p>
+    </header>
+
+    <div class="lg-mid">
+      <label class="lg-field">
+        <span class="lg-lbl">Full name</span>
+        <input class="lg-input" type="text" autocomplete="name" placeholder="Sanjeev Ramprasad"
+               [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+      </label>
+      <label class="lg-field">
+        <span class="lg-lbl">Email</span>
+        <input class="lg-input" type="email" autocomplete="email" placeholder="you@email.com"
+               [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" />
+      </label>
+      <div class="lg-row">
+        <label class="lg-field">
+          <span class="lg-lbl">Age</span>
+          <input class="lg-input" type="tel" inputmode="numeric" maxlength="3" placeholder="32"
+                 [ngModel]="age()" (ngModelChange)="age.set($event)" name="age" />
+        </label>
+        <label class="lg-field grow">
+          <span class="lg-lbl">City</span>
+          <input class="lg-input" type="text" autocomplete="address-level2" placeholder="Chennai"
+                 [ngModel]="city()" (ngModelChange)="city.set($event)" name="city" />
+        </label>
+      </div>
+      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
+    </div>
+
+    <footer class="lg-bottom">
+      <button class="lg-btn" type="submit" [disabled]="!detailsValid || busy()">
+        <span *ngIf="!busy()">Enter PropertyNest</span>
+        <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
+      </button>
     </footer>
   </form>
 

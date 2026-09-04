@@ -36,6 +36,9 @@
 .lg-bottom { flex: none; display: flex; flex-direction: column; gap: 0.9rem; }
 
 .lg-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.lg-row { display: flex; gap: 0.75rem; }
+.lg-row .lg-field:first-child { width: 6.5rem; flex: none; }
+.lg-field.grow { flex: 1; }
 .lg-lbl { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .lg-input {
   width: 100%; box-sizing: border-box;

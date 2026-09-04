@@ -16,6 +16,11 @@ export interface AuthUser {
   owner: string;
   name?: string;
   phone?: string;
+  email?: string;
+  age?: number | null;
+  city?: string;
+  /** True once name + email + age + city are all filled in. */
+  profile_complete?: boolean;
 }
 
 const TOKEN_KEY = 'auth_token_v1';
@@ -43,11 +48,12 @@ export class AuthService {
   readonly user = signal<AuthUser | null>(this.loadUser());
   /** True once a verified session exists. */
   readonly signedIn = signal<boolean>(!!this.loadToken());
+  /** True once the signed-in user has completed their profile details. */
+  readonly profileComplete = signal<boolean>(this.loadUser()?.profile_complete ?? false);
 
   /** Kept between sendCode and verifyCode. */
   private confirmation: import('firebase/auth').ConfirmationResult | null = null;
   private pendingPhone = '';
-  private pendingName = '';
   /** Dev fallback: the code we "sent" when Firebase isn't configured. */
   private devCode: string | null = null;
 
@@ -65,8 +71,7 @@ export class AuthService {
 
   // ---------------- step 1: send the code ----------------
 
-  async sendCode(name: string, phone: string): Promise<void> {
-    this.pendingName = name.trim();
+  async sendCode(phone: string): Promise<void> {
     this.pendingPhone = this.e164(phone);
     this.confirmation = null;
     this.devCode = null;
@@ -108,7 +113,7 @@ export class AuthService {
     const res = await fetch(`${environment.apiUrl}/auth/phone`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: this.pendingName, phone: this.pendingPhone, id_token: idToken }),
+      body: JSON.stringify({ phone: this.pendingPhone, id_token: idToken }),
     });
     if (!res.ok) {
       const msg = await res.json().catch(() => ({}));
@@ -119,6 +124,27 @@ export class AuthService {
     return data.user;
   }
 
+  // ---------------- step 3: complete profile (new users) ----------------
+
+  /** Save name + email + age + city for a signed-in user. Updates the stored
+   *  user + flips profileComplete when the backend confirms it's complete. */
+  async saveProfile(details: { name: string; email: string; age: number | null; city: string }): Promise<AuthUser> {
+    const token = this.token();
+    if (!token) throw new Error('Your session has expired. Please sign in again.');
+    const res = await fetch(`${environment.apiUrl}/auth/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(details),
+    });
+    if (!res.ok) {
+      const msg = await res.json().catch(() => ({}));
+      throw new Error(msg?.detail || 'Could not save your details. Please try again.');
+    }
+    const user = (await res.json()) as AuthUser;
+    this.persist(token, user);
+    return user;
+  }
+
   signOut(): void {
     try {
       localStorage.removeItem(TOKEN_KEY);
@@ -127,6 +153,7 @@ export class AuthService {
     this.token.set(null);
     this.user.set(null);
     this.signedIn.set(false);
+    this.profileComplete.set(false);
   }
 
   // ---------------- helpers ----------------
@@ -139,6 +166,7 @@ export class AuthService {
     this.token.set(token);
     this.user.set(user);
     this.signedIn.set(true);
+    this.profileComplete.set(!!user.profile_complete);
   }
 
   private e164(phone: string): string {
