@@ -1,0 +1,20 @@
+# Node
+frontend/node_modules
+frontend/dist
+frontend/.angular
+
+# Python
+backend/.venv
+**/__pycache__
+*.pyc
+backend/static
+backend/app/data/*.json
+backend/app/data/client_docs
+
+# Env / secrets
+**/.env
+
+# Git / misc
+.git
+.gitignore
+*.md

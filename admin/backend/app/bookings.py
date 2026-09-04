@@ -19,16 +19,32 @@ _LOCAL_PATH = os.path.join(os.path.dirname(__file__), "data", "bookings.json")
 
 
 # ---------------- storage ----------------
+_TABLE_OK = None  # None = unprobed, True/False = cached result
+
 
 def _use_supabase() -> bool:
-    """True only when Supabase is actually configured and reachable."""
+    """True only when Supabase is configured AND the `bookings` table exists.
+
+    Probed once and cached. If the table is missing (fresh project that hasn't
+    run the schema SQL yet), we fall back to local JSON instead of 500-ing —
+    run supabase_setup.sql to persist bookings across restarts."""
+    global _TABLE_OK
+    if _TABLE_OK is not None:
+        return _TABLE_OK
     try:
         from app.supabase_client import get_supabase
 
-        get_supabase()  # raises RuntimeError if not configured
-        return True
-    except Exception:
-        return False
+        get_supabase().table("bookings").select("id").limit(1).execute()
+        _TABLE_OK = True
+    except Exception as e:
+        msg = str(e).lower()
+        if any(s in msg for s in ("bookings", "does not exist", "pgrst205",
+                                  "schema cache", "could not find", "not configured")):
+            _TABLE_OK = False
+        else:
+            # Transient error (network, etc.) — don't cache; let it retry.
+            return False
+    return _TABLE_OK
 
 
 def _read_local() -> list[dict]:

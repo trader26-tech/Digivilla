@@ -31,14 +31,28 @@ _BUCKET = "client-docs"
 
 
 # ── storage helpers ──────────────────────────────────────────────────────────
+_TABLE_OK = None  # None = unprobed
+
+
 def _use_supabase() -> bool:
+    """True only when Supabase is configured AND the admin_documents table
+    exists; otherwise fall back to local disk (see bookings.py for the pattern)."""
+    global _TABLE_OK
+    if _TABLE_OK is not None:
+        return _TABLE_OK
     try:
         from app.supabase_client import get_supabase
 
-        get_supabase()
-        return True
-    except Exception:
-        return False
+        get_supabase().table(_META_TABLE).select("id").limit(1).execute()
+        _TABLE_OK = True
+    except Exception as e:
+        msg = str(e).lower()
+        if any(s in msg for s in (_META_TABLE, "does not exist", "pgrst205",
+                                  "schema cache", "could not find", "not configured")):
+            _TABLE_OK = False
+        else:
+            return False
+    return _TABLE_OK
 
 
 def _load() -> list[dict]:

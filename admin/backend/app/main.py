@@ -358,3 +358,10 @@ def admin_delete_booking(
     if not ok:
         raise HTTPException(status_code=404, detail="Booking not found")
     return {"status": "deleted"}
+
+
+# Serve the built admin Angular SPA (combined single-service deploy). Must be
+# last so the catch-all route does not shadow the API endpoints above.
+from app.static_spa import mount_spa  # noqa: E402
+
+mount_spa(app)
