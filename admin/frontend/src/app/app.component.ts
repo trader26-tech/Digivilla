@@ -38,9 +38,14 @@ interface MonthCell {
   day: number;
   inMonth: boolean;
   isToday: boolean;
+  isPast: boolean;
   total: number;
   pending: number;
+  /** distinct request kinds present that day, for the colored dots */
+  kinds: string[];
 }
+/** The order kinds are shown in dots/legend and their accent tokens. */
+const KIND_ORDER = ['consultation', 'sip', 'buy', 'withdraw'] as const;
 /** Human labels + accents per request kind. */
 const KIND_META: Record<string, { label: string; verb: string; icon: string }> = {
   consultation: { label: 'Consultation', verb: 'wants a call about', icon: '📞' },
@@ -401,13 +406,18 @@ export class AppComponent implements OnInit {
       const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
       const iso = this.isoOf(d);
       const items = byDay.get(iso) || [];
+      // distinct kinds present that day, in a stable display order
+      const present = new Set(items.map((b) => b.kind));
+      const kinds = KIND_ORDER.filter((k) => present.has(k));
       cells.push({
         iso,
         day: d.getDate(),
         inMonth: d.getMonth() === m,
         isToday: iso === todayIso,
+        isPast: iso < todayIso,
         total: items.length,
         pending: items.filter((b) => b.status === 'requested').length,
+        kinds,
       });
     }
     return cells;
@@ -444,6 +454,58 @@ export class AppComponent implements OnInit {
 
   selectDay(iso: string): void { this.selectedDate.set(iso); }
   isSelected(iso: string): boolean { return this.selectedDate() === iso; }
+
+  /** "Needs your attention" feed — every still-requested item, newest first,
+   *  honouring the kind filter. This is what the admin should act on now. */
+  notifications = computed<AgendaItem[]>(() => {
+    const filter = this.kindFilter();
+    return this.bookings()
+      .filter((b) => b.status === 'requested' && (filter === 'all' || b.kind === filter))
+      .map((b) => {
+        const t = this.timeOf(b);
+        return { booking: b, time: t, timeLabel: this.timeLabel(t), hasSlot: !!this.splitSlot(b.slot).time };
+      })
+      .sort((a, z) => (z.booking.created_at || '').localeCompare(a.booking.created_at || ''));
+  });
+
+  /** Count of new requests per kind, for the quick-action / filter badges. */
+  newByKind = computed<Record<string, number>>(() => {
+    const counts: Record<string, number> = { all: 0, consultation: 0, sip: 0, buy: 0, withdraw: 0 };
+    for (const b of this.bookings()) {
+      if (b.status !== 'requested') continue;
+      counts['all']++;
+      if (counts[b.kind] != null) counts[b.kind]++;
+    }
+    return counts;
+  });
+
+  /** Total documents across all client folders — for the Clients quick-action. */
+  get totalDocs(): number { return this.clients().reduce((n, c) => n + (c.count || 0), 0); }
+
+  /** True if the notification is dated today — used to surface "new today". */
+  isTodayItem(a: AgendaItem): boolean { return this.dayOf(a.booking) === this.isoOf(new Date()); }
+
+  /** Jump the calendar to a notification's day and select it. */
+  jumpTo(a: AgendaItem): void {
+    const iso = this.dayOf(a.booking);
+    if (!iso) return;
+    const d = this.parseIso(iso);
+    if (d) this.viewMonth.set({ y: d.getFullYear(), m: d.getMonth() });
+    this.selectedDate.set(iso);
+  }
+
+  /** A short "how long ago" label for a request. */
+  ago(created: string): string {
+    const then = new Date(created).getTime();
+    if (isNaN(then)) return '';
+    const mins = Math.floor((Date.now() - then) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return days === 1 ? 'yesterday' : `${days}d ago`;
+  }
 
   prevMonth(): void {
     this.viewMonth.update(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }));

@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # Trusted-device lifetime (the httpOnly cookie) and idle auto-lock window.
     device_ttl_days: int = 30
     default_lock_minutes: int = 30
+    # Device-cookie SameSite policy. "lax" for the same-origin combined deploy
+    # (persists reliably, incl. iOS PWA). Use "none" (forces Secure) only if the
+    # admin SPA is served from a different origin than this API.
+    cookie_samesite: str = "lax"
+    cookie_secure: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

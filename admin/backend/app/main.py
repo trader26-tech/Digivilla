@@ -85,11 +85,18 @@ def _admin_device(request: Request) -> str:
     return payload["did"]
 
 
+# Same-origin combined deploy → SameSite=Lax persists reliably (incl. iOS PWA).
+# Set COOKIE_SAMESITE=none (with Secure) only if the admin SPA is ever hosted on
+# a different origin than this API again.
+_COOKIE_SAMESITE = (settings.cookie_samesite or "lax").lower()
+_COOKIE_SECURE = _COOKIE_SAMESITE == "none" or settings.cookie_secure
+
+
 def _set_admin_cookie(resp: Response, raw: str) -> None:
     resp.set_cookie(
         admin_auth.DEVICE_COOKIE, raw,
         max_age=admin_auth.device_ttl_days() * 86400,
-        httponly=True, secure=True, samesite="none", path="/",
+        httponly=True, secure=_COOKIE_SECURE, samesite=_COOKIE_SAMESITE, path="/",
     )
 
 
@@ -212,7 +219,7 @@ def admin_logout(request: Request, response: Response) -> dict:
     raw = request.cookies.get(admin_auth.DEVICE_COOKIE, "")
     if "." in raw:
         admin_auth.device_delete(raw.split(".", 1)[0])
-    response.delete_cookie(admin_auth.DEVICE_COOKIE, path="/", samesite="none", secure=True)
+    response.delete_cookie(admin_auth.DEVICE_COOKIE, path="/", samesite=_COOKIE_SAMESITE, secure=_COOKIE_SECURE)
     return {"ok": True}
 
 
