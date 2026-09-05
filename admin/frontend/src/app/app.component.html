@@ -35,7 +35,7 @@
     <ng-container *ngIf="phase() === 'setpin'">
       <h1>Set a 4-digit PIN</h1>
       <p class="sub">You’ll use this PIN to unlock on this device for the next 30 days.</p>
-      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •"
+      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="PIN"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" autofocus />
       <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="Repeat PIN"
         [ngModel]="pin2Input()" (ngModelChange)="pin2Input.set($event)" (keydown.enter)="createPin()" />
