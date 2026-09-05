@@ -279,12 +279,6 @@
             [ngModel]="crmSearch()" (ngModelChange)="crmSearch.set($event)" />
         </div>
         <div class="crm-count">{{ filteredClients().length }} client{{ filteredClients().length === 1 ? '' : 's' }}</div>
-        <div class="crm-tools" *ngIf="crmClients().length && !crmSearch()">
-          <button class="seed-btn" [disabled]="addingVilla()" (click)="giveSecondVilla()">
-            {{ addingVilla() ? 'Adding…' : '+ Give a client a 2nd villa' }}
-          </button>
-          <p class="added-note" *ngIf="addedNote()">{{ addedNote() }}</p>
-        </div>
 
         <div class="loading" *ngIf="crmLoading()">Loading clients…</div>
         <div class="crm-rows">
@@ -296,8 +290,8 @@
               <span class="crm-row-sub">+91 {{ c.phone }}<span *ngIf="c.city"> · {{ c.city }}</span></span>
             </span>
             <span class="crm-row-right">
-              <span class="crm-badge" *ngIf="c.pending" title="Needs action">{{ c.pending }}</span>
               <span class="crm-villas">{{ c.villa_count }} villa{{ c.villa_count === 1 ? '' : 's' }}</span>
+              <span class="crm-pending" *ngIf="c.pending" [title]="c.pending + ' request' + (c.pending === 1 ? '' : 's') + ' need action'">{{ c.pending }} new</span>
             </span>
           </button>
         </div>

@@ -775,9 +775,12 @@
 .crm-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .crm-row-name { font-size: 0.9rem; font-weight: 750; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .crm-row-sub { font-size: 0.74rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.crm-row-right { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; }
-.crm-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: 0.68rem; font-weight: 850; color: #fff; background: var(--terracotta); }
-.crm-villas { font-size: 0.68rem; color: var(--muted); font-weight: 650; }
+.crm-row-right { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
+.crm-villas { font-size: 0.74rem; color: var(--ink); font-weight: 750; }
+.crm-pending {
+  font-size: 0.62rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.03em;
+  color: #fff; background: var(--terracotta); padding: 0.1rem 0.4rem; border-radius: 999px;
+}
 
 /* right: profile */
 .crm-detail { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
