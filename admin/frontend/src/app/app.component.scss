@@ -3,100 +3,145 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 1.05rem;
-  font-weight: 850;
-  letter-spacing: -0.3px;
-  color: var(--text);
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--ink);
 }
-.logo { color: var(--purple); }
+.brand .brand-name { color: var(--ink); }
+.logo {
+  color: var(--brass);
+  font-size: 1rem;
+  transform: translateY(-1px);
+}
 .tag {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #fff;
-  background: linear-gradient(135deg, #a05cff, #ff7a3d);
-  padding: 0.15rem 0.45rem;
-  border-radius: 6px;
+  letter-spacing: 0.1em;
+  color: var(--paper);
+  background: var(--brass);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
 }
 
-.err { color: var(--low); font-size: 0.88rem; font-weight: 650; margin: 0.4rem 0; }
-.note { color: var(--muted); font-size: 0.82rem; margin: 0.35rem 0; }
+.err { color: var(--negative); font-size: 0.88rem; font-weight: 650; margin: 0.4rem 0 0; }
+.note { color: var(--muted); font-size: 0.82rem; margin: 0.35rem 0 0; }
 
 /* ================= LOCK SCREEN ================= */
 .lock {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  padding: 2rem 1.25rem;
+  position: relative;
   background:
-    radial-gradient(120% 70% at 20% -10%, rgba(160, 92, 255, 0.28), transparent 55%),
-    radial-gradient(120% 60% at 110% 10%, rgba(255, 122, 61, 0.15), transparent 50%);
+    radial-gradient(115% 70% at 15% -10%, color-mix(in srgb, var(--brass) 16%, transparent), transparent 55%),
+    radial-gradient(110% 65% at 105% 8%, color-mix(in srgb, var(--terracotta) 10%, transparent), transparent 55%),
+    var(--paper);
 }
+
 .lock-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 1.8rem 1.6rem;
-  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.85);
+  border-radius: 24px;
+  padding: 2.4rem 2rem 2.1rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 24px 60px -32px rgba(22, 48, 43, 0.35);
   animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-.lock-card h1 { margin: 1.1rem 0 0.3rem; font-size: 1.55rem; font-weight: 850; letter-spacing: -0.6px; }
-.lock-card .sub { margin: 0 0 1.3rem; color: var(--muted); font-size: 0.92rem; line-height: 1.55; }
-.lock-card .sub b { color: var(--text); }
+
+.lock-card h1 {
+  margin: 1.5rem 0 0.4rem;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  color: var(--ink);
+}
+.lock-card .sub {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.lock-card .sub b { color: var(--ink); font-weight: 700; }
 
 .code-input {
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 0.7rem;
   border: 1.5px solid var(--border);
-  border-radius: 13px;
+  border-radius: 14px;
   background: var(--surface-2);
-  color: var(--text);
+  color: var(--ink);
   font: inherit;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   text-align: center;
-  padding: 0.85rem 0.95rem;
+  padding: 0.95rem 1rem;
   font-variant-numeric: tabular-nums;
-  &::placeholder { letter-spacing: 0.14em; color: var(--muted); opacity: 0.6; }
-  &:focus { outline: none; border-color: var(--purple); }
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  &::placeholder { letter-spacing: 0.18em; color: var(--muted); opacity: 0.55; }
+  &:focus {
+    outline: none;
+    background: var(--surface);
+    border-color: var(--brass);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brass) 16%, transparent);
+  }
 }
+/* PIN fields: fixed-width, extra-spaced dots feel like a keypad entry */
+.code-input.pin { letter-spacing: 0.5em; font-size: 1.5rem; padding-left: 1.5em; }
 
 .cta {
   width: 100%;
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
   border: none;
   border-radius: 14px;
-  padding: 0.95rem;
+  padding: 1rem;
   font: inherit;
   font-size: 1rem;
   font-weight: 800;
-  color: #fff;
+  letter-spacing: 0.2px;
+  color: var(--paper);
   cursor: pointer;
-  background: linear-gradient(120deg, #a05cff, #b866d6 55%, #ff7a3d);
-  box-shadow: 0 14px 32px -14px rgba(180, 90, 200, 0.75);
-  transition: transform 0.12s, opacity 0.2s;
-  &:active { transform: scale(0.98); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  background: var(--brass);
+  box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--brass) 85%, transparent);
+  transition: transform 0.12s, filter 0.2s, opacity 0.2s;
+  &:hover:not(:disabled) { filter: brightness(1.05); }
+  &:active { transform: scale(0.985); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
 }
 .link {
   display: block;
   width: 100%;
-  margin-top: 0.7rem;
+  margin-top: 0.85rem;
   background: none;
   border: none;
-  color: var(--purple);
+  color: var(--brass);
   font: inherit;
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
+  &:hover:not(:disabled) { text-decoration: underline; }
   &:disabled { opacity: 0.5; }
+}
+
+.lock-foot {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 /* ================= DASHBOARD ================= */
@@ -108,7 +153,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.9rem 1.2rem;
-  background: rgba(8, 6, 15, 0.82);
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -350,7 +395,7 @@
   &:active { transform: scale(0.95); }
   &:disabled { opacity: 0.5; }
 }
-.act.ok { border-color: transparent; background: linear-gradient(135deg, #34c98a, #2f9e6f); color: #fff; }
+.act.ok { border-color: transparent; background: var(--positive); color: #fff; }
 .act.no:hover { border-color: var(--low); color: var(--low); }
 .act.reopen { font-size: 0.76rem; }
 

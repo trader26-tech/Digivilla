@@ -1,12 +1,16 @@
 <!-- ═══════════════════════ LOCK SCREEN ═══════════════════════ -->
 <div class="lock" *ngIf="phase() !== 'unlocked'">
   <div class="lock-card" *ngIf="phase() !== 'loading'">
-    <div class="brand"><span class="logo">◆</span> MyLakshyas <span class="tag">Admin</span></div>
+    <div class="brand">
+      <span class="logo">◆</span>
+      <span class="brand-name">Digivilla</span>
+      <span class="tag">Admin</span>
+    </div>
 
     <!-- email -->
     <ng-container *ngIf="phase() === 'email'">
       <h1>Consultation desk</h1>
-      <p class="sub">We’ll email a one-time code to<br><b>{{ signinEmail() || 'your admin email' }}</b>.</p>
+      <p class="sub">We’ll email a one-time sign-in code to<br><b>{{ signinEmail() || 'your admin email' }}</b>.</p>
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="sendCode()">
         {{ busy() ? 'Sending…' : 'Email me a code' }}
@@ -22,18 +26,18 @@
       <p class="note" *ngIf="notice()">{{ notice() }}</p>
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="verifyCode()">
-        {{ busy() ? 'Checking…' : 'Verify' }}
+        {{ busy() ? 'Checking…' : 'Verify & continue' }}
       </button>
       <button class="link" (click)="sendCode()" [disabled]="busy()">Resend code</button>
     </ng-container>
 
     <!-- set pin -->
     <ng-container *ngIf="phase() === 'setpin'">
-      <h1>Set a PIN</h1>
-      <p class="sub">Choose a 4–8 digit PIN. You’ll use it to unlock on this device for the next 30 days.</p>
-      <input class="code-input" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"
+      <h1>Set a 4-digit PIN</h1>
+      <p class="sub">You’ll use this PIN to unlock on this device for the next 30 days.</p>
+      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" autofocus />
-      <input class="code-input" type="password" inputmode="numeric" maxlength="8" placeholder="Repeat PIN"
+      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="Repeat PIN"
         [ngModel]="pin2Input()" (ngModelChange)="pin2Input.set($event)" (keydown.enter)="createPin()" />
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="createPin()">
@@ -44,8 +48,8 @@
     <!-- pin unlock -->
     <ng-container *ngIf="phase() === 'pin'">
       <h1>Welcome back</h1>
-      <p class="sub">Enter your PIN to unlock.</p>
-      <input class="code-input" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"
+      <p class="sub">Enter your 4-digit PIN to unlock.</p>
+      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" (keydown.enter)="doUnlock()" autofocus />
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="doUnlock()">
@@ -54,12 +58,18 @@
       <button class="link" (click)="useEmailInstead()">Sign in with email instead</button>
     </ng-container>
   </div>
+
+  <p class="lock-foot" *ngIf="phase() !== 'loading'">Digivilla · Secure admin access</p>
 </div>
 
 <!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
 <div class="dash" *ngIf="phase() === 'unlocked'">
   <header class="top">
-    <div class="brand"><span class="logo">◆</span> MyLakshyas <span class="tag">Admin</span></div>
+    <div class="brand">
+      <span class="logo">◆</span>
+      <span class="brand-name">Digivilla</span>
+      <span class="tag">Admin</span>
+    </div>
     <div class="top-right">
       <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">{{ lockCountdown() }}</span>
       <button class="ghost" (click)="signOut()">Sign out</button>

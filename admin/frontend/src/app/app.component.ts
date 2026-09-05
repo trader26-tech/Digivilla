@@ -168,7 +168,7 @@ export class AppComponent implements OnInit {
 
   createPin(): void {
     const p = this.pinInput().trim();
-    if (!/^\d{4,8}$/.test(p)) { this.authError.set('PIN must be 4–8 digits.'); return; }
+    if (!/^\d{4}$/.test(p)) { this.authError.set('PIN must be exactly 4 digits.'); return; }
     if (p !== this.pin2Input().trim()) { this.authError.set('The two PINs don’t match.'); return; }
     if (this.busy()) return;
     this.busy.set(true);

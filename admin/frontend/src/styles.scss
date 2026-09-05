@@ -1,17 +1,37 @@
+/* ============================================================
+   Digivilla Admin — matches the client app's "estate document"
+   palette: warm document-white background, deep estate-green ink,
+   brass accent. All-Inter type system.
+   ============================================================ */
 :root {
-  --bg: #08060f;
-  --surface: #141220;
-  --surface-2: #1e1b2e;
-  --border: #2a2740;
-  --text: #f2eefc;
-  --muted: #a99fce;
-  --accent: #a370ff;
-  --accent-2: #7a3ea8;
-  --purple: #a370ff;
-  --orange: #ff9a4a;
-  --good: #4be3a1;
-  --warn: #ffb84d;
-  --low: #ff6f7d;
+  /* Brand palette (shared with the client app) */
+  --ink: #16302B;          /* deep estate green — text, brand */
+  --paper: #FAF8F3;        /* warm document white — background */
+  --survey: #DDD6C7;       /* faint khaki — borders, hairlines */
+  --brass: #A67C2E;        /* accent — CTAs, active states */
+  --terracotta: #8C4A32;   /* emphasis / errors */
+  --positive: #2E6B4F;     /* confirmed / gains */
+  --negative: #9B3B2E;     /* declined / losses */
+
+  /* Neutral surface tokens derived from the palette */
+  --bg:        var(--paper);
+  --surface:   #ffffff;
+  --surface-2: #F3EFE6;    /* subtle inset (inputs, chips) */
+  --border:    var(--survey);
+  --text:      var(--ink);
+  --muted:     color-mix(in srgb, var(--ink) 52%, var(--paper));
+
+  /* Legacy aliases used across the dashboard styles (remapped to brand) */
+  --accent:    var(--brass);
+  --accent-2:  color-mix(in srgb, var(--brass) 70%, var(--ink));
+  --purple:    var(--brass);
+  --orange:    var(--terracotta);
+  --good:      var(--positive);
+  --warn:      var(--brass);
+  --low:       var(--negative);
+
+  --font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -19,8 +39,15 @@ html, body {
   margin: 0;
   padding: 0;
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
+  font-feature-settings: 'tnum' 1;
   -webkit-font-smoothing: antialiased;
-  background: var(--bg);
+  text-rendering: optimizeLegibility;
+  background: var(--paper);
   min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }

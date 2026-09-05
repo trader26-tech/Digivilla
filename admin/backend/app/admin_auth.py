@@ -41,7 +41,7 @@ OTP_RESEND_COOLDOWN = 30         # seconds between request-otp calls (per email)
 OTP_MAX_PER_HOUR = 6             # request-otp calls per email per hour
 
 PIN_MIN_LEN = 4
-PIN_MAX_LEN = 8
+PIN_MAX_LEN = 4
 PIN_MAX_ATTEMPTS = 5             # wrong-PIN tries before the device is revoked
 
 LOCK_PRESETS = [10, 30, 60, 120]
@@ -400,12 +400,12 @@ def is_valid_token(token: str) -> bool:
 # ── email delivery (Resend; falls back to server log in dev) ─────────────────
 def _otp_html(code: str) -> str:
     return f"""\
-<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:440px;margin:0 auto;padding:32px 28px;background:#141220;border-radius:16px;color:#f2eefc">
-  <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px">MyLakshyas <span style="color:#a370ff">Admin</span></div>
-  <div style="font-size:13px;color:#a99fce;margin-bottom:24px">Secure sign-in code</div>
-  <div style="font-size:40px;font-weight:800;letter-spacing:10px;color:#fff;background:#1e1b2e;border-radius:12px;padding:18px 0;text-align:center">{code}</div>
-  <div style="font-size:13px;color:#a99fce;margin-top:22px;line-height:1.6">
-    Enter this code to sign in. It expires in <b style="color:#f2eefc">5 minutes</b>.<br>
+<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:440px;margin:0 auto;padding:32px 28px;background:#ffffff;border:1px solid #DDD6C7;border-radius:16px;color:#16302B">
+  <div style="font-size:20px;font-weight:800;color:#16302B;margin-bottom:4px">◆ Digivilla <span style="color:#A67C2E">Admin</span></div>
+  <div style="font-size:13px;color:#6b7c74;margin-bottom:24px">Secure sign-in code</div>
+  <div style="font-size:40px;font-weight:800;letter-spacing:10px;color:#16302B;background:#F3EFE6;border-radius:12px;padding:18px 0;text-align:center">{code}</div>
+  <div style="font-size:13px;color:#6b7c74;margin-top:22px;line-height:1.6">
+    Enter this code to sign in. It expires in <b style="color:#16302B">5 minutes</b>.<br>
     If you didn't request this, ignore this email — no one can access the desk without it.
   </div>
 </div>"""
@@ -420,7 +420,7 @@ def send_otp(to_email: str, code: str) -> bool:
     api_key = (get_settings().resend_api_key or "").strip()
     sender = (get_settings().otp_from or "onboarding@resend.dev").strip()
     if not api_key:
-        print(f"\n{'='*52}\n  [MyLakshyas Admin OTP]  code for {to_email}: {code}\n"
+        print(f"\n{'='*52}\n  [Digivilla Admin OTP]  code for {to_email}: {code}\n"
               f"  (RESEND_API_KEY not set — printed to log for dev)\n{'='*52}\n", flush=True)
         return False
     try:
@@ -430,9 +430,9 @@ def send_otp(to_email: str, code: str) -> bool:
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
-                "from": f"MyLakshyas Admin <{sender}>",
+                "from": f"Digivilla Admin <{sender}>",
                 "to": [to_email],
-                "subject": f"{code} is your MyLakshyas admin sign-in code",
+                "subject": f"{code} is your Digivilla admin sign-in code",
                 "html": _otp_html(code),
             },
             timeout=15,

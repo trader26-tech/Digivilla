@@ -51,7 +51,7 @@ from app.schemas import (
 
 settings = get_settings()
 
-app = FastAPI(title="MyLakshyas Admin API", version="1.0.0")
+app = FastAPI(title="Digivilla Admin API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
