@@ -100,7 +100,19 @@
   }
 }
 /* PIN fields: fixed-width, extra-spaced dots feel like a keypad entry */
-.code-input.pin { letter-spacing: 0.5em; font-size: 1.5rem; padding-left: 1.5em; }
+.code-input.pin { letter-spacing: 0.5em; font-size: 1.5rem; padding-left: 1.5em; margin-bottom: 0.4rem; }
+
+/* header label above each PIN field */
+.field-label {
+  display: block;
+  text-align: left;
+  margin: 0.6rem 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
 
 .cta {
   width: 100%;

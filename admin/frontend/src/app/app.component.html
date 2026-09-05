@@ -35,10 +35,15 @@
     <ng-container *ngIf="phase() === 'setpin'">
       <h1>Set a 4-digit PIN</h1>
       <p class="sub">You’ll use this PIN to unlock on this device for the next 30 days.</p>
-      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="PIN"
+
+      <label class="field-label" for="pin1">PIN</label>
+      <input id="pin1" class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" autofocus />
-      <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="Repeat PIN"
+
+      <label class="field-label" for="pin2">Repeat PIN</label>
+      <input id="pin2" class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
         [ngModel]="pin2Input()" (ngModelChange)="pin2Input.set($event)" (keydown.enter)="createPin()" />
+
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="createPin()">
         {{ busy() ? 'Saving…' : 'Save PIN & continue' }}
