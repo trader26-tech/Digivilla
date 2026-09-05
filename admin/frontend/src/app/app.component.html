@@ -86,25 +86,6 @@
 
   <!-- ─────────── CALENDAR TAB ─────────── -->
   <div class="wrap wide" *ngIf="tab() === 'calendar'">
-    <!-- summary header (KPI row) -->
-    <div class="kpis card">
-      <div class="kpi">
-        <span class="kpi-label">Awaiting you</span>
-        <b class="kpi-val pend">{{ requestedCount }}</b>
-        <span class="kpi-sub">need action this month</span>
-      </div>
-      <div class="kpi">
-        <span class="kpi-label">Requests · {{ monthLabel() }}</span>
-        <b class="kpi-val">{{ monthSummary().total }}</b>
-        <span class="kpi-sub">{{ monthSummary().byKind['sip'] }} SIP · {{ monthSummary().byKind['buy'] }} buy · {{ monthSummary().byKind['withdraw'] }} withdraw</span>
-      </div>
-      <div class="kpi">
-        <span class="kpi-label">Value in play</span>
-        <b class="kpi-val money">{{ moneyShort(monthSummary().value) || '₹0' }}</b>
-        <span class="kpi-sub">across this month’s requests</span>
-      </div>
-    </div>
-
     <div class="cal-shell">
       <!-- ═══════ LEFT: month calendar ═══════ -->
       <div class="left-col">

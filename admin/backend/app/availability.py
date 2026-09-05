@@ -33,6 +33,9 @@ DEFAULT_CONFIG = {
     "slot_minutes": 30,
     "weekdays": [0, 1, 2, 3, 4, 5],  # Mon–Sat
     "tz_offset": "+05:30",           # IST; stamped onto every ISO slot
+    # Recurring busy times — "HH:MM" slot-starts that are busy EVERY working day
+    # (e.g. a lunch break or gym). Distinct from one-off per-day blocked_slots.
+    "busy_times": [],
 }
 
 
@@ -101,7 +104,7 @@ def get_config() -> dict:
 
 def set_config(patch: dict) -> dict:
     cfg = get_config()
-    for k in ("start", "end", "slot_minutes", "weekdays", "tz_offset"):
+    for k in ("start", "end", "slot_minutes", "weekdays", "tz_offset", "busy_times"):
         if k in patch and patch[k] is not None:
             cfg[k] = patch[k]
     if _use_supabase():
@@ -180,6 +183,7 @@ def day_grid(days: int = 14) -> list[dict]:
     cfg = get_config()
     times = _times(cfg)
     blocked = set(blocked_slots())
+    busy_times = set(cfg.get("busy_times", []))
     weekdays = set(cfg.get("weekdays", DEFAULT_CONFIG["weekdays"]))
 
     out: list[dict] = []
@@ -192,6 +196,30 @@ def day_grid(days: int = 14) -> list[dict]:
         slots = []
         for t in times:
             s = slot_iso(iso, t, cfg)
-            slots.append({"time": t, "slot": s, "blocked": s in blocked})
+            recurring = t in busy_times          # busy every day at this time
+            one_off = s in blocked               # busy just this day
+            slots.append({
+                "time": t, "slot": s,
+                "blocked": recurring or one_off,
+                "recurring": recurring,
+            })
         out.append({"date": iso, "weekday": d.weekday(), "slots": slots})
     return out
+
+
+def taken_slots(days: int = 60) -> list[str]:
+    """Every ISO slot a client must NOT see as free: one-off blocks PLUS the
+    recurring busy times expanded across the upcoming working days."""
+    cfg = get_config()
+    busy_times = cfg.get("busy_times", [])
+    weekdays = set(cfg.get("weekdays", DEFAULT_CONFIG["weekdays"]))
+    out = set(blocked_slots())
+    if busy_times:
+        today = datetime.now()
+        for i in range(days):
+            d = (today + timedelta(days=i)).date()
+            if d.weekday() not in weekdays:
+                continue
+            for t in busy_times:
+                out.add(slot_iso(d.isoformat(), t, cfg))
+    return sorted(out)

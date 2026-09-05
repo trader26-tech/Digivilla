@@ -507,6 +507,7 @@ export class AppComponent implements OnInit {
     const start = this.avStart() || '10:00';
     const end = this.avEnd() || '18:00';
     const blocked = new Set(this.blockedSet());
+    const recurring = new Set(this.busyTimes());
     const filter = this.kindFilter();
 
     // bucket the day's requests by their half-hour slot start ("HH:MM")
@@ -521,24 +522,30 @@ export class AppComponent implements OnInit {
 
     const toMin = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
     const rows: {
-      time: string; label: string; iso: string; blocked: boolean; requests: Booking[];
+      time: string; label: string; iso: string;
+      blocked: boolean; recurring: boolean; requests: Booking[];
     }[] = [];
     for (let t = toMin(start); t < toMin(end); t += 30) {
       const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
       const slotIso = `${iso}T${hm}:00+05:30`;
+      const isRecurring = recurring.has(hm);
       rows.push({
         time: hm,
         label: this.timeLabel(hm),
         iso: slotIso,
-        blocked: blocked.has(slotIso),
+        recurring: isRecurring,
+        blocked: isRecurring || blocked.has(slotIso),
         requests: reqBy.get(hm) || [],
       });
     }
     return rows;
   });
 
-  /** the set of blocked slot ISO strings, kept in a signal for reactivity */
+  /** the set of blocked slot ISO strings (one-off, per day), for reactivity */
   blockedSet = signal<string[]>([]);
+  /** recurring busy "HH:MM" times — busy EVERY day (lunch, gym) */
+  busyTimes = signal<string[]>([]);
+  savingBusy = signal(false);
 
   private floorHalfHour(hm: string): string {
     const [h, m] = hm.split(':').map(Number);
@@ -546,7 +553,7 @@ export class AppComponent implements OnInit {
     return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
 
-  /** Toggle a 30-min slot busy/free for the selected day (e.g. block 12–1pm for gym). */
+  /** Toggle a 30-min slot busy/free for JUST the selected day (one-off). */
   toggleDaySlot(slotIso: string, currentlyBlocked: boolean): void {
     const next = !currentlyBlocked;
     this.avBusySlot.set(slotIso);
@@ -555,6 +562,31 @@ export class AppComponent implements OnInit {
       error: () => this.avBusySlot.set(''),
     });
   }
+
+  /** Toggle a recurring busy time (busy EVERY working day at this HH:MM). */
+  toggleRecurringBusy(hm: string): void {
+    const cur = this.busyTimes();
+    const next = cur.includes(hm) ? cur.filter((t) => t !== hm) : [...cur, hm].sort();
+    this.busyTimes.set(next);
+    this.savingBusy.set(true);
+    this.api.saveAvailabilityConfig({ busy_times: next }).subscribe({
+      next: () => this.savingBusy.set(false),
+      error: () => this.savingBusy.set(false),
+    });
+  }
+
+  /** All half-hour times across the working window — for the recurring picker. */
+  windowTimes = computed<{ time: string; label: string }[]>(() => {
+    const toMin = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+    const out: { time: string; label: string }[] = [];
+    for (let t = toMin(this.avStart() || '10:00'); t < toMin(this.avEnd() || '18:00'); t += 30) {
+      const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+      out.push({ time: hm, label: this.timeLabel(hm) });
+    }
+    return out;
+  });
+  isBusyTime(hm: string): boolean { return this.busyTimes().includes(hm); }
+  showBusyEditor = signal(false);
 
   /** counts for the selected day, for the little header summary. */
   daySummary = computed<{ total: number; pending: number }>(() => {

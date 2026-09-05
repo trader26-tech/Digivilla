@@ -112,7 +112,7 @@ def create_booking(payload: BookingCreate) -> Booking:
 def taken_slots() -> dict:
     """Public: ISO slots unavailable to clients — confirmed bookings PLUS the
     slots the admin has blocked — so the picker greys them out."""
-    slots = set(bookings_svc.confirmed_slots()) | set(availability_svc.blocked_slots())
+    slots = set(bookings_svc.confirmed_slots()) | set(availability_svc.taken_slots())
     return {"slots": sorted(slots)}
 
 

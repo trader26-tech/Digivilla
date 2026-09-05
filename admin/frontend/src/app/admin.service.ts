@@ -45,11 +45,13 @@ export interface AvailabilityConfig {
   slot_minutes: number;
   weekdays: number[];
   tz_offset: string;
+  busy_times: string[];   // "HH:MM" slots busy EVERY day (recurring)
 }
 export interface DaySlot {
   time: string; // "HH:MM"
   slot: string; // ISO-8601
   blocked: boolean;
+  recurring?: boolean;    // true when busy because of a recurring busy_time
 }
 export interface AvailabilityDay {
   date: string; // YYYY-MM-DD
