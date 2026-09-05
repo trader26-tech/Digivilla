@@ -343,6 +343,31 @@ export class AppComponent implements OnInit {
     });
   }
 
+  /** "Good morning / afternoon / evening" by the local clock. */
+  greeting = computed<string>(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  });
+
+  /** The admin's first name: from the sign-in email, else "Ranjeev". */
+  adminName = computed<string>(() => {
+    const raw = (this.signinEmail() || this.maskedEmail() || '').trim();
+    const local = raw.split('@')[0].replace(/[._-]+/g, ' ').trim();
+    const first = local.split(' ')[0].replace(/\*/g, '');
+    if (!first || first.length < 2) return 'Ranjeev';
+    return first.charAt(0).toUpperCase() + first.slice(1);
+  });
+
+  /** Today, spelled out — e.g. "Saturday, 5 September". */
+  todayLong = computed<string>(() => {
+    const d = new Date();
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const mo = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${days[d.getDay()]}, ${d.getDate()} ${mo[d.getMonth()]}`;
+  });
+
   lockCountdown = computed<string>(() => {
     const s = this.secondsLeft();
     if (s === null) return '';
@@ -679,9 +704,10 @@ export class AppComponent implements OnInit {
         this.avStart.set(r.config.start);
         this.avEnd.set(r.config.end);
         this.avWeekdays.set(r.config.weekdays);
-        // gather every blocked slot ISO across the returned days for the day view
+        this.busyTimes.set(r.config.busy_times || []);
+        // one-off blocks only (recurring busy is tracked separately via busyTimes)
         const blocked: string[] = [];
-        for (const d of r.days) for (const s of d.slots) if (s.blocked) blocked.push(s.slot);
+        for (const d of r.days) for (const s of d.slots) if (s.blocked && !s.recurring) blocked.push(s.slot);
         this.blockedSet.set(blocked);
       },
       error: (e) => { if (e?.status === 401) this.lock(); },

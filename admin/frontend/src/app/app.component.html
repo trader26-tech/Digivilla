@@ -86,6 +86,25 @@
 
   <!-- ─────────── CALENDAR TAB ─────────── -->
   <div class="wrap wide" *ngIf="tab() === 'calendar'">
+    <!-- greeting hero -->
+    <div class="hero">
+      <div class="hero-text">
+        <h1 class="hero-title">{{ greeting() }}, {{ adminName() }}</h1>
+        <p class="hero-sub">{{ todayLong() }}</p>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat" [class.accent]="requestedCount">
+          <b>{{ requestedCount }}</b><span>Need you</span>
+        </div>
+        <div class="hstat">
+          <b>{{ confirmedCount }}</b><span>Confirmed</span>
+        </div>
+        <div class="hstat">
+          <b>{{ bookings().length }}</b><span>Total</span>
+        </div>
+      </div>
+    </div>
+
     <div class="cal-shell">
       <!-- ═══════ LEFT: month calendar ═══════ -->
       <div class="left-col">
@@ -146,20 +165,36 @@
           </button>
         </div>
 
-        <!-- working-hours editor (inline) -->
-        <div class="hours">
+        <!-- working hours + busy-hours control -->
+        <div class="hours card">
           <div class="hours-row">
-            <label>Working hours</label>
-            <div class="hours-inputs">
-              <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
-              <span>to</span>
-              <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
-              <button class="save-hours" [disabled]="avSavingCfg()" (click)="saveWindow()">
-                {{ avSavingCfg() ? 'Saving…' : 'Save' }}
+            <div class="hours-left">
+              <span class="hours-lbl">Working hours</span>
+              <div class="hours-inputs">
+                <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
+                <span class="to">–</span>
+                <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
+                <button class="save-hours" [disabled]="avSavingCfg()" (click)="saveWindow()">
+                  {{ avSavingCfg() ? 'Saving…' : 'Save' }}
+                </button>
+              </div>
+            </div>
+            <button class="busy-btn" [class.on]="showBusyEditor()" (click)="showBusyEditor.set(!showBusyEditor())">
+              ⛔ Busy hours<span class="busy-count" *ngIf="busyTimes().length">{{ busyTimes().length }}</span>
+            </button>
+          </div>
+
+          <!-- recurring busy-hours editor -->
+          <div class="busy-editor" *ngIf="showBusyEditor()">
+            <p class="busy-help">Pick times that are busy <b>every day</b> (lunch, gym). Clients never see these. <span class="busy-saving" *ngIf="savingBusy()">saving…</span></p>
+            <div class="busy-grid">
+              <button *ngFor="let t of windowTimes()" class="busy-chip"
+                [class.on]="isBusyTime(t.time)" (click)="toggleRecurringBusy(t.time)">
+                {{ t.label }}
               </button>
             </div>
           </div>
-          <p class="hours-hint">Tap a free slot to mark it busy (e.g. gym) — clients won’t see busy slots.</p>
+          <p class="hours-hint" *ngIf="!showBusyEditor()">On the timeline below, tap any free slot to block it for <b>this day only</b>.</p>
         </div>
 
         <div class="loading" *ngIf="loading()">Loading…</div>
@@ -170,22 +205,23 @@
           <li class="srow" *ngFor="let s of daySlots()"
             [class.busy]="s.blocked" [class.filled]="s.requests.length">
             <div class="srow-time">{{ s.label }}</div>
-            <div class="srow-body">
-              <!-- requests in this slot -->
-              <div class="req" *ngFor="let b of s.requests"
-                [class.done]="b.status !== 'requested'">
-                <div class="req-top">
-                  <span class="req-kind">{{ kindIcon(b) }} {{ kindLabel(b) }}</span>
-                  <span class="req-status" *ngIf="b.status === 'confirmed'">Confirmed</span>
-                  <span class="req-status" *ngIf="b.status === 'declined'">Declined</span>
-                  <span class="req-status new" *ngIf="b.status === 'requested'">New</span>
+
+            <!-- one or more requests in this slot -->
+            <div class="srow-cards" *ngIf="s.requests.length">
+              <div class="reqcard" *ngFor="let b of s.requests"
+                [attr.data-kind]="b.kind" [class.done]="b.status !== 'requested'">
+                <span class="reqcard-ico">{{ kindIcon(b) }}</span>
+                <div class="reqcard-body">
+                  <div class="reqcard-line1">
+                    <b class="reqcard-name">{{ b.name }}</b>
+                    <span class="reqcard-badge" [class.new]="b.status === 'requested'">
+                      {{ b.status === 'requested' ? 'New' : b.status === 'confirmed' ? 'Confirmed' : 'Declined' }}
+                    </span>
+                  </div>
+                  <div class="reqcard-need">{{ kindLabel(b) }} — {{ requirementLine(b) }}</div>
+                  <a class="reqcard-phone" [href]="'tel:+91' + b.phone">📞 +91 {{ b.phone }}</a>
                 </div>
-                <div class="req-who">
-                  <b>{{ b.name }}</b>
-                  <a [href]="'tel:+91' + b.phone">+91 {{ b.phone }}</a>
-                </div>
-                <div class="req-need">{{ requirementLine(b) }}</div>
-                <div class="req-actions">
+                <div class="reqcard-actions">
                   <ng-container *ngIf="b.status === 'requested'">
                     <button class="act ok" [disabled]="busyId() === b.id" (click)="confirm(b)">
                       {{ b.kind === 'consultation' ? 'Confirm' : 'Mark done' }}
@@ -195,15 +231,22 @@
                   <button class="act reopen" *ngIf="b.status !== 'requested'" [disabled]="busyId() === b.id" (click)="reopen(b)">Reopen</button>
                 </div>
               </div>
-
-              <!-- empty slot: free / busy toggle -->
-              <button class="slot-toggle" *ngIf="!s.requests.length"
-                [disabled]="avBusySlot() === s.iso"
-                (click)="toggleDaySlot(s.iso, s.blocked)">
-                <span *ngIf="!s.blocked" class="free">Free · tap to mark busy</span>
-                <span *ngIf="s.blocked" class="busy-lbl">Busy</span>
-              </button>
             </div>
+
+            <!-- busy (recurring or one-off) -->
+            <div class="srow-busy" *ngIf="!s.requests.length && s.blocked">
+              <span class="busy-tag">{{ s.recurring ? '⛔ Busy every day' : '⛔ Busy' }}</span>
+              <button class="unbusy" *ngIf="!s.recurring" [disabled]="avBusySlot() === s.iso"
+                (click)="toggleDaySlot(s.iso, s.blocked)">Free up</button>
+              <span class="busy-recur-note" *ngIf="s.recurring">set in Busy hours</span>
+            </div>
+
+            <!-- free slot -->
+            <button class="srow-free" *ngIf="!s.requests.length && !s.blocked"
+              [disabled]="avBusySlot() === s.iso"
+              (click)="toggleDaySlot(s.iso, s.blocked)">
+              Free · tap to mark busy today
+            </button>
           </li>
         </ul>
 
