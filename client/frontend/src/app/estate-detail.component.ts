@@ -109,9 +109,11 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   @Input() initialVariant: LandVariantKey = 'balanced';
   @Output() back = new EventEmitter<void>();
 
-  /** Whether the "reserve → book a consultation" sheet is open. */
+  /** Whether the request sheet is open, and which action it performs. */
   booking = signal(false);
-  openBooking(): void {
+  bookingKind = signal<'consultation' | 'sip' | 'buy' | 'withdraw'>('consultation');
+  openBooking(kind: 'consultation' | 'sip' | 'buy' | 'withdraw' = 'consultation'): void {
+    this.bookingKind.set(kind);
     this.booking.set(true);
     if (navigator.vibrate) navigator.vibrate(5);
   }

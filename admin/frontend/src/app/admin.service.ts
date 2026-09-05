@@ -4,15 +4,18 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../environments/environment';
 
+export type RequestKind = 'consultation' | 'sip' | 'buy' | 'withdraw';
+
 export interface Booking {
   id: string;
   name: string;
   phone: string;
+  kind: RequestKind;
   property: string;
   variant: string;
   plots: number;
   amount: number;
-  slot: string; // ISO-8601
+  slot: string; // ISO-8601 (consultation only)
   note: string;
   status: 'requested' | 'confirmed' | 'declined';
   created_at: string;

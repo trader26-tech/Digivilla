@@ -8,23 +8,27 @@
     <div class="bs-tick">
       <svg viewBox="0 0 52 52" width="64" height="64"><circle cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="3" opacity="0.3"/><path d="M15 27l7 7 15-16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <h2>Consultation requested</h2>
-    <p class="bs-done-slot">{{ chosenLabel() }}</p>
-    <p class="bs-done-sub">We'll call you at that time to walk you through the plot and complete the payment. You'll get a confirmation shortly.</p>
+    <h2>{{ doneTitle }}</h2>
+    <p class="bs-done-slot" *ngIf="isConsult">{{ chosenLabel() }}</p>
+    <p class="bs-done-sub">{{ doneSub }}</p>
     <button class="bs-cta" (click)="close.emit()">Done</button>
   </div>
 
   <!-- ============ form ============ -->
   <ng-container *ngIf="!done()">
     <header class="bs-head">
-      <h2>Reserve this plot</h2>
+      <h2>{{ headTitle }}</h2>
       <button class="bs-x" (click)="close.emit()" aria-label="Close">✕</button>
     </header>
 
-    <p class="bs-lead">
+    <p class="bs-lead" *ngIf="isConsult">
       Pick a free time and we'll call you to finish your reservation —
       <b>{{ plots }} × {{ variantName || property }}</b> for <b>{{ '₹' + amount.toLocaleString('en-IN') }}</b>.
       No payment now.
+    </p>
+    <p class="bs-lead" *ngIf="!isConsult">
+      Leave your details for <b>{{ variantName || property }}</b> and your advisor will
+      call you shortly to complete it. No payment now.
     </p>
 
     <!-- name + phone -->
@@ -40,44 +44,58 @@
           <input type="tel" inputmode="numeric" placeholder="10-digit mobile" [ngModel]="phone()" (ngModelChange)="onPhone($event)" maxlength="10" autocomplete="tel" />
         </div>
       </label>
+
+      <!-- amount (sip / buy / withdraw) -->
+      <label class="bs-field" *ngIf="!isConsult">
+        <span>{{ amountLabel }}</span>
+        <div class="bs-phone">
+          <i>₹</i>
+          <input type="tel" inputmode="numeric" placeholder="Amount"
+            [ngModel]="amountInput() || ''" (ngModelChange)="onAmount($event)" autocomplete="off" />
+        </div>
+      </label>
     </div>
 
-    <!-- day strip -->
-    <span class="bs-cap">Choose a day</span>
-    <div class="bs-days">
-      <button
-        *ngFor="let d of days"
-        class="bs-day"
-        [class.on]="selectedDay() === d.iso"
-        (click)="selectedDay.set(d.iso); selectedTime.set('')"
-      >
-        <span class="bd-wd">{{ d.weekday }}</span>
-        <b class="bd-n">{{ d.day }}</b>
-        <span class="bd-mo">{{ d.month }}</span>
-      </button>
-    </div>
+    <!-- day + time picker: consultation only -->
+    <ng-container *ngIf="isConsult">
+      <span class="bs-cap">Choose a day</span>
+      <div class="bs-days">
+        <button
+          *ngFor="let d of days"
+          class="bs-day"
+          [class.on]="selectedDay() === d.iso"
+          (click)="selectedDay.set(d.iso); selectedTime.set('')"
+        >
+          <span class="bd-wd">{{ d.weekday }}</span>
+          <b class="bd-n">{{ d.day }}</b>
+          <span class="bd-mo">{{ d.month }}</span>
+        </button>
+      </div>
 
-    <!-- time grid -->
-    <span class="bs-cap">Choose a time</span>
-    <div class="bs-times">
-      <button
-        *ngFor="let t of times"
-        class="bs-time"
-        [class.on]="selectedTime() === t"
-        [class.taken]="isTaken(t)"
-        [disabled]="isTaken(t)"
-        (click)="pickTime(t)"
-      >
-        {{ timeLabel(t) }}
-        <span class="bs-taken-lbl" *ngIf="isTaken(t)">booked</span>
-      </button>
-    </div>
+      <span class="bs-cap">Choose a time</span>
+      <div class="bs-times">
+        <button
+          *ngFor="let t of times"
+          class="bs-time"
+          [class.on]="selectedTime() === t"
+          [class.taken]="isTaken(t)"
+          [disabled]="isTaken(t)"
+          (click)="pickTime(t)"
+        >
+          {{ timeLabel(t) }}
+          <span class="bs-taken-lbl" *ngIf="isTaken(t)">booked</span>
+        </button>
+      </div>
+    </ng-container>
 
     <p class="bs-error" *ngIf="error()">{{ error() }}</p>
 
     <button class="bs-cta" [disabled]="!canSubmit" (click)="submit()">
-      <span *ngIf="!submitting()">{{ selectedTime() ? 'Request ' + chosenLabel() : 'Pick a time' }}</span>
-      <span *ngIf="submitting()">Booking…</span>
+      <span *ngIf="!submitting()">
+        <ng-container *ngIf="isConsult">{{ selectedTime() ? 'Request ' + chosenLabel() : 'Pick a time' }}</ng-container>
+        <ng-container *ngIf="!isConsult">{{ ctaLabel }}</ng-container>
+      </span>
+      <span *ngIf="submitting()">Sending…</span>
     </button>
   </ng-container>
 </div>

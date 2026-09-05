@@ -62,15 +62,19 @@ def _write_local(rows: list[dict]) -> None:
 
 def _normalize(row: dict) -> dict:
     """Fill defaults for optional fields before building the Pydantic model."""
+    kind = row.get("kind") or "consultation"
+    if kind not in ("consultation", "sip", "buy", "withdraw"):
+        kind = "consultation"
     return {
         "id": row.get("id", ""),
         "name": row.get("name", ""),
         "phone": row.get("phone", ""),
+        "kind": kind,
         "property": row.get("property", "land"),
         "variant": row.get("variant", ""),
         "plots": int(row.get("plots", 1) or 1),
         "amount": float(row.get("amount", 0) or 0),
-        "slot": row.get("slot", ""),
+        "slot": row.get("slot", "") or "",
         "note": row.get("note", ""),
         "status": row.get("status", "requested"),
         "created_at": row.get("created_at", ""),
@@ -109,9 +113,11 @@ def list_bookings() -> list[Booking]:
 
 
 def confirmed_slots() -> list[str]:
-    """ISO slot strings that are already CONFIRMED — used to grey them out in
-    the user's picker so two people can't be booked into the same time."""
-    return [b.slot for b in list_bookings() if b.status == "confirmed"]
+    """ISO slot strings that are already CONFIRMED consultations — used to grey
+    them out in the user's picker so two people can't book the same time.
+    SIP/buy/withdraw requests carry no slot, so they never block the picker."""
+    return [b.slot for b in list_bookings()
+            if b.status == "confirmed" and b.kind == "consultation" and b.slot]
 
 
 def set_status(booking_id: str, status: str) -> Booking | None:

@@ -348,44 +348,110 @@
 .empty h2 { margin: 0.6rem 0 0.4rem; font-size: 1.35rem; font-weight: 850; }
 .empty p { margin: 0 auto; max-width: 340px; color: var(--muted); line-height: 1.5; }
 
-/* bookings calendar */
-.cal { display: flex; flex-direction: column; gap: 1.5rem; }
-.day-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.7rem; }
-.day-head h2 { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px; }
-.today-pill {
-  font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-  color: #fff; background: var(--purple); padding: 0.15rem 0.5rem; border-radius: 999px;
+/* ================= CALENDAR (day agenda + month overview) ================= */
+.kind-filter { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.1rem; }
+.kind-filter button {
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  font: inherit; font-size: 0.82rem; font-weight: 700; padding: 0.4rem 0.75rem;
+  border-radius: 999px; cursor: pointer; transition: all 0.15s;
 }
-.slots { display: flex; flex-direction: column; gap: 0.5rem; }
-.slot {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+.kind-filter button:hover { border-color: var(--brass); color: var(--ink); }
+.kind-filter button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.cal-layout { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 1.5rem; align-items: start; margin-bottom: 1.6rem; }
+@media (max-width: 820px) { .cal-layout { grid-template-columns: 1fr; } }
+
+/* --- Month overview --- */
+.month {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+  padding: 1rem 1rem 0.8rem; position: sticky; top: 4.5rem;
 }
-.slot.requested { border-color: rgba(255, 154, 74, 0.45); background: linear-gradient(180deg, rgba(255,154,74,0.06), transparent); }
-.slot.confirmed { border-color: rgba(75, 227, 161, 0.5); background: linear-gradient(180deg, rgba(75,227,161,0.08), transparent); }
-.slot.declined { opacity: 0.6; }
-.slot-time {
-  flex: none; width: 60px;
-  font-size: 0.86rem; font-weight: 800; color: var(--text);
-  font-variant-numeric: tabular-nums;
+@media (max-width: 820px) { .month { position: static; } }
+.month-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
+.month-title { display: flex; align-items: center; gap: 0.6rem; }
+.month-title b { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px; }
+.today-btn {
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--brass);
+  font: inherit; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.55rem;
+  border-radius: 999px; cursor: pointer;
 }
-.slot-body { flex: 1; min-width: 0; }
-.who { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
-.who-name { font-size: 0.98rem; font-weight: 750; }
-.who-phone { font-size: 0.82rem; color: var(--purple); text-decoration: none; font-weight: 650; }
-.what { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
-.slot-actions { flex: none; display: flex; align-items: center; gap: 0.4rem; }
+.mnav {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  width: 32px; height: 32px; border-radius: 10px; font-size: 1.15rem; line-height: 1;
+  cursor: pointer; transition: all 0.15s;
+}
+.mnav:hover { border-color: var(--brass); color: var(--brass); }
+.dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+.dow span { text-align: center; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cell {
+  position: relative; aspect-ratio: 1 / 1; border: 1px solid transparent; border-radius: 10px;
+  background: transparent; color: var(--ink); font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  transition: background 0.12s, border-color 0.12s;
+}
+.cell:hover { background: var(--surface-2); }
+.cell.dim { color: color-mix(in srgb, var(--ink) 32%, var(--paper)); }
+.cell .dnum { font-size: 0.85rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.cell.today .dnum { color: var(--brass); font-weight: 850; }
+.cell.today { border-color: color-mix(in srgb, var(--brass) 40%, transparent); }
+.cell.has .dnum { font-weight: 800; }
+.cell.sel { background: var(--ink); border-color: var(--ink); }
+.cell.sel .dnum, .cell.sel.today .dnum { color: var(--paper); }
+.dots { display: flex; gap: 3px; height: 6px; }
+.dot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+.dot.pend { background: var(--brass); }
+.dot.done { background: var(--positive); }
+.cell.sel .dot.pend { background: #fff; }
+.cell.sel .dot.done { background: color-mix(in srgb, var(--positive) 50%, #fff); }
+.legend { margin: 0.7rem 0 0.2rem; font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 0.2rem; }
+.legend .dot { transform: translateY(1px); }
+
+/* --- Selected-day agenda --- */
+.agenda-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.agenda-head h2 { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.4px; }
+.agenda-sub { margin: 0.2rem 0 0; font-size: 0.86rem; color: var(--muted); }
+.agenda-sub b { color: var(--brass); }
+.agenda-empty { text-align: center; padding: 2.4rem 1rem; border: 1px dashed var(--border); border-radius: 16px; }
+.agenda-empty .empty-icon { font-size: 2.4rem; }
+.agenda-empty p { margin: 0.6rem 0 0.3rem; font-weight: 750; color: var(--ink); }
+.agenda-empty span { color: var(--muted); font-size: 0.85rem; display: block; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.tl-item { display: flex; gap: 0.9rem; }
+.tl-time { flex: none; width: 66px; text-align: right; padding-top: 0.55rem; }
+.tl-time b { display: block; font-size: 0.9rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tl-time .tl-when { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 700; }
+.tl-card {
+  flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 0.85rem 0.95rem; border-left: 3px solid var(--survey);
+}
+.tl-item.requested .tl-card { border-left-color: var(--brass); background: color-mix(in srgb, var(--brass) 5%, var(--surface)); }
+.tl-item.confirmed .tl-card { border-left-color: var(--positive); }
+.tl-item.declined .tl-card { opacity: 0.6; }
+.tl-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.kind-chip {
+  font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 999px;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--border);
+}
+.kind-chip[data-kind="sip"] { color: #2f6ea3; border-color: color-mix(in srgb, #2f6ea3 40%, transparent); }
+.kind-chip[data-kind="buy"] { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 45%, transparent); }
+.kind-chip[data-kind="withdraw"] { color: var(--terracotta); border-color: color-mix(in srgb, var(--terracotta) 40%, transparent); }
+.kind-chip[data-kind="consultation"] { color: var(--positive); border-color: color-mix(in srgb, var(--positive) 40%, transparent); }
+.tl-who { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.tl-need { font-size: 0.85rem; color: var(--ink); margin-top: 0.3rem; font-weight: 600; }
+.tl-note { font-size: 0.82rem; color: var(--muted); margin-top: 0.25rem; font-style: italic; }
+.tl-actions { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+.who-name { font-size: 0.98rem; font-weight: 800; color: var(--ink); }
+.who-phone { font-size: 0.84rem; color: var(--brass); text-decoration: none; font-weight: 700; }
+.who-phone:hover { text-decoration: underline; }
 .badge {
   display: inline-flex; align-items: center; gap: 0.3rem;
   font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.7rem; border-radius: 999px;
 }
-.badge.ok { color: var(--good); background: rgba(75, 227, 161, 0.14); }
-.badge.no { color: var(--low); background: rgba(255, 111, 125, 0.12); }
+.badge.ok { color: var(--positive); background: color-mix(in srgb, var(--positive) 14%, transparent); }
+.badge.no { color: var(--negative); background: color-mix(in srgb, var(--negative) 12%, transparent); }
+.badge.new { color: var(--brass); background: color-mix(in srgb, var(--brass) 15%, transparent); margin-left: auto; }
 .act {
   display: inline-flex; align-items: center; gap: 0.3rem;
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text);

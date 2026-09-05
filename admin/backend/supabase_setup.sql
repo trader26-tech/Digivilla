@@ -9,22 +9,27 @@
 -- bookings / availability / documents persist and stay in sync with the client.
 -- ============================================================================
 
--- bookings — consultation requests from the client app; the admin confirms them.
+-- bookings — client requests from the app; the admin actions them.
+-- `kind` distinguishes consultation calls from SIP / buy / withdraw requests.
 create table if not exists public.bookings (
     id          text primary key,
     name        text not null,
     phone       text not null,
+    kind        text not null default 'consultation',  -- consultation | sip | buy | withdraw
     property    text not null default 'land',
     variant     text default '',
     plots       integer not null default 1,
     amount      double precision not null default 0,
-    slot        text not null,
+    slot        text default '',
     note        text default '',
     status      text not null default 'requested',  -- requested | confirmed | declined
     created_at  text not null
 );
 alter table public.bookings enable row level security;
 create index if not exists bookings_slot_idx on public.bookings (slot);
+-- If the table already existed without these, add them (idempotent):
+alter table public.bookings add column if not exists kind text not null default 'consultation';
+alter table public.bookings alter column slot drop not null;
 
 -- admin_otp — pending sign-in codes (one row per email; salted hash only).
 create table if not exists public.admin_otp (

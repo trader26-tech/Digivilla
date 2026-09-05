@@ -344,13 +344,21 @@
         <span class="cta-k">{{ activeVariant().name }} {{ propName }}</span>
         <span class="cta-v">{{ inr(ticketPrice) }}</span>
       </div>
-      <button class="cta-btn" type="button" (click)="openBooking()">Reserve this {{ propName.toLowerCase() }}</button>
+      <button class="cta-btn" type="button" (click)="openBooking('consultation')">Reserve this {{ propName.toLowerCase() }}</button>
+
+      <!-- Own it / SIP / Withdraw — sent straight to your advisor. -->
+      <div class="cta-actions">
+        <button class="act-btn own" type="button" (click)="openBooking('buy')">Own now</button>
+        <button class="act-btn sip" type="button" (click)="openBooking('sip')">Start SIP</button>
+        <button class="act-btn wd" type="button" (click)="openBooking('withdraw')">Withdraw</button>
+      </div>
     </section>
   </ng-container>
 
-  <!-- Reserve → book a free consultation slot. -->
+  <!-- Request sheet — consultation / sip / buy / withdraw. -->
   <app-booking-sheet
     *ngIf="booking()"
+    [kind]="bookingKind()"
     [property]="property"
     [variant]="active()"
     [variantName]="activeVariant().name + ' ' + propName"

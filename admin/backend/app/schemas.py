@@ -3,16 +3,23 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-# --- Bookings -------------------------------------------------------------
+# --- Bookings / client requests -------------------------------------------
 class BookingCreate(BaseModel):
-    """A consultation request a user submits when reserving a plot."""
+    """A request a client submits from the app. `kind` distinguishes them:
+      consultation — a call slot when reserving a plot (needs `slot`)
+      sip          — start a recurring SIP into a Digivilla
+      buy          — buy/own a Digivilla now
+      withdraw     — withdraw from a Digivilla they hold
+    SIP/buy/withdraw don't require a time slot; the admin actions them from the
+    calendar on the day they came in (created_at)."""
     name: str
     phone: str
-    property: str = "land"        # which tier they're reserving
+    kind: str = "consultation"    # consultation | sip | buy | withdraw
+    property: str = "land"        # which Digivilla tier
     variant: str = ""             # conservative | balanced | aggressive
     plots: int = 1
     amount: float = 0
-    slot: str                     # ISO-8601 datetime of the requested slot
+    slot: str = ""                # ISO-8601 of the requested slot (consultation only)
     note: str = ""
 
 

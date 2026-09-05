@@ -25,6 +25,30 @@ interface SlotCell {
   booking: Booking | null;
 }
 
+/** One request placed on the agenda for a given day. */
+interface AgendaItem {
+  booking: Booking;
+  time: string;        // "10:00" for consultations, else the created time
+  timeLabel: string;   // "10 am"
+  hasSlot: boolean;    // true for scheduled consultations
+}
+/** A cell in the month grid. */
+interface MonthCell {
+  iso: string;
+  day: number;
+  inMonth: boolean;
+  isToday: boolean;
+  total: number;
+  pending: number;
+}
+/** Human labels + accents per request kind. */
+const KIND_META: Record<string, { label: string; verb: string; icon: string }> = {
+  consultation: { label: 'Consultation', verb: 'wants a call about', icon: '📞' },
+  sip:          { label: 'SIP',          verb: 'wants to start an SIP in', icon: '🔁' },
+  buy:          { label: 'Buy',          verb: 'wants to own', icon: '🏠' },
+  withdraw:     { label: 'Withdraw',     verb: 'wants to withdraw from', icon: '💸' },
+};
+
 const WK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // 0..6 = Mon..Sun
@@ -68,6 +92,12 @@ export class AppComponent implements OnInit {
   loading = signal(false);
   loadError = signal('');
   busyId = signal('');
+
+  // calendar (day agenda + month overview)
+  selectedDate = signal<string>(this.isoOf(new Date()));   // day shown in the agenda
+  viewMonth = signal<{ y: number; m: number }>({ y: new Date().getFullYear(), m: new Date().getMonth() });
+  kindFilter = signal<'all' | 'consultation' | 'sip' | 'buy' | 'withdraw'>('all');
+  readonly kindMeta = KIND_META;
 
   // availability
   avDays = signal<AvailabilityDay[]>([]);
@@ -326,28 +356,116 @@ export class AppComponent implements OnInit {
   get requestedCount(): number { return this.bookings().filter((b) => b.status === 'requested').length; }
   get confirmedCount(): number { return this.bookings().filter((b) => b.status === 'confirmed').length; }
 
-  days = computed<DayGroup[]>(() => {
-    const todayIso = this.isoOf(new Date());
-    const byDay = new Map<string, Map<string, Booking>>();
+  // ═══════════════════════════ CALENDAR ═══════════════════════════
+
+  /** The ISO day a booking belongs on: its slot day for consultations,
+   *  otherwise the day it was submitted (created_at). */
+  private dayOf(b: Booking): string {
+    const s = this.splitSlot(b.slot);
+    if (s.day) return s.day;
+    const d = new Date(b.created_at);
+    return isNaN(d.getTime()) ? '' : this.isoOf(d);
+  }
+  private timeOf(b: Booking): string {
+    const s = this.splitSlot(b.slot);
+    if (s.time) return s.time;
+    const d = new Date(b.created_at);
+    return isNaN(d.getTime()) ? '00:00' : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  /** bookings grouped by ISO day, honouring the kind filter. */
+  private byDayMap = computed<Map<string, Booking[]>>(() => {
+    const filter = this.kindFilter();
+    const m = new Map<string, Booking[]>();
     for (const b of this.bookings()) {
-      const { day, time } = this.splitSlot(b.slot);
-      if (!day) continue;
-      if (!byDay.has(day)) byDay.set(day, new Map());
-      byDay.get(day)!.set(time, b);
+      if (filter !== 'all' && b.kind !== filter) continue;
+      const iso = this.dayOf(b);
+      if (!iso) continue;
+      if (!m.has(iso)) m.set(iso, []);
+      m.get(iso)!.push(b);
     }
-    const out: DayGroup[] = [];
-    for (const iso of [...byDay.keys()].sort()) {
-      const d = this.parseIso(iso);
-      const times = [...byDay.get(iso)!.keys()].sort();
-      out.push({
+    return m;
+  });
+
+  /** The month grid (6 weeks) for the currently-viewed month. */
+  monthGrid = computed<MonthCell[]>(() => {
+    const { y, m } = this.viewMonth();
+    const todayIso = this.isoOf(new Date());
+    const first = new Date(y, m, 1);
+    // Grid starts on the Monday on/before the 1st.
+    const offset = (first.getDay() + 6) % 7; // 0=Mon
+    const start = new Date(y, m, 1 - offset);
+    const byDay = this.byDayMap();
+    const cells: MonthCell[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const iso = this.isoOf(d);
+      const items = byDay.get(iso) || [];
+      cells.push({
         iso,
-        label: d ? `${WK[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]}` : iso,
+        day: d.getDate(),
+        inMonth: d.getMonth() === m,
         isToday: iso === todayIso,
-        slots: times.map((t) => ({ time: t, label: this.timeLabel(t), booking: byDay.get(iso)!.get(t)! })),
+        total: items.length,
+        pending: items.filter((b) => b.status === 'requested').length,
       });
     }
-    return out;
+    return cells;
   });
+
+  monthLabel = computed<string>(() => {
+    const { y, m } = this.viewMonth();
+    return `${['January','February','March','April','May','June','July','August','September','October','November','December'][m]} ${y}`;
+  });
+
+  /** The agenda for the selected day, sorted by time, newest-status first. */
+  agenda = computed<AgendaItem[]>(() => {
+    const iso = this.selectedDate();
+    const items = (this.byDayMap().get(iso) || []).map((b) => {
+      const t = this.timeOf(b);
+      return { booking: b, time: t, timeLabel: this.timeLabel(t), hasSlot: !!this.splitSlot(b.slot).time };
+    });
+    return items.sort((a, z) => a.time.localeCompare(z.time));
+  });
+
+  selectedDayLabel = computed<string>(() => {
+    const d = this.parseIso(this.selectedDate());
+    if (!d) return this.selectedDate();
+    const today = this.isoOf(new Date());
+    const prefix = this.selectedDate() === today ? 'Today · ' : '';
+    return `${prefix}${WK[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`;
+  });
+
+  /** counts for the selected day, for the little header summary. */
+  daySummary = computed<{ total: number; pending: number }>(() => {
+    const items = this.byDayMap().get(this.selectedDate()) || [];
+    return { total: items.length, pending: items.filter((b) => b.status === 'requested').length };
+  });
+
+  selectDay(iso: string): void { this.selectedDate.set(iso); }
+  isSelected(iso: string): boolean { return this.selectedDate() === iso; }
+
+  prevMonth(): void {
+    this.viewMonth.update(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }));
+  }
+  nextMonth(): void {
+    this.viewMonth.update(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }));
+  }
+  goToday(): void {
+    const now = new Date();
+    this.viewMonth.set({ y: now.getFullYear(), m: now.getMonth() });
+    this.selectedDate.set(this.isoOf(now));
+  }
+  setKindFilter(k: 'all' | 'consultation' | 'sip' | 'buy' | 'withdraw'): void { this.kindFilter.set(k); }
+
+  kindLabel(b: Booking): string { return (KIND_META[b.kind] || KIND_META['consultation']).label; }
+  kindIcon(b: Booking): string { return (KIND_META[b.kind] || KIND_META['consultation']).icon; }
+  requirementLine(b: Booking): string {
+    const meta = KIND_META[b.kind] || KIND_META['consultation'];
+    const what = this.propLabel(b) || (b.property || 'a Digivilla');
+    const amt = b.amount ? ` · ${this.money(b.amount)}${b.kind === 'sip' ? '/mo' : ''}` : '';
+    return `${meta.verb} ${what}${amt}`;
+  }
 
   // ═══════════════════════════ AVAILABILITY ═══════════════════════════
   loadAvailability(): void {
@@ -514,6 +632,11 @@ export class AppComponent implements OnInit {
   }
   propLabel(b: Booking): string {
     const v = b.variant ? b.variant[0].toUpperCase() + b.variant.slice(1) : '';
-    return `${b.plots} × ${v} ${b.property}`.replace(/\s+/g, ' ').trim();
+    const prop = b.property || 'Digivilla';
+    // Consultations reserve N plots; SIP/buy/withdraw are about the Digivilla itself.
+    if (b.kind === 'consultation') {
+      return `${b.plots} × ${v} ${prop}`.replace(/\s+/g, ' ').trim();
+    }
+    return `${v} ${prop}`.replace(/\s+/g, ' ').trim();
   }
 }
