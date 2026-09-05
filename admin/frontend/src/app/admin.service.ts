@@ -66,6 +66,61 @@ export interface ClientFolder {
   count: number;
   updated: string;
 }
+
+/** A row in the Clients list (light summary). */
+export interface ClientRow {
+  id: string;
+  name: string;
+  phone: string;
+  city: string;
+  villa_count: number;
+  invested: number;
+  pending: number;
+}
+/** One villa a client owns / is building. */
+export interface ClientHolding {
+  id: string;
+  villa_name: string;
+  villa_id: string;
+  status: string;              // accumulating | active | exited
+  price: number;
+  invested: number;
+  progress: number | null;     // 0..1 toward the villa price
+  current_value: number;
+  rent_received: number;
+  sip_monthly: number;
+  sip_next_payment: string | null;
+}
+/** A row in a client's money ledger. */
+export interface ClientLedgerRow {
+  id: string;
+  villa_name: string;
+  kind: string;                // sip | lump_sum | rent | withdrawal
+  amount: number;
+  date: string;
+  status: string;
+  note: string;
+}
+/** The full client profile shown when a client is opened. */
+export interface ClientProfile {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  city: string;
+  age: number | null;
+  summary: {
+    invested: number;
+    current_value: number;
+    rent_received: number;
+    sip_monthly: number;
+    villa_count: number;
+  };
+  holdings: ClientHolding[];
+  ledger: ClientLedgerRow[];
+  requests: Booking[];
+  documents: ClientDoc[];
+}
 export interface ClientDoc {
   id: string;
   client: string;
@@ -159,6 +214,14 @@ export class AdminService {
   blockSlot(slot: string, blocked: boolean): Observable<{ ok: boolean; blocked: string[] }> {
     return this.http.post<{ ok: boolean; blocked: string[] }>(
       `${this.base}/admin/availability/block`, { slot, blocked }, this.opts);
+  }
+
+  // ── CRM: full client profiles ─────────────────────────────────────────────
+  listCrmClients(): Observable<ClientRow[]> {
+    return this.http.get<ClientRow[]>(`${this.base}/admin/crm/clients`, this.opts);
+  }
+  getCrmClient(id: string): Observable<ClientProfile> {
+    return this.http.get<ClientProfile>(`${this.base}/admin/crm/clients/${id}`, this.opts);
   }
 
   // ── client documents ──────────────────────────────────────────────────────

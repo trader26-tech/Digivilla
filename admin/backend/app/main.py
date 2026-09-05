@@ -34,6 +34,7 @@ from fastapi.responses import Response as RawResponse
 from app import admin_auth
 from app import availability as availability_svc
 from app import bookings as bookings_svc
+from app import clients as clients_svc
 from app import documents as documents_svc
 from app.config import get_settings
 from app.schemas import (
@@ -262,6 +263,26 @@ def admin_availability_block(
     _require_admin(authorization)
     availability_svc.set_blocked(body.slot, body.blocked)
     return {"ok": True, "blocked": availability_svc.blocked_slots()}
+
+
+# --- Admin CRM: full client profiles (users + holdings + money + requests) ---
+@app.get("/admin/crm/clients")
+def admin_crm_clients(authorization: Optional[str] = Header(default=None)) -> list[dict]:
+    """List of all clients with a light summary, for the Clients tab."""
+    _require_admin(authorization)
+    return clients_svc.list_clients()
+
+
+@app.get("/admin/crm/clients/{user_id}")
+def admin_crm_client(
+    user_id: str, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """One client's full profile: contact, villas, money, ledger, requests, docs."""
+    _require_admin(authorization)
+    profile = clients_svc.get_client(user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    return profile
 
 
 # --- Admin client documents ----------------------------------------------

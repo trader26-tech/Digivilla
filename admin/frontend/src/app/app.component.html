@@ -101,7 +101,7 @@
     </div>
 
     <div class="cal-shell">
-      <!-- ═══════ LEFT: calendar + filters + availability ═══════ -->
+      <!-- ═══════ LEFT: month calendar ═══════ -->
       <div class="left-col">
         <section class="month card">
           <div class="month-head">
@@ -119,7 +119,6 @@
             <button *ngFor="let c of monthGrid()" class="cell"
               [class.dim]="!c.inMonth" [class.today]="c.isToday" [class.sel]="isSelected(c.iso)"
               [class.past]="c.isPast" [class.has]="c.total > 0" [class.needs]="c.pending > 0"
-              [attr.data-kind]="c.total ? c.topKind : null"
               (click)="selectDay(c.iso)"
               [attr.aria-label]="c.day + (c.total ? ', ' + c.total + ' request' + (c.total === 1 ? '' : 's') : '')">
               <span class="cell-top">
@@ -127,184 +126,247 @@
                 <span class="cnt" *ngIf="c.total" [class.pend]="c.pending">{{ c.total }}</span>
               </span>
               <span class="cell-val" *ngIf="c.amount">{{ moneyShort(c.amount) }}</span>
-              <span class="dots" *ngIf="c.kinds.length && !c.amount">
-                <i class="kdot" *ngFor="let k of c.kinds" [attr.data-kind]="k" [title]="kindMeta[k].label"></i>
-              </span>
             </button>
-          </div>
-        </section>
-
-        <!-- kind filter (below the calendar) -->
-        <div class="kind-filter">
-          <button [class.on]="kindFilter() === 'all'" (click)="setKindFilter('all')">
-            All <em *ngIf="newByKind()['all']">{{ newByKind()['all'] }}</em>
-          </button>
-          <button class="k-consultation" [class.on]="kindFilter() === 'consultation'" (click)="setKindFilter('consultation')">
-            📞 Consults <em *ngIf="newByKind()['consultation']">{{ newByKind()['consultation'] }}</em>
-          </button>
-          <button class="k-sip" [class.on]="kindFilter() === 'sip'" (click)="setKindFilter('sip')">
-            🔁 SIP <em *ngIf="newByKind()['sip']">{{ newByKind()['sip'] }}</em>
-          </button>
-          <button class="k-buy" [class.on]="kindFilter() === 'buy'" (click)="setKindFilter('buy')">
-            🏠 Buy <em *ngIf="newByKind()['buy']">{{ newByKind()['buy'] }}</em>
-          </button>
-          <button class="k-withdraw" [class.on]="kindFilter() === 'withdraw'" (click)="setKindFilter('withdraw')">
-            💸 Withdraw <em *ngIf="newByKind()['withdraw']">{{ newByKind()['withdraw'] }}</em>
-          </button>
-        </div>
-
-        <!-- availability editor -->
-        <section class="panel card">
-          <button class="panel-head" (click)="showAvailability.set(!showAvailability())">
-            <div>
-              <h2>My availability</h2>
-              <p>Split working hours into 30-minute slots. Block any you’re busy — clients only see the free ones.</p>
-            </div>
-            <span class="chev" [class.open]="showAvailability()">▾</span>
-          </button>
-          <div class="panel-body" *ngIf="showAvailability()">
-            <div class="window-row">
-              <label>Start
-                <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
-              </label>
-              <label>End
-                <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
-              </label>
-            </div>
-            <div class="weekdays">
-              <button *ngFor="let wd of [0,1,2,3,4,5,6]" class="wd" [class.on]="isWeekdayOn(wd)"
-                (click)="toggleWeekday(wd)">{{ weekdayLabels[wd] }}</button>
-            </div>
-            <button class="save-window" [disabled]="avSavingCfg()" (click)="saveWindow()">
-              {{ avSavingCfg() ? 'Saving…' : 'Save working hours' }}
-            </button>
-            <div class="av-days">
-              <div class="av-day" *ngFor="let d of avDays()">
-                <div class="av-day-head">
-                  <b>{{ dayLabel(d.date) }}</b>
-                  <span>{{ freeCount(d) }} free</span>
-                </div>
-                <div class="chips">
-                  <button class="chip" *ngFor="let s of d.slots"
-                    [class.blocked]="s.blocked" [disabled]="avBusySlot() === s.slot"
-                    (click)="toggleSlot(d, s)"
-                    [title]="s.blocked ? 'Blocked — tap to free' : 'Free — tap to block'">
-                    {{ timeLabel(s.time) }}
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       </div>
 
-      <!-- ═══════ RIGHT: selected-day requests ═══════ -->
+      <!-- ═══════ RIGHT: selected day — filters, working hours, 30-min timeline ═══════ -->
       <section class="right-col card">
         <div class="agenda-head">
           <h2>{{ selectedDayLabel() }}</h2>
           <p class="agenda-sub">
             <span *ngIf="daySummary().total">{{ daySummary().total }} request{{ daySummary().total === 1 ? '' : 's' }}<span *ngIf="daySummary().pending"> · <b>{{ daySummary().pending }} need you</b></span></span>
-            <span *ngIf="!daySummary().total">Nothing scheduled</span>
+            <span *ngIf="!daySummary().total">No requests</span>
           </p>
         </div>
 
-        <div class="loading" *ngIf="loading()">Loading requests…</div>
-        <p class="err" *ngIf="loadError()">{{ loadError() }}</p>
-
-        <div class="agenda-empty" *ngIf="!loading() && !agenda().length">
-          <div class="empty-icon">🗓️</div>
-          <p>No requests on this day.</p>
-          <span>Pick another day on the calendar, or wait for clients to send SIP, buy, withdrawal or consultation requests.</span>
+        <!-- kind filter (in the day/X-ray section) -->
+        <div class="kind-filter">
+          <button [class.on]="kindFilter() === 'all'" (click)="setKindFilter('all')">
+            All <em *ngIf="newByKind()['all']">{{ newByKind()['all'] }}</em>
+          </button>
+          <button [class.on]="kindFilter() === 'consultation'" (click)="setKindFilter('consultation')">
+            Consults <em *ngIf="newByKind()['consultation']">{{ newByKind()['consultation'] }}</em>
+          </button>
+          <button [class.on]="kindFilter() === 'sip'" (click)="setKindFilter('sip')">
+            SIP <em *ngIf="newByKind()['sip']">{{ newByKind()['sip'] }}</em>
+          </button>
+          <button [class.on]="kindFilter() === 'buy'" (click)="setKindFilter('buy')">
+            Buy <em *ngIf="newByKind()['buy']">{{ newByKind()['buy'] }}</em>
+          </button>
+          <button [class.on]="kindFilter() === 'withdraw'" (click)="setKindFilter('withdraw')">
+            Withdraw <em *ngIf="newByKind()['withdraw']">{{ newByKind()['withdraw'] }}</em>
+          </button>
         </div>
 
-        <ul class="timeline" *ngIf="!loading() && agenda().length">
-          <li class="tl-item" *ngFor="let a of agenda()"
-            [class.requested]="a.booking.status === 'requested'"
-            [class.confirmed]="a.booking.status === 'confirmed'"
-            [class.declined]="a.booking.status === 'declined'"
-            [attr.data-kind]="a.booking.kind">
-            <div class="tl-time">
-              <b>{{ a.timeLabel }}</b>
-              <span class="tl-when">{{ a.hasSlot ? 'scheduled' : 'requested' }}</span>
+        <!-- working-hours editor (inline) -->
+        <div class="hours">
+          <div class="hours-row">
+            <label>Working hours</label>
+            <div class="hours-inputs">
+              <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
+              <span>to</span>
+              <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
+              <button class="save-hours" [disabled]="avSavingCfg()" (click)="saveWindow()">
+                {{ avSavingCfg() ? 'Saving…' : 'Save' }}
+              </button>
             </div>
-            <div class="tl-card">
-              <div class="tl-top">
-                <span class="kind-chip" [attr.data-kind]="a.booking.kind">{{ kindIcon(a.booking) }} {{ kindLabel(a.booking) }}</span>
-                <span class="badge ok" *ngIf="a.booking.status === 'confirmed'">Confirmed</span>
-                <span class="badge no" *ngIf="a.booking.status === 'declined'">Declined</span>
-                <span class="badge new" *ngIf="a.booking.status === 'requested'">New</span>
+          </div>
+          <p class="hours-hint">Tap a free slot to mark it busy (e.g. gym) — clients won’t see busy slots.</p>
+        </div>
+
+        <div class="loading" *ngIf="loading()">Loading…</div>
+        <p class="err" *ngIf="loadError()">{{ loadError() }}</p>
+
+        <!-- 30-minute slot timeline -->
+        <ul class="slots-day" *ngIf="!loading()">
+          <li class="srow" *ngFor="let s of daySlots()"
+            [class.busy]="s.blocked" [class.filled]="s.requests.length">
+            <div class="srow-time">{{ s.label }}</div>
+            <div class="srow-body">
+              <!-- requests in this slot -->
+              <div class="req" *ngFor="let b of s.requests"
+                [class.done]="b.status !== 'requested'">
+                <div class="req-top">
+                  <span class="req-kind">{{ kindIcon(b) }} {{ kindLabel(b) }}</span>
+                  <span class="req-status" *ngIf="b.status === 'confirmed'">Confirmed</span>
+                  <span class="req-status" *ngIf="b.status === 'declined'">Declined</span>
+                  <span class="req-status new" *ngIf="b.status === 'requested'">New</span>
+                </div>
+                <div class="req-who">
+                  <b>{{ b.name }}</b>
+                  <a [href]="'tel:+91' + b.phone">+91 {{ b.phone }}</a>
+                </div>
+                <div class="req-need">{{ requirementLine(b) }}</div>
+                <div class="req-actions">
+                  <ng-container *ngIf="b.status === 'requested'">
+                    <button class="act ok" [disabled]="busyId() === b.id" (click)="confirm(b)">
+                      {{ b.kind === 'consultation' ? 'Confirm' : 'Mark done' }}
+                    </button>
+                    <button class="act no" [disabled]="busyId() === b.id" (click)="decline(b)">Decline</button>
+                  </ng-container>
+                  <button class="act reopen" *ngIf="b.status !== 'requested'" [disabled]="busyId() === b.id" (click)="reopen(b)">Reopen</button>
+                </div>
               </div>
-              <div class="tl-who">
-                <b class="who-name">{{ a.booking.name }}</b>
-                <a class="who-phone" [href]="'tel:+91' + a.booking.phone">📞 +91 {{ a.booking.phone }}</a>
-              </div>
-              <div class="tl-need">{{ requirementLine(a.booking) }}</div>
-              <div class="tl-note" *ngIf="a.booking.note">“{{ a.booking.note }}”</div>
-              <div class="tl-actions">
-                <ng-container *ngIf="a.booking.status === 'requested'">
-                  <button class="act ok" [disabled]="busyId() === a.booking.id" (click)="confirm(a.booking)">
-                    {{ a.booking.kind === 'consultation' ? 'Confirm' : 'Mark done' }}
-                  </button>
-                  <button class="act no" [disabled]="busyId() === a.booking.id" (click)="decline(a.booking)">Decline</button>
-                </ng-container>
-                <button class="act reopen" *ngIf="a.booking.status !== 'requested'" [disabled]="busyId() === a.booking.id" (click)="reopen(a.booking)">Reopen</button>
-              </div>
+
+              <!-- empty slot: free / busy toggle -->
+              <button class="slot-toggle" *ngIf="!s.requests.length"
+                [disabled]="avBusySlot() === s.iso"
+                (click)="toggleDaySlot(s.iso, s.blocked)">
+                <span *ngIf="!s.blocked" class="free">Free · tap to mark busy</span>
+                <span *ngIf="s.blocked" class="busy-lbl">Busy</span>
+              </button>
             </div>
           </li>
         </ul>
+
+        <div class="agenda-empty" *ngIf="!loading() && !daySlots().length">
+          <div class="empty-icon">🗓️</div>
+          <p>No working hours set for this day.</p>
+          <span>Set your working hours above to see your 30-minute slots.</span>
+        </div>
       </section>
     </div>
 
   </div>
 
-  <!-- ─────────── DOCUMENTS TAB ─────────── -->
-  <div class="wrap docs" *ngIf="tab() === 'documents'">
-    <div class="doc-layout">
-      <!-- client list -->
-      <aside class="clients">
-        <div class="add-client">
-          <input placeholder="New client name"
-            [ngModel]="newClientName()" (ngModelChange)="newClientName.set($event)" (keydown.enter)="addClient()" />
-          <button (click)="addClient()" [disabled]="!newClientName().trim()">Add</button>
+  <!-- ─────────── CLIENTS TAB (CRM) ─────────── -->
+  <div class="wrap wide" *ngIf="tab() === 'documents'">
+    <div class="crm-layout">
+      <!-- ══ LEFT: searchable client list ══ -->
+      <aside class="crm-list card">
+        <div class="crm-search">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input placeholder="Search by name or phone"
+            [ngModel]="crmSearch()" (ngModelChange)="crmSearch.set($event)" />
         </div>
-        <div class="loading" *ngIf="docsLoading()">Loading…</div>
-        <button class="client-row" *ngFor="let c of clients()"
-          [class.on]="activeClient() === c.client" (click)="openClient(c.client)">
-          <span class="c-name">{{ c.client }}</span>
-          <span class="c-count">{{ c.count }}</span>
-        </button>
-        <p class="hint" *ngIf="!docsLoading() && !clients().length">Add a client to start attaching documents.</p>
+        <div class="crm-count">{{ filteredClients().length }} client{{ filteredClients().length === 1 ? '' : 's' }}</div>
+
+        <div class="loading" *ngIf="crmLoading()">Loading clients…</div>
+        <div class="crm-rows">
+          <button class="crm-row" *ngFor="let c of filteredClients()"
+            [class.on]="crmActive()?.id === c.id" (click)="openCrmClient(c.id)">
+            <span class="crm-avatar">{{ c.name.charAt(0) }}</span>
+            <span class="crm-row-main">
+              <span class="crm-row-name">{{ c.name }}</span>
+              <span class="crm-row-sub">+91 {{ c.phone }}<span *ngIf="c.city"> · {{ c.city }}</span></span>
+            </span>
+            <span class="crm-row-right">
+              <span class="crm-badge" *ngIf="c.pending" title="Needs action">{{ c.pending }}</span>
+              <span class="crm-villas">{{ c.villa_count }} villa{{ c.villa_count === 1 ? '' : 's' }}</span>
+            </span>
+          </button>
+        </div>
+        <p class="hint" *ngIf="!crmLoading() && !filteredClients().length">No clients match “{{ crmSearch() }}”.</p>
       </aside>
 
-      <!-- documents for active client -->
-      <section class="docs-panel">
-        <ng-container *ngIf="activeClient(); else pickClient">
-          <div class="docs-head">
-            <h2>{{ activeClient() }}</h2>
-            <label class="upload" [class.busy]="uploading()">
-              <input type="file" (change)="onFilePicked($event)" hidden [disabled]="uploading()" />
-              {{ uploading() ? 'Uploading…' : '+ Attach document' }}
-            </label>
-          </div>
-          <p class="err" *ngIf="docError()">{{ docError() }}</p>
+      <!-- ══ RIGHT: full client profile ══ -->
+      <section class="crm-detail">
+        <div class="loading" *ngIf="crmDetailLoading()">Loading profile…</div>
 
-          <div class="doc-empty" *ngIf="!clientDocs().length">
-            <p>No documents yet for {{ activeClient() }}.</p>
+        <div class="crm-empty card" *ngIf="!crmDetailLoading() && !crmActive()">
+          <div class="empty-icon">👤</div>
+          <p>Pick a client to see everything.</p>
+          <span>Contact, villas &amp; holdings, SIP &amp; rent, documents and requests — all on one page.</span>
+        </div>
+
+        <ng-container *ngIf="!crmDetailLoading() && crmActive() as p">
+          <!-- header: identity + contact -->
+          <div class="crm-head card">
+            <span class="crm-head-avatar">{{ p.name.charAt(0) }}</span>
+            <div class="crm-head-id">
+              <h2>{{ p.name }}</h2>
+              <div class="crm-contact">
+                <a [href]="'tel:+91' + p.phone">📞 +91 {{ p.phone }}</a>
+                <span *ngIf="p.email">✉️ {{ p.email }}</span>
+                <span *ngIf="p.city">📍 {{ p.city }}<span *ngIf="p.age"> · {{ p.age }} yrs</span></span>
+              </div>
+            </div>
           </div>
 
-          <ul class="doc-list" *ngIf="clientDocs().length">
-            <li class="doc" *ngFor="let d of clientDocs()">
-              <button class="doc-open" (click)="openDoc(d)">
-                <span class="doc-name">{{ d.filename }}</span>
-                <span class="doc-meta">{{ fileSize(d.size) }}</span>
-              </button>
-              <button class="doc-del" (click)="removeDoc(d)" title="Delete">✕</button>
-            </li>
-          </ul>
+          <!-- money summary -->
+          <div class="ui-kpis crm-kpis">
+            <div class="ui-kpi"><small>Invested</small><b class="ui-figure">{{ money(p.summary.invested) }}</b></div>
+            <div class="ui-kpi"><small>Current value</small><b class="ui-figure">{{ money(p.summary.current_value) }}</b></div>
+            <div class="ui-kpi"><small>Rent received</small><b class="ui-figure">{{ money(p.summary.rent_received) }}</b></div>
+            <div class="ui-kpi"><small>Monthly SIP</small><b class="ui-figure">{{ money(p.summary.sip_monthly) }}</b></div>
+          </div>
+
+          <!-- villas & holdings -->
+          <div class="crm-block card">
+            <h3 class="crm-block-h">Villas &amp; holdings</h3>
+            <p class="crm-none" *ngIf="!p.holdings.length">No villas yet.</p>
+            <div class="holding" *ngFor="let h of p.holdings">
+              <div class="holding-top">
+                <b class="holding-name">🏠 {{ h.villa_name }}</b>
+                <span class="pill" [class.p-brass]="h.status === 'accumulating'" [class.p-green]="h.status === 'active'" [class.p-muted]="h.status === 'exited'">{{ h.status }}</span>
+                <span class="holding-value">{{ money(h.current_value) }}</span>
+              </div>
+              <div class="holding-bar" *ngIf="h.progress != null">
+                <span class="holding-fill" [style.width.%]="(h.progress || 0) * 100"></span>
+              </div>
+              <div class="holding-meta">
+                <span>Invested <b>{{ money(h.invested) }}</b><span *ngIf="h.progress != null"> · {{ pct(h.progress) }} of {{ money(h.price) }}</span></span>
+                <span *ngIf="h.sip_monthly">SIP <b>{{ money(h.sip_monthly) }}</b>/mo<span *ngIf="h.sip_next_payment"> · next {{ h.sip_next_payment }}</span></span>
+                <span *ngIf="h.rent_received">Rent <b>{{ money(h.rent_received) }}</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- documents -->
+          <div class="crm-block card">
+            <div class="crm-block-head">
+              <h3 class="crm-block-h">Documents</h3>
+              <label class="upload" [class.busy]="uploading()">
+                <input type="file" (change)="onCrmFilePicked($event)" hidden [disabled]="uploading()" />
+                {{ uploading() ? 'Uploading…' : '+ Attach (PAN, KYC…)' }}
+              </label>
+            </div>
+            <p class="err" *ngIf="docError()">{{ docError() }}</p>
+            <p class="crm-none" *ngIf="!p.documents.length">No documents yet — attach their PAN, agreement or KYC.</p>
+            <ul class="doc-list" *ngIf="p.documents.length">
+              <li class="doc" *ngFor="let d of p.documents">
+                <button class="doc-open" (click)="openDoc(d)">
+                  <span class="doc-name">📄 {{ d.filename }}</span>
+                  <span class="doc-meta">{{ fileSize(d.size) }}</span>
+                </button>
+                <button class="doc-del" (click)="removeCrmDoc(d)" title="Delete">✕</button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- money ledger -->
+          <div class="crm-block card" *ngIf="p.ledger.length">
+            <h3 class="crm-block-h">Money ledger</h3>
+            <div class="ledger-scroll">
+              <table class="ledger">
+                <thead><tr><th>Date</th><th>Villa</th><th>Type</th><th class="r">Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let t of p.ledger">
+                    <td class="mono">{{ t.date }}</td>
+                    <td>{{ t.villa_name }}</td>
+                    <td><span class="pill kind-{{ t.kind }}">{{ kindMetaFor(t.kind === 'buy' ? 'buy' : t.kind).icon }} {{ t.kind }}</span></td>
+                    <td class="r mono" [class.out]="t.kind === 'rent' || t.kind === 'withdrawal'">
+                      {{ (t.kind === 'rent' ? '+' : t.kind === 'withdrawal' ? '−' : '') }}{{ money(t.amount) }}
+                    </td>
+                    <td><span class="pill" [class.p-green]="t.status === 'paid'" [class.p-brass]="t.status === 'reduced' || t.status === 'pending'" [class.p-terra]="t.status === 'skipped' || t.status === 'failed'">{{ t.status }}</span><span class="ledger-note" *ngIf="t.note"> · {{ t.note }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- requests on the calendar -->
+          <div class="crm-block card" *ngIf="p.requests.length">
+            <h3 class="crm-block-h">Requests</h3>
+            <div class="req" *ngFor="let r of p.requests">
+              <span class="pill kind-{{ r.kind }}">{{ kindMetaFor(r.kind).icon }} {{ kindMetaFor(r.kind).label }}</span>
+              <span class="req-amt" *ngIf="r.amount">{{ money(r.amount) }}</span>
+              <span class="req-status" [class.p-brass]="r.status === 'requested'" [class.p-green]="r.status === 'confirmed'" [class.p-muted]="r.status === 'declined'">{{ r.status }}</span>
+            </div>
+          </div>
         </ng-container>
-        <ng-template #pickClient>
-          <div class="doc-empty"><p>Pick a client, or add one, to see their documents.</p></div>
-        </ng-template>
       </section>
     </div>
   </div>

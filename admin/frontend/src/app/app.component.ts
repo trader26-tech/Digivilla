@@ -8,6 +8,8 @@ import {
   Booking,
   ClientDoc,
   ClientFolder,
+  ClientProfile,
+  ClientRow,
 } from './admin.service';
 
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
@@ -124,6 +126,22 @@ export class AppComponent implements OnInit {
   newClientName = signal('');
   uploading = signal(false);
   docError = signal('');
+
+  // CRM — full client profiles (the Clients tab)
+  crmClients = signal<ClientRow[]>([]);
+  crmLoading = signal(false);
+  crmSearch = signal('');
+  crmActive = signal<ClientProfile | null>(null);
+  crmDetailLoading = signal(false);
+
+  /** clients filtered by the search box (name or phone). */
+  filteredClients = computed<ClientRow[]>(() => {
+    const q = this.crmSearch().trim().toLowerCase();
+    const list = this.crmClients();
+    if (!q) return list;
+    return list.filter((c) =>
+      c.name.toLowerCase().includes(q) || (c.phone || '').includes(q));
+  });
 
   ngOnInit(): void {
     this.initAuth();
@@ -266,6 +284,7 @@ export class AppComponent implements OnInit {
     this.refresh();
     this.loadAvailability();
     this.loadClients();
+    this.loadCrmClients();
   }
 
   private bindActivity(): void {
@@ -480,6 +499,63 @@ export class AppComponent implements OnInit {
     return `${prefix}${WK[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`;
   });
 
+  /** Full working-hours timeline for the selected day, split into 30-min slots.
+   *  Each slot carries its busy/free state (from availability) and any requests
+   *  that fall in that half-hour window. This is the "glance my whole day" view. */
+  daySlots = computed(() => {
+    const iso = this.selectedDate();
+    const start = this.avStart() || '10:00';
+    const end = this.avEnd() || '18:00';
+    const blocked = new Set(this.blockedSet());
+    const filter = this.kindFilter();
+
+    // bucket the day's requests by their half-hour slot start ("HH:MM")
+    const reqBy = new Map<string, Booking[]>();
+    for (const b of (this.byDayMap().get(iso) || [])) {
+      if (filter !== 'all' && b.kind !== filter) continue;
+      const t = this.timeOf(b);
+      const half = this.floorHalfHour(t);
+      if (!reqBy.has(half)) reqBy.set(half, []);
+      reqBy.get(half)!.push(b);
+    }
+
+    const toMin = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+    const rows: {
+      time: string; label: string; iso: string; blocked: boolean; requests: Booking[];
+    }[] = [];
+    for (let t = toMin(start); t < toMin(end); t += 30) {
+      const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+      const slotIso = `${iso}T${hm}:00+05:30`;
+      rows.push({
+        time: hm,
+        label: this.timeLabel(hm),
+        iso: slotIso,
+        blocked: blocked.has(slotIso),
+        requests: reqBy.get(hm) || [],
+      });
+    }
+    return rows;
+  });
+
+  /** the set of blocked slot ISO strings, kept in a signal for reactivity */
+  blockedSet = signal<string[]>([]);
+
+  private floorHalfHour(hm: string): string {
+    const [h, m] = hm.split(':').map(Number);
+    const mm = m >= 30 ? 30 : 0;
+    return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  }
+
+  /** Toggle a 30-min slot busy/free for the selected day (e.g. block 12–1pm for gym). */
+  toggleDaySlot(slotIso: string, currentlyBlocked: boolean): void {
+    const next = !currentlyBlocked;
+    this.avBusySlot.set(slotIso);
+    this.api.blockSlot(slotIso, next).subscribe({
+      next: (r) => { this.blockedSet.set(r.blocked || []); this.avBusySlot.set(''); },
+      error: () => this.avBusySlot.set(''),
+    });
+  }
+
   /** counts for the selected day, for the little header summary. */
   daySummary = computed<{ total: number; pending: number }>(() => {
     const items = this.byDayMap().get(this.selectedDate()) || [];
@@ -565,12 +641,16 @@ export class AppComponent implements OnInit {
 
   // ═══════════════════════════ AVAILABILITY ═══════════════════════════
   loadAvailability(): void {
-    this.api.availability(14).subscribe({
+    this.api.availability(62).subscribe({
       next: (r) => {
         this.avDays.set(r.days);
         this.avStart.set(r.config.start);
         this.avEnd.set(r.config.end);
         this.avWeekdays.set(r.config.weekdays);
+        // gather every blocked slot ISO across the returned days for the day view
+        const blocked: string[] = [];
+        for (const d of r.days) for (const s of d.slots) if (s.blocked) blocked.push(s.slot);
+        this.blockedSet.set(blocked);
       },
       error: (e) => { if (e?.status === 401) this.lock(); },
     });
@@ -614,6 +694,59 @@ export class AppComponent implements OnInit {
     return d ? `${WK[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]}` : iso;
   }
   freeCount(day: AvailabilityDay): number { return day.slots.filter((s) => !s.blocked).length; }
+
+  // ═══════════════════════════ CRM (Clients tab) ═══════════════════════════
+  loadCrmClients(): void {
+    this.crmLoading.set(true);
+    this.api.listCrmClients().subscribe({
+      next: (c) => { this.crmClients.set(c); this.crmLoading.set(false); },
+      error: (e) => { this.crmLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+  }
+
+  openCrmClient(id: string): void {
+    this.crmDetailLoading.set(true);
+    this.crmActive.set(null);
+    this.api.getCrmClient(id).subscribe({
+      next: (p) => { this.crmActive.set(p); this.crmDetailLoading.set(false); },
+      error: (e) => { this.crmDetailLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+  }
+
+  closeCrmClient(): void { this.crmActive.set(null); }
+
+  /** Upload a document to the currently-open CRM client (by their name). */
+  onCrmFilePicked(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    const client = this.crmActive();
+    if (!file || !client) return;
+    this.uploading.set(true);
+    this.docError.set('');
+    this.api.uploadDocument(client.name, file).subscribe({
+      next: (doc) => {
+        this.crmActive.update((p) => p ? { ...p, documents: [doc, ...p.documents] } : p);
+        this.uploading.set(false);
+        input.value = '';
+      },
+      error: (e) => {
+        this.docError.set(e?.error?.detail || 'Upload failed. Try again.');
+        this.uploading.set(false);
+        input.value = '';
+      },
+    });
+  }
+
+  removeCrmDoc(doc: ClientDoc): void {
+    this.api.deleteDocument(doc.id).subscribe({
+      next: () => this.crmActive.update((p) =>
+        p ? { ...p, documents: p.documents.filter((d) => d.id !== doc.id) } : p),
+      error: () => this.docError.set('Could not delete that document.'),
+    });
+  }
+
+  kindMetaFor(kind: string) { return KIND_META[kind] || KIND_META['consultation']; }
+  pct(v: number | null): string { return v == null ? '—' : `${Math.round(v * 100)}%`; }
 
   // ═══════════════════════════ DOCUMENTS ═══════════════════════════
   loadClients(): void {
