@@ -1,5 +1,5 @@
 /**
- * PropertyNest package data — the desk's EXACT published allocations, per-fund
+ * Digivilla package data — the desk's EXACT published allocations, per-fund
  * monthly-withdrawal amounts, and the bucket/withdrawal rules, for all four
  * tiers. This is the single source of truth the property-detail page reads.
  *

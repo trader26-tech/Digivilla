@@ -36,7 +36,7 @@ export interface Property {
 }
 
 /**
- * PropertyNest storefront — the four property tiers a customer can "own".
+ * Digivilla storefront — the four property tiers a customer can "own".
  * Each is a curated basket of mutual funds; the tier sets the ticket size and
  * each tier offers three risk variants (conservative / balanced / aggressive)
  * so the investor picks the concentration that fits their need.
@@ -175,7 +175,7 @@ export class StorefrontComponent {
     this.openWhy = this.openWhy === k ? null : k;
   }
 
-  // Figures from the PropertyNest package data. growthPct = expected p.a.;
+  // Figures from the Digivilla package data. growthPct = expected p.a.;
   // past3y = illustrative trailing 3-yr return; monthlyIncome = rent (null = Land).
   readonly properties: Property[] = [
     {

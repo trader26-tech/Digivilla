@@ -21,7 +21,7 @@ export class LoginComponent {
 
   private readonly auth = inject(AuthService);
 
-  step = signal<'welcome' | 'phone' | 'otp' | 'details'>('welcome');
+  step = signal<'phone' | 'otp' | 'details'>('phone');
   phone = signal('');
   code = signal('');
   busy = signal(false);
@@ -47,12 +47,6 @@ export class LoginComponent {
   }
 
   get firebaseReady(): boolean { return this.auth.firebaseReady; }
-
-  /** Leave the welcome screen and begin the sign-in flow. */
-  start(): void {
-    this.error.set('');
-    this.step.set('phone');
-  }
 
   get phoneValid(): boolean {
     return this.phone().replace(/\D/g, '').length >= 10;

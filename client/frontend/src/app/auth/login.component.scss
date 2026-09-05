@@ -107,58 +107,39 @@
 .lg-fine { margin: 0.1rem 0 0; font-size: 0.82rem; color: var(--muted); text-align: center; line-height: 1.45; }
 .lg-dev { display: block; color: var(--brass); font-weight: 700; }
 
-/* ============ WELCOME / value proposition ============ */
-.wc-flow {
-  flex: 1; display: flex; flex-direction: column;
-  padding: calc(env(safe-area-inset-top) + 2.2rem) 1.5rem calc(1.6rem + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-  animation: rise 0.5s cubic-bezier(0.22,1,0.36,1) 0.08s both;
-}
-
-/* TOP — brand + headline */
-.wc-top { flex: none; }
-.wc-brand { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.6rem; }
-.wc-logo {
-  display: grid; place-items: center; width: 34px; height: 34px;
-  border-radius: 11px; color: #fff;
+/* ============ value proposition on the sign-in screen ============ */
+/* brand mark above the headline */
+.lg-brand { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.15rem; }
+.lg-logo {
+  display: grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 10px; color: #fff;
   background: linear-gradient(135deg, #2E6B4F, #21563d);
-  box-shadow: 0 10px 22px -10px rgba(46,107,79,0.7);
+  box-shadow: 0 9px 20px -10px rgba(46,107,79,0.7);
 }
-.wc-name {
+.lg-brandname {
   font-family: var(--font-display); font-weight: 850;
-  font-size: 1.12rem; letter-spacing: -0.3px; color: var(--ink);
-}
-.wc-title {
-  margin: 0; font-family: var(--font-display);
-  font-size: 2.35rem; font-weight: 850; letter-spacing: -1.2px; line-height: 1.06; color: var(--ink);
-}
-.wc-lead {
-  margin: 0.85rem 0 0; max-width: 34ch;
-  font-size: 1rem; line-height: 1.5; color: var(--muted);
+  font-size: 1.05rem; letter-spacing: -0.3px; color: var(--ink);
 }
 
-/* MIDDLE — why it's useful; grows to push the CTA down */
-.wc-benefits {
-  flex: 1; list-style: none; margin: 0; padding: 2rem 0 1rem;
-  display: flex; flex-direction: column; gap: 1.25rem;
-  align-self: stretch;
+/* the "what you're signing up for" list, sitting above the phone field */
+.lg-why {
+  list-style: none; margin: 0 0 0.35rem; padding: 0;
+  display: flex; flex-direction: column; gap: 0.85rem;
 }
-.wc-benefit { display: flex; align-items: flex-start; gap: 0.85rem; }
-.wc-ico {
-  flex: none; display: grid; place-items: center; width: 38px; height: 38px;
-  border-radius: 12px; color: var(--brass);
+.lg-why li {
+  display: flex; align-items: flex-start; gap: 0.7rem;
+  font-size: 0.9rem; line-height: 1.42; color: var(--muted);
+  b { color: var(--ink); font-weight: 800; }
+}
+.lg-why-ico {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; margin-top: 1px;
+  border-radius: 10px; color: var(--brass);
   background: color-mix(in srgb, var(--brass) 12%, var(--paper));
   border: 1.5px solid color-mix(in srgb, var(--brass) 22%, transparent);
 }
-.wc-txt {
-  display: flex; flex-direction: column; gap: 0.15rem;
-  font-size: 0.9rem; line-height: 1.45; color: var(--muted);
-  b { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 0.98rem; }
-}
 
-/* BOTTOM — CTA, pinned low (reuses .lg-btn) */
-.wc-bottom { flex: none; display: flex; flex-direction: column; gap: 0.9rem; }
-.wc-fine { margin: 0.1rem 0 0; font-size: 0.82rem; color: var(--muted); text-align: center; }
+/* the phone field no longer floats mid-screen — keep it snug after the pitch */
+.lg-mid { justify-content: flex-start; gap: 1.5rem; }
 
 #recaptcha-container { position: fixed; bottom: 0; left: 0; }
 
