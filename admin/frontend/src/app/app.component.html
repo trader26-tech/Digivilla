@@ -66,234 +66,178 @@
 <div class="dash" *ngIf="phase() === 'unlocked'">
   <header class="top">
     <div class="brand">
-      <span class="logo">◆</span>
       <span class="brand-name">Digivilla</span>
       <span class="tag">Admin</span>
     </div>
+    <nav class="top-tabs">
+      <button [class.on]="tab() === 'calendar'" (click)="tab.set('calendar')">Calendar</button>
+      <button [class.on]="tab() === 'documents'" (click)="tab.set('documents')">Clients</button>
+    </nav>
     <div class="top-right">
       <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">{{ lockCountdown() }}</span>
       <button class="ghost" (click)="signOut()">Sign out</button>
     </div>
   </header>
 
-  <!-- ─────────── QUICK ACTIONS ─────────── -->
-  <div class="quick">
-    <span class="quick-label">Quick actions</span>
-    <div class="quick-tiles">
-      <button class="qtile" [class.on]="tab() === 'calendar'" (click)="tab.set('calendar')">
-        <span class="qt-ico">📅</span>
-        <span class="qt-text">
-          <b>Calendar</b>
-          <small>{{ requestedCount }} awaiting · {{ bookings().length }} total</small>
-        </span>
-        <span class="qt-badge" *ngIf="requestedCount">{{ requestedCount }}</span>
-      </button>
-      <button class="qtile" [class.on]="tab() === 'documents'" (click)="tab.set('documents')">
-        <span class="qt-ico">👥</span>
-        <span class="qt-text">
-          <b>Clients</b>
-          <small>{{ clients().length }} client{{ clients().length === 1 ? '' : 's' }} · {{ totalDocs }} document{{ totalDocs === 1 ? '' : 's' }}</small>
-        </span>
-      </button>
-    </div>
-  </div>
-
   <!-- ─────────── CALENDAR TAB ─────────── -->
-  <div class="wrap" *ngIf="tab() === 'calendar'">
-    <!-- kind filter -->
-    <div class="kind-filter">
-      <button [class.on]="kindFilter() === 'all'" (click)="setKindFilter('all')">
-        All <em *ngIf="newByKind()['all']">{{ newByKind()['all'] }}</em>
-      </button>
-      <button class="k-consultation" [class.on]="kindFilter() === 'consultation'" (click)="setKindFilter('consultation')">
-        📞 Consults <em *ngIf="newByKind()['consultation']">{{ newByKind()['consultation'] }}</em>
-      </button>
-      <button class="k-sip" [class.on]="kindFilter() === 'sip'" (click)="setKindFilter('sip')">
-        🔁 SIP <em *ngIf="newByKind()['sip']">{{ newByKind()['sip'] }}</em>
-      </button>
-      <button class="k-buy" [class.on]="kindFilter() === 'buy'" (click)="setKindFilter('buy')">
-        🏠 Buy <em *ngIf="newByKind()['buy']">{{ newByKind()['buy'] }}</em>
-      </button>
-      <button class="k-withdraw" [class.on]="kindFilter() === 'withdraw'" (click)="setKindFilter('withdraw')">
-        💸 Withdraw <em *ngIf="newByKind()['withdraw']">{{ newByKind()['withdraw'] }}</em>
-      </button>
+  <div class="wrap wide" *ngIf="tab() === 'calendar'">
+    <!-- summary stats -->
+    <div class="stats">
+      <div class="stat pending"><b>{{ requestedCount }}</b><span>Awaiting you</span></div>
+      <div class="stat confirmed"><b>{{ confirmedCount }}</b><span>Confirmed</span></div>
+      <div class="stat total"><b>{{ bookings().length }}</b><span>Total requests</span></div>
     </div>
 
-    <div class="cal-layout">
-      <!-- ===== Month overview ===== -->
-      <section class="month">
-        <div class="month-head">
-          <button class="mnav" (click)="prevMonth()" aria-label="Previous month">‹</button>
-          <div class="month-title">
-            <b>{{ monthLabel() }}</b>
-            <button class="today-btn" (click)="goToday()">Today</button>
+    <div class="cal-shell">
+      <!-- ═══════ LEFT: calendar + filters + availability ═══════ -->
+      <div class="left-col">
+        <section class="month card">
+          <div class="month-head">
+            <div class="month-title">
+              <b>{{ monthLabel() }}</b>
+              <button class="today-btn" (click)="goToday()">Today</button>
+            </div>
+            <div class="mnav-group">
+              <button class="mnav" (click)="prevMonth()" aria-label="Previous month">‹</button>
+              <button class="mnav" (click)="nextMonth()" aria-label="Next month">›</button>
+            </div>
           </div>
-          <button class="mnav" (click)="nextMonth()" aria-label="Next month">›</button>
-        </div>
-        <div class="dow"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-        <div class="grid">
-          <button *ngFor="let c of monthGrid()" class="cell"
-            [class.dim]="!c.inMonth" [class.today]="c.isToday" [class.sel]="isSelected(c.iso)"
-            [class.past]="c.isPast" [class.has]="c.total > 0" [class.needs]="c.pending > 0"
-            (click)="selectDay(c.iso)"
-            [attr.aria-label]="c.day + (c.total ? ', ' + c.total + ' request' + (c.total === 1 ? '' : 's') : '')">
-            <span class="dnum">{{ c.day }}</span>
-            <span class="pill" *ngIf="c.pending">{{ c.pending }} new</span>
-            <span class="dots" *ngIf="c.kinds.length">
-              <i class="kdot" *ngFor="let k of c.kinds" [attr.data-kind]="k" [title]="kindMeta[k].label"></i>
-            </span>
+          <div class="dow"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div class="grid">
+            <button *ngFor="let c of monthGrid()" class="cell"
+              [class.dim]="!c.inMonth" [class.today]="c.isToday" [class.sel]="isSelected(c.iso)"
+              [class.past]="c.isPast" [class.has]="c.total > 0" [class.needs]="c.pending > 0"
+              (click)="selectDay(c.iso)"
+              [attr.aria-label]="c.day + (c.total ? ', ' + c.total + ' request' + (c.total === 1 ? '' : 's') : '')">
+              <span class="dnum">{{ c.day }}</span>
+              <span class="dots" *ngIf="c.kinds.length">
+                <i class="kdot" *ngFor="let k of c.kinds" [attr.data-kind]="k" [title]="kindMeta[k].label"></i>
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <!-- kind filter (below the calendar) -->
+        <div class="kind-filter">
+          <button [class.on]="kindFilter() === 'all'" (click)="setKindFilter('all')">
+            All <em *ngIf="newByKind()['all']">{{ newByKind()['all'] }}</em>
+          </button>
+          <button class="k-consultation" [class.on]="kindFilter() === 'consultation'" (click)="setKindFilter('consultation')">
+            📞 Consults <em *ngIf="newByKind()['consultation']">{{ newByKind()['consultation'] }}</em>
+          </button>
+          <button class="k-sip" [class.on]="kindFilter() === 'sip'" (click)="setKindFilter('sip')">
+            🔁 SIP <em *ngIf="newByKind()['sip']">{{ newByKind()['sip'] }}</em>
+          </button>
+          <button class="k-buy" [class.on]="kindFilter() === 'buy'" (click)="setKindFilter('buy')">
+            🏠 Buy <em *ngIf="newByKind()['buy']">{{ newByKind()['buy'] }}</em>
+          </button>
+          <button class="k-withdraw" [class.on]="kindFilter() === 'withdraw'" (click)="setKindFilter('withdraw')">
+            💸 Withdraw <em *ngIf="newByKind()['withdraw']">{{ newByKind()['withdraw'] }}</em>
           </button>
         </div>
-        <div class="legend">
-          <span class="lg" data-kind="consultation"><i class="kdot" data-kind="consultation"></i> Consult</span>
-          <span class="lg" data-kind="sip"><i class="kdot" data-kind="sip"></i> SIP</span>
-          <span class="lg" data-kind="buy"><i class="kdot" data-kind="buy"></i> Buy</span>
-          <span class="lg" data-kind="withdraw"><i class="kdot" data-kind="withdraw"></i> Withdraw</span>
-          <span class="lg needs-lg"><i class="ring"></i> Needs action</span>
-        </div>
-      </section>
 
-      <!-- ===== Needs your attention feed ===== -->
-      <section class="notify">
-        <div class="notify-head">
-          <h2>Needs your attention</h2>
-          <span class="n-count" *ngIf="notifications().length">{{ notifications().length }}</span>
-        </div>
-
-        <div class="loading" *ngIf="loading()">Loading requests…</div>
-        <p class="err" *ngIf="loadError()">{{ loadError() }}</p>
-
-        <div class="notify-empty" *ngIf="!loading() && !notifications().length">
-          <div class="empty-icon">✅</div>
-          <p>You’re all caught up.</p>
-          <span>New SIP, buy, withdrawal and consultation requests will appear here.</span>
-        </div>
-
-        <ul class="feed" *ngIf="!loading() && notifications().length">
-          <li class="feed-item" *ngFor="let a of notifications()" [attr.data-kind]="a.booking.kind">
-            <button class="feed-tap" (click)="jumpTo(a)">
-              <span class="feed-ico" [attr.data-kind]="a.booking.kind">{{ kindIcon(a.booking) }}</span>
-              <span class="feed-body">
-                <span class="feed-line1">
-                  <b class="feed-name">{{ a.booking.name }}</b>
-                  <span class="feed-when">{{ ago(a.booking.created_at) }}</span>
-                </span>
-                <span class="feed-need"><b>{{ kindLabel(a.booking) }}</b> — {{ requirementLine(a.booking) }}</span>
-              </span>
-              <span class="feed-new" *ngIf="isTodayItem(a)">today</span>
-            </button>
-            <div class="feed-actions">
-              <a class="fa call" [href]="'tel:+91' + a.booking.phone">Call</a>
-              <button class="fa ok" [disabled]="busyId() === a.booking.id" (click)="confirm(a.booking)">
-                {{ a.booking.kind === 'consultation' ? 'Confirm' : 'Mark done' }}
-              </button>
-              <button class="fa no" [disabled]="busyId() === a.booking.id" (click)="decline(a.booking)">Decline</button>
+        <!-- availability editor -->
+        <section class="panel card">
+          <button class="panel-head" (click)="showAvailability.set(!showAvailability())">
+            <div>
+              <h2>My availability</h2>
+              <p>Split working hours into 30-minute slots. Block any you’re busy — clients only see the free ones.</p>
             </div>
-          </li>
-        </ul>
-      </section>
-    </div>
+            <span class="chev" [class.open]="showAvailability()">▾</span>
+          </button>
+          <div class="panel-body" *ngIf="showAvailability()">
+            <div class="window-row">
+              <label>Start
+                <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
+              </label>
+              <label>End
+                <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
+              </label>
+            </div>
+            <div class="weekdays">
+              <button *ngFor="let wd of [0,1,2,3,4,5,6]" class="wd" [class.on]="isWeekdayOn(wd)"
+                (click)="toggleWeekday(wd)">{{ weekdayLabels[wd] }}</button>
+            </div>
+            <button class="save-window" [disabled]="avSavingCfg()" (click)="saveWindow()">
+              {{ avSavingCfg() ? 'Saving…' : 'Save working hours' }}
+            </button>
+            <div class="av-days">
+              <div class="av-day" *ngFor="let d of avDays()">
+                <div class="av-day-head">
+                  <b>{{ dayLabel(d.date) }}</b>
+                  <span>{{ freeCount(d) }} free</span>
+                </div>
+                <div class="chips">
+                  <button class="chip" *ngFor="let s of d.slots"
+                    [class.blocked]="s.blocked" [disabled]="avBusySlot() === s.slot"
+                    (click)="toggleSlot(d, s)"
+                    [title]="s.blocked ? 'Blocked — tap to free' : 'Free — tap to block'">
+                    {{ timeLabel(s.time) }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
-    <!-- ===== Selected-day agenda ===== -->
-    <section class="agenda">
-      <div class="agenda-head">
-        <div>
+      <!-- ═══════ RIGHT: selected-day requests ═══════ -->
+      <section class="right-col card">
+        <div class="agenda-head">
           <h2>{{ selectedDayLabel() }}</h2>
           <p class="agenda-sub">
             <span *ngIf="daySummary().total">{{ daySummary().total }} request{{ daySummary().total === 1 ? '' : 's' }}<span *ngIf="daySummary().pending"> · <b>{{ daySummary().pending }} need you</b></span></span>
             <span *ngIf="!daySummary().total">Nothing scheduled</span>
           </p>
         </div>
-      </div>
 
-      <div class="agenda-empty" *ngIf="!loading() && !agenda().length">
-        <div class="empty-icon">🗓️</div>
-        <p>No requests on this day.</p>
-        <span>Pick another day on the calendar, or wait for clients to send requests.</span>
-      </div>
+        <div class="loading" *ngIf="loading()">Loading requests…</div>
+        <p class="err" *ngIf="loadError()">{{ loadError() }}</p>
 
-      <ul class="timeline" *ngIf="!loading() && agenda().length">
-        <li class="tl-item" *ngFor="let a of agenda()"
-          [class.requested]="a.booking.status === 'requested'"
-          [class.confirmed]="a.booking.status === 'confirmed'"
-          [class.declined]="a.booking.status === 'declined'"
-          [attr.data-kind]="a.booking.kind">
-          <div class="tl-time">
-            <b>{{ a.timeLabel }}</b>
-            <span class="tl-when">{{ a.hasSlot ? 'scheduled' : 'requested' }}</span>
-          </div>
-          <div class="tl-card">
-            <div class="tl-top">
-              <span class="kind-chip" [attr.data-kind]="a.booking.kind">{{ kindIcon(a.booking) }} {{ kindLabel(a.booking) }}</span>
-              <span class="badge ok" *ngIf="a.booking.status === 'confirmed'">Confirmed</span>
-              <span class="badge no" *ngIf="a.booking.status === 'declined'">Declined</span>
-              <span class="badge new" *ngIf="a.booking.status === 'requested'">New</span>
-            </div>
-            <div class="tl-who">
-              <b class="who-name">{{ a.booking.name }}</b>
-              <a class="who-phone" [href]="'tel:+91' + a.booking.phone">📞 +91 {{ a.booking.phone }}</a>
-            </div>
-            <div class="tl-need">{{ requirementLine(a.booking) }}</div>
-            <div class="tl-note" *ngIf="a.booking.note">“{{ a.booking.note }}”</div>
-            <div class="tl-actions">
-              <ng-container *ngIf="a.booking.status === 'requested'">
-                <button class="act ok" [disabled]="busyId() === a.booking.id" (click)="confirm(a.booking)">
-                  {{ a.booking.kind === 'consultation' ? 'Confirm' : 'Mark done' }}
-                </button>
-                <button class="act no" [disabled]="busyId() === a.booking.id" (click)="decline(a.booking)">Decline</button>
-              </ng-container>
-              <button class="act reopen" *ngIf="a.booking.status !== 'requested'" [disabled]="busyId() === a.booking.id" (click)="reopen(a.booking)">Reopen</button>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </section>
-
-    <!-- availability editor -->
-    <section class="panel">
-      <button class="panel-head" (click)="showAvailability.set(!showAvailability())">
-        <div>
-          <h2>My availability</h2>
-          <p>Split your working hours into 30-minute slots. Block any you’re busy — clients only see the free ones.</p>
+        <div class="agenda-empty" *ngIf="!loading() && !agenda().length">
+          <div class="empty-icon">🗓️</div>
+          <p>No requests on this day.</p>
+          <span>Pick another day on the calendar, or wait for clients to send SIP, buy, withdrawal or consultation requests.</span>
         </div>
-        <span class="chev" [class.open]="showAvailability()">▾</span>
-      </button>
 
-      <div class="panel-body" *ngIf="showAvailability()">
-        <div class="window-row">
-          <label>Start
-            <input type="time" [ngModel]="avStart()" (ngModelChange)="avStart.set($event)" step="1800" />
-          </label>
-          <label>End
-            <input type="time" [ngModel]="avEnd()" (ngModelChange)="avEnd.set($event)" step="1800" />
-          </label>
-        </div>
-        <div class="weekdays">
-          <button *ngFor="let wd of [0,1,2,3,4,5,6]" class="wd" [class.on]="isWeekdayOn(wd)"
-            (click)="toggleWeekday(wd)">{{ weekdayLabels[wd] }}</button>
-        </div>
-        <button class="save-window" [disabled]="avSavingCfg()" (click)="saveWindow()">
-          {{ avSavingCfg() ? 'Saving…' : 'Save working hours' }}
-        </button>
+        <ul class="timeline" *ngIf="!loading() && agenda().length">
+          <li class="tl-item" *ngFor="let a of agenda()"
+            [class.requested]="a.booking.status === 'requested'"
+            [class.confirmed]="a.booking.status === 'confirmed'"
+            [class.declined]="a.booking.status === 'declined'"
+            [attr.data-kind]="a.booking.kind">
+            <div class="tl-time">
+              <b>{{ a.timeLabel }}</b>
+              <span class="tl-when">{{ a.hasSlot ? 'scheduled' : 'requested' }}</span>
+            </div>
+            <div class="tl-card">
+              <div class="tl-top">
+                <span class="kind-chip" [attr.data-kind]="a.booking.kind">{{ kindIcon(a.booking) }} {{ kindLabel(a.booking) }}</span>
+                <span class="badge ok" *ngIf="a.booking.status === 'confirmed'">Confirmed</span>
+                <span class="badge no" *ngIf="a.booking.status === 'declined'">Declined</span>
+                <span class="badge new" *ngIf="a.booking.status === 'requested'">New</span>
+              </div>
+              <div class="tl-who">
+                <b class="who-name">{{ a.booking.name }}</b>
+                <a class="who-phone" [href]="'tel:+91' + a.booking.phone">📞 +91 {{ a.booking.phone }}</a>
+              </div>
+              <div class="tl-need">{{ requirementLine(a.booking) }}</div>
+              <div class="tl-note" *ngIf="a.booking.note">“{{ a.booking.note }}”</div>
+              <div class="tl-actions">
+                <ng-container *ngIf="a.booking.status === 'requested'">
+                  <button class="act ok" [disabled]="busyId() === a.booking.id" (click)="confirm(a.booking)">
+                    {{ a.booking.kind === 'consultation' ? 'Confirm' : 'Mark done' }}
+                  </button>
+                  <button class="act no" [disabled]="busyId() === a.booking.id" (click)="decline(a.booking)">Decline</button>
+                </ng-container>
+                <button class="act reopen" *ngIf="a.booking.status !== 'requested'" [disabled]="busyId() === a.booking.id" (click)="reopen(a.booking)">Reopen</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
 
-        <div class="av-days">
-          <div class="av-day" *ngFor="let d of avDays()">
-            <div class="av-day-head">
-              <b>{{ dayLabel(d.date) }}</b>
-              <span>{{ freeCount(d) }} free</span>
-            </div>
-            <div class="chips">
-              <button class="chip" *ngFor="let s of d.slots"
-                [class.blocked]="s.blocked" [disabled]="avBusySlot() === s.slot"
-                (click)="toggleSlot(d, s)"
-                [title]="s.blocked ? 'Blocked — tap to free' : 'Free — tap to block'">
-                {{ timeLabel(s.time) }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 
   <!-- ─────────── DOCUMENTS TAB ─────────── -->
