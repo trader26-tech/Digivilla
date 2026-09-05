@@ -227,6 +227,14 @@ _SAMPLE = {
         {"id": "v_10l", "name": "Estate Villa", "price": 1000000, "rent_monthly": 5000},
         {"id": "v_50l", "name": "Manor Villa", "price": 5000000, "rent_monthly": 27000},
     ],
+    "villa_funds": [
+        {"id": "vf_01", "villa_id": "v_1l", "scheme_code": 122640, "fund_name": "Parag Parikh Flexi Cap", "weight": 0.45, "role": "growth", "withdraw_monthly": 0, "sort_order": 1},
+        {"id": "vf_02", "villa_id": "v_1l", "scheme_code": 100119, "fund_name": "HDFC Balanced Advantage", "weight": 0.30, "role": "hedge", "withdraw_monthly": 0, "sort_order": 2},
+        {"id": "vf_03", "villa_id": "v_1l", "scheme_code": 105758, "fund_name": "HDFC Mid-Cap Opportunities", "weight": 0.25, "role": "growth", "withdraw_monthly": 0, "sort_order": 3},
+        {"id": "vf_04", "villa_id": "v_10l", "scheme_code": 105968, "fund_name": "Kotak Equity Arbitrage", "weight": 0.40, "role": "income", "withdraw_monthly": 5000, "sort_order": 1},
+        {"id": "vf_05", "villa_id": "v_10l", "scheme_code": 103340, "fund_name": "ICICI Pru Liquid", "weight": 0.10, "role": "liquid", "withdraw_monthly": 0, "sort_order": 2},
+        {"id": "vf_06", "villa_id": "v_10l", "scheme_code": 122640, "fund_name": "Parag Parikh Flexi Cap", "weight": 0.50, "role": "growth", "withdraw_monthly": 0, "sort_order": 3},
+    ],
     "user_villas": [
         {"id": "uv_1", "user_id": "u_ravi", "villa_id": "v_1l", "status": "accumulating",
          "sip_monthly": 10000, "sip_day": 5, "sip_next_payment": "2026-10-05",

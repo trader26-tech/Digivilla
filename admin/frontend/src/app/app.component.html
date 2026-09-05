@@ -86,22 +86,11 @@
 
   <!-- ─────────── CALENDAR TAB ─────────── -->
   <div class="wrap wide" *ngIf="tab() === 'calendar'">
-    <!-- greeting hero -->
+    <!-- greeting -->
     <div class="hero">
       <div class="hero-text">
         <h1 class="hero-title">{{ greeting() }}, {{ adminName() }}</h1>
         <p class="hero-sub">{{ todayLong() }}</p>
-      </div>
-      <div class="hero-stats">
-        <div class="hstat" [class.accent]="requestedCount">
-          <b>{{ requestedCount }}</b><span>Need you</span>
-        </div>
-        <div class="hstat">
-          <b>{{ confirmedCount }}</b><span>Confirmed</span>
-        </div>
-        <div class="hstat">
-          <b>{{ bookings().length }}</b><span>Total</span>
-        </div>
       </div>
     </div>
 

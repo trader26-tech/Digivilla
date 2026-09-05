@@ -351,14 +351,8 @@ export class AppComponent implements OnInit {
     return 'Good evening';
   });
 
-  /** The admin's first name: from the sign-in email, else "Ranjeev". */
-  adminName = computed<string>(() => {
-    const raw = (this.signinEmail() || this.maskedEmail() || '').trim();
-    const local = raw.split('@')[0].replace(/[._-]+/g, ' ').trim();
-    const first = local.split(' ')[0].replace(/\*/g, '');
-    if (!first || first.length < 2) return 'Ranjeev';
-    return first.charAt(0).toUpperCase() + first.slice(1);
-  });
+  /** The admin's name shown in the greeting. */
+  adminName = computed<string>(() => 'Ranjeev');
 
   /** Today, spelled out — e.g. "Saturday, 5 September". */
   todayLong = computed<string>(() => {
