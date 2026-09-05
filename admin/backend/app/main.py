@@ -282,6 +282,14 @@ def admin_crm_seed(authorization: Optional[str] = Header(default=None)) -> dict:
     return clients_svc.seed_sample()
 
 
+@app.post("/admin/crm/add-second-villa")
+def admin_crm_add_second_villa(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Give an existing single-villa client a second villa (a real multi-villa
+    example) so the Clients tab shows the 2-villa layout."""
+    _require_admin(authorization)
+    return clients_svc.add_second_villa()
+
+
 @app.get("/admin/crm/clients/{user_id}")
 def admin_crm_client(
     user_id: str, authorization: Optional[str] = Header(default=None),

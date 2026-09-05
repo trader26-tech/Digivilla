@@ -801,6 +801,23 @@ export class AppComponent implements OnInit {
     });
   }
 
+  addingVilla = signal(false);
+  addedNote = signal('');
+  /** Give an existing single-villa client a second villa (multi-villa demo). */
+  giveSecondVilla(): void {
+    if (this.addingVilla()) return;
+    this.addingVilla.set(true);
+    this.addedNote.set('');
+    this.api.addSecondVilla().subscribe({
+      next: (r) => {
+        this.addingVilla.set(false);
+        this.addedNote.set(r.detail || (r.name ? `${r.name} now has 2 villas.` : ''));
+        this.loadCrmClients();
+      },
+      error: () => this.addingVilla.set(false),
+    });
+  }
+
   /** Upload a document to the currently-open CRM client (by their name). */
   onCrmFilePicked(ev: Event): void {
     const input = ev.target as HTMLInputElement;

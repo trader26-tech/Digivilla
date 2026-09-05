@@ -291,3 +291,66 @@ def seed_sample() -> dict:
         except Exception as e:
             return {"ok": False, "detail": f"Failed seeding {table}: {e}", "done": counts}
     return {"ok": True, "seeded": counts}
+
+
+def add_second_villa() -> dict:
+    """Give an existing client a SECOND villa (a different one from what they
+    already hold), plus a small SIP + a couple of contributions, so the Clients
+    tab has a real multi-villa example. Idempotent-ish: skips clients who already
+    hold 2+ villas. Works on the live Supabase data."""
+    if not _use_supabase():
+        return {"ok": False, "detail": "Supabase not configured."}
+    import uuid
+    from datetime import date
+    from app.supabase_client import get_supabase
+
+    cl = get_supabase()
+    users = _rows("users")
+    villas = _rows("villas")
+    user_villas = _rows("user_villas")
+    if not users or len(villas) < 2:
+        return {"ok": False, "detail": "Need at least one client and two villas in the catalogue."}
+
+    held: dict[str, list[str]] = {}
+    for uv in user_villas:
+        held.setdefault(uv.get("user_id"), []).append(uv.get("villa_id"))
+
+    # pick the first client who currently holds exactly one villa
+    target = next((u for u in users if len(held.get(u.get("id"), [])) == 1), None)
+    if not target:
+        # everyone already has 2+ (or none) — nothing to do
+        already = next((u for u in users if len(held.get(u.get("id"), [])) >= 2), None)
+        if already:
+            return {"ok": True, "detail": f"{already.get('name')} already has 2+ villas.", "user_id": already.get("id")}
+        return {"ok": False, "detail": "No client with exactly one villa to extend."}
+
+    uid = target["id"]
+    have = set(held.get(uid, []))
+    # choose a different villa (prefer the cheapest one they don't have)
+    other = next((v for v in sorted(villas, key=lambda v: _money(v.get("price")))
+                  if v.get("id") not in have), None)
+    if not other:
+        return {"ok": False, "detail": "No alternative villa to add."}
+
+    uv_id = "uv_" + uuid.uuid4().hex[:8]
+    price = _money(other.get("price"))
+    invested = round(price * 0.2)  # 20% in so far → accumulating
+    try:
+        cl.table("user_villas").insert({
+            "id": uv_id, "user_id": uid, "villa_id": other["id"], "status": "accumulating",
+            "sip_monthly": 5000, "sip_day": 1, "sip_next_payment": "2026-10-01",
+            "current_value": round(invested * 1.05),
+        }).execute()
+        cl.table("transactions").insert([
+            {"id": "t_" + uuid.uuid4().hex[:8], "user_villa_id": uv_id, "kind": "sip",
+             "amount": 5000, "txn_date": "2026-08-01", "status": "paid", "note": ""},
+            {"id": "t_" + uuid.uuid4().hex[:8], "user_villa_id": uv_id, "kind": "sip",
+             "amount": 5000, "txn_date": "2026-09-01", "status": "paid", "note": ""},
+            {"id": "t_" + uuid.uuid4().hex[:8], "user_villa_id": uv_id, "kind": "lump_sum",
+             "amount": max(invested - 10000, 0), "txn_date": "2026-08-15", "status": "paid", "note": "top-up"},
+        ]).execute()
+    except Exception as e:
+        return {"ok": False, "detail": f"Failed adding second villa: {e}"}
+
+    return {"ok": True, "user_id": uid, "name": target.get("name"),
+            "added_villa": other.get("name"), "detail": f"{target.get('name')} now holds 2 villas."}

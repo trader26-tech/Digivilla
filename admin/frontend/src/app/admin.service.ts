@@ -243,6 +243,10 @@ export class AdminService {
     return this.http.post<{ ok: boolean; seeded?: any; detail?: string }>(
       `${this.base}/admin/crm/seed`, {}, this.opts);
   }
+  addSecondVilla(): Observable<{ ok: boolean; name?: string; detail?: string }> {
+    return this.http.post<{ ok: boolean; name?: string; detail?: string }>(
+      `${this.base}/admin/crm/add-second-villa`, {}, this.opts);
+  }
 
   // ── client documents ──────────────────────────────────────────────────────
   listClients(): Observable<ClientFolder[]> {
