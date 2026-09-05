@@ -407,6 +407,29 @@ export class AppComponent implements OnInit {
   get requestedCount(): number { return this.bookings().filter((b) => b.status === 'requested').length; }
   get confirmedCount(): number { return this.bookings().filter((b) => b.status === 'confirmed').length; }
 
+  // ── Google Meet link on a session ──
+  meetEditId = signal('');     // booking id whose link editor is open
+  meetDraft = signal('');      // the link being typed
+
+  openMeetEditor(b: Booking): void {
+    this.meetDraft.set(b.meet_link || '');
+    this.meetEditId.set(b.id);
+  }
+  cancelMeet(): void { this.meetEditId.set(''); this.meetDraft.set(''); }
+
+  saveMeet(b: Booking): void {
+    const link = this.meetDraft().trim();
+    this.busyId.set(b.id);
+    this.api.setMeetLink(b.id, link).subscribe({
+      next: (u) => {
+        this.bookings.update((list) => list.map((x) => (x.id === b.id ? u : x)));
+        this.busyId.set('');
+        this.cancelMeet();
+      },
+      error: () => this.busyId.set(''),
+    });
+  }
+
   // ═══════════════════════════ CALENDAR ═══════════════════════════
 
   /** The ISO day a booking belongs on: its slot day for consultations,

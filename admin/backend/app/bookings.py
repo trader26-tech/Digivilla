@@ -77,6 +77,7 @@ def _normalize(row: dict) -> dict:
         "slot": row.get("slot", "") or "",
         "note": row.get("note", ""),
         "status": row.get("status", "requested"),
+        "meet_link": row.get("meet_link", "") or "",
         "created_at": row.get("created_at", ""),
     }
 
@@ -140,6 +141,35 @@ def set_status(booking_id: str, status: str) -> Booking | None:
     for r in rows:
         if r.get("id") == booking_id:
             r["status"] = status
+            found = r
+            break
+    if found is None:
+        return None
+    _write_local(rows)
+    return Booking(**_normalize(found))
+
+
+def set_meet_link(booking_id: str, meet_link: str) -> Booking | None:
+    """Attach (or clear) a Google Meet / video link on a booking."""
+    meet_link = (meet_link or "").strip()
+    if _use_supabase():
+        from app.supabase_client import get_supabase
+
+        res = (
+            get_supabase()
+            .table("bookings")
+            .update({"meet_link": meet_link})
+            .eq("id", booking_id)
+            .execute()
+        )
+        rows = res.data or []
+        return Booking(**_normalize(rows[0])) if rows else None
+
+    rows = _read_local()
+    found: dict | None = None
+    for r in rows:
+        if r.get("id") == booking_id:
+            r["meet_link"] = meet_link
             found = r
             break
     if found is None:

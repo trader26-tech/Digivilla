@@ -220,6 +220,25 @@
                   </div>
                   <div class="reqcard-need">{{ kindLabel(b) }} — {{ requirementLine(b) }}</div>
                   <a class="reqcard-phone" [href]="'tel:+91' + b.phone">📞 +91 {{ b.phone }}</a>
+
+                  <!-- Google Meet link for the session -->
+                  <div class="meet" *ngIf="b.kind === 'consultation'">
+                    <ng-container *ngIf="meetEditId() !== b.id">
+                      <a *ngIf="b.meet_link" class="meet-link" [href]="b.meet_link" target="_blank" rel="noopener">
+                        <span class="meet-ico">🎥</span> Join Google Meet
+                      </a>
+                      <button class="meet-add" (click)="openMeetEditor(b)">
+                        {{ b.meet_link ? 'Edit link' : '+ Add Meet link' }}
+                      </button>
+                    </ng-container>
+                    <div class="meet-edit" *ngIf="meetEditId() === b.id">
+                      <input class="meet-input" placeholder="https://meet.google.com/…"
+                        [ngModel]="meetDraft()" (ngModelChange)="meetDraft.set($event)"
+                        (keydown.enter)="saveMeet(b)" autofocus />
+                      <button class="act ok meet-save" [disabled]="busyId() === b.id" (click)="saveMeet(b)">Save</button>
+                      <button class="meet-cancel" (click)="cancelMeet()">Cancel</button>
+                    </div>
+                  </div>
                 </div>
                 <div class="reqcard-actions">
                   <ng-container *ngIf="b.status === 'requested'">
@@ -339,6 +358,25 @@
                 <span>Invested <b>{{ money(h.invested) }}</b><span *ngIf="h.progress != null"> · {{ pct(h.progress) }} of {{ money(h.price) }}</span></span>
                 <span *ngIf="h.sip_monthly">SIP <b>{{ money(h.sip_monthly) }}</b>/mo<span *ngIf="h.sip_next_payment"> · next {{ h.sip_next_payment }}</span></span>
                 <span *ngIf="h.rent_received">Rent <b>{{ money(h.rent_received) }}</b></span>
+              </div>
+
+              <!-- fund concentration: what this villa is made of -->
+              <div class="conc" *ngIf="h.funds?.length">
+                <div class="conc-title">Concentration · what it holds</div>
+                <div class="conc-bar">
+                  <span class="conc-seg" *ngFor="let f of h.funds"
+                    [style.width.%]="f.weight * 100" [attr.data-role]="f.role"
+                    [title]="f.fund_name + ' · ' + pct(f.weight)"></span>
+                </div>
+                <ul class="conc-list">
+                  <li class="conc-fund" *ngFor="let f of h.funds">
+                    <span class="conc-dot" [attr.data-role]="f.role"></span>
+                    <span class="conc-name">{{ f.fund_name }}</span>
+                    <span class="conc-role">{{ f.role }}</span>
+                    <span class="conc-wt">{{ pct(f.weight) }}</span>
+                    <span class="conc-val">{{ money(f.value) }}</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>

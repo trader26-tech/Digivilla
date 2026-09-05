@@ -18,6 +18,7 @@ export interface Booking {
   slot: string; // ISO-8601 (consultation only)
   note: string;
   status: 'requested' | 'confirmed' | 'declined';
+  meet_link?: string;   // Google Meet / video link for the session
   created_at: string;
 }
 
@@ -92,6 +93,16 @@ export interface ClientHolding {
   rent_received: number;
   sip_monthly: number;
   sip_next_payment: string | null;
+  funds: ClientFund[];
+}
+/** One fund inside a villa (the concentration). */
+export interface ClientFund {
+  fund_name: string;
+  scheme_code: number;
+  weight: number;        // 0..1 of the villa
+  role: string;          // income | growth | liquid | hedge
+  value: number;         // this client's ₹ in this fund
+  withdraw_monthly: number;
 }
 /** A row in a client's money ledger. */
 export interface ClientLedgerRow {
@@ -200,6 +211,9 @@ export class AdminService {
   }
   setStatus(id: string, status: 'confirmed' | 'declined' | 'requested'): Observable<Booking> {
     return this.http.post<Booking>(`${this.base}/admin/bookings/${id}/status`, { status }, this.opts);
+  }
+  setMeetLink(id: string, meet_link: string): Observable<Booking> {
+    return this.http.post<Booking>(`${this.base}/admin/bookings/${id}/meet`, { meet_link }, this.opts);
   }
   deleteBooking(id: string): Observable<{ status: string }> {
     return this.http.delete<{ status: string }>(`${this.base}/admin/bookings/${id}`, this.opts);

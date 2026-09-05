@@ -46,6 +46,7 @@ from app.schemas import (
     BlockSlotBody,
     Booking,
     BookingCreate,
+    BookingMeetUpdate,
     BookingStatusUpdate,
     ClientCreate,
 )
@@ -371,6 +372,19 @@ def admin_set_status(
 ) -> Booking:
     _require_admin(authorization)
     updated = bookings_svc.set_status(booking_id, payload.status)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return updated
+
+
+@app.post("/admin/bookings/{booking_id}/meet", response_model=Booking)
+def admin_set_meet(
+    booking_id: str,
+    payload: BookingMeetUpdate,
+    authorization: Optional[str] = Header(default=None),
+) -> Booking:
+    _require_admin(authorization)
+    updated = bookings_svc.set_meet_link(booking_id, payload.meet_link)
     if not updated:
         raise HTTPException(status_code=404, detail="Booking not found")
     return updated

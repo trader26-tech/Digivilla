@@ -26,11 +26,16 @@ class BookingCreate(BaseModel):
 class Booking(BookingCreate):
     id: str
     status: str = "requested"     # requested | confirmed | declined
+    meet_link: str = ""           # Google Meet / video link for the session
     created_at: str
 
 
 class BookingStatusUpdate(BaseModel):
     status: str                   # confirmed | declined
+
+
+class BookingMeetUpdate(BaseModel):
+    meet_link: str = ""           # the Google Meet (or any) link to attach
 
 
 # --- Admin OTP → PIN sign-in ---------------------------------------------
@@ -58,6 +63,7 @@ class AvailabilityConfig(BaseModel):
     slot_minutes: Optional[int] = None
     weekdays: Optional[list[int]] = None
     tz_offset: Optional[str] = None
+    busy_times: Optional[list[str]] = None   # "HH:MM" busy every day
 
 
 class BlockSlotBody(BaseModel):

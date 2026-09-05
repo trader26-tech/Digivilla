@@ -126,6 +126,10 @@ def get_client(user_id: str) -> dict | None:
     txn_by_uv: dict[str, list[dict]] = {}
     for t in all_txns:
         txn_by_uv.setdefault(t.get("user_villa_id"), []).append(t)
+    # fund concentration per villa (which funds each villa is made of)
+    funds_by_villa: dict[str, list[dict]] = {}
+    for f in _rows("villa_funds"):
+        funds_by_villa.setdefault(f.get("villa_id"), []).append(f)
 
     holdings = []
     total_invested = total_value = total_rent = total_sip = 0.0
@@ -143,6 +147,17 @@ def get_client(user_id: str) -> dict | None:
         total_value += value
         total_rent += rent
         total_sip += sip
+        # fund concentration: weight → this client's ₹ in each fund (by current value)
+        vfunds = sorted(funds_by_villa.get(uv.get("villa_id"), []),
+                        key=lambda f: (f.get("sort_order", 0), -_money(f.get("weight"))))
+        funds = [{
+            "fund_name": f.get("fund_name") or "Fund",
+            "scheme_code": f.get("scheme_code"),
+            "weight": _money(f.get("weight")),
+            "role": f.get("role") or "growth",
+            "value": round(value * _money(f.get("weight"))),
+            "withdraw_monthly": _money(f.get("withdraw_monthly")),
+        } for f in vfunds]
         holdings.append({
             "id": uv.get("id"),
             "villa_name": villa.get("name") or "Villa",
@@ -155,6 +170,7 @@ def get_client(user_id: str) -> dict | None:
             "rent_received": rent,
             "sip_monthly": sip,
             "sip_next_payment": uv.get("sip_next_payment"),
+            "funds": funds,
         })
         for t in txns:
             ledger.append({

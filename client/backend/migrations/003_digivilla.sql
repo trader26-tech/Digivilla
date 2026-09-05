@@ -128,11 +128,13 @@ create table if not exists public.bookings (
     slot         text default '',                    -- ISO-8601 datetime (consultation only)
     note         text default '',
     status       text not null default 'requested',  -- requested | confirmed | declined
+    meet_link    text default '',                    -- Google Meet / video link for the session
     created_at   timestamptz not null default now()
 );
 -- If bookings already exists from the old schema, add the new links (safe):
-alter table public.bookings add column if not exists user_id  text references public.users(id) on delete set null;
-alter table public.bookings add column if not exists villa_id text references public.villas(id) on delete set null;
+alter table public.bookings add column if not exists user_id   text references public.users(id) on delete set null;
+alter table public.bookings add column if not exists villa_id  text references public.villas(id) on delete set null;
+alter table public.bookings add column if not exists meet_link text default '';
 create index if not exists bookings_user_idx    on public.bookings (user_id);
 create index if not exists bookings_status_idx  on public.bookings (status);
 create index if not exists bookings_slot_idx    on public.bookings (slot);

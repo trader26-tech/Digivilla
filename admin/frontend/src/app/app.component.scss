@@ -541,7 +541,7 @@
 .hours-hint b { color: var(--ink); }
 
 /* ── 30-minute slot timeline ── */
-.slots-day { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; max-height: 680px; overflow-y: auto; padding-right: 0.2rem; }
+.slots-day { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .srow { display: grid; grid-template-columns: 58px 1fr; gap: 0.6rem; align-items: start; }
 .srow-time {
   text-align: right; padding-top: 0.55rem;
@@ -572,6 +572,36 @@
 .reqcard-need { font-size: 0.86rem; color: var(--ink); line-height: 1.45; font-weight: 500; }
 .reqcard-phone { font-size: 0.83rem; color: var(--brass); text-decoration: none; font-weight: 700; margin-top: 0.1rem; }
 .reqcard-phone:hover { text-decoration: underline; }
+
+/* Google Meet link on a session */
+.meet { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+.meet-link {
+  display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;
+  font-size: 0.8rem; font-weight: 750; color: var(--positive);
+  background: color-mix(in srgb, var(--positive) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--positive) 30%, transparent);
+  padding: 0.35rem 0.65rem; border-radius: 999px;
+}
+.meet-link:hover { background: color-mix(in srgb, var(--positive) 18%, transparent); }
+.meet-add {
+  border: 1px dashed var(--border); background: transparent; color: var(--muted);
+  font: inherit; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.6rem;
+  border-radius: 8px; cursor: pointer;
+  &:hover { border-color: var(--ink); color: var(--ink); }
+}
+.meet-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; width: 100%; }
+.meet-input {
+  flex: 1; min-width: 140px; border: 1.5px solid var(--border); border-radius: 9px;
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 0.82rem;
+  padding: 0.4rem 0.55rem;
+  &:focus { outline: none; border-color: var(--brass); }
+}
+.meet-save { padding: 0.4rem 0.7rem; }
+.meet-cancel {
+  border: none; background: none; color: var(--muted); font: inherit; font-size: 0.78rem;
+  font-weight: 700; cursor: pointer; padding: 0.3rem 0.4rem;
+  &:hover { color: var(--ink); }
+}
 .reqcard-actions { flex: none; display: flex; flex-direction: column; gap: 0.4rem; }
 @media (max-width: 620px) {
   .srow { grid-template-columns: 46px 1fr; gap: 0.45rem; }
@@ -802,6 +832,25 @@
 .holding-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--brass), var(--positive)); }
 .holding-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; font-size: 0.8rem; color: var(--muted); }
 .holding-meta b { color: var(--ink); font-weight: 750; }
+
+/* fund concentration — the stacked bar + fund list */
+.conc { margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
+.conc-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.5rem; }
+.conc-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-2); margin-bottom: 0.7rem; }
+.conc-seg { height: 100%; }
+/* role tints — subtle greys with one accent, staying near-monochrome */
+.conc-seg[data-role="income"], .conc-dot[data-role="income"] { background: var(--ink); }
+.conc-seg[data-role="growth"], .conc-dot[data-role="growth"] { background: var(--brass); }
+.conc-seg[data-role="liquid"], .conc-dot[data-role="liquid"] { background: color-mix(in srgb, var(--ink) 35%, var(--paper)); }
+.conc-seg[data-role="hedge"],  .conc-dot[data-role="hedge"]  { background: color-mix(in srgb, var(--ink) 60%, var(--paper)); }
+.conc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.conc-fund { display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; }
+.conc-dot { flex: none; width: 9px; height: 9px; border-radius: 3px; }
+.conc-name { font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conc-role { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); background: var(--surface-2); padding: 0.1rem 0.4rem; border-radius: 999px; }
+.conc-wt { margin-left: auto; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.conc-val { width: 84px; text-align: right; color: var(--muted); font-weight: 650; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .conc-val { display: none; } }
 
 /* documents (reuses .doc-list / .doc from the old tab) */
 
