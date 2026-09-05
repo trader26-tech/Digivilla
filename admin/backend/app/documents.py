@@ -133,10 +133,15 @@ def add_document(client: str, filename: str, content: bytes, content_type: str) 
 
         cl = get_supabase()
         _ensure_bucket(cl)
-        cl.storage.from_(_BUCKET).upload(
-            path, content,
-            {"content-type": content_type or "application/octet-stream", "upsert": "true"},
-        )
+        try:
+            cl.storage.from_(_BUCKET).upload(
+                path, content,
+                {"content-type": content_type or "application/octet-stream", "upsert": "true"},
+            )
+        except Exception as e:
+            # Surface a clear error instead of silently "succeeding" into a
+            # bucket that isn't there — the admin needs to know the upload failed.
+            raise ValueError(f"Could not store the file in Supabase: {e}")
     else:
         os.makedirs(os.path.join(_FILES_DIR, _slug(client)), exist_ok=True)
         with open(os.path.join(_FILES_DIR, path), "wb") as fh:
@@ -159,9 +164,17 @@ def get_document(doc_id: str) -> tuple[dict, bytes] | None:
     if _use_supabase():
         from app.supabase_client import get_supabase
 
+        cl = get_supabase()
         try:
-            data = get_supabase().storage.from_(_BUCKET).download(path)
+            data = cl.storage.from_(_BUCKET).download(path)
         except Exception:
+            # Storage miss (e.g. uploaded before the bucket existed). Fall back
+            # to the local copy if this instance happens to have it, so an old
+            # doc still opens; otherwise report not-found.
+            full = os.path.join(_FILES_DIR, path)
+            if os.path.exists(full):
+                with open(full, "rb") as fh:
+                    return row, fh.read()
             return None
     else:
         full = os.path.join(_FILES_DIR, path)
@@ -222,11 +235,39 @@ def _insert(row: dict) -> None:
         _save(rows)
 
 
+_BUCKET_OK = False
+
+
 def _ensure_bucket(cl) -> None:
+    """Make sure the private `client-docs` bucket exists. Checked once per
+    process, tolerant of the differing create_bucket signatures across
+    supabase-py versions, and a no-op if the bucket is already there."""
+    global _BUCKET_OK
+    if _BUCKET_OK:
+        return
+    # Already exists?
     try:
-        cl.storage.create_bucket(_BUCKET, options={"public": False})
+        cl.storage.get_bucket(_BUCKET)
+        _BUCKET_OK = True
+        return
     except Exception:
-        pass  # already exists
+        pass
+    # Create it — try the current options-dict form, then older signatures.
+    for attempt in (
+        lambda: cl.storage.create_bucket(_BUCKET, options={"public": False}),
+        lambda: cl.storage.create_bucket(_BUCKET, {"public": False}),
+        lambda: cl.storage.create_bucket(_BUCKET),
+    ):
+        try:
+            attempt()
+            _BUCKET_OK = True
+            return
+        except Exception as e:
+            # "already exists" means we're done; anything else, try the next form.
+            if "exist" in str(e).lower() or "duplicate" in str(e).lower():
+                _BUCKET_OK = True
+                return
+    # Couldn't confirm; leave _BUCKET_OK False so we retry next upload.
 
 
 def _public(row: dict) -> dict:

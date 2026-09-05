@@ -242,6 +242,10 @@ _SAMPLE = {
         {"id": "uv_2", "user_id": "u_anjali", "villa_id": "v_10l", "status": "active",
          "sip_monthly": 0, "sip_day": None, "sip_next_payment": None,
          "current_value": 1048000},
+        # Anjali also builds a second villa by SIP → shows the multi-villa case
+        {"id": "uv_3", "user_id": "u_anjali", "villa_id": "v_1l", "status": "accumulating",
+         "sip_monthly": 5000, "sip_day": 1, "sip_next_payment": "2026-10-01",
+         "current_value": 21500},
     ],
     "transactions": [
         {"id": "t_1", "user_villa_id": "uv_1", "kind": "sip", "amount": 10000, "txn_date": "2026-07-05", "status": "paid", "note": ""},
@@ -253,6 +257,9 @@ _SAMPLE = {
         {"id": "t_7", "user_villa_id": "uv_2", "kind": "rent", "amount": 5000, "txn_date": "2026-08-01", "status": "paid", "note": ""},
         {"id": "t_8", "user_villa_id": "uv_2", "kind": "rent", "amount": 4500, "txn_date": "2026-09-01", "status": "reduced", "note": "arbitrage sleeve low"},
         {"id": "t_9", "user_villa_id": "uv_2", "kind": "withdrawal", "amount": 0, "txn_date": "2026-09-04", "status": "pending", "note": "requested Rs 3.5L"},
+        {"id": "t_10", "user_villa_id": "uv_3", "kind": "sip", "amount": 5000, "txn_date": "2026-08-01", "status": "paid", "note": ""},
+        {"id": "t_11", "user_villa_id": "uv_3", "kind": "sip", "amount": 5000, "txn_date": "2026-09-01", "status": "paid", "note": ""},
+        {"id": "t_12", "user_villa_id": "uv_3", "kind": "lump_sum", "amount": 10000, "txn_date": "2026-08-15", "status": "paid", "note": "top-up"},
     ],
     "bookings": [
         {"id": "b_1", "user_id": "u_ravi", "villa_id": "v_1l", "name": "Ravi Kumar", "phone": "9876543210", "kind": "sip", "amount": 10000, "slot": "", "status": "requested", "created_at": "2026-09-05"},
