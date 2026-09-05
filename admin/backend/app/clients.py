@@ -267,3 +267,27 @@ _SAMPLE = {
         {"id": "b_3", "user_id": "u_anjali", "villa_id": "v_50l", "name": "Anjali Menon", "phone": "9000011111", "kind": "consultation", "amount": 0, "slot": "2026-09-08T10:30", "status": "confirmed", "created_at": "2026-09-02"},
     ],
 }
+
+
+def seed_sample() -> dict:
+    """Insert the sample clients (Ravi + Anjali) into Supabase so the Clients
+    tab has data to show. Idempotent: upserts by primary key, so re-running is
+    safe. No-op (with a message) when Supabase isn't configured. Order matters —
+    parents (users, villas) before children (user_villas, transactions)."""
+    if not _use_supabase():
+        return {"ok": False, "detail": "Supabase not configured; the app already shows the built-in samples."}
+    from app.supabase_client import get_supabase
+
+    cl = get_supabase()
+    counts: dict[str, int] = {}
+    order = ["users", "villas", "villa_funds", "user_villas", "transactions", "bookings"]
+    for table in order:
+        rows = _SAMPLE.get(table, [])
+        if not rows:
+            continue
+        try:
+            cl.table(table).upsert(rows).execute()
+            counts[table] = len(rows)
+        except Exception as e:
+            return {"ok": False, "detail": f"Failed seeding {table}: {e}", "done": counts}
+    return {"ok": True, "seeded": counts}

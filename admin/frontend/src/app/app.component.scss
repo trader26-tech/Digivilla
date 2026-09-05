@@ -690,6 +690,14 @@
   }
 }
 .hint { font-size: 0.8rem; color: var(--muted); line-height: 1.45; padding: 0.5rem 0.2rem; }
+.crm-list-empty { padding: 0.3rem 0.2rem; }
+.seed-btn {
+  margin-top: 0.4rem; border: 1px solid var(--brass); background: var(--surface); color: var(--brass);
+  font: inherit; font-size: 0.82rem; font-weight: 750; padding: 0.5rem 0.85rem; border-radius: 10px;
+  cursor: pointer; transition: background 0.15s;
+  &:hover:not(:disabled) { background: color-mix(in srgb, var(--brass) 8%, var(--surface)); }
+  &:disabled { opacity: 0.55; }
+}
 
 .docs-panel {
   flex: 1; min-width: 0;

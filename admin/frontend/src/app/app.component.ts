@@ -790,6 +790,17 @@ export class AppComponent implements OnInit {
 
   closeCrmClient(): void { this.crmActive.set(null); }
 
+  seeding = signal(false);
+  /** One-time: load the sample clients into Supabase, then refresh the list. */
+  seedClients(): void {
+    if (this.seeding()) return;
+    this.seeding.set(true);
+    this.api.seedSampleClients().subscribe({
+      next: () => { this.seeding.set(false); this.loadCrmClients(); },
+      error: () => this.seeding.set(false),
+    });
+  }
+
   /** Upload a document to the currently-open CRM client (by their name). */
   onCrmFilePicked(ev: Event): void {
     const input = ev.target as HTMLInputElement;

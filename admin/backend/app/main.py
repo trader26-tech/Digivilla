@@ -274,6 +274,14 @@ def admin_crm_clients(authorization: Optional[str] = Header(default=None)) -> li
     return clients_svc.list_clients()
 
 
+@app.post("/admin/crm/seed")
+def admin_crm_seed(authorization: Optional[str] = Header(default=None)) -> dict:
+    """One-time: insert the sample clients (Ravi + Anjali) into Supabase so the
+    Clients tab has data. Idempotent — safe to call more than once."""
+    _require_admin(authorization)
+    return clients_svc.seed_sample()
+
+
 @app.get("/admin/crm/clients/{user_id}")
 def admin_crm_client(
     user_id: str, authorization: Optional[str] = Header(default=None),

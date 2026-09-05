@@ -295,7 +295,15 @@
             </span>
           </button>
         </div>
-        <p class="hint" *ngIf="!crmLoading() && !filteredClients().length">No clients match “{{ crmSearch() }}”.</p>
+        <div class="crm-list-empty" *ngIf="!crmLoading() && !filteredClients().length">
+          <p class="hint" *ngIf="crmSearch()">No clients match “{{ crmSearch() }}”.</p>
+          <ng-container *ngIf="!crmSearch()">
+            <p class="hint">No clients yet. They appear here once people sign in — or load a few samples to explore.</p>
+            <button class="seed-btn" [disabled]="seeding()" (click)="seedClients()">
+              {{ seeding() ? 'Loading…' : 'Load sample clients' }}
+            </button>
+          </ng-container>
+        </div>
       </aside>
 
       <!-- ══ RIGHT: full client profile ══ -->

@@ -239,6 +239,10 @@ export class AdminService {
   getCrmClient(id: string): Observable<ClientProfile> {
     return this.http.get<ClientProfile>(`${this.base}/admin/crm/clients/${id}`, this.opts);
   }
+  seedSampleClients(): Observable<{ ok: boolean; seeded?: any; detail?: string }> {
+    return this.http.post<{ ok: boolean; seeded?: any; detail?: string }>(
+      `${this.base}/admin/crm/seed`, {}, this.opts);
+  }
 
   // ── client documents ──────────────────────────────────────────────────────
   listClients(): Observable<ClientFolder[]> {
