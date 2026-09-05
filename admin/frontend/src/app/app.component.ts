@@ -41,8 +41,10 @@ interface MonthCell {
   isPast: boolean;
   total: number;
   pending: number;
+  amount: number;        // total ₹ of that day's requests (for the cell value)
   /** distinct request kinds present that day, for the colored dots */
   kinds: string[];
+  topKind: string;       // the dominant kind that day (drives the cell tint)
 }
 /** The order kinds are shown in dots/legend and their accent tokens. */
 const KIND_ORDER = ['consultation', 'sip', 'buy', 'withdraw'] as const;
@@ -409,6 +411,10 @@ export class AppComponent implements OnInit {
       // distinct kinds present that day, in a stable display order
       const present = new Set(items.map((b) => b.kind));
       const kinds = KIND_ORDER.filter((k) => present.has(k));
+      // dominant kind (most frequent) for the cell tint
+      const counts: Record<string, number> = {};
+      for (const b of items) counts[b.kind] = (counts[b.kind] || 0) + 1;
+      const topKind = kinds.slice().sort((a, b) => (counts[b] || 0) - (counts[a] || 0))[0] || '';
       cells.push({
         iso,
         day: d.getDate(),
@@ -417,7 +423,9 @@ export class AppComponent implements OnInit {
         isPast: iso < todayIso,
         total: items.length,
         pending: items.filter((b) => b.status === 'requested').length,
+        amount: items.reduce((s, b) => s + (b.amount || 0), 0),
         kinds,
+        topKind,
       });
     }
     return cells;
@@ -426,6 +434,32 @@ export class AppComponent implements OnInit {
   monthLabel = computed<string>(() => {
     const { y, m } = this.viewMonth();
     return `${['January','February','March','April','May','June','July','August','September','October','November','December'][m]} ${y}`;
+  });
+
+  /** Compact ₹ for tight calendar cells: ₹5k, ₹1.2L, ₹3Cr. */
+  moneyShort(v: number): string {
+    if (!v) return '';
+    if (v >= 1e7) return `₹${(v / 1e7).toFixed(v % 1e7 ? 1 : 0)}Cr`;
+    if (v >= 1e5) return `₹${(v / 1e5).toFixed(v % 1e5 ? 1 : 0)}L`;
+    if (v >= 1e3) return `₹${(v / 1e3).toFixed(v % 1e3 ? 1 : 0)}k`;
+    return `₹${Math.round(v)}`;
+  }
+
+  /** This month's totals for the summary header (by request kind + value). */
+  monthSummary = computed(() => {
+    const { y, m } = this.viewMonth();
+    let total = 0, pending = 0, value = 0;
+    const byKind: Record<string, number> = { consultation: 0, sip: 0, buy: 0, withdraw: 0 };
+    for (const b of this.bookings()) {
+      const iso = this.dayOf(b);
+      const d = this.parseIso(iso);
+      if (!d || d.getFullYear() !== y || d.getMonth() !== m) continue;
+      total++;
+      if (b.status === 'requested') pending++;
+      value += b.amount || 0;
+      if (b.kind in byKind) byKind[b.kind]++;
+    }
+    return { total, pending, value, byKind };
   });
 
   /** The agenda for the selected day, sorted by time, newest-status first. */

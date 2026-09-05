@@ -215,18 +215,21 @@
   box-shadow: 0 1px 2px rgba(22, 48, 43, 0.04);
 }
 
-/* ================= SUMMARY STATS ================= */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1.3rem; }
-.stat {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-  padding: 1rem 1.1rem; text-align: left;
+/* ================= KPI HEADER ROW ================= */
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 1.3rem; overflow: hidden; }
+.kpi { padding: 1.05rem 1.3rem; border-right: 1px solid var(--border); }
+.kpi:last-child { border-right: none; }
+.kpi-label { display: block; font-size: 0.72rem; font-weight: 750; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.kpi-val { display: block; margin: 0.35rem 0 0.2rem; font-size: 2rem; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--ink); }
+.kpi-val.pend { color: var(--terracotta); }
+.kpi-val.money { color: var(--positive); }
+.kpi-sub { display: block; font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+@media (max-width: 620px) {
+  .kpis { grid-template-columns: 1fr; }
+  .kpi { border-right: none; border-bottom: 1px solid var(--border); }
+  .kpi:last-child { border-bottom: none; }
+  .kpi-val { font-size: 1.6rem; }
 }
-.stat b { display: block; font-size: 1.9rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-.stat span { display: block; margin-top: 0.35rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.stat.pending b { color: var(--terracotta); }
-.stat.confirmed b { color: var(--positive); }
-.stat.total b { color: var(--ink); }
-@media (max-width: 560px) { .stat b { font-size: 1.5rem; } .stat span { font-size: 0.66rem; } }
 
 /* ================= CALENDAR SHELL (2 columns) ================= */
 .cal-shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 460px); gap: 1.4rem; align-items: start; }
@@ -390,31 +393,54 @@
   cursor: pointer; transition: all 0.15s;
 }
 .mnav:hover { border-color: var(--brass); color: var(--brass); }
-.dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
-.dow span { text-align: center; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cell {
-  position: relative; aspect-ratio: 1 / 1; border: 1.5px solid transparent; border-radius: 12px;
-  background: transparent; color: var(--ink); font: inherit; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-  transition: background 0.12s, border-color 0.12s, transform 0.1s;
-}
-.cell:hover { background: var(--surface-2); }
-.cell:active { transform: scale(0.96); }
-.cell.dim { color: color-mix(in srgb, var(--ink) 26%, var(--paper)); pointer-events: none; }
-.cell .dnum {
-  font-size: 1rem; font-weight: 650; font-variant-numeric: tabular-nums;
-  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px;
-}
-.cell.has .dnum { font-weight: 800; }
-.cell.today .dnum { color: #fff; font-weight: 850; background: var(--brass); }
-.cell.needs { border-color: color-mix(in srgb, var(--terracotta) 40%, transparent); }
-.cell.sel { background: var(--ink); border-color: var(--ink); }
-.cell.sel .dnum { color: var(--paper); }
-.cell.sel.today .dnum { background: transparent; color: var(--paper); }
+.dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 7px; }
+.dow span { text-align: left; padding-left: 0.35rem; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
 
-/* per-kind colored dots under the number */
-.dots { display: flex; gap: 3px; height: 6px; }
+/* Rich cells (reference style): number top-left, count badge top-right,
+   ₹ value below, and a soft kind-tinted background when there are requests. */
+.cell {
+  position: relative; min-height: 74px; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); color: var(--ink); font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 0.4rem 0.45rem 0.4rem;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s, transform 0.1s;
+}
+.cell:hover { border-color: var(--brass); }
+.cell:active { transform: scale(0.98); }
+.cell.dim { background: transparent; border-color: transparent; color: color-mix(in srgb, var(--ink) 26%, var(--paper)); pointer-events: none; }
+@media (max-width: 560px) { .cell { min-height: 58px; } }
+
+.cell-top { display: flex; align-items: center; justify-content: space-between; }
+.cell .dnum { font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.4; }
+.cell.today .dnum {
+  color: #fff; font-weight: 850; background: var(--brass);
+  width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center;
+  margin: -2px 0;
+}
+.cnt {
+  min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  display: inline-grid; place-items: center; font-size: 0.68rem; font-weight: 850;
+  color: #fff; background: color-mix(in srgb, var(--ink) 55%, var(--paper));
+}
+.cnt.pend { background: var(--terracotta); }
+.cell-val { font-size: 0.8rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; margin-top: auto; }
+
+/* soft per-kind tint for days that have requests */
+.cell.has[data-kind="consultation"] { background: color-mix(in srgb, var(--k-consultation) 8%, var(--surface)); }
+.cell.has[data-kind="sip"]          { background: color-mix(in srgb, var(--k-sip) 8%, var(--surface)); }
+.cell.has[data-kind="buy"]          { background: color-mix(in srgb, var(--k-buy) 10%, var(--surface)); }
+.cell.has[data-kind="withdraw"]     { background: color-mix(in srgb, var(--k-withdraw) 9%, var(--surface)); }
+.cell.needs { border-color: color-mix(in srgb, var(--terracotta) 45%, transparent); }
+
+/* selected day: dark fill wins over everything */
+.cell.sel { background: var(--ink) !important; border-color: var(--ink); box-shadow: 0 4px 14px -6px rgba(22,48,43,.5); }
+.cell.sel .dnum, .cell.sel .cell-val { color: var(--paper); }
+.cell.sel.today .dnum { background: rgba(255,255,255,0.18); color: #fff; }
+.cell.sel .cnt { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* per-kind colored dots (used only when a day has no ₹ value) */
+.dots { display: flex; gap: 3px; height: 6px; margin-top: auto; }
 .kdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; background: var(--muted); }
 .kdot[data-kind="consultation"] { background: var(--k-consultation); }
 .kdot[data-kind="sip"]          { background: var(--k-sip); }

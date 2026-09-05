@@ -81,11 +81,23 @@
 
   <!-- ─────────── CALENDAR TAB ─────────── -->
   <div class="wrap wide" *ngIf="tab() === 'calendar'">
-    <!-- summary stats -->
-    <div class="stats">
-      <div class="stat pending"><b>{{ requestedCount }}</b><span>Awaiting you</span></div>
-      <div class="stat confirmed"><b>{{ confirmedCount }}</b><span>Confirmed</span></div>
-      <div class="stat total"><b>{{ bookings().length }}</b><span>Total requests</span></div>
+    <!-- summary header (KPI row) -->
+    <div class="kpis card">
+      <div class="kpi">
+        <span class="kpi-label">Awaiting you</span>
+        <b class="kpi-val pend">{{ requestedCount }}</b>
+        <span class="kpi-sub">need action this month</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Requests · {{ monthLabel() }}</span>
+        <b class="kpi-val">{{ monthSummary().total }}</b>
+        <span class="kpi-sub">{{ monthSummary().byKind['sip'] }} SIP · {{ monthSummary().byKind['buy'] }} buy · {{ monthSummary().byKind['withdraw'] }} withdraw</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Value in play</span>
+        <b class="kpi-val money">{{ moneyShort(monthSummary().value) || '₹0' }}</b>
+        <span class="kpi-sub">across this month’s requests</span>
+      </div>
     </div>
 
     <div class="cal-shell">
@@ -107,10 +119,15 @@
             <button *ngFor="let c of monthGrid()" class="cell"
               [class.dim]="!c.inMonth" [class.today]="c.isToday" [class.sel]="isSelected(c.iso)"
               [class.past]="c.isPast" [class.has]="c.total > 0" [class.needs]="c.pending > 0"
+              [attr.data-kind]="c.total ? c.topKind : null"
               (click)="selectDay(c.iso)"
               [attr.aria-label]="c.day + (c.total ? ', ' + c.total + ' request' + (c.total === 1 ? '' : 's') : '')">
-              <span class="dnum">{{ c.day }}</span>
-              <span class="dots" *ngIf="c.kinds.length">
+              <span class="cell-top">
+                <span class="dnum">{{ c.day }}</span>
+                <span class="cnt" *ngIf="c.total" [class.pend]="c.pending">{{ c.total }}</span>
+              </span>
+              <span class="cell-val" *ngIf="c.amount">{{ moneyShort(c.amount) }}</span>
+              <span class="dots" *ngIf="c.kinds.length && !c.amount">
                 <i class="kdot" *ngFor="let k of c.kinds" [attr.data-kind]="k" [title]="kindMeta[k].label"></i>
               </span>
             </button>
