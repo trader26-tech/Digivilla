@@ -153,9 +153,10 @@ export class EstateService {
     return this.tiles().filter((x) => x.type === t).length;
   }
 
-  /** Sum of monthly rent from finished villas — the "Rent in" chip. */
+  /** Sum of monthly income across ALL holdings — finished villas AND ones still
+   *  under SIP (each earns income proportional to what's invested). */
   get rentIn(): number {
-    return this.tiles().filter((t) => t.type === 'villa').reduce((s, t) => s + t.rentMonthly, 0);
+    return this.tiles().reduce((s, t) => s + (t.rentMonthly || 0), 0);
   }
   /** Sum of active SIPs on villas under construction — the "Build cost" chip. */
   get buildCost(): number {

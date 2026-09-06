@@ -57,6 +57,11 @@ def _rows(table: str) -> list[dict]:
     return list(_SAMPLE.get(table, []))
 
 
+# Forward monthly income as a fraction of invested (0.3%/mo ≈ 3.6%/yr):
+# ₹1cr invested → ₹30k/mo, ₹10k → ₹30. Same rate the client app uses.
+MONTHLY_INCOME_RATE = 0.003
+
+
 # ── money helpers ─────────────────────────────────────────────────────────────
 def _money(v) -> float:
     try:
@@ -132,7 +137,7 @@ def get_client(user_id: str) -> dict | None:
         funds_by_villa.setdefault(f.get("villa_id"), []).append(f)
 
     holdings = []
-    total_invested = total_value = total_rent = total_sip = 0.0
+    total_invested = total_value = total_rent = total_sip = total_income = 0.0
     ledger: list[dict] = []
     for uv in my_uv:
         villa = villas_by_id.get(uv.get("villa_id"), {})
@@ -143,10 +148,14 @@ def get_client(user_id: str) -> dict | None:
         price = _money(villa.get("price"))
         value = _money(uv.get("current_value"))
         sip = _money(uv.get("sip_monthly"))
+        # forward monthly income: proportional to what's actually invested
+        # (0.3%/mo ≈ 3.6%/yr) — even a villa still under SIP earns a little.
+        income = 0.0 if uv.get("status") == "exited" else round(invested * MONTHLY_INCOME_RATE)
         total_invested += invested
         total_value += value
         total_rent += rent
         total_sip += sip
+        total_income += income
         # fund concentration: weight → this client's ₹ in each fund (by current value)
         vfunds = sorted(funds_by_villa.get(uv.get("villa_id"), []),
                         key=lambda f: (f.get("sort_order", 0), -_money(f.get("weight"))))
@@ -168,6 +177,7 @@ def get_client(user_id: str) -> dict | None:
             "progress": round(invested / price, 4) if price else None,
             "current_value": value,
             "rent_received": rent,
+            "monthly_income": income,
             "sip_monthly": sip,
             "sip_next_payment": uv.get("sip_next_payment"),
             "funds": funds,
@@ -204,6 +214,7 @@ def get_client(user_id: str) -> dict | None:
             "invested": total_invested,
             "current_value": total_value,
             "rent_received": total_rent,
+            "monthly_income": total_income,
             "sip_monthly": total_sip,
             "villa_count": len(holdings),
         },

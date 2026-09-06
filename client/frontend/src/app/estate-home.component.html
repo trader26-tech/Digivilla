@@ -295,14 +295,18 @@
            SIP, how much left — with a clear progress bar. ===== -->
       <ng-container *ngIf="c.tile?.type === 'building'">
         <span class="pop-status build">🏗️ Under construction</span>
-        <div class="pop-stats">
+        <div class="pop-stats three">
           <div class="pop-stat">
-            <span class="ps-k">Invested so far</span>
+            <span class="ps-k">Invested</span>
             <b class="ps-v">{{ compact(investedSoFar(c.tile!)) }}</b>
           </div>
           <div class="pop-stat">
-            <span class="ps-k">Monthly SIP</span>
+            <span class="ps-k">SIP</span>
             <b class="ps-v">{{ compact(c.tile!.sipMonthly) }}<span class="ps-yr">/mo</span></b>
+          </div>
+          <div class="pop-stat">
+            <span class="ps-k">Income*</span>
+            <b class="ps-v rent">{{ compact(c.tile!.rentMonthly) }}<span class="ps-yr">/mo</span></b>
           </div>
         </div>
         <div class="pop-bar">

@@ -334,7 +334,7 @@
           <div class="ui-kpis crm-kpis">
             <div class="ui-kpi"><small>Invested</small><b class="ui-figure">{{ money(p.summary.invested) }}</b></div>
             <div class="ui-kpi"><small>Current value</small><b class="ui-figure">{{ money(p.summary.current_value) }}</b></div>
-            <div class="ui-kpi"><small>Rent received</small><b class="ui-figure">{{ money(p.summary.rent_received) }}</b></div>
+            <div class="ui-kpi"><small>Income / mo</small><b class="ui-figure">{{ money(p.summary.monthly_income) }}</b></div>
             <div class="ui-kpi"><small>Monthly SIP</small><b class="ui-figure">{{ money(p.summary.sip_monthly) }}</b></div>
           </div>
 
@@ -393,7 +393,7 @@
                 </span>
                 <span>Invested <b>{{ money(h.invested) }}</b><span *ngIf="h.progress != null"> · {{ pct(h.progress) }} of {{ money(h.price) }}</span></span>
                 <span *ngIf="h.sip_monthly">SIP <b>{{ money(h.sip_monthly) }}</b>/mo<span *ngIf="h.sip_next_payment"> · next {{ h.sip_next_payment }}</span></span>
-                <span *ngIf="h.rent_received">Rent <b>{{ money(h.rent_received) }}</b></span>
+                <span *ngIf="h.monthly_income">Income <b>{{ money(h.monthly_income) }}</b>/mo</span>
               </div>
 
               <!-- per-holding actions -->

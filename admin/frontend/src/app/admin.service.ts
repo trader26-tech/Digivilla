@@ -91,6 +91,7 @@ export interface ClientHolding {
   progress: number | null;     // 0..1 toward the villa price
   current_value: number;
   rent_received: number;
+  monthly_income: number;
   sip_monthly: number;
   sip_next_payment: string | null;
   funds: ClientFund[];
@@ -134,6 +135,7 @@ export interface ClientProfile {
     invested: number;
     current_value: number;
     rent_received: number;
+    monthly_income: number;
     sip_monthly: number;
     villa_count: number;
   };

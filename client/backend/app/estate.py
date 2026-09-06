@@ -154,11 +154,13 @@ def _tiles_from_crm(owner: str) -> list[dict]:
         inv = float(invested.get(uv.get("id"), 0) or 0)
         cur = float(uv.get("current_value") or 0)
         sip = float(uv.get("sip_monthly") or 0)
-        rent = float(villa.get("rent_monthly") or 0)
         fully_paid = uv.get("status") == "active" or (price > 0 and inv >= price)
         exited = uv.get("status") == "exited"
         # building = under construction; villa = built. (exited still shows as villa.)
         ttype = "villa" if (fully_paid or exited) else "building"
+        # Income is PROPORTIONAL to what's actually invested — even a villa still
+        # under SIP earns a small monthly income (₹30k on ₹1cr ≈ ₹30 on ₹10k).
+        income = 0 if exited else round(inv * MONTHLY_INCOME_RATE)
         tiles.append({
             "id": uv.get("id"),
             "type": ttype,
@@ -166,12 +168,17 @@ def _tiles_from_crm(owner: str) -> list[dict]:
             "cost": price,
             "sipMonthly": sip,
             "sipAccrued": round(inv),
-            "rentMonthly": rent if (fully_paid and not exited) else 0,
-            "currentValue": round(cur),
+            "rentMonthly": income,
+            "currentValue": round(cur or inv),
             "label": villa.get("name") or "Villa",
             "boughtAt": i,
         })
     return tiles
+
+
+# Monthly income as a fraction of invested (0.3%/mo ≈ 3.6%/yr): ₹1cr → ₹30k,
+# ₹10k → ₹30. Applies to every holding, proportional to money actually in.
+MONTHLY_INCOME_RATE = 0.003
 
 
 def save_tiles(owner: str, tiles: list[dict]) -> list[dict]:

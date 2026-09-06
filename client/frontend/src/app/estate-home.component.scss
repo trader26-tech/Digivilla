@@ -937,6 +937,8 @@
   gap: 0.6rem;
   margin-top: 0.9rem;
 }
+.pop-stats.three { grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+.pop-stats.three .ps-v { font-size: 1.1rem; }
 .pop-stat {
   display: flex; flex-direction: column; gap: 0.15rem;
   padding: 0.7rem 0.8rem;
