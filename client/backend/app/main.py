@@ -380,6 +380,17 @@ def get_my_estate(authorization: Optional[str] = Header(default=None)) -> dict:
     return {"tiles": estate_svc.get_tiles(owner)}
 
 
+@app.get("/me/holding/{uv_id}")
+def get_my_holding(uv_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Full detail for one of the user's holdings: money ledger + fund
+    concentration. Owner-scoped."""
+    owner = _owner_or_401(authorization)
+    detail = estate_svc.holding_detail(owner, uv_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Holding not found")
+    return detail
+
+
 # --- Villa fund backtest (growth-of-money chart on the villa detail page) ------
 from app import villa_backtest as villa_bt  # noqa: E402
 

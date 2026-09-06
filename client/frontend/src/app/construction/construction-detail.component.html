@@ -54,19 +54,44 @@
       <span>Ready by {{ completesOn | date:'MMM y' }}</span>
     </div>
   </section>
-  <!-- 4 · funds building this villa -->
-  <section class="funds reveal" style="--i:4">
-    <div class="funds-head"><span class="sec-cap">Funds inside</span></div>
-    <div class="funds-body">
-      <div class="fund-line" *ngFor="let f of plan.funds; trackBy: trackFund">
-        <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
-        <span class="fund-name">{{ f.name }}</span>
-        <span class="fund-amt">{{ compactK(f.weight * cost) }}</span>
-      </div>
+
+  <!-- 5 · money ledger: contributions ⇆ rent payouts (toggle) -->
+  <section class="ledger-sec reveal" style="--i:5">
+    <div class="ledger-toggle">
+      <button [class.on]="!showRent()" (click)="showRent.set(false)">Contributions</button>
+      <button [class.on]="showRent()" (click)="showRent.set(true)">Rent paid</button>
     </div>
+
+    <!-- contributions: every SIP / lump-sum, by date -->
+    <ul class="ledger" *ngIf="!showRent()">
+      <li class="led-row" *ngFor="let r of contributions()">
+        <span class="led-ico" [attr.data-kind]="r.kind">{{ r.kind === 'sip' ? '🔁' : '💰' }}</span>
+        <span class="led-main">
+          <b class="led-title">{{ r.kind === 'sip' ? 'SIP instalment' : 'Lump-sum' }}</b>
+          <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
+        </span>
+        <b class="led-amt">+{{ compact(r.amount) }}</b>
+      </li>
+      <li class="led-empty" *ngIf="!contributions().length">No contributions yet.</li>
+    </ul>
+
+    <!-- rent paid to the client, by date -->
+    <ul class="ledger" *ngIf="showRent()">
+      <li class="led-row" *ngFor="let r of rentLog()">
+        <span class="led-ico" data-kind="rent">🪙</span>
+        <span class="led-main">
+          <b class="led-title">Rent payout</b>
+          <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
+        </span>
+        <b class="led-amt pos">+{{ compact(r.amount) }}</b>
+      </li>
+      <li class="led-empty" *ngIf="!rentLog().length">
+        No rent yet — income of {{ compact(monthlyIncome()) }}/mo starts flowing as it builds.
+      </li>
+    </ul>
   </section>
 
-  <!-- 5 · why this beats a real villa (swipeable) -->
+  <!-- 6 · why this beats a real villa (swipeable) -->
   <section class="why reveal" style="--i:5">
     <span class="sec-cap">Your eVilla perks</span>
     <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
@@ -86,7 +111,34 @@
               [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
     </div>
   </section>
-  <!-- 6 · withdraw -->
+
+  <!-- 7 · Funds inside — real concentration, collapsed by default. Each fund
+       shows how much of the invested money sits in it (progress toward target). -->
+  <section class="fi reveal" style="--i:7">
+    <button class="fi-head" (click)="toggleFundsInside()" [attr.aria-expanded]="fundsOpen()">
+      <span class="sec-cap">Funds inside</span>
+      <span class="fi-caret" [class.open]="fundsOpen()">▾</span>
+    </button>
+    <div class="fi-body" *ngIf="fundsOpen()">
+      <p class="fi-lead">Your {{ compact(investedSoFar) }} invested so far, split across the villa’s mix:</p>
+      <div class="fi-fund" *ngFor="let f of funds()">
+        <div class="fi-row1">
+          <span class="fi-dot" [attr.data-role]="f.role"></span>
+          <b class="fi-name">{{ f.fund_name }}</b>
+          <span class="fi-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
+        </div>
+        <div class="fi-bar"><span class="fi-fill" [attr.data-role]="f.role"
+          [style.width.%]="f.target ? (f.invested / f.target) * 100 : 0"></span></div>
+        <div class="fi-row2">
+          <span class="fi-role">{{ f.role }}</span>
+          <span class="fi-amt"><b>{{ compact(f.invested) }}</b> of {{ compact(f.target) }}</span>
+        </div>
+      </div>
+      <p class="fi-empty" *ngIf="!funds().length">Fund breakdown will appear here.</p>
+    </div>
+  </section>
+
+  <!-- 8 · withdraw -->
   <button class="withdraw reveal" style="--i:6" (click)="openWithdraw()">
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
       <path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -95,64 +147,47 @@
   </button>
 </main>
 
-<!-- ============ withdraw — 4-step book-a-call flow ============ -->
+<!-- ============ withdraw — one-screen slot picker (real booking) ============ -->
 <div class="sheet-backdrop" *ngIf="withdrawOpen()" (click)="closeWithdraw()"></div>
 <aside class="sheet wd-sheet" *ngIf="withdrawOpen()" role="dialog" aria-modal="true" aria-label="Withdraw">
   <span class="sheet-grab" aria-hidden="true"></span>
 
-  <ng-container *ngIf="wdStep() === 0">
+  <ng-container *ngIf="!booked()">
     <div class="sheet-head">
-      <span class="sheet-title">How withdrawal works</span>
+      <span class="sheet-title">Withdraw · book a call</span>
       <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
     </div>
-    <ol class="wd-steps">
-      <li><span class="wd-step-n">1</span><div class="wd-step-t"><b>Book a free slot</b><span>Pick a call with your fund manager</span></div></li>
-      <li><span class="wd-step-n">2</span><div class="wd-step-t"><b>Manager initiates payment</b><span>On the call, they start your withdrawal</span></div></li>
-      <li><span class="wd-step-n">3</span><div class="wd-step-t"><b>Money in your bank</b><span>Received within 2 working days</span></div></li>
-    </ol>
-    <button class="wd-done-btn" (click)="wdBegin()">Okay, book a slot</button>
+    <p class="wd-lead">Pick a slot — your fund manager calls to process the withdrawal (money in your bank within 2 working days).</p>
+
+    <p class="wd-empty" *ngIf="wdDaysLoading()">Finding open slots…</p>
+    <p class="wd-empty" *ngIf="!wdDaysLoading() && !wdDays().length">No open slots right now. Please try again later.</p>
+
+    <div class="wd-days" *ngIf="!wdDaysLoading()">
+      <div class="wd-day" *ngFor="let day of wdDays()">
+        <span class="wd-day-lbl">{{ day.label }}</span>
+        <div class="wd-slots">
+          <button class="wd-slot" *ngFor="let s of day.slots" [class.on]="wdIsSlot(s)"
+            (click)="wdPick(day.label, s)">{{ s.label }}</button>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="wdSlotIso()">
+      <p class="wd-err" *ngIf="wdError()">{{ wdError() }}</p>
+      <button class="wd-confirm" [disabled]="wdSubmitting()" (click)="wdConfirm()">
+        {{ wdSubmitting() ? 'Booking…' : 'Confirm · ' + wdSlotLabel() }}
+      </button>
+    </ng-container>
   </ng-container>
 
-  <ng-container *ngIf="wdStep() === 1">
-    <div class="sheet-head">
-      <span class="sheet-title">Step 1 · Pick a slot</span>
-      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
-    </div>
-    <div class="wd-monthbar">
-      <button class="wd-nav" (click)="wdPrevMonth()" [disabled]="!wdCanPrev" aria-label="Previous month">‹</button>
-      <b class="wd-monthlbl">{{ wdMonthLabel }}</b>
-      <button class="wd-nav" (click)="wdNextMonth()" aria-label="Next month">›</button>
-    </div>
-    <div class="wd-dow-row" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
-    <div class="wd-grid">
-      <ng-container *ngFor="let c of wdCells">
-        <span class="wd-blank" *ngIf="!c"></span>
-        <button *ngIf="c" class="wd-cell" [class.sel]="wdIsDay(c)" [disabled]="!wdSelectable(c)" (click)="wdPickDay(c)">{{ c | date:'d' }}</button>
-      </ng-container>
-    </div>
-    <p class="wd-hint">Weekday slots, from 2 days out.</p>
-  </ng-container>
-
-  <ng-container *ngIf="wdStep() === 2 && wdDay() as day">
-    <div class="sheet-head">
-      <span class="sheet-title">Step 2 · Pick a time</span>
-      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
-    </div>
-    <p class="wd-lead">Slots with the fund manager on <b>{{ day | date:'EEEE, d MMM' }}</b></p>
-    <div class="wd-slots">
-      <button class="wd-slot" *ngFor="let s of WD_SLOTS" (click)="wdPickSlot(s)">{{ s }}</button>
-    </div>
-    <button class="wd-back" (click)="wdStep.set(1)">‹ Change date</button>
-  </ng-container>
-
-  <div class="wd-done" *ngIf="wdStep() === 3 && wdDay() as day">
+  <div class="wd-done" *ngIf="booked()">
     <div class="wd-tick" [class.pop]="justBooked()" aria-hidden="true">
       <svg viewBox="0 0 52 52"><circle class="wd-tick-ring" cx="26" cy="26" r="24"/><path class="wd-tick-mark" d="M15 27l7 7 15-15"/></svg>
     </div>
     <b class="wd-done-title">Call booked</b>
     <p class="wd-done-sub">
       Your fund manager will call on<br>
-      <b>{{ day | date:'EEEE, d MMM y' }} at {{ wdSlot() }}</b><br>
+      <b>{{ wdSlotLabel() }}</b><br>
       to process your withdrawal.
     </p>
     <button class="wd-done-btn" (click)="closeWithdraw()">Done</button>

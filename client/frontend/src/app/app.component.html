@@ -100,6 +100,7 @@
 <!-- An under-construction tile tapped -> its dedicated build-detail page. -->
 <app-construction-detail
   *ngIf="!intro && construction"
+  [holdingId]="construction.id"
   [cost]="construction.cost"
   [sipMonthly]="construction.sipMonthly"
   [sipAccrued]="construction.sipAccrued"

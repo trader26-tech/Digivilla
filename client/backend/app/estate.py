@@ -181,6 +181,75 @@ def _tiles_from_crm(owner: str) -> list[dict]:
 MONTHLY_INCOME_RATE = 0.003
 
 
+def holding_detail(owner: str, uv_id: str) -> dict | None:
+    """Full detail for ONE of this user's holdings (by user_villas id): the
+    money ledger (every SIP/lump-sum/rent, by date) and the fund concentration
+    with how much of the invested money sits in each fund. Owner-scoped so a
+    client can only read their own. Returns None if not theirs."""
+    try:
+        from app.supabase_client import get_supabase
+        cl = get_supabase()
+    except Exception:
+        return None
+    try:
+        urows = cl.table("users").select("id").eq("owner", owner).limit(1).execute().data or []
+        if not urows:
+            return None
+        uid = urows[0]["id"]
+        uv_rows = cl.table("user_villas").select("*").eq("id", uv_id).eq("user_id", uid).limit(1).execute().data or []
+        if not uv_rows:
+            return None          # not this user's holding
+        uv = uv_rows[0]
+        villa = (cl.table("villas").select("*").eq("id", uv.get("villa_id")).limit(1).execute().data or [{}])[0]
+        txns = cl.table("transactions").select("*").eq("user_villa_id", uv_id).execute().data or []
+        vfunds = cl.table("villa_funds").select("*").eq("villa_id", uv.get("villa_id")).execute().data or []
+    except Exception:
+        return None
+
+    def m(v):
+        try: return float(v or 0)
+        except (TypeError, ValueError): return 0.0
+
+    invested = sum(m(t.get("amount")) for t in txns
+                   if t.get("kind") in ("sip", "lump_sum") and t.get("status") == "paid")
+
+    # ledger split into contributions (money IN) and rent/income (money paid to them)
+    contributions = sorted(
+        [{"kind": t.get("kind"), "amount": m(t.get("amount")), "date": t.get("txn_date"),
+          "status": t.get("status"), "note": t.get("note") or ""}
+         for t in txns if t.get("kind") in ("sip", "lump_sum")],
+        key=lambda x: x["date"] or "", reverse=True)
+    rent_log = sorted(
+        [{"amount": m(t.get("amount")), "date": t.get("txn_date"), "status": t.get("status")}
+         for t in txns if t.get("kind") == "rent"],
+        key=lambda x: x["date"] or "", reverse=True)
+
+    # concentration: weight → ₹ of the INVESTED money in each fund
+    funds = []
+    for f in sorted(vfunds, key=lambda f: (f.get("sort_order", 0), -m(f.get("weight")))):
+        w = m(f.get("weight"))
+        funds.append({
+            "fund_name": f.get("fund_name") or "Fund",
+            "role": f.get("role") or "growth",
+            "weight": w,
+            "invested": round(invested * w),          # money in this fund so far
+            "target": round(m(villa.get("price")) * w),  # its share of the full ticket
+        })
+
+    return {
+        "id": uv_id,
+        "villa_name": villa.get("name") or "Villa",
+        "price": m(villa.get("price")),
+        "invested": round(invested),
+        "sip_monthly": m(uv.get("sip_monthly")),
+        "monthly_income": round(invested * MONTHLY_INCOME_RATE),
+        "status": uv.get("status") or "accumulating",
+        "contributions": contributions,
+        "rent_log": rent_log,
+        "funds": funds,
+    }
+
+
 def save_tiles(owner: str, tiles: list[dict]) -> list[dict]:
     """Replace this user's whole estate with `tiles`. Returns the saved set."""
     cleaned = [_clean(t, owner) for t in (tiles or []) if t.get("id")]

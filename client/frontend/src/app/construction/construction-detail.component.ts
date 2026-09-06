@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 
+import { environment } from '../../environments/environment';
+import { AuthService } from '../auth/auth.service';
+import { BookingService } from '../booking.service';
 import { compact, compactK } from '../shared/format.util';
 import {
   HoldingFund,
@@ -9,6 +13,11 @@ import {
   assetLabel,
   villaPlan,
 } from '../villa/villa-detail.model';
+
+/** One row of the money ledger (a contribution or a rent payout). */
+interface LedgerRow { kind?: string; amount: number; date: string; status?: string; note?: string; }
+/** A fund inside the villa, with how much of the invested money sits in it. */
+interface HoldFund { fund_name: string; role: string; weight: number; invested: number; target: number; }
 
 /**
  * The under-construction detail page — a villa still being built. Mirrors the
@@ -25,6 +34,10 @@ import {
   styleUrl: './construction-detail.component.scss',
 })
 export class ConstructionDetailComponent implements OnInit {
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
+  private bookingSvc = inject(BookingService);
+
   /** Target villa cost this build is working toward. */
   @Input() cost = 40_00_000;
   /** Monthly SIP feeding the build. */
@@ -35,7 +48,32 @@ export class ConstructionDetailComponent implements OnInit {
   @Input() name = 'Under Construction';
   /** When the build was started (epoch ms). */
   @Input() boughtAt = Date.now();
+  /** The holding id (user_villas id) — used to fetch the ledger + funds. */
+  @Input() holdingId = '';
   @Output() back = new EventEmitter<void>();
+
+  // ── live detail: money ledger + fund concentration (fetched by holdingId) ──
+  contributions = signal<LedgerRow[]>([]);
+  rentLog = signal<LedgerRow[]>([]);
+  funds = signal<HoldFund[]>([]);
+  showRent = signal(false);        // toggle: contributions ↔ rent payouts
+  fundsOpen = signal(false);       // "Funds inside" starts collapsed
+  monthlyIncome = signal(0);
+
+  private loadDetail(): void {
+    if (!this.holdingId || !this.auth.token()) return;
+    const headers = { Authorization: `Bearer ${this.auth.token()}` };
+    this.http.get<any>(`${environment.apiUrl}/me/holding/${this.holdingId}`, { headers }).subscribe({
+      next: (d) => {
+        this.contributions.set(d.contributions || []);
+        this.rentLog.set(d.rent_log || []);
+        this.funds.set(d.funds || []);
+        this.monthlyIncome.set(d.monthly_income || 0);
+      },
+      error: () => {},
+    });
+  }
+  toggleFundsInside(): void { this.fundsOpen.update((v) => !v); }
 
   plan!: VillaPlan;
 
@@ -69,6 +107,7 @@ export class ConstructionDetailComponent implements OnInit {
     this.completesOn = d;
 
     this.buildPerks();
+    this.loadDetail();
   }
 
   onBack(): void {
@@ -126,81 +165,86 @@ export class ConstructionDetailComponent implements OnInit {
     return f.name;
   }
 
-  // --- withdraw: a 4-step "book a call with the fund manager" flow ---
+  // --- withdraw: one-screen slot picker → real request in the admin calendar ---
   withdrawOpen = signal(false);
-  wdStep = signal(0);
-  wdMonth = signal(this.firstOfThisMonth());
-  wdDay = signal<Date | null>(null);
-  wdSlot = signal<string | null>(null);
+  wdDays = signal<{ iso: string; label: string; slots: { label: string; slot: string }[] }[]>([]);
+  wdDaysLoading = signal(false);
+  wdSlotIso = signal<string | null>(null);
+  wdSlotLabel = signal('');
+  wdSubmitting = signal(false);
+  wdError = signal('');
+  booked = signal(false);
   justBooked = signal(false);
 
-  readonly WD_SLOTS = ['10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '5:00 PM'];
-
-  private firstOfThisMonth(): Date {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  }
-
   openWithdraw(): void {
-    this.wdStep.set(0);
-    this.wdMonth.set(this.firstOfThisMonth());
-    this.wdDay.set(null);
-    this.wdSlot.set(null);
+    this.booked.set(false);
     this.justBooked.set(false);
+    this.wdSlotIso.set(null); this.wdSlotLabel.set(''); this.wdError.set('');
     this.withdrawOpen.set(true);
     if (navigator.vibrate) navigator.vibrate(4);
+    this.loadWdDays();
   }
   closeWithdraw(): void { this.withdrawOpen.set(false); }
-  wdBegin(): void { this.wdStep.set(1); }
 
-  get wdMonthLabel(): string {
-    return this.wdMonth().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  private loadWdDays(): void {
+    this.wdDaysLoading.set(true);
+    this.wdDays.set([]);
+    const wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    this.bookingSvc.freeDays(4).subscribe({
+      next: (r) => {
+        this.wdDays.set((r.days || []).map((day) => {
+          const [y, m, d] = day.date.split('-').map(Number);
+          const dt = new Date(y, m - 1, d);
+          return {
+            iso: day.date,
+            label: `${wk[dt.getDay()]}, ${dt.getDate()} ${mo[dt.getMonth()]}`,
+            slots: (day.slots || []).map((s) => ({ label: this.slotLabel(s.time), slot: s.slot })),
+          };
+        }));
+        this.wdDaysLoading.set(false);
+      },
+      error: () => { this.wdDays.set([]); this.wdDaysLoading.set(false); },
+    });
   }
-  get wdCells(): (Date | null)[] {
-    const m = this.wdMonth();
-    const year = m.getFullYear();
-    const mon = m.getMonth();
-    const lead = new Date(year, mon, 1).getDay();
-    const days = new Date(year, mon + 1, 0).getDate();
-    const cells: (Date | null)[] = [];
-    for (let i = 0; i < lead; i++) cells.push(null);
-    for (let d = 1; d <= days; d++) cells.push(new Date(year, mon, d));
-    return cells;
+  private slotLabel(hm: string): string {
+    const [h, m] = hm.split(':').map(Number);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`;
   }
-  get wdCanPrev(): boolean { return this.wdMonth() > this.firstOfThisMonth(); }
-  wdPrevMonth(): void {
-    if (!this.wdCanPrev) return;
-    const m = this.wdMonth();
-    this.wdMonth.set(new Date(m.getFullYear(), m.getMonth() - 1, 1));
-  }
-  wdNextMonth(): void {
-    const m = this.wdMonth();
-    this.wdMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1));
-  }
-  wdSelectable(dt: Date): boolean {
-    const dow = dt.getDay();
-    if (dow === 0 || dow === 6) return false;
-    const min = new Date();
-    min.setHours(0, 0, 0, 0);
-    min.setDate(min.getDate() + 2);
-    return dt.getTime() >= min.getTime();
-  }
-  wdIsDay(dt: Date): boolean {
-    const d = this.wdDay();
-    return !!d && d.getTime() === dt.getTime();
-  }
-  wdPickDay(dt: Date): void {
-    if (!this.wdSelectable(dt)) return;
-    this.wdDay.set(dt);
-    this.wdSlot.set(null);
-    this.wdStep.set(2);
+  wdPick(dayLabel: string, s: { label: string; slot: string }): void {
+    this.wdSlotIso.set(s.slot);
+    this.wdSlotLabel.set(`${dayLabel} · ${s.label}`);
+    this.wdError.set('');
     if (navigator.vibrate) navigator.vibrate(4);
   }
-  wdPickSlot(slot: string): void {
-    this.wdSlot.set(slot);
-    this.wdStep.set(3);
-    this.justBooked.set(true);
-    if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
-    setTimeout(() => this.justBooked.set(false), 1600);
+  wdIsSlot(s: { slot: string }): boolean { return this.wdSlotIso() === s.slot; }
+
+  wdConfirm(): void {
+    if (this.wdSubmitting() || !this.wdSlotIso()) return;
+    const u = this.auth.user();
+    const name = (u?.name || '').trim() || 'Client';
+    const phone = (u?.phone || '').replace(/\D/g, '').slice(-10);
+    this.wdSubmitting.set(true);
+    this.wdError.set('');
+    this.bookingSvc.createBooking({
+      name, phone,
+      kind: 'withdraw',
+      property: 'villa',
+      variant: 'balanced',
+      amount: this.investedSoFar,
+      slot: this.wdSlotIso()!,
+      note: `Withdraw · ${this.name}`,
+    }).subscribe({
+      next: () => {
+        this.wdSubmitting.set(false);
+        this.booked.set(true);
+        this.justBooked.set(true);
+        if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
+        setTimeout(() => this.justBooked.set(false), 1600);
+      },
+      error: () => { this.wdSubmitting.set(false); this.wdError.set('Could not book that slot. Please try again.'); },
+    });
   }
 }
