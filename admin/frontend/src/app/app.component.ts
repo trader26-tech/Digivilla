@@ -927,6 +927,22 @@ export class AppComponent implements OnInit {
   kindMetaFor(kind: string) { return KIND_META[kind] || KIND_META['consultation']; }
   pct(v: number | null): string { return v == null ? '—' : `${Math.round(v * 100)}%`; }
 
+  /** A villa the client hasn't fully paid for yet is "under construction" —
+   *  they're still accumulating (SIP / lump-sums) toward the full price. Once
+   *  fully funded it's "built" (active); exited stays exited. */
+  holdingStatus(h: any): 'construction' | 'built' | 'exited' {
+    if (h?.status === 'exited') return 'exited';
+    const fullyPaid = h?.progress != null && h.progress >= 1;
+    if (h?.status === 'active' || fullyPaid) return 'built';
+    return 'construction';
+  }
+  holdingStatusLabel(h: any): string {
+    return { construction: 'Under construction', built: 'Built', exited: 'Exited' }[this.holdingStatus(h)];
+  }
+  holdingIcon(h: any): string {
+    return this.holdingStatus(h) === 'construction' ? '🏗️' : '🏠';
+  }
+
   // ═══════════════════════════ DOCUMENTS ═══════════════════════════
   loadClients(): void {
     this.docsLoading.set(true);

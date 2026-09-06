@@ -375,16 +375,22 @@
 
             <p class="crm-none" *ngIf="!p.holdings.length && !showAddVilla()">No villas yet — add one above.</p>
 
-            <div class="holding" *ngFor="let h of p.holdings">
+            <div class="holding" *ngFor="let h of p.holdings" [attr.data-state]="holdingStatus(h)">
               <div class="holding-top">
-                <b class="holding-name">🏠 {{ h.villa_name }}</b>
-                <span class="pill" [class.p-brass]="h.status === 'accumulating'" [class.p-green]="h.status === 'active'" [class.p-muted]="h.status === 'exited'">{{ h.status }}</span>
+                <b class="holding-name">{{ holdingIcon(h) }} {{ h.villa_name }}</b>
+                <span class="pill"
+                  [class.p-brass]="holdingStatus(h) === 'construction'"
+                  [class.p-green]="holdingStatus(h) === 'built'"
+                  [class.p-muted]="holdingStatus(h) === 'exited'">{{ holdingStatusLabel(h) }}</span>
                 <span class="holding-value">{{ money(h.current_value) }}</span>
               </div>
-              <div class="holding-bar" *ngIf="h.progress != null">
+              <div class="holding-bar" *ngIf="h.progress != null" [class.constructing]="holdingStatus(h) === 'construction'">
                 <span class="holding-fill" [style.width.%]="(h.progress || 0) * 100"></span>
               </div>
               <div class="holding-meta">
+                <span *ngIf="holdingStatus(h) === 'construction' && h.progress != null" class="build-line">
+                  🏗️ <b>{{ pct(h.progress) }} built</b> · {{ money(h.price - h.invested) }} to go
+                </span>
                 <span>Invested <b>{{ money(h.invested) }}</b><span *ngIf="h.progress != null"> · {{ pct(h.progress) }} of {{ money(h.price) }}</span></span>
                 <span *ngIf="h.sip_monthly">SIP <b>{{ money(h.sip_monthly) }}</b>/mo<span *ngIf="h.sip_next_payment"> · next {{ h.sip_next_payment }}</span></span>
                 <span *ngIf="h.rent_received">Rent <b>{{ money(h.rent_received) }}</b></span>
