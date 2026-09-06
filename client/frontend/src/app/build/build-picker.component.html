@@ -5,18 +5,19 @@
     <p class="xp-def">A curated basket of mutual funds you build toward with a monthly SIP — and can draw a rent-like income from later.</p>
   </div>
 
-  <!-- the three tiers, all on one screen -->
+  <!-- the three tiers, all on one screen — whole tile taps through -->
   <div class="xp-tiles">
     <button class="tier" *ngFor="let it of items" type="button" (click)="buy(it.cost)">
       <span class="tier-art"><app-villa-art></app-villa-art></span>
       <span class="tier-body">
         <span class="tier-name">{{ it.name }}</span>
-        <span class="tier-sip">SIP from <b>{{ compact(it.sipMonthly) }}/mo</b></span>
+        <span class="tier-sip">SIP {{ compact(it.sipMonthly) }}/mo</span>
       </span>
-      <span class="tier-cta">
-        Start SIP
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="tier-income">
+        <b>{{ compact(it.incomeMonthly) }}/mo</b>
+        <small>income</small>
       </span>
+      <svg class="tier-chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
 
