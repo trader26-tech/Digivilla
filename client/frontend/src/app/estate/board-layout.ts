@@ -116,27 +116,30 @@ export function buildCells(tiles: Tile[]): Cell[] {
   const mid = Math.floor(grid / 2);
   const out: Cell[] = [];
 
-  // The centre villa — the founding villa of the city, dead centre. It is a
-  // real villa (tappable, with its own price + rent) but still flagged `hall`
-  // so it keeps its special centrepiece rendering and drives view centring.
+  // The CENTRE holds the user's FIRST real villa (there is no fake "founding"
+  // villa). If they own nothing yet, the centre is just an open plot.
+  const centreTileVal = tiles.length ? tiles[0] : null;
   out.push({
     col: mid,
     row: mid,
     x: 0,
     y: mid * TILE_H,
-    tile: centreTile(),
-    index: -1,
-    hall: true,
+    tile: centreTileVal,
+    index: centreTileVal ? 0 : -1,
+    hall: false,
   });
 
+  // The remaining tiles (2nd onward) fill outward from the centre, front-most
+  // corners first.
+  const rest = tiles.slice(1);
   fillOrder(grid).forEach(({ col, row }, i) => {
     out.push({
       col,
       row,
       x: (col - row) * (TILE_W / 2),
       y: (col + row) * (TILE_H / 2),
-      tile: tiles[i] ?? null,
-      index: i,
+      tile: rest[i] ?? null,
+      index: i + 1,
       hall: false,
     });
   });
