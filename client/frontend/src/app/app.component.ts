@@ -63,6 +63,9 @@ export class AppComponent {
    *  before login, so just reveal the app. */
   onLoggedIn(): void {
     this.syncProfileFromAuth();
+    // Load THIS user's real estate from the DB (empty for a new account),
+    // replacing any leftover local cache from a previous/demo session.
+    this.est.syncFromServer();
   }
 
   /** Mirror the verified user's name + phone into the estate profile so the

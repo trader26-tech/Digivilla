@@ -142,8 +142,31 @@ create index if not exists bookings_created_idx on public.bookings (created_at);
 
 
 -- ────────────────────────────────────────────────────────────────────────────
+-- estate_tiles — the client app's per-user "estate" board (villas / land /
+-- builds the user has on their map). Keyed to the user's `owner` id so each
+-- account has its own estate. A brand-new user has NO rows here (empty estate,
+-- all values zero) until they build.
+-- ────────────────────────────────────────────────────────────────────────────
+create table if not exists public.estate_tiles (
+    id            text primary key,                 -- tile id (app-generated)
+    owner         text not null,                    -- usr_<hex>, the user who owns it
+    type          text not null,                    -- land | building | villa
+    variant       text not null default 'balanced', -- conservative | balanced | aggressive
+    cost          double precision not null default 0,
+    sip_monthly   double precision not null default 0,
+    sip_accrued   double precision not null default 0,
+    rent_monthly  double precision not null default 0,
+    label         text not null default '',
+    bought_at     bigint not null default 0,        -- epoch ms
+    created_at    timestamptz not null default now()
+);
+create index if not exists estate_tiles_owner_idx on public.estate_tiles (owner);
+
+
+-- ────────────────────────────────────────────────────────────────────────────
 -- Row Level Security — on by default; the server's service-role key bypasses it.
 -- ────────────────────────────────────────────────────────────────────────────
+alter table public.estate_tiles   enable row level security;
 alter table public.users        enable row level security;
 alter table public.villas       enable row level security;
 alter table public.villa_funds  enable row level security;

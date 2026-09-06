@@ -361,6 +361,35 @@ def auth_profile(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# --- Per-user estate board (the client home map, keyed to the signed-in user) --
+from app import estate as estate_svc  # noqa: E402
+
+
+def _owner_or_401(authorization: Optional[str]) -> str:
+    token = authorization.replace("Bearer ", "", 1) if authorization else ""
+    owner = auth_svc.owner_from_token(token)
+    if not owner:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return owner
+
+
+@app.get("/me/estate")
+def get_my_estate(authorization: Optional[str] = Header(default=None)) -> dict:
+    """This user's estate tiles. Empty for a brand-new account (all values zero)."""
+    owner = _owner_or_401(authorization)
+    return {"tiles": estate_svc.get_tiles(owner)}
+
+
+@app.put("/me/estate")
+def put_my_estate(
+    body: dict, authorization: Optional[str] = Header(default=None)
+) -> dict:
+    """Replace this user's estate with the given tiles."""
+    owner = _owner_or_401(authorization)
+    tiles = body.get("tiles", []) if isinstance(body, dict) else []
+    return {"tiles": estate_svc.save_tiles(owner, tiles)}
+
+
 # NOTE: Consultation bookings + admin dashboard endpoints moved to the
 # separate admin backend (admin/backend) so the admin app can deploy and
 # scale independently. They share the same Supabase DB. The client SPA now

@@ -1,4 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+
+import { environment } from '../environments/environment';
+import { AuthService } from './auth/auth.service';
 
 /** The three tile kinds, each with a distinct money mechanic:
  *  - land:     bought outright. NO rent — capital sits in an equity growth
@@ -38,36 +42,6 @@ export interface Tile {
 const STORE_KEY = 'estate_tiles_v2';
 const RENT_KEY = 'estate_rent_collected_v1';
 const PROFILE_KEY = 'estate_profile_v1';
-/** Set once the starter tiles have been seeded, so we never re-seed over a
- *  user who has since cleared their own plots. */
-const SEEDED_KEY = 'estate_seeded_v2';
-
-/**
- * A small starter estate: one of each kind (villa, land, under-construction),
- * so the board shows all three categories with plenty of open plots left for
- * the user to fill. Seeded once on first run only.
- */
-function starterTiles(): Tile[] {
-  const now = 1_760_000_000_000; // fixed stamp so history/growth are stable
-  return [
-    {
-      id: 'seed-villa', type: 'villa', variant: 'balanced',
-      cost: 30_00_000, sipMonthly: 0, sipAccrued: 0,
-      rentMonthly: Math.round((30_00_000 * 0.06) / 12),
-      boughtAt: now - 120 * 86_400_000, label: 'Green Villa',
-    },
-    {
-      id: 'seed-land', type: 'land', variant: 'aggressive',
-      cost: 20_00_000, sipMonthly: 0, sipAccrued: 0, rentMonthly: 0,
-      boughtAt: now - 80 * 86_400_000, label: 'Kelambakkam Grove',
-    },
-    {
-      id: 'seed-build', type: 'building', variant: 'balanced',
-      cost: 40_00_000, sipMonthly: 25_000, sipAccrued: 6_00_000, rentMonthly: 0,
-      boughtAt: now - 40 * 86_400_000, label: 'Hillview Build',
-    },
-  ];
-}
 
 /** Plots available around the town hall. The board is large and the map
  *  scrolls freely, so there is always room to keep building. */
@@ -75,35 +49,66 @@ export const TOTAL_PLOTS = 120;
 
 @Injectable({ providedIn: 'root' })
 export class EstateService {
-  /** Owned tiles, newest last. A signal so the estate re-renders on change. */
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
+
+  /** Owned tiles, newest last. A signal so the estate re-renders on change.
+   *  A brand-new account starts EMPTY (no fake starter tiles). */
   readonly tiles = signal<Tile[]>(this.load());
   /** Lifetime rent collected (tapping the coin adds the pending rent). */
   readonly rentCollected = signal<number>(this.loadRent());
   /** Whose town this is, and where. Used for the home greeting. */
   readonly profile = signal<Profile>(this.loadProfile());
 
+  constructor() {
+    // When signed in, the DB is the source of truth: load this user's real
+    // estate (empty for a new account) and keep localStorage only as a cache.
+    if (this.auth.token()) this.syncFromServer();
+  }
+
+  private get authHeaders(): Record<string, string> {
+    const t = this.auth.token();
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  }
+
+  /** Pull this user's estate from the backend and replace local state. */
+  syncFromServer(): void {
+    const t = this.auth.token();
+    if (!t) return;
+    this.http.get<{ tiles: Tile[] }>(`${environment.apiUrl}/me/estate`, { headers: this.authHeaders })
+      .subscribe({
+        next: (r) => {
+          this.tiles.set(r.tiles || []);
+          this.cacheLocal();
+        },
+        error: () => { /* offline — keep the local cache */ },
+      });
+  }
+
+  /** Push the current estate to the backend (fire-and-forget). */
+  private pushToServer(): void {
+    if (!this.auth.token()) return;
+    this.http.put(`${environment.apiUrl}/me/estate`, { tiles: this.tiles() },
+      { headers: this.authHeaders }).subscribe({ next: () => {}, error: () => {} });
+  }
+
   // ---------------- persistence ----------------
   private load(): Tile[] {
+    // Local cache only — NO fake seeding. New accounts start empty; the real
+    // estate is loaded from the server in the constructor when signed in.
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) return JSON.parse(raw) as Tile[];
-      // first run: seed a small starter estate (once), so the board shows all
-      // three kinds with open plots left over. Never re-seeds afterwards.
-      if (!localStorage.getItem(SEEDED_KEY)) {
-        const seed = starterTiles();
-        localStorage.setItem(STORE_KEY, JSON.stringify(seed));
-        localStorage.setItem(SEEDED_KEY, '1');
-        return seed;
-      }
-      return [];
+      return raw ? (JSON.parse(raw) as Tile[]) : [];
     } catch {
       return [];
     }
   }
+  private cacheLocal(): void {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(this.tiles())); } catch {}
+  }
   private save(): void {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(this.tiles()));
-    } catch {}
+    this.cacheLocal();
+    this.pushToServer();
   }
   private loadRent(): number {
     try {
