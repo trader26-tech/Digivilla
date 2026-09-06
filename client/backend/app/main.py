@@ -380,6 +380,18 @@ def get_my_estate(authorization: Optional[str] = Header(default=None)) -> dict:
     return {"tiles": estate_svc.get_tiles(owner)}
 
 
+# --- Villa fund backtest (growth-of-money chart on the villa detail page) ------
+from app import villa_backtest as villa_bt  # noqa: E402
+
+
+@app.get("/villa/backtest")
+def villa_backtest(amount: float = 10_00_000) -> dict:
+    """Per-fund + blended growth-of-₹100 for the villa's fixed 5-fund mix, plus a
+    'what `amount` invested at the start is worth today' summary. Public (the
+    figures are illustrative history, not user data)."""
+    return villa_bt.backtest(amount)
+
+
 @app.put("/me/estate")
 def put_my_estate(
     body: dict, authorization: Optional[str] = Header(default=None)

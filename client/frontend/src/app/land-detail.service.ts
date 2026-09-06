@@ -71,4 +71,37 @@ export class LandDetailService {
       include_series: true,
     });
   }
+
+  /** Villa growth-of-₹100 backtest: per-fund + blended lines + a summary of what
+   *  `amount` invested at the start would be worth today. */
+  villaBacktest(amount: number): Observable<VillaBacktest> {
+    return this.http.get<VillaBacktest>(`${this.base}/villa/backtest?amount=${amount}`);
+  }
+}
+
+/** One fund's growth-of-₹100 line. */
+export interface VillaBtFund {
+  name: string;
+  role: string;         // arbitrage | equity | gold
+  weight: number;
+  index: number[];
+  mult: number;
+}
+export interface VillaBacktest {
+  ok: boolean;
+  detail?: string;
+  dates: string[];
+  blend_index: number[];
+  blend_mult: number;
+  worst_drawdown: number;
+  per_fund: Record<string, VillaBtFund>;
+  summary: {
+    invested: number;
+    final_value: number;
+    total_return_pct: number;
+    monthly_income: number;
+    years: number;
+    start: string;
+    end: string;
+  };
 }

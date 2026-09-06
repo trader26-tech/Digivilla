@@ -117,6 +117,15 @@ def taken_slots() -> dict:
     return {"slots": sorted(slots)}
 
 
+@app.get("/availability/free")
+def free_slots(date: str) -> dict:
+    """Public: the advisor's FREE 30-min slots on a given date (YYYY-MM-DD), so
+    the client's booking sheet only offers times the advisor is actually open —
+    working hours minus busy/blocked slots and confirmed bookings."""
+    taken = set(bookings_svc.confirmed_slots())
+    return {"date": date, "slots": availability_svc.free_slots_for(date, taken)}
+
+
 # --- Admin sign-in: email OTP → trusted device → PIN → access tokens ------
 @app.get("/admin/auth/session")
 def admin_session(request: Request) -> dict:

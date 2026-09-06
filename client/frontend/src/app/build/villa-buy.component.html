@@ -27,14 +27,55 @@
     </div>
   </section>
 
-  <!-- amount presets -->
-  <div class="amt-row reveal" style="--i:2">
-    <button class="amt-chip" *ngFor="let a of PRESETS" [class.on]="amount() === a" (click)="pickAmount(a)">
-      {{ compactK(a) }}
-    </button>
-  </div>
+  <!-- 3 · Past performance — real growth-of-money backtest of the fund mix -->
+  <section class="bt reveal" style="--i:2">
+    <div class="grow-head"><span class="sec-cap">Past performance</span></div>
 
-  <!-- 3 · why this eVilla -->
+    <div class="bt-loading" *ngIf="btLoading()">Loading real fund history…</div>
+
+    <ng-container *ngIf="!btLoading() && bt() as b">
+      <!-- headline: what this amount would have become -->
+      <p class="bt-lead">
+        <b>{{ compact(b.summary.invested) }}</b> invested in {{ b.summary.start }} would be
+        <b class="bt-final">{{ compact(b.summary.final_value) }}</b> today
+        <span class="bt-sub">— {{ b.summary.total_return_pct }}% total over {{ b.summary.years }} yrs, paying ~{{ compact(b.summary.monthly_income) }}/mo income.</span>
+      </p>
+
+      <!-- log-scale growth-of-money chart, one line per fund + the blend -->
+      <div class="bt-chart">
+        <svg [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img" aria-label="Growth of money by fund">
+          <!-- log gridlines -->
+          <g class="bt-grid">
+            <line *ngFor="let t of yTicks" [attr.x1]="0" [attr.x2]="chartW - 40" [attr.y1]="t.y" [attr.y2]="t.y"/>
+            <text *ngFor="let t of yTicks" class="bt-ylab" [attr.x]="chartW - 38" [attr.y]="t.y + 3">₹{{ t.v }}</text>
+          </g>
+          <!-- x-year labels -->
+          <text *ngFor="let t of xTicks" class="bt-xlab" [attr.x]="t.x" [attr.y]="chartH - 6">{{ t.label }}</text>
+          <!-- one line per series -->
+          <g *ngFor="let s of series">
+            <path [attr.d]="path(s.index)" fill="none" [attr.stroke]="s.color"
+                  [attr.stroke-width]="s.blend ? 2.4 : 1.4" [attr.stroke-dasharray]="s.blend ? '5 3' : null"
+                  stroke-linejoin="round" stroke-linecap="round" [attr.opacity]="s.blend ? 1 : 0.85"/>
+            <text class="bt-endlab" [attr.x]="endX()" [attr.y]="endY(s.index) + 3" [attr.fill]="s.color">{{ s.mult }}×</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- legend = the fund breakdown, inside the chart -->
+      <div class="bt-legend">
+        <span class="bt-lg" *ngFor="let s of series">
+          <i class="bt-sw" [style.background]="s.color"></i>{{ s.name }} <b>{{ s.mult }}×</b>
+        </span>
+      </div>
+      <p class="pp-note">Growth of ₹100 from real month-end NAVs. Past performance may not be sustained in future. Subject to market risk.</p>
+    </ng-container>
+
+    <p class="pp-note" *ngIf="!btLoading() && !bt()">Fund history is unavailable right now.</p>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- 4 · why this eVilla -->
   <section class="why reveal" style="--i:3">
     <span class="sec-cap">Why this eVilla</span>
     <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)" (pointercancel)="onPerkUp($event)">
@@ -53,46 +94,7 @@
 
   <div class="rule"></div>
 
-  <!-- 4 · Past performance (SEBI format) — NO forward projection. Fill these
-       from the scheme factsheet before going live. -->
-  <section class="grow reveal" style="--i:4">
-    <div class="grow-head">
-      <span class="sec-cap">Past performance</span>
-    </div>
-    <p class="grow-lead">
-      Trailing returns of the underlying scheme(s), as per the AMC factsheet.
-      <b>Past performance may not be sustained in future.</b>
-    </p>
-    <div class="pp-rows">
-      <div class="pp-row"><span>1 year</span><b>— %*</b></div>
-      <div class="pp-row"><span>3 years</span><b>— %*</b></div>
-      <div class="pp-row"><span>5 years</span><b>— %*</b></div>
-    </div>
-    <p class="pp-note">* To be populated with SEBI-format returns from the scheme factsheet.</p>
-    <div class="stack-legend" hidden>
-      <span class="lg"><i class="sw base"></i>Invested</span>
-      <span class="lg"><i class="sw growth"></i>Growth</span>
-      <span class="lg"><i class="sw rent"></i>Rent</span>
-    </div>
-  </section>
-
-  <div class="rule"></div>
-
-  <!-- 5 · funds (always open) -->
-  <section class="funds reveal" style="--i:5">
-    <div class="funds-head">
-      <span class="sec-cap">Funds inside</span>
-    </div>
-    <div class="funds-body">
-      <div class="fund-line" *ngFor="let f of plan.funds; trackBy: trackFund">
-        <span class="fund-dot" [style.background]="assetColor(f.assetClass)"></span>
-        <span class="fund-name">{{ f.name }}</span>
-        <span class="fund-amt">{{ compactK(f.weight * amount()) }}</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6 · book now -->
+  <!-- book now -->
   <button class="book-now reveal" style="--i:6" (click)="openBook()">Book now · {{ compactK(amount()) }}</button>
 
   <!-- full MFD statutory disclosure (ARN placeholder, SWP, past-performance) -->
@@ -129,15 +131,44 @@
       <span class="sheet-title">Pick a time</span>
       <button class="sheet-close" (click)="closeBook()" aria-label="Close">✕</button>
     </div>
-    <p class="cs-lead">Slots on <b>{{ d | date:'EEEE, d MMM' }}</b></p>
-    <div class="cs-slots"><button class="cs-slot" *ngFor="let s of SLOTS" (click)="bkPickSlot(s)">{{ s }}</button></div>
+    <p class="cs-lead">Times the advisor is free on <b>{{ d | date:'EEEE, d MMM' }}</b></p>
+    <p class="cs-empty" *ngIf="bkSlotsLoading()">Checking availability…</p>
+    <div class="cs-slots" *ngIf="!bkSlotsLoading() && bkSlots().length">
+      <button class="cs-slot" *ngFor="let s of bkSlots()" (click)="bkPickSlot(s)">{{ s.label }}</button>
+    </div>
+    <p class="cs-empty" *ngIf="!bkSlotsLoading() && !bkSlots().length">
+      No free slots this day. Try another day.
+    </p>
     <button class="cs-back" (click)="bkStep.set(1)">‹ Change day</button>
   </ng-container>
 
-  <div class="cs-done" *ngIf="bkStep() === 3 && bkDay() as d">
+  <ng-container *ngIf="bkStep() === 3 && bkDay() as d">
+    <div class="sheet-head">
+      <span class="sheet-title">How would you like to invest?</span>
+      <button class="sheet-close" (click)="closeBook()" aria-label="Close">✕</button>
+    </div>
+    <p class="cs-lead"><b>{{ d | date:'EEEE, d MMM' }} · {{ bkSlot() }}</b> · {{ compactK(amount()) }}</p>
+    <div class="pay-opts">
+      <button class="pay-opt" [class.on]="bkPay() === 'buy'" (click)="bkPay.set('buy')">
+        <b>🏠 Full amount</b>
+        <span>Invest {{ compactK(amount()) }} now, in one go.</span>
+      </button>
+      <button class="pay-opt" [class.on]="bkPay() === 'sip'" (click)="bkPay.set('sip')">
+        <b>🔁 Monthly SIP</b>
+        <span>Build it up a little each month toward {{ compactK(amount()) }}.</span>
+      </button>
+    </div>
+    <p class="cs-error" *ngIf="bkError()">{{ bkError() }}</p>
+    <button class="cs-confirm" [disabled]="bkSubmitting()" (click)="bkConfirm()">
+      {{ bkSubmitting() ? 'Booking…' : 'Confirm & book the call' }}
+    </button>
+    <button class="cs-back" (click)="bkStep.set(2)">‹ Change time</button>
+  </ng-container>
+
+  <div class="cs-done" *ngIf="bkStep() === 4 && bkDay() as d">
     <div class="cs-tick" [class.pop]="justBooked()"><svg viewBox="0 0 52 52"><circle class="cs-tick-ring" cx="26" cy="26" r="24"/><path class="cs-tick-mark" d="M15 27l7 7 15-15"/></svg></div>
     <b class="cs-done-title">Booked!</b>
-    <p class="cs-done-sub">We’ll call on<br><b>{{ d | date:'EEEE, d MMM y' }} at {{ bkSlot() }}</b><br>to help you invest {{ compactK(amount()) }} in this mutual-fund basket (executed on AssetPlus).</p>
+    <p class="cs-done-sub">Your advisor will call on<br><b>{{ d | date:'EEEE, d MMM y' }} at {{ bkSlot() }}</b><br>to set up your {{ bkPay() === 'sip' ? 'monthly SIP' : 'full investment' }} of {{ compactK(amount()) }}.</p>
     <button class="cs-done-btn" (click)="onBack()">Done</button>
   </div>
 </aside>

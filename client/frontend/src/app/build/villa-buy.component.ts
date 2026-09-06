@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 
+import { BookingService } from '../booking.service';
+import { AuthService } from '../auth/auth.service';
 import { VillaArtComponent } from '../shared/villa-art.component';
 import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { MfdDisclosureComponent } from '../shared/mfd-disclosure.component';
+import { LandDetailService, VillaBacktest } from '../land-detail.service';
 import { compact, compactK } from '../shared/format.util';
 import {
   HoldingFund,
@@ -29,6 +32,9 @@ import {
   styleUrls: ['../villa/villa-detail.component.scss', './villa-buy.component.scss'],
 })
 export class VillaBuyComponent implements OnInit {
+  private booking = inject(BookingService);
+  private auth = inject(AuthService);
+
   /** Investment amount presets the user can pick. */
   readonly PRESETS = [10_00_000, 25_00_000, 50_00_000, 1_00_00_000];
   amount = signal(25_00_000);
@@ -46,9 +52,91 @@ export class VillaBuyComponent implements OnInit {
   compactK = compactK;
   assetColor = assetColor;
 
+  // ── fund backtest (growth-of-money chart) ──
+  private landSvc = inject(LandDetailService);
+  bt = signal<VillaBacktest | null>(null);
+  btLoading = signal(true);
+  /** colour per fund role for the chart lines + legend */
+  readonly roleColor: Record<string, string> = {
+    equity: '#0f7a6b', gold: '#c8862b', arbitrage: '#3a7ca5',
+  };
+
   ngOnInit(): void {
     if (this.startAmount) this.amount.set(this.startAmount);
     this.recompute();
+    this.loadBacktest();
+  }
+
+  private loadBacktest(): void {
+    this.btLoading.set(true);
+    this.landSvc.villaBacktest(this.amount()).subscribe({
+      next: (r) => { this.bt.set(r && r.ok ? r : null); this.btLoading.set(false); },
+      error: () => { this.bt.set(null); this.btLoading.set(false); },
+    });
+  }
+
+  // ── chart geometry (log-scale growth-of-money) ──
+  readonly chartW = 320;
+  readonly chartH = 200;
+  private readonly padL = 8; private readonly padR = 44;
+  private readonly padT = 12; private readonly padB = 22;
+
+  /** All series (per-fund + the blend), for drawing lines + legend. */
+  get series(): { key: string; name: string; color: string; index: number[]; mult: number; blend?: boolean }[] {
+    const b = this.bt();
+    if (!b) return [];
+    const funds = Object.entries(b.per_fund).map(([key, f]) => ({
+      key, name: f.name, color: this.roleColor[f.role] || '#888',
+      index: f.index, mult: f.mult,
+    }));
+    return [
+      ...funds,
+      { key: 'blend', name: 'Your villa', color: '#14202e', index: b.blend_index, mult: b.blend_mult, blend: true },
+    ];
+  }
+
+  private get logBounds(): { min: number; max: number } {
+    const b = this.bt();
+    if (!b) return { min: 100, max: 1600 };
+    let max = 100;
+    for (const f of Object.values(b.per_fund)) max = Math.max(max, ...f.index);
+    max = Math.max(max, ...b.blend_index);
+    return { min: 100, max };
+  }
+  private x(i: number, n: number): number {
+    return this.padL + (i / Math.max(1, n - 1)) * (this.chartW - this.padL - this.padR);
+  }
+  private y(v: number): number {
+    const { min, max } = this.logBounds;
+    const t = (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min) || 1);
+    return this.padT + (1 - t) * (this.chartH - this.padT - this.padB);
+  }
+  /** SVG path for one series' index array. */
+  path(index: number[]): string {
+    if (!index.length) return '';
+    return index.map((v, i) => `${i === 0 ? 'M' : 'L'}${this.x(i, index.length).toFixed(1)},${this.y(v).toFixed(1)}`).join(' ');
+  }
+  /** End-of-line y for placing the "7.3×" label. */
+  endY(index: number[]): number { return index.length ? this.y(index[index.length - 1]) : 0; }
+  endX(): number { return this.chartW - this.padR + 3; }
+
+  /** Log Y-axis gridline values (₹100, 200, 400, …) within bounds. */
+  get yTicks(): { v: number; y: number }[] {
+    const { max } = this.logBounds;
+    const out: { v: number; y: number }[] = [];
+    for (let v = 100; v <= max * 1.001; v *= 2) out.push({ v, y: this.y(v) });
+    return out;
+  }
+  /** A few x-axis year labels. */
+  get xTicks(): { label: string; x: number }[] {
+    const b = this.bt();
+    if (!b) return [];
+    const n = b.dates.length;
+    const out: { label: string; x: number }[] = [];
+    for (let i = 0; i < n; i += Math.max(1, Math.floor(n / 4))) {
+      out.push({ label: b.dates[i].slice(0, 4), x: this.x(i, n) });
+    }
+    return out;
   }
 
   pickAmount(a: number): void {
@@ -126,14 +214,21 @@ export class VillaBuyComponent implements OnInit {
     if (Math.abs(dx) > 40) this.stepPerk(dx < 0 ? 1 : -1);
   }
 
-  // ---- book now: pick a day → time → confirmed (same as the call flow) ----
+  // ---- book now: pick a day → time → how you'll pay → confirmed ----
   bookOpen = signal(false);
   bkStep = signal(1);
   bkMonth = signal(this.firstOfThisMonth());
   bkDay = signal<Date | null>(null);
-  bkSlot = signal<string | null>(null);
+  bkSlot = signal<string | null>(null);      // "HH:MM AM" label
+  bkSlotIso = signal<string | null>(null);   // ISO datetime posted to the API
   justBooked = signal(false);
-  readonly SLOTS = ['10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '5:00 PM'];
+  /** Real free slots for the picked day, from the advisor's availability. */
+  bkSlots = signal<{ time: string; label: string; slot: string }[]>([]);
+  bkSlotsLoading = signal(false);
+  /** How the client will fund it: a monthly SIP, or the full amount now. */
+  bkPay = signal<'sip' | 'buy'>('buy');
+  bkSubmitting = signal(false);
+  bkError = signal('');
 
   private firstOfThisMonth(): Date {
     const d = new Date();
@@ -186,16 +281,65 @@ export class VillaBuyComponent implements OnInit {
   bkPickDay(dt: Date): void {
     if (!this.bkSelectable(dt)) return;
     this.bkDay.set(dt);
-    this.bkSlot.set(null);
+    this.bkSlot.set(null); this.bkSlotIso.set(null);
     this.bkStep.set(2);
     if (navigator.vibrate) navigator.vibrate(4);
+    // load only the slots the advisor is actually free on this day
+    const iso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    this.bkSlotsLoading.set(true);
+    this.bkSlots.set([]);
+    this.booking.freeSlots(iso).subscribe({
+      next: (r) => {
+        this.bkSlots.set((r.slots || []).map((s) => ({ time: s.time, slot: s.slot, label: this.slotLabel(s.time) })));
+        this.bkSlotsLoading.set(false);
+      },
+      error: () => { this.bkSlots.set([]); this.bkSlotsLoading.set(false); },
+    });
   }
-  bkPickSlot(s: string): void {
-    this.bkSlot.set(s);
+
+  private slotLabel(hm: string): string {
+    const [h, m] = hm.split(':').map(Number);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`;
+  }
+
+  /** Pick a time → go to the "how you'll pay" step (SIP vs full). */
+  bkPickSlot(slot: { label: string; slot: string }): void {
+    this.bkSlot.set(slot.label);
+    this.bkSlotIso.set(slot.slot);
+    this.bkPay.set('buy');
+    this.bkError.set('');
     this.bkStep.set(3);
-    this.justBooked.set(true);
-    if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
-    setTimeout(() => this.justBooked.set(false), 1600);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+
+  /** Confirm: create a REAL request that lands in the advisor's calendar. */
+  bkConfirm(): void {
+    if (this.bkSubmitting() || !this.bkSlotIso()) return;
+    const u = this.auth.user();
+    const name = (u?.name || '').trim() || 'Client';
+    const phone = (u?.phone || '').replace(/\D/g, '').slice(-10);
+    this.bkSubmitting.set(true);
+    this.bkError.set('');
+    this.booking.createBooking({
+      name, phone,
+      kind: this.bkPay(),                 // 'sip' or 'buy'
+      property: 'villa',
+      variant: 'balanced',
+      amount: this.amount(),
+      slot: this.bkSlotIso()!,
+      note: `${this.name} · ${this.bkPay() === 'sip' ? 'Monthly SIP' : 'Full amount'}`,
+    }).subscribe({
+      next: () => {
+        this.bkSubmitting.set(false);
+        this.bkStep.set(4);
+        this.justBooked.set(true);
+        if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
+        setTimeout(() => this.justBooked.set(false), 1600);
+      },
+      error: () => { this.bkSubmitting.set(false); this.bkError.set('Could not book that slot. Please try again.'); },
+    });
   }
 
   onBack(): void { this.back.emit(); }

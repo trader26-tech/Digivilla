@@ -48,4 +48,11 @@ export class BookingService {
   takenSlots(): Observable<{ slots: string[] }> {
     return this.http.get<{ slots: string[] }>(`${this.base}/bookings/taken`);
   }
+
+  /** The advisor's FREE 30-min slots on a date (YYYY-MM-DD) — only times the
+   *  advisor is actually open. Used by the book-now sheet. */
+  freeSlots(date: string): Observable<{ date: string; slots: { time: string; slot: string }[] }> {
+    return this.http.get<{ date: string; slots: { time: string; slot: string }[] }>(
+      `${this.base}/availability/free?date=${date}`);
+  }
 }

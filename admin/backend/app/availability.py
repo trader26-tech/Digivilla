@@ -207,6 +207,34 @@ def day_grid(days: int = 14) -> list[dict]:
     return out
 
 
+def free_slots_for(date_iso: str, taken: set[str] | None = None) -> list[dict]:
+    """The advisor's FREE 30-min slots on one date — working hours minus the
+    recurring busy times, one-off blocks, and any already-taken slots. Public:
+    the client's booking sheet shows exactly these. Returns [] on a non-working
+    day. `taken` (confirmed bookings) is passed in so we don't import bookings
+    here (avoids a cycle)."""
+    from datetime import date as _date
+    try:
+        y, m, d = (int(x) for x in date_iso.split("-"))
+        dt = _date(y, m, d)
+    except Exception:
+        return []
+    cfg = get_config()
+    weekdays = set(cfg.get("weekdays", DEFAULT_CONFIG["weekdays"]))
+    if dt.weekday() not in weekdays:
+        return []
+    blocked = set(blocked_slots())
+    busy_times = set(cfg.get("busy_times", []))
+    taken = taken or set()
+    out: list[dict] = []
+    for t in _times(cfg):
+        s = slot_iso(date_iso, t, cfg)
+        if t in busy_times or s in blocked or s in taken:
+            continue
+        out.append({"time": t, "slot": s})
+    return out
+
+
 def taken_slots(days: int = 60) -> list[str]:
     """Every ISO slot a client must NOT see as free: one-off blocks PLUS the
     recurring busy times expanded across the upcoming working days."""
