@@ -60,6 +60,7 @@
 <!-- Villa buy page (from the pick screen). -->
 <app-villa-buy
   *ngIf="!intro && buildFlow === 'villa'"
+  [startAmount]="buildAmount"
   (back)="closeBuild()"
 ></app-villa-buy>
 

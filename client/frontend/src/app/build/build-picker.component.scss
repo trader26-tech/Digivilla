@@ -28,13 +28,27 @@
 .xp-page { width: 16px; height: 5px; border-radius: 999px; background: var(--survey); transition: background 0.3s, width 0.3s; }
 .xp-page.on { width: 22px; background: var(--brass); }
 
+/* section heading: "Villa" + one-line definition, above the cards */
+.xp-intro {
+  position: absolute; top: calc(3.2rem + env(safe-area-inset-top)); left: 1.3rem; right: 1.3rem; z-index: 5;
+  text-align: center;
+}
+.xp-title {
+  margin: 0; font-family: var(--font-display);
+  font-size: 2.1rem; font-weight: 850; letter-spacing: -1px; color: var(--ink);
+}
+.xp-def {
+  margin: 0.4rem auto 0; max-width: 30rem;
+  font-size: 0.9rem; line-height: 1.5; color: var(--muted);
+}
+
 /* stacked full-screen cards */
 .xp-stack { position: absolute; inset: 0; }
 .xp-card {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; text-align: center;
   justify-content: center; gap: 0.2rem;
-  padding: calc(3.4rem + env(safe-area-inset-top)) 1.3rem calc(1.2rem + env(safe-area-inset-bottom));
+  padding: calc(8.5rem + env(safe-area-inset-top)) 1.3rem calc(1.2rem + env(safe-area-inset-bottom));
   opacity: 0; transform: translateY(40px) scale(0.98); pointer-events: none;
   transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }

@@ -1,44 +1,35 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 
-import { LandArtComponent } from '../shared/land-art.component';
 import { VillaArtComponent } from '../shared/villa-art.component';
 import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { compact } from '../shared/format.util';
-import { villaPlan } from '../villa/villa-detail.model';
 
-/** One asset in the Explore feed. */
+/** One villa tier in the Explore feed. */
 interface ExploreItem {
-  kind: 'villa' | 'land';
-  label: string;        // "VILLA" / "PLOT" — the top-bar word
-  name: string;
-  fundType: string;     // the REAL mutual-fund category this picture stands for
-  tag: string;          // the one-line promise
-  cost: number;
-  headV: string;        // the headline figure (rent/mo or growth)
-  headK: string;        // its label
-  worth20: number;      // worth in 20 years
-  splitA: string;       // breakdown left
-  splitB: string;       // breakdown right
+  name: string;         // "₹10 L Villa"
+  cost: number;         // ticket size
+  sipMonthly: number;   // suggested monthly SIP to build toward it
+  tier: string;         // short label under the title
 }
 
 /**
- * Explore — a swipe-DOWN feed of assets to buy. The top bar shows "EXPLORE ·
- * <ASSET> · n OF N" with pagination dots so the user knows there's more below.
- * Each asset fills the screen at the same size. "Tap to know more" opens that
- * asset's page.
+ * Explore — a swipe feed of the three villa tiers a user can start an SIP into
+ * (₹10 L, ₹50 L, ₹1 Cr). No land. Header "Villa" with a one-line definition;
+ * each card is tappable to begin an SIP at that ticket size.
  */
 @Component({
   selector: 'app-build-picker',
   standalone: true,
-  imports: [CommonModule, VillaArtComponent, LandArtComponent, MfDisclaimerComponent],
+  imports: [CommonModule, VillaArtComponent, MfDisclaimerComponent],
   templateUrl: './build-picker.component.html',
   styleUrl: './build-picker.component.scss',
 })
 export class BuildPickerComponent {
   @Input() embedded = false;
   @Output() back = new EventEmitter<void>();
-  @Output() pick = new EventEmitter<'villa' | 'land'>();
+  /** Emits the chosen ticket size (₹) so the villa page opens on that amount. */
+  @Output() pick = new EventEmitter<number>();
 
   compact = compact;
 
@@ -46,52 +37,29 @@ export class BuildPickerComponent {
   readonly items: ExploreItem[] = this.buildItems();
 
   private buildItems(): ExploreItem[] {
-    // NO forward return projections shown. The villa maps to an SWP the user
-    // sets up; the plot to a growth fund held at NAV. Figures below describe
-    // the SETUP the user chooses, not an expected return.
-    const villaCost = 50_00_000;
-    const villaSwp = Math.round((villaCost * 0.06) / 12); // a 6%/yr SWP the user may set
+    // Three villa tiers. Suggested SIP is a small monthly toward the ticket
+    // (illustrative — the user can change it on the next page).
+    const tiers = [10_00_000, 50_00_000, 1_00_00_000];
+    return tiers.map((cost) => ({
+      name: `${compact(cost)} Villa`,
+      cost,
+      sipMonthly: this.suggestSip(cost),
+      tier: 'Start a monthly SIP toward this villa',
+    }));
+  }
 
-    const landCost = 20_00_000;
-
-    return [
-      {
-        kind: 'villa',
-        label: 'VILLA',
-        name: 'Villa',
-        fundType: 'Income funds · hybrid / arbitrage / debt',
-        tag: 'A fund with a monthly SWP you set up.',
-        cost: villaCost,
-        headV: compact(villaSwp),
-        headK: 'SWP you set — withdraws your own units*',
-        // legacy fields kept for the type; no longer shown
-        worth20: 0,
-        splitA: '',
-        splitB: '',
-      },
-      {
-        kind: 'land',
-        label: 'PLOT',
-        name: 'Plot',
-        fundType: 'Equity growth fund',
-        tag: 'A growth fund, held in your name at NAV.',
-        cost: landCost,
-        headV: 'At NAV',
-        headK: 'value moves with the market*',
-        worth20: 0,
-        splitA: '',
-        splitB: '',
-      },
-    ];
+  /** A gentle suggested SIP: ~0.5% of the ticket / month, rounded to ₹1,000. */
+  private suggestSip(cost: number): number {
+    return Math.max(1000, Math.round((cost * 0.005) / 1000) * 1000);
   }
 
   goTo(i: number): void {
     this.index.set(Math.max(0, Math.min(this.items.length - 1, i)));
   }
 
-  buy(kind: 'villa' | 'land'): void {
+  buy(cost: number): void {
     if (navigator.vibrate) navigator.vibrate(5);
-    this.pick.emit(kind);
+    this.pick.emit(cost);
   }
   onBack(): void { this.back.emit(); }
 

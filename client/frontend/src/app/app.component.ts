@@ -143,9 +143,13 @@ export class AppComponent {
     this.view = 'explore';
     window.scrollTo({ top: 0 });
   }
-  /** A choice on the pick screen -> the matching buy page. */
-  pickBuild(kind: 'villa' | 'land'): void {
-    this.buildFlow = kind;
+  /** Ticket size chosen on the Explore villa feed. */
+  buildAmount = 25_00_000;
+  /** A villa tier tapped on the Explore feed -> the villa buy/SIP page,
+   *  opened at the chosen ticket size. */
+  pickBuild(amount: number): void {
+    this.buildAmount = amount || 25_00_000;
+    this.buildFlow = 'villa';
     window.scrollTo({ top: 0 });
   }
   closeBuild(): void {

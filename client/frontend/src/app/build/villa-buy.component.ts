@@ -34,6 +34,8 @@ export class VillaBuyComponent implements OnInit {
   amount = signal(25_00_000);
 
   @Input() name = 'Signature Villa';
+  /** Ticket size to open on (chosen on the Explore villa feed). */
+  @Input() startAmount = 25_00_000;
   @Output() back = new EventEmitter<void>();
 
   plan!: VillaPlan;
@@ -45,6 +47,7 @@ export class VillaBuyComponent implements OnInit {
   assetColor = assetColor;
 
   ngOnInit(): void {
+    if (this.startAmount) this.amount.set(this.startAmount);
     this.recompute();
   }
 
