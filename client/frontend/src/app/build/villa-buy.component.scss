@@ -163,13 +163,18 @@
 /* ===== fund backtest: growth-of-money chart ===== */
 .bt { margin-top: 0.4rem; }
 .bt-loading { padding: 1.2rem 0; text-align: center; color: var(--muted); font-size: 0.9rem; }
-.bt-lead {
-  margin: 0.5rem 0 0.9rem; font-size: 0.95rem; line-height: 1.5; color: var(--ink);
-  b { font-weight: 800; }
-  .bt-final { color: var(--positive); }
-  .bt-sub { color: var(--muted); font-weight: 500; }
+
+/* three clean numbers */
+.bt-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.6rem 0 0.9rem; }
+.bt-stat {
+  text-align: center;
+  b { display: block; font-family: var(--font-display); font-size: 1.15rem; font-weight: 850; letter-spacing: -0.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  b.grow { color: var(--positive); }
+  b.tot { color: var(--brass); }
+  span { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 }
-.bt-chart { width: 100%; }
+
+.bt-chart { width: 100%; position: relative; touch-action: pan-y; }
 .bt-chart svg { width: 100%; height: auto; display: block; }
 .bt-grid line { stroke: var(--survey); stroke-width: 1; opacity: 0.55; }
 .bt-ylab { font-size: 7px; fill: var(--muted); }
@@ -179,3 +184,14 @@
 .bt-lg { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--muted); }
 .bt-lg b { color: var(--ink); font-weight: 800; }
 .bt-sw { width: 11px; height: 3px; border-radius: 999px; display: inline-block; }
+
+/* scrub marker + read-out */
+.bt-cursor { stroke: var(--ink); stroke-width: 1; opacity: 0.5; stroke-dasharray: 3 3; }
+.bt-dot { fill: var(--ink); stroke: #fff; stroke-width: 1.5; }
+.bt-readout {
+  position: absolute; top: 0; right: 0;
+  display: flex; flex-direction: column; align-items: flex-end;
+  background: var(--ink); color: #fff; border-radius: 8px; padding: 0.3rem 0.55rem;
+  b { font-size: 0.9rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  span { font-size: 0.66rem; opacity: 0.8; }
+}

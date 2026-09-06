@@ -133,6 +133,21 @@ export class VillaBuyComponent implements OnInit {
     return out;
   }
 
+  // ── scrub-to-inspect: touch/drag a point to read its month + value ──
+  hover = signal<{ x: number; y: number; date: string; value: number } | null>(null);
+  onScrub(ev: PointerEvent, el: Element): void {
+    const b = this.bt();
+    if (!b) return;
+    const rect = el.getBoundingClientRect();
+    const px = ((ev.clientX - rect.left) / rect.width) * this.chartW;
+    const n = b.total.length;
+    // nearest month index to the pointer's x
+    const frac = (px - this.padL) / (this.chartW - this.padL - this.padR);
+    const i = Math.max(0, Math.min(n - 1, Math.round(frac * (n - 1))));
+    this.hover.set({ x: this.x(i, n), y: this.y(b.total[i]), date: b.dates[i], value: b.total[i] });
+  }
+  clearScrub(): void { this.hover.set(null); }
+
   pickAmount(a: number): void {
     this.amount.set(a);
     this.recompute();

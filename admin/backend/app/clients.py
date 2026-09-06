@@ -391,20 +391,31 @@ def add_holding(user_id: str, villa_id: str, sip_monthly: float = 0,
 
     uv_id = "uv_" + uuid.uuid4().hex[:8]
     invested = max(0.0, _money(invested))
+    sip = max(0.0, _money(sip_monthly))
+    # Seed the money that's actually in: a lump-sum if given, plus the first SIP
+    # instalment if a SIP was set — so "Invested" reflects the SIP right away
+    # (a SIP with no instalment recorded looked like ₹0 invested).
+    seed_txns = []
+    if invested > 0:
+        seed_txns.append(("lump_sum", invested, "Initial allocation"))
+    if sip > 0:
+        seed_txns.append(("sip", sip, "First SIP instalment"))
+    invested_total = invested + (sip if sip > 0 else 0)
     row = {
         "id": uv_id, "user_id": user_id, "villa_id": villa_id,
         "status": status if status in ("accumulating", "active", "exited") else "accumulating",
-        "sip_monthly": max(0.0, _money(sip_monthly)), "sip_day": 1,
-        "current_value": round(invested),
+        "sip_monthly": sip, "sip_day": 1,
+        "current_value": round(invested_total),
     }
     try:
         cl.table("user_villas").insert(row).execute()
-        if invested > 0:
-            cl.table("transactions").insert({
-                "id": "t_" + uuid.uuid4().hex[:8], "user_villa_id": uv_id,
-                "kind": "lump_sum", "amount": invested, "txn_date": date.today().isoformat(),
-                "status": "paid", "note": "Initial allocation",
-            }).execute()
+        if seed_txns:
+            cl.table("transactions").insert([
+                {"id": "t_" + uuid.uuid4().hex[:8], "user_villa_id": uv_id,
+                 "kind": k, "amount": amt, "txn_date": date.today().isoformat(),
+                 "status": "paid", "note": note}
+                for (k, amt, note) in seed_txns
+            ]).execute()
     except Exception as e:
         return {"ok": False, "detail": f"Could not add villa: {e}"}
     return {"ok": True, "detail": f"Added {villa.get('name')}.", "profile": get_client(user_id)}

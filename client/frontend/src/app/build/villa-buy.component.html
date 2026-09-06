@@ -34,35 +34,51 @@
     <div class="bt-loading" *ngIf="btLoading()">Loading real fund history…</div>
 
     <ng-container *ngIf="!btLoading() && bt() as b">
-      <!-- headline: what this amount would have become, WHILE paying income -->
-      <p class="bt-lead">
-        <b>{{ compact(b.summary.invested) }}</b> invested in {{ b.summary.start }} would be
-        <b class="bt-final">{{ compact(b.summary.final_value) }}</b> today —
-        <span class="bt-sub">while paying you <b>{{ compact(b.summary.monthly_income) }}/mo</b> ({{ compact(b.summary.income_paid_total) }} over {{ b.summary.years }} yrs).</span>
-      </p>
+      <!-- three clean numbers: rent collected · growth · total -->
+      <div class="bt-stats">
+        <div class="bt-stat">
+          <b>{{ compact(b.summary.income_paid_total) }}</b>
+          <span>rent collected</span>
+        </div>
+        <div class="bt-stat">
+          <b class="grow">{{ compact(b.summary.final_value) }}</b>
+          <span>grown to</span>
+        </div>
+        <div class="bt-stat">
+          <b class="tot">{{ compact(b.summary.final_value + b.summary.income_paid_total) }}</b>
+          <span>total value</span>
+        </div>
+      </div>
 
-      <!-- stacked-area chart: portfolio value over time, split by bucket -->
+      <!-- scrubbable stacked-area chart -->
       <div class="bt-chart">
-        <svg [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img" aria-label="Portfolio value over time by fund bucket">
-          <!-- ₹ gridlines -->
+        <svg #btsvg [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
+             aria-label="Portfolio value over time — drag to inspect"
+             (pointerdown)="onScrub($event, btsvg)" (pointermove)="onScrub($event, btsvg)"
+             (pointerup)="clearScrub()" (pointerleave)="clearScrub()">
           <g class="bt-grid">
             <line *ngFor="let t of yTicks" [attr.x1]="padL" [attr.x2]="chartW - padR" [attr.y1]="t.y" [attr.y2]="t.y"/>
             <text *ngFor="let t of yTicks" class="bt-ylab" [attr.x]="padL + 2" [attr.y]="t.y - 2">{{ t.label }}</text>
           </g>
-          <!-- stacked bands -->
           <path *ngFor="let a of areas" [attr.d]="a.d" [attr.fill]="a.color" />
-          <!-- x-year labels -->
           <text *ngFor="let t of xTicks" class="bt-xlab" [attr.x]="t.x" [attr.y]="chartH - 5">{{ t.label }}</text>
+          <!-- scrub marker -->
+          <g *ngIf="hover() as h">
+            <line class="bt-cursor" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="padT" [attr.y2]="chartH - padB"/>
+            <circle class="bt-dot" [attr.cx]="h.x" [attr.cy]="h.y" r="3"/>
+          </g>
         </svg>
+        <!-- read-out for the scrubbed month -->
+        <div class="bt-readout" *ngIf="hover() as h">
+          <b>{{ compact(h.value) }}</b><span>{{ h.date }}</span>
+        </div>
       </div>
 
-      <!-- legend = the three buckets, matching the image -->
       <div class="bt-legend">
         <span class="bt-lg" *ngFor="let a of areas">
           <i class="bt-sw" [style.background]="a.color"></i>{{ a.name }}
         </span>
       </div>
-      <p class="pp-note">Real month-end NAVs, simulating your monthly SWP drawn from the arbitrage sleeve (blue, bottom) while equity &amp; gold grow untouched. Past performance may not be sustained in future.</p>
     </ng-container>
 
     <p class="pp-note" *ngIf="!btLoading() && !bt()">Fund history is unavailable right now.</p>
