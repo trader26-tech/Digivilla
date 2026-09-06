@@ -236,13 +236,16 @@ def holding_detail(owner: str, uv_id: str) -> dict | None:
             "target": round(m(villa.get("price")) * w),  # its share of the full ticket
         })
 
+    rent_paid_total = sum(r["amount"] for r in rent_log if r.get("status") != "skipped")
     return {
         "id": uv_id,
         "villa_name": villa.get("name") or "Villa",
         "price": m(villa.get("price")),
         "invested": round(invested),
         "sip_monthly": m(uv.get("sip_monthly")),
+        "sip_next_payment": uv.get("sip_next_payment"),   # ISO date or null
         "monthly_income": round(invested * MONTHLY_INCOME_RATE),
+        "rent_paid_total": round(rent_paid_total),
         "status": uv.get("status") or "accumulating",
         "contributions": contributions,
         "rent_log": rent_log,

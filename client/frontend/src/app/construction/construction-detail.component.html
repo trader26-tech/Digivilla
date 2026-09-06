@@ -21,37 +21,29 @@
     </svg>
   </section>
 
-  <!-- 2 · the two headline figures: invested so far · completes in -->
+  <!-- 2 · headline figures: invested so far · total rent/income paid -->
   <section class="value reveal" style="--i:2">
     <div class="val-cell">
       <b class="val-big">{{ compactK(investedSoFar) }}</b>
       <span class="val-k">Invested so far</span>
     </div>
     <div class="val-cell right">
-      <b class="val-big brass">{{ monthsLeft }} mo</b>
-      <span class="val-k">Left to complete</span>
+      <b class="val-big green">{{ compact(rentPaidTotal()) }}</b>
+      <span class="val-k">Rent paid to you</span>
     </div>
   </section>
-  <!-- 3 · rent once built (above the progress, as the payoff) -->
-  <section class="reveal" style="--i:3">
-    <div class="cx-rent">
-      <div class="cx-rent-l">
-        <span class="cx-rent-k">Rent once built</span>
-        <span class="cx-rent-s">Starts when construction completes</span>
-      </div>
-      <b class="cx-rent-v">{{ compact(rentWhenBuilt) }}<span>/mo</span></b>
-    </div>
-  </section>
-  <!-- 4 · build progress -->
-  <section class="prog reveal" style="--i:4">
+
+  <!-- 3 · build progress + the correct next-payment date -->
+  <section class="prog reveal" style="--i:3">
     <div class="prog-head">
       <span class="sec-cap">Build progress</span>
       <b class="prog-pct">{{ pct }}%</b>
     </div>
     <div class="prog-bar"><span class="prog-fill" [style.width.%]="pct"></span></div>
     <div class="prog-meta">
-      <span>{{ monthsDone }} of {{ monthsTotal }} months paid</span>
-      <span>Ready by {{ completesOn | date:'MMM y' }}</span>
+      <span>{{ compact(investedSoFar) }} of {{ compact(cost) }}</span>
+      <span *ngIf="nextPayment()">Next SIP · {{ nextPayment() | date:'d MMM' }}</span>
+      <span *ngIf="!nextPayment()">Ready by {{ completesOn | date:'MMM y' }}</span>
     </div>
   </section>
 

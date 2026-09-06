@@ -59,6 +59,8 @@ export class ConstructionDetailComponent implements OnInit {
   showRent = signal(false);        // toggle: contributions ↔ rent payouts
   fundsOpen = signal(false);       // "Funds inside" starts collapsed
   monthlyIncome = signal(0);
+  rentPaidTotal = signal(0);       // total income/rent paid to the client so far
+  nextPayment = signal<Date | null>(null);  // when the next SIP is due
 
   private loadDetail(): void {
     if (!this.holdingId || !this.auth.token()) return;
@@ -69,10 +71,30 @@ export class ConstructionDetailComponent implements OnInit {
         this.rentLog.set(d.rent_log || []);
         this.funds.set(d.funds || []);
         this.monthlyIncome.set(d.monthly_income || 0);
+        this.rentPaidTotal.set(d.rent_paid_total || 0);
+        this.nextPayment.set(this.computeNextPayment(d));
       },
       error: () => {},
     });
   }
+
+  /** Next SIP due date: the stored date if present & future, else one month
+   *  after the most recent contribution (or one month from today). */
+  private computeNextPayment(d: any): Date | null {
+    if (!d.sip_monthly) return null;                 // no SIP → no next payment
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (d.sip_next_payment) {
+      const p = new Date(d.sip_next_payment);
+      if (!isNaN(p.getTime()) && p >= today) return p;
+    }
+    // derive from the last contribution date + 1 month
+    const last = (d.contributions || [])[0]?.date;
+    const base = last ? new Date(last) : new Date();
+    const next = new Date(base); next.setMonth(next.getMonth() + 1);
+    while (next < today) next.setMonth(next.getMonth() + 1);   // roll forward if overdue
+    return next;
+  }
+
   toggleFundsInside(): void { this.fundsOpen.update((v) => !v); }
 
   plan!: VillaPlan;
