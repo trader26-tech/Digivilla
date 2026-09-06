@@ -27,21 +27,16 @@
                  [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" />
         </div>
       </label>
+      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
+    </div>
 
+    <!-- Continue, pinned to the bottom -->
+    <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
         <span *ngIf="!busy()">Continue</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
-
-      <!-- the one punchy line, right below the phone -->
-      <p class="lg-pitch">Own property, a little each month — the easiest way to start investing.</p>
-
-      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
-      <p class="lg-fine">
-        We’ll text a 6-digit code to verify it’s you.
-        <span *ngIf="!firebaseReady" class="lg-dev">Dev mode — use 123456.</span>
-      </p>
-    </div>
+    </footer>
   </form>
 
   <!-- STEP 2 · OTP -->
