@@ -92,6 +92,18 @@
 }
 .cs-back { margin-top: 0.9rem; border: none; background: none; color: var(--muted); font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 .cs-empty { margin: 1rem 0 0.4rem; color: var(--muted); font-size: 0.9rem; text-align: center; }
+
+/* one-screen: day sections, each with its free time chips */
+.bk-days { display: flex; flex-direction: column; gap: 1rem; margin-top: 0.6rem; max-height: 46vh; overflow-y: auto; }
+.bk-day-lbl { display: block; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.5rem; }
+.bk-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+.bk-slot {
+  padding: 0.7rem 0.4rem; border-radius: 11px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  font: inherit; font-size: 0.85rem; font-weight: 750; cursor: pointer; transition: all 0.12s;
+  &:hover { border-color: var(--brass); }
+  &.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  &:active { transform: scale(0.96); }
+}
 .cs-error { margin: 0.6rem 0 0; color: #d13b2a; font-size: 0.85rem; font-weight: 700; text-align: center; }
 
 /* SIP vs full payment choice */
