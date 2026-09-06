@@ -126,6 +126,26 @@ def free_slots(date: str) -> dict:
     return {"date": date, "slots": availability_svc.free_slots_for(date, taken)}
 
 
+@app.get("/availability/free-days")
+def free_days(days: int = 14, limit: int = 4) -> dict:
+    """Public: the next `limit` upcoming days that HAVE free slots, each with its
+    slots — computed in ONE request (the client's book sheet used to make ~14
+    calls). `days` is how far ahead to scan; `limit` caps the days returned."""
+    from datetime import date as _date, timedelta
+    taken = set(bookings_svc.confirmed_slots())   # fetched once, reused
+    out: list[dict] = []
+    d = _date.today() + timedelta(days=1)          # start tomorrow
+    for _ in range(max(1, min(days, 31))):
+        iso = d.isoformat()
+        slots = availability_svc.free_slots_for(iso, taken)
+        if slots:
+            out.append({"date": iso, "slots": slots})
+            if len(out) >= limit:
+                break
+        d += timedelta(days=1)
+    return {"days": out}
+
+
 # --- Admin sign-in: email OTP → trusted device → PIN → access tokens ------
 @app.get("/admin/auth/session")
 def admin_session(request: Request) -> dict:

@@ -55,4 +55,10 @@ export class BookingService {
     return this.http.get<{ date: string; slots: { time: string; slot: string }[] }>(
       `${this.base}/availability/free?date=${date}`);
   }
+
+  /** The next few days that have free slots, in ONE request (fast). */
+  freeDays(limit = 4): Observable<{ days: { date: string; slots: { time: string; slot: string }[] }[] }> {
+    return this.http.get<{ days: { date: string; slots: { time: string; slot: string }[] }[] }>(
+      `${this.base}/availability/free-days?limit=${limit}`);
+  }
 }

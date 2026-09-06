@@ -99,6 +99,8 @@ export interface VillaBacktest {
     final_value: number;
     total_return_pct: number;
     monthly_income: number;
+    income_paid_total: number;
+    arb_zero_month: string | null;
     years: number;
     start: string;
     end: string;

@@ -235,34 +235,26 @@ export class VillaBuyComponent implements OnInit {
   }
   closeBook(): void { this.bookOpen.set(false); }
 
-  /** Load the next few working days that actually have free slots, each with
-   *  its times — so the sheet shows everything at once (no day-then-time hops). */
+  /** Load the next few open days + their free slots in ONE request (fast). */
   private loadNextOpenDays(): void {
     this.bkDaysLoading.set(true);
     this.bkDays.set([]);
-    // candidate dates: the next ~14 days, starting tomorrow
-    const cands: Date[] = [];
-    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
-    for (let i = 0; i < 14; i++) { cands.push(new Date(d)); d.setDate(d.getDate() + 1); }
-    const iso = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
     const wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    Promise.all(cands.map((x) =>
-      new Promise<{ iso: string; label: string; slots: { label: string; slot: string }[] }>((resolve) => {
-        this.booking.freeSlots(iso(x)).subscribe({
-          next: (r) => resolve({
-            iso: iso(x),
-            label: `${wk[x.getDay()]}, ${x.getDate()} ${mo[x.getMonth()]}`,
-            slots: (r.slots || []).map((s) => ({ label: this.slotLabel(s.time), slot: s.slot })),
-          }),
-          error: () => resolve({ iso: iso(x), label: '', slots: [] }),
-        });
-      })
-    )).then((all) => {
-      // keep only days that have at least one free slot; show the first 4
-      this.bkDays.set(all.filter((day) => day.slots.length).slice(0, 4));
-      this.bkDaysLoading.set(false);
+    this.booking.freeDays(4).subscribe({
+      next: (r) => {
+        this.bkDays.set((r.days || []).map((day) => {
+          const [y, m, d] = day.date.split('-').map(Number);
+          const dt = new Date(y, m - 1, d);
+          return {
+            iso: day.date,
+            label: `${wk[dt.getDay()]}, ${dt.getDate()} ${mo[dt.getMonth()]}`,
+            slots: (day.slots || []).map((s) => ({ label: this.slotLabel(s.time), slot: s.slot })),
+          };
+        }));
+        this.bkDaysLoading.set(false);
+      },
+      error: () => { this.bkDays.set([]); this.bkDaysLoading.set(false); },
     });
   }
 

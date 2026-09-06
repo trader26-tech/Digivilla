@@ -34,11 +34,11 @@
     <div class="bt-loading" *ngIf="btLoading()">Loading real fund history…</div>
 
     <ng-container *ngIf="!btLoading() && bt() as b">
-      <!-- headline: what this amount would have become -->
+      <!-- headline: what this amount would have become, WHILE paying income -->
       <p class="bt-lead">
         <b>{{ compact(b.summary.invested) }}</b> invested in {{ b.summary.start }} would be
-        <b class="bt-final">{{ compact(b.summary.final_value) }}</b> today
-        <span class="bt-sub">— {{ b.summary.total_return_pct }}% total over {{ b.summary.years }} yrs, paying ~{{ compact(b.summary.monthly_income) }}/mo income.</span>
+        <b class="bt-final">{{ compact(b.summary.final_value) }}</b> today —
+        <span class="bt-sub">while paying you <b>{{ compact(b.summary.monthly_income) }}/mo</b> ({{ compact(b.summary.income_paid_total) }} over {{ b.summary.years }} yrs).</span>
       </p>
 
       <!-- stacked-area chart: portfolio value over time, split by bucket -->
@@ -62,7 +62,7 @@
           <i class="bt-sw" [style.background]="a.color"></i>{{ a.name }}
         </span>
       </div>
-      <p class="pp-note">Real month-end NAVs. The arbitrage sleeve funds your monthly income; equity &amp; gold grow to sustain it. Past performance may not be sustained in future.</p>
+      <p class="pp-note">Real month-end NAVs, simulating your monthly SWP drawn from the arbitrage sleeve (blue, bottom) while equity &amp; gold grow untouched. Past performance may not be sustained in future.</p>
     </ng-container>
 
     <p class="pp-note" *ngIf="!btLoading() && !bt()">Fund history is unavailable right now.</p>
