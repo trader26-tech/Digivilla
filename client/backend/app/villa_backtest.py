@@ -54,46 +54,49 @@ def backtest(amount: float = 10_00_000) -> dict:
     if len(months) < 24:
         return {"ok": False, "detail": "Not enough overlapping NAV history."}
 
-    # per-fund index
-    per_fund = {}
-    for f in VILLA_FUNDS:
-        idx = _index_from_monthly(months, monthlies[f["key"]])
-        per_fund[f["key"]] = {
-            "name": f["name"], "role": f["role"], "weight": f["weight"],
-            "index": idx, "mult": round(idx[-1] / 100.0, 2),
-        }
+    # per-fund growth-of-₹100 index
+    per_fund_index = {f["key"]: _index_from_monthly(months, monthlies[f["key"]]) for f in VILLA_FUNDS}
 
-    # blended index = weighted sum of each fund's index at every month
-    blend = []
-    for i in range(len(months)):
-        v = sum(per_fund[f["key"]]["index"][i] * f["weight"] for f in VILLA_FUNDS)
-        blend.append(round(v, 2))
-    blend_mult = round(blend[-1] / 100.0, 2)
+    # ── stacked bands: each band = its ₹ value over time (scaled to `amount`) ──
+    # Equity = Large+Mid+Small combined (their weights); Gold; Arbitrage.
+    # value_of(band) at month i = amount × Σ(weight_f × index_f[i]/100) over the band's funds.
+    def band_values(keys: list[str]) -> list[float]:
+        out = []
+        for i in range(len(months)):
+            v = sum(amount * f["weight"] * (per_fund_index[f["key"]][i] / 100.0)
+                    for f in VILLA_FUNDS if f["key"] in keys)
+            out.append(round(v))
+        return out
 
-    # worst drawdown of the blend
-    peak = blend[0]
-    worst = 0.0
-    for v in blend:
+    equity_keys = ["largecap", "midcap", "smallcap"]
+    bands = [
+        {"key": "equity",    "name": "Large + Mid + Small Cap", "color": "#2e7d64", "values": band_values(equity_keys)},
+        {"key": "gold",      "name": "Nippon India Gold Savings", "color": "#c8862b", "values": band_values(["gold"])},
+        {"key": "arbitrage", "name": "SBI Arbitrage Fund",        "color": "#3a7ca5", "values": band_values(["arbitrage"])},
+    ]
+
+    # total portfolio value over time (sum of bands)
+    total = [round(sum(b["values"][i] for b in bands)) for i in range(len(months))]
+    blend_mult = round(total[-1] / amount, 2) if amount else 0
+
+    # worst drawdown of the total
+    peak = total[0]; worst = 0.0
+    for v in total:
         peak = max(peak, v)
         worst = min(worst, v / peak - 1.0)
-
-    # summary: `amount` invested at the start
-    final_value = round(amount * blend_mult)
-    total_return_pct = round((blend_mult - 1.0) * 100.0)
-    monthly_income = round(amount * RENT_YIELD / 12.0)
 
     return {
         "ok": True,
         "dates": months,
-        "blend_index": blend,
+        "bands": bands,          # stacked, bottom→top order as given
+        "total": total,
         "blend_mult": blend_mult,
         "worst_drawdown": round(worst * 100.0, 1),
-        "per_fund": per_fund,
         "summary": {
             "invested": round(amount),
-            "final_value": final_value,
-            "total_return_pct": total_return_pct,
-            "monthly_income": monthly_income,
+            "final_value": total[-1],
+            "total_return_pct": round((blend_mult - 1.0) * 100.0),
+            "monthly_income": round(amount * RENT_YIELD / 12.0),
             "years": round(len(months) / 12.0, 1),
             "start": months[0],
             "end": months[-1],

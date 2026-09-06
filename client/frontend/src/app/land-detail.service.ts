@@ -79,22 +79,21 @@ export class LandDetailService {
   }
 }
 
-/** One fund's growth-of-₹100 line. */
-export interface VillaBtFund {
+/** One stacked band = a bucket's ₹ value over time. */
+export interface VillaBtBand {
+  key: string;          // equity | gold | arbitrage
   name: string;
-  role: string;         // arbitrage | equity | gold
-  weight: number;
-  index: number[];
-  mult: number;
+  color: string;
+  values: number[];     // ₹ value each month
 }
 export interface VillaBacktest {
   ok: boolean;
   detail?: string;
   dates: string[];
-  blend_index: number[];
+  bands: VillaBtBand[];  // bottom → top
+  total: number[];
   blend_mult: number;
   worst_drawdown: number;
-  per_fund: Record<string, VillaBtFund>;
   summary: {
     invested: number;
     final_value: number;

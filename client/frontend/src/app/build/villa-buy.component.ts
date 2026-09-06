@@ -52,14 +52,10 @@ export class VillaBuyComponent implements OnInit {
   compactK = compactK;
   assetColor = assetColor;
 
-  // ── fund backtest (growth-of-money chart) ──
+  // ── fund backtest (stacked-area growth chart) ──
   private landSvc = inject(LandDetailService);
   bt = signal<VillaBacktest | null>(null);
   btLoading = signal(true);
-  /** colour per fund role for the chart lines + legend */
-  readonly roleColor: Record<string, string> = {
-    equity: '#0f7a6b', gold: '#c8862b', arbitrage: '#3a7ca5',
-  };
 
   ngOnInit(): void {
     if (this.startAmount) this.amount.set(this.startAmount);
@@ -75,59 +71,57 @@ export class VillaBuyComponent implements OnInit {
     });
   }
 
-  // ── chart geometry (log-scale growth-of-money) ──
+  // ── stacked-area chart geometry ──
   readonly chartW = 320;
-  readonly chartH = 200;
-  private readonly padL = 8; private readonly padR = 44;
-  private readonly padT = 12; private readonly padB = 22;
+  readonly chartH = 190;
+  readonly padL = 6; readonly padR = 6;
+  readonly padT = 10; readonly padB = 20;
 
-  /** All series (per-fund + the blend), for drawing lines + legend. */
-  get series(): { key: string; name: string; color: string; index: number[]; mult: number; blend?: boolean }[] {
+  private get maxTotal(): number {
     const b = this.bt();
-    if (!b) return [];
-    const funds = Object.entries(b.per_fund).map(([key, f]) => ({
-      key, name: f.name, color: this.roleColor[f.role] || '#888',
-      index: f.index, mult: f.mult,
-    }));
-    return [
-      ...funds,
-      { key: 'blend', name: 'Your villa', color: '#14202e', index: b.blend_index, mult: b.blend_mult, blend: true },
-    ];
-  }
-
-  private get logBounds(): { min: number; max: number } {
-    const b = this.bt();
-    if (!b) return { min: 100, max: 1600 };
-    let max = 100;
-    for (const f of Object.values(b.per_fund)) max = Math.max(max, ...f.index);
-    max = Math.max(max, ...b.blend_index);
-    return { min: 100, max };
+    return b ? Math.max(...b.total, 1) : 1;
   }
   private x(i: number, n: number): number {
     return this.padL + (i / Math.max(1, n - 1)) * (this.chartW - this.padL - this.padR);
   }
   private y(v: number): number {
-    const { min, max } = this.logBounds;
-    const t = (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min) || 1);
-    return this.padT + (1 - t) * (this.chartH - this.padT - this.padB);
+    return this.padT + (1 - v / this.maxTotal) * (this.chartH - this.padT - this.padB);
   }
-  /** SVG path for one series' index array. */
-  path(index: number[]): string {
-    if (!index.length) return '';
-    return index.map((v, i) => `${i === 0 ? 'M' : 'L'}${this.x(i, index.length).toFixed(1)},${this.y(v).toFixed(1)}`).join(' ');
-  }
-  /** End-of-line y for placing the "7.3×" label. */
-  endY(index: number[]): number { return index.length ? this.y(index[index.length - 1]) : 0; }
-  endX(): number { return this.chartW - this.padR + 3; }
 
-  /** Log Y-axis gridline values (₹100, 200, 400, …) within bounds. */
-  get yTicks(): { v: number; y: number }[] {
-    const { max } = this.logBounds;
-    const out: { v: number; y: number }[] = [];
-    for (let v = 100; v <= max * 1.001; v *= 2) out.push({ v, y: this.y(v) });
+  /** Stacked areas: each band drawn between its running-cumulative baseline and
+   *  the top of the stack below it. Returns closed SVG polygon paths bottom→top. */
+  get areas(): { color: string; name: string; d: string }[] {
+    const b = this.bt();
+    if (!b) return [];
+    const n = b.dates.length;
+    const below = new Array(n).fill(0);   // cumulative baseline
+    const out: { color: string; name: string; d: string }[] = [];
+    for (const band of b.bands) {
+      const top = below.map((base, i) => base + band.values[i]);
+      // top edge L→R, then bottom edge R→L
+      let d = top.map((v, i) => `${i === 0 ? 'M' : 'L'}${this.x(i, n).toFixed(1)},${this.y(v).toFixed(1)}`).join(' ');
+      for (let i = n - 1; i >= 0; i--) d += ` L${this.x(i, n).toFixed(1)},${this.y(below[i]).toFixed(1)}`;
+      d += ' Z';
+      out.push({ color: band.color, name: band.name, d });
+      for (let i = 0; i < n; i++) below[i] = top[i];
+    }
     return out;
   }
-  /** A few x-axis year labels. */
+
+  /** ₹ Y-axis ticks (nice round values up to the max total). */
+  get yTicks(): { label: string; y: number }[] {
+    const max = this.maxTotal;
+    const out: { label: string; y: number }[] = [];
+    const step = this.niceStep(max / 3);
+    for (let v = step; v <= max * 1.001; v += step) out.push({ label: this.compact(v), y: this.y(v) });
+    return out;
+  }
+  private niceStep(raw: number): number {
+    const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / pow;
+    const f = n >= 5 ? 5 : n >= 2 ? 2 : 1;
+    return f * pow;
+  }
   get xTicks(): { label: string; x: number }[] {
     const b = this.bt();
     if (!b) return [];
@@ -214,86 +208,61 @@ export class VillaBuyComponent implements OnInit {
     if (Math.abs(dx) > 40) this.stepPerk(dx < 0 ? 1 : -1);
   }
 
-  // ---- book now: pick a day → time → how you'll pay → confirmed ----
+  // ---- book now: one screen — the next open days with their free slots ----
   bookOpen = signal(false);
-  bkStep = signal(1);
-  bkMonth = signal(this.firstOfThisMonth());
-  bkDay = signal<Date | null>(null);
-  bkSlot = signal<string | null>(null);      // "HH:MM AM" label
-  bkSlotIso = signal<string | null>(null);   // ISO datetime posted to the API
   justBooked = signal(false);
-  /** Real free slots for the picked day, from the advisor's availability. */
-  bkSlots = signal<{ time: string; label: string; slot: string }[]>([]);
-  bkSlotsLoading = signal(false);
-  /** How the client will fund it: a monthly SIP, or the full amount now. */
+  booked = signal(false);                     // shows the confirmed screen
+  /** The next few open days, each with the advisor's free 30-min slots. */
+  bkDays = signal<{ iso: string; label: string; slots: { label: string; slot: string }[] }[]>([]);
+  bkDaysLoading = signal(false);
+  bkSlotIso = signal<string | null>(null);    // the chosen slot (ISO)
+  bkSlotLabel = signal<string>('');           // "Mon 8 Sep · 10:00 AM"
+  /** How the client will fund it: full amount now, or a monthly SIP. */
   bkPay = signal<'sip' | 'buy'>('buy');
   bkSubmitting = signal(false);
   bkError = signal('');
 
-  private firstOfThisMonth(): Date {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  }
   openBook(): void {
-    this.bkStep.set(1);
-    this.bkMonth.set(this.firstOfThisMonth());
-    this.bkDay.set(null);
-    this.bkSlot.set(null);
+    this.booked.set(false);
     this.justBooked.set(false);
+    this.bkSlotIso.set(null);
+    this.bkSlotLabel.set('');
+    this.bkPay.set('buy');
+    this.bkError.set('');
     this.bookOpen.set(true);
     if (navigator.vibrate) navigator.vibrate(4);
+    this.loadNextOpenDays();
   }
   closeBook(): void { this.bookOpen.set(false); }
 
-  get bkMonthLabel(): string {
-    return this.bkMonth().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-  }
-  get bkCells(): (Date | null)[] {
-    const m = this.bkMonth();
-    const y = m.getFullYear(), mon = m.getMonth();
-    const lead = new Date(y, mon, 1).getDay();
-    const days = new Date(y, mon + 1, 0).getDate();
-    const out: (Date | null)[] = [];
-    for (let i = 0; i < lead; i++) out.push(null);
-    for (let d = 1; d <= days; d++) out.push(new Date(y, mon, d));
-    return out;
-  }
-  get bkCanPrev(): boolean { return this.bkMonth() > this.firstOfThisMonth(); }
-  bkPrev(): void {
-    if (!this.bkCanPrev) return;
-    const m = this.bkMonth();
-    this.bkMonth.set(new Date(m.getFullYear(), m.getMonth() - 1, 1));
-  }
-  bkNext(): void {
-    const m = this.bkMonth();
-    this.bkMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1));
-  }
-  bkSelectable(dt: Date): boolean {
-    const dow = dt.getDay();
-    if (dow === 0 || dow === 6) return false;
-    const min = new Date(); min.setHours(0, 0, 0, 0); min.setDate(min.getDate() + 1);
-    return dt.getTime() >= min.getTime();
-  }
-  bkIsDay(dt: Date): boolean {
-    const d = this.bkDay();
-    return !!d && d.getTime() === dt.getTime();
-  }
-  bkPickDay(dt: Date): void {
-    if (!this.bkSelectable(dt)) return;
-    this.bkDay.set(dt);
-    this.bkSlot.set(null); this.bkSlotIso.set(null);
-    this.bkStep.set(2);
-    if (navigator.vibrate) navigator.vibrate(4);
-    // load only the slots the advisor is actually free on this day
-    const iso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-    this.bkSlotsLoading.set(true);
-    this.bkSlots.set([]);
-    this.booking.freeSlots(iso).subscribe({
-      next: (r) => {
-        this.bkSlots.set((r.slots || []).map((s) => ({ time: s.time, slot: s.slot, label: this.slotLabel(s.time) })));
-        this.bkSlotsLoading.set(false);
-      },
-      error: () => { this.bkSlots.set([]); this.bkSlotsLoading.set(false); },
+  /** Load the next few working days that actually have free slots, each with
+   *  its times — so the sheet shows everything at once (no day-then-time hops). */
+  private loadNextOpenDays(): void {
+    this.bkDaysLoading.set(true);
+    this.bkDays.set([]);
+    // candidate dates: the next ~14 days, starting tomorrow
+    const cands: Date[] = [];
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
+    for (let i = 0; i < 14; i++) { cands.push(new Date(d)); d.setDate(d.getDate() + 1); }
+    const iso = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    const wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    Promise.all(cands.map((x) =>
+      new Promise<{ iso: string; label: string; slots: { label: string; slot: string }[] }>((resolve) => {
+        this.booking.freeSlots(iso(x)).subscribe({
+          next: (r) => resolve({
+            iso: iso(x),
+            label: `${wk[x.getDay()]}, ${x.getDate()} ${mo[x.getMonth()]}`,
+            slots: (r.slots || []).map((s) => ({ label: this.slotLabel(s.time), slot: s.slot })),
+          }),
+          error: () => resolve({ iso: iso(x), label: '', slots: [] }),
+        });
+      })
+    )).then((all) => {
+      // keep only days that have at least one free slot; show the first 4
+      this.bkDays.set(all.filter((day) => day.slots.length).slice(0, 4));
+      this.bkDaysLoading.set(false);
     });
   }
 
@@ -304,15 +273,14 @@ export class VillaBuyComponent implements OnInit {
     return m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`;
   }
 
-  /** Pick a time → go to the "how you'll pay" step (SIP vs full). */
-  bkPickSlot(slot: { label: string; slot: string }): void {
-    this.bkSlot.set(slot.label);
-    this.bkSlotIso.set(slot.slot);
-    this.bkPay.set('buy');
+  /** Tap a slot chip — just selects it (Confirm is on the same screen). */
+  pickSlot(dayLabel: string, s: { label: string; slot: string }): void {
+    this.bkSlotIso.set(s.slot);
+    this.bkSlotLabel.set(`${dayLabel} · ${s.label}`);
     this.bkError.set('');
-    this.bkStep.set(3);
     if (navigator.vibrate) navigator.vibrate(4);
   }
+  isSlot(s: { slot: string }): boolean { return this.bkSlotIso() === s.slot; }
 
   /** Confirm: create a REAL request that lands in the advisor's calendar. */
   bkConfirm(): void {
@@ -333,7 +301,7 @@ export class VillaBuyComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.bkSubmitting.set(false);
-        this.bkStep.set(4);
+        this.booked.set(true);
         this.justBooked.set(true);
         if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
         setTimeout(() => this.justBooked.set(false), 1600);
