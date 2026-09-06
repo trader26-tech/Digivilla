@@ -352,7 +352,7 @@
                   <span>Villa</span>
                   <select [ngModel]="newVillaId()" (ngModelChange)="newVillaId.set($event)">
                     <option value="" disabled>Choose a villa…</option>
-                    <option *ngFor="let v of villaCatalog()" [value]="v.id">{{ v.villa_name || v.name }} · {{ money(v.price) }}</option>
+                    <option *ngFor="let v of villaCatalog()" [value]="v.id">{{ v.name }} · {{ money(v.price) }}</option>
                   </select>
                 </label>
               </div>

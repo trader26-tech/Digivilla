@@ -846,6 +846,33 @@
 .holding-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; font-size: 0.8rem; color: var(--muted); }
 .holding-meta b { color: var(--ink); font-weight: 750; }
 
+/* small text buttons (Edit / Remove / + Add villa) */
+.mini-btn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 0.76rem; font-weight: 750; padding: 0.32rem 0.6rem;
+  border-radius: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  &:hover { border-color: var(--ink); }
+}
+.mini-btn.danger { color: var(--negative); }
+.mini-btn.danger:hover { border-color: var(--negative); background: color-mix(in srgb, var(--negative) 6%, var(--surface)); }
+.holding-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+
+/* add / edit villa form */
+.villa-form {
+  margin: 0.7rem 0 0.9rem; padding: 0.9rem; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--surface-2);
+}
+.vf-row { display: flex; gap: 0.7rem; }
+.vf-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.6rem; flex: 1; }
+.vf-field.grow { flex: 1; }
+.vf-field span { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.vf-field input, .vf-field select {
+  border: 1px solid var(--border); border-radius: 9px; background: var(--surface);
+  color: var(--ink); font: inherit; font-size: 0.9rem; font-weight: 600; padding: 0.5rem 0.6rem;
+  &:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 15%, transparent); }
+}
+.vf-actions { display: flex; gap: 0.4rem; margin-top: 0.3rem; }
+
 /* fund concentration — the stacked bar + fund list */
 .conc { margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
 .conc-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.5rem; }

@@ -10,7 +10,7 @@ interface ExploreItem {
   name: string;         // "₹10 L Villa"
   cost: number;         // ticket size
   sipMonthly: number;   // suggested monthly SIP to build toward it
-  tier: string;         // short label under the title
+  incomeMonthly: number; // rent-like monthly income once built
 }
 
 /**
@@ -36,21 +36,12 @@ export class BuildPickerComponent {
   readonly items: ExploreItem[] = this.buildItems();
 
   private buildItems(): ExploreItem[] {
-    // Three villa tiers. Suggested SIP is a small monthly toward the ticket
-    // (illustrative — the user can change it on the next page).
-    const tiers = [10_00_000, 50_00_000, 1_00_00_000];
-    return tiers.map((cost) => ({
-      name: `${compact(cost)} Villa`,
-      cost,
-      sipMonthly: this.suggestSip(cost),
-      tier: 'Start a monthly SIP toward this villa',
-    }));
-  }
-
-  /** Suggested SIP: ~0.5% of the ticket / month, but never below the ₹10,000
-   *  minimum, rounded to ₹1,000. */
-  private suggestSip(cost: number): number {
-    return Math.max(10_000, Math.round((cost * 0.005) / 1000) * 1000);
+    // Three villa tiers with their monthly rent-like income once built.
+    return [
+      { name: '₹10 L Villa', cost: 10_00_000, sipMonthly: 10_000, incomeMonthly: 3_000 },
+      { name: '₹50 L Villa', cost: 50_00_000, sipMonthly: 25_000, incomeMonthly: 15_000 },
+      { name: '₹1 Cr Villa', cost: 1_00_00_000, sipMonthly: 50_000, incomeMonthly: 30_000 },
+    ];
   }
 
   buy(cost: number): void {

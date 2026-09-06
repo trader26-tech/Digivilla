@@ -783,6 +783,8 @@ export class AppComponent implements OnInit {
   openCrmClient(id: string): void {
     this.crmDetailLoading.set(true);
     this.crmActive.set(null);
+    this.showAddVilla.set(false); this.editingUv.set(''); this.villaError.set('');
+    this.ensureVillaCatalog();
     this.api.getCrmClient(id).subscribe({
       next: (p) => { this.crmActive.set(p); this.crmDetailLoading.set(false); },
       error: (e) => { this.crmDetailLoading.set(false); if (e?.status === 401) this.lock(); },
