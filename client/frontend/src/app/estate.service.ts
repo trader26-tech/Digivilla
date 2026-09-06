@@ -64,6 +64,13 @@ export class EstateService {
     // When signed in, the DB is the source of truth: load this user's real
     // estate (empty for a new account) and keep localStorage only as a cache.
     if (this.auth.token()) this.syncFromServer();
+    // Re-sync whenever the app is brought back to the foreground, so a villa the
+    // advisor just mapped (or SIP recorded) shows up without a manual refresh.
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && this.auth.token()) this.syncFromServer();
+      });
+    }
   }
 
   private get authHeaders(): Record<string, string> {
