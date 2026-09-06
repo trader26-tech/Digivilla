@@ -139,15 +139,17 @@
 
         <g [attr.transform]="'translate(' + offX + ',' + offY + ')'">
           <ng-container *ngFor="let c of cells()">
-            <!-- ===== THE HALL: painted as the grandest villa, dead centre.
-                 The founding villa — tappable like any other. ===== -->
-            <g *ngIf="c.hall" class="cell hall owned" (click)="tapCell(c)" role="button" tabindex="0"
+            <!-- ===== THE HALL: the founding villa, dead centre — but ONLY once
+                 the user owns something. An empty ₹0 estate shows an open plot
+                 here instead, so nothing is implied to be owned. ===== -->
+            <g *ngIf="c.hall && !isEmptyEstate()" class="cell hall owned" (click)="tapCell(c)" role="button" tabindex="0"
                [attr.aria-label]="c.tile?.label">
               <use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
             </g>
 
-            <!-- ===== OPEN plot: dashed diamond. Tap to build. ===== -->
-            <g *ngIf="!c.hall && !c.tile" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
+            <!-- ===== OPEN plot: dashed diamond. Tap to build. (Also the centre
+                 when the estate is empty.) ===== -->
+            <g *ngIf="(!c.hall && !c.tile) || (c.hall && isEmptyEstate())" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
                [attr.aria-label]="'Open plot ' + (c.index + 1)">
               <use [attr.href]="'#tLocked'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
               <!-- the "build here" mark — always visible on every open plot -->

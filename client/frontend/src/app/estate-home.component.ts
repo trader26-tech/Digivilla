@@ -186,6 +186,11 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   /** Every cell, owned tiles assigned and sorted back-to-front for painting. */
   cells = computed<Cell[]>(() => buildCells(this.est.tiles()));
 
+  /** True when the user owns nothing yet — the whole estate is open plots, so
+   *  we don't paint the founding villa in the centre (an empty ₹0 estate should
+   *  look genuinely empty and invite the first purchase). */
+  isEmptyEstate = computed<boolean>(() => this.est.tiles().length === 0);
+
   get boardW(): number { return boardSize(this.grid).w; }
   get boardH(): number { return boardSize(this.grid).h; }
   get offX(): number { return boardOrigin(this.grid).x; }
