@@ -106,6 +106,8 @@
   display: flex; flex-direction: column; gap: 0.55rem;
 }
 .mk-row { display: flex; align-items: center; gap: 0.7rem; margin: 0; }
+.mk-row .mk-txt { flex: 1; }
+.mk-row + .mk-row { margin-top: 0.5rem; }
 .mk-art {
   flex: none; width: 44px; height: 36px;
   app-villa-art, app-land-art { display: block; width: 100%; height: 100%; }
@@ -542,6 +544,15 @@
   color: var(--muted);
 }
 .stat-more { color: var(--brass); font-weight: 800; }
+
+/* small ⓘ button next to a figure label / villa row (tap to reveal a note) */
+.stat-i {
+  display: inline-grid; place-items: center; padding: 0; border: none; background: none;
+  color: color-mix(in srgb, var(--muted) 80%, var(--paper)); cursor: pointer;
+  transform: translateY(1px);
+  svg { display: block; }
+  &:hover, &.on { color: var(--brass); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   /* no flip — just a plain cross-fade, hidden face stays flat and invisible */
