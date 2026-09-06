@@ -121,12 +121,14 @@ def get_tiles(owner: str) -> list[dict]:
 def _tiles_from_crm(owner: str) -> list[dict]:
     """Build the client's map tiles from the CRM holdings (user_villas), so the
     admin and client are one connected system. A holding that isn't fully paid
-    for yet is a `building` (under construction); a fully-funded one is a `villa`."""
-    if not _use_supabase():
-        return []
+    for yet is a `building` (under construction); a fully-funded one is a `villa`.
+
+    NOTE: this only needs Supabase to be CONFIGURED — it must NOT depend on the
+    legacy `estate_tiles` table existing (that table may be absent even when the
+    CRM tables are present, which was silently hiding admin-mapped villas)."""
     try:
         from app.supabase_client import get_supabase
-        cl = get_supabase()
+        cl = get_supabase()   # raises if Supabase isn't configured
         # owner (client auth key) → the CRM user id
         urows = cl.table("users").select("id").eq("owner", owner).limit(1).execute().data or []
         if not urows:
