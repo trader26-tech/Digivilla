@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { VillaArtComponent } from '../shared/villa-art.component';
 import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { compact } from '../shared/format.util';
 
-/** One villa tier in the Explore feed. */
+/** One villa tier. */
 interface ExploreItem {
   name: string;         // "₹10 L Villa"
   cost: number;         // ticket size
@@ -14,9 +14,9 @@ interface ExploreItem {
 }
 
 /**
- * Explore — a swipe feed of the three villa tiers a user can start an SIP into
- * (₹10 L, ₹50 L, ₹1 Cr). No land. Header "Villa" with a one-line definition;
- * each card is tappable to begin an SIP at that ticket size.
+ * Explore — one screen showing the three villa tiers a user can start an SIP
+ * into (₹10 L, ₹50 L, ₹1 Cr). No land. Header "Villa" with a one-line
+ * definition; each tile is tappable to begin an SIP at that ticket size.
  */
 @Component({
   selector: 'app-build-picker',
@@ -33,7 +33,6 @@ export class BuildPickerComponent {
 
   compact = compact;
 
-  index = signal(0);
   readonly items: ExploreItem[] = this.buildItems();
 
   private buildItems(): ExploreItem[] {
@@ -53,33 +52,9 @@ export class BuildPickerComponent {
     return Math.max(1000, Math.round((cost * 0.005) / 1000) * 1000);
   }
 
-  goTo(i: number): void {
-    this.index.set(Math.max(0, Math.min(this.items.length - 1, i)));
-  }
-
   buy(cost: number): void {
     if (navigator.vibrate) navigator.vibrate(5);
     this.pick.emit(cost);
   }
   onBack(): void { this.back.emit(); }
-
-  // --- swipe down/up between full-screen cards ---
-  private swipeY: number | null = null;
-  onDown(e: PointerEvent): void {
-    // NOTE: no setPointerCapture here — capturing steals the pointerup from the
-    // Buy button and kills its click. We just note where the finger went down.
-    this.swipeY = e.clientY;
-  }
-  onUp(e: PointerEvent): void {
-    if (this.swipeY === null) return;
-    const dy = e.clientY - this.swipeY;
-    this.swipeY = null;
-    // Only a real vertical drag counts as a swipe; a tap (tiny move) falls
-    // through so the button underneath receives its click normally.
-    if (Math.abs(dy) > 50) this.goTo(this.index() + (dy < 0 ? 1 : -1)); // swipe up → next
-  }
-  onWheel(e: WheelEvent): void {
-    if (Math.abs(e.deltaY) < 24) return;
-    this.goTo(this.index() + (e.deltaY > 0 ? 1 : -1));
-  }
 }

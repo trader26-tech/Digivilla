@@ -1,109 +1,67 @@
 :host { display: block; }
 
 .xp {
-  position: relative;
   max-width: 460px; margin: 0 auto;
-  height: 100vh; height: 100dvh;
-  overflow: hidden;
-  touch-action: pan-x;
+  min-height: 100vh; min-height: 100dvh;
+  padding: calc(1.6rem + env(safe-area-inset-top)) 1.3rem calc(1.4rem + env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background: var(--paper);
 }
-.xp.embedded { height: calc(100dvh - 4.5rem); }
+.xp.embedded {
+  min-height: calc(100dvh - 4.5rem);
+  padding-bottom: 5.5rem;   /* clear the floating bottom nav */
+}
 
-/* top bar: back · EXPLORE·ASSET·n OF N · pagination dots */
-.xp-top {
-  position: absolute; top: calc(0.9rem + env(safe-area-inset-top)); left: 1.3rem; right: 1.3rem; z-index: 6;
-  display: flex; align-items: center; gap: 0.6rem;
-}
-.xp-back {
-  width: 38px; height: 38px; flex: none; display: grid; place-items: center;
-  border-radius: 11px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
-  font-size: 1.4rem; line-height: 1; cursor: pointer; transition: transform 0.12s, border-color 0.2s;
-  &:hover { border-color: var(--brass); }
-  &:active { transform: scale(0.94); }
-}
-.xp-kicker { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
-.xp-top-sp { flex: 1; }
-.xp-pages { display: flex; gap: 0.35rem; }
-.xp-page { width: 16px; height: 5px; border-radius: 999px; background: var(--survey); transition: background 0.3s, width 0.3s; }
-.xp-page.on { width: 22px; background: var(--brass); }
-
-/* section heading: "Villa" + one-line definition, above the cards */
-.xp-intro {
-  position: absolute; top: calc(3.2rem + env(safe-area-inset-top)); left: 1.3rem; right: 1.3rem; z-index: 5;
-  text-align: center;
-}
+/* section heading: "Villa" + one-line definition */
+.xp-intro { text-align: center; margin-bottom: 1.4rem; }
 .xp-title {
   margin: 0; font-family: var(--font-display);
   font-size: 2.1rem; font-weight: 850; letter-spacing: -1px; color: var(--ink);
 }
 .xp-def {
-  margin: 0.4rem auto 0; max-width: 30rem;
-  font-size: 0.9rem; line-height: 1.5; color: var(--muted);
+  margin: 0.45rem auto 0; max-width: 30rem;
+  font-size: 0.92rem; line-height: 1.5; color: var(--muted);
 }
 
-/* stacked full-screen cards */
-.xp-stack { position: absolute; inset: 0; }
-.xp-card {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; text-align: center;
-  justify-content: center; gap: 0.2rem;
-  padding: calc(8.5rem + env(safe-area-inset-top)) 1.3rem calc(1.2rem + env(safe-area-inset-bottom));
-  opacity: 0; transform: translateY(40px) scale(0.98); pointer-events: none;
-  transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.xp-card.up { transform: translateY(-40px) scale(0.98); }
-.xp-card.on { opacity: 1; transform: none; pointer-events: auto; }
+/* the three tiers, stacked and all visible on one screen */
+.xp-tiles { display: flex; flex-direction: column; gap: 0.85rem; }
 
-/* name + cost to own, big and centred */
-.xp-head { display: flex; flex-direction: column; align-items: center; gap: 0.05rem; }
-.xp-name {
-  margin: 0;
-  font-family: var(--font-display); font-size: 2.4rem; font-weight: 850; letter-spacing: -1px; color: var(--ink);
-}
-.xp-cost {
-  font-family: var(--font-display); font-size: 1.9rem; font-weight: 850; letter-spacing: -0.8px; line-height: 1.05;
-  color: var(--brass);
-}
-.xp-cost-k { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-
-/* the asset */
-.xp-art {
-  width: 100%; max-width: 340px; margin: 0.5rem auto;
-  app-villa-art, app-land-art { display: block; width: 100%; height: auto; }
+.tier {
+  display: flex; align-items: center; gap: 0.9rem; width: 100%; text-align: left;
+  background: #fff; border: 1.5px solid var(--survey); border-radius: 18px;
+  padding: 0.85rem 0.95rem; cursor: pointer; font: inherit; color: var(--ink);
+  box-shadow: 0 1px 2px rgba(22, 48, 43, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  &:hover { border-color: var(--brass); box-shadow: 0 10px 24px -16px rgba(166,124,46,0.6); }
+  &:active { transform: scale(0.99); }
 }
 
-/* two clean stat cells, split down the middle */
-.xp-stats {
-  display: flex; align-items: center; justify-content: center; gap: 1.4rem;
-  margin-top: 0.4rem;
+/* the villa illustration, small, on the left */
+.tier-art {
+  flex: none; width: 84px; height: 68px; overflow: hidden;
+  display: grid; place-items: center;
+  app-villa-art { display: block; width: 100%; height: auto; }
 }
-.xp-stat { display: flex; flex-direction: column; gap: 0.2rem; }
-.xp-stat-div { width: 1px; align-self: stretch; margin: 0.3rem 0; background: var(--survey); }
-.xp-stat-v {
-  font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; line-height: 1;
-  color: var(--ink); font-variant-numeric: tabular-nums;
-}
-.xp-stat-v.grow { color: var(--positive); }
-.xp-stat-k { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
 
-/* a centred pill under the figures, not a full-width bar at the foot */
-.xp-buy {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
-  align-self: center; margin-top: 1.4rem; padding: 0.75rem 1.4rem;
-  border: 0; border-radius: 999px; background: var(--brass); color: #fff;
-  font: inherit; font-size: 0.92rem; font-weight: 800; cursor: pointer;
-  box-shadow: 0 12px 26px -12px rgba(166, 124, 46, 0.7);
-  transition: transform 0.12s, filter 0.2s;
+.tier-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.tier-name {
+  font-family: var(--font-display); font-size: 1.35rem; font-weight: 850;
+  letter-spacing: -0.5px; color: var(--ink); line-height: 1.05;
+}
+.tier-sip { font-size: 0.86rem; color: var(--muted); }
+.tier-sip b { color: var(--ink); font-weight: 800; }
+
+/* the SIP pill on the right */
+.tier-cta {
+  flex: none; display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.55rem 0.9rem; border-radius: 999px;
+  background: var(--brass); color: #fff; font-size: 0.84rem; font-weight: 800;
+  box-shadow: 0 10px 22px -12px rgba(166,124,46,0.7);
   svg { display: block; }
-  &:hover { filter: brightness(1.05); }
-  &:active { transform: scale(0.97); }
 }
-.xp-swipe { flex: none; display: block; text-align: center; margin-top: 0.7rem; font-size: 0.76rem; color: var(--muted); animation: nudge 1.8s ease-in-out infinite; }
-@keyframes nudge { 0%, 100% { transform: translateY(0); opacity: 0.7; } 50% { transform: translateY(-3px); opacity: 1; } }
 
-@media (prefers-reduced-motion: reduce) {
-  .xp-card { transition: opacity 0.2s ease; transform: none; }
-  .xp-card.up { transform: none; }
-  .xp-swipe { animation: none; }
+app-mf-disclaimer { display: block; text-align: center; margin-top: 1.2rem; }
+
+@media (max-width: 380px) {
+  .tier-art { display: none; }   /* keep it clean on very narrow phones */
 }

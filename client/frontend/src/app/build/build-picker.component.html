@@ -1,52 +1,24 @@
-<main class="xp" [class.embedded]="embedded"
-      (pointerdown)="onDown($event)" (pointerup)="onUp($event)" (pointercancel)="onUp($event)"
-      (wheel)="onWheel($event)">
-
-  <!-- top bar: VILLA · n OF N, and pagination dots -->
-  <header class="xp-top">
-    <span class="xp-kicker">VILLA · {{ index() + 1 }} OF {{ items.length }}</span>
-    <span class="xp-top-sp"></span>
-    <span class="xp-pages" aria-hidden="true">
-      <span class="xp-page" *ngFor="let it of items; let i = index" [class.on]="index() === i"></span>
-    </span>
-  </header>
-
+<main class="xp" [class.embedded]="embedded">
   <!-- section heading: what a Villa is -->
   <div class="xp-intro">
     <h1 class="xp-title">Villa</h1>
-    <p class="xp-def">A villa is a curated basket of mutual funds you build toward with a monthly SIP — and can draw a rent-like income from later.</p>
+    <p class="xp-def">A curated basket of mutual funds you build toward with a monthly SIP — and can draw a rent-like income from later.</p>
   </div>
 
-  <div class="xp-stack">
-    <section class="xp-card" *ngFor="let it of items; let i = index"
-             [class.on]="index() === i" [class.up]="i < index()">
-
-      <!-- tier name + ticket size, centred -->
-      <div class="xp-head">
-        <h2 class="xp-name">{{ it.name }}</h2>
-        <span class="xp-cost-k">ticket size · {{ compact(it.cost) }}</span>
-      </div>
-
-      <!-- the villa -->
-      <div class="xp-art">
-        <app-villa-art></app-villa-art>
-      </div>
-
-      <!-- the suggested monthly SIP -->
-      <div class="xp-stats">
-        <div class="xp-stat">
-          <b class="xp-stat-v">{{ compact(it.sipMonthly) }}/mo</b>
-          <span class="xp-stat-k">suggested SIP to start</span>
-        </div>
-      </div>
-
-      <button class="xp-buy" (click)="buy(it.cost)">
+  <!-- the three tiers, all on one screen -->
+  <div class="xp-tiles">
+    <button class="tier" *ngFor="let it of items" type="button" (click)="buy(it.cost)">
+      <span class="tier-art"><app-villa-art></app-villa-art></span>
+      <span class="tier-body">
+        <span class="tier-name">{{ it.name }}</span>
+        <span class="tier-sip">SIP from <b>{{ compact(it.sipMonthly) }}/mo</b></span>
+      </span>
+      <span class="tier-cta">
         Start SIP
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-
-      <span class="xp-swipe" *ngIf="i < items.length - 1" aria-hidden="true">Swipe up for more ↑</span>
-      <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
-    </section>
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
   </div>
+
+  <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
 </main>
