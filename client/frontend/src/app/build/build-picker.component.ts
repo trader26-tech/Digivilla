@@ -47,9 +47,10 @@ export class BuildPickerComponent {
     }));
   }
 
-  /** A gentle suggested SIP: ~0.5% of the ticket / month, rounded to ₹1,000. */
+  /** Suggested SIP: ~0.5% of the ticket / month, but never below the ₹10,000
+   *  minimum, rounded to ₹1,000. */
   private suggestSip(cost: number): number {
-    return Math.max(1000, Math.round((cost * 0.005) / 1000) * 1000);
+    return Math.max(10_000, Math.round((cost * 0.005) / 1000) * 1000);
   }
 
   buy(cost: number): void {

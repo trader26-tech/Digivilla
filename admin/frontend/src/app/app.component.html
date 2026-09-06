@@ -340,8 +340,41 @@
 
           <!-- villas & holdings -->
           <div class="crm-block card">
-            <h3 class="crm-block-h">Villas &amp; holdings</h3>
-            <p class="crm-none" *ngIf="!p.holdings.length">No villas yet.</p>
+            <div class="crm-block-head">
+              <h3 class="crm-block-h">Villas &amp; holdings</h3>
+              <button class="mini-btn" (click)="openAddVilla()">+ Add villa</button>
+            </div>
+
+            <!-- add-villa form -->
+            <div class="villa-form" *ngIf="showAddVilla()">
+              <div class="vf-row">
+                <label class="vf-field grow">
+                  <span>Villa</span>
+                  <select [ngModel]="newVillaId()" (ngModelChange)="newVillaId.set($event)">
+                    <option value="" disabled>Choose a villa…</option>
+                    <option *ngFor="let v of villaCatalog()" [value]="v.id">{{ v.villa_name || v.name }} · {{ money(v.price) }}</option>
+                  </select>
+                </label>
+              </div>
+              <div class="vf-row">
+                <label class="vf-field">
+                  <span>SIP / mo (₹)</span>
+                  <input type="tel" inputmode="numeric" placeholder="0" [ngModel]="newVillaSip() || ''" (ngModelChange)="newVillaSip.set(+$event || 0)" />
+                </label>
+                <label class="vf-field">
+                  <span>Invested now (₹)</span>
+                  <input type="tel" inputmode="numeric" placeholder="0" [ngModel]="newVillaInvested() || ''" (ngModelChange)="newVillaInvested.set(+$event || 0)" />
+                </label>
+              </div>
+              <p class="err" *ngIf="villaError()">{{ villaError() }}</p>
+              <div class="vf-actions">
+                <button class="act ok" [disabled]="!newVillaId() || villaBusy()" (click)="addVilla()">{{ villaBusy() ? 'Adding…' : 'Add villa' }}</button>
+                <button class="act" (click)="cancelAddVilla()">Cancel</button>
+              </div>
+            </div>
+
+            <p class="crm-none" *ngIf="!p.holdings.length && !showAddVilla()">No villas yet — add one above.</p>
+
             <div class="holding" *ngFor="let h of p.holdings">
               <div class="holding-top">
                 <b class="holding-name">🏠 {{ h.villa_name }}</b>
@@ -355,6 +388,39 @@
                 <span>Invested <b>{{ money(h.invested) }}</b><span *ngIf="h.progress != null"> · {{ pct(h.progress) }} of {{ money(h.price) }}</span></span>
                 <span *ngIf="h.sip_monthly">SIP <b>{{ money(h.sip_monthly) }}</b>/mo<span *ngIf="h.sip_next_payment"> · next {{ h.sip_next_payment }}</span></span>
                 <span *ngIf="h.rent_received">Rent <b>{{ money(h.rent_received) }}</b></span>
+              </div>
+
+              <!-- per-holding actions -->
+              <div class="holding-actions" *ngIf="editingUv() !== h.id">
+                <button class="mini-btn" (click)="startEditHolding(h)">Edit</button>
+                <button class="mini-btn danger" (click)="deleteHolding(h)">Remove</button>
+              </div>
+
+              <!-- inline edit form -->
+              <div class="villa-form" *ngIf="editingUv() === h.id">
+                <div class="vf-row">
+                  <label class="vf-field">
+                    <span>SIP / mo (₹)</span>
+                    <input type="tel" inputmode="numeric" [ngModel]="editSip() || ''" (ngModelChange)="editSip.set(+$event || 0)" />
+                  </label>
+                  <label class="vf-field">
+                    <span>Current value (₹)</span>
+                    <input type="tel" inputmode="numeric" [ngModel]="editValue() || ''" (ngModelChange)="editValue.set(+$event || 0)" />
+                  </label>
+                </div>
+                <label class="vf-field">
+                  <span>Status</span>
+                  <select [ngModel]="editStatus()" (ngModelChange)="editStatus.set($event)">
+                    <option value="accumulating">Accumulating</option>
+                    <option value="active">Active</option>
+                    <option value="exited">Exited</option>
+                  </select>
+                </label>
+                <p class="err" *ngIf="villaError()">{{ villaError() }}</p>
+                <div class="vf-actions">
+                  <button class="act ok" [disabled]="villaBusy()" (click)="saveHolding()">{{ villaBusy() ? 'Saving…' : 'Save' }}</button>
+                  <button class="act" (click)="cancelEditHolding()">Cancel</button>
+                </div>
               </div>
 
               <!-- fund concentration: what this villa is made of -->

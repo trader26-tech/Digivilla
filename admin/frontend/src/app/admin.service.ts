@@ -95,6 +95,14 @@ export interface ClientHolding {
   sip_next_payment: string | null;
   funds: ClientFund[];
 }
+/** A villa in the catalogue the admin can assign to a client. */
+export interface VillaCatalogItem {
+  id: string;
+  name: string;
+  price: number;
+  rent_monthly: number;
+  target_growth: number;
+}
 /** One fund inside a villa (the concentration). */
 export interface ClientFund {
   fund_name: string;
@@ -243,9 +251,24 @@ export class AdminService {
     return this.http.post<{ ok: boolean; seeded?: any; detail?: string }>(
       `${this.base}/admin/crm/seed`, {}, this.opts);
   }
-  addSecondVilla(): Observable<{ ok: boolean; name?: string; detail?: string }> {
-    return this.http.post<{ ok: boolean; name?: string; detail?: string }>(
-      `${this.base}/admin/crm/add-second-villa`, {}, this.opts);
+  // ── villa management (map villas to a client) ─────────────────────────────
+  listVillas(): Observable<VillaCatalogItem[]> {
+    return this.http.get<VillaCatalogItem[]>(`${this.base}/admin/crm/villas`, this.opts);
+  }
+  addHolding(userId: string, body: { villa_id: string; sip_monthly?: number; invested?: number; status?: string }):
+    Observable<{ ok: boolean; detail?: string; profile?: ClientProfile }> {
+    return this.http.post<{ ok: boolean; detail?: string; profile?: ClientProfile }>(
+      `${this.base}/admin/crm/clients/${userId}/villas`, body, this.opts);
+  }
+  updateHolding(userId: string, uvId: string, patch: { sip_monthly?: number; current_value?: number; status?: string }):
+    Observable<{ ok: boolean; detail?: string; profile?: ClientProfile }> {
+    return this.http.put<{ ok: boolean; detail?: string; profile?: ClientProfile }>(
+      `${this.base}/admin/crm/clients/${userId}/villas/${uvId}`, patch, this.opts);
+  }
+  deleteHolding(userId: string, uvId: string):
+    Observable<{ ok: boolean; detail?: string; profile?: ClientProfile }> {
+    return this.http.delete<{ ok: boolean; detail?: string; profile?: ClientProfile }>(
+      `${this.base}/admin/crm/clients/${userId}/villas/${uvId}`, this.opts);
   }
 
   // ── client documents ──────────────────────────────────────────────────────

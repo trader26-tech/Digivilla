@@ -282,14 +282,6 @@ def admin_crm_seed(authorization: Optional[str] = Header(default=None)) -> dict:
     return clients_svc.seed_sample()
 
 
-@app.post("/admin/crm/add-second-villa")
-def admin_crm_add_second_villa(authorization: Optional[str] = Header(default=None)) -> dict:
-    """Give an existing single-villa client a second villa (a real multi-villa
-    example) so the Clients tab shows the 2-villa layout."""
-    _require_admin(authorization)
-    return clients_svc.add_second_villa()
-
-
 @app.get("/admin/crm/clients/{user_id}")
 def admin_crm_client(
     user_id: str, authorization: Optional[str] = Header(default=None),
@@ -300,6 +292,58 @@ def admin_crm_client(
     if not profile:
         raise HTTPException(status_code=404, detail="Client not found.")
     return profile
+
+
+# --- Villa management: map villas to a client (add / modify / delete) --------
+@app.get("/admin/crm/villas")
+def admin_crm_villas(authorization: Optional[str] = Header(default=None)) -> list[dict]:
+    """The villa catalogue — every villa the admin can assign to a client."""
+    _require_admin(authorization)
+    return clients_svc.list_villas()
+
+
+@app.post("/admin/crm/clients/{user_id}/villas")
+def admin_crm_add_villa(
+    user_id: str, body: dict, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """Assign a villa to a client."""
+    _require_admin(authorization)
+    villa_id = (body or {}).get("villa_id")
+    if not villa_id:
+        raise HTTPException(status_code=400, detail="villa_id is required.")
+    res = clients_svc.add_holding(
+        user_id, villa_id,
+        sip_monthly=(body or {}).get("sip_monthly", 0),
+        invested=(body or {}).get("invested", 0),
+        status=(body or {}).get("status", "accumulating"),
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("detail", "Could not add villa."))
+    return res
+
+
+@app.put("/admin/crm/clients/{user_id}/villas/{uv_id}")
+def admin_crm_update_villa(
+    user_id: str, uv_id: str, body: dict, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """Modify a client's villa holding (SIP / status / current value)."""
+    _require_admin(authorization)
+    res = clients_svc.update_holding(user_id, uv_id, body or {})
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("detail", "Could not update."))
+    return res
+
+
+@app.delete("/admin/crm/clients/{user_id}/villas/{uv_id}")
+def admin_crm_delete_villa(
+    user_id: str, uv_id: str, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """Remove a villa from a client."""
+    _require_admin(authorization)
+    res = clients_svc.delete_holding(user_id, uv_id)
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("detail", "Could not remove."))
+    return res
 
 
 # --- Admin client documents ----------------------------------------------

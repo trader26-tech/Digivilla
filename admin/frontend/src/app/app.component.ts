@@ -10,6 +10,7 @@ import {
   ClientFolder,
   ClientProfile,
   ClientRow,
+  VillaCatalogItem,
 } from './admin.service';
 
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
@@ -798,6 +799,95 @@ export class AppComponent implements OnInit {
     this.api.seedSampleClients().subscribe({
       next: () => { this.seeding.set(false); this.loadCrmClients(); },
       error: () => this.seeding.set(false),
+    });
+  }
+
+  // ═══════════════════════════ VILLA MANAGEMENT ═══════════════════════════
+  villaCatalog = signal<VillaCatalogItem[]>([]);
+  villaBusy = signal(false);
+  villaError = signal('');
+  // "add villa" form
+  showAddVilla = signal(false);
+  newVillaId = signal('');
+  newVillaSip = signal<number>(0);
+  newVillaInvested = signal<number>(0);
+  // "edit holding" form (per holding id)
+  editingUv = signal<string>('');
+  editSip = signal<number>(0);
+  editValue = signal<number>(0);
+  editStatus = signal<string>('accumulating');
+
+  private ensureVillaCatalog(): void {
+    if (this.villaCatalog().length) return;
+    this.api.listVillas().subscribe({ next: (v) => this.villaCatalog.set(v), error: () => {} });
+  }
+
+  openAddVilla(): void {
+    this.ensureVillaCatalog();
+    this.villaError.set('');
+    this.newVillaId.set(''); this.newVillaSip.set(0); this.newVillaInvested.set(0);
+    this.showAddVilla.set(true);
+  }
+  cancelAddVilla(): void { this.showAddVilla.set(false); }
+
+  addVilla(): void {
+    const uid = this.crmActive()?.id;
+    if (!uid || !this.newVillaId() || this.villaBusy()) return;
+    this.villaBusy.set(true); this.villaError.set('');
+    this.api.addHolding(uid, {
+      villa_id: this.newVillaId(),
+      sip_monthly: Number(this.newVillaSip()) || 0,
+      invested: Number(this.newVillaInvested()) || 0,
+    }).subscribe({
+      next: (r) => {
+        this.villaBusy.set(false); this.showAddVilla.set(false);
+        if (r.profile) this.crmActive.set(r.profile);
+        this.loadCrmClients();
+      },
+      error: (e) => { this.villaBusy.set(false); this.villaError.set(e?.error?.detail || 'Could not add villa.'); },
+    });
+  }
+
+  startEditHolding(h: any): void {
+    this.editingUv.set(h.id);
+    this.editSip.set(h.sip_monthly || 0);
+    this.editValue.set(h.current_value || 0);
+    this.editStatus.set(h.status || 'accumulating');
+    this.villaError.set('');
+  }
+  cancelEditHolding(): void { this.editingUv.set(''); }
+
+  saveHolding(): void {
+    const uid = this.crmActive()?.id;
+    const uvId = this.editingUv();
+    if (!uid || !uvId || this.villaBusy()) return;
+    this.villaBusy.set(true); this.villaError.set('');
+    this.api.updateHolding(uid, uvId, {
+      sip_monthly: Number(this.editSip()) || 0,
+      current_value: Number(this.editValue()) || 0,
+      status: this.editStatus(),
+    }).subscribe({
+      next: (r) => {
+        this.villaBusy.set(false); this.editingUv.set('');
+        if (r.profile) this.crmActive.set(r.profile);
+        this.loadCrmClients();
+      },
+      error: (e) => { this.villaBusy.set(false); this.villaError.set(e?.error?.detail || 'Could not update.'); },
+    });
+  }
+
+  deleteHolding(h: any): void {
+    const uid = this.crmActive()?.id;
+    if (!uid || this.villaBusy()) return;
+    if (typeof confirm === 'function' && !confirm(`Remove ${h.villa_name} from this client?`)) return;
+    this.villaBusy.set(true); this.villaError.set('');
+    this.api.deleteHolding(uid, h.id).subscribe({
+      next: (r) => {
+        this.villaBusy.set(false);
+        if (r.profile) this.crmActive.set(r.profile);
+        this.loadCrmClients();
+      },
+      error: (e) => { this.villaBusy.set(false); this.villaError.set(e?.error?.detail || 'Could not remove.'); },
     });
   }
 

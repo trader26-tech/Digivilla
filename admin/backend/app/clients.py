@@ -354,3 +354,96 @@ def add_second_villa() -> dict:
 
     return {"ok": True, "user_id": uid, "name": target.get("name"),
             "added_villa": other.get("name"), "detail": f"{target.get('name')} now holds 2 villas."}
+
+
+# ── villa management (map villas to a client) ────────────────────────────────
+def list_villas() -> list[dict]:
+    """The villa catalogue — every villa the admin can assign to a client."""
+    villas = _rows("villas")
+    out = []
+    for v in sorted(villas, key=lambda v: (v.get("sort_order", 0), _money(v.get("price")))):
+        out.append({
+            "id": v.get("id"),
+            "name": v.get("name") or "Villa",
+            "price": _money(v.get("price")),
+            "rent_monthly": _money(v.get("rent_monthly")),
+            "target_growth": _money(v.get("target_growth")),
+        })
+    return out
+
+
+def add_holding(user_id: str, villa_id: str, sip_monthly: float = 0,
+                invested: float = 0, status: str = "accumulating") -> dict:
+    """Assign a villa to a client (a new user_villas row), optionally seeding an
+    initial invested amount as a lump-sum transaction. Returns the updated profile."""
+    if not _use_supabase():
+        return {"ok": False, "detail": "Supabase not configured."}
+    import uuid
+    from datetime import date
+    from app.supabase_client import get_supabase
+    cl = get_supabase()
+
+    if not next((u for u in _rows("users") if u.get("id") == user_id), None):
+        return {"ok": False, "detail": "Client not found."}
+    villa = next((v for v in _rows("villas") if v.get("id") == villa_id), None)
+    if not villa:
+        return {"ok": False, "detail": "Villa not found."}
+
+    uv_id = "uv_" + uuid.uuid4().hex[:8]
+    invested = max(0.0, _money(invested))
+    row = {
+        "id": uv_id, "user_id": user_id, "villa_id": villa_id,
+        "status": status if status in ("accumulating", "active", "exited") else "accumulating",
+        "sip_monthly": max(0.0, _money(sip_monthly)), "sip_day": 1,
+        "current_value": round(invested),
+    }
+    try:
+        cl.table("user_villas").insert(row).execute()
+        if invested > 0:
+            cl.table("transactions").insert({
+                "id": "t_" + uuid.uuid4().hex[:8], "user_villa_id": uv_id,
+                "kind": "lump_sum", "amount": invested, "txn_date": date.today().isoformat(),
+                "status": "paid", "note": "Initial allocation",
+            }).execute()
+    except Exception as e:
+        return {"ok": False, "detail": f"Could not add villa: {e}"}
+    return {"ok": True, "detail": f"Added {villa.get('name')}.", "profile": get_client(user_id)}
+
+
+def update_holding(user_id: str, uv_id: str, patch: dict) -> dict:
+    """Modify a client's villa holding — SIP, status, or current value."""
+    if not _use_supabase():
+        return {"ok": False, "detail": "Supabase not configured."}
+    from app.supabase_client import get_supabase
+    cl = get_supabase()
+
+    fields: dict = {}
+    if "sip_monthly" in patch and patch["sip_monthly"] is not None:
+        fields["sip_monthly"] = max(0.0, _money(patch["sip_monthly"]))
+    if "current_value" in patch and patch["current_value"] is not None:
+        fields["current_value"] = max(0.0, _money(patch["current_value"]))
+    if patch.get("status") in ("accumulating", "active", "exited"):
+        fields["status"] = patch["status"]
+    if not fields:
+        return {"ok": False, "detail": "Nothing to update."}
+    try:
+        res = cl.table("user_villas").update(fields).eq("id", uv_id).eq("user_id", user_id).execute()
+        if not (res.data or []):
+            return {"ok": False, "detail": "Holding not found."}
+    except Exception as e:
+        return {"ok": False, "detail": f"Could not update: {e}"}
+    return {"ok": True, "detail": "Updated.", "profile": get_client(user_id)}
+
+
+def delete_holding(user_id: str, uv_id: str) -> dict:
+    """Remove a villa from a client (and its ledger rows)."""
+    if not _use_supabase():
+        return {"ok": False, "detail": "Supabase not configured."}
+    from app.supabase_client import get_supabase
+    cl = get_supabase()
+    try:
+        cl.table("transactions").delete().eq("user_villa_id", uv_id).execute()
+        cl.table("user_villas").delete().eq("id", uv_id).eq("user_id", user_id).execute()
+    except Exception as e:
+        return {"ok": False, "detail": f"Could not remove: {e}"}
+    return {"ok": True, "detail": "Removed.", "profile": get_client(user_id)}
