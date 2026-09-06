@@ -1,50 +1,31 @@
 <main class="login">
-  <!-- STEP 1 · phone (carries the value proposition — the first thing a new user sees) -->
-  <form *ngIf="step() === 'phone'" class="lg-flow" (ngSubmit)="sendCode()" novalidate>
-    <!-- top: brand + the pitch — WHY sign up, right on the sign-in screen -->
-    <header class="lg-top">
-      <div class="lg-brand">
-        <span class="lg-logo" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="18" height="18">
-            <path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M5 10v9h14v-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M10 19v-5h4v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <span class="lg-brandname">Digivilla</span>
-      </div>
-      <h1 class="lg-title">Welcome to your<br>financial freedom</h1>
-      <p class="lg-sub">
-        Own real property — plot by plot — from a small amount each month.
-        Sign in to start building your estate.
+  <!-- STEP 1 · welcome hero + phone entry (the first screen a new user sees) -->
+  <form *ngIf="step() === 'phone'" class="lg-hero" (ngSubmit)="sendCode()" novalidate>
+    <!-- brand -->
+    <div class="lg-brand">
+      <span class="lg-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 10v9h14v-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 19v-5h4v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="lg-brandname">Digivilla</span>
+    </div>
+
+    <!-- the one message: what Digivilla is -->
+    <div class="lg-hero-mid">
+      <h1 class="lg-hero-title">Own property,<br>a little each month.</h1>
+      <p class="lg-hero-sub">
+        Build a real-estate-backed portfolio — villas &amp; land — starting
+        from a small monthly amount, guided by an expert.
       </p>
-    </header>
+    </div>
 
-    <!-- middle: WHAT you're signing up for + the phone field -->
-    <div class="lg-mid">
-      <ul class="lg-why">
-        <li>
-          <span class="lg-why-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 20V9m6 11V4m6 16v-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-          </span>
-          <span><b>Start small, grow steadily</b> — invest a little monthly and watch your estate grow.</span>
-        </li>
-        <li>
-          <span class="lg-why-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 11.5 12 5l9 6.5M5 10.5V19h14v-8.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <span><b>Real property, fractional ownership</b> — own a share of villas &amp; land, backed by real estate.</span>
-        </li>
-        <li>
-          <span class="lg-why-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3v18M8 7h6a2.5 2.5 0 0 1 0 5H8m0 0h7a2.5 2.5 0 0 1 0 5H8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <span><b>Guided by a fund manager</b> — expert help confirms every purchase.</span>
-        </li>
-      </ul>
-
+    <!-- phone entry + action, pinned to the bottom -->
+    <div class="lg-hero-action">
       <label class="lg-field">
-        <span class="lg-lbl">Phone number</span>
+        <span class="lg-lbl">Enter your phone to begin</span>
         <div class="lg-phone">
           <span class="lg-cc">🇮🇳 +91</span>
           <input class="lg-input bare" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10"
@@ -54,19 +35,16 @@
       </label>
 
       <p class="lg-err" *ngIf="error()">{{ error() }}</p>
-    </div>
 
-    <!-- bottom: the action -->
-    <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
-        <span *ngIf="!busy()">Get verification code</span>
+        <span *ngIf="!busy()">Continue</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
       <p class="lg-fine">
         We’ll text a 6-digit code to verify it’s you.
         <span *ngIf="!firebaseReady" class="lg-dev">Dev mode — use 123456.</span>
       </p>
-    </footer>
+    </div>
   </form>
 
   <!-- STEP 2 · OTP -->
@@ -101,20 +79,33 @@
   <!-- STEP 3 · details (new users, after OTP) -->
   <form *ngIf="step() === 'details'" class="lg-flow" (ngSubmit)="saveDetails()" novalidate>
     <header class="lg-top">
+      <!-- step indicator: phone → code → details -->
+      <div class="lg-steps" aria-label="Step 3 of 3">
+        <span class="lg-step done"></span>
+        <span class="lg-step done"></span>
+        <span class="lg-step on"></span>
+      </div>
+      <span class="lg-eyebrow">Last step</span>
       <h1 class="lg-title">A few details</h1>
-      <p class="lg-sub">So we can set up your account.</p>
+      <p class="lg-sub">This is just for your account — it stays private.</p>
     </header>
 
     <div class="lg-mid">
       <label class="lg-field">
         <span class="lg-lbl">Full name</span>
-        <input class="lg-input" type="text" autocomplete="name" placeholder="Sanjeev Ramprasad"
-               [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+        <div class="lg-inwrap">
+          <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input class="lg-input has-ico" type="text" autocomplete="name" placeholder="Sanjeev Ramprasad"
+                 [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+        </div>
       </label>
       <label class="lg-field">
         <span class="lg-lbl">Email</span>
-        <input class="lg-input" type="email" autocomplete="email" placeholder="you@email.com"
-               [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" />
+        <div class="lg-inwrap">
+          <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input class="lg-input has-ico" type="email" autocomplete="email" placeholder="you@email.com"
+                 [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" />
+        </div>
       </label>
       <div class="lg-row">
         <label class="lg-field">
@@ -124,8 +115,11 @@
         </label>
         <label class="lg-field grow">
           <span class="lg-lbl">City</span>
-          <input class="lg-input" type="text" autocomplete="address-level2" placeholder="Chennai"
-                 [ngModel]="city()" (ngModelChange)="city.set($event)" name="city" />
+          <div class="lg-inwrap">
+            <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <input class="lg-input has-ico" type="text" autocomplete="address-level2" placeholder="Chennai"
+                   [ngModel]="city()" (ngModelChange)="city.set($event)" name="city" />
+          </div>
         </label>
       </div>
       <p class="lg-err" *ngIf="error()">{{ error() }}</p>
@@ -136,6 +130,7 @@
         <span *ngIf="!busy()">Enter Digivilla</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
+      <p class="lg-fine">🔒 Your details are private and never shared.</p>
     </footer>
   </form>
 

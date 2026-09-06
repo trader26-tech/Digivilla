@@ -121,25 +121,48 @@
   font-size: 1.05rem; letter-spacing: -0.3px; color: var(--ink);
 }
 
-/* the "what you're signing up for" list, sitting above the phone field */
-.lg-why {
-  list-style: none; margin: 0 0 0.35rem; padding: 0;
-  display: flex; flex-direction: column; gap: 0.85rem;
+/* ============ WELCOME HERO (step 1) ============ */
+.lg-hero {
+  flex: 1; display: flex; flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 2.2rem) 1.5rem calc(1.8rem + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  animation: rise 0.5s cubic-bezier(0.22,1,0.36,1) 0.08s both;
 }
-.lg-why li {
-  display: flex; align-items: flex-start; gap: 0.7rem;
-  font-size: 0.9rem; line-height: 1.42; color: var(--muted);
-  b { color: var(--ink); font-weight: 800; }
+/* the one message, vertically centered so it dominates the screen */
+.lg-hero-mid { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 1.5rem 0; }
+.lg-hero-title {
+  margin: 0; font-family: var(--font-display);
+  font-size: clamp(2.3rem, 9vw, 3.1rem); font-weight: 850;
+  letter-spacing: -1.5px; line-height: 1.04; color: var(--ink);
 }
-.lg-why-ico {
-  flex: none; display: grid; place-items: center; width: 32px; height: 32px; margin-top: 1px;
-  border-radius: 10px; color: var(--brass);
-  background: color-mix(in srgb, var(--brass) 12%, var(--paper));
-  border: 1.5px solid color-mix(in srgb, var(--brass) 22%, transparent);
+.lg-hero-sub {
+  margin: 1rem 0 0; max-width: 22rem;
+  font-size: 1.05rem; line-height: 1.55; color: var(--muted);
+}
+.lg-hero-action { flex: none; display: flex; flex-direction: column; gap: 0.85rem; }
+
+/* ============ DETAILS step polish ============ */
+/* step indicator (phone → code → details) */
+.lg-steps { display: flex; gap: 0.4rem; margin-bottom: 1.15rem; }
+.lg-step {
+  height: 5px; flex: 1; border-radius: 999px; background: var(--survey);
+  transition: background 0.3s;
+}
+.lg-step.done { background: color-mix(in srgb, var(--positive) 55%, var(--survey)); }
+.lg-step.on { background: linear-gradient(90deg, #2E6B4F, var(--brass)); }
+.lg-eyebrow {
+  display: inline-block; font-size: 0.72rem; font-weight: 850; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--brass); margin-bottom: 0.4rem;
 }
 
-/* the phone field no longer floats mid-screen — keep it snug after the pitch */
-.lg-mid { justify-content: flex-start; gap: 1.5rem; }
+/* input with a leading icon */
+.lg-inwrap { position: relative; display: flex; align-items: center; }
+.lg-ico {
+  position: absolute; left: 0.95rem; color: color-mix(in srgb, var(--muted) 75%, var(--paper));
+  pointer-events: none;
+}
+.lg-inwrap:focus-within .lg-ico { color: var(--brass); }
+.lg-input.has-ico { padding-left: 2.85rem; }
 
 #recaptcha-container { position: fixed; bottom: 0; left: 0; }
 
