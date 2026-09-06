@@ -965,7 +965,14 @@
   display: block; margin-top: 0.4rem;
   font-size: 0.76rem; color: var(--muted); text-align: center;
   font-variant-numeric: tabular-nums;
+  b { color: var(--brass); font-weight: 800; }
 }
+.pop-status {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 999px;
+  margin-bottom: 0.7rem;
+}
+.pop-status.build { color: var(--brass); background: color-mix(in srgb, var(--brass) 14%, transparent); }
 .pop-bar-fill {
   display: block; height: 100%;
   border-radius: 999px;

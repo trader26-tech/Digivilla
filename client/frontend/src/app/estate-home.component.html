@@ -291,23 +291,26 @@
         </div>
       </div>
 
-      <!-- ===== BUILDING (under construction): days left to complete · the
-           rent it will pay once built · a clear progress bar. ===== -->
+      <!-- ===== BUILDING (under construction): the investment so far — invested,
+           SIP, how much left — with a clear progress bar. ===== -->
       <ng-container *ngIf="c.tile?.type === 'building'">
+        <span class="pop-status build">🏗️ Under construction</span>
         <div class="pop-stats">
           <div class="pop-stat">
-            <span class="ps-k">Completes in</span>
-            <b class="ps-v">{{ monthsLeft(c.tile!) }} <span class="ps-yr">months</span></b>
+            <span class="ps-k">Invested so far</span>
+            <b class="ps-v">{{ compact(investedSoFar(c.tile!)) }}</b>
           </div>
           <div class="pop-stat">
-            <span class="ps-k">Rent once built</span>
-            <b class="ps-v rent">{{ compact(futureRent(c.tile!)) }}<span class="ps-yr">/mo</span></b>
+            <span class="ps-k">Monthly SIP</span>
+            <b class="ps-v">{{ compact(c.tile!.sipMonthly) }}<span class="ps-yr">/mo</span></b>
           </div>
         </div>
         <div class="pop-bar">
           <span class="pop-bar-fill" [style.width.%]="buildPct(c.tile!)"></span>
         </div>
-        <span class="pop-barnote">{{ buildPct(c.tile!) }}% built · ready by {{ completesOn(c.tile!) | date:'MMM y' }}</span>
+        <span class="pop-barnote">
+          {{ buildPct(c.tile!) }}% built · <b>{{ compact(remaining(c.tile!)) }} to go</b> of {{ compact(c.tile!.cost) }}
+        </span>
       </ng-container>
 
       <!-- ===== LAND: invested · CAGR growth ===== -->
@@ -322,10 +325,8 @@
         </div>
       </div>
 
-      <!-- primary action: only a finished villa has a full detail page. A
-           building/land shows everything it needs right here in the popup. -->
-      <button class="pop-cta" *ngIf="c.tile?.type === 'villa'" (click)="openFull(c.tile!)">Open details</button>
-      <button class="pop-cta" *ngIf="c.tile && c.tile.type !== 'villa'" (click)="closeDetail()">Got it</button>
+      <!-- primary action: every owned tile opens its full investment details. -->
+      <button class="pop-cta" *ngIf="c.tile" (click)="openFull(c.tile!)">View details</button>
       <button class="pop-cta build" *ngIf="!c.tile" (click)="startBuild(c)">Build here</button>
     </div>
   </div>

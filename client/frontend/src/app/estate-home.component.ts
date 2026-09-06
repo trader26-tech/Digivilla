@@ -379,6 +379,17 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   landCagrPct(): number {
     return Math.round(this.LAND_CAGR * 100);
   }
+
+  // -------- investment numbers for the detail popup --------
+  /** How much has actually gone in so far (SIP accrued for a build; full cost
+   *  once it's a finished villa/land). */
+  investedSoFar(t: Tile): number {
+    return t.type === 'building' ? t.sipAccrued : t.cost;
+  }
+  /** How much is still to go before the villa is fully owned. */
+  remaining(t: Tile): number {
+    return Math.max(0, t.cost - this.investedSoFar(t));
+  }
   /** A land plot's value today, its cost grown at the CAGR since purchase. */
   landValue(t: Tile): number {
     // Clamp the holding period to a sane 0–5 years so a bad boughtAt (0/1970,
