@@ -141,6 +141,16 @@
 }
 .lg-hero-action { flex: none; display: flex; flex-direction: column; gap: 0.85rem; }
 
+/* ============ PHONE step: title + field up top, one-liner below ============ */
+/* don't grow to push the button to the bottom — keep it near the top */
+.lg-mid.lg-mid-tight { flex: none; padding-top: 1.6rem; gap: 1rem; }
+/* the single punchy pitch line, right under the phone/CTA */
+.lg-pitch {
+  margin: 0.2rem 0 0; text-align: center;
+  font-size: 1rem; line-height: 1.5; font-weight: 650; color: var(--ink);
+  max-width: 24rem; align-self: center;
+}
+
 /* ============ DETAILS step polish ============ */
 /* step indicator (phone → code → details) */
 .lg-steps { display: flex; gap: 0.4rem; margin-bottom: 1.15rem; }

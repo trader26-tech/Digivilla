@@ -1,6 +1,6 @@
 <main class="login">
-  <!-- STEP 1 · welcome hero + phone entry (the first screen a new user sees) -->
-  <form *ngIf="step() === 'phone'" class="lg-hero" (ngSubmit)="sendCode()" novalidate>
+  <!-- STEP 1 · phone entry (the first screen a new user sees) -->
+  <form *ngIf="step() === 'phone'" class="lg-flow" (ngSubmit)="sendCode()" novalidate>
     <!-- brand -->
     <div class="lg-brand">
       <span class="lg-logo" aria-hidden="true">
@@ -13,19 +13,13 @@
       <span class="lg-brandname">Digivilla</span>
     </div>
 
-    <!-- the one message: what Digivilla is -->
-    <div class="lg-hero-mid">
-      <h1 class="lg-hero-title">Own property,<br>a little each month.</h1>
-      <p class="lg-hero-sub">
-        Build a real-estate-backed portfolio — villas &amp; land — starting
-        from a small monthly amount, guided by an expert.
-      </p>
-    </div>
+    <!-- title + phone entry, near the top -->
+    <header class="lg-top">
+      <h1 class="lg-title">Enter your phone<br>to begin</h1>
+    </header>
 
-    <!-- phone entry + action, pinned to the bottom -->
-    <div class="lg-hero-action">
+    <div class="lg-mid lg-mid-tight">
       <label class="lg-field">
-        <span class="lg-lbl">Enter your phone to begin</span>
         <div class="lg-phone">
           <span class="lg-cc">🇮🇳 +91</span>
           <input class="lg-input bare" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10"
@@ -34,12 +28,15 @@
         </div>
       </label>
 
-      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
-
       <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
         <span *ngIf="!busy()">Continue</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
+
+      <!-- the one punchy line, right below the phone -->
+      <p class="lg-pitch">Own property, a little each month — the easiest way to start investing.</p>
+
+      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
       <p class="lg-fine">
         We’ll text a 6-digit code to verify it’s you.
         <span *ngIf="!firebaseReady" class="lg-dev">Dev mode — use 123456.</span>
