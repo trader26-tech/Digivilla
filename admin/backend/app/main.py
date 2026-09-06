@@ -132,12 +132,15 @@ def free_days(days: int = 14, limit: int = 4) -> dict:
     slots — computed in ONE request (the client's book sheet used to make ~14
     calls). `days` is how far ahead to scan; `limit` caps the days returned."""
     from datetime import date as _date, timedelta
-    taken = set(bookings_svc.confirmed_slots())   # fetched once, reused
+    # fetch the shared inputs ONCE (not per day) — this is the speed fix
+    taken = set(bookings_svc.confirmed_slots())
+    cfg = availability_svc.get_config()
+    blocked = set(availability_svc.blocked_slots())
     out: list[dict] = []
     d = _date.today() + timedelta(days=1)          # start tomorrow
     for _ in range(max(1, min(days, 31))):
         iso = d.isoformat()
-        slots = availability_svc.free_slots_for(iso, taken)
+        slots = availability_svc.free_slots_for(iso, taken, cfg=cfg, blocked=blocked)
         if slots:
             out.append({"date": iso, "slots": slots})
             if len(out) >= limit:

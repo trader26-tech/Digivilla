@@ -207,23 +207,25 @@ def day_grid(days: int = 14) -> list[dict]:
     return out
 
 
-def free_slots_for(date_iso: str, taken: set[str] | None = None) -> list[dict]:
+def free_slots_for(date_iso: str, taken: set[str] | None = None,
+                   cfg: dict | None = None, blocked: set[str] | None = None) -> list[dict]:
     """The advisor's FREE 30-min slots on one date — working hours minus the
     recurring busy times, one-off blocks, and any already-taken slots. Public:
     the client's booking sheet shows exactly these. Returns [] on a non-working
-    day. `taken` (confirmed bookings) is passed in so we don't import bookings
-    here (avoids a cycle)."""
+    day. `taken`, `cfg`, and `blocked` can be passed in so a caller scanning many
+    days fetches them ONCE (avoids a Supabase round-trip per day)."""
     from datetime import date as _date
     try:
         y, m, d = (int(x) for x in date_iso.split("-"))
         dt = _date(y, m, d)
     except Exception:
         return []
-    cfg = get_config()
+    cfg = cfg if cfg is not None else get_config()
     weekdays = set(cfg.get("weekdays", DEFAULT_CONFIG["weekdays"]))
     if dt.weekday() not in weekdays:
         return []
-    blocked = set(blocked_slots())
+    if blocked is None:
+        blocked = set(blocked_slots())
     busy_times = set(cfg.get("busy_times", []))
     taken = taken or set()
     out: list[dict] = []
