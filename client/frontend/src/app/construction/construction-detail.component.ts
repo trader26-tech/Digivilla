@@ -56,8 +56,10 @@ export class ConstructionDetailComponent implements OnInit {
   contributions = signal<LedgerRow[]>([]);
   rentLog = signal<LedgerRow[]>([]);
   funds = signal<HoldFund[]>([]);
-  showRent = signal(false);        // toggle: contributions ↔ rent payouts
+  tab = signal<'contrib' | 'rent'>('contrib');   // Contributions ↔ Rent paid
   fundsOpen = signal(false);       // "Funds inside" starts collapsed
+  currentValue = signal(0);        // combined value (NAV) of all funds today
+  invested = signal(0);            // total money put in (SIP + lump-sum)
   monthlyIncome = signal(0);
   rentPaidTotal = signal(0);       // total income/rent paid to the client so far
   nextPayment = signal<Date | null>(null);  // when the next SIP is due
@@ -70,6 +72,8 @@ export class ConstructionDetailComponent implements OnInit {
         this.contributions.set(d.contributions || []);
         this.rentLog.set(d.rent_log || []);
         this.funds.set(d.funds || []);
+        this.currentValue.set(d.current_value || d.invested || 0);
+        this.invested.set(d.invested || this.sipAccrued);
         this.monthlyIncome.set(d.monthly_income || 0);
         this.rentPaidTotal.set(d.rent_paid_total || 0);
         this.nextPayment.set(this.computeNextPayment(d));
@@ -97,6 +101,12 @@ export class ConstructionDetailComponent implements OnInit {
 
   toggleFundsInside(): void { this.fundsOpen.update((v) => !v); }
 
+  /** Rent is paid on the 1st of each month — the next upcoming payout date. */
+  nextRent(): Date {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  }
+
   plan!: VillaPlan;
 
   // build figures
@@ -117,6 +127,8 @@ export class ConstructionDetailComponent implements OnInit {
     this.plan = villaPlan(this.cost, 20);
 
     this.investedSoFar = this.sipAccrued;
+    this.invested.set(this.sipAccrued);
+    this.currentValue.set(this.sipAccrued);   // until the live NAV loads
     this.monthsTotal = this.sipMonthly > 0 ? Math.round(this.cost / this.sipMonthly) : 60;
     this.monthsDone = this.sipMonthly > 0 ? Math.round(this.sipAccrued / this.sipMonthly) : 0;
     this.monthsDone = Math.min(this.monthsDone, this.monthsTotal);

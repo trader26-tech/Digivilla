@@ -237,11 +237,15 @@ def holding_detail(owner: str, uv_id: str) -> dict | None:
         })
 
     rent_paid_total = sum(r["amount"] for r in rent_log if r.get("status") != "skipped")
+    # current value = latest mark-to-market (falls back to invested until real
+    # NAV valuation is wired). Kept separate from invested so the UI can show both.
+    current_value = m(uv.get("current_value")) or invested
     return {
         "id": uv_id,
         "villa_name": villa.get("name") or "Villa",
         "price": m(villa.get("price")),
         "invested": round(invested),
+        "current_value": round(current_value),
         "sip_monthly": m(uv.get("sip_monthly")),
         "sip_next_payment": uv.get("sip_next_payment"),   # ISO date or null
         "monthly_income": round(invested * MONTHLY_INCOME_RATE),

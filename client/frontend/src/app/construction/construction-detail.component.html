@@ -21,66 +21,81 @@
     </svg>
   </section>
 
-  <!-- 2 · headline figures: invested so far · total rent/income paid -->
+  <!-- 2 · headline figures: current value (combined NAV) · money invested -->
   <section class="value reveal" style="--i:2">
     <div class="val-cell">
-      <b class="val-big">{{ compactK(investedSoFar) }}</b>
-      <span class="val-k">Invested so far</span>
+      <b class="val-big">{{ compact(currentValue()) }}</b>
+      <span class="val-k">Current value</span>
     </div>
     <div class="val-cell right">
-      <b class="val-big green">{{ compact(rentPaidTotal()) }}</b>
-      <span class="val-k">Rent paid to you</span>
+      <b class="val-big">{{ compact(invested()) }}</b>
+      <span class="val-k">Investment</span>
     </div>
   </section>
 
-  <!-- 3 · build progress + the correct next-payment date -->
-  <section class="prog reveal" style="--i:3">
-    <div class="prog-head">
-      <span class="sec-cap">Build progress</span>
-      <b class="prog-pct">{{ pct }}%</b>
-    </div>
-    <div class="prog-bar"><span class="prog-fill" [style.width.%]="pct"></span></div>
-    <div class="prog-meta">
-      <span>{{ compact(investedSoFar) }} of {{ compact(cost) }}</span>
-      <span *ngIf="nextPayment()">Next SIP · {{ nextPayment() | date:'d MMM' }}</span>
-      <span *ngIf="!nextPayment()">Ready by {{ completesOn | date:'MMM y' }}</span>
-    </div>
-  </section>
-
-  <!-- 5 · money ledger: contributions ⇆ rent payouts (toggle) -->
-  <section class="ledger-sec reveal" style="--i:5">
-    <div class="ledger-toggle">
-      <button [class.on]="!showRent()" (click)="showRent.set(false)">Contributions</button>
-      <button [class.on]="showRent()" (click)="showRent.set(true)">Rent paid</button>
+  <!-- 3 · one clean toggle: Contributions ↔ Rent paid -->
+  <section class="tabs reveal" style="--i:3">
+    <div class="tabseg">
+      <button [class.on]="tab() === 'contrib'" (click)="tab.set('contrib')">Contributions</button>
+      <button [class.on]="tab() === 'rent'" (click)="tab.set('rent')">Rent paid</button>
     </div>
 
-    <!-- contributions: every SIP / lump-sum, by date -->
-    <ul class="ledger" *ngIf="!showRent()">
-      <li class="led-row" *ngFor="let r of contributions()">
-        <span class="led-ico" [attr.data-kind]="r.kind">{{ r.kind === 'sip' ? '🔁' : '💰' }}</span>
-        <span class="led-main">
-          <b class="led-title">{{ r.kind === 'sip' ? 'SIP instalment' : 'Lump-sum' }}</b>
-          <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
-        </span>
-        <b class="led-amt">+{{ compact(r.amount) }}</b>
-      </li>
-      <li class="led-empty" *ngIf="!contributions().length">No contributions yet.</li>
-    </ul>
+    <!-- ── CONTRIBUTIONS: build progress + every SIP / lump-sum ── -->
+    <div class="pane" *ngIf="tab() === 'contrib'">
+      <!-- build progress lives inside contributions -->
+      <div class="prog">
+        <div class="prog-head">
+          <span class="sec-cap">Build progress</span>
+          <b class="prog-pct">{{ pct }}%</b>
+        </div>
+        <div class="prog-bar"><span class="prog-fill" [style.width.%]="pct"></span></div>
+        <div class="prog-meta">
+          <span>{{ compact(invested()) }} of {{ compact(cost) }}</span>
+          <span *ngIf="nextPayment()">Next SIP · {{ nextPayment() | date:'d MMM' }}</span>
+          <span *ngIf="!nextPayment()">Ready by {{ completesOn | date:'MMM y' }}</span>
+        </div>
+      </div>
 
-    <!-- rent paid to the client, by date -->
-    <ul class="ledger" *ngIf="showRent()">
-      <li class="led-row" *ngFor="let r of rentLog()">
-        <span class="led-ico" data-kind="rent">🪙</span>
-        <span class="led-main">
-          <b class="led-title">Rent payout</b>
-          <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
-        </span>
-        <b class="led-amt pos">+{{ compact(r.amount) }}</b>
-      </li>
-      <li class="led-empty" *ngIf="!rentLog().length">
-        No rent yet — income of {{ compact(monthlyIncome()) }}/mo starts flowing as it builds.
-      </li>
-    </ul>
+      <ul class="ledger">
+        <li class="led-row" *ngFor="let r of contributions()">
+          <span class="led-ico" [attr.data-kind]="r.kind">{{ r.kind === 'sip' ? '🔁' : '💰' }}</span>
+          <span class="led-main">
+            <b class="led-title">{{ r.kind === 'sip' ? 'SIP instalment' : 'Lump-sum' }}</b>
+            <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
+          </span>
+          <b class="led-amt">+{{ compact(r.amount) }}</b>
+        </li>
+        <li class="led-empty" *ngIf="!contributions().length">No contributions yet.</li>
+      </ul>
+    </div>
+
+    <!-- ── RENT PAID: total · next payout · history ── -->
+    <div class="pane" *ngIf="tab() === 'rent'">
+      <div class="rent-sum">
+        <div class="rs-cell">
+          <b class="rs-big">{{ compact(rentPaidTotal()) }}</b>
+          <span class="rs-k">Total rent paid</span>
+        </div>
+        <div class="rs-cell right">
+          <b class="rs-nxt">{{ nextRent() | date:'d MMM' }}</b>
+          <span class="rs-k">Next payment · {{ compact(monthlyIncome()) }}</span>
+        </div>
+      </div>
+
+      <ul class="ledger">
+        <li class="led-row" *ngFor="let r of rentLog()">
+          <span class="led-ico" data-kind="rent">🪙</span>
+          <span class="led-main">
+            <b class="led-title">Rent payout</b>
+            <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
+          </span>
+          <b class="led-amt pos">+{{ compact(r.amount) }}</b>
+        </li>
+        <li class="led-empty" *ngIf="!rentLog().length">
+          No rent received yet — your first payout is on {{ nextRent() | date:'d MMM' }}.
+        </li>
+      </ul>
+    </div>
   </section>
 
   <!-- 6 · why this beats a real villa (swipeable) -->
