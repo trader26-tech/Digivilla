@@ -278,14 +278,17 @@
   padding: 0.55rem; border-radius: 9px; transition: background 0.15s, color 0.15s;
 }
 .ledger-toggle button.on { background: #fff; color: var(--ink); box-shadow: 0 2px 6px -3px rgba(22,48,43,0.3); }
-.ledger { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.ledger { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* no box — clean rows separated by a hairline, so it doesn't fight the perk card */
 .led-row {
   display: flex; align-items: center; gap: 0.7rem;
-  padding: 0.7rem 0.85rem; border: 1px solid var(--survey); border-radius: 13px; background: #fff;
+  padding: 0.7rem 0.15rem;
+  border-bottom: 1px solid var(--survey);
 }
+.led-row:last-child { border-bottom: none; }
 .led-ico {
-  flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
-  font-size: 1rem; background: var(--paper); border: 1px solid var(--survey);
+  flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  font-size: 0.95rem; background: var(--paper);
 }
 .led-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .led-title { font-size: 0.92rem; font-weight: 800; color: var(--ink); }
