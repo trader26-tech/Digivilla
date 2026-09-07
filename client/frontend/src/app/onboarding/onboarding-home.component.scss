@@ -50,6 +50,15 @@
 }
 @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
 
+/* embedded in the home shell: no outer chrome, flow naturally */
+.ob.embedded, .bk.embedded {
+  max-width: none; padding: 0; min-height: 0; animation: none;
+}
+/* embedded: the shell shows the brand + a stage rail, so hide the duplicate
+   brand chip (the booked-home keeps its status pill — the rail doesn't show
+   requested/confirmed). */
+.ob.embedded .ob-brand { display: none; }
+
 .ob-head { margin-bottom: 1.6rem; }
 .ob-brand {
   display: inline-flex; align-items: center; gap: 0.4rem;

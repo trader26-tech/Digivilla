@@ -7,29 +7,17 @@
 <app-login *ngIf="!intro && !auth.signedIn()" (done)="onLoggedIn()"></app-login>
 
 <ng-container *ngIf="!intro && auth.signedIn()">
-<!-- ONBOARDING: no villa yet → advantages + book-your-setup-call. -->
-<app-onboarding-home
-  *ngIf="holdingCount === 0 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+<!-- HOME: one evolving surface — Call → SIP build-up → Villa — chosen by state.
+     (For 2+ holdings the home swaps its body to the full estate map.) -->
+<app-home
+  *ngIf="detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
   [justVerified]="justVerified"
-  (refresh)="onEstateRefresh()"
-></app-onboarding-home>
-
-<!-- SINGLE VILLA: exactly one holding → the one house, filling up. -->
-<app-single-estate
-  *ngIf="holdingCount === 1 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
   (openTile)="openTile($event)"
   (account)="openAccount()"
-></app-single-estate>
-
-<!-- HOME: the isometric estate map — only once there are 2+ holdings. -->
-<app-estate-home
-  *ngIf="holdingCount >= 2 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
-  class="has-nav"
-  (openTile)="openTile($event)"
   (explore)="goExplore()"
   (build)="openBuild()"
-  (account)="openAccount()"
-></app-estate-home>
+  (refresh)="onEstateRefresh()"
+></app-home>
 
 <!-- EXPLORE tab: browse the villa / land options. -->
 <app-build-picker

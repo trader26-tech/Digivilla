@@ -12,7 +12,7 @@
 </div>
 
 <!-- ============ 2 · advantages + book-your-setup-call ============ -->
-<main class="ob" *ngIf="phase() === 'welcome'">
+<main class="ob" [class.embedded]="embedded" *ngIf="phase() === 'welcome'">
   <header class="ob-head">
     <span class="ob-brand">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -53,7 +53,7 @@
 </main>
 
 <!-- ============ 3 · BOOKED HOME — call booked, villa on its way ============ -->
-<main class="bk" *ngIf="phase() === 'booked'">
+<main class="bk" [class.embedded]="embedded" *ngIf="phase() === 'booked'">
   <header class="bk-top">
     <span class="bk-pill" [class.confirmed]="isConfirmed">
       <span class="bk-dot"></span>{{ isConfirmed ? 'Call confirmed' : 'Call booked' }}

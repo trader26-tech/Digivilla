@@ -9,13 +9,11 @@ import { ConstructionDetailComponent } from './construction/construction-detail.
 import { EstateDetailComponent } from './estate-detail.component';
 import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
-import { EstateHomeComponent } from './estate-home.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
+import { HomeComponent } from './home/home.component';
 import { LandDetailComponent } from './land/land-detail.component';
-import { OnboardingHomeComponent } from './onboarding/onboarding-home.component';
 import { PropertyKey } from './property-package.data';
-import { SingleEstateComponent } from './single-estate/single-estate.component';
 import { StorefrontComponent } from './storefront.component';
 import { EstateService, Tile } from './estate.service';
 import { VillaDetailComponent } from './villa/villa-detail.component';
@@ -33,9 +31,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
   imports: [
     CommonModule,
     IntroComponent,
-    EstateHomeComponent,
-    OnboardingHomeComponent,
-    SingleEstateComponent,
+    HomeComponent,
     StorefrontComponent,
     LandStorefrontComponent,
     LandDetailComponent,

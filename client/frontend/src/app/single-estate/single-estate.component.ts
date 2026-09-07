@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output, computed, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, inject } from '@angular/core';
 
 import { EstateService, Tile } from '../estate.service';
 import { VillaArtComponent } from '../shared/villa-art.component';
@@ -24,6 +24,9 @@ import { compact } from '../shared/format.util';
   styleUrl: './single-estate.component.scss',
 })
 export class SingleEstateComponent {
+  /** When embedded in the unified home shell, hide the local top bar (the shell
+   *  provides the greeting + avatar) and drop the outer page padding. */
+  @Input() embedded = false;
   /** Open the full detail page for the villa. */
   @Output() openTile = new EventEmitter<Tile>();
   /** Corner avatar → account page. */

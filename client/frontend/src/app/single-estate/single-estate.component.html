@@ -1,6 +1,6 @@
-<main class="se" *ngIf="tile() as t">
-  <!-- top bar: greeting + avatar -->
-  <header class="se-top">
+<main class="se" [class.embedded]="embedded" *ngIf="tile() as t">
+  <!-- top bar: greeting + avatar (hidden when embedded — the home shell owns it) -->
+  <header class="se-top" *ngIf="!embedded">
     <div class="se-greet">
       <span class="se-hi">{{ greeting }}</span>
       <b class="se-name">{{ profile.name || 'Welcome' }}</b>

@@ -28,6 +28,8 @@ import { Booking, BookingService } from '../booking.service';
 export class OnboardingHomeComponent implements OnInit {
   /** Show the big verified-tick celebration first (set right after OTP). */
   @Input() justVerified = false;
+  /** Embedded in the unified home shell → drop the outer page padding. */
+  @Input() embedded = false;
   /** Fires when we want the shell to re-sync the estate (advisor may have
    *  assigned a villa). Lets the home refresh without a manual reload. */
   @Output() refresh = new EventEmitter<void>();
