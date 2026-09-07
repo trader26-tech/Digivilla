@@ -1,21 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 
 import { AuthService } from '../auth/auth.service';
-import { BookingService } from '../booking.service';
+import { Booking, BookingService } from '../booking.service';
 
 /**
  * The first thing a freshly-verified client sees, before they own any villa.
  *
  * Flow:
  *   1. A celebratory "verified" tick animation (only when we just came from OTP).
- *   2. The advantages of Digivilla at the top.
- *   3. A single, clear call to action: book a setup call with the fund manager.
- *      That call IS the account setup — the advisor asks the risk questions and
- *      then assigns the first villa, which is when the client's estate appears.
+ *   2. The advantages of Digivilla + a single CTA: book a setup call.
+ *   3. Once a call is booked, this becomes the home screen: a "coming soon"
+ *      villa, the booked call's date/time + status, and what happens on the
+ *      call. It stays until the advisor assigns the first villa (which flips the
+ *      whole app to the single-house view).
  *
- * The slot picker mirrors the withdraw flow (real free days from the advisor's
- * calendar, one tap to pick, one tap to confirm — a real booking).
+ * The setup call is a REAL booking in the shared DB; the booked state is read
+ * back from the DB (by phone) so it persists across reopens.
  */
 @Component({
   selector: 'app-onboarding-home',
@@ -27,12 +28,26 @@ import { BookingService } from '../booking.service';
 export class OnboardingHomeComponent implements OnInit {
   /** Show the big verified-tick celebration first (set right after OTP). */
   @Input() justVerified = false;
+  /** Fires when we want the shell to re-sync the estate (advisor may have
+   *  assigned a villa). Lets the home refresh without a manual reload. */
+  @Output() refresh = new EventEmitter<void>();
 
   private auth = inject(AuthService);
   private bookingSvc = inject(BookingService);
 
-  /** 'tick' plays the celebration; 'welcome' is the advantages + CTA screen. */
-  phase = signal<'tick' | 'welcome'>('welcome');
+  /** 'tick' plays the celebration; 'welcome' is the advantages + CTA screen;
+   *  'booked' is the home shown once the setup call is booked. */
+  phase = signal<'tick' | 'welcome' | 'booked'>('welcome');
+
+  /** The upcoming setup call, read from the DB (or set right after booking). */
+  upcoming = signal<Booking | null>(null);
+
+  /** What the advisor does on the call — shown on the booked home. */
+  STEPS = [
+    { n: 1, title: 'Understand your goals', sub: 'a few quick risk & timeline questions' },
+    { n: 2, title: 'Assign your first villa', sub: 'the right basket for you, set up live' },
+    { n: 3, title: 'Start your first payment', sub: 'your villa begins building right away' },
+  ];
 
   ADVANTAGES = [
     { ico: 'M4 13V4h9l7 7-9 9zM8 8h.01', title: 'Own from ₹10,000', sub: 'a fraction of a whole villa, not ₹1 Cr upfront' },
@@ -42,14 +57,65 @@ export class OnboardingHomeComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    // If the user already booked a setup call (this or an earlier session),
+    // land straight on the booked home. Otherwise show advantages + CTA.
+    this.loadUpcoming(true);
     if (this.justVerified) {
       this.phase.set('tick');
-      // let the tick play, then reveal the welcome screen
-      setTimeout(() => this.phase.set('welcome'), 1900);
+      // let the tick play, then reveal the right screen (booked or welcome)
+      setTimeout(() => { if (this.phase() === 'tick') this.settleAfterTick(); }, 1900);
     }
   }
 
-  skipTick(): void { this.phase.set('welcome'); }
+  skipTick(): void { this.settleAfterTick(); }
+  private settleAfterTick(): void {
+    this.phase.set(this.upcoming() ? 'booked' : 'welcome');
+  }
+
+  /** Load this client's most recent upcoming consultation from the DB. */
+  private loadUpcoming(settlePhase = false): void {
+    const phone = this.auth.user()?.phone || '';
+    if (!phone) return;
+    this.bookingSvc.mine(phone).subscribe({
+      next: (list) => {
+        const now = Date.now();
+        const next = (list || [])
+          .filter((b) => b.kind === 'consultation' && b.status !== 'declined' && b.slot)
+          .filter((b) => new Date(b.slot!).getTime() > now - 3 * 3600_000)  // keep recent/future
+          .sort((a, b) => new Date(a.slot!).getTime() - new Date(b.slot!).getTime())[0] || null;
+        this.upcoming.set(next);
+        // only auto-switch to 'booked' outside the tick; the tick settles itself
+        if (settlePhase && !this.justVerified && next) this.phase.set('booked');
+      },
+      error: () => {},
+    });
+  }
+
+  /** Pretty date/time for the booked card, from the slot ISO. */
+  get callWhen(): { day: string; time: string } | null {
+    const iso = this.upcoming()?.slot;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    const wk = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const h = d.getHours(), m = d.getMinutes();
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return {
+      day: `${wk[d.getDay()]}, ${d.getDate()} ${mo[d.getMonth()]}`,
+      time: m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`,
+    };
+  }
+
+  /** True once the advisor has confirmed the call (vs still 'requested'). */
+  get isConfirmed(): boolean { return this.upcoming()?.status === 'confirmed'; }
+
+  /** Re-check the DB (advisor may have confirmed, or assigned a villa). */
+  recheck(): void {
+    this.loadUpcoming();
+    this.refresh.emit();
+  }
 
   // --- book the setup call: one-screen slot picker → real request ----------
   sheetOpen = signal(false);
@@ -59,12 +125,8 @@ export class OnboardingHomeComponent implements OnInit {
   slotLabel = signal('');
   submitting = signal(false);
   error = signal('');
-  booked = signal(false);
-  justBooked = signal(false);
 
   openBooking(): void {
-    this.booked.set(false);
-    this.justBooked.set(false);
     this.slotIso.set(null); this.slotLabel.set(''); this.error.set('');
     this.sheetOpen.set(true);
     if (navigator.vibrate) navigator.vibrate(4);
@@ -122,12 +184,15 @@ export class OnboardingHomeComponent implements OnInit {
       slot: this.slotIso()!,
       note: 'Account setup · risk profile & first villa',
     }).subscribe({
-      next: () => {
+      next: (b) => {
         this.submitting.set(false);
-        this.booked.set(true);
-        this.justBooked.set(true);
+        this.upcoming.set(b);            // show it immediately on the booked home
         if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
-        setTimeout(() => this.justBooked.set(false), 1600);
+        // close the sheet and land on the booked home screen
+        this.sheetOpen.set(false);
+        this.phase.set('booked');
+        // reconcile with the DB (canonical record) shortly after
+        setTimeout(() => this.loadUpcoming(), 400);
       },
       error: () => { this.submitting.set(false); this.error.set('Could not book that slot. Please try again.'); },
     });

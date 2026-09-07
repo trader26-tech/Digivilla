@@ -11,6 +11,7 @@
 <app-onboarding-home
   *ngIf="holdingCount === 0 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
   [justVerified]="justVerified"
+  (refresh)="onEstateRefresh()"
 ></app-onboarding-home>
 
 <!-- SINGLE VILLA: exactly one holding → the one house, filling up. -->

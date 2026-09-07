@@ -49,6 +49,12 @@ export class BookingService {
     return this.http.get<{ slots: string[] }>(`${this.base}/bookings/taken`);
   }
 
+  /** This client's own bookings (by phone), newest first — used to show the
+   *  setup call they booked on the home screen. */
+  mine(phone: string): Observable<Booking[]> {
+    return this.http.get<Booking[]>(`${this.base}/bookings/mine?phone=${encodeURIComponent(phone)}`);
+  }
+
   /** The advisor's FREE 30-min slots on a date (YYYY-MM-DD) — only times the
    *  advisor is actually open. Used by the book-now sheet. */
   freeSlots(date: string): Observable<{ date: string; slots: { time: string; slot: string }[] }> {

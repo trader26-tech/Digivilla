@@ -52,49 +52,96 @@
   </div>
 </main>
 
+<!-- ============ 3 · BOOKED HOME — call booked, villa on its way ============ -->
+<main class="bk" *ngIf="phase() === 'booked'">
+  <header class="bk-top">
+    <span class="bk-pill" [class.confirmed]="isConfirmed">
+      <span class="bk-dot"></span>{{ isConfirmed ? 'Call confirmed' : 'Call booked' }}
+    </span>
+    <button class="bk-refresh" (click)="recheck()" aria-label="Refresh">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M20 11a8 8 0 1 0-.5 3M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <!-- the coming-soon villa -->
+  <section class="bk-stage">
+    <div class="bk-ground" aria-hidden="true"></div>
+    <div class="bk-house" aria-hidden="true">
+      <svg viewBox="20 30 200 152" preserveAspectRatio="xMidYMid meet">
+        <g transform="translate(120,88)">
+          <polygon points="93.6,4 0,58 0,79.6 93.6,25.6" fill="#c9beac"/>
+          <polygon points="0,58 -93.6,4 -93.6,25.6 0,79.6" fill="#bcae98"/>
+          <polygon points="0,-54 93.6,0 0,54 -93.6,0" fill="#e7dfce"/>
+          <polygon points="0,-54 93.6,0 0,54 -93.6,0" fill="none" stroke="#cabfa9" stroke-width="2" stroke-dasharray="8 7"/>
+        </g>
+        <g transform="translate(120,110) scale(0.30) translate(-640,-430)" opacity="0.5">
+          <polygon points="735.5,367.9 640.0,423.1 640.0,476.0 735.5,420.8" fill="#efe6d7"/>
+          <polygon points="640.0,423.1 536.5,363.3 536.5,416.2 640.0,476.0" fill="#d3c5ab"/>
+          <polygon points="632.0,308.1 735.5,367.9 640.0,423.1 536.5,363.3" fill="#b9ab90"/>
+        </g>
+        <g transform="translate(120,110) scale(0.30) translate(-640,-430)">
+          <polyline points="632.0,301.2 763.4,377.1 640.0,448.4 508.7,372.5 632.0,301.2" fill="none" stroke="#a67c2e" stroke-width="6" stroke-linejoin="round" stroke-dasharray="14 12" opacity="0.8"/>
+          <polyline points="632.0,259.8 763.4,335.7 640.0,407.0 508.7,331.1 632.0,259.8" fill="none" stroke="#a67c2e" stroke-width="6" stroke-linejoin="round" stroke-dasharray="14 12" opacity="0.55"/>
+        </g>
+      </svg>
+    </div>
+    <b class="bk-house-title">Your villa is on its way</b>
+    <p class="bk-house-sub">Your fund manager will assign it on the call.</p>
+  </section>
+
+  <!-- the booked call card -->
+  <section class="bk-card" *ngIf="callWhen as w">
+    <div class="bk-card-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+    <div class="bk-card-txt">
+      <span class="bk-card-k">Setup call · {{ isConfirmed ? 'confirmed' : 'requested' }}</span>
+      <b class="bk-card-day">{{ w.day }}</b>
+      <span class="bk-card-time">{{ w.time }} · your fund manager will call you</span>
+    </div>
+  </section>
+  <p class="bk-note" *ngIf="!isConfirmed">We’ll confirm your slot shortly — you’ll get a call at the time above.</p>
+
+  <!-- what happens on the call -->
+  <section class="bk-steps">
+    <span class="bk-steps-cap">What happens on the call</span>
+    <div class="bk-step" *ngFor="let s of STEPS">
+      <span class="bk-step-n">{{ s.n }}</span>
+      <span class="bk-step-txt"><b>{{ s.title }}</b><span>{{ s.sub }}</span></span>
+    </div>
+  </section>
+
+  <button class="bk-change" (click)="openBooking()">Change time</button>
+</main>
+
 <!-- ============ setup-call slot picker (real booking) ============ -->
 <div class="sheet-backdrop" *ngIf="sheetOpen()" (click)="closeBooking()"></div>
 <aside class="sheet" *ngIf="sheetOpen()" role="dialog" aria-modal="true" aria-label="Book your setup call">
   <span class="sheet-grab" aria-hidden="true"></span>
 
-  <ng-container *ngIf="!booked()">
-    <div class="sheet-head">
-      <span class="sheet-title">Book your setup call</span>
-      <button class="sheet-close" (click)="closeBooking()" aria-label="Close">✕</button>
-    </div>
-    <p class="sh-lead">Pick a time that works — your fund manager will call to set up your account and assign your first villa.</p>
+  <div class="sheet-head">
+    <span class="sheet-title">Book your setup call</span>
+    <button class="sheet-close" (click)="closeBooking()" aria-label="Close">✕</button>
+  </div>
+  <p class="sh-lead">Pick a time that works — your fund manager will call to set up your account and assign your first villa.</p>
 
-    <p class="sh-empty" *ngIf="daysLoading()">Finding open slots…</p>
-    <p class="sh-empty" *ngIf="!daysLoading() && !days().length">No open slots right now. Please try again later.</p>
+  <p class="sh-empty" *ngIf="daysLoading()">Finding open slots…</p>
+  <p class="sh-empty" *ngIf="!daysLoading() && !days().length">No open slots right now. Please try again later.</p>
 
-    <div class="sh-days" *ngIf="!daysLoading()">
-      <div class="sh-day" *ngFor="let day of days()">
-        <span class="sh-day-lbl">{{ day.label }}</span>
-        <div class="sh-slots">
-          <button class="sh-slot" *ngFor="let s of day.slots" [class.on]="isSlot(s)"
-            (click)="pick(day.label, s)">{{ s.label }}</button>
-        </div>
+  <div class="sh-days" *ngIf="!daysLoading()">
+    <div class="sh-day" *ngFor="let day of days()">
+      <span class="sh-day-lbl">{{ day.label }}</span>
+      <div class="sh-slots">
+        <button class="sh-slot" *ngFor="let s of day.slots" [class.on]="isSlot(s)"
+          (click)="pick(day.label, s)">{{ s.label }}</button>
       </div>
     </div>
-
-    <ng-container *ngIf="slotIso()">
-      <p class="sh-err" *ngIf="error()">{{ error() }}</p>
-      <button class="sh-confirm" [disabled]="submitting()" (click)="confirm()">
-        {{ submitting() ? 'Booking…' : 'Confirm · ' + slotLabel() }}
-      </button>
-    </ng-container>
-  </ng-container>
-
-  <div class="sh-done" *ngIf="booked()">
-    <div class="sh-tick" [class.pop]="justBooked()" aria-hidden="true">
-      <svg viewBox="0 0 52 52"><circle class="sh-tick-ring" cx="26" cy="26" r="24"/><path class="sh-tick-mark" d="M15 27l7 7 15-15"/></svg>
-    </div>
-    <b class="sh-done-title">Call booked</b>
-    <p class="sh-done-sub">
-      Your fund manager will call on<br>
-      <b>{{ slotLabel() }}</b><br>
-      to set up your account.
-    </p>
-    <button class="sh-done-btn" (click)="closeBooking()">Done</button>
   </div>
+
+  <ng-container *ngIf="slotIso()">
+    <p class="sh-err" *ngIf="error()">{{ error() }}</p>
+    <button class="sh-confirm" [disabled]="submitting()" (click)="confirm()">
+      {{ submitting() ? 'Booking…' : 'Confirm · ' + slotLabel() }}
+    </button>
+  </ng-container>
 </aside>

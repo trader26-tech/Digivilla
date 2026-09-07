@@ -109,6 +109,14 @@ def create_booking(payload: BookingCreate) -> Booking:
     return bookings_svc.create_booking(payload)
 
 
+@app.get("/bookings/mine", response_model=list[Booking])
+def my_bookings(phone: str) -> list[Booking]:
+    """Public: a client's own bookings, looked up by their phone number, so the
+    client app can show the setup call they booked (date/time + status). Matches
+    on the last 10 digits."""
+    return bookings_svc.bookings_for_phone(phone)
+
+
 @app.get("/bookings/taken")
 def taken_slots() -> dict:
     """Public: ISO slots unavailable to clients — confirmed bookings PLUS the

@@ -81,6 +81,10 @@ export class AppComponent {
    *  0 → onboarding (book setup call), 1 → single house, 2+ → the map grid. */
   get holdingCount(): number { return this.est.tiles().length; }
 
+  /** From the onboarding "refresh" — the advisor may have assigned a villa, so
+   *  re-pull the estate; if a villa now exists, the view flips automatically. */
+  onEstateRefresh(): void { this.est.syncFromServer(); }
+
   /** Mirror the verified user's name + phone into the estate profile so the
    *  account page and greeting show the real, logged-in details. */
   private syncProfileFromAuth(): void {

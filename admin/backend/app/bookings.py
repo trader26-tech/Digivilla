@@ -113,6 +113,19 @@ def list_bookings() -> list[Booking]:
     return [Booking(**_normalize(r)) for r in rows]
 
 
+def bookings_for_phone(phone: str) -> list[Booking]:
+    """Every booking made by one phone number, newest first — so a client can
+    see their own requests (e.g. the setup call they just booked). Matches on
+    the last 10 digits so +91/spacing differences don't hide a match."""
+    digits = "".join(ch for ch in (phone or "") if ch.isdigit())[-10:]
+    if not digits:
+        return []
+    out = [b for b in list_bookings()
+           if "".join(ch for ch in (b.phone or "") if ch.isdigit())[-10:] == digits]
+    out.sort(key=lambda b: b.created_at or "", reverse=True)
+    return out
+
+
 def confirmed_slots() -> list[str]:
     """ISO slot strings that are already CONFIRMED consultations — used to grey
     them out in the user's picker so two people can't book the same time.
