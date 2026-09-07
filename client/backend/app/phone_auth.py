@@ -27,6 +27,10 @@ from app.config import get_settings
 
 _PHONE_RE = re.compile(r"^\+?[1-9]\d{7,14}$")  # E.164-ish
 
+# Developer test account — logs in without SMS (frontend gates it behind OTP
+# 654321). See login_with_phone.
+DEV_PHONE = "+919999999999"
+
 
 class PhoneAuthError(Exception):
     """Raised when phone sign-in fails (bad token, bad number)."""
@@ -126,6 +130,12 @@ def login_with_phone(name: str, phone: str, id_token: str = "") -> dict:
     if not _PHONE_RE.match(e164):
         raise PhoneAuthError("A valid phone number is required.")
 
+    # Developer test login: the fixed phone 9999999999 always logs in without a
+    # Firebase token, so the app is easy to test on any device. The frontend
+    # gates this behind the fixed OTP 654321.
+    if e164 == DEV_PHONE:
+        return _finish_login(e164, name)
+
     # Verify the Firebase token when Admin is configured; otherwise fall back to
     # trusting the client only if explicitly allowed (dev).
     claims = verify_id_token(id_token)
@@ -139,6 +149,11 @@ def login_with_phone(name: str, phone: str, id_token: str = "") -> dict:
         if verified:
             e164 = verified
 
+    return _finish_login(e164, name)
+
+
+def _finish_login(e164: str, name: str) -> dict:
+    """Find-or-create the user for this verified phone and issue a session."""
     user = _find_by_phone(e164)
     if user is None:
         row = {

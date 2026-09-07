@@ -57,13 +57,16 @@ export class AuthService {
   /** Dev fallback: the code we "sent" when Firebase isn't configured. */
   private devCode: string | null = null;
 
+  // ── Developer test login ─────────────────────────────────────────────────
+  // Phone 9999999999 + OTP 654321 always logs in, with NO SMS — a fixed account
+  // for testing the app on any device. Works even when real Firebase SMS is on.
+  private static readonly DEV_PHONE = '+919999999999';
+  private static readonly DEV_CODE = '654321';
+  /** True while the current attempt is the developer test login. */
+  private devLogin = false;
+
   private get fbConfig(): FirebaseWebConfig | null {
-    // TEST BYPASS: when window.__env.devBypassOtp is true, ignore Firebase
-    // entirely and use the fixed dev code (123456). Lets you log in without a
-    // real SMS while testing. Requires the backend to allow unverified phones
-    // (ALLOW_UNVERIFIED_PHONE=true). NEVER set devBypassOtp in production.
     const w = (typeof window !== 'undefined' ? (window as any).__env : undefined) || {};
-    if (w.devBypassOtp) return null;
     const c = w.firebase as Partial<FirebaseWebConfig> | undefined;
     if (c && c.apiKey && c.authDomain && c.projectId && c.appId) return c as FirebaseWebConfig;
     return null;
@@ -80,6 +83,10 @@ export class AuthService {
     this.pendingPhone = this.e164(phone);
     this.confirmation = null;
     this.devCode = null;
+
+    // Developer test login — the fixed phone skips SMS entirely.
+    this.devLogin = this.pendingPhone === AuthService.DEV_PHONE;
+    if (this.devLogin) return;
 
     const cfg = this.fbConfig;
     if (!cfg) {
@@ -104,11 +111,16 @@ export class AuthService {
   async verifyCode(code: string): Promise<AuthUser> {
     let idToken = '';
 
-    if (this.confirmation) {
+    if (this.devLogin) {
+      // Developer test login — accept only the fixed dev code, no Firebase.
+      if (code.trim() !== AuthService.DEV_CODE) {
+        throw new Error('That code is not correct.');
+      }
+    } else if (this.confirmation) {
       const cred = await this.confirmation.confirm(code.trim());
       idToken = await cred.user.getIdToken();
     } else {
-      // dev fallback
+      // dev fallback (no Firebase configured)
       if (code.trim() !== this.devCode) {
         throw new Error('That code is not correct.');
       }

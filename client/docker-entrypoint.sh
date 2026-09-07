@@ -9,9 +9,6 @@
 #                      e.g. https://<admin-api>.up.railway.app
 #   FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID,
 #   FIREBASE_MESSAGING_SENDER_ID — Firebase web config (enables real phone-OTP SMS).
-#   DEV_BYPASS_OTP   — set to "true" to SKIP real SMS: log in with any phone +
-#                      code 123456 (needs backend ALLOW_UNVERIFIED_PHONE=true).
-#                      TEST ONLY — leave unset/false in production.
 set -e
 
 ENV_JS=./static/assets/env.js
@@ -22,7 +19,6 @@ cat > "$ENV_JS" <<EOF
 window.__env = {
   apiUrl: "${API_URL:-}",
   bookingApiUrl: "${BOOKING_API_URL:-}",
-  devBypassOtp: ${DEV_BYPASS_OTP:-false},
   firebase: {
     apiKey: "${FIREBASE_API_KEY:-}",
     authDomain: "${FIREBASE_AUTH_DOMAIN:-mylakshayas.firebaseapp.com}",
