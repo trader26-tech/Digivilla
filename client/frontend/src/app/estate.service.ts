@@ -130,7 +130,9 @@ export class EstateService {
     } catch {}
   }
   private loadProfile(): Profile {
-    const fallback: Profile = { name: 'Sanjeev', city: 'Chennai', phone: '+91 98765 43210' };
+    // No fake demo identity — a fresh user has no name until the advisor sets
+    // it up on the first call. The greeting handles an empty name gracefully.
+    const fallback: Profile = { name: '', city: '', phone: '' };
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
       return raw ? { ...fallback, ...(JSON.parse(raw) as Partial<Profile>) } : fallback;

@@ -13,7 +13,9 @@ import { EstateHomeComponent } from './estate-home.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { LandDetailComponent } from './land/land-detail.component';
+import { OnboardingHomeComponent } from './onboarding/onboarding-home.component';
 import { PropertyKey } from './property-package.data';
+import { SingleEstateComponent } from './single-estate/single-estate.component';
 import { StorefrontComponent } from './storefront.component';
 import { EstateService, Tile } from './estate.service';
 import { VillaDetailComponent } from './villa/villa-detail.component';
@@ -32,6 +34,8 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     CommonModule,
     IntroComponent,
     EstateHomeComponent,
+    OnboardingHomeComponent,
+    SingleEstateComponent,
     StorefrontComponent,
     LandStorefrontComponent,
     LandDetailComponent,
@@ -54,6 +58,10 @@ export class AppComponent {
   /** The opening animation plays first; flips false when it finishes. */
   intro = true;
 
+  /** True only on the login→app transition we just made, so the onboarding
+   *  screen plays its "verified" tick once (not on every returning visit). */
+  justVerified = false;
+
   constructor() {
     // On a returning verified session, sync the profile from the auth user.
     this.syncProfileFromAuth();
@@ -62,11 +70,16 @@ export class AppComponent {
   /** Called after phone verification succeeds — the intro already played
    *  before login, so just reveal the app. */
   onLoggedIn(): void {
+    this.justVerified = true;
     this.syncProfileFromAuth();
     // Load THIS user's real estate from the DB (empty for a new account),
     // replacing any leftover local cache from a previous/demo session.
     this.est.syncFromServer();
   }
+
+  /** How many holdings the user has — decides which home to show:
+   *  0 → onboarding (book setup call), 1 → single house, 2+ → the map grid. */
+  get holdingCount(): number { return this.est.tiles().length; }
 
   /** Mirror the verified user's name + phone into the estate profile so the
    *  account page and greeting show the real, logged-in details. */
@@ -87,6 +100,9 @@ export class AppComponent {
   get onTab(): boolean {
     return (
       !this.intro && this.auth.signedIn() &&
+      // The bottom nav only makes sense once the map grid is showing (2+
+      // holdings). Onboarding and the single-house view are self-contained.
+      this.holdingCount >= 2 &&
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.buildFlow === null && !this.accountOpen &&
       (this.view === 'home' || this.view === 'explore')

@@ -68,64 +68,6 @@
     </footer>
   </form>
 
-  <!-- STEP 3 · details (new users, after OTP) -->
-  <form *ngIf="step() === 'details'" class="lg-flow" (ngSubmit)="saveDetails()" novalidate>
-    <header class="lg-top">
-      <!-- step indicator: phone → code → details -->
-      <div class="lg-steps" aria-label="Step 3 of 3">
-        <span class="lg-step done"></span>
-        <span class="lg-step done"></span>
-        <span class="lg-step on"></span>
-      </div>
-      <span class="lg-eyebrow">Last step</span>
-      <h1 class="lg-title">A few details</h1>
-      <p class="lg-sub">This is just for your account — it stays private.</p>
-    </header>
-
-    <div class="lg-mid">
-      <label class="lg-field">
-        <span class="lg-lbl">Full name</span>
-        <div class="lg-inwrap">
-          <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input class="lg-input has-ico" type="text" autocomplete="name" placeholder="Sanjeev Ramprasad"
-                 [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
-        </div>
-      </label>
-      <label class="lg-field">
-        <span class="lg-lbl">Email</span>
-        <div class="lg-inwrap">
-          <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input class="lg-input has-ico" type="email" autocomplete="email" placeholder="you@email.com"
-                 [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" />
-        </div>
-      </label>
-      <div class="lg-row">
-        <label class="lg-field">
-          <span class="lg-lbl">Age</span>
-          <input class="lg-input" type="tel" inputmode="numeric" maxlength="3" placeholder="32"
-                 [ngModel]="age()" (ngModelChange)="age.set($event)" name="age" />
-        </label>
-        <label class="lg-field grow">
-          <span class="lg-lbl">City</span>
-          <div class="lg-inwrap">
-            <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-            <input class="lg-input has-ico" type="text" autocomplete="address-level2" placeholder="Chennai"
-                   [ngModel]="city()" (ngModelChange)="city.set($event)" name="city" />
-          </div>
-        </label>
-      </div>
-      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
-    </div>
-
-    <footer class="lg-bottom">
-      <button class="lg-btn" type="submit" [disabled]="!detailsValid || busy()">
-        <span *ngIf="!busy()">Enter Digivilla</span>
-        <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
-      </button>
-      <p class="lg-fine">🔒 Your details are private and never shared.</p>
-    </footer>
-  </form>
-
   <!-- invisible reCAPTCHA mount for Firebase phone auth -->
   <div id="recaptcha-container"></div>
 </main>

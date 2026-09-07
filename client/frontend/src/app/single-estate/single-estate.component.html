@@ -1,0 +1,66 @@
+<main class="se" *ngIf="tile() as t">
+  <!-- top bar: greeting + avatar -->
+  <header class="se-top">
+    <div class="se-greet">
+      <span class="se-hi">{{ greeting }}</span>
+      <b class="se-name">{{ profile.name || 'Welcome' }}</b>
+    </div>
+    <button class="se-avatar" (click)="account.emit()" aria-label="Account">
+      <img *ngIf="profile.photo" [src]="profile.photo" alt="" />
+      <span *ngIf="!profile.photo">{{ (profile.name || 'D')[0] }}</span>
+    </button>
+  </header>
+
+  <!-- the one house, filling up bottom-to-top -->
+  <button class="se-stage" (click)="open()" [attr.aria-label]="'Open ' + t.label">
+    <div class="se-ground" aria-hidden="true"></div>
+
+    <!-- status pill -->
+    <span class="se-status" [class.built]="isBuilt()">
+      <span class="se-dot"></span>
+      {{ isBuilt() ? 'Built · earning' : 'Under construction' }}
+    </span>
+
+    <div class="se-house">
+      <!-- ghost: the finished shape, always faint -->
+      <div class="se-ghost"><app-villa-art></app-villa-art></div>
+      <!-- fill: full colour, revealed from the ground up by progress -->
+      <div class="se-fill" [style.clip-path]="'inset(' + (100 - pct()) + '% 0 0 0)'">
+        <app-villa-art></app-villa-art>
+      </div>
+      <!-- the rising water line -->
+      <span class="se-line" [style.bottom.%]="pct()" *ngIf="!isBuilt()"></span>
+    </div>
+
+    <b class="se-house-name">{{ t.label }}</b>
+    <span class="se-tap">Tap to view details ›</span>
+  </button>
+
+  <!-- the numbers -->
+  <section class="se-stats">
+    <div class="se-stat">
+      <b class="se-stat-v">{{ compact(invested()) }}</b>
+      <span class="se-stat-k">Current value</span>
+    </div>
+    <div class="se-stat">
+      <b class="se-stat-v pos">{{ compact(income()) }}</b>
+      <span class="se-stat-k">Monthly income</span>
+    </div>
+    <div class="se-stat">
+      <b class="se-stat-v">{{ nextPayment() | date:'d MMM' }}</b>
+      <span class="se-stat-k">Next payment</span>
+    </div>
+  </section>
+
+  <!-- progress toward a fully-built villa -->
+  <section class="se-prog" *ngIf="!isBuilt()">
+    <div class="se-prog-head">
+      <span>Building your villa</span>
+      <b>{{ pct() }}%</b>
+    </div>
+    <div class="se-prog-bar"><span class="se-prog-fill" [style.width.%]="pct()"></span></div>
+    <p class="se-prog-meta">{{ compact(invested()) }} of {{ compact(t.cost) }} · keep adding to complete it</p>
+  </section>
+
+  <p class="se-foot" *ngIf="isBuilt()">Your villa is fully built and paying you every month. 🎉</p>
+</main>

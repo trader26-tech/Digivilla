@@ -1,0 +1,100 @@
+<!-- ============ 1 · verified tick celebration ============ -->
+<div class="tick-screen" *ngIf="phase() === 'tick'" (click)="skipTick()">
+  <div class="tick-wrap">
+    <div class="tick-glow" aria-hidden="true"></div>
+    <svg class="tick-svg" viewBox="0 0 72 72" aria-hidden="true">
+      <circle class="tick-ring" cx="36" cy="36" r="33"/>
+      <path class="tick-mark" d="M21 37l10 10 20-22"/>
+    </svg>
+  </div>
+  <b class="tick-title">You’re verified</b>
+  <p class="tick-sub">Welcome to Digivilla</p>
+</div>
+
+<!-- ============ 2 · advantages + book-your-setup-call ============ -->
+<main class="ob" *ngIf="phase() === 'welcome'">
+  <header class="ob-head">
+    <span class="ob-brand">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path d="M3 11.2 12 4l9 7.2M5 10v9h14v-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Digivilla
+    </span>
+    <h1 class="ob-title">Let’s set up<br>your estate</h1>
+    <p class="ob-lead">One quick call with your fund manager — they’ll understand your goals and hand you your first villa.</p>
+  </header>
+
+  <!-- advantages -->
+  <section class="ob-perks">
+    <div class="ob-perk" *ngFor="let p of ADVANTAGES; let i = index" [style.--i]="i">
+      <span class="ob-perk-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="ob-perk-txt">
+        <b>{{ p.title }}</b>
+        <span>{{ p.sub }}</span>
+      </span>
+    </div>
+  </section>
+
+  <!-- the single call to action -->
+  <div class="ob-cta-wrap">
+    <button class="ob-cta" (click)="openBooking()">
+      <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/>
+        <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M8 14h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      Book your setup call
+    </button>
+    <p class="ob-cta-fine">Free · 15 minutes · your risk profile & first villa</p>
+  </div>
+</main>
+
+<!-- ============ setup-call slot picker (real booking) ============ -->
+<div class="sheet-backdrop" *ngIf="sheetOpen()" (click)="closeBooking()"></div>
+<aside class="sheet" *ngIf="sheetOpen()" role="dialog" aria-modal="true" aria-label="Book your setup call">
+  <span class="sheet-grab" aria-hidden="true"></span>
+
+  <ng-container *ngIf="!booked()">
+    <div class="sheet-head">
+      <span class="sheet-title">Book your setup call</span>
+      <button class="sheet-close" (click)="closeBooking()" aria-label="Close">✕</button>
+    </div>
+    <p class="sh-lead">Pick a time that works — your fund manager will call to set up your account and assign your first villa.</p>
+
+    <p class="sh-empty" *ngIf="daysLoading()">Finding open slots…</p>
+    <p class="sh-empty" *ngIf="!daysLoading() && !days().length">No open slots right now. Please try again later.</p>
+
+    <div class="sh-days" *ngIf="!daysLoading()">
+      <div class="sh-day" *ngFor="let day of days()">
+        <span class="sh-day-lbl">{{ day.label }}</span>
+        <div class="sh-slots">
+          <button class="sh-slot" *ngFor="let s of day.slots" [class.on]="isSlot(s)"
+            (click)="pick(day.label, s)">{{ s.label }}</button>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="slotIso()">
+      <p class="sh-err" *ngIf="error()">{{ error() }}</p>
+      <button class="sh-confirm" [disabled]="submitting()" (click)="confirm()">
+        {{ submitting() ? 'Booking…' : 'Confirm · ' + slotLabel() }}
+      </button>
+    </ng-container>
+  </ng-container>
+
+  <div class="sh-done" *ngIf="booked()">
+    <div class="sh-tick" [class.pop]="justBooked()" aria-hidden="true">
+      <svg viewBox="0 0 52 52"><circle class="sh-tick-ring" cx="26" cy="26" r="24"/><path class="sh-tick-mark" d="M15 27l7 7 15-15"/></svg>
+    </div>
+    <b class="sh-done-title">Call booked</b>
+    <p class="sh-done-sub">
+      Your fund manager will call on<br>
+      <b>{{ slotLabel() }}</b><br>
+      to set up your account.
+    </p>
+    <button class="sh-done-btn" (click)="closeBooking()">Done</button>
+  </div>
+</aside>

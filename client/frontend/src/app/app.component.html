@@ -1,14 +1,28 @@
 <!-- Opening animation, plays first — before login. -->
 <app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
 
-<!-- GATE: after the intro, nothing renders until the phone is verified AND the
-     profile is complete (new users fill in their details right after the OTP). -->
-<app-login *ngIf="!intro && !(auth.signedIn() && auth.profileComplete())" (done)="onLoggedIn()"></app-login>
+<!-- GATE: after the intro, nothing renders until the phone is verified. Profile
+     details are no longer collected here — the advisor sets that up on the
+     first call, so a freshly-verified user drops straight into onboarding. -->
+<app-login *ngIf="!intro && !auth.signedIn()" (done)="onLoggedIn()"></app-login>
 
-<ng-container *ngIf="!intro && auth.signedIn() && auth.profileComplete()">
-<!-- HOME: the isometric estate — the user's own map. Shown right after intro. -->
+<ng-container *ngIf="!intro && auth.signedIn()">
+<!-- ONBOARDING: no villa yet → advantages + book-your-setup-call. -->
+<app-onboarding-home
+  *ngIf="holdingCount === 0 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+  [justVerified]="justVerified"
+></app-onboarding-home>
+
+<!-- SINGLE VILLA: exactly one holding → the one house, filling up. -->
+<app-single-estate
+  *ngIf="holdingCount === 1 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+  (openTile)="openTile($event)"
+  (account)="openAccount()"
+></app-single-estate>
+
+<!-- HOME: the isometric estate map — only once there are 2+ holdings. -->
 <app-estate-home
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+  *ngIf="holdingCount >= 2 && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
   class="has-nav"
   (openTile)="openTile($event)"
   (explore)="goExplore()"
