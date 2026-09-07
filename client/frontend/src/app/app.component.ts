@@ -11,7 +11,7 @@ import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
-import { HomeComponent } from './home/home.component';
+import { EstateHomeComponent } from './estate-home.component';
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
@@ -31,7 +31,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
   imports: [
     CommonModule,
     IntroComponent,
-    HomeComponent,
+    EstateHomeComponent,
     StorefrontComponent,
     LandStorefrontComponent,
     LandDetailComponent,
@@ -100,9 +100,6 @@ export class AppComponent {
   get onTab(): boolean {
     return (
       !this.intro && this.auth.signedIn() &&
-      // The bottom nav only makes sense once the map grid is showing (2+
-      // holdings). Onboarding and the single-house view are self-contained.
-      this.holdingCount >= 2 &&
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.buildFlow === null && !this.accountOpen &&
       (this.view === 'home' || this.view === 'explore')

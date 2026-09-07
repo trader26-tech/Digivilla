@@ -5,7 +5,9 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  Input,
   OnDestroy,
+  OnInit,
   Output,
   ViewChild,
   computed,
@@ -13,6 +15,8 @@ import {
   signal,
 } from '@angular/core';
 
+import { AuthService } from './auth/auth.service';
+import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { CallsService } from './shared/calls.service';
 import { VillaArtComponent } from './shared/villa-art.component';
@@ -49,10 +53,13 @@ const PLOT_TICKET = 10_00_000;
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
-export class EstateHomeComponent implements AfterViewInit, OnDestroy {
+export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
   /** Hidden file picker behind the corner avatar. */
   @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
+
+  /** Play the "verified" tick once, right after OTP (passed by the shell). */
+  @Input() justVerified = false;
 
   /** Tapping a built tile asks the shell to open its detail page. */
   @Output() openTile = new EventEmitter<Tile>();
@@ -62,9 +69,28 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   @Output() build = new EventEmitter<void>();
   /** The corner avatar -> open the account page. */
   @Output() account = new EventEmitter<void>();
+  /** Ask the shell to re-sync the estate (advisor may have assigned a villa). */
+  @Output() refresh = new EventEmitter<void>();
 
   readonly est = inject(EstateService);
   private readonly callsSvc = inject(CallsService);
+  private readonly bookingSvc = inject(BookingService);
+  private readonly auth = inject(AuthService);
+
+  // ── the setup call (empty estate): show the upcoming booked call on the map,
+  //    and let a brand-new user book one right from here. ──
+  /** The user's next upcoming consultation, read from the shared DB. */
+  upcomingCall = signal<Booking | null>(null);
+  /** The verified-tick overlay, shown once right after OTP. */
+  showTick = signal(false);
+  /** Book-a-setup-call sheet (empty-estate flow). */
+  callSheetOpen = signal(false);
+  callDays = signal<{ iso: string; label: string; slots: { label: string; slot: string }[] }[]>([]);
+  callDaysLoading = signal(false);
+  callSlotIso = signal<string | null>(null);
+  callSlotLabel = signal('');
+  callSubmitting = signal(false);
+  callError = signal('');
 
   /** Buy sheet state: the open plot being filled, or null. */
   buying = signal<Cell | null>(null);
@@ -232,6 +258,114 @@ export class EstateHomeComponent implements AfterViewInit, OnDestroy {
   // ------------------------------------------------------------ lifecycle --
 
   private ro?: ResizeObserver;
+
+  ngOnInit(): void {
+    // Play the verified tick once, right after OTP.
+    if (this.justVerified) {
+      this.showTick.set(true);
+      setTimeout(() => this.showTick.set(false), 1900);
+    }
+    // Load any upcoming setup call so an empty estate can show it.
+    this.loadUpcomingCall();
+  }
+
+  // ── setup call (shown when the estate is empty) ─────────────────────────────
+  private loadUpcomingCall(): void {
+    const phone = this.auth.user()?.phone || '';
+    if (!phone) return;
+    this.bookingSvc.mine(phone).subscribe({
+      next: (list) => {
+        const now = Date.now();
+        const next = (list || [])
+          .filter((b) => b.kind === 'consultation' && b.status !== 'declined' && b.slot)
+          .filter((b) => new Date(b.slot!).getTime() > now - 3 * 3600_000)
+          .sort((a, b) => new Date(a.slot!).getTime() - new Date(b.slot!).getTime())[0] || null;
+        this.upcomingCall.set(next);
+      },
+      error: () => {},
+    });
+  }
+
+  /** Pretty date/time for the upcoming-call chip. */
+  get callWhen(): { day: string; time: string } | null {
+    const iso = this.upcomingCall()?.slot;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    const wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const h = d.getHours(), m = d.getMinutes();
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return {
+      day: `${wk[d.getDay()]}, ${d.getDate()} ${mo[d.getMonth()]}`,
+      time: m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`,
+    };
+  }
+  get callConfirmed(): boolean { return this.upcomingCall()?.status === 'confirmed'; }
+
+  openCallSheet(): void {
+    this.callSlotIso.set(null); this.callSlotLabel.set(''); this.callError.set('');
+    this.callSheetOpen.set(true);
+    if (navigator.vibrate) navigator.vibrate(4);
+    this.loadCallDays();
+  }
+  closeCallSheet(): void { this.callSheetOpen.set(false); }
+  private loadCallDays(): void {
+    this.callDaysLoading.set(true);
+    this.callDays.set([]);
+    const wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    this.bookingSvc.freeDays(4).subscribe({
+      next: (r) => {
+        this.callDays.set((r.days || []).map((day) => {
+          const [y, m, d] = day.date.split('-').map(Number);
+          const dt = new Date(y, m - 1, d);
+          return {
+            iso: day.date,
+            label: `${wk[dt.getDay()]}, ${dt.getDate()} ${mo[dt.getMonth()]}`,
+            slots: (day.slots || []).map((s) => ({ label: this.callSlotLabelFor(s.time), slot: s.slot })),
+          };
+        }));
+        this.callDaysLoading.set(false);
+      },
+      error: () => { this.callDays.set([]); this.callDaysLoading.set(false); },
+    });
+  }
+  private callSlotLabelFor(hm: string): string {
+    const [h, m] = hm.split(':').map(Number);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`;
+  }
+  callPick(dayLabel: string, s: { label: string; slot: string }): void {
+    this.callSlotIso.set(s.slot);
+    this.callSlotLabel.set(`${dayLabel} · ${s.label}`);
+    this.callError.set('');
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+  callIsSlot(s: { slot: string }): boolean { return this.callSlotIso() === s.slot; }
+  callConfirm(): void {
+    if (this.callSubmitting() || !this.callSlotIso()) return;
+    const u = this.auth.user();
+    const name = (u?.name || '').trim() || 'New client';
+    const phone = (u?.phone || '').replace(/\D/g, '').slice(-10);
+    this.callSubmitting.set(true);
+    this.callError.set('');
+    this.bookingSvc.createBooking({
+      name, phone, kind: 'consultation', property: 'villa', variant: 'balanced',
+      slot: this.callSlotIso()!, note: 'Account setup · risk profile & first villa',
+    }).subscribe({
+      next: (b) => {
+        this.callSubmitting.set(false);
+        this.upcomingCall.set(b);
+        this.callSheetOpen.set(false);
+        if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
+        setTimeout(() => this.loadUpcomingCall(), 400);
+      },
+      error: () => { this.callSubmitting.set(false); this.callError.set('Could not book that slot. Please try again.'); },
+    });
+  }
 
   ngAfterViewInit(): void {
     this.centreOnTown();

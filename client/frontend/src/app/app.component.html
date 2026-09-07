@@ -7,17 +7,19 @@
 <app-login *ngIf="!intro && !auth.signedIn()" (done)="onLoggedIn()"></app-login>
 
 <ng-container *ngIf="!intro && auth.signedIn()">
-<!-- HOME: one evolving surface — Call → SIP build-up → Villa — chosen by state.
-     (For 2+ holdings the home swaps its body to the full estate map.) -->
-<app-home
+<!-- HOME: the ONE estate map — "[Name]'s City" — kept for every state. When the
+     user has no villa yet it shows a dummy house + the upcoming setup call; as
+     they progress the same map fills with their real villas. -->
+<app-estate-home
   *ngIf="detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+  class="has-nav"
   [justVerified]="justVerified"
   (openTile)="openTile($event)"
-  (account)="openAccount()"
   (explore)="goExplore()"
   (build)="openBuild()"
+  (account)="openAccount()"
   (refresh)="onEstateRefresh()"
-></app-home>
+></app-estate-home>
 
 <!-- EXPLORE tab: browse the villa / land options. -->
 <app-build-picker

@@ -23,7 +23,7 @@
          shown once, below the town — not repeated up here. ===== -->
     <header class="hero">
       <span class="hero-kicker">YOUR ESTATE</span>
-      <h1 class="hero-title">{{ est.profile().name }}&rsquo;s City</h1>
+      <h1 class="hero-title">{{ est.profile().name ? est.profile().name + '&rsquo;s City' : 'Your City' }}</h1>
     </header>
 
     <!-- the isometric town — below the hero. Scrolls freely in both
@@ -147,9 +147,17 @@
               <use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
             </g>
 
-            <!-- ===== OPEN plot: dashed diamond. Tap to build. (Also the centre
-                 when the estate is empty.) ===== -->
-            <g *ngIf="(!c.hall && !c.tile) || (c.hall && isEmptyEstate())" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
+            <!-- ===== EMPTY-ESTATE CENTRE: a faint "dummy" villa — the home the
+                 setup call will turn real. The empty centre is the cell with
+                 index -1 (no tile). Tapping it opens the setup-call sheet. ===== -->
+            <g *ngIf="!c.hall && !c.tile && c.index === -1 && isEmptyEstate()" class="cell dummy"
+               (click)="openCallSheet()" role="button" tabindex="0" aria-label="Book your setup call">
+              <use [attr.href]="'#tLand'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
+              <g class="dummy-villa"><use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use></g>
+            </g>
+
+            <!-- ===== OPEN plot: dashed diamond. Tap to build. ===== -->
+            <g *ngIf="!c.hall && !c.tile && c.index !== -1" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
                [attr.aria-label]="'Open plot ' + (c.index + 1)">
               <use [attr.href]="'#tLocked'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
               <!-- the "build here" mark — always visible on every open plot -->
@@ -186,9 +194,34 @@
     <!-- line below the town, then the figures -->
     <div class="stats-rule"></div>
 
+    <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
+    <ng-container *ngIf="isEmptyEstate()">
+      <!-- already booked → show the upcoming call -->
+      <button class="call-card" *ngIf="upcomingCall() && callWhen as w" (click)="openCallSheet()">
+        <span class="call-ico" [class.confirmed]="callConfirmed" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+        <span class="call-txt">
+          <span class="call-k">Setup call · {{ callConfirmed ? 'confirmed' : 'requested' }}</span>
+          <b class="call-day">{{ w.day }} · {{ w.time }}</b>
+          <span class="call-sub">Your fund manager will call &amp; assign your first villa</span>
+        </span>
+        <span class="call-go" aria-hidden="true">›</span>
+      </button>
+
+      <!-- not booked yet → the single CTA -->
+      <ng-container *ngIf="!upcomingCall()">
+        <p class="call-lead">Book one quick call — your fund manager sets up your account and hands you your first villa.</p>
+        <button class="call-cta" (click)="openCallSheet()">
+          <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M8 14h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          Book your setup call
+        </button>
+      </ng-container>
+    </ng-container>
+
     <!-- ===== the two headline numbers: City value · Rent a month. Each has a
          small ⓘ that expands a one-line note on what it means / its risk. ===== -->
-    <div class="stats">
+    <div class="stats" *ngIf="!isEmptyEstate()">
       <div class="stat worth">
         <b class="stat-v">{{ compact(est.estateValue) }}<sup class="star">*</sup></b>
         <span class="stat-k">City value
@@ -421,4 +454,47 @@
 
   <!-- collect toast -->
   <div class="toast" *ngIf="collected() > 0">＋ {{ compact(collected()) }} rent collected</div>
+
+  <!-- ============ verified tick (once, right after OTP) ============ -->
+  <div class="tick-screen" *ngIf="showTick()" (click)="showTick.set(false)">
+    <div class="tick-wrap">
+      <div class="tick-glow" aria-hidden="true"></div>
+      <svg class="tick-svg" viewBox="0 0 72 72" aria-hidden="true">
+        <circle class="tick-ring" cx="36" cy="36" r="33"/><path class="tick-mark" d="M21 37l10 10 20-22"/>
+      </svg>
+    </div>
+    <b class="tick-title">You&rsquo;re verified</b>
+    <p class="tick-sub">Welcome to Digivilla</p>
+  </div>
+
+  <!-- ============ setup-call slot picker (empty estate) ============ -->
+  <div class="cs-backdrop" *ngIf="callSheetOpen()" (click)="closeCallSheet()"></div>
+  <aside class="cs-sheet" *ngIf="callSheetOpen()" role="dialog" aria-modal="true" aria-label="Book your setup call">
+    <span class="cs-grab" aria-hidden="true"></span>
+    <div class="cs-head">
+      <span class="cs-title">Book your setup call</span>
+      <button class="cs-close" (click)="closeCallSheet()" aria-label="Close">✕</button>
+    </div>
+    <p class="cs-lead">Pick a time — your fund manager will call to set up your account and assign your first villa.</p>
+
+    <p class="cs-empty" *ngIf="callDaysLoading()">Finding open slots…</p>
+    <p class="cs-empty" *ngIf="!callDaysLoading() && !callDays().length">No open slots right now. Please try again later.</p>
+
+    <div class="cs-days" *ngIf="!callDaysLoading()">
+      <div class="cs-day" *ngFor="let day of callDays()">
+        <span class="cs-day-lbl">{{ day.label }}</span>
+        <div class="cs-slots">
+          <button class="cs-slot" *ngFor="let s of day.slots" [class.on]="callIsSlot(s)"
+            (click)="callPick(day.label, s)">{{ s.label }}</button>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="callSlotIso()">
+      <p class="cs-err" *ngIf="callError()">{{ callError() }}</p>
+      <button class="cs-confirm" [disabled]="callSubmitting()" (click)="callConfirm()">
+        {{ callSubmitting() ? 'Booking…' : 'Confirm · ' + callSlotLabel() }}
+      </button>
+    </ng-container>
+  </aside>
 </section>
