@@ -6,6 +6,12 @@ window.__env = {
   // Set to e.g. 'http://localhost:8000' for a local split backend.
   apiUrl: '',
 
+  // ── TEST ONLY: bypass phone OTP ──────────────────────────────────────────
+  // true  → skip Firebase SMS; log in with ANY phone number + code 123456.
+  //         Requires the backend env ALLOW_UNVERIFIED_PHONE=true.
+  // false → normal real-SMS login. MUST be false in production.
+  devBypassOtp: false,
+
   // ── Firebase web config — enables REAL phone-OTP SMS. ────────────────────
   // Fill these from the Firebase Console:
   //   Project Settings → General → Your apps → Web app → SDK setup & config.

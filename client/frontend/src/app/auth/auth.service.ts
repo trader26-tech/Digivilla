@@ -58,7 +58,12 @@ export class AuthService {
   private devCode: string | null = null;
 
   private get fbConfig(): FirebaseWebConfig | null {
+    // TEST BYPASS: when window.__env.devBypassOtp is true, ignore Firebase
+    // entirely and use the fixed dev code (123456). Lets you log in without a
+    // real SMS while testing. Requires the backend to allow unverified phones
+    // (ALLOW_UNVERIFIED_PHONE=true). NEVER set devBypassOtp in production.
     const w = (typeof window !== 'undefined' ? (window as any).__env : undefined) || {};
+    if (w.devBypassOtp) return null;
     const c = w.firebase as Partial<FirebaseWebConfig> | undefined;
     if (c && c.apiKey && c.authDomain && c.projectId && c.appId) return c as FirebaseWebConfig;
     return null;
