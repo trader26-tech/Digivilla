@@ -24,6 +24,20 @@ export interface Profile {
   photo?: string;
 }
 
+/** One fund inside a villa's mix. */
+export interface VillaFundMix { fund_name: string; role: string; weight: number; }
+/** A villa tier shown on the Explore page (from /villas/catalog). */
+export interface VillaTier {
+  id: string;
+  name: string;
+  price: number;
+  monthly_income: number;
+  growth_rate: number;
+  projection: Record<string, number>;   // "5" | "10" | "15" | "20" → value
+  multiple_20y: number;
+  funds: VillaFundMix[];
+}
+
 export interface Tile {
   id: string;
   type: TileType;
@@ -76,6 +90,12 @@ export class EstateService {
   private get authHeaders(): Record<string, string> {
     const t = this.auth.token();
     return t ? { Authorization: `Bearer ${t}` } : {};
+  }
+
+  /** The villa tiers for the Explore page (public catalog) — price, monthly
+   *  income, growth projection and fund mix. */
+  catalog(): import('rxjs').Observable<{ villas: VillaTier[] }> {
+    return this.http.get<{ villas: VillaTier[] }>(`${environment.apiUrl}/villas/catalog`);
   }
 
   /** Pull this user's estate from the backend and replace local state. */

@@ -403,6 +403,13 @@ def villa_backtest(amount: float = 10_00_000) -> dict:
     return villa_bt.backtest(amount)
 
 
+@app.get("/villas/catalog")
+def villas_catalog() -> dict:
+    """Public: the villa tiers for the Explore page — price, monthly income, a
+    long-run growth projection, and the fund mix. Illustrative figures."""
+    return {"villas": estate_svc.villa_catalog()}
+
+
 @app.put("/me/estate")
 def put_my_estate(
     body: dict, authorization: Optional[str] = Header(default=None)

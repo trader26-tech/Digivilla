@@ -181,6 +181,51 @@ def _tiles_from_crm(owner: str) -> list[dict]:
 MONTHLY_INCOME_RATE = 0.003
 
 
+def villa_catalog() -> list[dict]:
+    """The villa tiers a client can own, for the Explore page — each villa with
+    its price, monthly income (price × MONTHLY_INCOME_RATE), a simple long-run
+    growth projection, and its fund mix (how the money is invested). Public;
+    figures are illustrative. Ordered cheapest → dearest."""
+    try:
+        from app.supabase_client import get_supabase
+        cl = get_supabase()
+        villas = cl.table("villas").select("*").execute().data or []
+        vfunds = cl.table("villa_funds").select("*").execute().data or []
+    except Exception:
+        return []
+
+    def m(v):
+        try: return float(v or 0)
+        except (TypeError, ValueError): return 0.0
+
+    mix_by_villa: dict[str, list] = {}
+    for f in sorted(vfunds, key=lambda f: (f.get("sort_order", 0), -m(f.get("weight")))):
+        mix_by_villa.setdefault(f.get("villa_id"), []).append({
+            "fund_name": f.get("fund_name") or "Fund",
+            "role": f.get("role") or "growth",
+            "weight": m(f.get("weight")),
+        })
+
+    # A single blended growth assumption for the projection (illustrative only,
+    # ~12%/yr) — used to show "what it could be worth" at 5/10/15/20 years.
+    RATE = 0.12
+    out = []
+    for v in sorted(villas, key=lambda x: m(x.get("price"))):
+        price = m(v.get("price"))
+        proj = {str(y): round(price * ((1 + RATE) ** y)) for y in (5, 10, 15, 20)}
+        out.append({
+            "id": v.get("id"),
+            "name": v.get("name") or "Villa",
+            "price": round(price),
+            "monthly_income": round(price * MONTHLY_INCOME_RATE),
+            "growth_rate": RATE,
+            "projection": proj,                       # year → value
+            "multiple_20y": round((1 + RATE) ** 20, 1),
+            "funds": mix_by_villa.get(v.get("id"), []),
+        })
+    return out
+
+
 def holding_detail(owner: str, uv_id: str) -> dict | None:
     """Full detail for ONE of this user's holdings (by user_villas id): the
     money ledger (every SIP/lump-sum/rent, by date) and the fund concentration

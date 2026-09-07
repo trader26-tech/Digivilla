@@ -1,0 +1,147 @@
+<main class="xp">
+  <ng-container *ngIf="current as v; else loadingTpl">
+    <!-- top rail: label + dots -->
+    <header class="xp-top">
+      <span class="xp-kicker">EXPLORE · VILLA · {{ idx() + 1 }} OF {{ count }}</span>
+      <div class="xp-dots" aria-hidden="true">
+        <span class="xp-dot" *ngFor="let t of tiers(); let i = index" [class.on]="i === idx()"></span>
+      </div>
+    </header>
+
+    <!-- the swipeable card -->
+    <section class="xp-card" (pointerdown)="onDown($event)" (pointerup)="onUp($event)"
+             (pointercancel)="onUp($event)">
+      <!-- cost-to-own chip -->
+      <div class="xp-chip">
+        <span class="xp-chip-k">COST TO OWN</span>
+        <b class="xp-chip-v">₹{{ v.price | number:'1.0-0' }}</b>
+      </div>
+
+      <!-- the villa art on its plinth -->
+      <div class="xp-art">
+        <div class="xp-plinth" aria-hidden="true"></div>
+        <app-villa-art></app-villa-art>
+      </div>
+
+      <!-- name + tagline -->
+      <div class="xp-head">
+        <h1 class="xp-name">{{ v.name }}</h1>
+        <p class="xp-tag">Own a slice, earn every month, watch it grow.</p>
+      </div>
+
+      <!-- projection + years timeline -->
+      <div class="xp-proj">
+        <div class="xp-proj-row">
+          <b class="xp-proj-v">{{ compact(projected()) }}</b>
+          <span class="xp-proj-x">{{ multiple() }}× in {{ years() }} years</span>
+        </div>
+        <p class="xp-proj-sub">₹{{ v.price | number:'1.0-0' }} put in, held {{ years() }} years — an illustration, not a promise</p>
+
+        <div class="xp-time">
+          <div class="xp-time-line" aria-hidden="true"></div>
+          <button class="xp-time-stop" *ngFor="let y of YEAR_STOPS" [class.on]="years() === y"
+                  (click)="pickYear(y)">
+            <span class="xp-time-node"></span>
+            <span class="xp-time-lbl">{{ y }} yrs</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- rent line -->
+      <div class="xp-rent">
+        <span class="xp-rent-k">Rent to you</span>
+        <b class="xp-rent-v">{{ compact(v.monthly_income) }}<span>/mo</span></b>
+      </div>
+
+      <!-- affordances -->
+      <div class="xp-actions">
+        <button class="xp-how" (click)="openExplainer()">How it works ↑</button>
+        <button class="xp-own" (click)="ownThis()">Own this villa</button>
+      </div>
+
+      <!-- swipe hints -->
+      <div class="xp-hints" aria-hidden="true">
+        <span class="xp-hint" *ngIf="count > 1">‹ swipe to compare ›</span>
+        <span class="xp-hint">swipe up for how it works</span>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="xp-loading">
+      <span class="xp-spin" *ngIf="loading()"></span>
+      <p *ngIf="!loading()">No villas available right now.</p>
+    </div>
+  </ng-template>
+
+  <!-- ============ "how it works" explainer (slides up) ============ -->
+  <div class="ex-backdrop" *ngIf="explainerOpen()" (click)="closeExplainer()"></div>
+  <aside class="ex-sheet" *ngIf="explainerOpen() && current as v" role="dialog" aria-modal="true"
+         aria-label="How this villa works">
+    <span class="ex-grab" aria-hidden="true"></span>
+    <div class="ex-scroll">
+      <header class="ex-head">
+        <span class="ex-kicker">HOW IT WORKS</span>
+        <h2 class="ex-title">{{ v.name }}</h2>
+        <button class="ex-close" (click)="closeExplainer()" aria-label="Close">✕</button>
+      </header>
+
+      <!-- 1 · afford it -->
+      <div class="ex-block">
+        <span class="ex-n">1</span>
+        <div class="ex-b">
+          <b>You don’t pay ₹{{ v.price | number:'1.0-0' }} upfront</b>
+          <p>Own a fraction and top it up monthly (SIP). Start from as little as ₹10,000 — you build toward the full villa over time, or buy it outright.</p>
+        </div>
+      </div>
+
+      <!-- 2 · where the money goes (the mix) -->
+      <div class="ex-block">
+        <span class="ex-n">2</span>
+        <div class="ex-b">
+          <b>Your money is invested across a mix</b>
+          <p>Every rupee is split across mutual-fund schemes — each with a job:</p>
+          <div class="ex-mix">
+            <div class="ex-fund" *ngFor="let f of v.funds">
+              <div class="ex-fund-row">
+                <span class="ex-fund-dot" [attr.data-role]="f.role"></span>
+                <b class="ex-fund-name">{{ f.fund_name }}</b>
+                <span class="ex-fund-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
+              </div>
+              <div class="ex-fund-bar"><span [attr.data-role]="f.role" [style.width.%]="f.weight * 100"></span></div>
+              <span class="ex-fund-role">{{ roleWord(f.role) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · earn -->
+      <div class="ex-block">
+        <span class="ex-n">3</span>
+        <div class="ex-b">
+          <b>It pays you every month</b>
+          <p>The income part of the mix pays out roughly <b>{{ compact(v.monthly_income) }}/month</b> on a fully-owned {{ v.name }} — proportional to how much you’ve put in so far.</p>
+        </div>
+      </div>
+
+      <!-- 4 · grow -->
+      <div class="ex-block">
+        <span class="ex-n">4</span>
+        <div class="ex-b">
+          <b>And it grows over time</b>
+          <p>Held long term, the growth part compounds. At an illustrative 12%/yr, ₹{{ v.price | number:'1.0-0' }} could be worth about <b>{{ compact(v.projection['20']) }}</b> in 20 years ({{ v.multiple_20y }}×). Market-linked — not guaranteed.</p>
+        </div>
+      </div>
+
+      <!-- earnings summary -->
+      <div class="ex-summary">
+        <div class="ex-sum-cell"><span>Rent / month</span><b>{{ compact(v.monthly_income) }}</b></div>
+        <div class="ex-sum-cell"><span>In 20 years</span><b>{{ compact(v.projection['20']) }}</b></div>
+        <div class="ex-sum-cell"><span>Growth</span><b>{{ v.multiple_20y }}×</b></div>
+      </div>
+
+      <button class="ex-cta" (click)="ownThis()">Own this villa</button>
+      <p class="ex-fine">Mutual funds are subject to market risks. Figures are illustrative.</p>
+    </div>
+  </aside>
+</main>

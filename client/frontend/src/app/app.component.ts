@@ -12,6 +12,7 @@ import { VillaBuyComponent } from './build/villa-buy.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
+import { ExploreComponent } from './explore/explore.component';
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
@@ -32,6 +33,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     CommonModule,
     IntroComponent,
     EstateHomeComponent,
+    ExploreComponent,
     StorefrontComponent,
     LandStorefrontComponent,
     LandDetailComponent,
@@ -61,6 +63,11 @@ export class AppComponent {
   constructor() {
     // On a returning verified session, sync the profile from the auth user.
     this.syncProfileFromAuth();
+    // Deep-link support: ?view=explore opens the Explore tab on load.
+    try {
+      const v = new URLSearchParams(location.search).get('view');
+      if (v === 'explore' || v === 'home') { this.view = v; this.intro = false; }
+    } catch {}
   }
 
   /** Called after phone verification succeeds — the intro already played
@@ -217,5 +224,13 @@ export class AppComponent {
   /** Back from the storefront -> home. */
   backToHome(): void {
     this.view = 'home';
+  }
+
+  /** "Own this villa" from Explore → go home, where the user books the setup
+   *  call (the advisor assigns the villa). The advisor-led flow is the only way
+   *  a villa is created, so we route them to the home's booking CTA. */
+  ownVilla(_v: unknown): void {
+    this.view = 'home';
+    window.scrollTo({ top: 0 });
   }
 }
