@@ -1,0 +1,24 @@
+<div class="pres" [class.portrait]="portrait()">
+  <!-- the landscape stage: rotated 90° when the phone is upright so the deck
+       fills the screen without the user turning the device -->
+  <div class="pres-stage">
+    <iframe
+      class="pres-frame"
+      [src]="deckUrl"
+      title="Presentation"
+      allow="fullscreen; autoplay"
+      referrerpolicy="no-referrer"
+    ></iframe>
+  </div>
+
+  <!-- close (fixed to the real screen, not the rotated stage) -->
+  <button class="pres-close" (click)="doClose()" aria-label="Close presentation">
+    <svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+  </button>
+
+  <!-- rotate hint — only while portrait, fades out -->
+  <div class="pres-hint" *ngIf="portrait() && showHint()" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="26" height="26"><path d="M7 4h7a2 2 0 0 1 2 2v3M17 20h-7a2 2 0 0 1-2-2v-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M4 9l3-3 3 3M20 15l-3 3-3-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Turn your phone sideways for the best view</span>
+  </div>
+</div>

@@ -4,6 +4,7 @@ import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, 
 import { AuthService } from './auth/auth.service';
 import { BookingService, Booking } from './booking.service';
 import { EstateService } from './estate.service';
+import { PresentationComponent } from './presentation.component';
 
 /** A call, shaped for the list: parsed date/time + friendly labels. */
 interface CallItem {
@@ -43,7 +44,7 @@ interface FreeDay {
 @Component({
   selector: 'app-calls',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PresentationComponent],
   templateUrl: './calls.component.html',
   styleUrl: './calls.component.scss',
 })
@@ -149,6 +150,11 @@ export class CallsComponent implements OnInit {
   join(link: string): void {
     if (link) window.open(link, '_blank', 'noopener');
   }
+
+  // ── presentation overlay ──
+  presenting = signal(false);
+  openPresentation(): void { this.presenting.set(true); if (navigator.vibrate) navigator.vibrate(6); }
+  closePresentation(): void { this.presenting.set(false); }
 
   statusText(s: string): string {
     return s === 'confirmed' ? 'Confirmed' : s === 'declined' ? 'Declined' : 'Requested';

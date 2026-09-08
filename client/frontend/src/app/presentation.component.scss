@@ -1,0 +1,102 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: block;
+}
+
+.pres {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+/* The stage holds the deck iframe. In LANDSCAPE it simply fills the screen. */
+.pres-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pres-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #faf9f5;
+}
+
+/* In PORTRAIT we rotate the stage 90° so the horizontal deck fills the phone
+   in landscape without the user having to physically turn it. The stage is
+   sized to the screen's swapped dimensions (100vh wide × 100vw tall), pinned
+   at the top-left, then rotated about that corner and slid into place. */
+.pres.portrait .pres-stage {
+  width: 100vh;
+  height: 100vw;
+  top: 0;
+  left: 100vw;
+  transform-origin: top left;
+  transform: rotate(90deg);
+}
+
+/* close button — fixed to the real screen corner (top-right as the phone is
+   actually held), above the rotated stage */
+.pres-close {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: calc(env(safe-area-inset-right) + 12px);
+  z-index: 210;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s, transform 0.12s;
+  &:hover { background: rgba(0, 0, 0, 0.72); }
+  &:active { transform: scale(0.92); }
+}
+
+/* rotate hint — centered, softly fading out */
+.pres-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 205;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  pointer-events: none;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  text-align: center;
+  padding: 2rem;
+  animation: hintOut 3.2s ease forwards;
+
+  svg { animation: rock 1.6s ease-in-out infinite; }
+  span {
+    font: 700 1.05rem/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    max-width: 260px;
+    letter-spacing: -0.2px;
+  }
+}
+@keyframes hintOut {
+  0%, 62% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes rock {
+  0%, 100% { transform: rotate(-12deg); }
+  50% { transform: rotate(12deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pres-hint { animation: none; }
+  .pres-hint svg { animation: none; }
+}

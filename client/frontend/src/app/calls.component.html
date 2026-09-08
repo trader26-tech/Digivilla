@@ -22,6 +22,19 @@
     </button>
   </section>
 
+  <!-- ===== PRESENT: open the pitch deck full-screen, for the advisor to walk
+       a client through from their phone ===== -->
+  <button class="ca-present" (click)="openPresentation()">
+    <span class="ca-present-ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 16v3m-4 1h8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M8 11l2.4-2.4 2 2L16 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="ca-present-body">
+      <b>Play the presentation</b>
+      <span>₹1 crore, two ways — walk a client through it, full-screen.</span>
+    </span>
+    <svg class="ca-present-arr" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
   <!-- ===== CALLS header + the SCHEDULE button ===== -->
   <div class="ca-section-h">
     <span>Your calls</span>
@@ -178,4 +191,7 @@
       </div>
     </ng-container>
   </section>
+
+  <!-- ===== PRESENTATION overlay (full-screen, landscape) ===== -->
+  <app-presentation *ngIf="presenting()" (close)="closePresentation()"></app-presentation>
 </main>

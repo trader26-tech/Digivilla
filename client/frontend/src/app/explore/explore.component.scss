@@ -1,28 +1,30 @@
-:host { display: block; width: 100%; max-width: 100%; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; box-sizing: border-box; }
-
-/* dark, premium canvas */
-.xp {
+/* :host paints the full-bleed dark ground; the content lives in a centred
+   phone-width column so on any screen it reads as one mobile panel. */
+:host {
   --bg: #0e1116; --bg2: #141922; --card: #1a2029; --line: #2a323e;
   --txt: #eef1f5; --dim: #8b95a3; --accent: #8b7bf0; --accent-soft: rgba(139, 123, 240, 0.16);
   --green: #64c37d;
+  display: block; min-height: 100vh; min-height: 100dvh; box-sizing: border-box;
+  background: linear-gradient(180deg, var(--bg2), var(--bg));
+  overflow-x: hidden;
+}
+
+/* the phone-width column, centred */
+.xp {
   position: relative;
+  width: 100%; max-width: 440px; margin: 0 auto;
   min-height: 100vh; min-height: 100dvh;
-  background:
-    radial-gradient(120% 60% at 50% 18%, rgba(100, 195, 125, 0.10), transparent 60%),
-    linear-gradient(180deg, var(--bg2), var(--bg));
+  background: radial-gradient(120% 60% at 50% 18%, rgba(100, 195, 125, 0.10), transparent 60%);
   color: var(--txt);
   padding: calc(1.1rem + env(safe-area-inset-top)) 1.25rem calc(6rem + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  display: block;
-  width: 100%; max-width: 100%; min-width: 0;
+  display: flex; flex-direction: column;
   font-variant-numeric: tabular-nums;
   overflow-x: hidden;
 }
-/* one centred content column. .xp already pads 1.25rem each side and clips
-   overflow-x, so width:100% here is always within the screen. */
-.xp-top { display: flex; width: 100%; max-width: 420px; margin: 0 auto; box-sizing: border-box; }
+.xp-top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.9rem; width: 100%; box-sizing: border-box; }
 .xp-card { display: flex; flex-direction: column; align-items: center;
-  width: 100%; max-width: 420px; margin: 0 auto; box-sizing: border-box; }
+  width: 100%; margin: 0 auto; box-sizing: border-box; }
 
 /* top rail: label + vertical pips directly beneath, on the LEFT */
 .xp-top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.9rem; }

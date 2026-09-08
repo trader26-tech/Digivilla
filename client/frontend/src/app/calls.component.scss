@@ -41,6 +41,27 @@
   &:hover { border-color: var(--brass); color: var(--brass); }
 }
 
+/* PRESENT card — launches the pitch deck full-screen */
+.ca-present {
+  display: flex; align-items: center; gap: 0.9rem; width: 100%; text-align: left;
+  margin-bottom: 1.5rem; padding: 1rem 1.05rem; border-radius: 18px; cursor: pointer;
+  color: var(--ink);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brass) 26%, var(--surface)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--brass) 40%, var(--survey));
+  box-shadow: 0 14px 34px -20px color-mix(in srgb, var(--brass) 80%, transparent);
+  transition: transform 0.12s, border-color 0.15s;
+  &:hover { border-color: var(--brass); }
+  &:active { transform: scale(0.99); }
+}
+.ca-present-ic {
+  flex: none; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 13px;
+  background: color-mix(in srgb, var(--brass) 24%, transparent); color: var(--brass);
+}
+.ca-present-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.18rem; }
+.ca-present-body b { font-size: 1.02rem; font-weight: 850; letter-spacing: -0.2px; }
+.ca-present-body span { font-size: 0.82rem; color: var(--muted); line-height: 1.35; }
+.ca-present-arr { flex: none; color: var(--brass); }
+
 .ca-section-h {
   display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
   font-size: 0.74rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.08em;
