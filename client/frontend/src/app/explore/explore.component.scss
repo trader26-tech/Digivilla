@@ -29,9 +29,13 @@
 /* top rail: label + vertical pips directly beneath, on the LEFT */
 .xp-top { display: flex; flex-direction: column; align-items: flex-start; gap: 0.9rem; }
 .xp-kicker { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; color: var(--dim); }
-.xp-vdots { display: flex; flex-direction: column; gap: 8px; padding-left: 2px; }
+/* vertical progress pips — left edge, vertically centred (beside the villa) */
+.xp-vdots {
+  position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); z-index: 5;
+  display: flex; flex-direction: column; gap: 9px;
+}
 .xp-vdot { width: 6px; height: 18px; border-radius: 999px; background: color-mix(in srgb, var(--dim) 40%, transparent); transition: background 0.3s, height 0.3s; }
-.xp-vdot.on { background: var(--accent); height: 30px; box-shadow: 0 0 12px -2px var(--accent); }
+.xp-vdot.on { background: var(--accent); height: 32px; box-shadow: 0 0 12px -2px var(--accent); }
 
 /* cost-to-own chip, top-right */
 .xp-chip {
@@ -93,13 +97,13 @@
   &:hover { filter: brightness(1.06); } &:active { transform: scale(0.98); }
 }
 
-/* subtle text hint (NOT a button) */
+/* subtle text hint (NOT a button) — right-aligned toward the villa */
 .xp-swipe {
-  margin: 1rem 0 0; font-size: 0.82rem; font-weight: 600; color: var(--dim);
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  align-self: flex-end; margin: 1rem 0 0; font-size: 0.82rem; font-weight: 600; color: var(--dim);
+  display: inline-flex; align-items: center; gap: 0.4rem;
 }
 .xp-swipe-arrow { display: inline-block; color: var(--accent); font-size: 1rem; animation: nudge 1.6s ease-in-out infinite; }
-@keyframes nudge { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-5px); } }
+@keyframes nudge { 0%,100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
 
 .xp-fine { margin: 0.7rem 0 0; font-size: 0.64rem; color: var(--dim); opacity: 0.6; text-align: center; }
 
