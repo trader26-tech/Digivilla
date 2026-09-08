@@ -1445,45 +1445,22 @@
 .rc-collect { display: block; margin: 0.5rem auto 0; border: none; background: none; cursor: pointer; font: inherit; font-size: 0.92rem; color: var(--positive); b { font-weight: 800; } }
 .rc-none { text-align: center; margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--muted); }
 
-/* ===== "what your estate means" — SEBI-compliant key card ===== */
+/* ===== minimal SEBI key — two tight one-liners + one disclaimer line ===== */
 .key {
   flex: none; align-self: center;
-  width: 100%; max-width: 400px; margin: 1.4rem auto 0; padding: 1.1rem 1.15rem 1rem;
-  border-radius: 20px; border: 1px solid var(--survey);
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgba(139, 123, 240, 0.08), transparent 55%),
-    var(--card);
-  box-shadow: 0 20px 46px -30px #000;
-  animation: heroIn 0.4s ease both;
+  display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+  margin: 1.2rem auto 0; padding: 0 1.25rem; text-align: center;
 }
-.key-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.9rem; }
-.key-cap { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.key-badge {
-  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--brass); background: color-mix(in srgb, var(--brass) 16%, transparent);
-  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+.key-item {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.82rem; color: var(--muted); line-height: 1.3;
+  b { color: var(--ink); font-weight: 800; }
 }
-.key-row { display: flex; align-items: flex-start; gap: 0.85rem; padding: 0.7rem 0; }
-.key-row + .key-row { border-top: 1px solid var(--survey); }
-.key-ico {
-  flex: none; width: 54px; height: 46px; border-radius: 12px;
-  display: grid; place-items: center; overflow: hidden;
-  background: color-mix(in srgb, var(--card-2) 70%, transparent);
-  app-villa-art, svg { display: block; width: 100%; height: 100%; }
-}
-.key-ico.ico-build { padding: 6px; }
-.key-txt { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-.key-txt > b { font-size: 0.98rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.key-txt > span { font-size: 0.8rem; line-height: 1.45; color: var(--muted); }
-.key-tag {
-  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 999px;
-}
-.key-tag.done { color: var(--positive); background: color-mix(in srgb, var(--positive) 18%, transparent); }
-.key-tag.build { color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, transparent); }
+.key-sw { flex: none; width: 12px; height: 12px; border-radius: 3px; }
+.key-sw.villa { background: #E6DBC9; }
+.key-sw.build { background: #59A52E; border: 1.5px dashed var(--gold); }
 .key-fine {
-  margin: 0.9rem 0 0; padding-top: 0.85rem; border-top: 1px solid var(--survey);
-  font-size: 0.7rem; line-height: 1.5; color: var(--muted);
+  margin: 0.5rem 0 0; font-size: 0.7rem; line-height: 1.4; color: var(--muted); opacity: 0.85;
   b { color: var(--terracotta); font-weight: 800; }
 }
 

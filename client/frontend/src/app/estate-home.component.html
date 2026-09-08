@@ -251,42 +251,12 @@
 
     </ng-container>
 
-    <!-- ===== WHAT THESE MEAN — SEBI-compliant key. Explains that the estate is
-         a metaphor for real mutual-fund units, market-linked & not assured. ===== -->
-    <section class="key" *ngIf="!isEmptyEstate()" aria-label="What the assets mean">
-      <div class="key-head">
-        <span class="key-cap">What your estate means</span>
-        <span class="key-badge">SEBI · illustrative</span>
-      </div>
-
-      <div class="key-row">
-        <span class="key-ico" aria-hidden="true"><app-villa-art></app-villa-art></span>
-        <span class="key-txt">
-          <b>Villa <span class="key-tag done">Fully funded</span></b>
-          <span>A mutual-fund holding, in your own name, that is fully paid in — its “rent” is an illustrative payout the basket aims for.</span>
-        </span>
-      </div>
-
-      <div class="key-row">
-        <span class="key-ico ico-build" aria-hidden="true">
-          <svg viewBox="0 0 120 120" width="100%" height="100%">
-            <polygon points="60,86 18,62 18,50 60,74 102,50 102,62" fill="#6d4527"/>
-            <polygon points="60,58 18,34 60,10 102,34" fill="#59a52e"/>
-            <polygon points="60,58 18,34 60,10 102,34" fill="none" stroke="#3f7a20" stroke-width="2"/>
-            <g stroke="#a97140" stroke-width="4" fill="none" stroke-linejoin="round" stroke-dasharray="7 6" opacity="0.9">
-              <polyline points="60,26 92,44 60,62 28,44 60,26"/>
-              <polyline points="60,14 92,32 60,50 28,32 60,14"/>
-            </g>
-          </svg>
-        </span>
-        <span class="key-txt">
-          <b>Under construction <span class="key-tag build">Still investing</span></b>
-          <span>The same holding while your SIP is still building it up — not yet fully paid in, so it isn’t earning its full payout yet.</span>
-        </span>
-      </div>
-
-      <p class="key-fine">Villas &amp; plots are a visual metaphor for tiers of a mutual-fund portfolio held in your name. Values shown are units at NAV and move daily. Mutual funds are subject to market risks; returns and payouts are illustrative and <b>not guaranteed</b>. Read all scheme-related documents carefully.</p>
-    </section>
+    <!-- ===== minimal SEBI key — two tight one-liners + one disclaimer line ===== -->
+    <div class="key" *ngIf="!isEmptyEstate()" aria-label="What the assets mean">
+      <span class="key-item"><i class="key-sw villa"></i><b>Villa</b> = a fully-funded fund holding</span>
+      <span class="key-item"><i class="key-sw build"></i><b>Under construction</b> = SIP still building it</span>
+      <p class="key-fine">A metaphor for mutual-fund units in your name · market-linked, <b>not guaranteed</b>.</p>
+    </div>
   </div>
 
   <!-- ============ PLOT DETAIL POPUP ============
