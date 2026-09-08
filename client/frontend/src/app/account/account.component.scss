@@ -11,7 +11,7 @@
 .ac-top { display: flex; align-items: center; gap: 0.6rem; padding-top: env(safe-area-inset-top); }
 .ac-back {
   width: 40px; height: 40px; flex: none; display: grid; place-items: center;
-  border-radius: 12px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border-radius: 12px; border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font-size: 1.5rem; line-height: 1; cursor: pointer;
   &:active { transform: scale(0.94); }
 }
@@ -23,7 +23,7 @@
 .ac-avatar {
   position: relative; width: 96px; height: 96px; margin: 0 auto 0.9rem;
   border-radius: 50%; display: grid; place-items: center; padding: 0;
-  border: 1px solid var(--survey); background: #fff; color: var(--muted); cursor: pointer;
+  border: 1px solid var(--survey); background: var(--card); color: var(--muted); cursor: pointer;
   box-shadow: 0 12px 30px -14px rgba(22, 48, 43, 0.5);
   transition: transform 0.12s, border-color 0.2s;
   &:active { transform: scale(0.96); }
@@ -52,7 +52,7 @@
 .ac-summary {
   display: flex; align-items: stretch; justify-content: space-around;
   padding: 1rem; margin: 0 0 1.4rem;
-  border-radius: 18px; border: 1px solid var(--survey); background: #fff;
+  border-radius: 18px; border: 1px solid var(--survey); background: var(--card);
   box-shadow: 0 12px 30px -24px rgba(22, 48, 43, 0.5);
 }
 .ac-sum-cell { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
@@ -65,7 +65,7 @@
 .ac-row {
   display: flex; align-items: center; gap: 0.85rem; width: 100%;
   padding: 0.9rem 1rem;
-  border-radius: 16px; border: 1px solid var(--survey); background: #fff;
+  border-radius: 16px; border: 1px solid var(--survey); background: var(--card);
   font: inherit; text-align: left; cursor: pointer;
   box-shadow: 0 10px 24px -20px rgba(22, 48, 43, 0.5);
   transition: transform 0.12s, border-color 0.2s;
@@ -87,7 +87,7 @@
 /* transactions — inside a boxed list, shown only when expanded */
 .ac-txns {
   margin-top: 0.6rem; padding: 0.2rem 1rem;
-  border-radius: 16px; border: 1px solid var(--survey); background: #fff;
+  border-radius: 16px; border: 1px solid var(--survey); background: var(--card);
   animation: ac-reveal 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes ac-reveal { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }

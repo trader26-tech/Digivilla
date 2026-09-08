@@ -123,6 +123,24 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
+  /** PORTFOLIO WORTH is masked (••••) by default; the eye reveals it. */
+  worthHidden = signal(true);
+  toggleWorth(): void { this.worthHidden.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
+  /** True when there's rent ready to collect (drives the coin on a villa). */
+  get hasRent(): boolean { return this.est.rentIn > 0; }
+  /** Today, for the "5 Sep · tap the coin to collect" line. */
+  today = new Date();
+  /** The first finished villa's id — the one that wears the collect coin. */
+  get firstVillaId(): string | null {
+    const v = this.est.tiles().find((t) => t.type === 'villa');
+    return v ? v.id : null;
+  }
+  /** Does this cell wear the coin? (first villa + rent available). */
+  wearsCoin(c: Cell): boolean {
+    return this.hasRent && !!c.tile && c.tile.type === 'villa' && c.tile.id === this.firstVillaId;
+  }
+  /** Tap the coin → collect (and don't also open the tile detail). */
+  tapCoin(ev: Event): void { ev.stopPropagation(); this.collect(); }
   /** The right-hand figure has two faces: monthly rent (default) and build
    *  cost. Tapping morphs between them in place. */
   showBuildCost = signal(false);

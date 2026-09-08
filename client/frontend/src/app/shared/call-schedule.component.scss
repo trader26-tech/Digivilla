@@ -11,7 +11,7 @@
   display: grid; place-items: center;
   padding: 0;
   border: 1px solid var(--survey);
-  background: #fff;
+  background: var(--card);
   /* same resting icon colour as the owner avatar, so the two top buttons
      read as a matched pair */
   color: var(--muted);
@@ -65,7 +65,7 @@
 .cs-close {
   width: 34px; height: 34px; flex: none;
   display: grid; place-items: center; border-radius: 50%;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font-size: 0.9rem; cursor: pointer; transition: transform 0.12s;
   &:active { transform: scale(0.92); }
 }
@@ -129,7 +129,7 @@
 .cs-monthlbl { font-size: 1rem; font-weight: 800; color: var(--ink); }
 .cs-nav {
   width: 34px; height: 34px; border-radius: 10px;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font-size: 1.2rem; cursor: pointer;
   &:disabled { opacity: 0.35; cursor: default; }
   &:active:not(:disabled) { transform: scale(0.94); }
@@ -142,7 +142,7 @@
   aspect-ratio: 1;
   display: grid; place-items: center;
   border-radius: 10px; border: 1px solid transparent;
-  background: #fff; color: var(--ink);
+  background: var(--card); color: var(--ink);
   font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
   transition: transform 0.1s, background 0.15s, border-color 0.15s;
   &:disabled { color: color-mix(in srgb, var(--muted) 55%, var(--paper)); background: none; cursor: default; }
@@ -157,7 +157,7 @@
 .cs-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.7rem; }
 .cs-slot {
   padding: 0.85rem; border-radius: 12px;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font: inherit; font-size: 0.95rem; font-weight: 800; cursor: pointer;
   transition: transform 0.1s, border-color 0.15s;
   &:hover { border-color: var(--brass); }

@@ -424,7 +424,7 @@
   display: grid; place-items: center;
   border-radius: 12px;
   border: 1px solid var(--survey);
-  background: #fff;
+  background: var(--card);
   color: var(--ink);
   cursor: pointer;
   transition: border-color 0.2s, transform 0.12s;

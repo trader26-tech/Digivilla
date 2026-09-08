@@ -23,7 +23,7 @@
   width: 40px; height: 40px; flex: none;
   display: grid; place-items: center;
   border-radius: 12px; border: 1px solid var(--survey);
-  background: #fff; color: var(--ink); font-size: 1.5rem; line-height: 1;
+  background: var(--card); color: var(--ink); font-size: 1.5rem; line-height: 1;
   cursor: pointer; transition: transform 0.12s, border-color 0.2s;
   &:active { transform: scale(0.94); }
 }
@@ -40,7 +40,7 @@
   padding: 0.4rem 1rem 0.6rem;
   background:
     radial-gradient(120% 90% at 50% -10%, rgba(46, 107, 79, 0.12), transparent 55%),
-    linear-gradient(180deg, #FFFDF8, #F4EFE4);
+    linear-gradient(180deg, var(--card-2), var(--card));
   border: 1px solid var(--survey);
 }
 .art app-villa-art { display: block; width: 100%; height: 210px; }
@@ -87,7 +87,7 @@
 .hist-arrow {
   display: grid; place-items: center; flex: none;
   width: 34px; height: 34px; border-radius: 50%;
-  border: 1px solid var(--survey); background: #fff; color: var(--muted);
+  border: 1px solid var(--survey); background: var(--card); color: var(--muted);
   cursor: pointer; transition: transform 0.12s, border-color 0.2s, color 0.2s;
   svg { display: block; }
   &:hover { border-color: var(--brass); color: var(--brass); }
@@ -169,7 +169,7 @@
   border: 1px solid var(--survey);
   color: var(--ink);
   box-shadow: 0 14px 34px -24px rgba(22, 48, 43, 0.5);
-  background: linear-gradient(150deg, var(--tint), transparent 62%), #fff;
+  background: linear-gradient(150deg, var(--tint), transparent 62%), var(--card);
   opacity: 0;
   transform: translateX(30px) scale(0.97);
   pointer-events: none;
@@ -280,7 +280,7 @@
   margin-bottom: 0.9rem;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--brass) 30%, var(--survey));
-  background: radial-gradient(120% 130% at 0% 0%, rgba(166, 124, 46, 0.12), transparent 60%), #fff;
+  background: radial-gradient(120% 130% at 0% 0%, rgba(166, 124, 46, 0.12), transparent 60%), var(--card);
   box-shadow: 0 12px 30px -22px rgba(166, 124, 46, 0.6);
 }
 .sheet-cap { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
@@ -289,7 +289,7 @@
 .sheet-close {
   width: 34px; height: 34px; flex: none;
   display: grid; place-items: center; border-radius: 50%;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font-size: 0.9rem; cursor: pointer; transition: transform 0.12s;
   &:active { transform: scale(0.92); }
 }
@@ -325,7 +325,7 @@
   padding: 0.95rem 1rem;
   border-radius: 14px;
   border: 1px solid var(--survey);
-  background: #fff;
+  background: var(--card);
   font: inherit; font-size: 0.98rem; font-weight: 800; color: var(--ink);
   cursor: pointer;
   box-shadow: 0 10px 26px -20px rgba(22, 48, 43, 0.5);
@@ -360,7 +360,7 @@
 .wd-nav {
   width: 34px; height: 34px; flex: none;
   display: grid; place-items: center; border-radius: 50%;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font-size: 1.1rem; line-height: 1; cursor: pointer;
   transition: transform 0.12s, border-color 0.2s, opacity 0.2s;
   &:hover:not(:disabled) { border-color: var(--brass); color: var(--brass); }
@@ -392,7 +392,7 @@
 .wd-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-bottom: 0.9rem; }
 .wd-slot {
   padding: 0.85rem 0.6rem; border-radius: 12px;
-  border: 1px solid var(--survey); background: #fff;
+  border: 1px solid var(--survey); background: var(--card);
   font: inherit; font-size: 0.95rem; font-weight: 800; color: var(--ink);
   cursor: pointer; transition: transform 0.12s, border-color 0.2s, color 0.2s;
   &:hover { border-color: var(--brass); color: var(--brass); }
@@ -455,8 +455,7 @@
   border-radius: 16px;
   border: 1px solid var(--survey);
   background:
-    radial-gradient(120% 120% at 0% 0%, rgba(46, 107, 79, 0.10), transparent 60%),
-    #fff;
+    radial-gradient(120% 120% at 0% 0%, rgba(46, 107, 79, 0.10), transparent 60%), var(--card);
   font: inherit; text-align: left; cursor: pointer;
   box-shadow: 0 10px 24px -18px rgba(46, 107, 79, 0.6);
   transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
@@ -486,7 +485,7 @@
 .bld-flow {
   display: flex; align-items: center; justify-content: center; gap: 0.8rem;
   padding: 1rem; margin-bottom: 1rem;
-  border-radius: 16px; border: 1px solid var(--survey); background: #fff;
+  border-radius: 16px; border: 1px solid var(--survey); background: var(--card);
 }
 .bld-node { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; text-align: center; position: relative; }
 .bld-art { width: 70px; height: 52px; display: block; }

@@ -644,7 +644,7 @@
    the cash/arbitrage dark-ash below (same colour as the Cash slice). */
 .sb-gain {
   position: relative; width: 100%;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 72%, #fff), var(--brass));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brass) 72%, var(--card)), var(--brass));
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
 }
 .sb-base { width: 100%; flex: 1; background: color-mix(in srgb, var(--ink) 24%, var(--survey)); }

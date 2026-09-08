@@ -17,7 +17,7 @@
   display: flex; gap: 0.4rem;
   padding: 0.45rem;
   border-radius: 999px;
-  background: color-mix(in srgb, #fff 80%, transparent);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
   backdrop-filter: blur(18px) saturate(1.2);
   border: 1px solid color-mix(in srgb, var(--survey) 80%, transparent);
   box-shadow: 0 22px 46px -16px rgba(22, 48, 43, 0.42), 0 3px 10px -4px rgba(22, 48, 43, 0.22);
@@ -59,10 +59,10 @@ $nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
 }
 /* the active tab expands into a filled green pill with its label */
 .tab.active .tab-in {
-  background: linear-gradient(120deg, #2E6B4F, #21563d);
-  color: #fff;
+  background: color-mix(in srgb, var(--brass) 16%, transparent);
+  color: var(--brass);
   padding: 0.78rem 1.5rem;
-  box-shadow: 0 12px 26px -8px rgba(46, 107, 79, 0.65);
+  box-shadow: none;
 }
 .tab.active .tab-in svg { transform: scale(1.06); }
 .tab.active .tab-lbl { max-width: 6rem; opacity: 1; transform: none; }

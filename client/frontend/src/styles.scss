@@ -5,16 +5,27 @@
    crisp dashboard text style in the user's reference screenshot.
    ============================================================ */
 :root {
-  --ink: #16302B;         /* deep estate green — text, brand surfaces */
-  --paper: #FAF8F3;       /* warm document white — background */
-  --survey: #DDD6C7;      /* faint khaki — borders, hairlines */
-  --brass: #A67C2E;       /* accent — CTAs, active states */
-  --terracotta: #8C4A32;  /* ONLY risk/disclaimer emphasis */
-  --positive: #2E6B4F;    /* gains */
-  --negative: #9B3B2E;    /* losses */
+  /* ============================================================
+     DARK THEME. The whole app is themed through these tokens, so
+     remapping them here flips every screen. Roles are kept identical
+     to before (ink = primary text, paper = page background, survey =
+     borders, brass = accent) — only the values are now dark, so all
+     existing token usage inverts correctly.
+     Palette: near-black navy · purple accent · gold coin · green gains.
+     ============================================================ */
+  --ink: #EEF1F5;         /* primary TEXT + strong surfaces (was dark, now light) */
+  --paper: #0E1116;       /* page BACKGROUND — near-black navy */
+  --card: #171C25;        /* raised surface (cards, chips) on the dark ground */
+  --card-2: #1E2530;      /* a slightly lighter raised surface */
+  --survey: #2A323E;      /* borders / hairlines on dark */
+  --brass: #8B7BF0;       /* ACCENT — purple: CTAs, active states, links */
+  --gold: #E9C15C;        /* the rent coin + gold accents */
+  --terracotta: #E08769;  /* risk / disclaimer emphasis (lightened for dark) */
+  --positive: #64C37D;    /* gains / rent / income (green) */
+  --negative: #E5735E;    /* losses */
 
-  /* Muted tone for the small ALL-CAPS labels (available to any component). */
-  --muted: color-mix(in srgb, var(--ink) 55%, var(--paper));
+  /* Muted tone for small labels — a mid grey that reads on the dark ground. */
+  --muted: #8B95A3;
 
   /* TYPE ONLY change: Inter for everything, matching the reference's clean
      sans-serif look. --font-display is just heavier-weight Inter now, not a

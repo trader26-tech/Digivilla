@@ -1,26 +1,38 @@
 <section class="estate">
   <!-- ============ TOP: swipeable estate canvas (top half) ============ -->
   <div class="estate-top">
-    <!-- ===== OWNER AVATAR: top-left, tap to attach a photo ===== -->
-    <button
-      class="avatar"
-      [class.has-photo]="!!est.profile().photo"
-      (click)="account.emit()"
-      aria-label="Your account"
-    >
-      <img *ngIf="est.profile().photo as p" class="avatar-img" [src]="p" alt="" />
-      <svg *ngIf="!est.profile().photo" class="avatar-ph" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" />
-        <path d="M5.5 19c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
-    </button>
+    <!-- ===== PORTFOLIO WORTH: top-left, masked by default with an eye toggle ===== -->
+    <div class="pw">
+      <span class="pw-k">PORTFOLIO WORTH</span>
+      <button class="pw-row" (click)="toggleWorth()" [attr.aria-label]="worthHidden() ? 'Show portfolio worth' : 'Hide portfolio worth'">
+        <b class="pw-v" *ngIf="!worthHidden()">{{ compact(est.estateValue) }}</b>
+        <span class="pw-dots" *ngIf="worthHidden()" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i>
+        </span>
+        <svg class="pw-eye" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path *ngIf="worthHidden()" d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <circle *ngIf="worthHidden()" cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <path *ngIf="!worthHidden()" d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12zM4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
-    <!-- ===== FUND-MANAGER CALLS: top-right; a star appears if one is <24h away ===== -->
-    <app-call-schedule></app-call-schedule>
+    <!-- ===== RENT IN / BUILD COST coin chips, top-right ===== -->
+    <div class="coins">
+      <div class="coin-chip">
+        <span class="coin coin-gold" aria-hidden="true"></span>
+        <span class="coin-k">RENT IN</span>
+        <b class="coin-v gold">{{ compact(est.rentIn) }}</b>
+      </div>
+      <div class="coin-chip">
+        <span class="coin coin-purple" aria-hidden="true"></span>
+        <span class="coin-k">BUILD COST</span>
+        <b class="coin-v purple">{{ compact(est.buildCost) }}</b>
+      </div>
+    </div>
 
-    <!-- ===== HERO: "YOUR ESTATE" over the estate name. The value + rent are
-         shown once, below the town — not repeated up here. ===== -->
+    <!-- ===== HERO: "YOUR ESTATE" over the estate name. ===== -->
     <header class="hero">
       <span class="hero-kicker">YOUR ESTATE</span>
       <h1 class="hero-title">{{ est.profile().name ? est.profile().name + '&rsquo;s City' : 'Your City' }}</h1>
@@ -175,6 +187,14 @@
               <g *ngIf="isBuilding(c)" [attr.transform]="buildTransform(c)">
                 <use [attr.href]="'#tBuild'"></use>
               </g>
+              <!-- the collect coin, floating over the first finished villa -->
+              <g *ngIf="wearsCoin(c)" class="coin-float" [attr.transform]="'translate(' + c.x + ',' + (c.y - 34) + ')'"
+                 (click)="tapCoin($event)" role="button" [attr.aria-label]="'Collect ' + compact(est.rentIn) + ' rent'">
+                <circle class="cf-shadow" cx="0" cy="30" r="10"></circle>
+                <circle class="cf-face" r="15"></circle>
+                <circle class="cf-ring" r="15"></circle>
+                <text class="cf-glyph" x="0" y="5" text-anchor="middle">₹</text>
+              </g>
             </g>
           </ng-container>
         </g>
@@ -219,65 +239,26 @@
       </ng-container>
     </ng-container>
 
-    <!-- ===== the two headline numbers: City value · Rent a month. Each has a
-         small ⓘ that expands a one-line note on what it means / its risk. ===== -->
-    <div class="stats" *ngIf="!isEmptyEstate()">
-      <div class="stat worth">
-        <b class="stat-v">{{ compact(est.estateValue) }}<sup class="star">*</sup></b>
-        <span class="stat-k">City value
-          <button class="stat-i" (click)="toggleTip('worth', $event)" [class.on]="tip() === 'worth'" aria-label="What is City value?">
-            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
-        </span>
-      </div>
-      <button class="stat income" (click)="toggleRentFace()" [class.flipped]="showBuildCost()"
-              [attr.aria-label]="showBuildCost() ? 'Monthly SIP — tap to see income potential' : 'Income potential — tap to see monthly SIP'">
-        <span class="stat-face" [class.on]="!showBuildCost()">
-          <b class="stat-v">{{ compact(est.rentIn) }}<sup class="star">*</sup></b>
-          <span class="stat-k">Income / mo
-            <span class="stat-i" (click)="toggleTip('rent', $event)" [class.on]="tip() === 'rent'" role="button" aria-label="What is Income?">
-              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </span>
-          </span>
-        </span>
-        <span class="stat-face build" [class.on]="showBuildCost()">
-          <b class="stat-v">{{ compact(est.buildCost) }}</b>
-          <span class="stat-k">Build cost <span class="stat-more" aria-hidden="true">‹</span></span>
-        </span>
-      </button>
-    </div>
-
-    <!-- full explanation for whichever figure's ⓘ was tapped (closed by default) -->
-    <p class="tip-note" *ngIf="tip() === 'worth'">
-      <b>City value</b> is today’s value of the mutual-fund units held in your name, priced at NAV.
-      It rises and falls with the market every day and is not guaranteed — it can go down as well as up.
-    </p>
-    <p class="tip-note" *ngIf="tip() === 'rent'">
-      <b>Income / mo</b> is an illustrative income the fund basket aims to pay out (e.g. via dividends or
-      an SWP). It is market-linked and <b>not assured</b> — the amount can vary or stop, depending on how
-      the underlying schemes perform.
-    </p>
-
-    <!-- ===== METAPHOR KEY: only shown for what the user actually holds ===== -->
-    <div class="meta-key" *ngIf="villas > 0 || buildings > 0">
-      <div class="mk-row" *ngIf="villas > 0">
-        <span class="mk-art"><app-villa-art></app-villa-art></span>
-        <span class="mk-txt"><b>Villa</b> — an arbitrage + equity mix</span>
-        <button class="stat-i" (click)="toggleTip('villa', $event)" [class.on]="tip() === 'villa'" aria-label="What is a villa?">
-          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="mk-row" *ngIf="buildings > 0">
-        <span class="mk-art"><app-villa-art></app-villa-art></span>
-        <span class="mk-txt"><b>Under construction</b> — a villa you’re building by SIP</span>
-      </div>
-      <p class="tip-note" *ngIf="tip() === 'villa'">
-        Each villa is a unit of a fund portfolio in your own name, valued at NAV and moving daily.
+    <!-- ===== rent collected to date + collect prompt (matches reference) ===== -->
+    <ng-container *ngIf="!isEmptyEstate()">
+      <p class="rc-line">
+        rent collected to date <b class="rc-v">{{ compact(est.rentCollected()) }}</b>
       </p>
-    </div>
+      <button class="rc-collect" *ngIf="hasRent" (click)="collect()">
+        {{ today | date:'d MMM' }} · <b>tap the coin to collect {{ compact(est.rentIn) }}</b>
+      </button>
+      <p class="rc-none" *ngIf="!hasRent">{{ today | date:'d MMM' }} · your villas are still building</p>
+
+      <!-- legend: villas · plots/building · open -->
+      <div class="legend">
+        <span class="lg-item" *ngIf="villas > 0"><span class="lg-sw villa"></span>{{ villas }} villa{{ villas === 1 ? '' : 's' }}</span>
+        <span class="lg-item" *ngIf="buildings > 0"><span class="lg-sw plot"></span>{{ buildings }} building</span>
+        <span class="lg-item" *ngIf="open > 0"><span class="lg-sw open"></span>{{ open }} open</span>
+      </div>
+    </ng-container>
 
     <!-- the single mandatory AMFI line, always visible just above the nav -->
-    <p class="home-amfi">* Mutual funds are subject to market risks. Read all scheme related documents carefully.</p>
+    <p class="home-amfi">Assets are a metaphor for tiers of a fund portfolio in your own name. Values are units at NAV and move daily.</p>
   </div>
 
   <!-- ============ PLOT DETAIL POPUP ============

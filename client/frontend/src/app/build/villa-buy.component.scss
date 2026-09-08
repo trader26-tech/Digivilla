@@ -3,7 +3,7 @@
 .amt-chip {
   flex: 1; min-width: 4rem;
   padding: 0.55rem 0.4rem; border-radius: 12px;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font: inherit; font-size: 0.9rem; font-weight: 800; cursor: pointer;
   transition: transform 0.1s, border-color 0.15s, background 0.15s;
   &:active { transform: scale(0.96); }
@@ -63,7 +63,7 @@
 .cs-monthlbl { font-size: 1rem; font-weight: 800; color: var(--ink); }
 .cs-nav {
   width: 34px; height: 34px; border-radius: 10px;
-  border: 1px solid var(--survey); background: #fff; color: var(--ink); font-size: 1.2rem; cursor: pointer;
+  border: 1px solid var(--survey); background: var(--card); color: var(--ink); font-size: 1.2rem; cursor: pointer;
   &:disabled { opacity: 0.35; cursor: default; }
   &:active:not(:disabled) { transform: scale(0.94); }
 }
@@ -73,7 +73,7 @@
 .cs-blank { aspect-ratio: 1; }
 .cs-cell {
   aspect-ratio: 1; display: grid; place-items: center;
-  border-radius: 10px; border: 1px solid transparent; background: #fff; color: var(--ink);
+  border-radius: 10px; border: 1px solid transparent; background: var(--card); color: var(--ink);
   font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
   transition: transform 0.1s, background 0.15s, border-color 0.15s;
   &:disabled { color: color-mix(in srgb, var(--muted) 55%, var(--paper)); background: none; cursor: default; }
@@ -85,7 +85,7 @@
 .cs-lead b { color: var(--ink); }
 .cs-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.7rem; }
 .cs-slot {
-  padding: 0.85rem; border-radius: 12px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  padding: 0.85rem; border-radius: 12px; border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font: inherit; font-size: 0.95rem; font-weight: 800; cursor: pointer;
   &:hover { border-color: var(--brass); }
   &:active { transform: scale(0.97); }
@@ -98,7 +98,7 @@
 .bk-day-lbl { display: block; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.5rem; }
 .bk-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
 .bk-slot {
-  padding: 0.7rem 0.4rem; border-radius: 11px; border: 1px solid var(--survey); background: #fff; color: var(--ink);
+  padding: 0.7rem 0.4rem; border-radius: 11px; border: 1px solid var(--survey); background: var(--card); color: var(--ink);
   font: inherit; font-size: 0.85rem; font-weight: 750; cursor: pointer; transition: all 0.12s;
   &:hover { border-color: var(--brass); }
   &.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
@@ -111,11 +111,11 @@
 .pay-opt {
   display: flex; flex-direction: column; gap: 0.2rem; text-align: left;
   padding: 0.85rem 1rem; border-radius: 14px; border: 1.5px solid var(--survey);
-  background: #fff; cursor: pointer; font: inherit; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  background: var(--card); cursor: pointer; font: inherit; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   b { font-size: 1rem; font-weight: 800; color: var(--ink); }
   span { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
   &:hover { border-color: var(--brass); }
-  &.on { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 6%, #fff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 16%, transparent); }
+  &.on { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 6%, var(--card)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 16%, transparent); }
 }
 .cs-confirm {
   width: 100%; margin-top: 1rem; padding: 1rem; border-radius: 14px; border: none; cursor: pointer;
@@ -154,7 +154,7 @@
 
 /* past-performance rows (SEBI format placeholder — no forward projection) */
 .pp-rows { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.8rem 0 0.5rem; }
-.pp-row { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid var(--survey); background: #fff;
+.pp-row { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid var(--survey); background: var(--card);
   span { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
   b { font-size: 0.95rem; color: var(--ink); font-variant-numeric: tabular-nums; }
 }
