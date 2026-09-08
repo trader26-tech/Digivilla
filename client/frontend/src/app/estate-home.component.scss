@@ -1485,7 +1485,7 @@
 }
 
 /* the collect coin floating over a villa on the map */
-.coin-float { cursor: pointer; animation: coin-bob 2.2s ease-in-out infinite; transform-box: view-box; }
+.coin-float { animation: coin-bob 2.2s ease-in-out infinite; }
 @keyframes coin-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .cf-shadow { fill: rgba(0,0,0,0.4); }
 .cf-face { fill: #E9C15C; }

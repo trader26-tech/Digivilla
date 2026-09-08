@@ -193,13 +193,18 @@
           <!-- ===== COIN OVERLAY: painted AFTER every tile so coins always sit
                on top of the villas (one gold coin per finished villa). ===== -->
           <ng-container *ngFor="let c of cells()">
-            <g *ngIf="wearsCoin(c)" class="coin-float" [attr.transform]="'translate(' + c.x + ',' + (c.y - 52) + ')'"
-               (click)="tapCoin($event)" role="button" [attr.aria-label]="'Collect ' + compact(est.rentIn) + ' rent'">
-              <ellipse class="cf-shadow" cx="0" cy="40" rx="13" ry="4"></ellipse>
-              <circle class="cf-face" r="17"></circle>
-              <circle class="cf-ring" r="17"></circle>
-              <circle class="cf-shine" cx="-5" cy="-6" r="4"></circle>
-              <text class="cf-glyph" x="0" y="6" text-anchor="middle">₹</text>
+            <!-- outer g positions the coin; inner g does the bob so the
+                 animation transform never clobbers the position transform -->
+            <g *ngIf="wearsCoin(c)" [attr.transform]="'translate(' + c.x + ',' + (c.y - 52) + ')'"
+               (click)="tapCoin($event)" role="button" [attr.aria-label]="'Collect ' + compact(est.rentIn) + ' rent'"
+               style="cursor:pointer">
+              <g class="coin-float">
+                <ellipse class="cf-shadow" cx="0" cy="40" rx="13" ry="4"></ellipse>
+                <circle class="cf-face" r="17"></circle>
+                <circle class="cf-ring" r="17"></circle>
+                <circle class="cf-shine" cx="-5" cy="-6" r="4"></circle>
+                <text class="cf-glyph" x="0" y="6" text-anchor="middle">₹</text>
+              </g>
             </g>
           </ng-container>
         </g>
