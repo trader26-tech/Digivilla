@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
 
 import { AuthService } from './auth/auth.service';
 import { BookingService, Booking } from './booking.service';
+import { EstateService } from './estate.service';
 
 /** A call, shaped for the list: parsed date/time + friendly labels. */
 interface CallItem {
@@ -30,11 +31,41 @@ interface CallItem {
 export class CallsComponent implements OnInit {
   private auth = inject(AuthService);
   private bookings = inject(BookingService);
+  readonly est = inject(EstateService);
+
+  @Output() signOut = new EventEmitter<void>();
+  @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
 
   loading = signal(true);
   raw = signal<Booking[]>([]);
 
+  /** The user's contact details for the profile header. */
+  get userPhone(): string {
+    return this.est.profile().phone || this.auth.user()?.phone || '';
+  }
+  get userName(): string {
+    return this.est.profile().name || this.auth.user()?.name || 'You';
+  }
+  get userCity(): string { return this.est.profile().city || ''; }
+  get initial(): string { return (this.userName || 'U').charAt(0).toUpperCase(); }
+
   ngOnInit(): void { this.load(); }
+
+  // profile photo upload (same technique as the account page)
+  pickPhoto(): void { this.photoInput?.nativeElement.click(); }
+  onPhotoChosen(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const photo = typeof reader.result === 'string' ? reader.result : undefined;
+      if (photo) this.est.setProfile({ photo });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+  doSignOut(): void { this.signOut.emit(); }
 
   load(): void {
     const phone = this.auth.user()?.phone || '';
