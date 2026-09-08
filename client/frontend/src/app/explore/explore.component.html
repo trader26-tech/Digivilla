@@ -8,6 +8,12 @@
       </div>
     </header>
 
+    <!-- cost-to-own chip, top-right -->
+    <div class="xp-chip">
+      <span class="xp-chip-k">COST TO OWN</span>
+      <b class="xp-chip-v">₹{{ v.price | number:'1.0-0' }}</b>
+    </div>
+
     <!-- the swipeable card -->
     <section class="xp-card" (pointerdown)="onDown($event)" (pointerup)="onUp($event)"
              (pointercancel)="onUp($event)" (wheel)="onWheel($event)">
@@ -20,34 +26,24 @@
       <!-- name -->
       <h1 class="xp-name">{{ v.name }}</h1>
 
-      <!-- the ONE headline number: what it costs to own -->
-      <div class="xp-price">
-        <span class="xp-price-k">Cost to own</span>
-        <b class="xp-price-v">₹{{ v.price | number:'1.0-0' }}</b>
-      </div>
-
-      <!-- the rent it pays -->
-      <div class="xp-facts">
-        <div class="xp-fact">
-          <b class="xp-fact-v pos">{{ compact(v.monthly_income) }}<span>/mo</span></b>
-          <span class="xp-fact-k">Rent paid to you</span>
+      <!-- two columns: rent · historical worth (with the 'if invested…' sub) -->
+      <div class="xp-cols">
+        <div class="xp-col">
+          <b class="xp-col-v pos">{{ compact(v.monthly_income) }}<span>/mo</span></b>
+          <span class="xp-col-k">Rent paid to you</span>
+        </div>
+        <div class="xp-col-div" aria-hidden="true"></div>
+        <div class="xp-col" *ngIf="historicalLine as h">
+          <b class="xp-col-v">{{ h.worth }}</b>
+          <span class="xp-col-k">worth today if invested {{ h.years }} yrs ago*</span>
         </div>
       </div>
-
-      <!-- plain-language, historical "what if" — easy to grasp -->
-      <p class="xp-hist" *ngIf="historicalLine as h">
-        If <b>₹{{ v.price | number:'1.0-0' }}</b> had been invested <b>{{ h.years }} years ago</b>,
-        it would be worth about <b class="pos">{{ h.worth }}</b> today —
-        even after taking <b>{{ h.rent }}/mo</b> rent.<sup>*</sup>
-      </p>
 
       <!-- one action -->
       <button class="xp-own" (click)="ownThis()">Book a call to own this</button>
 
-      <!-- prominent left-swipe affordance for the details -->
-      <button class="xp-details" (click)="openExplainer()">
-        <span class="xp-details-arrow">←</span> Swipe left to see how it works
-      </button>
+      <!-- subtle left-swipe hint (NOT a button) -->
+      <p class="xp-swipe"><span class="xp-swipe-arrow">←</span> swipe left to see how it works</p>
 
       <p class="xp-fine">*Illustrative, based on historical returns. Market-linked, not guaranteed.</p>
     </section>
