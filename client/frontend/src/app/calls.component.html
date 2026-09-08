@@ -76,13 +76,15 @@
       </section>
 
       <!-- more upcoming -->
-      <section class="ca-group" *ngIf="upcoming().length > 1">
+      <section class="ca-group" *ngIf="restUpcoming().length">
         <h2 class="ca-group-h">Upcoming</h2>
-        <div class="ca-row" *ngFor="let c of upcoming().slice(1)">
-          <span class="ca-row-ic" aria-hidden="true">📞</span>
-          <div class="ca-row-date">
-            <b>{{ c.dateLabel }} · {{ c.timeLabel }}</b>
-            <span>{{ c.note || 'Call with fund manager' }}</span>
+        <div class="ca-row" *ngFor="let c of restUpcoming()" [class.auto]="c.auto">
+          <span class="ca-date-chip" aria-hidden="true">
+            <b>{{ c.day }}</b><span>{{ c.monthLabel }}</span>
+          </span>
+          <div class="ca-row-main">
+            <b class="ca-row-title">{{ c.note }}</b>
+            <span class="ca-row-sub">{{ c.dateLabel }}<ng-container *ngIf="c.timeLabel"> · {{ c.timeLabel }}</ng-container></span>
           </div>
           <button class="ca-join sm" *ngIf="c.meetLink" (click)="join(c.meetLink)" aria-label="Join call">Join</button>
           <span class="ca-pill sm" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
@@ -93,10 +95,12 @@
       <section class="ca-group" *ngIf="past().length">
         <h2 class="ca-group-h">Past</h2>
         <div class="ca-row past" *ngFor="let c of past()">
-          <span class="ca-row-ic" aria-hidden="true">📞</span>
-          <div class="ca-row-date">
-            <b>{{ c.dateLabel }} · {{ c.timeLabel }}</b>
-            <span>{{ c.note || 'Call with fund manager' }}</span>
+          <span class="ca-date-chip" aria-hidden="true">
+            <b>{{ c.day }}</b><span>{{ c.monthLabel }}</span>
+          </span>
+          <div class="ca-row-main">
+            <b class="ca-row-title">{{ c.note }}</b>
+            <span class="ca-row-sub">{{ c.dateLabel }}<ng-container *ngIf="c.timeLabel"> · {{ c.timeLabel }}</ng-container></span>
           </div>
           <span class="ca-pill sm" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
         </div>

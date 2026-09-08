@@ -143,18 +143,28 @@
 .ca-group { margin-bottom: 1.4rem; }
 .ca-group-h { margin: 0 0 0.7rem; font-size: 0.74rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .ca-row {
-  display: flex; align-items: center; gap: 0.8rem;
-  background: var(--surface); border: 1px solid var(--survey); border-radius: 16px;
-  padding: 0.85rem 1rem; margin-bottom: 0.6rem;
+  display: flex; align-items: center; gap: 0.85rem;
+  background: var(--card); border: 1px solid var(--survey); border-radius: 16px;
+  padding: 0.75rem 0.85rem; margin-bottom: 0.6rem;
 }
-.ca-row.past { opacity: 0.6; }
-.ca-row-ic {
-  flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px;
-  background: color-mix(in srgb, var(--ink) 8%, var(--surface)); font-size: 1rem;
+.ca-row.past { opacity: 0.55; }
+/* big date chip on the left: day number + month */
+.ca-date-chip {
+  flex: none; width: 52px; height: 52px; border-radius: 13px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  background: color-mix(in srgb, var(--brass) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 22%, transparent);
+  b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 850; line-height: 1; color: var(--ink); }
+  span { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brass); }
 }
-.ca-row-date { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.ca-row-date b { font-size: 1rem; font-weight: 800; color: var(--ink); }
-.ca-row-date span { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.ca-row.auto .ca-date-chip {
+  background: color-mix(in srgb, var(--positive) 14%, transparent);
+  border-color: color-mix(in srgb, var(--positive) 24%, transparent);
+  span { color: var(--positive); }
+}
+.ca-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.ca-row-title { font-size: 0.95rem; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ca-row-sub { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 
 /* ============================ SCHEDULE SHEET ============================ */
 .sheet-scrim {

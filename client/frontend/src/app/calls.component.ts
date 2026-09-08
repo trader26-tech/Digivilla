@@ -8,14 +8,17 @@ import { PresentationComponent } from './presentation.component';
 
 /** A call, shaped for the list: parsed date/time + friendly labels. */
 interface CallItem {
-  booking: Booking;
+  booking: Booking | null;   // null for an auto-generated quarterly placeholder
   when: number;         // epoch ms of the slot (or created_at fallback)
   dateLabel: string;    // "Wed, 10 Sep"
-  timeLabel: string;    // "10:30 am"
-  status: string;       // requested | confirmed | declined
+  timeLabel: string;    // "10:30 am"  ('' for a placeholder — time set on the call)
+  status: string;       // requested | confirmed | declined | scheduled
   meetLink: string;
   note: string;         // the review type, e.g. "Quarterly review"
   upcoming: boolean;
+  auto?: boolean;       // true = an upcoming quarterly review (not yet booked)
+  day?: number;         // day-of-month for the big date chip
+  monthLabel?: string;  // "Dec" for the big date chip
 }
 
 /** One kind of call the user can request from the fund manager. */
@@ -118,46 +121,106 @@ export class CallsComponent implements OnInit {
     });
   }
 
-  /** Only consultation bookings that carry a real slot = actual calls. */
+  /** Real consultation bookings that carry a slot = actual calls. */
   private calls = computed<CallItem[]>(() => {
     const now = Date.now();
     return this.raw()
       .filter((b) => (b.kind || 'consultation') === 'consultation' && !!b.slot)
       .map((b) => {
         const when = this.parseSlot(b.slot!);
+        const d = new Date(when);
         return {
           booking: b, when,
           dateLabel: this.dateLabel(when),
           timeLabel: this.timeLabel(when),
           status: b.status || 'requested',
           meetLink: b.meet_link || '',
-          note: (b.note || '').trim(),
-          upcoming: when >= now - 30 * 60_000,   // grace: still "upcoming" 30m after start
+          note: (b.note || '').trim() || 'Fund-manager call',
+          upcoming: when >= now - 30 * 60_000,
+          day: d.getDate(),
+          monthLabel: this.MON[d.getMonth()],
         } as CallItem;
       });
   });
 
-  upcoming = computed<CallItem[]>(() =>
-    this.calls().filter((c) => c.upcoming).sort((a, z) => a.when - z.when));
+  /** Auto quarterly reviews for the year ahead, from the estate's start date.
+   *  e.g. set up on the 8th → 8 Dec, 8 Mar, 8 Jun reviews shown as upcoming. */
+  private quarterlyReviews = computed<CallItem[]>(() => {
+    const anchor = this.quarterAnchor();
+    if (!anchor) return [];
+    const now = Date.now();
+    const out: CallItem[] = [];
+    for (let q = 1; q <= 4; q++) {
+      const d = new Date(anchor);
+      d.setMonth(d.getMonth() + q * 3);
+      const when = d.getTime();
+      if (when < now) continue;                 // only future quarters
+      out.push({
+        booking: null, when,
+        dateLabel: this.dateLabel(when),
+        timeLabel: '',
+        status: 'scheduled',
+        meetLink: '',
+        note: 'Quarterly review',
+        upcoming: true, auto: true,
+        day: d.getDate(),
+        monthLabel: this.MON[d.getMonth()],
+      });
+    }
+    return out;
+  });
+
+  /** The date the quarterly cadence counts from: the earliest real booking, or
+   *  today if none yet. Fixed at the day-of-month so reviews land on that day. */
+  private quarterAnchor(): number | null {
+    const booked = this.calls().map((c) => c.when).filter((w) => w > 0);
+    const base = booked.length ? Math.min(...booked) : Date.now();
+    const d = new Date(base); d.setHours(11, 0, 0, 0);   // a sensible default time
+    return d.getTime();
+  }
+
+  upcoming = computed<CallItem[]>(() => {
+    // real upcoming calls + auto quarterly reviews, de-duped by (day,month)
+    const real = this.calls().filter((c) => c.upcoming);
+    const takenKeys = new Set(real.map((c) => `${c.day}-${c.monthLabel}`));
+    const autos = this.quarterlyReviews().filter((c) => !takenKeys.has(`${c.day}-${c.monthLabel}`));
+    return [...real, ...autos].sort((a, z) => a.when - z.when);
+  });
   past = computed<CallItem[]>(() =>
     this.calls().filter((c) => !c.upcoming).sort((a, z) => z.when - a.when));
 
   /** The single next call (for the hero card). */
   next = computed<CallItem | null>(() => this.upcoming()[0] || null);
+  /** Upcoming after the hero one. */
+  restUpcoming = computed<CallItem[]>(() => this.upcoming().slice(1));
 
-  hasAny = computed<boolean>(() => this.calls().length > 0);
+  hasAny = computed<boolean>(() => this.upcoming().length > 0 || this.past().length > 0);
+
+  private readonly MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   join(link: string): void {
     if (link) window.open(link, '_blank', 'noopener');
   }
 
-  // ── presentation overlay ──
+  // ── presentation ──
+  // Open the deck as a REAL top-level page in a new tab. This is bulletproof:
+  // it sidesteps the iframe + service-worker + SPA-routing interactions that
+  // were leaving the embedded deck blank. The deck is a self-contained
+  // full-screen slideshow, so a plain page load is the best experience anyway.
   presenting = signal(false);
-  openPresentation(): void { this.presenting.set(true); if (navigator.vibrate) navigator.vibrate(6); }
+  openPresentation(): void {
+    if (navigator.vibrate) navigator.vibrate(6);
+    // cache-bust so a stale service-worker copy is never shown
+    const url = `deck/flat-vs-income.html?v=${Date.now()}`;
+    const win = window.open(url, '_blank');
+    // Popup blocked (some in-app/PWA webviews) → fall back to the in-app overlay.
+    if (!win) this.presenting.set(true);
+  }
   closePresentation(): void { this.presenting.set(false); }
 
   statusText(s: string): string {
-    return s === 'confirmed' ? 'Confirmed' : s === 'declined' ? 'Declined' : 'Requested';
+    return s === 'confirmed' ? 'Confirmed' : s === 'declined' ? 'Declined'
+      : s === 'scheduled' ? 'Scheduled' : 'Requested';
   }
 
   // ============================ SCHEDULE A CALL ============================
