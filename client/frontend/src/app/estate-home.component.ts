@@ -123,6 +123,9 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   selected = signal<Cell | null>(null);
   /** Just-collected toast amount, or 0. */
   collected = signal(0);
+  /** The "what your estate means" key — closed by default, opens on the ? tap. */
+  keyOpen = signal(false);
+  toggleKey(): void { this.keyOpen.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
   /** PORTFOLIO WORTH is masked (••••) by default; the eye reveals it. */
   worthHidden = signal(true);
   toggleWorth(): void { this.worthHidden.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }

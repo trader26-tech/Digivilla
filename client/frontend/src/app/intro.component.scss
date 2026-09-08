@@ -11,7 +11,7 @@
   place-items: center;
   overflow: hidden;
   background:
-    radial-gradient(140% 120% at 50% 118%, #3a2f6b 0%, #241d47 18%, #14131f 46%, #0F1015 74%, #0E1116 100%);
+    radial-gradient(120% 90% at 50% 122%, #6b2b52 0%, #4a2a63 20%, #2a2149 40%, #161428 64%, #0E1116 100%);
   transition: opacity 0.6s ease, filter 0.6s ease;
 }
 .intro.leave {
@@ -35,8 +35,19 @@
   aspect-ratio: 1;
   transform: translate(-50%, 60%) scale(0.6);
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 42%, #EDE9FF 0%, #B4A6F5 34%, #8B7BF0 64%, rgba(139, 123, 240, 0) 72%);
-  filter: blur(1px);
+  /* reddish-purple sun: warm rose core → magenta → deep purple rim */
+  background:
+    radial-gradient(circle at 50% 42%,
+      #FFE3D6 0%,
+      #F7A8B8 20%,
+      #D96BA0 42%,
+      #9C4FC4 66%,
+      #6E3BB0 82%,
+      rgba(110, 59, 176, 0) 84%);
+  box-shadow:
+    0 0 70px 10px rgba(217, 107, 160, 0.45),
+    0 0 140px 40px rgba(156, 79, 196, 0.35),
+    inset 0 -18px 40px rgba(110, 40, 120, 0.4);
   animation: sunRise 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @keyframes sunRise {
@@ -53,7 +64,10 @@
   width: 120vw;
   aspect-ratio: 1;
   transform: translate(-50%, 50%);
-  background: radial-gradient(circle, rgba(139, 123, 240, 0.32) 0%, rgba(139, 123, 240, 0) 55%);
+  background: radial-gradient(circle,
+    rgba(217, 107, 160, 0.30) 0%,
+    rgba(156, 79, 196, 0.22) 28%,
+    rgba(110, 59, 176, 0) 58%);
   animation: fadeIn 2s ease forwards;
 }
 
@@ -74,21 +88,21 @@
 }
 .h1 {
   height: 70%;
-  background: linear-gradient(#181528, #0E1116);
+  background: linear-gradient(#1d1631, #0E1116);
   animation-delay: 0.7s;
 }
 .h2 {
   height: 52%;
   left: -20%;
   right: 30%;
-  background: linear-gradient(#241d47, #14131f);
+  background: linear-gradient(#3a2350, #17132a);
   animation-delay: 0.9s;
 }
 .h3 {
   height: 44%;
   left: 35%;
   right: -20%;
-  background: linear-gradient(#2f2760, #1a1730);
+  background: linear-gradient(#5a2c5e, #241a38);
   animation-delay: 1.05s;
 }
 @keyframes hillUp {
@@ -156,7 +170,8 @@
 /* Emphasis word: solid, high-contrast terracotta so it reads crisply
    on the warm paper — no transparent gradient fill (that made it faint). */
 .freedom .w.em {
-  color: #A98BF5;
+  background: linear-gradient(100deg, #F7A8B8, #C86BC4 55%, #9C7BF0);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
   animation-delay: 0.9s;
 }
 .rule {
