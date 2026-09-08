@@ -63,6 +63,60 @@
   &:active { transform: scale(0.92); }
 }
 
+/* loading shimmer over the (cream) deck bg while it unpacks */
+.pres-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 206;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  background: #faf9f5;
+  color: #6b6b63;
+  font: 600 0.95rem/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.pres-spin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid rgba(63, 107, 69, 0.25);
+  border-top-color: #3f6b45;
+  animation: pres-spin 0.75s linear infinite;
+}
+@keyframes pres-spin { to { transform: rotate(360deg); } }
+
+/* escape hatch — shown if the embed stalls (e.g. a stale cache) */
+.pres-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 207;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  background: #faf9f5;
+  color: #2b2b28;
+}
+.pres-fb-title { margin: 0; font: 800 1.25rem/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.pres-fb-sub { margin: 0 0 1rem; font: 500 0.95rem/1.4 -apple-system, sans-serif; color: #6b6b63; max-width: 300px; }
+.pres-fb-btn {
+  padding: 0.85rem 1.6rem;
+  border: none;
+  border-radius: 999px;
+  background: #3f6b45;
+  color: #fff;
+  font: 800 1rem -apple-system, sans-serif;
+  cursor: pointer;
+  transition: transform 0.12s, filter 0.2s;
+  &:active { transform: scale(0.97); }
+  &:hover { filter: brightness(1.06); }
+}
+
 /* rotate hint — centered, softly fading out */
 .pres-hint {
   position: fixed;

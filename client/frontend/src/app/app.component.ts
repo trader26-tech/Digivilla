@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { SwUpdate } from '@angular/service-worker';
 
 import { AccountComponent } from './account/account.component';
 import { AuthService } from './auth/auth.service';
@@ -62,6 +63,8 @@ export class AppComponent {
    *  screen plays its "verified" tick once (not on every returning visit). */
   justVerified = false;
 
+  private readonly swUpdate = inject(SwUpdate, { optional: true });
+
   constructor() {
     // On a returning verified session, sync the profile from the auth user.
     this.syncProfileFromAuth();
@@ -70,6 +73,23 @@ export class AppComponent {
       const v = new URLSearchParams(location.search).get('view');
       if (v === 'explore' || v === 'home') { this.view = v; this.intro = false; }
     } catch {}
+    // Never leave a user stuck on a stale cached build: as soon as the service
+    // worker fetches a newer version, activate it and reload so the latest app
+    // (and the presentation deck) is what they see.
+    this.watchForUpdates();
+  }
+
+  private watchForUpdates(): void {
+    const sw = this.swUpdate;
+    if (!sw || !sw.isEnabled) return;
+    sw.versionUpdates.subscribe((e) => {
+      if (e.type === 'VERSION_READY') {
+        sw.activateUpdate().then(() => document.location.reload()).catch(() => {});
+      }
+    });
+    // Proactively poll for a new version shortly after load and every 5 min.
+    setTimeout(() => sw.checkForUpdate().catch(() => {}), 8000);
+    setInterval(() => sw.checkForUpdate().catch(() => {}), 5 * 60_000);
   }
 
   /** Called after phone verification succeeds — the intro already played

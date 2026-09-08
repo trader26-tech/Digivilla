@@ -6,9 +6,23 @@
       class="pres-frame"
       [src]="deckUrl"
       title="Presentation"
+      (load)="onFrameLoad()"
       allow="fullscreen; autoplay"
       referrerpolicy="no-referrer"
     ></iframe>
+  </div>
+
+  <!-- loading shimmer until the deck's first frame is up -->
+  <div class="pres-loading" *ngIf="!loaded() && !stalled()" aria-hidden="true">
+    <span class="pres-spin"></span>
+    <span>Loading presentation…</span>
+  </div>
+
+  <!-- escape hatch: if the embed didn't come up, open it standalone -->
+  <div class="pres-fallback" *ngIf="stalled() && !loaded()">
+    <p class="pres-fb-title">Presentation is taking a moment</p>
+    <p class="pres-fb-sub">Open it in a new tab for the smoothest view.</p>
+    <button class="pres-fb-btn" (click)="openInNewTab()">Open presentation</button>
   </div>
 
   <!-- close (fixed to the real screen, not the rotated stage) -->
@@ -17,7 +31,7 @@
   </button>
 
   <!-- rotate hint — only while portrait, fades out -->
-  <div class="pres-hint" *ngIf="portrait() && showHint()" aria-hidden="true">
+  <div class="pres-hint" *ngIf="portrait() && showHint() && loaded()" aria-hidden="true">
     <svg viewBox="0 0 24 24" width="26" height="26"><path d="M7 4h7a2 2 0 0 1 2 2v3M17 20h-7a2 2 0 0 1-2-2v-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M4 9l3-3 3 3M20 15l-3 3-3-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span>Turn your phone sideways for the best view</span>
   </div>
