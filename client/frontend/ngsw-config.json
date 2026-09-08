@@ -27,6 +27,16 @@
       }
     },
     {
+      "name": "deck",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/deck/**"
+        ]
+      }
+    },
+    {
       "name": "fonts",
       "installMode": "lazy",
       "updateMode": "prefetch",
@@ -37,5 +47,9 @@
         ]
       }
     }
+  ],
+  "navigationUrls": [
+    "/**",
+    "!/deck/**"
   ]
 }
