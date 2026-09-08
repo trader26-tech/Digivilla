@@ -1,21 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, HostListener, OnDestroy, OnInit, Output, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, Output, ViewChild, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 /**
- * Full-screen presentation overlay — plays the "₹1 crore, two ways" deck for
- * the advisor to walk a client through, from their phone.
+ * In-app presentation — the "₹1 crore, two ways" deck rendered INSIDE the app
+ * (not a new tab), with our own left/right controls.
  *
- * The deck is a self-contained HTML slideshow served from /deck. It renders in
- * an iframe. Two robustness measures matter here:
- *   1. A cache-busting query so a stale service-worker copy is never shown.
- *   2. A load watchdog: if the iframe hasn't signalled load in a few seconds
- *      (blank screen), we surface an "Open in a new tab" escape hatch that
- *      opens the deck standalone — which always works.
+ * The deck is a same-origin page of 13 stacked `<section class="slide">`
+ * elements. We load it in an iframe, hide its own scrollbars/chrome, and drive
+ * navigation ourselves: our arrow buttons scroll the target slide into view,
+ * and a dot rail shows progress. This gives a clean, native-feeling slideshow
+ * the advisor controls with one thumb.
  *
- * The deck is horizontal. On a phone held upright we rotate the stage 90° so it
- * fills the screen in landscape, and also try to lock the OS to landscape
- * (Android/Chrome; iOS ignores it, which is why the CSS rotation is the real fix).
+ * On a phone held upright the stage is rotated 90° so the horizontal deck fills
+ * the screen in landscape.
  */
 @Component({
   selector: 'app-presentation',
@@ -26,37 +24,30 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 })
 export class PresentationComponent implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<void>();
+  @ViewChild('frame') frame?: ElementRef<HTMLIFrameElement>;
 
-  /** URL of the bundled deck. The service worker caches it per build and the
-   *  app auto-activates new builds, so this stays fresh without a query bust
-   *  (which would defeat offline caching). */
   readonly rawUrl = 'deck/flat-vs-income.html';
-  /** Sanitized URL for the iframe [src] (set in the constructor). */
   deckUrl: SafeResourceUrl;
 
   constructor(private sanitizer: DomSanitizer) {
     this.deckUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.rawUrl);
   }
 
-  /** True when the phone is in portrait and we should rotate the stage. */
   portrait = signal(true);
-  /** Show the "rotate for the best view" hint briefly on open. */
-  showHint = signal(true);
-  /** The iframe fired its load event — the deck HTML arrived. */
   loaded = signal(false);
-  /** Watchdog tripped: took too long, show the "open in new tab" escape hatch. */
   stalled = signal(false);
 
+  /** Slide index + total, driven from the deck's own <section.slide> list. */
+  index = signal(0);
+  total = signal(0);
+
+  private slides: HTMLElement[] = [];
   private watchdog?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
     this.measure();
     this.tryLockLandscape();
-    setTimeout(() => this.showHint.set(false), 3200);
-    // If the deck hasn't loaded in 6s, offer the standalone escape hatch.
-    this.watchdog = setTimeout(() => {
-      if (!this.loaded()) this.stalled.set(true);
-    }, 6000);
+    this.watchdog = setTimeout(() => { if (!this.loaded()) this.stalled.set(true); }, 7000);
   }
 
   ngOnDestroy(): void {
@@ -64,26 +55,96 @@ export class PresentationComponent implements OnInit, OnDestroy {
     this.tryUnlock();
   }
 
+  /** Once the deck loads, grab its slides, hide its own chrome, and show the
+   *  first slide. The deck shows one slide at a time via opacity/visibility —
+   *  we drive that directly so our controls page cleanly through them. */
   onFrameLoad(): void {
-    this.loaded.set(true);
-    this.stalled.set(false);
-    if (this.watchdog) clearTimeout(this.watchdog);
+    const doc = this.frameDoc();
+    if (!doc) { this.stalled.set(true); return; }
+    const collect = () => {
+      const list = Array.from(doc.querySelectorAll<HTMLElement>('section.slide'));
+      if (!list.length) return false;
+      this.slides = list;
+      this.total.set(list.length);
+      this.injectDeckStyles(doc);
+      this.goTo(0);
+      this.loaded.set(true);
+      this.stalled.set(false);
+      if (this.watchdog) clearTimeout(this.watchdog);
+      return true;
+    };
+    if (!collect()) {
+      let tries = 0;
+      const iv = setInterval(() => { if (collect() || ++tries > 25) clearInterval(iv); }, 200);
+    }
   }
 
-  /** Open the deck standalone in a new tab — the guaranteed-to-work fallback. */
-  openInNewTab(): void {
-    window.open(this.rawUrl, '_blank', 'noopener');
+  /** Hide the deck's own presenter chrome (the left thumbnail rail + any
+   *  scrollbars) and centre each slide so it fills our stage. */
+  private injectDeckStyles(doc: Document): void {
+    try {
+      const style = doc.createElement('style');
+      style.id = '__pres_override';
+      style.textContent = `
+        html, body { overflow: hidden !important; margin: 0 !important; background: #faf9f5 !important; }
+        ::-webkit-scrollbar { width: 0 !important; height: 0 !important; }
+        /* The thumbnail rail sits to the LEFT of the stage (x < ~188px). Hide any
+           aside/nav chrome so only the current slide shows. */
+        aside, nav, [class*="rail"], [class*="thumb"], [class*="sidebar"],
+        [class*="filmstrip"], [class*="tray"] { display: none !important; }
+        /* Centre each absolute slide in the viewport, filling it. */
+        section.slide {
+          position: fixed !important; inset: 0 !important; margin: auto !important;
+          transition: opacity 0.32s ease !important;
+        }
+      `;
+      doc.head.appendChild(style);
+    } catch { /* same-origin, shouldn't throw */ }
   }
+
+  private frameDoc(): Document | null {
+    try { return this.frame?.nativeElement.contentDocument || null; } catch { return null; }
+  }
+
+  // ── navigation: drive the deck's own one-slide-visible model ──
+  next(): void { this.goTo(this.index() + 1); }
+  prev(): void { this.goTo(this.index() - 1); }
+
+  goTo(i: number): void {
+    const n = this.slides.length;
+    if (!n) return;
+    const clamped = Math.max(0, Math.min(n - 1, i));
+    this.index.set(clamped);
+    // show only the target slide (deck toggles opacity/visibility to page)
+    this.slides.forEach((s, k) => {
+      const on = k === clamped;
+      s.style.setProperty('opacity', on ? '1' : '0', 'important');
+      s.style.setProperty('visibility', on ? 'visible' : 'hidden', 'important');
+      s.style.setProperty('z-index', on ? '2' : '0', 'important');
+      s.style.setProperty('pointer-events', on ? 'auto' : 'none', 'important');
+    });
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+
+  get atStart(): boolean { return this.index() <= 0; }
+  get atEnd(): boolean { return this.index() >= this.total() - 1; }
+
+  /** Keyboard support on desktop. */
+  @HostListener('window:keydown', ['$event'])
+  onKey(e: KeyboardEvent): void {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); this.next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); this.prev(); }
+    else if (e.key === 'Escape') { this.doClose(); }
+  }
+
+  openInNewTab(): void { window.open(this.rawUrl, '_blank', 'noopener'); }
 
   @HostListener('window:resize')
   onResize(): void { this.measure(); }
-
   @HostListener('window:orientationchange')
   onOrient(): void { setTimeout(() => this.measure(), 120); }
 
-  private measure(): void {
-    this.portrait.set(window.innerHeight > window.innerWidth);
-  }
+  private measure(): void { this.portrait.set(window.innerHeight > window.innerWidth); }
 
   private async tryLockLandscape(): Promise<void> {
     try {
@@ -91,7 +152,7 @@ export class PresentationComponent implements OnInit, OnDestroy {
       if (el.requestFullscreen) { await el.requestFullscreen().catch(() => {}); }
       const orient: any = (screen as any).orientation;
       if (orient && orient.lock) { await orient.lock('landscape').catch(() => {}); }
-    } catch { /* unsupported — CSS rotation handles it */ }
+    } catch { /* CSS rotation handles it */ }
   }
   private async tryUnlock(): Promise<void> {
     try {
@@ -101,8 +162,5 @@ export class PresentationComponent implements OnInit, OnDestroy {
     } catch { /* no-op */ }
   }
 
-  doClose(): void {
-    this.tryUnlock();
-    this.close.emit();
-  }
+  doClose(): void { this.tryUnlock(); this.close.emit(); }
 }

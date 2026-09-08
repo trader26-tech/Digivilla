@@ -1,38 +1,53 @@
 <div class="pres" [class.portrait]="portrait()">
-  <!-- the landscape stage: rotated 90° when the phone is upright so the deck
-       fills the screen without the user turning the device -->
+  <!-- the deck stage (rotated 90° on an upright phone so it fills landscape) -->
   <div class="pres-stage">
     <iframe
+      #frame
       class="pres-frame"
       [src]="deckUrl"
       title="Presentation"
       (load)="onFrameLoad()"
-      allow="fullscreen; autoplay"
+      scrolling="no"
+      allow="fullscreen"
       referrerpolicy="no-referrer"
     ></iframe>
   </div>
 
-  <!-- loading shimmer until the deck's first frame is up -->
+  <!-- loading state over the deck's cream bg while it hydrates -->
   <div class="pres-loading" *ngIf="!loaded() && !stalled()" aria-hidden="true">
     <span class="pres-spin"></span>
     <span>Loading presentation…</span>
   </div>
 
-  <!-- escape hatch: if the embed didn't come up, open it standalone -->
+  <!-- escape hatch if the deck never comes up -->
   <div class="pres-fallback" *ngIf="stalled() && !loaded()">
     <p class="pres-fb-title">Presentation is taking a moment</p>
-    <p class="pres-fb-sub">Open it in a new tab for the smoothest view.</p>
+    <p class="pres-fb-sub">Open it in a new tab instead.</p>
     <button class="pres-fb-btn" (click)="openInNewTab()">Open presentation</button>
   </div>
 
-  <!-- close (fixed to the real screen, not the rotated stage) -->
+  <!-- ===== our custom controls (only once the deck is live) ===== -->
+  <ng-container *ngIf="loaded()">
+    <!-- PREV / NEXT — big, thumb-friendly, on the real screen edges -->
+    <button class="pres-nav prev" (click)="prev()" [disabled]="atStart" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="pres-nav next" (click)="next()" [disabled]="atEnd" aria-label="Next slide">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <!-- bottom bar: counter + progress dots -->
+    <div class="pres-bar">
+      <span class="pres-count">{{ index() + 1 }} / {{ total() }}</span>
+      <div class="pres-dots">
+        <button class="pres-dot" *ngFor="let s of [].constructor(total()); let i = index"
+                [class.on]="i === index()" (click)="goTo(i)" [attr.aria-label]="'Slide ' + (i + 1)"></button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- close -->
   <button class="pres-close" (click)="doClose()" aria-label="Close presentation">
     <svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
   </button>
-
-  <!-- rotate hint — only while portrait, fades out -->
-  <div class="pres-hint" *ngIf="portrait() && showHint() && loaded()" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="26" height="26"><path d="M7 4h7a2 2 0 0 1 2 2v3M17 20h-7a2 2 0 0 1-2-2v-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M4 9l3-3 3 3M20 15l-3 3-3-3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Turn your phone sideways for the best view</span>
-  </div>
 </div>

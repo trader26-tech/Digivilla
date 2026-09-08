@@ -18,6 +18,17 @@ from app.schemas import Booking, BookingCreate
 _LOCAL_PATH = os.path.join(os.path.dirname(__file__), "data", "bookings.json")
 
 
+def _new_meet_link(booking_id: str) -> str:
+    """A unique, joinable video-call room for this booking — created on the fly,
+    no login or OAuth needed, and everyone who opens the link lands in the SAME
+    room (unlike meet.google.com/new, which spins a fresh room per click). Uses
+    a Google-Meet-style room path on a public Jitsi host. The advisor can still
+    override this with a real Google Meet link from the admin app."""
+    import re
+    slug = re.sub(r"[^a-z0-9]", "", booking_id.lower())[:12] or uuid.uuid4().hex[:12]
+    return f"https://meet.jit.si/digivilla-{slug}"
+
+
 # ---------------- storage ----------------
 _TABLE_OK = None  # None = unprobed, True/False = cached result
 
@@ -77,7 +88,10 @@ def _normalize(row: dict) -> dict:
         "slot": row.get("slot", "") or "",
         "note": row.get("note", ""),
         "status": row.get("status", "requested"),
-        "meet_link": row.get("meet_link", "") or "",
+        # a stored (advisor-set) link wins; otherwise derive a stable room from
+        # the booking id so every consultation has a joinable video link.
+        "meet_link": (row.get("meet_link") or "").strip()
+        or (_new_meet_link(row.get("id", "")) if (row.get("kind") or "consultation") == "consultation" and row.get("slot") else ""),
         "created_at": row.get("created_at", ""),
     }
 
@@ -89,6 +103,11 @@ def create_booking(payload: BookingCreate) -> Booking:
     row["id"] = uuid.uuid4().hex
     row["status"] = "requested"
     row["created_at"] = datetime.now(timezone.utc).isoformat()
+    # NOTE: the video-call link is NOT stored (the bookings table has no
+    # meet_link column). Instead both apps DERIVE the same room deterministically
+    # from the booking id (see _new_meet_link / the client's meetFor), so every
+    # call has a joinable link with no schema change. An advisor-set real Meet
+    # link, when the column exists, still takes precedence on read.
 
     if _use_supabase():
         from app.supabase_client import get_supabase

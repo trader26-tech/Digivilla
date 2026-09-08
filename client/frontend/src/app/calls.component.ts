@@ -134,7 +134,7 @@ export class CallsComponent implements OnInit {
           dateLabel: this.dateLabel(when),
           timeLabel: this.timeLabel(when),
           status: b.status || 'requested',
-          meetLink: b.meet_link || '',
+          meetLink: b.meet_link || this.meetFor(b.id),
           note: (b.note || '').trim() || 'Fund-manager call',
           upcoming: when >= now - 30 * 60_000,
           day: d.getDate(),
@@ -160,7 +160,7 @@ export class CallsComponent implements OnInit {
         dateLabel: this.dateLabel(when),
         timeLabel: '',
         status: 'scheduled',
-        meetLink: '',
+        meetLink: this.meetFor('q' + d.getFullYear() + (d.getMonth() + 1)),
         note: 'Quarterly review',
         upcoming: true, auto: true,
         day: d.getDate(),
@@ -202,20 +202,18 @@ export class CallsComponent implements OnInit {
     if (link) window.open(link, '_blank', 'noopener');
   }
 
-  // ── presentation ──
-  // Open the deck as a REAL top-level page in a new tab. This is bulletproof:
-  // it sidesteps the iframe + service-worker + SPA-routing interactions that
-  // were leaving the embedded deck blank. The deck is a self-contained
-  // full-screen slideshow, so a plain page load is the best experience anyway.
-  presenting = signal(false);
-  openPresentation(): void {
-    if (navigator.vibrate) navigator.vibrate(6);
-    // cache-bust so a stale service-worker copy is never shown
-    const url = `deck/flat-vs-income.html?v=${Date.now()}`;
-    const win = window.open(url, '_blank');
-    // Popup blocked (some in-app/PWA webviews) → fall back to the in-app overlay.
-    if (!win) this.presenting.set(true);
+  /** A stable video-call room for a call, matching the backend's scheme, so
+   *  every call (real or an auto quarterly one) has a joinable link. */
+  private meetFor(id: string): string {
+    const slug = (id || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) || 'call';
+    return `https://meet.jit.si/digivilla-${slug}`;
   }
+
+  // ── presentation ──
+  // Open the deck INSIDE the app (integrated overlay with our own left/right
+  // controls) — not a new tab.
+  presenting = signal(false);
+  openPresentation(): void { this.presenting.set(true); if (navigator.vibrate) navigator.vibrate(6); }
   closePresentation(): void { this.presenting.set(false); }
 
   statusText(s: string): string {

@@ -12,7 +12,7 @@
   overflow: hidden;
 }
 
-/* The stage holds the deck iframe. In LANDSCAPE it simply fills the screen. */
+/* deck stage — fills the screen in landscape */
 .pres-stage {
   position: absolute;
   inset: 0;
@@ -27,10 +27,7 @@
   background: #faf9f5;
 }
 
-/* In PORTRAIT we rotate the stage 90° so the horizontal deck fills the phone
-   in landscape without the user having to physically turn it. The stage is
-   sized to the screen's swapped dimensions (100vh wide × 100vw tall), pinned
-   at the top-left, then rotated about that corner and slid into place. */
+/* PORTRAIT: rotate the stage 90° so the horizontal deck fills the phone. */
 .pres.portrait .pres-stage {
   width: 100vh;
   height: 100vw;
@@ -40,13 +37,86 @@
   transform: rotate(90deg);
 }
 
-/* close button — fixed to the real screen corner (top-right as the phone is
-   actually held), above the rotated stage */
+/* ===== custom prev / next ===== */
+.pres-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 210;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: #2b2b28;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform 0.12s, opacity 0.18s, background 0.15s;
+  &:active { transform: translateY(-50%) scale(0.9); }
+  &:hover { background: #fff; }
+  &:disabled { opacity: 0; pointer-events: none; }
+}
+.pres-nav.prev { left: calc(env(safe-area-inset-left) + 14px); }
+.pres-nav.next { right: calc(env(safe-area-inset-right) + 14px); }
+
+/* ===== bottom bar: counter + dots ===== */
+.pres-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  transform: translateX(-50%);
+  z-index: 210;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(20, 20, 22, 0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 26px -10px rgba(0, 0, 0, 0.5);
+}
+.pres-count {
+  font: 800 0.82rem/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #fff;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.pres-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 70vw;
+  overflow: hidden;
+}
+.pres-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.2s, width 0.2s, transform 0.15s;
+  &.on {
+    background: #fff;
+    width: 20px;
+    border-radius: 999px;
+  }
+}
+
+/* close */
 .pres-close {
   position: fixed;
   top: calc(env(safe-area-inset-top) + 12px);
   right: calc(env(safe-area-inset-right) + 12px);
-  z-index: 210;
+  z-index: 212;
   width: 44px;
   height: 44px;
   display: grid;
@@ -55,102 +125,44 @@
   border: none;
   cursor: pointer;
   color: #fff;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   transition: background 0.15s, transform 0.12s;
-  &:hover { background: rgba(0, 0, 0, 0.72); }
+  &:hover { background: rgba(0, 0, 0, 0.68); }
   &:active { transform: scale(0.92); }
 }
 
-/* loading shimmer over the (cream) deck bg while it unpacks */
-.pres-loading {
+/* loading + fallback over the cream deck bg */
+.pres-loading, .pres-fallback {
   position: fixed;
   inset: 0;
-  z-index: 206;
+  z-index: 208;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.9rem;
+  gap: 0.6rem;
   background: #faf9f5;
-  color: #6b6b63;
-  font: 600 0.95rem/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  text-align: center;
+  padding: 2rem;
 }
+.pres-loading { color: #6b6b63; font: 600 0.95rem/1.4 -apple-system, sans-serif; }
 .pres-spin {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 3px solid rgba(63, 107, 69, 0.25);
-  border-top-color: #3f6b45;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 3px solid rgba(63, 107, 69, 0.25); border-top-color: #3f6b45;
   animation: pres-spin 0.75s linear infinite;
 }
 @keyframes pres-spin { to { transform: rotate(360deg); } }
-
-/* escape hatch — shown if the embed stalls (e.g. a stale cache) */
-.pres-fallback {
-  position: fixed;
-  inset: 0;
-  z-index: 207;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 2rem;
-  text-align: center;
-  background: #faf9f5;
-  color: #2b2b28;
-}
-.pres-fb-title { margin: 0; font: 800 1.25rem/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-.pres-fb-sub { margin: 0 0 1rem; font: 500 0.95rem/1.4 -apple-system, sans-serif; color: #6b6b63; max-width: 300px; }
+.pres-fb-title { margin: 0; font: 800 1.25rem/1.3 -apple-system, sans-serif; color: #2b2b28; }
+.pres-fb-sub { margin: 0 0 1rem; font: 500 0.95rem/1.4 -apple-system, sans-serif; color: #6b6b63; }
 .pres-fb-btn {
-  padding: 0.85rem 1.6rem;
-  border: none;
-  border-radius: 999px;
-  background: #3f6b45;
-  color: #fff;
-  font: 800 1rem -apple-system, sans-serif;
-  cursor: pointer;
-  transition: transform 0.12s, filter 0.2s;
+  padding: 0.85rem 1.6rem; border: none; border-radius: 999px;
+  background: #3f6b45; color: #fff; font: 800 1rem -apple-system, sans-serif; cursor: pointer;
   &:active { transform: scale(0.97); }
-  &:hover { filter: brightness(1.06); }
-}
-
-/* rotate hint — centered, softly fading out */
-.pres-hint {
-  position: fixed;
-  inset: 0;
-  z-index: 205;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.9rem;
-  pointer-events: none;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
-  text-align: center;
-  padding: 2rem;
-  animation: hintOut 3.2s ease forwards;
-
-  svg { animation: rock 1.6s ease-in-out infinite; }
-  span {
-    font: 700 1.05rem/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    max-width: 260px;
-    letter-spacing: -0.2px;
-  }
-}
-@keyframes hintOut {
-  0%, 62% { opacity: 1; }
-  100% { opacity: 0; }
-}
-@keyframes rock {
-  0%, 100% { transform: rotate(-12deg); }
-  50% { transform: rotate(12deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pres-hint { animation: none; }
-  .pres-hint svg { animation: none; }
+  .pres-nav, .pres-dot, .pres-close { transition: none; }
+  .pres-spin { animation-duration: 1.4s; }
 }
