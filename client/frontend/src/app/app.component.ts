@@ -71,7 +71,7 @@ export class AppComponent {
     // Deep-link support: ?view=explore opens the Explore tab on load.
     try {
       const v = new URLSearchParams(location.search).get('view');
-      if (v === 'explore' || v === 'home') { this.view = v; this.intro = false; }
+      if (v === 'explore' || v === 'home' || v === 'calls') { this.view = v; this.intro = false; }
     } catch {}
     // Never leave a user stuck on a stale cached build: as soon as the service
     // worker fetches a newer version, activate it and reload so the latest app
