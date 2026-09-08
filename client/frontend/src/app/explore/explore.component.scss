@@ -1,4 +1,4 @@
-:host { display: block; min-height: 100vh; min-height: 100dvh; }
+:host { display: block; width: 100%; max-width: 100%; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; box-sizing: border-box; }
 
 /* dark, premium canvas */
 .xp {
@@ -13,10 +13,16 @@
   color: var(--txt);
   padding: calc(1.1rem + env(safe-area-inset-top)) 1.25rem calc(6rem + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  display: flex; flex-direction: column;
+  display: block;
+  width: 100%; max-width: 100%; min-width: 0;
   font-variant-numeric: tabular-nums;
   overflow-x: hidden;
 }
+/* one centred content column. .xp already pads 1.25rem each side and clips
+   overflow-x, so width:100% here is always within the screen. */
+.xp-top { display: flex; width: 100%; max-width: 420px; margin: 0 auto; box-sizing: border-box; }
+.xp-card { display: flex; flex-direction: column; align-items: center;
+  width: 100%; max-width: 420px; margin: 0 auto; box-sizing: border-box; }
 
 /* top rail */
 .xp-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -28,9 +34,14 @@
 /* the card */
 .xp-card {
   flex: 1; display: flex; flex-direction: column; align-items: center;
+  min-width: 0; box-sizing: border-box;
   touch-action: pan-y; user-select: none; -webkit-user-select: none;
   animation: card-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+/* every DESCENDANT (not the card itself — that keeps its 420px clamp):
+   border-box + shrink + wrap, so padded rows and long text never force the
+   card wider than its max-width. */
+.xp-card * { box-sizing: border-box; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 @keyframes card-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 
 /* cost chip */
@@ -54,16 +65,16 @@
 }
 
 /* name */
-.xp-head { text-align: center; margin-top: 1.4rem; }
-.xp-name { margin: 0; font-size: 3rem; font-weight: 800; letter-spacing: -1.6px; line-height: 1; color: var(--txt); }
-.xp-tag { margin: 0.7rem 0 0; font-size: 1rem; color: var(--dim); }
+.xp-head { text-align: center; margin-top: 1.4rem; width: 100%; }
+.xp-name { margin: 0; font-size: clamp(2rem, 10vw, 2.8rem); font-weight: 800; letter-spacing: -1.4px; line-height: 1.02; color: var(--txt); word-break: break-word; }
+.xp-tag { margin: 0.7rem 0 0; font-size: 0.95rem; color: var(--dim); }
 
 /* projection */
 .xp-proj { width: 100%; text-align: center; margin-top: 1.6rem; }
-.xp-proj-row { display: flex; align-items: baseline; justify-content: center; gap: 0.7rem; }
-.xp-proj-v { font-size: 2.8rem; font-weight: 800; letter-spacing: -1.4px; color: var(--txt); }
-.xp-proj-x { font-size: 1rem; font-weight: 700; color: var(--accent); }
-.xp-proj-sub { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--dim); }
+.xp-proj-row { display: flex; align-items: baseline; justify-content: center; gap: 0.6rem; flex-wrap: wrap; }
+.xp-proj-v { font-size: clamp(2rem, 9vw, 2.6rem); font-weight: 800; letter-spacing: -1.2px; color: var(--txt); }
+.xp-proj-x { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+.xp-proj-sub { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--dim); line-height: 1.4; padding: 0 0.5rem; }
 
 /* years timeline */
 .xp-time { position: relative; display: flex; justify-content: space-between; margin-top: 1.3rem; padding: 0 6px; }
