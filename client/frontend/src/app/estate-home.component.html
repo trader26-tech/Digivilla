@@ -197,16 +197,16 @@
                  roof itself. Outer g = fixed position on the roof-top of the
                  cell; inner g = the bob (so the animation transform never
                  clobbers the position transform, which stacked them before). -->
-            <g *ngIf="wearsCoin(c)" [attr.transform]="'translate(' + c.x + ',' + (c.y - 46) + ')'"
+            <g *ngIf="wearsCoin(c)" [attr.transform]="'translate(' + c.x + ',' + (c.y - 44) + ')'"
                (click)="tapCoin($event)" role="button" [attr.aria-label]="'Collect ' + compact(est.rentIn) + ' rent'"
                style="cursor:pointer">
-              <!-- shadow stays on the roof (does not bob) -->
-              <ellipse class="cf-shadow" cx="0" cy="26" rx="11" ry="3.5"></ellipse>
+              <!-- shadow rests on the CENTRE of the villa roof (does not bob) -->
+              <ellipse class="cf-shadow" cx="0" cy="30" rx="9" ry="3"></ellipse>
               <g class="coin-float">
-                <circle class="cf-face" r="15"></circle>
-                <circle class="cf-ring" r="15"></circle>
-                <circle class="cf-shine" cx="-4.5" cy="-5" r="3.5"></circle>
-                <text class="cf-glyph" x="0" y="5" text-anchor="middle">₹</text>
+                <circle class="cf-face" r="12"></circle>
+                <circle class="cf-ring" r="12"></circle>
+                <circle class="cf-shine" cx="-3.5" cy="-4" r="3"></circle>
+                <text class="cf-glyph" x="0" y="4" text-anchor="middle">₹</text>
               </g>
             </g>
           </ng-container>

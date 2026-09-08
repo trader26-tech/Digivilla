@@ -35,14 +35,22 @@
 .xp-card {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   min-width: 0; box-sizing: border-box;
-  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  touch-action: none; user-select: none; -webkit-user-select: none;
   animation: card-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 /* every DESCENDANT (not the card itself — that keeps its 420px clamp):
    border-box + shrink + wrap, so padded rows and long text never force the
    card wider than its max-width. */
 .xp-card * { box-sizing: border-box; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
-@keyframes card-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes card-in { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+/* the villa gently floats up and down */
+.xp-float { animation: villa-float 3.4s ease-in-out infinite; }
+@keyframes villa-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@media (prefers-reduced-motion: reduce) { .xp-float { animation: none; } }
 
 /* cost chip */
 .xp-chip {

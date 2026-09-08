@@ -88,7 +88,7 @@ export class ExploreComponent implements OnInit {
 
   ownThis(): void { const v = this.current; if (v) this.own.emit(v); }
 
-  // ---- swipe: horizontal pages tiers; a left-swipe opens the explainer ----
+  // ---- swipe: VERTICAL pages villas (up = next, down = prev); LEFT = details ----
   private sx: number | null = null;
   private sy: number | null = null;
   onDown(e: PointerEvent): void {
@@ -102,17 +102,20 @@ export class ExploreComponent implements OnInit {
     this.sx = this.sy = null;
     try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
     const ax = Math.abs(dx), ay = Math.abs(dy);
-    if (ay > ax && ay > 50) {          // vertical swipe up → explainer
-      if (dy < 0) this.openExplainer();
+    if (ay >= ax) {
+      // vertical: swipe UP → next villa, swipe DOWN → previous villa
+      if (ay > 45) this.step(dy < 0 ? 1 : -1);
       return;
     }
-    if (ax > 45) {
-      // right-swipe → previous tier; left-swipe → next tier, and if already at
-      // the last tier, a further left-swipe opens the explainer for it.
-      if (dx > 0) this.step(-1);
-      else if (this.idx() < this.count - 1) this.step(1);
-      else this.openExplainer();
-    }
+    // horizontal: a LEFT swipe opens the explainer (the "how it works" details)
+    if (dx < -45) this.openExplainer();
+  }
+
+  /** Desktop: scroll wheel pages villas up/down. */
+  onWheel(e: WheelEvent): void {
+    if (Math.abs(e.deltaY) < 24) return;
+    e.preventDefault();
+    this.step(e.deltaY > 0 ? 1 : -1);
   }
 
   /** How the fund weight reads as a role label. */

@@ -10,17 +10,17 @@
 
     <!-- the swipeable card -->
     <section class="xp-card" (pointerdown)="onDown($event)" (pointerup)="onUp($event)"
-             (pointercancel)="onUp($event)">
+             (pointercancel)="onUp($event)" (wheel)="onWheel($event)">
       <!-- cost-to-own chip -->
       <div class="xp-chip">
         <span class="xp-chip-k">COST TO OWN</span>
         <b class="xp-chip-v">₹{{ v.price | number:'1.0-0' }}</b>
       </div>
 
-      <!-- the villa art on its plinth -->
+      <!-- the villa art on its plinth — gently floating -->
       <div class="xp-art">
         <div class="xp-plinth" aria-hidden="true"></div>
-        <app-villa-art></app-villa-art>
+        <div class="xp-float"><app-villa-art></app-villa-art></div>
       </div>
 
       <!-- name + tagline -->
@@ -55,14 +55,14 @@
 
       <!-- affordances -->
       <div class="xp-actions">
-        <button class="xp-how" (click)="openExplainer()">How it works ↑</button>
+        <button class="xp-how" (click)="openExplainer()">← How it works</button>
         <button class="xp-own" (click)="ownThis()">Own this villa</button>
       </div>
 
       <!-- swipe hints -->
       <div class="xp-hints" aria-hidden="true">
-        <span class="xp-hint" *ngIf="count > 1">‹ swipe to compare ›</span>
-        <span class="xp-hint">swipe up for how it works</span>
+        <span class="xp-hint" *ngIf="count > 1">↑ swipe up · down ↓ for other villas</span>
+        <span class="xp-hint">swipe left for how it works</span>
       </div>
     </section>
   </ng-container>
