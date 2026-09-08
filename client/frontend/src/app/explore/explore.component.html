@@ -8,10 +8,15 @@
       </div>
     </header>
 
-    <!-- cost-to-own chip, top-right -->
-    <div class="xp-chip">
-      <span class="xp-chip-k">COST TO OWN</span>
-      <b class="xp-chip-v">₹{{ v.price | number:'1.0-0' }}</b>
+    <!-- cost-to-own chip, top-right, with a "how it works" cue beneath it -->
+    <div class="xp-corner">
+      <div class="xp-chip">
+        <span class="xp-chip-k">COST TO OWN</span>
+        <b class="xp-chip-v">₹{{ v.price | number:'1.0-0' }}</b>
+      </div>
+      <button class="xp-how" (click)="openExplainer()">
+        How it works? <span class="xp-how-arrow">→</span>
+      </button>
     </div>
 
     <!-- the swipeable card -->
@@ -26,24 +31,21 @@
       <!-- name -->
       <h1 class="xp-name">{{ v.name }}</h1>
 
-      <!-- two columns: rent · historical worth (with the 'if invested…' sub) -->
-      <div class="xp-cols">
+      <!-- two matched columns: what it pays you · what it grows to -->
+      <div class="xp-cols" *ngIf="historicalLine as h">
         <div class="xp-col">
-          <b class="xp-col-v pos">{{ compact(v.monthly_income) }}<span>/mo</span></b>
-          <span class="xp-col-k">Rent paid to you</span>
+          <b class="xp-col-v pos">{{ compact(v.monthly_income) }}</b>
+          <span class="xp-col-k">Monthly rent</span>
         </div>
         <div class="xp-col-div" aria-hidden="true"></div>
-        <div class="xp-col" *ngIf="historicalLine as h">
+        <div class="xp-col">
           <b class="xp-col-v">{{ h.worth }}</b>
-          <span class="xp-col-k">worth today if invested {{ h.years }} yrs ago*</span>
+          <span class="xp-col-k">Value in {{ h.years }} yrs<sup>*</sup></span>
         </div>
       </div>
 
       <!-- one action -->
       <button class="xp-own" (click)="ownThis()">Book a call to own this</button>
-
-      <!-- subtle swipe hint, right-aligned toward the villa -->
-      <p class="xp-swipe">swipe to see how it's built <span class="xp-swipe-arrow">→</span></p>
 
       <p class="xp-fine">*Illustrative, based on historical returns. Market-linked, not guaranteed.</p>
     </section>
