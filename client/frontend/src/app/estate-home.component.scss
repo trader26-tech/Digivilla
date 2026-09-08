@@ -292,7 +292,9 @@
 }
 .cell.open:hover .plot-open { fill: rgba(166, 124, 46, 0.10); stroke: var(--brass); }
 .peg { fill: rgba(150,140,120,0.55); }
-.plot-cta { opacity: 1; transition: opacity 0.2s ease; pointer-events: none; }
+/* the "+" build marks are hidden by default so the empty board reads clean
+   like the reference; they fade in only on hover/focus of a plot. */
+.plot-cta { opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
 /* a solid brass ring around the + (no dotted stroke) */
 .plot-ring {
   fill: rgba(166,124,46,0.12);
@@ -301,11 +303,7 @@
 }
 .plot-ico { fill: none; stroke: var(--brass); stroke-width: 2.4; stroke-linecap: round; }
 .cell.open:hover .plot-cta,
-.cell.open:focus-visible .plot-cta { opacity: 1; }
-/* the + is always visible on every open plot */
-@media (hover: none) {
-  .plot-cta { opacity: 1; }
-}
+.cell.open:focus-visible .plot-cta { opacity: 0.9; }
 
 .lawn { fill: url(#lawn); stroke: #2f6127; stroke-width: 1; }
 .soil-l { fill: #6b4f2b; }
@@ -1426,7 +1424,7 @@
 .pw-eye { color: var(--muted); flex: none; }
 
 /* RENT IN / BUILD COST coin chips (top-right) */
-.coins { position: absolute; top: calc(1.2rem + env(safe-area-inset-top)); right: 1.1rem; left: auto; z-index: 3; display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; max-width: 62vw; }
+.coins { position: absolute; top: calc(1.2rem + env(safe-area-inset-top)); right: 1rem; left: auto; z-index: 3; display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; width: min(56%, 220px); }
 .coin-chip {
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.55rem;
   padding: 0.35rem 0.85rem 0.35rem 0.35rem; border-radius: 999px;
