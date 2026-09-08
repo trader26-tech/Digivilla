@@ -53,7 +53,7 @@ export class ExploreComponent implements OnInit {
         // (₹10L, ₹50L) come straight from the real catalog.
         const list = (r.villas || []).filter((v) => v.price >= 10_00_000);
         this.tiers.set(list.length ? list : (r.villas || []));
-        this.loading.set(false);
+        this.loading.set(false); try{ if(new URLSearchParams(location.search).get('how')==='1') this.explainerOpen.set(true);}catch(e){}
       },
       error: () => { this.loading.set(false); },
     });

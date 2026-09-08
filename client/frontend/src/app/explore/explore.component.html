@@ -1,12 +1,14 @@
 <main class="xp">
   <ng-container *ngIf="current as v; else loadingTpl">
-    <!-- top rail: label + dots -->
+    <!-- top rail: label only -->
     <header class="xp-top">
       <span class="xp-kicker">EXPLORE · VILLA · {{ idx() + 1 }} OF {{ count }}</span>
-      <div class="xp-dots" aria-hidden="true">
-        <span class="xp-dot" *ngFor="let t of tiers(); let i = index" [class.on]="i === idx()"></span>
-      </div>
     </header>
+
+    <!-- VERTICAL pips on the right — paging is up/down, so the indicator is too -->
+    <div class="xp-vdots" aria-hidden="true" *ngIf="count > 1">
+      <span class="xp-vdot" *ngFor="let t of tiers(); let i = index" [class.on]="i === idx()"></span>
+    </div>
 
     <!-- the swipeable card -->
     <section class="xp-card" (pointerdown)="onDown($event)" (pointerup)="onUp($event)"
@@ -74,16 +76,15 @@
     </div>
   </ng-template>
 
-  <!-- ============ "how it works" explainer (slides up) ============ -->
-  <div class="ex-backdrop" *ngIf="explainerOpen()" (click)="closeExplainer()"></div>
-  <aside class="ex-sheet" *ngIf="explainerOpen() && current as v" role="dialog" aria-modal="true"
+  <!-- ============ "how it works" — a full page that slides in from the right
+       on left-swipe (or the button). Details render over this new page. ======= -->
+  <aside class="ex-page" *ngIf="explainerOpen() && current as v" role="dialog" aria-modal="true"
          aria-label="How this villa works">
-    <span class="ex-grab" aria-hidden="true"></span>
     <div class="ex-scroll">
       <header class="ex-head">
+        <button class="ex-back" (click)="closeExplainer()" aria-label="Back">‹</button>
         <span class="ex-kicker">HOW IT WORKS</span>
         <h2 class="ex-title">{{ v.name }}</h2>
-        <button class="ex-close" (click)="closeExplainer()" aria-label="Close">✕</button>
       </header>
 
       <!-- 1 · afford it -->
