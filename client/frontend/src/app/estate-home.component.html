@@ -193,12 +193,13 @@
           <!-- ===== COIN OVERLAY: painted AFTER every tile so coins always sit
                on top of the villas (one gold coin per finished villa). ===== -->
           <ng-container *ngFor="let c of cells()">
-            <g *ngIf="wearsCoin(c)" class="coin-float" [attr.transform]="'translate(' + c.x + ',' + (c.y - 42) + ')'"
+            <g *ngIf="wearsCoin(c)" class="coin-float" [attr.transform]="'translate(' + c.x + ',' + (c.y - 52) + ')'"
                (click)="tapCoin($event)" role="button" [attr.aria-label]="'Collect ' + compact(est.rentIn) + ' rent'">
-              <ellipse class="cf-shadow" cx="0" cy="34" rx="12" ry="4"></ellipse>
-              <circle class="cf-face" r="16"></circle>
-              <circle class="cf-ring" r="16"></circle>
-              <text class="cf-glyph" x="0" y="5" text-anchor="middle">₹</text>
+              <ellipse class="cf-shadow" cx="0" cy="40" rx="13" ry="4"></ellipse>
+              <circle class="cf-face" r="17"></circle>
+              <circle class="cf-ring" r="17"></circle>
+              <circle class="cf-shine" cx="-5" cy="-6" r="4"></circle>
+              <text class="cf-glyph" x="0" y="6" text-anchor="middle">₹</text>
             </g>
           </ng-container>
         </g>
@@ -247,38 +248,31 @@
       </p>
     </ng-container>
 
-    <!-- ===== WHAT YOUR ESTATE MEANS — premium card, real isometric art ===== -->
-    <section class="key" *ngIf="!isEmptyEstate()" aria-label="What the assets mean">
-      <div class="key-head">
-        <span class="key-cap">What your estate means</span>
-        <span class="key-badge">SEBI · illustrative</span>
-      </div>
+    <!-- ===== "What does this mean?" — collapsed to a tiny ? by default ===== -->
+    <div class="keywrap" *ngIf="!isEmptyEstate()">
+      <button class="key-toggle" (click)="toggleKey()" [attr.aria-expanded]="keyOpen()" aria-label="What does this mean?">
+        <span class="key-q">?</span> What does this mean
+      </button>
 
-      <div class="key-row">
-        <span class="key-ico" aria-hidden="true">
-          <svg viewBox="26 20 188 128" width="100%" height="100%"><use href="#tVilla"></use></svg>
-        </span>
-        <span class="key-txt">
-          <b>Villa <span class="key-tag done">Fully funded</span></b>
-          <span>A fully-paid fund holding in your name — pays an illustrative monthly payout.</span>
-        </span>
-      </div>
-
-      <div class="key-row">
-        <span class="key-ico" aria-hidden="true">
-          <svg viewBox="26 20 188 128" width="100%" height="100%">
-            <use href="#tLand"></use>
-            <g transform="translate(120,96) scale(0.30) translate(-640,-430)"><use href="#tBuild"></use></g>
-          </svg>
-        </span>
-        <span class="key-txt">
-          <b>Under construction <span class="key-tag build">Still investing</span></b>
-          <span>The same holding while your SIP builds it up — not earning its full payout yet.</span>
-        </span>
-      </div>
-
-      <p class="key-fine">A visual metaphor for mutual-fund units in your name · market-linked, <b>not guaranteed</b>.</p>
-    </section>
+      <section class="key" *ngIf="keyOpen()" aria-label="What the assets mean">
+        <div class="key-row">
+          <span class="key-ico" aria-hidden="true">
+            <svg viewBox="26 20 188 128" width="100%" height="100%"><use href="#tVilla"></use></svg>
+          </span>
+          <span class="key-txt"><b>Villa</b><span>Fully-paid holding — pays a monthly payout.</span></span>
+        </div>
+        <div class="key-row">
+          <span class="key-ico" aria-hidden="true">
+            <svg viewBox="26 20 188 128" width="100%" height="100%">
+              <use href="#tLand"></use>
+              <g transform="translate(120,96) scale(0.30) translate(-640,-430)"><use href="#tBuild"></use></g>
+            </svg>
+          </span>
+          <span class="key-txt"><b>Under construction</b><span>SIP still building it up.</span></span>
+        </div>
+        <p class="key-fine">A metaphor for mutual-fund units in your name · market-linked, <b>not guaranteed</b>.</p>
+      </section>
+    </div>
   </div>
 
   <!-- ============ PLOT DETAIL POPUP ============

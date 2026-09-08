@@ -1445,56 +1445,53 @@
 .rc-collect { display: block; margin: 0.5rem auto 0; border: none; background: none; cursor: pointer; font: inherit; font-size: 0.92rem; color: var(--positive); b { font-weight: 800; } }
 .rc-none { text-align: center; margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--muted); }
 
-/* ===== "what your estate means" — a FAINT, recessive filler. It's not the
-   point of the screen (the city is), so it sits quiet and low-contrast; it
-   gently lifts to full clarity only when the user actually looks at it. ===== */
+/* ===== "what does this mean?" — a tiny ? chip; the panel is hidden until
+   tapped, so it never competes with the city. ===== */
+.keywrap { flex: none; align-self: center; width: 100%; max-width: 360px; margin: 1.4rem auto 0; display: flex; flex-direction: column; align-items: center; }
+.key-toggle {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  border: none; background: none; cursor: pointer; font: inherit;
+  font-size: 0.78rem; font-weight: 600; color: var(--muted);
+  padding: 0.3rem 0.5rem; border-radius: 999px; transition: color 0.2s;
+  &:hover { color: var(--ink); }
+}
+.key-q {
+  display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+  background: color-mix(in srgb, var(--brass) 18%, transparent); color: var(--brass);
+  font-size: 0.7rem; font-weight: 800;
+}
+
 .key {
-  flex: none; align-self: center;
-  width: 100%; max-width: 390px; margin: 1.6rem auto 0; padding: 0.9rem 1.1rem 0.8rem;
-  border-radius: 18px; border: 1px solid color-mix(in srgb, var(--survey) 45%, transparent);
-  background: color-mix(in srgb, var(--card) 45%, transparent);
-  opacity: 0.42;
-  transition: opacity 0.35s ease;
-  animation: heroIn 0.4s ease both;
-  &:hover, &:focus-within { opacity: 1; }
+  width: 100%; margin: 0.7rem 0 0; padding: 0.85rem 1rem 0.8rem;
+  border-radius: 16px; border: 1px solid var(--survey); background: var(--card);
+  animation: keyDrop 0.28s cubic-bezier(0.22,1,0.36,1) both;
 }
-.key-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.5rem; }
-.key-cap { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.key-badge {
-  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--brass); background: color-mix(in srgb, var(--brass) 16%, transparent);
-  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
-}
-.key-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0; }
+@keyframes keyDrop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.key-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; }
 .key-row + .key-row { border-top: 1px solid var(--survey); }
 .key-ico {
-  flex: none; width: 62px; height: 50px; border-radius: 12px;
+  flex: none; width: 52px; height: 42px; border-radius: 10px;
   display: grid; place-items: center; overflow: hidden;
   background: color-mix(in srgb, var(--card-2) 70%, transparent);
   svg { display: block; width: 100%; height: 100%; }
 }
-.key-txt { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-.key-txt > b { font-size: 0.95rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
-.key-txt > span { font-size: 0.78rem; line-height: 1.4; color: var(--muted); }
-.key-tag {
-  font-size: 0.56rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 999px;
-}
-.key-tag.done { color: var(--positive); background: color-mix(in srgb, var(--positive) 18%, transparent); }
-.key-tag.build { color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, transparent); }
+.key-txt { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.key-txt > b { font-size: 0.9rem; font-weight: 800; color: var(--ink); }
+.key-txt > span { font-size: 0.76rem; line-height: 1.35; color: var(--muted); }
 .key-fine {
-  margin: 0.7rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--survey);
-  font-size: 0.68rem; line-height: 1.45; color: var(--muted);
+  margin: 0.6rem 0 0; padding-top: 0.6rem; border-top: 1px solid var(--survey);
+  font-size: 0.66rem; line-height: 1.4; color: var(--muted);
   b { color: var(--terracotta); font-weight: 800; }
 }
 
 /* the collect coin floating over a villa on the map */
 .coin-float { cursor: pointer; animation: coin-bob 2.2s ease-in-out infinite; transform-box: view-box; }
 @keyframes coin-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-.cf-shadow { fill: rgba(0,0,0,0.35); }
-.cf-face { fill: url(#coinGrad); fill: #E9C15C; }
-.cf-ring { fill: none; stroke: #C79A34; stroke-width: 2; }
-.cf-glyph { fill: #6B5111; font-size: 15px; font-weight: 800; }
+.cf-shadow { fill: rgba(0,0,0,0.4); }
+.cf-face { fill: #E9C15C; }
+.cf-ring { fill: none; stroke: #B8902F; stroke-width: 2.5; }
+.cf-shine { fill: #FBEBB0; opacity: 0.9; }
+.cf-glyph { fill: #6B5111; font-size: 17px; font-weight: 800; }
 
 /* the AMFI/metaphor line, dimmed on dark */
 .home-amfi { color: var(--muted); }
