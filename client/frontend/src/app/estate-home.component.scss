@@ -1445,22 +1445,44 @@
 .rc-collect { display: block; margin: 0.5rem auto 0; border: none; background: none; cursor: pointer; font: inherit; font-size: 0.92rem; color: var(--positive); b { font-weight: 800; } }
 .rc-none { text-align: center; margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--muted); }
 
-/* ===== minimal SEBI key — two tight one-liners + one disclaimer line ===== */
+/* ===== "what your estate means" — premium card with real isometric art ===== */
 .key {
   flex: none; align-self: center;
-  display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
-  margin: 1.2rem auto 0; padding: 0 1.25rem; text-align: center;
+  width: 100%; max-width: 390px; margin: 1.3rem auto 0; padding: 1rem 1.1rem 0.9rem;
+  border-radius: 20px; border: 1px solid var(--survey);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(139, 123, 240, 0.08), transparent 55%),
+    var(--card);
+  box-shadow: 0 20px 46px -30px #000;
+  animation: heroIn 0.4s ease both;
 }
-.key-item {
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  font-size: 0.82rem; color: var(--muted); line-height: 1.3;
-  b { color: var(--ink); font-weight: 800; }
+.key-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.5rem; }
+.key-cap { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.key-badge {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--brass); background: color-mix(in srgb, var(--brass) 16%, transparent);
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
 }
-.key-sw { flex: none; width: 12px; height: 12px; border-radius: 3px; }
-.key-sw.villa { background: #E6DBC9; }
-.key-sw.build { background: #59A52E; border: 1.5px dashed var(--gold); }
+.key-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0; }
+.key-row + .key-row { border-top: 1px solid var(--survey); }
+.key-ico {
+  flex: none; width: 62px; height: 50px; border-radius: 12px;
+  display: grid; place-items: center; overflow: hidden;
+  background: color-mix(in srgb, var(--card-2) 70%, transparent);
+  svg { display: block; width: 100%; height: 100%; }
+}
+.key-txt { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.key-txt > b { font-size: 0.95rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.key-txt > span { font-size: 0.78rem; line-height: 1.4; color: var(--muted); }
+.key-tag {
+  font-size: 0.56rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px;
+}
+.key-tag.done { color: var(--positive); background: color-mix(in srgb, var(--positive) 18%, transparent); }
+.key-tag.build { color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, transparent); }
 .key-fine {
-  margin: 0.5rem 0 0; font-size: 0.7rem; line-height: 1.4; color: var(--muted); opacity: 0.85;
+  margin: 0.7rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--survey);
+  font-size: 0.68rem; line-height: 1.45; color: var(--muted);
   b { color: var(--terracotta); font-weight: 800; }
 }
 
