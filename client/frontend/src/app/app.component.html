@@ -33,6 +33,7 @@
 <app-calls
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'calls'"
   class="has-nav"
+  (signOut)="onSignOut()"
 ></app-calls>
 
 <!-- BOTTOM NAV: a floating pill with three tabs — Home, Explore, Calls. -->
