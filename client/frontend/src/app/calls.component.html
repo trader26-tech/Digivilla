@@ -13,7 +13,7 @@
     <div class="ca-id">
       <h1 class="ca-name">{{ userName }}</h1>
       <p class="ca-contact">
-        <span *ngIf="userPhone">📱 +91 {{ userPhone }}</span>
+        <span *ngIf="phonePretty">{{ phonePretty }}</span>
         <span *ngIf="userCity"> · {{ userCity }}</span>
       </p>
     </div>
@@ -22,16 +22,27 @@
     </button>
   </section>
 
-  <!-- ===== CALLS ===== -->
-  <div class="ca-section-h">Your calls</div>
+  <!-- ===== CALLS header + the SCHEDULE button ===== -->
+  <div class="ca-section-h">
+    <span>Your calls</span>
+    <button class="ca-add" (click)="openSheet()" aria-label="Schedule a call">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <span>Schedule</span>
+    </button>
+  </div>
 
   <div class="ca-loading" *ngIf="loading()">Loading your calls…</div>
 
   <ng-container *ngIf="!loading()">
+    <!-- EMPTY: nudge them to book their first call with a big, obvious CTA -->
     <div class="ca-empty" *ngIf="!hasAny()">
       <div class="ca-empty-ic">📞</div>
-      <p>No calls scheduled yet.</p>
-      <span>When you book a call, or your fund manager sets one up, it shows here.</span>
+      <p>No calls scheduled yet</p>
+      <span>Book a call with your fund manager for a quarterly review, or any question about your villas.</span>
+      <button class="ca-empty-cta" (click)="openSheet()">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        Schedule a call
+      </button>
     </div>
 
     <ng-container *ngIf="hasAny()">
@@ -42,6 +53,7 @@
           <b class="ca-hero-date">{{ c.dateLabel }}</b>
           <span class="ca-hero-time">{{ c.timeLabel }}</span>
         </div>
+        <p class="ca-hero-reason" *ngIf="c.note">{{ c.note }}</p>
         <span class="ca-pill hero-pill" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
         <button class="ca-join" *ngIf="c.meetLink" (click)="join(c.meetLink)">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 10l6-3v10l-6-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
@@ -56,8 +68,8 @@
         <div class="ca-row" *ngFor="let c of upcoming().slice(1)">
           <span class="ca-row-ic" aria-hidden="true">📞</span>
           <div class="ca-row-date">
-            <b>{{ c.dateLabel }}</b>
-            <span>{{ c.timeLabel }}</span>
+            <b>{{ c.dateLabel }} · {{ c.timeLabel }}</b>
+            <span>{{ c.note || 'Call with fund manager' }}</span>
           </div>
           <button class="ca-join sm" *ngIf="c.meetLink" (click)="join(c.meetLink)" aria-label="Join call">Join</button>
           <span class="ca-pill sm" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
@@ -70,12 +82,100 @@
         <div class="ca-row past" *ngFor="let c of past()">
           <span class="ca-row-ic" aria-hidden="true">📞</span>
           <div class="ca-row-date">
-            <b>{{ c.dateLabel }}</b>
-            <span>{{ c.timeLabel }}</span>
+            <b>{{ c.dateLabel }} · {{ c.timeLabel }}</b>
+            <span>{{ c.note || 'Call with fund manager' }}</span>
           </div>
           <span class="ca-pill sm" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
         </div>
       </section>
     </ng-container>
   </ng-container>
+
+  <!-- ============================ SCHEDULE SHEET ============================ -->
+  <div class="sheet-scrim" *ngIf="sheetStep() > 0" (click)="closeSheet()"></div>
+
+  <section class="sheet" *ngIf="sheetStep() > 0" role="dialog" aria-modal="true" aria-label="Schedule a call">
+    <div class="sheet-grip" aria-hidden="true"></div>
+
+    <!-- STEP 1 · pick the reason -->
+    <ng-container *ngIf="sheetStep() === 1">
+      <header class="sheet-head">
+        <h2 class="sheet-title">Talk to your fund manager</h2>
+        <p class="sheet-sub">What’s this call about?</p>
+      </header>
+      <div class="reasons">
+        <button class="reason" *ngFor="let r of REASONS" (click)="pickReason(r)">
+          <span class="reason-ic">{{ r.icon }}</span>
+          <span class="reason-body">
+            <b>{{ r.title }}</b>
+            <span>{{ r.blurb }}</span>
+          </span>
+          <svg class="reason-arr" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- STEP 2 · pick a free slot from the fund manager's calendar -->
+    <ng-container *ngIf="sheetStep() === 2">
+      <header class="sheet-head row">
+        <button class="sheet-back" (click)="backToReason()" aria-label="Back">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div>
+          <h2 class="sheet-title sm">Pick a time</h2>
+          <p class="sheet-sub">{{ chosenReason()?.title }} · fund manager’s free slots</p>
+        </div>
+      </header>
+
+      <div class="slots-loading" *ngIf="slotsLoading()">
+        <span class="ca-spin"></span> Finding open times…
+      </div>
+
+      <ng-container *ngIf="!slotsLoading()">
+        <p class="slots-none" *ngIf="!freeDays().length">
+          No open slots in the next few days. Your fund manager will reach out — or try again later.
+        </p>
+
+        <ng-container *ngIf="freeDays().length">
+          <!-- day rail -->
+          <div class="day-rail">
+            <button class="day-chip" *ngFor="let d of freeDays(); let i = index"
+                    [class.on]="i === activeDay()" (click)="pickDay(i)">
+              {{ d.label }}
+            </button>
+          </div>
+
+          <!-- time grid for the active day -->
+          <div class="slot-grid" *ngIf="currentDay as d">
+            <button class="slot" *ngFor="let s of d.slots"
+                    [class.on]="isChosen(s)" (click)="pickSlot(s)">
+              {{ s.time }}
+            </button>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <p class="book-err" *ngIf="bookErr()">{{ bookErr() }}</p>
+
+      <button class="sheet-cta" [disabled]="!chosenSlot() || booking()" (click)="confirmBooking()">
+        <span *ngIf="!booking()">
+          {{ chosenSlot() ? 'Request ' + (chosenReason()?.title || 'call') : 'Select a time' }}
+        </span>
+        <span *ngIf="booking()" class="ca-spin light"></span>
+      </button>
+    </ng-container>
+
+    <!-- STEP 3 · booked -->
+    <ng-container *ngIf="sheetStep() === 3">
+      <div class="booked">
+        <div class="booked-tick" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="34" height="34"><path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="booked-title">Call requested</h2>
+        <p class="booked-when">{{ chosenReason()?.title }}<br>{{ bookedSummary }}</p>
+        <p class="booked-note">Your fund manager will confirm and share the meeting link before the call. You’ll see it here.</p>
+        <button class="sheet-cta solid" (click)="closeSheet()">Done</button>
+      </div>
+    </ng-container>
+  </section>
 </main>

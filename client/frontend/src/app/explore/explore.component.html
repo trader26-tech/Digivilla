@@ -1,71 +1,48 @@
 <main class="xp">
   <ng-container *ngIf="current as v; else loadingTpl">
-    <!-- top rail: label only -->
+    <!-- top rail: label, with the vertical progress pips directly beneath (left) -->
     <header class="xp-top">
       <span class="xp-kicker">EXPLORE · VILLA · {{ idx() + 1 }} OF {{ count }}</span>
+      <div class="xp-vdots" aria-hidden="true" *ngIf="count > 1">
+        <span class="xp-vdot" *ngFor="let t of tiers(); let i = index" [class.on]="i === idx()"></span>
+      </div>
     </header>
-
-    <!-- VERTICAL pips on the right — paging is up/down, so the indicator is too -->
-    <div class="xp-vdots" aria-hidden="true" *ngIf="count > 1">
-      <span class="xp-vdot" *ngFor="let t of tiers(); let i = index" [class.on]="i === idx()"></span>
-    </div>
 
     <!-- the swipeable card -->
     <section class="xp-card" (pointerdown)="onDown($event)" (pointerup)="onUp($event)"
              (pointercancel)="onUp($event)" (wheel)="onWheel($event)">
-      <!-- cost-to-own chip -->
-      <div class="xp-chip">
-        <span class="xp-chip-k">COST TO OWN</span>
-        <b class="xp-chip-v">₹{{ v.price | number:'1.0-0' }}</b>
-      </div>
-
-      <!-- the villa art on its plinth — gently floating -->
+      <!-- the villa art — the hero -->
       <div class="xp-art">
         <div class="xp-plinth" aria-hidden="true"></div>
         <div class="xp-float"><app-villa-art></app-villa-art></div>
       </div>
 
-      <!-- name + tagline -->
-      <div class="xp-head">
-        <h1 class="xp-name">{{ v.name }}</h1>
-        <p class="xp-tag">Own a slice, earn every month, watch it grow.</p>
+      <!-- name -->
+      <h1 class="xp-name">{{ v.name }}</h1>
+
+      <!-- the ONE headline number: what it costs to own -->
+      <div class="xp-price">
+        <span class="xp-price-k">Cost to own</span>
+        <b class="xp-price-v">₹{{ v.price | number:'1.0-0' }}</b>
       </div>
 
-      <!-- projection + years timeline -->
-      <div class="xp-proj">
-        <div class="xp-proj-row">
-          <b class="xp-proj-v">{{ compact(projected()) }}</b>
-          <span class="xp-proj-x">{{ multiple() }}× in {{ years() }} years</span>
+      <!-- two quiet supporting facts -->
+      <div class="xp-facts">
+        <div class="xp-fact">
+          <b class="xp-fact-v pos">{{ compact(v.monthly_income) }}<span>/mo</span></b>
+          <span class="xp-fact-k">Rent to you</span>
         </div>
-        <p class="xp-proj-sub">₹{{ v.price | number:'1.0-0' }} put in, held {{ years() }} years — an illustration, not a promise</p>
-
-        <div class="xp-time">
-          <div class="xp-time-line" aria-hidden="true"></div>
-          <button class="xp-time-stop" *ngFor="let y of YEAR_STOPS" [class.on]="years() === y"
-                  (click)="pickYear(y)">
-            <span class="xp-time-node"></span>
-            <span class="xp-time-lbl">{{ y }} yrs</span>
-          </button>
+        <div class="xp-fact">
+          <b class="xp-fact-v">{{ compact(v.projection['20']) }}</b>
+          <span class="xp-fact-k">Worth in 20 yrs*</span>
         </div>
       </div>
 
-      <!-- rent line -->
-      <div class="xp-rent">
-        <span class="xp-rent-k">Rent to you</span>
-        <b class="xp-rent-v">{{ compact(v.monthly_income) }}<span>/mo</span></b>
-      </div>
+      <!-- one action -->
+      <button class="xp-own" (click)="ownThis()">Own this villa</button>
 
-      <!-- affordances -->
-      <div class="xp-actions">
-        <button class="xp-how" (click)="openExplainer()">← How it works</button>
-        <button class="xp-own" (click)="ownThis()">Own this villa</button>
-      </div>
-
-      <!-- swipe hints -->
-      <div class="xp-hints" aria-hidden="true">
-        <span class="xp-hint" *ngIf="count > 1">↑ swipe up · down ↓ for other villas</span>
-        <span class="xp-hint">swipe left for how it works</span>
-      </div>
+      <!-- one quiet hint -->
+      <p class="xp-hint">↑ swipe for more villas · ← swipe for details</p>
     </section>
   </ng-container>
 
