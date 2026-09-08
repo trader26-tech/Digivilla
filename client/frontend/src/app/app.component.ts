@@ -9,6 +9,7 @@ import { ConstructionDetailComponent } from './construction/construction-detail.
 import { EstateDetailComponent } from './estate-detail.component';
 import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
+import { CallsComponent } from './calls.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
@@ -44,6 +45,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     VillaBuyComponent,
     LandBuyComponent,
     AccountComponent,
+    CallsComponent,
     LoginComponent,
   ],
   templateUrl: './app.component.html',
@@ -99,17 +101,17 @@ export class AppComponent {
     if (Object.keys(patch).length) this.est.setProfile(patch);
   }
 
-  /** Which bottom-nav tab is active: the estate map, or the explore catalog. */
-  view: 'home' | 'explore' | 'storefront' = 'home';
+  /** Which bottom-nav tab is active. */
+  view: 'home' | 'explore' | 'calls' | 'storefront' = 'home';
 
-  /** True when a top-level tab (home/explore) is showing — the bottom nav is
-   *  only visible then, not on detail / buy / account pages. */
+  /** True when a top-level tab (home/explore/calls) is showing — the bottom nav
+   *  is only visible then, not on detail / buy / account pages. */
   get onTab(): boolean {
     return (
       !this.intro && this.auth.signedIn() &&
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.buildFlow === null && !this.accountOpen &&
-      (this.view === 'home' || this.view === 'explore')
+      (this.view === 'home' || this.view === 'explore' || this.view === 'calls')
     );
   }
 
@@ -119,6 +121,10 @@ export class AppComponent {
   }
   goExplore(): void {
     this.view = 'explore';
+    window.scrollTo({ top: 0 });
+  }
+  goCalls(): void {
+    this.view = 'calls';
     window.scrollTo({ top: 0 });
   }
 

@@ -22,6 +22,7 @@ export interface BookingCreate {
 export interface Booking extends BookingCreate {
   id: string;
   status: string;
+  meet_link?: string;   // Google Meet / video link for the call
   created_at: string;
 }
 

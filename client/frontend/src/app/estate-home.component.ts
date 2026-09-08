@@ -130,6 +130,9 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   get hasRent(): boolean { return this.est.rentIn > 0; }
   /** Today, for the "5 Sep · tap the coin to collect" line. */
   today = new Date();
+  /** Open plots shown in the legend — the immediate ring around the town, not
+   *  the whole 120-plot board, so it reads clean (e.g. "3 open"). */
+  get openShown(): number { return Math.min(this.open, Math.max(3, this.villas + this.buildings)); }
   /** The first finished villa's id — the one that wears the collect coin. */
   get firstVillaId(): string | null {
     const v = this.est.tiles().find((t) => t.type === 'villa');

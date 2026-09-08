@@ -29,7 +29,13 @@
   (back)="goHome()"
 ></app-explore>
 
-<!-- BOTTOM NAV: a floating pill with two tabs, Home and Explore. -->
+<!-- CALLS tab: the user's scheduled fund-manager calls. -->
+<app-calls
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'calls'"
+  class="has-nav"
+></app-calls>
+
+<!-- BOTTOM NAV: a floating pill with three tabs — Home, Explore, Calls. -->
 <nav class="tabbar" *ngIf="onTab">
   <div class="tabbar-pill">
     <button class="tab" [class.active]="view === 'home'" (click)="goHome()" aria-label="Home">
@@ -42,6 +48,12 @@
       <span class="tab-in">
         <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
         <span class="tab-lbl">Explore</span>
+      </span>
+    </button>
+    <button class="tab" [class.active]="view === 'calls'" (click)="goCalls()" aria-label="Calls">
+      <span class="tab-in">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 3h3l2 5-2 1.5a11 11 0 0 0 5 5L18 12l3 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 2-3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+        <span class="tab-lbl">Calls</span>
       </span>
     </button>
   </div>

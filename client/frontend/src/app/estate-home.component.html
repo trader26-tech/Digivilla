@@ -137,11 +137,11 @@
             </g>
           </g>
           <g id="tLocked">
-            <!-- an empty, buildable lot — light paper tones to match the page,
-                 with a soft brass dashed survey line -->
-            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#F1EADA"></polygon>
-            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#E8DFCB" opacity="0.5"></polygon>
-            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#C7A55C" stroke-width="1.6" stroke-dasharray="6 5"></polygon>
+            <!-- an empty, buildable lot — DARK on the dark board, so unowned
+                 land recedes and the green estate pops (matches the reference). -->
+            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#232A36"></polygon>
+            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#2A323E" opacity="0.5"></polygon>
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3A4453" stroke-width="1.6" stroke-dasharray="6 5"></polygon>
           </g>
           <!-- one construction shell, re-anchored per building cell -->
           <g id="tBuild">
@@ -249,11 +249,11 @@
       </button>
       <p class="rc-none" *ngIf="!hasRent">{{ today | date:'d MMM' }} · your villas are still building</p>
 
-      <!-- legend: villas · plots/building · open -->
+      <!-- legend: villas · plots/building · open (open capped for a clean read) -->
       <div class="legend">
         <span class="lg-item" *ngIf="villas > 0"><span class="lg-sw villa"></span>{{ villas }} villa{{ villas === 1 ? '' : 's' }}</span>
         <span class="lg-item" *ngIf="buildings > 0"><span class="lg-sw plot"></span>{{ buildings }} building</span>
-        <span class="lg-item" *ngIf="open > 0"><span class="lg-sw open"></span>{{ open }} open</span>
+        <span class="lg-item"><span class="lg-sw open"></span>{{ openShown }} open</span>
       </div>
     </ng-container>
 
