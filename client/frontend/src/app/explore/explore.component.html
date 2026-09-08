@@ -26,23 +26,30 @@
         <b class="xp-price-v">₹{{ v.price | number:'1.0-0' }}</b>
       </div>
 
-      <!-- two quiet supporting facts -->
+      <!-- the rent it pays -->
       <div class="xp-facts">
         <div class="xp-fact">
           <b class="xp-fact-v pos">{{ compact(v.monthly_income) }}<span>/mo</span></b>
-          <span class="xp-fact-k">Rent to you</span>
-        </div>
-        <div class="xp-fact">
-          <b class="xp-fact-v">{{ compact(v.projection['20']) }}</b>
-          <span class="xp-fact-k">Worth in 20 yrs*</span>
+          <span class="xp-fact-k">Rent paid to you</span>
         </div>
       </div>
+
+      <!-- plain-language, historical "what if" — easy to grasp -->
+      <p class="xp-hist" *ngIf="historicalLine as h">
+        If <b>₹{{ v.price | number:'1.0-0' }}</b> had been invested <b>{{ h.years }} years ago</b>,
+        it would be worth about <b class="pos">{{ h.worth }}</b> today —
+        even after taking <b>{{ h.rent }}/mo</b> rent.<sup>*</sup>
+      </p>
 
       <!-- one action -->
       <button class="xp-own" (click)="ownThis()">Book a call to own this</button>
 
-      <!-- one quiet hint -->
-      <p class="xp-hint">↑ swipe for more villas · ← swipe for details</p>
+      <!-- prominent left-swipe affordance for the details -->
+      <button class="xp-details" (click)="openExplainer()">
+        <span class="xp-details-arrow">←</span> Swipe left to see how it works
+      </button>
+
+      <p class="xp-fine">*Illustrative, based on historical returns. Market-linked, not guaranteed.</p>
     </section>
   </ng-container>
 
