@@ -202,11 +202,29 @@ export class CallsComponent implements OnInit {
     if (link) window.open(link, '_blank', 'noopener');
   }
 
-  /** A stable video-call room for a call, matching the backend's scheme, so
-   *  every call (real or an auto quarterly one) has a joinable link. */
-  private meetFor(id: string): string {
-    const slug = (id || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) || 'call';
-    return `https://meet.jit.si/digivilla-${slug}`;
+  /** The single Google Meet room for all calls. The backend returns this on
+   *  each booking; used as a fallback for the auto quarterly placeholders. */
+  readonly MEET_LINK = 'https://meet.google.com/eua-iwxb-eez';
+  private meetFor(_id: string): string { return this.MEET_LINK; }
+
+  /** The Join button only "lights up" around the scheduled time — from 10 min
+   *  before the slot until 45 min after. Before that it's shown but disabled
+   *  with a countdown, so the user knows it's the same link at the right time. */
+  joinOpen(c: CallItem): boolean {
+    if (!c.meetLink) return false;
+    const now = Date.now();
+    return now >= c.when - 10 * 60_000 && now <= c.when + 45 * 60_000;
+  }
+  /** A short "opens in …" hint for a call whose join window hasn't arrived. */
+  joinHint(c: CallItem): string {
+    const now = Date.now();
+    if (now > c.when + 45 * 60_000) return 'Call ended';
+    const mins = Math.round((c.when - 10 * 60_000 - now) / 60_000);
+    if (mins <= 0) return 'Join now';
+    if (mins < 60) return `Opens in ${mins} min`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `Opens in ${hrs} hr${hrs === 1 ? '' : 's'}`;
+    return `Link opens at call time`;
   }
 
   // ── presentation ──

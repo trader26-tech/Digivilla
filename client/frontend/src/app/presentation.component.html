@@ -1,53 +1,256 @@
 <div class="pres" [class.portrait]="portrait()">
-  <!-- the deck stage (rotated 90° on an upright phone so it fills landscape) -->
-  <div class="pres-stage">
-    <iframe
-      #frame
-      class="pres-frame"
-      [src]="deckUrl"
-      title="Presentation"
-      (load)="onFrameLoad()"
-      scrolling="no"
-      allow="fullscreen"
-      referrerpolicy="no-referrer"
-    ></iframe>
-  </div>
+  <div class="stage" (pointerdown)="onDown($event)" (pointerup)="onUp($event)" (pointercancel)="onUp($event)">
+    <!-- one 16:9 slide, keyed so it re-animates on change -->
+    <div class="slide" [attr.data-kind]="current.kind" [class.rev]="dir() === -1" [attr.key]="index()">
 
-  <!-- loading state over the deck's cream bg while it hydrates -->
-  <div class="pres-loading" *ngIf="!loaded() && !stalled()" aria-hidden="true">
-    <span class="pres-spin"></span>
-    <span>Loading presentation…</span>
-  </div>
+      <!-- faint grid backdrop, like the deck -->
+      <div class="grid-bg" aria-hidden="true"></div>
 
-  <!-- escape hatch if the deck never comes up -->
-  <div class="pres-fallback" *ngIf="stalled() && !loaded()">
-    <p class="pres-fb-title">Presentation is taking a moment</p>
-    <p class="pres-fb-sub">Open it in a new tab instead.</p>
-    <button class="pres-fb-btn" (click)="openInNewTab()">Open presentation</button>
-  </div>
+      <!-- eyebrow -->
+      <span class="eyebrow" *ngIf="current.eyebrow">{{ current.eyebrow }}</span>
 
-  <!-- ===== our custom controls (only once the deck is live) ===== -->
-  <ng-container *ngIf="loaded()">
-    <!-- PREV / NEXT — big, thumb-friendly, on the real screen edges -->
-    <button class="pres-nav prev" (click)="prev()" [disabled]="atStart" aria-label="Previous slide">
-      <svg viewBox="0 0 24 24" width="26" height="26"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <button class="pres-nav next" (click)="next()" [disabled]="atEnd" aria-label="Next slide">
-      <svg viewBox="0 0 24 24" width="26" height="26"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+      <!-- ===================== 1 · COVER ===================== -->
+      <ng-container *ngIf="current.kind === 'cover'">
+        <div class="cover">
+          <div class="cover-l">
+            <h1 class="d-title big">{{ current.title }}</h1>
+            <p class="d-sub">{{ current.sub }}</p>
+          </div>
+          <div class="cover-r">
+            <div class="house-art" aria-hidden="true">
+              <div class="ha-roof"></div>
+              <div class="ha-body">
+                <span class="ha-win"></span><span class="ha-door"></span><span class="ha-win"></span>
+              </div>
+              <div class="ha-ground"></div>
+            </div>
+            <div class="price-badge"><b>{{ current.data.badge }}</b><span>{{ current.data.badgeSub }}</span></div>
+          </div>
+        </div>
+      </ng-container>
 
-    <!-- bottom bar: counter + progress dots -->
-    <div class="pres-bar">
-      <span class="pres-count">{{ index() + 1 }} / {{ total() }}</span>
-      <div class="pres-dots">
-        <button class="pres-dot" *ngFor="let s of [].constructor(total()); let i = index"
-                [class.on]="i === index()" (click)="goTo(i)" [attr.aria-label]="'Slide ' + (i + 1)"></button>
-      </div>
+      <!-- ===================== 2 · STAT SPLIT ===================== -->
+      <ng-container *ngIf="current.kind === 'stat-split'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="split">
+          <div class="split-bar" aria-hidden="true">
+            <span class="sb-keep" style="width:86%"></span>
+            <span class="sb-lost" style="width:14%"></span>
+          </div>
+          <div class="split-cells">
+            <div class="split-cell keep">
+              <b>{{ current.data.keep.value }}</b><span>{{ current.data.keep.label }}</span>
+            </div>
+            <div class="split-cell lost">
+              <b>{{ current.data.lost.value }}</b><span>{{ current.data.lost.label }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 3 · BREAKDOWN ===================== -->
+      <ng-container *ngIf="current.kind === 'breakdown'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="bd">
+          <div class="bd-row" *ngFor="let it of current.data.items">
+            <div class="bd-head"><b class="bd-name">{{ it.name }}</b><b class="bd-val">{{ it.value }}</b></div>
+            <div class="bd-track"><span [style.width.%]="it.pct"></span></div>
+          </div>
+          <div class="bd-total"><span>Total</span><b>{{ current.data.total }}</b></div>
+        </div>
+        <p class="d-foot">{{ current.sub }}</p>
+      </ng-container>
+
+      <!-- ===================== 4 · RENT HERO ===================== -->
+      <ng-container *ngIf="current.kind === 'rent-hero'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="rent-eq">
+          <div class="re-cell"><b>{{ current.data.a }}</b><span>{{ current.data.aSub }}</span></div>
+          <span class="re-op">×</span>
+          <div class="re-cell"><b>{{ current.data.b }}</b><span>{{ current.data.bSub }}</span></div>
+          <span class="re-op">=</span>
+          <div class="re-cell res"><b>{{ current.data.c }}</b><span>{{ current.data.cSub }}</span></div>
+        </div>
+        <p class="d-foot">{{ current.sub }}</p>
+      </ng-container>
+
+      <!-- ===================== 5 · FLOW ===================== -->
+      <ng-container *ngIf="current.kind === 'flow'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="flow">
+          <div class="flow-step" *ngFor="let s of current.data.steps" [attr.data-tone]="s.tone">
+            <span class="fs-k">{{ s.k }}</span>
+            <b class="fs-v">{{ s.v }}</b>
+          </div>
+          <div class="flow-keep">
+            <span>What you keep</span>
+            <b>{{ current.data.keep.v }}</b>
+            <em>{{ current.data.keep.note }}</em>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 6 · DIVISIBLE ===================== -->
+      <ng-container *ngIf="current.kind === 'divisible'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="dv">
+          <div class="dv-card">
+            <span class="dv-h">{{ current.data.financial.title }}</span>
+            <div class="dv-grid">
+              <span class="dv-slice on"></span><span class="dv-slice"></span><span class="dv-slice"></span>
+              <span class="dv-slice"></span><span class="dv-slice"></span>
+            </div>
+            <b class="dv-slice-lbl">{{ current.data.financial.slice }} <span>take just this</span></b>
+            <p>{{ current.data.financial.note }}</p>
+          </div>
+          <div class="dv-card">
+            <span class="dv-h">{{ current.data.house.title }}</span>
+            <div class="dv-house"><span>NOT DIVISIBLE</span></div>
+            <p>{{ current.data.house.note }}</p>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 7 · LIQUIDITY ===================== -->
+      <ng-container *ngIf="current.kind === 'liquidity'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <p class="d-sub tight">{{ current.sub }}</p>
+        <div class="lq">
+          <div class="lq-bars">
+            <div class="lq-bar" *ngFor="let r of current.data.rows" [class.fast]="r.fast">
+              <span class="lq-name">{{ r.name }}</span>
+              <div class="lq-track"><span [style.width.%]="r.fast ? 12 : 100"></span></div>
+              <b class="lq-time">{{ r.time }}</b>
+            </div>
+          </div>
+          <div class="lq-costs">
+            <div class="lq-cost" *ngFor="let c of current.data.costs">
+              <span>{{ c.k }}</span><b>{{ c.v }}</b>
+            </div>
+            <div class="lq-inhand"><span>{{ current.data.outCost }}</span><b>{{ current.data.inHand }}</b></div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 8 · SOLUTION ===================== -->
+      <ng-container *ngIf="current.kind === 'solution'">
+        <div class="sol">
+          <h1 class="d-title big center">{{ current.title }}</h1>
+          <div class="iso" aria-hidden="true">
+            <span class="iso-coin">₹</span>
+            <div class="iso-plot">
+              <div class="iso-villa"></div>
+              <div class="iso-tree"></div>
+              <div class="iso-pool"></div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 9 · TWO THINGS ===================== -->
+      <ng-container *ngIf="current.kind === 'two-things'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="two">
+          <div class="two-card">
+            <span class="two-ic">₹</span>
+            <b>{{ current.data.a.title }}</b>
+            <p>{{ current.data.a.note }}</p>
+          </div>
+          <span class="two-plus">+</span>
+          <div class="two-card">
+            <span class="two-ic grow">↗</span>
+            <b>{{ current.data.b.title }}</b>
+            <p>{{ current.data.b.note }}</p>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 10 · BUILD ===================== -->
+      <ng-container *ngIf="current.kind === 'build'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <p class="d-sub tight">{{ current.sub }}</p>
+        <div class="bld">
+          <div class="bld-fund" *ngFor="let f of current.data.funds" [attr.data-tone]="f.tone">
+            <div class="bf-top">
+              <span class="bf-dot"></span>
+              <div class="bf-txt"><b class="bf-role">{{ f.role }}</b><span class="bf-name">{{ f.name }}</span></div>
+              <b class="bf-amt">{{ f.amt }}</b>
+              <span class="bf-pct">{{ f.pct }}%</span>
+            </div>
+            <div class="bf-track"><span [style.width.%]="f.pct"></span></div>
+            <span class="bf-swp" *ngIf="f.tone === 'vault'">↳ {{ current.data.swp.value }}/mo SWP drawn from here</span>
+          </div>
+        </div>
+        <p class="d-foot">{{ current.data.foot }}</p>
+      </ng-container>
+
+      <!-- ===================== 11 · AFTER 15Y ===================== -->
+      <ng-container *ngIf="current.kind === 'after'">
+        <h2 class="d-title">{{ current.title }}</h2>
+        <div class="aft">
+          <div class="aft-head">
+            <b class="aft-big">{{ current.data.headline.value }}</b>
+            <span>{{ current.data.headline.invested }}</span>
+            <span class="pos">{{ current.data.headline.paid }}</span>
+          </div>
+          <div class="aft-cols">
+            <div class="aft-card vault">
+              <span class="aft-h">{{ current.data.vault.title }}</span>
+              <div class="aft-line" *ngFor="let r of current.data.vault.rows"><span>{{ r.k }}</span><b>{{ r.v }}</b></div>
+            </div>
+            <div class="aft-card trees">
+              <span class="aft-h">{{ current.data.trees.title }}</span>
+              <div class="aft-tree" *ngFor="let r of current.data.trees.rows">
+                <span class="at-name">{{ r.name }}</span>
+                <span class="at-mult">{{ r.mult }}</span>
+                <span class="at-cagr">{{ r.cagr }}</span>
+                <b class="at-val">{{ r.val }}</b>
+              </div>
+            </div>
+          </div>
+          <p class="d-foot">{{ current.data.foot }}</p>
+        </div>
+      </ng-container>
+
+      <!-- ===================== 12 · DISCLAIMER ===================== -->
+      <ng-container *ngIf="current.kind === 'disclaimer'">
+        <h2 class="d-title warn">{{ current.title }}</h2>
+        <div class="disc">
+          <div class="disc-pt" *ngFor="let p of current.data.points">
+            <b>{{ p.k }}</b><span>{{ p.d }}</span>
+          </div>
+        </div>
+        <p class="d-fine">{{ current.data.fine }}</p>
+      </ng-container>
+
+      <!-- ===================== 13 · CTA ===================== -->
+      <ng-container *ngIf="current.kind === 'cta'">
+        <div class="cta">
+          <h1 class="d-title big">{{ current.title }}</h1>
+          <p class="d-sub">{{ current.sub }}</p>
+          <p class="d-fine">{{ current.data.fine }}</p>
+        </div>
+      </ng-container>
+
     </div>
-  </ng-container>
+  </div>
 
-  <!-- close -->
-  <button class="pres-close" (click)="doClose()" aria-label="Close presentation">
+  <!-- ===== custom controls ===== -->
+  <button class="nav prev" (click)="prev()" [disabled]="atStart" aria-label="Previous">
+    <svg viewBox="0 0 24 24" width="26" height="26"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button class="nav next" (click)="next()" [disabled]="atEnd" aria-label="Next">
+    <svg viewBox="0 0 24 24" width="26" height="26"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="bar">
+    <span class="count">{{ index() + 1 }} / {{ total }}</span>
+    <div class="dots">
+      <button class="dot" *ngFor="let s of slides; let i = index" [class.on]="i === index()" (click)="goTo(i)" [attr.aria-label]="'Slide ' + (i + 1)"></button>
+    </div>
+  </div>
+
+  <button class="close" (click)="doClose()" aria-label="Close presentation">
     <svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
   </button>
 </div>

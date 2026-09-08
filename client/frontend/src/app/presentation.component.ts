@@ -1,19 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, Output, ViewChild, signal } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Component, EventEmitter, HostListener, OnDestroy, OnInit, Output, signal } from '@angular/core';
+
+import { SLIDES, Slide } from './presentation/deck.data';
 
 /**
- * In-app presentation — the "₹1 crore, two ways" deck rendered INSIDE the app
- * (not a new tab), with our own left/right controls.
+ * In-app presentation — the "₹1 crore, two ways" deck rebuilt as NATIVE slides
+ * (not an embedded page). 13 slides render with the deck's editorial identity
+ * and are paged with our own left/right controls + a progress dot rail.
  *
- * The deck is a same-origin page of 13 stacked `<section class="slide">`
- * elements. We load it in an iframe, hide its own scrollbars/chrome, and drive
- * navigation ourselves: our arrow buttons scroll the target slide into view,
- * and a dot rail shows progress. This gives a clean, native-feeling slideshow
- * the advisor controls with one thumb.
- *
- * On a phone held upright the stage is rotated 90° so the horizontal deck fills
- * the screen in landscape.
+ * On a phone held upright the stage rotates 90° so each 16:9 slide fills the
+ * screen in landscape; we also try to lock the OS to landscape.
  */
 @Component({
   selector: 'app-presentation',
@@ -24,140 +20,75 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 })
 export class PresentationComponent implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<void>();
-  @ViewChild('frame') frame?: ElementRef<HTMLIFrameElement>;
 
-  readonly rawUrl = 'deck/flat-vs-income.html';
-  deckUrl: SafeResourceUrl;
-
-  constructor(private sanitizer: DomSanitizer) {
-    this.deckUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.rawUrl);
-  }
-
-  portrait = signal(true);
-  loaded = signal(false);
-  stalled = signal(false);
-
-  /** Slide index + total, driven from the deck's own <section.slide> list. */
+  readonly slides: Slide[] = SLIDES;
   index = signal(0);
-  total = signal(0);
+  /** Direction of the last move, for the slide-in animation. */
+  dir = signal<1 | -1>(1);
+  portrait = signal(true);
 
-  private slides: HTMLElement[] = [];
-  private watchdog?: ReturnType<typeof setTimeout>;
+  get total(): number { return this.slides.length; }
+  get current(): Slide { return this.slides[this.index()]; }
+  get atStart(): boolean { return this.index() <= 0; }
+  get atEnd(): boolean { return this.index() >= this.total - 1; }
 
   ngOnInit(): void {
     this.measure();
     this.tryLockLandscape();
-    this.watchdog = setTimeout(() => { if (!this.loaded()) this.stalled.set(true); }, 7000);
   }
+  ngOnDestroy(): void { this.tryUnlock(); }
 
-  ngOnDestroy(): void {
-    if (this.watchdog) clearTimeout(this.watchdog);
-    this.tryUnlock();
-  }
-
-  /** Once the deck loads, grab its slides, hide its own chrome, and show the
-   *  first slide. The deck shows one slide at a time via opacity/visibility —
-   *  we drive that directly so our controls page cleanly through them. */
-  onFrameLoad(): void {
-    const doc = this.frameDoc();
-    if (!doc) { this.stalled.set(true); return; }
-    const collect = () => {
-      const list = Array.from(doc.querySelectorAll<HTMLElement>('section.slide'));
-      if (!list.length) return false;
-      this.slides = list;
-      this.total.set(list.length);
-      this.injectDeckStyles(doc);
-      this.goTo(0);
-      this.loaded.set(true);
-      this.stalled.set(false);
-      if (this.watchdog) clearTimeout(this.watchdog);
-      return true;
-    };
-    if (!collect()) {
-      let tries = 0;
-      const iv = setInterval(() => { if (collect() || ++tries > 25) clearInterval(iv); }, 200);
-    }
-  }
-
-  /** Hide the deck's own presenter chrome (the left thumbnail rail + any
-   *  scrollbars) and centre each slide so it fills our stage. */
-  private injectDeckStyles(doc: Document): void {
-    try {
-      const style = doc.createElement('style');
-      style.id = '__pres_override';
-      style.textContent = `
-        html, body { overflow: hidden !important; margin: 0 !important; background: #faf9f5 !important; }
-        ::-webkit-scrollbar { width: 0 !important; height: 0 !important; }
-        /* The thumbnail rail sits to the LEFT of the stage (x < ~188px). Hide any
-           aside/nav chrome so only the current slide shows. */
-        aside, nav, [class*="rail"], [class*="thumb"], [class*="sidebar"],
-        [class*="filmstrip"], [class*="tray"] { display: none !important; }
-        /* Centre each absolute slide in the viewport, filling it. */
-        section.slide {
-          position: fixed !important; inset: 0 !important; margin: auto !important;
-          transition: opacity 0.32s ease !important;
-        }
-      `;
-      doc.head.appendChild(style);
-    } catch { /* same-origin, shouldn't throw */ }
-  }
-
-  private frameDoc(): Document | null {
-    try { return this.frame?.nativeElement.contentDocument || null; } catch { return null; }
-  }
-
-  // ── navigation: drive the deck's own one-slide-visible model ──
-  next(): void { this.goTo(this.index() + 1); }
-  prev(): void { this.goTo(this.index() - 1); }
-
+  next(): void { if (!this.atEnd) { this.dir.set(1); this.go(this.index() + 1); } }
+  prev(): void { if (!this.atStart) { this.dir.set(-1); this.go(this.index() - 1); } }
   goTo(i: number): void {
-    const n = this.slides.length;
-    if (!n) return;
-    const clamped = Math.max(0, Math.min(n - 1, i));
-    this.index.set(clamped);
-    // show only the target slide (deck toggles opacity/visibility to page)
-    this.slides.forEach((s, k) => {
-      const on = k === clamped;
-      s.style.setProperty('opacity', on ? '1' : '0', 'important');
-      s.style.setProperty('visibility', on ? 'visible' : 'hidden', 'important');
-      s.style.setProperty('z-index', on ? '2' : '0', 'important');
-      s.style.setProperty('pointer-events', on ? 'auto' : 'none', 'important');
-    });
+    if (i === this.index()) return;
+    this.dir.set(i > this.index() ? 1 : -1);
+    this.go(i);
+  }
+  private go(i: number): void {
+    this.index.set(Math.max(0, Math.min(this.total - 1, i)));
     if (navigator.vibrate) navigator.vibrate(4);
   }
 
-  get atStart(): boolean { return this.index() <= 0; }
-  get atEnd(): boolean { return this.index() >= this.total() - 1; }
-
-  /** Keyboard support on desktop. */
+  // keyboard (desktop) + swipe (touch)
   @HostListener('window:keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); this.next(); }
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); this.prev(); }
+    if (['ArrowRight', 'ArrowDown', ' '].includes(e.key)) { e.preventDefault(); this.next(); }
+    else if (['ArrowLeft', 'ArrowUp'].includes(e.key)) { e.preventDefault(); this.prev(); }
     else if (e.key === 'Escape') { this.doClose(); }
   }
 
-  openInNewTab(): void { window.open(this.rawUrl, '_blank', 'noopener'); }
+  private sx: number | null = null;
+  private sy: number | null = null;
+  onDown(e: PointerEvent): void { this.sx = e.clientX; this.sy = e.clientY; }
+  onUp(e: PointerEvent): void {
+    if (this.sx === null || this.sy === null) return;
+    const dx = e.clientX - this.sx, dy = e.clientY - this.sy;
+    this.sx = this.sy = null;
+    // In portrait the stage is rotated 90°, so a physical horizontal swipe reads
+    // as vertical in stage coords — accept both axes and use the larger delta.
+    const horiz = Math.abs(dx) >= Math.abs(dy);
+    const d = horiz ? dx : dy;
+    if (Math.abs(d) < 45) return;
+    if (d < 0) this.next(); else this.prev();
+  }
 
-  @HostListener('window:resize')
-  onResize(): void { this.measure(); }
-  @HostListener('window:orientationchange')
-  onOrient(): void { setTimeout(() => this.measure(), 120); }
-
+  @HostListener('window:resize') onResize(): void { this.measure(); }
+  @HostListener('window:orientationchange') onOrient(): void { setTimeout(() => this.measure(), 120); }
   private measure(): void { this.portrait.set(window.innerHeight > window.innerWidth); }
 
   private async tryLockLandscape(): Promise<void> {
     try {
       const el = document.documentElement as any;
-      if (el.requestFullscreen) { await el.requestFullscreen().catch(() => {}); }
-      const orient: any = (screen as any).orientation;
-      if (orient && orient.lock) { await orient.lock('landscape').catch(() => {}); }
+      if (el.requestFullscreen) await el.requestFullscreen().catch(() => {});
+      const o: any = (screen as any).orientation;
+      if (o && o.lock) await o.lock('landscape').catch(() => {});
     } catch { /* CSS rotation handles it */ }
   }
   private async tryUnlock(): Promise<void> {
     try {
-      const orient: any = (screen as any).orientation;
-      if (orient && orient.unlock) orient.unlock();
+      const o: any = (screen as any).orientation;
+      if (o && o.unlock) o.unlock();
       if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen().catch(() => {});
     } catch { /* no-op */ }
   }

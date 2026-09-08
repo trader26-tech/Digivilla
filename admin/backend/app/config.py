@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     # Regex to additionally allow deploy origins (e.g. Railway subdomains).
     cors_origin_regex: Optional[str] = r"https://.*\.up\.railway\.app"
 
+    # The single Google Meet room used for all fund-manager calls. Every
+    # consultation shows this link; the client's Join button only activates
+    # around the scheduled time. Override via env MEET_LINK.
+    meet_link: str = "https://meet.google.com/eua-iwxb-eez"
+
     # --- Admin OTP → PIN sign-in ---
     # Secret used to sign admin session tokens (change in production).
     admin_token_secret: str = "dev-admin-insecure-change-me"

@@ -18,15 +18,14 @@ from app.schemas import Booking, BookingCreate
 _LOCAL_PATH = os.path.join(os.path.dirname(__file__), "data", "bookings.json")
 
 
-def _new_meet_link(booking_id: str) -> str:
-    """A unique, joinable video-call room for this booking — created on the fly,
-    no login or OAuth needed, and everyone who opens the link lands in the SAME
-    room (unlike meet.google.com/new, which spins a fresh room per click). Uses
-    a Google-Meet-style room path on a public Jitsi host. The advisor can still
-    override this with a real Google Meet link from the admin app."""
-    import re
-    slug = re.sub(r"[^a-z0-9]", "", booking_id.lower())[:12] or uuid.uuid4().hex[:12]
-    return f"https://meet.jit.si/digivilla-{slug}"
+def _new_meet_link(booking_id: str = "") -> str:
+    """The single Google Meet room used for every call (from settings.meet_link).
+    An advisor-set per-booking link, when present, still takes precedence."""
+    try:
+        from app.config import get_settings
+        return (get_settings().meet_link or "").strip()
+    except Exception:
+        return ""
 
 
 # ---------------- storage ----------------
