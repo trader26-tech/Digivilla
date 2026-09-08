@@ -128,6 +128,14 @@
   margin: 0; padding: 0.5rem 0.9rem; font-size: 0.82rem;
   background: var(--positive); color: #fff; box-shadow: none;
 }
+/* "opens in …" pill shown before the join window on the hero */
+.ca-join-wait {
+  display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1.1rem;
+  padding: 0.6rem 1rem; border-radius: 999px;
+  background: rgba(255,255,255,0.14); color: #fff;
+  font-size: 0.85rem; font-weight: 700;
+  svg { display: block; opacity: 0.85; }
+}
 
 /* status pill */
 .ca-pill {
