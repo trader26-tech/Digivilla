@@ -11,7 +11,7 @@
   place-items: center;
   overflow: hidden;
   background:
-    radial-gradient(140% 120% at 50% 118%, #F1D9A8 0%, #E4C489 16%, #DDD6C7 42%, #EFEADD 70%, #FAF8F3 100%);
+    radial-gradient(140% 120% at 50% 118%, #3a2f6b 0%, #241d47 18%, #14131f 46%, #0F1015 74%, #0E1116 100%);
   transition: opacity 0.6s ease, filter 0.6s ease;
 }
 .intro.leave {
@@ -35,7 +35,7 @@
   aspect-ratio: 1;
   transform: translate(-50%, 60%) scale(0.6);
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 45%, #FFFDF6 0%, #EBCF92 40%, #A67C2E 70%, rgba(166, 124, 46, 0) 72%);
+  background: radial-gradient(circle at 50% 42%, #EDE9FF 0%, #B4A6F5 34%, #8B7BF0 64%, rgba(139, 123, 240, 0) 72%);
   filter: blur(1px);
   animation: sunRise 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
@@ -53,7 +53,7 @@
   width: 120vw;
   aspect-ratio: 1;
   transform: translate(-50%, 50%);
-  background: radial-gradient(circle, rgba(166, 124, 46, 0.28) 0%, rgba(166, 124, 46, 0) 55%);
+  background: radial-gradient(circle, rgba(139, 123, 240, 0.32) 0%, rgba(139, 123, 240, 0) 55%);
   animation: fadeIn 2s ease forwards;
 }
 
@@ -74,21 +74,21 @@
 }
 .h1 {
   height: 70%;
-  background: linear-gradient(#20463E, #16302B);
+  background: linear-gradient(#181528, #0E1116);
   animation-delay: 0.7s;
 }
 .h2 {
   height: 52%;
   left: -20%;
   right: 30%;
-  background: linear-gradient(#2C5B4F, #1B3A33);
+  background: linear-gradient(#241d47, #14131f);
   animation-delay: 0.9s;
 }
 .h3 {
   height: 44%;
   left: 35%;
   right: -20%;
-  background: linear-gradient(#377163, #21473E);
+  background: linear-gradient(#2f2760, #1a1730);
   animation-delay: 1.05s;
 }
 @keyframes hillUp {
@@ -109,12 +109,12 @@
   position: relative;
   z-index: 2;
   text-align: center;
-  color: #16302B;
+  color: #EEF1F5;
   padding: 0 1.5rem;
   /* lift above the horizon so the sun rises behind/below, never under the text */
   transform: translateY(-16vh);
 }
-/* soft dark scrim behind the wordmark so text stays legible over the bright sky */
+/* soft dark scrim behind the wordmark so text stays legible over the glow */
 .mark::before {
   content: "";
   position: absolute;
@@ -124,7 +124,7 @@
   width: 150%;
   height: 260%;
   z-index: -1;
-  background: radial-gradient(60% 55% at 50% 50%, rgba(250, 248, 243, 0.72) 0%, rgba(250, 248, 243, 0.4) 45%, transparent 72%);
+  background: radial-gradient(60% 55% at 50% 50%, rgba(14, 17, 22, 0.72) 0%, rgba(14, 17, 22, 0.4) 45%, transparent 72%);
   pointer-events: none;
 }
 .kicker {
@@ -133,7 +133,7 @@
   font-weight: 500;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: rgba(22, 48, 43, 0.78);
+  color: rgba(238, 241, 245, 0.7);
   opacity: 0;
   animation: fadeUp 0.8s ease 0.3s forwards;
 }
@@ -143,7 +143,7 @@
   letter-spacing: -0.02em;
   line-height: 0.98;
   font-size: clamp(2.6rem, 12vw, 6rem);
-  text-shadow: 0 1px 1px rgba(22, 48, 43, 0.12);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 .freedom .w {
   display: block;
@@ -156,7 +156,7 @@
 /* Emphasis word: solid, high-contrast terracotta so it reads crisply
    on the warm paper — no transparent gradient fill (that made it faint). */
 .freedom .w.em {
-  color: #8C4A32;
+  color: #A98BF5;
   animation-delay: 0.9s;
 }
 .rule {
@@ -164,7 +164,7 @@
   width: 0;
   height: 2px;
   margin: 1.3rem auto 0;
-  background: linear-gradient(90deg, transparent, rgba(166, 124, 46, 0.85), transparent);
+  background: linear-gradient(90deg, transparent, rgba(139, 123, 240, 0.9), transparent);
   animation: ruleGrow 1s ease 1.5s forwards;
 }
 

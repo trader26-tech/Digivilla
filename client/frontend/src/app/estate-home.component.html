@@ -211,9 +211,6 @@
       </button>
     </div>
 
-    <!-- line below the town, then the figures -->
-    <div class="stats-rule"></div>
-
     <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
     <ng-container *ngIf="isEmptyEstate()">
       <!-- already booked → show the upcoming call -->
@@ -239,16 +236,11 @@
       </ng-container>
     </ng-container>
 
-    <!-- ===== rent collected to date + collect prompt (matches reference) ===== -->
+    <!-- ===== rent collected to date (single clean line) ===== -->
     <ng-container *ngIf="!isEmptyEstate()">
       <p class="rc-line">
         rent collected to date <b class="rc-v">{{ compact(est.rentCollected()) }}</b>
       </p>
-      <button class="rc-collect" *ngIf="hasRent" (click)="collect()">
-        {{ today | date:'d MMM' }} · <b>tap the coin to collect {{ compact(est.rentIn) }}</b>
-      </button>
-      <p class="rc-none" *ngIf="!hasRent">{{ today | date:'d MMM' }} · your villas are still building</p>
-
     </ng-container>
 
     <!-- ===== WHAT YOUR ESTATE MEANS — premium card, real isometric art ===== -->

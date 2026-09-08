@@ -27,10 +27,10 @@
   flex-direction: column;
   /* content sits toward the top (pulled up) to make room for the metaphor key
      + disclaimer below, rather than floating dead-centre. */
-  justify-content: flex-start;
-  /* generous top space so the hero clears the PORTFOLIO WORTH + coin chips,
-     matching the reference's roomy rhythm */
-  padding: calc(9.5rem + env(safe-area-inset-top)) 0 5rem;
+  /* the city (hero + map) is the hero of the screen — sit it toward the centre,
+     with the faint "what this means" filler flowing quietly below. */
+  justify-content: center;
+  padding: calc(7rem + env(safe-area-inset-top)) 0 4rem;
   overflow: hidden;
   /* an ambient "scene" the town sits inside — a soft warm sky up top, a green
      estate glow rising from the ground, and a gentle vertical wash between, so
@@ -1445,16 +1445,18 @@
 .rc-collect { display: block; margin: 0.5rem auto 0; border: none; background: none; cursor: pointer; font: inherit; font-size: 0.92rem; color: var(--positive); b { font-weight: 800; } }
 .rc-none { text-align: center; margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--muted); }
 
-/* ===== "what your estate means" — premium card with real isometric art ===== */
+/* ===== "what your estate means" — a FAINT, recessive filler. It's not the
+   point of the screen (the city is), so it sits quiet and low-contrast; it
+   gently lifts to full clarity only when the user actually looks at it. ===== */
 .key {
   flex: none; align-self: center;
-  width: 100%; max-width: 390px; margin: 1.3rem auto 0; padding: 1rem 1.1rem 0.9rem;
-  border-radius: 20px; border: 1px solid var(--survey);
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgba(139, 123, 240, 0.08), transparent 55%),
-    var(--card);
-  box-shadow: 0 20px 46px -30px #000;
+  width: 100%; max-width: 390px; margin: 1.6rem auto 0; padding: 0.9rem 1.1rem 0.8rem;
+  border-radius: 18px; border: 1px solid color-mix(in srgb, var(--survey) 45%, transparent);
+  background: color-mix(in srgb, var(--card) 45%, transparent);
+  opacity: 0.42;
+  transition: opacity 0.35s ease;
   animation: heroIn 0.4s ease both;
+  &:hover, &:focus-within { opacity: 1; }
 }
 .key-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.5rem; }
 .key-cap { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }

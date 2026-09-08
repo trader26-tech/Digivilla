@@ -133,14 +133,9 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Open plots shown in the legend — the immediate ring around the town, not
    *  the whole 120-plot board, so it reads clean (e.g. "3 open"). */
   get openShown(): number { return Math.min(this.open, Math.max(3, this.villas + this.buildings)); }
-  /** The first finished villa's id — the one that wears the collect coin. */
-  get firstVillaId(): string | null {
-    const v = this.est.tiles().find((t) => t.type === 'villa');
-    return v ? v.id : null;
-  }
-  /** Does this cell wear the coin? (first villa + rent available). */
+  /** Every finished villa wears a collect coin while there's rent to collect. */
   wearsCoin(c: Cell): boolean {
-    return this.hasRent && !!c.tile && c.tile.type === 'villa' && c.tile.id === this.firstVillaId;
+    return this.hasRent && !!c.tile && c.tile.type === 'villa';
   }
   /** Tap the coin → collect (and don't also open the tile detail). */
   tapCoin(ev: Event): void { ev.stopPropagation(); this.collect(); }
