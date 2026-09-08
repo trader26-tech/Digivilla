@@ -25,10 +25,10 @@
 }
 .slide {
   position: relative;
+  /* fill the stage completely — the stage is already sized to the correct
+     landscape rectangle (either the rotated portrait stage, or the real
+     landscape viewport), so the slide just fills it. */
   width: 100%; height: 100%;
-  max-width: calc(100vh * 16 / 9);
-  max-height: calc(100vw * 9 / 16);
-  aspect-ratio: 16 / 9;
   background: var(--cream); color: var(--ink);
   padding: clamp(1.2rem, 4.2vmin, 3rem) clamp(1.6rem, 5.5vmin, 4rem);
   box-sizing: border-box;
@@ -36,15 +36,31 @@
   display: flex; flex-direction: column; gap: clamp(0.5rem, 1.6vmin, 1.1rem);
   animation: slideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
+/* In the non-rotated case (landscape phone / tablet / desktop) keep the deck a
+   centred 16:9 card so it never distorts on very wide screens. */
+.pres:not(.portrait) .slide {
+  width: min(100%, calc(100vh * 16 / 9));
+  height: min(100%, calc(100vw * 9 / 16));
+  aspect-ratio: 16 / 9;
+}
 .slide.rev { animation: slideInRev 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes slideIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes slideInRev { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
 
-/* PORTRAIT: rotate the whole stage 90° so 16:9 fills an upright phone */
+/* PORTRAIT: rotate the whole stage 90° so the 16:9 deck fills an upright phone.
+   Stage is sized to the SWAPPED viewport (100vh wide × 100vw tall); origin at
+   the top-left; translate right by one screen-width then rotate 90° clockwise
+   about that point — this sweeps the box down to exactly cover the screen. */
 .pres.portrait .stage {
   width: 100vh; height: 100vw;
   transform-origin: top left;
-  transform: rotate(90deg) translateY(-100vh);
+  transform: translateX(100vw) rotate(90deg);
+}
+/* graceful rotate-in when the presentation opens on a phone */
+.pres.portrait .stage { animation: rotateIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes rotateIn {
+  from { transform: translateX(100vw) rotate(90deg) scale(0.86); opacity: 0; }
+  to   { transform: translateX(100vw) rotate(90deg) scale(1); opacity: 1; }
 }
 
 /* faint grid */
