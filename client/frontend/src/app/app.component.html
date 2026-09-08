@@ -33,6 +33,8 @@
 <app-calls
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'calls'"
   class="has-nav"
+  [autoOpenReason]="bookOnOpen"
+  (opened)="clearBookOnOpen()"
   (signOut)="onSignOut()"
 ></app-calls>
 

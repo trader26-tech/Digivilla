@@ -111,11 +111,26 @@ export class ExploreComponent implements OnInit {
     if (dx < -45) this.openExplainer();
   }
 
-  /** Desktop: scroll wheel pages villas up/down. */
+  /** Desktop: scroll wheel pages villas up/down — throttled so one flick moves
+   *  exactly one villa (a trackpad fires dozens of events per gesture). */
+  private wheelLock = 0;
   onWheel(e: WheelEvent): void {
-    if (Math.abs(e.deltaY) < 24) return;
+    if (Math.abs(e.deltaY) < 8) return;
     e.preventDefault();
+    const now = Date.now();
+    if (now - this.wheelLock < 500) return;   // ignore until the flick settles
+    this.wheelLock = now;
     this.step(e.deltaY > 0 ? 1 : -1);
+  }
+
+  /** A plain-language, historical "what if" line for the current villa. Uses
+   *  the villa's own growth assumption over 17 years so it reads concretely. */
+  get historicalLine(): { years: number; worth: string; rent: string } | null {
+    const v = this.current;
+    if (!v) return null;
+    const years = 17;
+    const worth = Math.round(v.price * Math.pow(1 + (v.growth_rate || 0.12), years));
+    return { years, worth: compact(worth), rent: compact(v.monthly_income) };
   }
 
   /** How the fund weight reads as a role label. */

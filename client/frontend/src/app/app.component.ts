@@ -236,7 +236,16 @@ export class AppComponent {
    *  call (the advisor assigns the villa). The advisor-led flow is the only way
    *  a villa is created, so we route them to the home's booking CTA. */
   ownVilla(_v: unknown): void {
-    this.view = 'home';
+    // Owning a villa is advisor-led: take the user to the Calls tab and pop the
+    // scheduler open on the "Portfolio review" track so they book the setup call
+    // and pick a real free slot from the fund manager's calendar.
+    this.bookOnOpen = 'Portfolio review';
+    this.view = 'calls';
     window.scrollTo({ top: 0 });
   }
+
+  /** When set, the Calls tab auto-opens its scheduler on this reason. Consumed
+   *  (cleared) by the Calls page once it has opened. */
+  bookOnOpen: string | null = null;
+  clearBookOnOpen(): void { this.bookOnOpen = null; }
 }

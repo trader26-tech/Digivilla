@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
 
 import { AuthService } from './auth/auth.service';
 import { BookingService, Booking } from './booking.service';
@@ -53,6 +53,19 @@ export class CallsComponent implements OnInit {
   readonly est = inject(EstateService);
 
   @Output() signOut = new EventEmitter<void>();
+  /** The shell asks the page to open the scheduler on a reason (e.g. from a
+   *  villa's "Own this villa"). Setter fires once the value arrives. */
+  @Input() set autoOpenReason(reason: string | null) {
+    if (!reason) return;
+    // defer so the view is ready before we pop the sheet
+    queueMicrotask(() => {
+      const match = this.REASONS.find((r) => r.key === reason) || this.REASONS[0];
+      this.openSheet();
+      this.pickReason(match);
+      this.opened.emit();
+    });
+  }
+  @Output() opened = new EventEmitter<void>();
   @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
 
   loading = signal(true);
