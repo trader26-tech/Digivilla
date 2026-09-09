@@ -97,10 +97,18 @@ def _public(row: dict) -> dict:
 def get_tiles(owner: str) -> list[dict]:
     """Every tile this user owns (empty list for a brand-new account).
 
-    The source of truth is the CRM (`user_villas` — the same rows the admin
-    assigns/edits), so whatever the advisor maps to a client shows up on the
-    client's map instantly. We fall back to the legacy `estate_tiles` store only
-    when the CRM has nothing for this user (older accounts / offline dev)."""
+    SOURCE OF TRUTH, in order:
+    1. The client's REAL portfolio — `client_holdings` (units × live NAV),
+       matched to this login by phone. If the admin has provisioned this client
+       (their phone resolves to a `client_code`), we return those tiles VERBATIM,
+       even when empty — a real client with no holdings yet sees an EMPTY estate,
+       never seed/demo villas. `client_holdings` wins over any stale `user_villas`.
+    2. Otherwise (no client_code — demo/dev accounts) the legacy CRM `user_villas`
+       tiles, then the `estate_tiles` store."""
+    from app import client_portfolio
+    if client_portfolio.client_code_for_owner(owner) is not None:
+        return client_portfolio.portfolio_tiles(owner)
+
     crm = _tiles_from_crm(owner)
     if crm:
         return crm

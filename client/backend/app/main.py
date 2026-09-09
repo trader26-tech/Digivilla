@@ -380,6 +380,16 @@ def get_my_estate(authorization: Optional[str] = Header(default=None)) -> dict:
     return {"tiles": estate_svc.get_tiles(owner)}
 
 
+@app.get("/me/portfolio")
+def get_my_portfolio(authorization: Optional[str] = Header(default=None)) -> dict:
+    """This user's REAL portfolio net worth, computed from client_holdings × live
+    NAV (matched to the login by phone). worth / invested / gain / gain_pct.
+    Empty (all zero, has_holdings=false) when no holdings are matched."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    return client_portfolio.portfolio_summary(owner)
+
+
 @app.get("/me/holding/{uv_id}")
 def get_my_holding(uv_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
     """Full detail for one of the user's holdings: money ledger + fund

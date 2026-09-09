@@ -148,12 +148,28 @@ _USER_FIELDS = ["signup", "client_code", "name", "pan", "phone", "email",
                 "dob", "address", "city", "state", "pin"]
 
 
+def _e164(phone: str) -> str:
+    """Store phones in E.164 so they join the client app's phone logins, which
+    normalize to +91… . A bare 10-digit Indian number → +91XXXXXXXXXX; anything
+    already prefixed or non-standard is left as-is."""
+    import re
+    p = (phone or "").strip()
+    if not p:
+        return ""
+    if p.startswith("+"):
+        return p
+    digits = re.sub(r"\D", "", p)
+    return "+91" + digits if len(digits) == 10 else p
+
+
 def _row_to_client(cells: list) -> dict | None:
     vals = [("" if c is None else str(c).strip()) for c in cells]
     vals += [""] * (len(_USER_FIELDS) - len(vals))
     d = dict(zip(_USER_FIELDS, vals))
     if not d.get("client_code"):
         return None
+    if "phone" in d:
+        d["phone"] = _e164(d.get("phone"))
     return d
 
 

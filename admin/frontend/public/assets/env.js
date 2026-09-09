@@ -4,4 +4,4 @@
 window.__env = window.__env || {};
 // Local test override: point the admin SPA at the backend running on :8003
 // (the README's default :8001 was already in use by another local service).
-window.__env.apiUrl = "http://localhost:8003";
+window.__env.apiUrl = "http://localhost:8020";

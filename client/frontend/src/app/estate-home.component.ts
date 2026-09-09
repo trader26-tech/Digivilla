@@ -121,27 +121,21 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   /** Detail popup state: the tapped cell (owned tile or open plot), or null. */
   selected = signal<Cell | null>(null);
-  /** Just-collected toast amount, or 0. */
-  collected = signal(0);
   /** The "what your estate means" key — closed by default, opens on the ? tap. */
   keyOpen = signal(false);
   toggleKey(): void { this.keyOpen.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
   /** PORTFOLIO WORTH is masked (••••) by default; the eye reveals it. */
   worthHidden = signal(true);
   toggleWorth(): void { this.worthHidden.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
-  /** True when there's rent ready to collect (drives the coin on a villa). */
-  get hasRent(): boolean { return this.est.rentIn > 0; }
-  /** Today, for the "5 Sep · tap the coin to collect" line. */
+  /** Today, for the date line. */
   today = new Date();
   /** Open plots shown in the legend — the immediate ring around the town, not
    *  the whole 120-plot board, so it reads clean (e.g. "3 open"). */
   get openShown(): number { return Math.min(this.open, Math.max(3, this.villas + this.buildings)); }
-  /** Every finished villa wears a collect coin while there's rent to collect. */
+  /** Every finished villa wears a decorative ₹ coin. */
   wearsCoin(c: Cell): boolean {
-    return this.hasRent && !!c.tile && c.tile.type === 'villa';
+    return !!c.tile && c.tile.type === 'villa';
   }
-  /** Tap the coin → collect (and don't also open the tile detail). */
-  tapCoin(ev: Event): void { ev.stopPropagation(); this.collect(); }
   /** The right-hand figure has two faces: monthly rent (default) and build
    *  cost. Tapping morphs between them in place. */
   showBuildCost = signal(false);
@@ -627,14 +621,6 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.bkSent.set(true);
     this.bkStep.set(3);
     if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
-  }
-
-  collect(): void {
-    const amt = this.est.collectRent();
-    if (amt <= 0) return;
-    this.collected.set(amt);
-    if (navigator.vibrate) navigator.vibrate([6, 40, 10]);
-    setTimeout(() => this.collected.set(0), 2600);
   }
 
   // ------------------------------------------------------------- helpers ---

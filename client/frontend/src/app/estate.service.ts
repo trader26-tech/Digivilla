@@ -77,15 +77,26 @@ export interface Tile {
   sipMonthly: number;      // monthly SIP (building only; 0 otherwise)
   sipAccrued: number;      // amount accrued so far (building)
   rentMonthly: number;     // monthly rent (villa only; 0 otherwise)
+  currentValue?: number;   // real live value (Σ units × NAV) for real holdings
   boughtAt: number;        // epoch ms
   label: string;           // e.g. "Kelambakkam Grove"
+}
+
+/** Real portfolio net worth, from GET /me/portfolio (client_holdings × live NAV). */
+export interface PortfolioSummary {
+  worth: number;
+  invested: number;
+  gain: number;
+  gain_pct: number;
+  holdings_count: number;
+  has_holdings: boolean;
+  client_code: string | null;
 }
 
 // v2: reset the board once to the lean starter (the v1 store had accumulated
 // many test tiles). Bumping the key means old v1 tiles are ignored and the
 // starter seeds fresh on the next load.
 const STORE_KEY = 'estate_tiles_v2';
-const RENT_KEY = 'estate_rent_collected_v1';
 const PROFILE_KEY = 'estate_profile_v1';
 
 /** Plots available around the town hall. The board is large and the map
@@ -100,8 +111,9 @@ export class EstateService {
   /** Owned tiles, newest last. A signal so the estate re-renders on change.
    *  A brand-new account starts EMPTY (no fake starter tiles). */
   readonly tiles = signal<Tile[]>(this.load());
-  /** Lifetime rent collected (tapping the coin adds the pending rent). */
-  readonly rentCollected = signal<number>(this.loadRent());
+  /** Authoritative real net worth from the server (client_holdings × live NAV).
+   *  Null until loaded; the tile-derived getters are the offline fallback. */
+  readonly portfolio = signal<PortfolioSummary | null>(null);
   /** Whose town this is, and where. Used for the home greeting. */
   readonly profile = signal<Profile>(this.loadProfile());
 
@@ -139,7 +151,7 @@ export class EstateService {
     return this.http.get<VillaSipDetail>(`${environment.apiUrl}/villas/sip/${id}`);
   }
 
-  /** Pull this user's estate from the backend and replace local state. */
+  /** Pull this user's estate + real net worth from the backend. */
   syncFromServer(): void {
     const t = this.auth.token();
     if (!t) return;
@@ -150,6 +162,17 @@ export class EstateService {
           this.cacheLocal();
         },
         error: () => { /* offline — keep the local cache */ },
+      });
+    this.loadPortfolio();
+  }
+
+  /** Authoritative real net worth (client_holdings × live NAV). */
+  loadPortfolio(): void {
+    if (!this.auth.token()) return;
+    this.http.get<PortfolioSummary>(`${environment.apiUrl}/me/portfolio`, { headers: this.authHeaders })
+      .subscribe({
+        next: (p) => this.portfolio.set(p),
+        error: () => { /* keep the tile-derived fallback */ },
       });
   }
 
@@ -178,18 +201,6 @@ export class EstateService {
     this.cacheLocal();
     this.pushToServer();
   }
-  private loadRent(): number {
-    try {
-      return Number(localStorage.getItem(RENT_KEY) || 0);
-    } catch {
-      return 0;
-    }
-  }
-  private saveRent(): void {
-    try {
-      localStorage.setItem(RENT_KEY, String(this.rentCollected()));
-    } catch {}
-  }
   private loadProfile(): Profile {
     // No fake demo identity — a fresh user has no name until the advisor sets
     // it up on the first call. The greeting handles an empty name gracefully.
@@ -216,28 +227,39 @@ export class EstateService {
     return this.tiles().filter((x) => x.type === t).length;
   }
 
-  /** Sum of monthly income across ALL holdings — finished villas AND ones still
-   *  under SIP (each earns income proportional to what's invested). */
-  get rentIn(): number {
-    return this.tiles().reduce((s, t) => s + (t.rentMonthly || 0), 0);
-  }
-  /** Sum of active SIPs on villas under construction — the "Build cost" chip. */
-  get buildCost(): number {
-    return this.tiles().filter((t) => t.type === 'building').reduce((s, t) => s + t.sipMonthly, 0);
+  /** Total invested — the money actually put in (Σ per-tile cost). Prefers the
+   *  authoritative server figure, falling back to the tiles when offline. */
+  get invested(): number {
+    const p = this.portfolio();
+    if (p) return p.invested;
+    return this.tiles().reduce((s, t) => s + (t.cost || 0), 0);
   }
 
-  /** Total worth of the estate today: finished villas and land at full value,
-   *  plus only what has actually accrued so far on villas still building. */
+  /** Live gain = current worth − invested (can be negative). Real, not rent. */
+  get gain(): number {
+    const p = this.portfolio();
+    if (p) return p.gain;
+    return this.estateValue - this.invested;
+  }
+
+  /** Gain as a percentage of invested. */
+  get gainPct(): number {
+    const p = this.portfolio();
+    if (p) return p.gain_pct;
+    const inv = this.invested;
+    return inv ? (this.gain / inv) * 100 : 0;
+  }
+
+  /** Total worth today: real live value (Σ units × NAV) per tile, falling back
+   *  to invested for legacy tiles that carry no currentValue. Prefers the
+   *  authoritative server figure. */
   get estateValue(): number {
+    const p = this.portfolio();
+    if (p) return p.worth;
     return this.tiles().reduce(
-      (s, t) => s + (t.type === 'building' ? t.sipAccrued : t.cost),
+      (s, t) => s + (t.currentValue ?? (t.type === 'building' ? t.sipAccrued : t.cost)),
       0,
     );
-  }
-
-  /** Yearly rent as an income figure (12 x the monthly "rent in"). */
-  get rentYearly(): number {
-    return this.rentIn * 12;
   }
 
   // ---------------- mutations ----------------
@@ -279,15 +301,6 @@ export class EstateService {
       ),
     );
     this.save();
-  }
-
-  /** Collect the pending rent (all villas' monthly rent, once). */
-  collectRent(): number {
-    const amt = this.rentIn;
-    if (amt <= 0) return 0;
-    this.rentCollected.update((v) => v + amt);
-    this.saveRent();
-    return amt;
   }
 
   /** Building progress 0..1 toward the villa's cost. */

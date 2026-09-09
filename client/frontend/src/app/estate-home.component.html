@@ -18,17 +18,19 @@
     </div>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
-    <!-- ===== RENT IN / BUILD COST coin chips, top-right ===== -->
+    <!-- ===== GAIN / INVESTED chips, top-right (real, from live NAV) ===== -->
     <div class="coins">
       <div class="coin-chip">
         <span class="coin coin-gold" aria-hidden="true"></span>
-        <span class="coin-k">RENT IN</span>
-        <b class="coin-v gold">{{ compact(est.rentIn) }}</b>
+        <span class="coin-k">GAIN</span>
+        <b class="coin-v" [class.gain-pos]="est.gain >= 0" [class.gain-neg]="est.gain < 0">
+          {{ est.gain >= 0 ? '+' : '' }}{{ compact(est.gain) }}
+        </b>
       </div>
       <div class="coin-chip">
         <span class="coin coin-purple" aria-hidden="true"></span>
-        <span class="coin-k">BUILD COST</span>
-        <b class="coin-v purple">{{ compact(est.buildCost) }}</b>
+        <span class="coin-k">INVESTED</span>
+        <b class="coin-v purple">{{ compact(est.invested) }}</b>
       </div>
     </div>
 
@@ -198,8 +200,7 @@
                  cell; inner g = the bob (so the animation transform never
                  clobbers the position transform, which stacked them before). -->
             <g *ngIf="wearsCoin(c)" [attr.transform]="'translate(' + c.x + ',' + (c.y - 44) + ')'"
-               (click)="tapCoin($event)" role="button" [attr.aria-label]="'Collect ' + compact(est.rentIn) + ' rent'"
-               style="cursor:pointer">
+               aria-hidden="true">
               <!-- shadow rests on the CENTRE of the villa roof (does not bob) -->
               <ellipse class="cf-shadow" cx="0" cy="30" rx="9" ry="3"></ellipse>
               <g class="coin-float">
@@ -249,10 +250,13 @@
       </ng-container>
     </ng-container>
 
-    <!-- ===== rent collected to date (single clean line) ===== -->
+    <!-- ===== total gain to date (real: live value − invested) ===== -->
     <ng-container *ngIf="!isEmptyEstate()">
       <p class="rc-line">
-        rent collected to date <b class="rc-v">{{ compact(est.rentCollected()) }}</b>
+        total gain to date
+        <b class="rc-v" [class.gain-pos]="est.gain >= 0" [class.gain-neg]="est.gain < 0">
+          {{ est.gain >= 0 ? '+' : '' }}{{ compact(est.gain) }} ({{ est.gainPct | number:'1.1-1' }}%)
+        </b>
       </p>
     </ng-container>
 
@@ -455,8 +459,6 @@
     </div>
   </div>
 
-  <!-- collect toast -->
-  <div class="toast" *ngIf="collected() > 0">＋ {{ compact(collected()) }} rent collected</div>
 
   <!-- ============ verified tick (once, right after OTP) ============ -->
   <div class="tick-screen" *ngIf="showTick()" (click)="showTick.set(false)">

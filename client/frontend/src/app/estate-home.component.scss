@@ -1495,3 +1495,7 @@
 
 /* the AMFI/metaphor line, dimmed on dark */
 .home-amfi { color: var(--muted); }
+
+/* real gain figure — green up, red down (chips + total-gain line) */
+.gain-pos { color: var(--positive); }
+.gain-neg { color: var(--negative); }
