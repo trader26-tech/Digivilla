@@ -1,16 +1,19 @@
 :host { display: block; }
+/* the fixed home manages its own space; ignore the shell's has-nav padding so
+   .estate stays exactly one viewport tall (no scroll). */
+:host.has-nav { padding-bottom: 0 !important; }
 
 .estate {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* FIXED to the viewport — the home never scrolls; everything fits one screen. */
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--paper);
   position: relative;
-  /* hard guard: nothing may ever spill sideways off the screen */
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* ============ TOP: avatar, hero line, then the map — in flow ============
@@ -19,18 +22,14 @@
      avatar → small gap → hero → gap → the town → (divider lives below) */
 .estate-top {
   position: relative;
-  /* the FIRST SCREEN: the hero, the town and the figures sit together as one
-     centred group, with breathing room above and below. */
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* fills the fixed .estate exactly — no growth, no scroll. The hero + map +
+     figures + key are one centred column that always fits the screen. */
+  flex: 1; min-height: 0;
   display: flex;
   flex-direction: column;
-  /* content sits toward the top (pulled up) to make room for the metaphor key
-     + disclaimer below, rather than floating dead-centre. */
-  /* the city (hero + map) is the hero of the screen — sit it toward the centre,
-     with the faint "what this means" filler flowing quietly below. */
   justify-content: center;
-  padding: calc(7rem + env(safe-area-inset-top)) 0 4rem;
+  /* bottom padding clears the floating nav pill so nothing hides behind it */
+  padding: calc(4.8rem + env(safe-area-inset-top)) 0 calc(6.5rem + env(safe-area-inset-bottom));
   overflow: hidden;
   /* an ambient "scene" the town sits inside — a soft warm sky up top, a green
      estate glow rising from the ground, and a gentle vertical wash between, so
@@ -303,7 +302,8 @@
      empty top/bottom padding, so no house is ever cut. */
   height: auto;
   aspect-ratio: 585.6 / 408;   /* the board's natural ratio — no distortion */
-  max-height: 72vh;
+  /* capped so the hero + map + figures + key all fit one fixed screen (no scroll) */
+  max-height: min(46vh, 340px);
   width: 100%;
   margin: 0 auto;
 }
