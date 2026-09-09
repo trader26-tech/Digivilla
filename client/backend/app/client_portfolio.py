@@ -31,6 +31,36 @@ _NAV_TTL_SECONDS = 6 * 3600
 _nav_cache: dict[int, tuple[float, Optional[float]]] = {}
 
 
+# ── villa model ──────────────────────────────────────────────────────────────
+# One villa = a fixed ₹5,00,000 pillar (no tiers). Every full ₹5L INVESTED into a
+# villa-forming bucket completes one villa (coin + SWP); the leftover is a single
+# "under construction" pillar. Kept as a constant so it's trivial to change later.
+VILLA_UNIT = 500_000.0
+
+# Which bucket(s) form villas. For now the SIP bucket(s) — SIP is the
+# accumulation plan that builds a villa up to ₹5L. Lumpsum buckets are shown in
+# the picker/modal but don't drive the estate map. Easy to widen later.
+def _is_villa_bucket(bucket: dict) -> bool:
+    return (bucket.get("kind") or "sip") == "sip"
+
+
+def _villa_tile(order: int, invested: float, value: float, *, building: bool) -> dict:
+    """One villa pillar tile in the frontend's shape. `building` → still under
+    construction (below ₹5L); otherwise a completed villa (coin + SWP)."""
+    return {
+        "id": f"villa_{order}",
+        "type": "building" if building else "villa",
+        "variant": "balanced",
+        "cost": VILLA_UNIT,                 # a full pillar is worth ₹5L
+        "sipMonthly": 0,
+        "sipAccrued": round(invested, 2),   # how much of this pillar is funded
+        "rentMonthly": 0,
+        "currentValue": round(value, 2),
+        "label": "Digivilla" if not building else "Digivilla · building",
+        "boughtAt": order,
+    }
+
+
 def _sb():
     from app.supabase_client import get_supabase
     return get_supabase()
@@ -131,9 +161,12 @@ def _valued_holdings(client_code: str) -> list[dict]:
 
 def portfolio_summary(owner: str) -> dict:
     """Real net-worth summary for the logged-in user (empty when unmatched)."""
+    from app import estate as estate_svc
+    swp = estate_svc.total_swp(owner)   # total SWP/income paid out so far
     code = client_code_for_owner(owner)
     if not code:
         return {"worth": 0, "invested": 0, "gain": 0, "gain_pct": 0,
+                "total_swp": swp,
                 "holdings_count": 0, "has_holdings": False, "client_code": None}
     hs = _valued_holdings(code)
     worth = round(sum(h["current_value"] for h in hs), 2)
@@ -144,6 +177,7 @@ def portfolio_summary(owner: str) -> dict:
         "invested": invested,
         "gain": gain,
         "gain_pct": round(gain / invested * 100, 2) if invested else 0,
+        "total_swp": swp,
         "holdings_count": len(hs),
         "has_holdings": bool(hs),
         "client_code": code,
@@ -168,49 +202,67 @@ def portfolio_tiles(owner: str) -> list[dict]:
     if not hs:
         return []
 
-    # scheme_code → (bucket_id, bucket_name) from the admin's villa definitions
+    # scheme_code → bucket_id for ONLY the villa-forming bucket(s). For now that
+    # is the "Moderate Digivilla" bucket (matched by name, spelling-tolerant), so
+    # only its funds build villas; everything else is net-worth "Other Funds".
+    codes_in_villa: set[int] = set()
     try:
-        buckets = _sb().table("villa_buckets").select("id,name,sort_order").order("sort_order").execute().data or []
-        bfunds = _sb().table("villa_bucket_funds").select("bucket_id,scheme_code").execute().data or []
+        buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
+        villa_bucket_ids = {
+            b["id"] for b in buckets
+            if _is_villa_bucket(b)
+        }
+        if villa_bucket_ids:
+            bfunds = _sb().table("villa_bucket_funds").select("bucket_id,scheme_code").execute().data or []
+            for f in bfunds:
+                if f.get("scheme_code") and f.get("bucket_id") in villa_bucket_ids:
+                    codes_in_villa.add(f["scheme_code"])
     except Exception:
-        buckets, bfunds = [], []
-    bucket_name = {b["id"]: b.get("name") or "Villa" for b in buckets}
-    bucket_order = {b["id"]: b.get("sort_order", 0) for b in buckets}
-    code_to_bucket: dict[int, str] = {}
-    for f in bfunds:
-        if f.get("scheme_code"):
-            code_to_bucket.setdefault(f["scheme_code"], f["bucket_id"])
+        codes_in_villa = set()
 
-    # group holdings by bucket ("__other__" for unmatched)
-    groups: dict[str, list[dict]] = {}
+    # split holdings: those in a villa bucket vs. everything else
+    villa_invested = 0.0
+    villa_value = 0.0
+    other_invested = 0.0
+    other_value = 0.0
     for h in hs:
-        bid = code_to_bucket.get(h.get("scheme_code"), "__other__")
-        groups.setdefault(bid, []).append(h)
+        if h.get("scheme_code") in codes_in_villa:
+            villa_invested += h["invested"]
+            villa_value += h["current_value"]
+        else:
+            other_invested += h["invested"]
+            other_value += h["current_value"]
 
-    tiles = []
-    # real buckets first (in the admin's sort order), then "Other Funds"
-    ordered = sorted(
-        [b for b in groups if b != "__other__"],
-        key=lambda b: bucket_order.get(b, 0),
-    )
-    if "__other__" in groups:
-        ordered.append("__other__")
+    tiles: list[dict] = []
+    order = 0
 
-    for i, bid in enumerate(ordered):
-        items = groups[bid]
-        value = round(sum(h["current_value"] for h in items), 2)
-        invested = round(sum(h["invested"] for h in items), 2)
-        label = "Other Funds" if bid == "__other__" else bucket_name.get(bid, "Villa")
+    # ── villas: one completed ₹5L pillar per full VILLA_UNIT of INVESTED money;
+    #    the remainder (if any) is a single "under construction" pillar. ──────
+    if villa_invested > 0:
+        n_complete = int(villa_invested // VILLA_UNIT)
+        remainder = round(villa_invested - n_complete * VILLA_UNIT, 2)
+        # live value scales with the invested split so a completed villa shows a
+        # realistic current value (Σ value × its share of invested).
+        val_ratio = (villa_value / villa_invested) if villa_invested else 1.0
+        for _ in range(n_complete):
+            tiles.append(_villa_tile(order, VILLA_UNIT, round(VILLA_UNIT * val_ratio, 2), building=False))
+            order += 1
+        if remainder > 0:
+            tiles.append(_villa_tile(order, remainder, round(remainder * val_ratio, 2), building=True))
+            order += 1
+
+    # ── other funds: shown in net worth, NEVER a villa ──────────────────────
+    if other_invested > 0 or other_value > 0:
         tiles.append({
-            "id": "other" if bid == "__other__" else f"bucket_{bid}",
-            "type": "villa",
+            "id": "other",
+            "type": "land",            # not a villa — a plain net-worth tile
             "variant": "balanced",
-            "cost": invested,
+            "cost": round(other_invested, 2),
             "sipMonthly": 0,
-            "sipAccrued": invested,
-            "rentMonthly": 0,            # these are MF holdings — no rent
-            "currentValue": value,
-            "label": label,
-            "boughtAt": i,
+            "sipAccrued": round(other_invested, 2),
+            "rentMonthly": 0,
+            "currentValue": round(other_value, 2),
+            "label": "Other Funds",
+            "boughtAt": order,
         })
     return tiles

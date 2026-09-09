@@ -43,6 +43,10 @@ export interface VillaSipItem {
   id: string;
   name: string;
   tier?: string;
+  /** 'sip' | 'lumpsum' — the bucket's investing mechanic. */
+  kind?: string;
+  /** e.g. "medium risk portfolio" (may be null/absent). */
+  subtitle?: string;
   fund_count: number;
 }
 /** One fund row inside a Villa SIP mix. Returns may be null (no history). */
@@ -60,6 +64,10 @@ export interface VillaSipDetail {
   id: string;
   name: string;
   tier?: string;
+  /** 'sip' | 'lumpsum' — the bucket's investing mechanic. */
+  kind?: string;
+  /** e.g. "medium risk portfolio" (may be null/absent). */
+  subtitle?: string;
   allocation_total: number;
   funds: VillaSipFund[];
   overall: {
@@ -88,6 +96,7 @@ export interface PortfolioSummary {
   invested: number;
   gain: number;
   gain_pct: number;
+  total_swp: number;
   holdings_count: number;
   has_holdings: boolean;
   client_code: string | null;
@@ -241,6 +250,9 @@ export class EstateService {
     if (p) return p.gain;
     return this.estateValue - this.invested;
   }
+
+  /** Total SWP paid out to the user so far (Σ paid income/rent), from server. */
+  get totalSwp(): number { return this.portfolio()?.total_swp ?? 0; }
 
   /** Gain as a percentage of invested. */
   get gainPct(): number {

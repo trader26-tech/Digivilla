@@ -11,21 +11,27 @@ import {
   signal,
 } from '@angular/core';
 
-import { EstateService, VillaSipDetail } from './estate.service';
+import { EstateService, VillaSipDetail, VillaSipItem } from './estate.service';
 
 /**
- * "Villa SIP" preview modal — a centered card over a dark scrim that renders the
- * canonical fund mix behind a villa:
+ * "Villa SIP" preview modal — a centered card over a dark scrim with two states:
  *
- *   Sip - <Villa Name>
- *   36, 24, 16, 12, 12                         ← subtle allocation summary
- *   Scheme Name | Category | Allocation | Past Returns (p.a.) [1Yr · 3Yr · 5Yr]
- *   …one row per fund, returns in green…
- *   Overall Portfolio Returns | | 100% | 1Yr · 3Yr · 5Yr   (bold footer)
+ *   PICKER ("Choose A Bucket"): a list of the available buckets from /villas/sip,
+ *   each a row with the name (bold), a SIP / LUMPSUM pill, tier, subtitle and
+ *   fund count. Tapping a row loads its detail and switches to DETAIL.
+ *
+ *   DETAIL: the canonical fund mix behind one bucket:
+ *     Sip - <Name>  |  Lumpsum - <Name>
+ *     medium risk portfolio                    ← grey subtitle (falls back to
+ *                                                the allocation summary)
+ *     Scheme Name | Category | Allocation | Past Returns (p.a.) [1Yr · 3Yr · 5Yr]
+ *     …one row per fund, returns in green…
+ *     Overall Portfolio Returns | | 100% | 1Yr · 3Yr · 5Yr   (bold footer)
  *
  * Data comes from EstateService (/villas/sip + /villas/sip/{id}); nothing is
- * hardcoded. Pass a villaId to load a specific villa, or a villaName hint to
- * match one by name from the list (else the first villa).
+ * hardcoded. Pass a villaId to open one bucket directly (no picker); otherwise
+ * the list is fetched: one bucket opens directly, many show the picker (with a
+ * name hint used to preselect, if given).
  */
 @Component({
   selector: 'app-villa-sip-modal',
@@ -43,17 +49,35 @@ export class VillaSipModalComponent implements OnInit, OnDestroy {
 
   private api = inject(EstateService);
 
+  /** Which face is showing: the bucket picker, or one bucket's detail table. */
+  readonly mode = signal<'picker' | 'detail'>('detail');
+  /** The available buckets (only populated/used in the picker state). */
+  readonly villas = signal<VillaSipItem[]>([]);
   readonly detail = signal<VillaSipDetail | null>(null);
   readonly loading = signal(true);
   readonly error = signal(false);
 
-  /** Title: "Sip - <Villa Name>", falling back to any name hint while loading. */
+  /** Title. In the picker it's "Choose A Bucket". In detail it uses `kind`:
+   *  lumpsum → "Lumpsum - <Name>", else "Sip - <Name>". While loading the
+   *  detail, falls back to the name hint. */
   readonly title = computed<string>(() => {
-    const name = this.detail()?.name || this.villaName || '';
-    return name ? `Sip - ${name}` : 'Sip';
+    if (this.mode() === 'picker') return 'Choose A Bucket';
+    const d = this.detail();
+    const name = d?.name || this.villaName || '';
+    if (!name) return 'Sip';
+    const prefix = d?.kind === 'lumpsum' ? 'Lumpsum' : 'Sip';
+    return `${prefix} - ${name}`;
   });
 
-  /** Subtle allocation summary line, e.g. "36, 24, 16, 12, 12". */
+  /** Grey subtitle under the title, e.g. "medium risk portfolio". Falls back to
+   *  the allocation summary ("36%, 24%, …") when the server sends no subtitle. */
+  readonly subtitle = computed<string>(() => {
+    const d = this.detail();
+    if (!d) return '';
+    return (d.subtitle && d.subtitle.trim()) || this.allocSummary();
+  });
+
+  /** Subtle allocation summary line, e.g. "36%, 24%, 16%, 12%, 12%". */
   readonly allocSummary = computed<string>(() => {
     const d = this.detail();
     if (!d) return '';
@@ -62,12 +86,14 @@ export class VillaSipModalComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.lockScroll(true);
+    // An explicit id opens that bucket straight into the detail table.
     if (this.villaId) {
       this.loadDetail(this.villaId);
       return;
     }
-    // No id: pick the villa whose name matches villaName (contains, case-
-    // insensitive), else the first one in the list.
+    // No id: fetch the list. One bucket opens directly; many show the picker.
+    this.loading.set(true);
+    this.error.set(false);
     this.api.villaSipList().subscribe({
       next: (r) => {
         const villas = r.villas || [];
@@ -75,14 +101,45 @@ export class VillaSipModalComponent implements OnInit, OnDestroy {
           this.fail();
           return;
         }
-        const hint = (this.villaName || '').trim().toLowerCase();
-        const match =
-          (hint && villas.find((v) => v.name.toLowerCase().includes(hint))) ||
-          villas[0];
-        this.loadDetail(match.id);
+        this.villas.set(villas);
+        if (villas.length === 1) {
+          // Only one bucket — skip the picker, open it directly.
+          this.loadDetail(villas[0].id);
+          return;
+        }
+        // Many buckets — show the picker (preselecting nothing; the name hint
+        // is left for the user to spot, matching the reference flow).
+        this.mode.set('picker');
+        this.loading.set(false);
       },
       error: () => this.fail(),
     });
+  }
+
+  /** Picker → detail: load and show the tapped bucket's fund mix. */
+  pick(v: VillaSipItem): void {
+    this.mode.set('detail');
+    this.loadDetail(v.id);
+  }
+
+  /** Detail → picker: return to the list (only when there is one to return to). */
+  back(): void {
+    if (!this.canGoBack()) return;
+    this.detail.set(null);
+    this.error.set(false);
+    this.loading.set(false);
+    this.mode.set('picker');
+  }
+
+  /** True when a picker list exists to return to (i.e. the modal wasn't opened
+   *  on a single explicit bucket). */
+  canGoBack(): boolean {
+    return !this.villaId && this.villas().length > 1;
+  }
+
+  /** A short SIP / LUMPSUM label for a bucket's pill. */
+  kindLabel(v: VillaSipItem): string {
+    return v.kind === 'lumpsum' ? 'LUMPSUM' : 'SIP';
   }
 
   ngOnDestroy(): void {

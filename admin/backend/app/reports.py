@@ -660,29 +660,32 @@ def _fund_row(bid: str, f: dict, order: int) -> dict:
     }
 
 
-def create_bucket(name: str, tier: str | None, funds: list[dict]) -> dict:
+def create_bucket(name: str, tier: str | None, funds: list[dict],
+                  kind: str = "sip", subtitle: str | None = None) -> dict:
     """funds: [{scheme_name, scheme_code?, category?, target_weight?,
     ret_1y?, ret_3y?, ret_5y?}]. Resolves codes; keeps the ratio (target_weight).
-    """
+    kind: 'sip' | 'lumpsum'. subtitle: e.g. 'medium risk portfolio'."""
     bid = str(uuid.uuid4())
+    kind = "lumpsum" if str(kind).lower() == "lumpsum" else "sip"
     for f in funds:
         if not f.get("scheme_code") and f.get("scheme_name"):
             f["scheme_code"] = resolve_scheme_code(f["scheme_name"])
     rows = [_fund_row(bid, f, i) for i, f in enumerate(funds)]
+    meta = {"id": bid, "name": name, "tier": tier, "kind": kind,
+            "subtitle": subtitle, "sort_order": 0}
     if _use_supabase():
         try:
-            _sb().table("villa_buckets").insert({
-                "id": bid, "name": name, "tier": tier, "sort_order": 0}).execute()
+            _sb().table("villa_buckets").insert(meta).execute()
             for r in rows:
                 _sb().table("villa_bucket_funds").insert(r).execute()
-            return {"id": bid, "name": name, "tier": tier, "funds": rows}
+            return {**meta, "funds": rows}
         except Exception:
             pass
     store = _load_local()
-    store.setdefault("buckets", []).append({"id": bid, "name": name, "tier": tier, "sort_order": 0})
+    store.setdefault("buckets", []).append(meta)
     store.setdefault("bucket_funds", []).extend(rows)
     _save_local(store)
-    return {"id": bid, "name": name, "tier": tier, "funds": rows}
+    return {**meta, "funds": rows}
 
 
 def delete_bucket(bid: str) -> None:

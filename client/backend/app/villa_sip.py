@@ -96,6 +96,7 @@ def list_villas() -> list[dict]:
         count[f["bucket_id"]] = count.get(f["bucket_id"], 0) + 1
     return [
         {"id": b["id"], "name": b.get("name"), "tier": b.get("tier"),
+         "kind": b.get("kind") or "sip", "subtitle": b.get("subtitle"),
          "fund_count": count.get(b["id"], 0)}
         for b in buckets
     ]
@@ -146,6 +147,8 @@ def villa_sip(bucket_id: str) -> Optional[dict]:
         "id": bucket["id"],
         "name": bucket.get("name"),
         "tier": bucket.get("tier"),
+        "kind": bucket.get("kind") or "sip",       # 'sip' | 'lumpsum'
+        "subtitle": bucket.get("subtitle"),        # e.g. 'medium risk portfolio'
         "allocation_total": round(alloc_total, 2),
         "funds": funds,
         "overall": overall,

@@ -169,6 +169,28 @@ def _tiles_from_crm(owner: str) -> list[dict]:
 MONTHLY_INCOME_RATE = 0.003
 
 
+def total_swp(owner: str) -> float:
+    """Total SWP paid out to this user so far — the sum of all PAID `rent`
+    (income/SWP) transactions across their holdings. 0 if none."""
+    try:
+        from app.supabase_client import get_supabase
+        cl = get_supabase()
+        urows = cl.table("users").select("id").eq("owner", owner).limit(1).execute().data or []
+        if not urows:
+            return 0.0
+        uid = urows[0]["id"]
+        uv = cl.table("user_villas").select("id").eq("user_id", uid).execute().data or []
+        ids = [h["id"] for h in uv]
+        if not ids:
+            return 0.0
+        txns = cl.table("transactions").select("amount,kind,status") \
+            .in_("user_villa_id", ids).eq("kind", "rent").execute().data or []
+        return round(sum(float(t.get("amount") or 0) for t in txns
+                         if t.get("status") != "skipped"), 2)
+    except Exception:
+        return 0.0
+
+
 def villa_catalog() -> list[dict]:
     """The villa tiers a client can own, for the Explore page — each villa with
     its price, monthly income (price × MONTHLY_INCOME_RATE), a simple long-run

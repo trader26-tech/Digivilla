@@ -328,7 +328,7 @@ export class AdminService {
   reportBuckets(): Observable<VillaBucket[]> {
     return this.http.get<VillaBucket[]>(`${this.base}/admin/reports/buckets`, this.opts);
   }
-  createBucket(body: { name: string; tier?: string; funds: BucketFund[] }): Observable<VillaBucket> {
+  createBucket(body: { name: string; tier?: string; kind?: string; subtitle?: string; funds: BucketFund[] }): Observable<VillaBucket> {
     return this.http.post<VillaBucket>(`${this.base}/admin/reports/buckets`, body, this.opts);
   }
   deleteBucket(id: string): Observable<{ status: string }> {
@@ -373,7 +373,7 @@ export interface BucketFund {
 export interface CalDay {
   date: string; status: 'both' | 'partial' | 'none'; user: any | null; transaction: any | null;
 }
-export interface VillaBucket { id: string; name: string; tier?: string; funds: BucketFund[]; }
+export interface VillaBucket { id: string; name: string; tier?: string; kind?: string; subtitle?: string; funds: BucketFund[]; }
 export interface VillaLive {
   bucket_id: string; name: string; tier?: string; nav_sum: number;
   funds: { scheme_name: string; scheme_code?: number; nav?: number; nav_date?: string; target_weight?: number }[];

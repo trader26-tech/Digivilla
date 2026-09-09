@@ -542,7 +542,9 @@ def admin_report_create_bucket(
     name = (payload.get("name") or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="name required")
-    return reports_svc.create_bucket(name, payload.get("tier"), payload.get("funds") or [])
+    return reports_svc.create_bucket(
+        name, payload.get("tier"), payload.get("funds") or [],
+        kind=payload.get("kind") or "sip", subtitle=payload.get("subtitle"))
 
 
 @app.delete("/admin/reports/buckets/{bucket_id}")

@@ -3,6 +3,15 @@
 
 <!-- Centered card. stopPropagation so clicks inside don't close it. -->
 <div class="vs-card" role="dialog" aria-modal="true" [attr.aria-label]="title()" (click)="$event.stopPropagation()">
+  <!-- ← back (detail view, only when a picker list exists to return to) -->
+  <button
+    class="vs-back"
+    type="button"
+    *ngIf="mode() === 'detail' && canGoBack()"
+    (click)="back()"
+    aria-label="Back to bucket list"
+  >←</button>
+
   <button class="vs-x" type="button" (click)="onClose()" aria-label="Close">×</button>
 
   <!-- ===== Loading ===== -->
@@ -16,11 +25,42 @@
     <p class="vs-state-tx">Couldn't load this villa</p>
   </div>
 
-  <!-- ===== Content ===== -->
-  <ng-container *ngIf="!loading() && !error() && detail() as d">
+  <!-- ===== Picker: "Choose A Bucket" ===== -->
+  <ng-container *ngIf="!loading() && !error() && mode() === 'picker'">
     <header class="vs-head">
       <h2 class="vs-title">{{ title() }}</h2>
-      <p class="vs-summary" *ngIf="allocSummary()">{{ allocSummary() }}</p>
+      <p class="vs-summary">Pick a bucket to see its fund mix</p>
+    </header>
+
+    <ul class="vs-picker">
+      <li *ngFor="let v of villas()">
+        <button class="vs-pick-row" type="button" (click)="pick(v)">
+          <span class="vs-pick-main">
+            <span class="vs-pick-top">
+              <span class="vs-pick-name">{{ v.name }}</span>
+              <span
+                class="vs-kind"
+                [class.vs-kind--sip]="kindLabel(v) === 'SIP'"
+                [class.vs-kind--lump]="kindLabel(v) === 'LUMPSUM'"
+              >{{ kindLabel(v) }}</span>
+            </span>
+            <span class="vs-pick-sub" *ngIf="v.subtitle">{{ v.subtitle }}</span>
+          </span>
+          <span class="vs-pick-meta">
+            <span class="vs-pick-tier" *ngIf="v.tier">{{ v.tier }}</span>
+            <span class="vs-pick-funds">{{ v.fund_count }} fund{{ v.fund_count === 1 ? '' : 's' }}</span>
+          </span>
+          <span class="vs-pick-caret" aria-hidden="true">›</span>
+        </button>
+      </li>
+    </ul>
+  </ng-container>
+
+  <!-- ===== Detail: the fund-mix table ===== -->
+  <ng-container *ngIf="!loading() && !error() && mode() === 'detail' && detail() as d">
+    <header class="vs-head">
+      <h2 class="vs-title">{{ title() }}</h2>
+      <p class="vs-summary" *ngIf="subtitle()">{{ subtitle() }}</p>
     </header>
 
     <div class="vs-table-wrap">

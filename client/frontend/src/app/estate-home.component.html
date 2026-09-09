@@ -250,13 +250,11 @@
       </ng-container>
     </ng-container>
 
-    <!-- ===== total gain to date (real: live value − invested) ===== -->
+    <!-- ===== total SWP received to date (income/rent paid out) ===== -->
     <ng-container *ngIf="!isEmptyEstate()">
       <p class="rc-line">
-        total gain to date
-        <b class="rc-v" [class.gain-pos]="est.gain >= 0" [class.gain-neg]="est.gain < 0">
-          {{ est.gain >= 0 ? '+' : '' }}{{ compact(est.gain) }} ({{ est.gainPct | number:'1.1-1' }}%)
-        </b>
+        total SWP received
+        <b class="rc-v swp">{{ compact(est.totalSwp) }}</b>
       </p>
     </ng-container>
 

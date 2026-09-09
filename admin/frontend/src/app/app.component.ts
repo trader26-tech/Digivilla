@@ -170,6 +170,8 @@ export class AppComponent implements OnInit {
   // bucket builder draft
   newBucketName = signal('');
   newBucketTier = signal('');
+  newBucketKind = signal<'sip' | 'lumpsum'>('sip');
+  newBucketSubtitle = signal('');
   newBucketFunds = signal<BucketFund[]>([]);
   newFundName = signal('');
   bucketSaving = signal(false);
@@ -939,11 +941,15 @@ export class AppComponent implements OnInit {
     if (!name || !this.newBucketFunds().length) return;
     this.bucketSaving.set(true);
     this.api.createBucket({
-      name, tier: this.newBucketTier().trim() || undefined, funds: this.newBucketFunds(),
+      name, tier: this.newBucketTier().trim() || undefined,
+      kind: this.newBucketKind(), subtitle: this.newBucketSubtitle().trim() || undefined,
+      funds: this.newBucketFunds(),
     }).subscribe({
       next: () => {
         this.bucketSaving.set(false);
-        this.newBucketName.set(''); this.newBucketTier.set(''); this.newBucketFunds.set([]);
+        this.newBucketName.set(''); this.newBucketTier.set('');
+        this.newBucketKind.set('sip'); this.newBucketSubtitle.set('');
+        this.newBucketFunds.set([]);
         this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
       },
       error: () => this.bucketSaving.set(false),

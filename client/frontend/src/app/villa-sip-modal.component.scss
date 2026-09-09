@@ -61,9 +61,33 @@
   &:active { transform: scale(0.94); }
 }
 
+/* ← back — mirrors the × button, top-left, only in the detail view */
+.vs-back {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--survey);
+  background: var(--card-2);
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, transform 0.1s;
+  &:hover { color: var(--ink); border-color: var(--muted); }
+  &:active { transform: scale(0.94); }
+}
+
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .vs-head {
-  margin: 0 2.6rem 1.1rem 0;   /* keep clear of the × */
+  /* clear both the × (right) and, when present, the ← (left); centered so the
+     title + grey subtitle sit above the table like the reference. */
+  margin: 0 2.6rem 1.1rem;
+  text-align: center;
 }
 .vs-title {
   margin: 0;
@@ -78,6 +102,106 @@
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+/* ── Picker: "Choose A Bucket" ──────────────────────────────────────────── */
+.vs-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.vs-pick-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: left;
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid var(--survey);
+  background: var(--card-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.08s;
+  &:hover {
+    border-color: var(--brass);
+    background: color-mix(in srgb, var(--brass) 8%, var(--card-2));
+  }
+  &:active { transform: scale(0.99); }
+}
+.vs-pick-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.vs-pick-top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.vs-pick-name {
+  font-weight: 800;
+  font-size: 0.98rem;
+  letter-spacing: -0.2px;
+  color: var(--ink);
+}
+.vs-pick-sub {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+/* the SIP / LUMPSUM pill */
+.vs-kind {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.vs-kind--sip {
+  color: var(--brass);
+  background: color-mix(in srgb, var(--brass) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+}
+.vs-kind--lump {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+}
+.vs-pick-meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  text-align: right;
+}
+.vs-pick-tier {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.vs-pick-funds {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.vs-pick-caret {
+  flex: 0 0 auto;
+  font-size: 1.35rem;
+  line-height: 1;
   color: var(--muted);
 }
 

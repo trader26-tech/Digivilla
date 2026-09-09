@@ -631,6 +631,11 @@
           <p class="nw-sub">A villa = a named set of fund schemes. Client holdings are matched into it; only these count toward villa value.</p>
           <input class="nw-inp" placeholder="Villa name (e.g. Balanced Villa)" [ngModel]="newBucketName()" (ngModelChange)="newBucketName.set($event)" />
           <input class="nw-inp" placeholder="Tier (optional — 10L / 50L / 1Cr)" [ngModel]="newBucketTier()" (ngModelChange)="newBucketTier.set($event)" />
+          <div class="nw-kind-seg" role="group" aria-label="Investment type">
+            <button type="button" [class.on]="newBucketKind() === 'sip'" (click)="newBucketKind.set('sip')">SIP</button>
+            <button type="button" [class.on]="newBucketKind() === 'lumpsum'" (click)="newBucketKind.set('lumpsum')">Lumpsum</button>
+          </div>
+          <input class="nw-inp" placeholder="Subtitle (e.g. medium risk portfolio)" [ngModel]="newBucketSubtitle()" (ngModelChange)="newBucketSubtitle.set($event)" />
           <div class="nw-fund-add">
             <input class="nw-inp" placeholder="Add a fund scheme name…" [ngModel]="newFundName()" (ngModelChange)="newFundName.set($event)" (keyup.enter)="addFundToBucket()" />
             <button class="nw-add-btn" (click)="addFundToBucket()">+</button>
@@ -680,7 +685,12 @@
           <div class="nw-empty" *ngIf="!nwBuckets().length">No buckets yet.</div>
           <div class="nw-bucket card" *ngFor="let b of nwBuckets()">
             <div class="nw-bucket-head">
-              <div><b>{{ b.name }}</b><span class="nw-villa-tier" *ngIf="b.tier">{{ b.tier }}</span></div>
+              <div>
+                <b>{{ b.name }}</b>
+                <span class="nw-kind-badge" [class.lumpsum]="b.kind === 'lumpsum'" *ngIf="b.kind">{{ b.kind === 'lumpsum' ? 'LUMPSUM' : 'SIP' }}</span>
+                <span class="nw-villa-tier" *ngIf="b.tier">{{ b.tier }}</span>
+                <small class="nw-bucket-sub" *ngIf="b.subtitle">{{ b.subtitle }}</small>
+              </div>
               <button class="nw-del" (click)="removeBucket(b.id)" aria-label="Delete">Delete</button>
             </div>
             <div class="nw-bk-head-row">
