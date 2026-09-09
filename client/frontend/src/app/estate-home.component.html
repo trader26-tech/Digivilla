@@ -37,7 +37,16 @@
     <!-- ===== HERO: "YOUR ESTATE" over the estate name. ===== -->
     <header class="hero">
       <span class="hero-kicker">YOUR ESTATE</span>
-      <h1 class="hero-title">{{ est.profile().name ? est.profile().name + '&rsquo;s City' : 'Your City' }}</h1>
+      <div class="hero-name">
+        <h1 class="hero-title">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
+        <button class="hero-edit" (click)="openSettings()" aria-label="Edit estate name">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            <path d="M13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <span class="hero-city" *ngIf="est.estateCity">{{ est.estateCity }}</span>
     </header>
 
     <!-- the isometric town — below the hero. Scrolls freely in both
@@ -499,5 +508,31 @@
         {{ callSubmitting() ? 'Booking…' : 'Confirm · ' + callSlotLabel() }}
       </button>
     </ng-container>
+  </aside>
+
+  <!-- ============ settings sheet — edit estate name + city ============ -->
+  <div class="cs-backdrop" *ngIf="settingsOpen()" (click)="closeSettings()"></div>
+  <aside class="cs-sheet st-sheet" *ngIf="settingsOpen()" role="dialog" aria-modal="true" aria-label="Your estate settings">
+    <span class="cs-grab" aria-hidden="true"></span>
+    <div class="cs-head">
+      <span class="cs-title">Your estate</span>
+      <button class="cs-close" (click)="closeSettings()" aria-label="Close">✕</button>
+    </div>
+    <p class="cs-lead">Set how your city is named on the home screen.</p>
+
+    <label class="st-field">
+      <span class="st-label">Estate name</span>
+      <input class="st-input" type="text" [(ngModel)]="draftNameModel"
+        [placeholder]="est.estateName || 'Your name'" autocomplete="off" />
+      <span class="st-hint">Leave blank to use your real name.</span>
+    </label>
+
+    <label class="st-field">
+      <span class="st-label">City / nickname</span>
+      <input class="st-input" type="text" [(ngModel)]="draftCityModel"
+        [placeholder]="est.estateCity || 'e.g. Chennai'" autocomplete="off" />
+    </label>
+
+    <button class="cs-confirm st-save" (click)="saveSettings()">Save</button>
   </aside>
 </section>

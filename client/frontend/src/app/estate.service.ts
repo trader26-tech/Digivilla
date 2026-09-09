@@ -100,6 +100,11 @@ export interface PortfolioSummary {
   holdings_count: number;
   has_holdings: boolean;
   client_code: string | null;
+  /** The name to greet with — server-derived from the client's real record, or
+   *  the user's custom override. May be "". */
+  estate_name: string;
+  /** The user's custom city / nickname for their estate. May be "". */
+  estate_city: string;
 }
 
 // v2: reset the board once to the lean starter (the v1 store had accumulated
@@ -182,6 +187,26 @@ export class EstateService {
       .subscribe({
         next: (p) => this.portfolio.set(p),
         error: () => { /* keep the tile-derived fallback */ },
+      });
+  }
+
+  /** The greeting name from the server (real record or the user's override). */
+  get estateName(): string { return this.portfolio()?.estate_name || ''; }
+  /** The user's custom city / nickname for their estate, from the server. */
+  get estateCity(): string { return this.portfolio()?.estate_city || ''; }
+
+  /** Save the user's estate-name / city edits. On success the resolved values
+   *  come back (an empty field clears to the server default) and are merged into
+   *  the portfolio signal in place, so the greeting updates live. Fails silently. */
+  saveEstateProfile(patch: { estate_name?: string; estate_city?: string }): void {
+    if (!this.auth.token()) return;
+    this.http
+      .patch<{ estate_name: string; estate_city: string }>(
+        `${environment.apiUrl}/me/profile`, patch, { headers: this.authHeaders },
+      )
+      .subscribe({
+        next: (res) => this.portfolio.update((p) => (p ? { ...p, ...res } : p)),
+        error: () => { /* silent — keep the current greeting */ },
       });
   }
 

@@ -215,6 +215,39 @@
   text-transform: capitalize;
 }
 
+/* the title + its subtle edit affordance sit on one centred row */
+.hero-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.hero-edit {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s, transform 0.12s;
+  svg { display: block; }
+  &:hover { color: var(--brass); background: color-mix(in srgb, var(--brass) 12%, transparent); }
+  &:active { transform: scale(0.9); }
+}
+/* the user's city / nickname, quietly under the title */
+.hero-city {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+
 @keyframes heroIn {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: none; }
@@ -1404,6 +1437,29 @@
 .cs-slot.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .cs-err { color: #d13b2a; font-size: 0.85rem; font-weight: 700; text-align: center; margin: 0.6rem 0 0; }
 .cs-confirm { width: 100%; margin-top: 1rem; padding: 1rem; border-radius: 14px; border: none; cursor: pointer; font: inherit; font-size: 1rem; font-weight: 850; color: #fff; background: linear-gradient(120deg, #2E6B4F, #21563d); &:disabled { opacity: 0.55; } }
+
+/* ============ settings sheet: estate name + city ============ */
+.st-field { display: block; margin-bottom: 1rem; }
+.st-label {
+  display: block; margin-bottom: 0.4rem;
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted);
+}
+.st-input {
+  width: 100%; box-sizing: border-box;
+  padding: 0.85rem 0.95rem;
+  border-radius: 13px; border: 1px solid var(--survey);
+  background: var(--card); color: var(--ink);
+  font: inherit; font-size: 1rem; font-weight: 650;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  &::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); font-weight: 500; }
+  &:focus {
+    outline: none; border-color: var(--brass);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 18%, transparent);
+  }
+}
+.st-hint { display: block; margin-top: 0.4rem; font-size: 0.74rem; line-height: 1.4; color: var(--muted); }
+.st-save { margin-top: 0.5rem; }
 
 @media (prefers-reduced-motion: reduce) {
   .dummy-villa, .tick-screen, .tick-glow, .tick-title, .tick-sub, .cs-sheet, .cs-backdrop { animation: none; }

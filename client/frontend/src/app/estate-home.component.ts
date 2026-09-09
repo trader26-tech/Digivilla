@@ -127,6 +127,36 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /** PORTFOLIO WORTH is masked (••••) by default; the eye reveals it. */
   worthHidden = signal(true);
   toggleWorth(): void { this.worthHidden.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
+
+  // ── settings sheet: edit the estate name + city (server-backed) ──
+  /** Whether the estate-settings sheet is open. */
+  settingsOpen = signal(false);
+  /** Draft values while the sheet is open (seeded from the server on open). */
+  draftName = signal('');
+  draftCity = signal('');
+  /** ngModel bridges for the two inputs (two-way binding into the signals). */
+  get draftNameModel(): string { return this.draftName(); }
+  set draftNameModel(v: string) { this.draftName.set(v); }
+  get draftCityModel(): string { return this.draftCity(); }
+  set draftCityModel(v: string) { this.draftCity.set(v); }
+
+  /** Open the settings sheet, seeding the drafts with the server values. */
+  openSettings(): void {
+    this.draftName.set(this.est.estateName);
+    this.draftCity.set(this.est.estateCity);
+    this.settingsOpen.set(true);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
+  closeSettings(): void { this.settingsOpen.set(false); }
+  /** Save the drafts (empty clears back to the server default) and close. */
+  saveSettings(): void {
+    this.est.saveEstateProfile({
+      estate_name: this.draftName().trim(),
+      estate_city: this.draftCity().trim(),
+    });
+    this.closeSettings();
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
   /** Today, for the date line. */
   today = new Date();
   /** Open plots shown in the legend — the immediate ring around the town, not

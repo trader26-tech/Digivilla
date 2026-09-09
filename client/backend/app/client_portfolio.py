@@ -120,6 +120,41 @@ def client_code_for_owner(owner: str) -> Optional[str]:
     return None
 
 
+def _first_name(full: Optional[str]) -> str:
+    """First word of a name, title-cased. 'RAMPRASAD RANJEEV' → 'Ramprasad'."""
+    w = (full or "").strip().split()
+    return w[0].capitalize() if w else ""
+
+
+def estate_name_for_owner(owner: str) -> str:
+    """The name shown on the client's estate ("<name>'s City").
+
+    Priority:
+      1. The user's own custom estate name (users.estate_name) — set in Settings.
+      2. The first word of their real admin record (client_master.name),
+         e.g. 'RAMPRASAD RANJEEV' → 'Ramprasad'.
+      3. Nothing → "" (the UI shows a neutral 'Your City').
+    """
+    try:
+        urows = _sb().table("users").select("estate_name").eq(
+            "owner", owner).limit(1).execute().data or []
+        custom = (urows[0].get("estate_name") if urows else "") or ""
+    except Exception:
+        custom = ""
+    if custom.strip():
+        return custom.strip()
+
+    code = client_code_for_owner(owner)
+    if code:
+        try:
+            cm = _sb().table("client_master").select("name").eq(
+                "client_code", code).limit(1).execute().data or []
+            return _first_name(cm[0].get("name")) if cm else ""
+        except Exception:
+            return ""
+    return ""
+
+
 def _holdings(client_code: str) -> list[dict]:
     try:
         return _sb().table("client_holdings").select("*").eq(
@@ -163,10 +198,12 @@ def portfolio_summary(owner: str) -> dict:
     """Real net-worth summary for the logged-in user (empty when unmatched)."""
     from app import estate as estate_svc
     swp = estate_svc.total_swp(owner)   # total SWP/income paid out so far
+    name = estate_name_for_owner(owner)
+    city = _estate_city_for_owner(owner)
     code = client_code_for_owner(owner)
     if not code:
         return {"worth": 0, "invested": 0, "gain": 0, "gain_pct": 0,
-                "total_swp": swp,
+                "total_swp": swp, "estate_name": name, "estate_city": city,
                 "holdings_count": 0, "has_holdings": False, "client_code": None}
     hs = _valued_holdings(code)
     worth = round(sum(h["current_value"] for h in hs), 2)
@@ -178,10 +215,38 @@ def portfolio_summary(owner: str) -> dict:
         "gain": gain,
         "gain_pct": round(gain / invested * 100, 2) if invested else 0,
         "total_swp": swp,
+        "estate_name": name,
+        "estate_city": city,
         "holdings_count": len(hs),
         "has_holdings": bool(hs),
         "client_code": code,
     }
+
+
+def _estate_city_for_owner(owner: str) -> str:
+    """The user's custom city/nickname (users.estate_city), or "" if unset."""
+    try:
+        u = _sb().table("users").select("estate_city").eq("owner", owner).limit(1).execute().data or []
+        return (u[0].get("estate_city") if u else "") or ""
+    except Exception:
+        return ""
+
+
+def set_estate_profile(owner: str, name: Optional[str], city: Optional[str]) -> dict:
+    """Save the user's custom estate name / city (Settings). Empty string clears
+    a field back to the default. Returns the resolved name/city after saving."""
+    patch: dict = {}
+    if name is not None:
+        patch["estate_name"] = name.strip()
+    if city is not None:
+        patch["estate_city"] = city.strip()
+    if patch:
+        try:
+            _sb().table("users").update(patch).eq("owner", owner).execute()
+        except Exception:
+            pass
+    return {"estate_name": estate_name_for_owner(owner),
+            "estate_city": _estate_city_for_owner(owner)}
 
 
 def _manual_villa_tiles(client_code: str) -> Optional[list[dict]]:
@@ -243,14 +308,8 @@ def _manual_villa_tiles(client_code: str) -> Optional[list[dict]]:
         })
         order += 1
 
-    if other_inv > 0 or other_val > 0:
-        tiles.append({
-            "id": "other", "type": "land", "variant": "balanced",
-            "cost": round(other_inv, 2), "sipMonthly": 0,
-            "sipAccrued": round(other_inv, 2), "rentMonthly": 0,
-            "currentValue": round(other_val, 2), "label": "Other Funds",
-            "boughtAt": order,
-        })
+    # Digivilla has no "land" concept: unmapped holdings are NOT shown on the
+    # map (they still count in net worth via /me/portfolio). Only villas show.
     return tiles
 
 
@@ -327,18 +386,6 @@ def portfolio_tiles(owner: str) -> list[dict]:
             tiles.append(_villa_tile(order, remainder, round(remainder * val_ratio, 2), building=True))
             order += 1
 
-    # ── other funds: shown in net worth, NEVER a villa ──────────────────────
-    if other_invested > 0 or other_value > 0:
-        tiles.append({
-            "id": "other",
-            "type": "land",            # not a villa — a plain net-worth tile
-            "variant": "balanced",
-            "cost": round(other_invested, 2),
-            "sipMonthly": 0,
-            "sipAccrued": round(other_invested, 2),
-            "rentMonthly": 0,
-            "currentValue": round(other_value, 2),
-            "label": "Other Funds",
-            "boughtAt": order,
-        })
+    # Digivilla has no "land" concept: unmapped/other holdings are NOT shown on
+    # the map (they still count in net worth via /me/portfolio). Only villas show.
     return tiles

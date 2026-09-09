@@ -305,7 +305,7 @@ def delete_basket(basket_id: str, owner: Optional[str] = None) -> dict:
 
 
 # --- Auth endpoints -------------------------------------------------------
-from fastapi import Header  # noqa: E402
+from fastapi import Body, Header  # noqa: E402
 
 from app import auth as auth_svc  # noqa: E402
 from app import phone_auth as phone_svc  # noqa: E402
@@ -388,6 +388,19 @@ def get_my_portfolio(authorization: Optional[str] = Header(default=None)) -> dic
     owner = _owner_or_401(authorization)
     from app import client_portfolio
     return client_portfolio.portfolio_summary(owner)
+
+
+@app.patch("/me/profile")
+def patch_my_profile(
+    body: dict = Body(default={}), authorization: Optional[str] = Header(default=None)
+) -> dict:
+    """Update the user's custom estate name and/or city (client Settings). Only
+    these two fields; empty string clears back to the default. No email needed."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    name = body.get("estate_name") if isinstance(body, dict) else None
+    city = body.get("estate_city") if isinstance(body, dict) else None
+    return client_portfolio.set_estate_profile(owner, name, city)
 
 
 @app.get("/me/holding/{uv_id}")
