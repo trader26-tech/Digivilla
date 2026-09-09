@@ -19,6 +19,8 @@ import {
   VillaLive,
   BucketFund,
   CalDay,
+  ClientTxn,
+  ClientVilla,
 } from './admin.service';
 
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
@@ -163,6 +165,14 @@ export class AppComponent implements OnInit {
   nwSearch = signal('');
   nwDetail = signal<ClientNetWorth | null>(null);
   nwDetailLoading = signal(false);
+  /** drawer sub-tab + villas & mapping state */
+  drawerTab = signal<'overview' | 'mapping'>('overview');
+  mapCode = signal<string>('');
+  mapTxns = signal<ClientTxn[]>([]);
+  mapVillas = signal<ClientVilla[]>([]);
+  mapSelected = signal<Set<string>>(new Set());
+  mapLoading = signal(false);
+  newVillaName = signal('');
   /** villa live pricing + bucket builder */
   nwVillas = signal<VillaLive[]>([]);
   nwBuckets = signal<VillaBucket[]>([]);
@@ -879,12 +889,96 @@ export class AppComponent implements OnInit {
   openNwClient(code: string): void {
     this.nwDetailLoading.set(true);
     this.nwDetail.set(null);
+    this.drawerTab.set('overview');
+    this.mapCode.set(code);
     this.api.reportClientDetail(code).subscribe({
       next: (d) => { this.nwDetail.set(d); this.nwDetailLoading.set(false); },
       error: (e) => { this.nwDetailLoading.set(false); if (e?.status === 401) this.lock(); },
     });
+    this.loadMapping(code);
   }
-  closeNwClient(): void { this.nwDetail.set(null); }
+  closeNwClient(): void {
+    this.nwDetail.set(null);
+    this.drawerTab.set('overview');
+    this.mapCode.set('');
+    this.mapTxns.set([]);
+    this.mapVillas.set([]);
+    this.mapSelected.set(new Set());
+  }
+
+  // ── villas & mapping ─────────────────────────────────────────────────────
+  loadMapping(code: string): void {
+    if (!code) return;
+    this.mapLoading.set(true);
+    this.api.clientTransactions(code).subscribe({
+      next: (t) => this.mapTxns.set(t),
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+    this.api.clientVillas(code).subscribe({
+      next: (v) => { this.mapVillas.set(v); this.mapLoading.set(false); },
+      error: (e) => { this.mapLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+  }
+  toggleTxn(orderId: string): void {
+    const next = new Set(this.mapSelected());
+    if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
+    this.mapSelected.set(next);
+  }
+  assignSelectedTo(villaId: string): void {
+    const ids = [...this.mapSelected()];
+    if (!ids.length) return;
+    this.api.assignTxns(villaId, ids).subscribe({
+      next: () => { this.loadMapping(this.mapCode()); this.mapSelected.set(new Set()); },
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  unassignSelected(): void {
+    const ids = [...this.mapSelected()];
+    if (!ids.length) return;
+    this.api.unassignTxns(ids).subscribe({
+      next: () => { this.loadMapping(this.mapCode()); this.mapSelected.set(new Set()); },
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  addClientVilla(): void {
+    const name = this.newVillaName().trim() || 'Villa';
+    this.api.createClientVilla(this.mapCode(), name).subscribe({
+      next: () => { this.loadMapping(this.mapCode()); this.newVillaName.set(''); },
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  setVillaStatus(v: ClientVilla, status: 'building' | 'constructed'): void {
+    this.api.updateClientVilla(v.id, { status }).subscribe({
+      next: () => this.loadMapping(this.mapCode()),
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  toggleCoin(v: ClientVilla): void {
+    this.api.updateClientVilla(v.id, { coin: !v.coin }).subscribe({
+      next: () => this.loadMapping(this.mapCode()),
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  renameVilla(v: ClientVilla, name: string): void {
+    const clean = (name || '').trim();
+    if (!clean || clean === v.name) return;
+    this.api.updateClientVilla(v.id, { name: clean }).subscribe({
+      next: () => this.loadMapping(this.mapCode()),
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  removeVilla(v: ClientVilla): void {
+    this.api.deleteClientVilla(v.id).subscribe({
+      next: () => this.loadMapping(this.mapCode()),
+      error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  villaOf(orderId: string): string | null {
+    const txn = this.mapTxns().find((t) => t.order_id === orderId);
+    if (!txn || !txn.villa_id) return null;
+    const v = this.mapVillas().find((x) => x.id === txn.villa_id);
+    return v ? v.name : null;
+  }
 
   loadVillasLive(): void {
     this.api.villasLive().subscribe({ next: (v) => this.nwVillas.set(v), error: () => {} });

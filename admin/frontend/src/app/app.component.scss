@@ -1188,4 +1188,63 @@ table.ledger td.out { color: var(--positive); }
 .nw-dr-villa-fund .num, .nw-dr-fund .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
 .nw-dr-fund { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.55rem 0.75rem; margin-bottom: 0.4rem; }
 
-@media (prefers-reduced-motion: reduce) { .nw-drawer, .nw-spin { animation: none; } }
+/* ── drawer sub-tabs ── */
+.nw-dr-tabs { display: flex; gap: 0.3rem; padding: 0.25rem; margin-bottom: 1.3rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+.nw-dr-tabs button { flex: 1; padding: 0.5rem 0.6rem; border: none; background: none; border-radius: 9px; font-size: 0.82rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s; }
+.nw-dr-tabs button:hover { color: var(--ink); }
+.nw-dr-tabs button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+
+/* ── villas & mapping ── */
+.nw-map { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: start; }
+.nw-map-col { min-width: 0; }
+.nw-map-empty { padding: 1.4rem 1rem; text-align: center; font-size: 0.82rem; color: var(--muted); background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; }
+
+.nw-txn-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 52vh; overflow-y: auto; padding-right: 0.15rem; }
+.nw-txn-row { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "chk main amt" "chk chip chip"; gap: 0.15rem 0.6rem; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 0.6rem 0.7rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.nw-txn-row:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--border)); }
+.nw-txn-row.sel { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 7%, var(--surface)); }
+.nw-txn-row input[type="checkbox"] { grid-area: chk; width: 16px; height: 16px; accent-color: var(--brass); cursor: pointer; }
+.nw-txn-main { grid-area: main; display: flex; flex-direction: column; min-width: 0; }
+.nw-txn-scheme { font-size: 0.82rem; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-txn-sub { font-size: 0.7rem; color: var(--muted); text-transform: capitalize; }
+.nw-txn-amt { grid-area: amt; font-size: 0.82rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.nw-txn-chip { grid-area: chip; justify-self: start; font-size: 0.66rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 999px; background: color-mix(in srgb, var(--brass) 15%, transparent); color: var(--brass); }
+.nw-txn-chip.muted { background: var(--surface-2); color: var(--muted); font-weight: 700; }
+
+.nw-map-actionbar { position: sticky; bottom: 0; margin-top: 0.7rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-start; justify-content: space-between; padding: 0.7rem; background: var(--surface); border: 1px solid var(--brass); border-radius: 12px; box-shadow: 0 10px 24px -16px rgba(0,0,0,0.45); }
+.nw-assign-label { display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); margin-bottom: 0.35rem; }
+.nw-assign-list { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.nw-assign-villa { padding: 0.3rem 0.6rem; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); border-radius: 8px; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+.nw-assign-villa:hover { border-color: var(--brass); color: var(--brass); }
+.nw-unassign-btn { padding: 0.4rem 0.7rem; border: 1px solid var(--border); background: var(--surface-2); color: var(--negative); border-radius: 8px; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+.nw-unassign-btn:hover { border-color: var(--negative); }
+
+.nw-newvilla { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+.nw-newvilla input { flex: 1; min-width: 0; padding: 0.5rem 0.65rem; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); border-radius: 9px; font-size: 0.82rem; }
+.nw-newvilla input:focus { outline: none; border-color: var(--brass); background: var(--surface); }
+.nw-newvilla button { flex: none; padding: 0.5rem 0.7rem; border: none; background: var(--brass); color: var(--paper); border-radius: 9px; font-size: 0.78rem; font-weight: 800; cursor: pointer; }
+
+.nw-map-villa { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 0.85rem 0.9rem; margin-bottom: 0.7rem; }
+.nw-map-villa-top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; }
+.nw-villa-name { flex: 1; min-width: 0; padding: 0.3rem 0.4rem; border: 1px solid transparent; background: transparent; color: var(--ink); font-size: 0.95rem; font-weight: 850; border-radius: 7px; }
+.nw-villa-name:hover { border-color: var(--border); }
+.nw-villa-name:focus { outline: none; border-color: var(--brass); background: var(--surface-2); }
+.nw-coin-toggle { flex: none; width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); font-size: 1rem; line-height: 1; cursor: pointer; filter: grayscale(1); opacity: 0.5; transition: all 0.15s; }
+.nw-coin-toggle.on { filter: none; opacity: 1; border-color: var(--brass); background: color-mix(in srgb, var(--brass) 16%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent); }
+.nw-villa-del { flex: none; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.nw-villa-del:hover { border-color: var(--negative); color: var(--negative); }
+
+.nw-progress { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-bottom: 0.4rem; }
+.nw-progress > span { display: block; height: 100%; background: var(--brass); border-radius: 999px; transition: width 0.3s; }
+.nw-map-villa-meta { display: flex; justify-content: space-between; font-size: 0.74rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; margin-bottom: 0.7rem; }
+
+.nw-seg { display: flex; gap: 0.25rem; padding: 0.22rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+.nw-seg button { flex: 1; padding: 0.4rem 0.3rem; border: none; background: none; border-radius: 7px; font-size: 0.72rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.nw-seg button:hover { color: var(--ink); }
+.nw-seg button.active { background: var(--brass); color: var(--paper); }
+
+.nw-villa-hint { margin-top: 0.55rem; font-size: 0.72rem; font-weight: 700; color: var(--brass); }
+
+@media (max-width: 720px) { .nw-map { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) { .nw-drawer, .nw-spin, .nw-progress > span { animation: none; transition: none; } }

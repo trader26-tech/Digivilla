@@ -556,6 +556,78 @@ def admin_report_delete_bucket(
     return {"status": "deleted"}
 
 
+# --- Manual transaction → villa mapping (admin) ---------------------------
+@app.get("/admin/reports/clients/{code}/transactions")
+def admin_client_transactions(
+    code: str, authorization: Optional[str] = Header(default=None),
+) -> list[dict]:
+    """The client's raw transactions, each with its assigned villa_id (or null)."""
+    _require_admin(authorization)
+    return reports_svc.list_transactions(code)
+
+
+@app.get("/admin/reports/clients/{code}/villas")
+def admin_client_villas(
+    code: str, authorization: Optional[str] = Header(default=None),
+) -> list[dict]:
+    """The client's admin-created villas + mapped total + ₹5L completion hint."""
+    _require_admin(authorization)
+    return reports_svc.list_client_villas(code)
+
+
+@app.post("/admin/reports/clients/{code}/villas")
+def admin_create_client_villa(
+    code: str, payload: dict = Body(...),
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    return reports_svc.create_client_villa(code, (payload.get("name") or "Villa").strip())
+
+
+@app.patch("/admin/reports/villas/{villa_id}")
+def admin_update_client_villa(
+    villa_id: str, payload: dict = Body(...),
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """Set a villa's name / status ('building'|'constructed') / coin / sort_order."""
+    _require_admin(authorization)
+    v = reports_svc.update_client_villa(villa_id, payload)
+    if not v:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    return v
+
+
+@app.delete("/admin/reports/villas/{villa_id}")
+def admin_delete_client_villa(
+    villa_id: str, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    reports_svc.delete_client_villa(villa_id)
+    return {"status": "deleted"}
+
+
+@app.post("/admin/reports/villas/{villa_id}/assign")
+def admin_assign_transactions(
+    villa_id: str, payload: dict = Body(...),
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """Assign the given transactions (order_ids) to this villa."""
+    _require_admin(authorization)
+    n = reports_svc.assign_transactions(villa_id, payload.get("order_ids") or [])
+    return {"assigned": n}
+
+
+@app.post("/admin/reports/villas/unassign")
+def admin_unassign_transactions(
+    payload: dict = Body(...),
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    """Clear the villa on the given transactions (order_ids)."""
+    _require_admin(authorization)
+    n = reports_svc.assign_transactions(None, payload.get("order_ids") or [])
+    return {"unassigned": n}
+
+
 # --- Admin bookings -------------------------------------------------------
 @app.get("/admin/bookings", response_model=list[Booking])
 def admin_list_bookings(

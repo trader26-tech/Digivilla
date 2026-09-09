@@ -136,6 +136,40 @@ def parse_transaction_csv(content: bytes) -> tuple[list[dict], str | None]:
     return rows, report_date
 
 
+def parse_transactions_raw(content: bytes) -> list[dict]:
+    """Return the UN-aggregated transaction rows (one per report line), keyed by
+    the AMC Order Id. Powers the admin's manual transaction → villa mapping.
+    Order Id is stable, so re-uploads can preserve prior villa assignments."""
+    text = content.decode("utf-8-sig", errors="replace")
+    reader = csv.DictReader(io.StringIO(text))
+    out: list[dict] = []
+    seen: set[str] = set()
+    for row in reader:
+        code = (row.get("Client Code") or "").strip()
+        scheme = (row.get("Scheme Name") or "").strip()
+        oid = (row.get("Order Id") or row.get("Order ID") or "").strip()
+        if not code or not scheme:
+            continue
+        # fall back to a synthetic id when a line has no order id, so nothing is lost
+        if not oid:
+            oid = f"{code}:{scheme}:{(row.get('Folio No') or '').strip()}:{(row.get('NAV Date') or '').strip()}:{(row.get('Amount') or '').strip()}"
+        if oid in seen:
+            continue
+        seen.add(oid)
+        out.append({
+            "order_id": oid,
+            "client_code": code,
+            "txn_date": _norm_date((row.get("NAV Date") or "").strip()) or None,
+            "scheme_name": scheme,
+            "folio_no": (row.get("Folio No") or "").strip(),
+            "kind": (row.get("Transaction") or "").strip() or None,
+            "amount": _to_float(row.get("Amount")),
+            "nav": _to_float(row.get("NAV")),
+            "units": _to_float(row.get("Units")),
+        })
+    return out
+
+
 def parse_user_report(content: bytes, filename: str) -> list[dict]:
     """Parse the User Report — .xlsx (preferred) or .csv. Returns client dicts."""
     name = (filename or "").lower()
@@ -398,6 +432,9 @@ def upload_report(report_type: str, filename: str, content: bytes,
         _save_clients(rows, report_date)
     else:
         _save_holdings(rows, report_date)
+        # also persist the RAW per-transaction rows (for manual villa mapping),
+        # preserving any villa assignments already made (upsert by order_id).
+        _save_transactions(parse_transactions_raw(content), report_date)
 
     meta = {
         "report_date": report_date, "report_type": report_type,
@@ -466,6 +503,51 @@ def _save_holdings(rows: list[dict], report_date: str) -> None:
             pass
     store = _load_local()
     store["holdings"] = enriched
+    _save_local(store)
+
+
+def _save_transactions(rows: list[dict], report_date: str) -> None:
+    """Upsert raw transactions by order_id — NEVER delete-all, and NEVER clobber
+    an existing manual `villa_id`. New txns are added; re-uploaded ones update
+    their facts (units/nav) but keep whatever villa the admin assigned."""
+    if not rows:
+        return
+    if _use_supabase():
+        try:
+            # which order_ids already exist (so we don't touch their villa_id)?
+            existing = set()
+            codes = {r["client_code"] for r in rows}
+            for code in codes:
+                got = _sb().table("client_transactions").select("order_id").eq(
+                    "client_code", code).execute().data or []
+                existing.update(t["order_id"] for t in got)
+            for r in rows:
+                code = resolve_scheme_code(r["scheme_name"])
+                rec = {
+                    "order_id": r["order_id"], "client_code": r["client_code"],
+                    "txn_date": r.get("txn_date"), "scheme_name": r["scheme_name"],
+                    "scheme_code": code, "folio_no": r.get("folio_no", ""),
+                    "kind": r.get("kind"), "amount": round(r.get("amount", 0), 2),
+                    "nav": r.get("nav"), "units": round(r.get("units", 0), 4),
+                    "report_date": report_date, "updated_at": _now_iso(),
+                }
+                # update() on an existing row leaves villa_id untouched; insert for new.
+                if r["order_id"] in existing:
+                    _sb().table("client_transactions").update(rec).eq(
+                        "order_id", r["order_id"]).execute()
+                else:
+                    _sb().table("client_transactions").insert(rec).execute()
+            return
+        except Exception:
+            pass
+    store = _load_local()
+    txns = {t["order_id"]: t for t in store.get("transactions", [])}
+    for r in rows:
+        prev = txns.get(r["order_id"], {})
+        txns[r["order_id"]] = {**r, "report_date": report_date,
+                               "scheme_code": resolve_scheme_code(r["scheme_name"]),
+                               "villa_id": prev.get("villa_id")}
+    store["transactions"] = list(txns.values())
     _save_local(store)
 
 
@@ -753,3 +835,139 @@ def villas_live() -> list[dict]:
             "funds": funds, "nav_sum": round(total, 4),
         })
     return out
+
+
+# ============================================================================
+# MANUAL TRANSACTION → VILLA MAPPING (admin)
+# ============================================================================
+VILLA_UNIT = 500_000.0   # a full villa = ₹5L invested (a UI hint, not enforced)
+
+
+def list_transactions(client_code: str) -> list[dict]:
+    """All raw transactions for a client, newest first, each with its villa_id."""
+    if _use_supabase():
+        try:
+            return (_sb().table("client_transactions").select("*")
+                    .eq("client_code", client_code).order("txn_date", desc=True)
+                    .execute().data or [])
+        except Exception:
+            pass
+    return sorted(
+        [t for t in _load_local().get("transactions", []) if t.get("client_code") == client_code],
+        key=lambda t: t.get("txn_date") or "", reverse=True)
+
+
+def list_client_villas(client_code: str) -> list[dict]:
+    """The admin-created villas for a client + each villa's mapped total and a
+    ₹5L completion hint (suggests constructed/coin, never forces)."""
+    if _use_supabase():
+        try:
+            villas = (_sb().table("client_villas").select("*")
+                      .eq("client_code", client_code).order("sort_order").execute().data or [])
+            txns = list_transactions(client_code)
+        except Exception:
+            villas, txns = [], []
+    else:
+        store = _load_local()
+        villas = sorted([v for v in store.get("client_villas", []) if v.get("client_code") == client_code],
+                        key=lambda v: v.get("sort_order", 0))
+        txns = list_transactions(client_code)
+
+    by_villa: dict[str, list] = {}
+    for t in txns:
+        if t.get("villa_id"):
+            by_villa.setdefault(t["villa_id"], []).append(t)
+    out = []
+    for v in villas:
+        items = by_villa.get(v["id"], [])
+        mapped = round(sum(float(t.get("amount") or 0) for t in items), 2)
+        out.append({
+            **v,
+            "mapped_total": mapped,
+            "txn_count": len(items),
+            "hint": {
+                "unit": VILLA_UNIT,
+                "progress": round(min(mapped / VILLA_UNIT, 1.0) * 100, 1) if VILLA_UNIT else 0,
+                "suggest_constructed": mapped >= VILLA_UNIT,
+            },
+        })
+    return out
+
+
+def create_client_villa(client_code: str, name: str) -> dict:
+    vid = str(uuid.uuid4())
+    row = {"id": vid, "client_code": client_code, "name": name or "Villa",
+           "status": "building", "coin": False, "sort_order": 0,
+           "created_at": _now_iso(), "updated_at": _now_iso()}
+    if _use_supabase():
+        try:
+            _sb().table("client_villas").insert(row).execute()
+            return {**row, "mapped_total": 0, "txn_count": 0}
+        except Exception:
+            pass
+    store = _load_local()
+    store.setdefault("client_villas", []).append(row)
+    _save_local(store)
+    return {**row, "mapped_total": 0, "txn_count": 0}
+
+
+def update_client_villa(villa_id: str, patch: dict) -> dict | None:
+    allowed = {k: v for k, v in patch.items() if k in ("name", "status", "coin", "sort_order")}
+    if "status" in allowed and allowed["status"] not in ("building", "constructed"):
+        allowed.pop("status")
+    if not allowed:
+        return None
+    allowed["updated_at"] = _now_iso()
+    if _use_supabase():
+        try:
+            r = _sb().table("client_villas").update(allowed).eq("id", villa_id).execute()
+            return (r.data or [None])[0]
+        except Exception:
+            pass
+    store = _load_local()
+    for v in store.get("client_villas", []):
+        if v["id"] == villa_id:
+            v.update(allowed)
+            _save_local(store)
+            return v
+    return None
+
+
+def delete_client_villa(villa_id: str) -> None:
+    if _use_supabase():
+        try:
+            # unassign its transactions, then delete the villa
+            _sb().table("client_transactions").update({"villa_id": None}).eq("villa_id", villa_id).execute()
+            _sb().table("client_villas").delete().eq("id", villa_id).execute()
+            return
+        except Exception:
+            pass
+    store = _load_local()
+    for t in store.get("transactions", []):
+        if t.get("villa_id") == villa_id:
+            t["villa_id"] = None
+    store["client_villas"] = [v for v in store.get("client_villas", []) if v["id"] != villa_id]
+    _save_local(store)
+
+
+def assign_transactions(villa_id: str | None, order_ids: list[str]) -> int:
+    """Set (or clear, when villa_id is None) the villa on the given transactions."""
+    if not order_ids:
+        return 0
+    if _use_supabase():
+        try:
+            for oid in order_ids:
+                _sb().table("client_transactions").update(
+                    {"villa_id": villa_id, "updated_at": _now_iso()}).eq("order_id", oid).execute()
+            return len(order_ids)
+        except Exception:
+            pass
+    store = _load_local()
+    ids = set(order_ids)
+    n = 0
+    for t in store.get("transactions", []):
+        if t.get("order_id") in ids:
+            t["villa_id"] = villa_id
+            n += 1
+    _save_local(store)
+    return n

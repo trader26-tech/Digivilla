@@ -184,6 +184,76 @@ def portfolio_summary(owner: str) -> dict:
     }
 
 
+def _manual_villa_tiles(client_code: str) -> Optional[list[dict]]:
+    """Tiles from the admin's MANUAL transaction→villa mapping, or None when the
+    admin hasn't created any villa for this client (→ fall back to auto ₹5L).
+
+    Each villa the admin made becomes one tile: `type = villa` when status is
+    'constructed' (coin drives the gold coin), else 'building'. Value/invested =
+    Σ of that villa's mapped transactions (units × live NAV). Transactions the
+    admin left unmapped roll up into a single "Other Funds" net-worth tile.
+    """
+    try:
+        villas = _sb().table("client_villas").select("*").eq(
+            "client_code", client_code).order("sort_order").execute().data or []
+        if not villas:
+            return None
+        txns = _sb().table("client_transactions").select(
+            "order_id,scheme_code,units,amount,villa_id").eq(
+            "client_code", client_code).execute().data or []
+    except Exception:
+        return None
+
+    # value each transaction at live NAV (units × NAV); fall back to amount.
+    by_villa: dict[str, dict] = {}
+    other_inv = other_val = 0.0
+    for t in txns:
+        units = _num(t.get("units"))
+        amount = _num(t.get("amount"))
+        nav = _live_nav(t.get("scheme_code"))
+        val = round(units * nav, 2) if (nav and units) else amount
+        vid = t.get("villa_id")
+        if vid:
+            g = by_villa.setdefault(vid, {"inv": 0.0, "val": 0.0})
+            g["inv"] += amount
+            g["val"] += val
+        else:
+            other_inv += amount
+            other_val += val
+
+    tiles: list[dict] = []
+    order = 0
+    for v in villas:
+        g = by_villa.get(v["id"], {"inv": 0.0, "val": 0.0})
+        constructed = v.get("status") == "constructed"
+        coin = bool(v.get("coin"))
+        tiles.append({
+            "id": f"cvilla_{v['id']}",
+            "type": "villa" if constructed else "building",
+            "variant": "balanced",
+            "cost": VILLA_UNIT,
+            "sipMonthly": 0,
+            "sipAccrued": round(g["inv"], 2),
+            # coin flag: the map shows a gold coin on villas with rentMonthly>0,
+            # so a nominal positive value turns the coin on when the admin enabled it.
+            "rentMonthly": 1 if (constructed and coin) else 0,
+            "currentValue": round(g["val"], 2),
+            "label": v.get("name") or "Villa",
+            "boughtAt": order,
+        })
+        order += 1
+
+    if other_inv > 0 or other_val > 0:
+        tiles.append({
+            "id": "other", "type": "land", "variant": "balanced",
+            "cost": round(other_inv, 2), "sipMonthly": 0,
+            "sipAccrued": round(other_inv, 2), "rentMonthly": 0,
+            "currentValue": round(other_val, 2), "label": "Other Funds",
+            "boughtAt": order,
+        })
+    return tiles
+
+
 def portfolio_tiles(owner: str) -> list[dict]:
     """The client's estate map tiles, built from REAL holdings.
 
@@ -201,6 +271,12 @@ def portfolio_tiles(owner: str) -> list[dict]:
     hs = _valued_holdings(code)
     if not hs:
         return []
+
+    # ── MANUAL OVERRIDE: if the admin has hand-mapped this client's transactions
+    #    into villas, those win over the automatic ₹5L logic below. ────────────
+    manual = _manual_villa_tiles(code)
+    if manual is not None:
+        return manual
 
     # scheme_code → bucket_id for ONLY the villa-forming bucket(s). For now that
     # is the "Moderate Digivilla" bucket (matched by name, spelling-tolerant), so

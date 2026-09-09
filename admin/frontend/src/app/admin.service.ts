@@ -322,6 +322,27 @@ export class AdminService {
   reportClientDetail(code: string): Observable<ClientNetWorth> {
     return this.http.get<ClientNetWorth>(`${this.base}/admin/reports/clients/${code}`, this.opts);
   }
+  clientTransactions(code: string): Observable<ClientTxn[]> {
+    return this.http.get<ClientTxn[]>(`${this.base}/admin/reports/clients/${code}/transactions`, this.opts);
+  }
+  clientVillas(code: string): Observable<ClientVilla[]> {
+    return this.http.get<ClientVilla[]>(`${this.base}/admin/reports/clients/${code}/villas`, this.opts);
+  }
+  createClientVilla(code: string, name: string): Observable<ClientVilla> {
+    return this.http.post<ClientVilla>(`${this.base}/admin/reports/clients/${code}/villas`, { name }, this.opts);
+  }
+  updateClientVilla(villaId: string, patch: Partial<{ name: string; status: string; coin: boolean; sort_order: number }>): Observable<ClientVilla> {
+    return this.http.patch<ClientVilla>(`${this.base}/admin/reports/villas/${villaId}`, patch, this.opts);
+  }
+  deleteClientVilla(villaId: string): Observable<{ status: string }> {
+    return this.http.delete<{ status: string }>(`${this.base}/admin/reports/villas/${villaId}`, this.opts);
+  }
+  assignTxns(villaId: string, orderIds: string[]): Observable<{ assigned: number }> {
+    return this.http.post<{ assigned: number }>(`${this.base}/admin/reports/villas/${villaId}/assign`, { order_ids: orderIds }, this.opts);
+  }
+  unassignTxns(orderIds: string[]): Observable<{ unassigned: number }> {
+    return this.http.post<{ unassigned: number }>(`${this.base}/admin/reports/villas/unassign`, { order_ids: orderIds }, this.opts);
+  }
   villasLive(): Observable<VillaLive[]> {
     return this.http.get<VillaLive[]>(`${this.base}/admin/reports/villas`, this.opts);
   }
@@ -365,6 +386,18 @@ export interface VillaMatch {
 export interface ClientNetWorth {
   client: any; net_worth: number; invested: number; gain: number; gain_pct: number;
   villas: VillaMatch[]; villa_count: number; extra: Holding[]; holdings: Holding[];
+}
+export interface ClientTxn {
+  order_id: string; client_code: string; txn_date: string;
+  scheme_name: string; scheme_code?: number; folio_no?: string;
+  kind: string; amount: number; nav: number; units: number;
+  villa_id: string | null; report_date: string;
+}
+export interface ClientVilla {
+  id: string; client_code: string; name: string;
+  status: 'building' | 'constructed'; coin: boolean; sort_order: number;
+  mapped_total: number; txn_count: number;
+  hint: { unit: number; progress: number; suggest_constructed: boolean };
 }
 export interface BucketFund {
   scheme_name: string; scheme_code?: number; target_weight?: number;

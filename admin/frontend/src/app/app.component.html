@@ -798,32 +798,109 @@
         <div><small>Gain</small><b [class.pos]="d.gain >= 0" [class.neg]="d.gain < 0">{{ money(d.gain) }} ({{ d.gain_pct }}%)</b></div>
       </div>
 
-      <!-- villas the client owns -->
-      <section class="nw-dr-block" *ngIf="d.villas.length">
-        <h3 class="nw-dr-h">Villas · {{ d.villa_count }}</h3>
-        <div class="nw-dr-villa" *ngFor="let v of d.villas">
-          <div class="nw-dr-villa-top">
-            <b>{{ v.name }}</b>
-            <span class="nw-badge" [class.complete]="v.complete">{{ v.owned_count }}/{{ v.total_funds }} funds</span>
-            <b class="nw-dr-villa-val">{{ money(v.value) }}</b>
+      <!-- drawer sub-tabs -->
+      <nav class="nw-dr-tabs">
+        <button [class.active]="drawerTab()==='overview'" (click)="drawerTab.set('overview')">Overview</button>
+        <button [class.active]="drawerTab()==='mapping'" (click)="drawerTab.set('mapping')">Villas &amp; mapping</button>
+      </nav>
+
+      <ng-container *ngIf="drawerTab()==='overview'">
+        <!-- villas the client owns -->
+        <section class="nw-dr-block" *ngIf="d.villas.length">
+          <h3 class="nw-dr-h">Villas · {{ d.villa_count }}</h3>
+          <div class="nw-dr-villa" *ngFor="let v of d.villas">
+            <div class="nw-dr-villa-top">
+              <b>{{ v.name }}</b>
+              <span class="nw-badge" [class.complete]="v.complete">{{ v.owned_count }}/{{ v.total_funds }} funds</span>
+              <b class="nw-dr-villa-val">{{ money(v.value) }}</b>
+            </div>
+            <div class="nw-dr-villa-fund" *ngFor="let f of v.funds">
+              <span>{{ f.scheme_name }}</span>
+              <span class="num">{{ f.units | number:'1.0-2' }} u × ₹{{ f.nav | number:'1.2-2' }}</span>
+              <b class="num">{{ money(f.current_value) }}</b>
+            </div>
           </div>
-          <div class="nw-dr-villa-fund" *ngFor="let f of v.funds">
-            <span>{{ f.scheme_name }}</span>
+        </section>
+
+        <!-- extra (non-bucket) holdings -->
+        <section class="nw-dr-block" *ngIf="d.extra.length">
+          <h3 class="nw-dr-h">Other holdings <small>(not in a villa bucket)</small></h3>
+          <div class="nw-dr-fund" *ngFor="let f of d.extra">
+            <span class="nw-dr-fund-name">{{ f.scheme_name }}</span>
             <span class="num">{{ f.units | number:'1.0-2' }} u × ₹{{ f.nav | number:'1.2-2' }}</span>
             <b class="num">{{ money(f.current_value) }}</b>
           </div>
-        </div>
-      </section>
+        </section>
+      </ng-container>
 
-      <!-- extra (non-bucket) holdings -->
-      <section class="nw-dr-block" *ngIf="d.extra.length">
-        <h3 class="nw-dr-h">Other holdings <small>(not in a villa bucket)</small></h3>
-        <div class="nw-dr-fund" *ngFor="let f of d.extra">
-          <span class="nw-dr-fund-name">{{ f.scheme_name }}</span>
-          <span class="num">{{ f.units | number:'1.0-2' }} u × ₹{{ f.nav | number:'1.2-2' }}</span>
-          <b class="num">{{ money(f.current_value) }}</b>
-        </div>
-      </section>
+      <!-- ===== VILLAS & MAPPING ===== -->
+      <div class="nw-map" *ngIf="drawerTab()==='mapping'">
+        <!-- LEFT: transactions -->
+        <section class="nw-map-col">
+          <h3 class="nw-dr-h">Transactions <small>({{ mapTxns().length }})</small></h3>
+
+          <div class="nw-map-empty" *ngIf="!mapTxns().length">No transactions yet — upload a Transaction Report.</div>
+
+          <div class="nw-txn-list" *ngIf="mapTxns().length">
+            <label class="nw-txn-row" *ngFor="let t of mapTxns()" [class.sel]="mapSelected().has(t.order_id)">
+              <input type="checkbox" [checked]="mapSelected().has(t.order_id)" (change)="toggleTxn(t.order_id)">
+              <div class="nw-txn-main">
+                <span class="nw-txn-scheme">{{ t.scheme_name }}</span>
+                <span class="nw-txn-sub">{{ t.txn_date }} · {{ t.kind }}</span>
+              </div>
+              <b class="nw-txn-amt">{{ money(t.amount) }}</b>
+              <span class="nw-txn-chip" *ngIf="villaOf(t.order_id) as vn; else unassignedChip">{{ vn }}</span>
+              <ng-template #unassignedChip><span class="nw-txn-chip muted">Unassigned</span></ng-template>
+            </label>
+          </div>
+
+          <div class="nw-map-actionbar" *ngIf="mapSelected().size">
+            <div class="nw-assign-wrap">
+              <span class="nw-assign-label">Assign {{ mapSelected().size }} selected to</span>
+              <div class="nw-assign-list">
+                <button class="nw-assign-villa" *ngFor="let v of mapVillas()" (click)="assignSelectedTo(v.id)">{{ v.name }}</button>
+                <span class="muted" *ngIf="!mapVillas().length">No villas yet</span>
+              </div>
+            </div>
+            <button class="nw-unassign-btn" (click)="unassignSelected()">Unassign</button>
+          </div>
+        </section>
+
+        <!-- RIGHT: villas -->
+        <section class="nw-map-col">
+          <h3 class="nw-dr-h">Villas <small>({{ mapVillas().length }})</small></h3>
+
+          <div class="nw-newvilla">
+            <input type="text" placeholder="New villa name" [ngModel]="newVillaName()" (ngModelChange)="newVillaName.set($event)" (keyup.enter)="addClientVilla()">
+            <button (click)="addClientVilla()">+ New villa</button>
+          </div>
+
+          <div class="nw-map-empty" *ngIf="!mapVillas().length">No villas yet — create one to start mapping.</div>
+
+          <div class="nw-map-villa" *ngFor="let v of mapVillas()">
+            <div class="nw-map-villa-top">
+              <input class="nw-villa-name" type="text" [ngModel]="v.name" (change)="renameVilla(v, $any($event.target).value)">
+              <button class="nw-coin-toggle" [class.on]="v.coin" (click)="toggleCoin(v)" [attr.aria-pressed]="v.coin" title="Gold coin">🪙</button>
+              <button class="nw-villa-del" (click)="removeVilla(v)" aria-label="Delete villa">×</button>
+            </div>
+
+            <div class="nw-progress" role="progressbar" [attr.aria-valuenow]="v.hint.progress">
+              <span [style.width.%]="v.hint.progress"></span>
+            </div>
+            <div class="nw-map-villa-meta">
+              <span>{{ money(v.mapped_total) }} <span class="muted">/ {{ money(v.hint.unit) }}</span></span>
+              <span class="muted">{{ v.txn_count }} txns</span>
+            </div>
+
+            <div class="nw-seg">
+              <button [class.active]="v.status==='building'" (click)="setVillaStatus(v, 'building')">Under construction</button>
+              <button [class.active]="v.status==='constructed'" (click)="setVillaStatus(v, 'constructed')">Constructed</button>
+            </div>
+
+            <div class="nw-villa-hint" *ngIf="v.hint.suggest_constructed && v.status==='building'">≥ ₹5L — mark constructed?</div>
+          </div>
+        </section>
+      </div>
     </ng-container>
   </aside>
 </div>
