@@ -6,5 +6,8 @@ pydantic-settings==2.3.4
 python-dotenv==1.0.1
 # Required by FastAPI for multipart form uploads (client-document attach).
 python-multipart==0.0.20
-# HTTP client used to send the admin sign-in code via Resend.
+# HTTP client used to send the admin sign-in code via Resend, and to fetch live
+# regular-plan NAVs from mfapi.in for villa/net-worth valuation.
 httpx==0.27.2
+# Read the daily User Report (.xlsx). Transaction reports are CSV.
+openpyxl==3.1.5

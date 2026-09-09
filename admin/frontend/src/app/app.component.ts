@@ -11,10 +11,17 @@ import {
   ClientProfile,
   ClientRow,
   VillaCatalogItem,
+  ReportUpload,
+  TodayStatus,
+  NetWorthRow,
+  ClientNetWorth,
+  VillaBucket,
+  VillaLive,
+  BucketFund,
 } from './admin.service';
 
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
-type Tab = 'calendar' | 'documents';
+type Tab = 'calendar' | 'documents' | 'networth';
 
 interface DayGroup {
   iso: string;
@@ -143,6 +150,39 @@ export class AppComponent implements OnInit {
     return list.filter((c) =>
       c.name.toLowerCase().includes(q) || (c.phone || '').includes(q));
   });
+
+  // ── NET WORTH tab (daily reports) ────────────────────────────────────────
+  nwToday = signal<TodayStatus | null>(null);
+  nwUploads = signal<ReportUpload[]>([]);
+  nwClients = signal<NetWorthRow[]>([]);
+  nwLoading = signal(false);
+  nwUploadingUser = signal(false);
+  nwUploadingTxn = signal(false);
+  nwError = signal('');
+  nwSearch = signal('');
+  nwDetail = signal<ClientNetWorth | null>(null);
+  nwDetailLoading = signal(false);
+  /** villa live pricing + bucket builder */
+  nwVillas = signal<VillaLive[]>([]);
+  nwBuckets = signal<VillaBucket[]>([]);
+  nwSub = signal<'clients' | 'villas' | 'buckets'>('clients');
+  // bucket builder draft
+  newBucketName = signal('');
+  newBucketTier = signal('');
+  newBucketFunds = signal<BucketFund[]>([]);
+  newFundName = signal('');
+  bucketSaving = signal(false);
+
+  nwFiltered = computed<NetWorthRow[]>(() => {
+    const q = this.nwSearch().trim().toLowerCase();
+    const list = this.nwClients();
+    if (!q) return list;
+    return list.filter((c) => c.name.toLowerCase().includes(q) ||
+      (c.phone || '').includes(q) || c.client_code.includes(q));
+  });
+  /** total net worth across all clients — the headline KPI. */
+  nwTotal = computed(() => this.nwClients().reduce((s, c) => s + (c.net_worth || 0), 0));
+  nwTotalInvested = computed(() => this.nwClients().reduce((s, c) => s + (c.invested || 0), 0));
 
   ngOnInit(): void {
     this.initAuth();
@@ -792,6 +832,93 @@ export class AppComponent implements OnInit {
   }
 
   closeCrmClient(): void { this.crmActive.set(null); }
+
+  // ═══════════════════════════ NET WORTH (daily reports) ═══════════════════════════
+  loadNetWorth(): void {
+    this.nwLoading.set(true);
+    this.api.reportToday().subscribe({ next: (t) => this.nwToday.set(t), error: () => {} });
+    this.api.reportUploads().subscribe({ next: (u) => this.nwUploads.set(u), error: () => {} });
+    this.api.reportClients().subscribe({
+      next: (c) => { this.nwClients.set(c); this.nwLoading.set(false); },
+      error: (e) => { this.nwLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+    this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b), error: () => {} });
+  }
+
+  onReportFile(type: 'user' | 'transaction', ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.nwError.set('');
+    (type === 'user' ? this.nwUploadingUser : this.nwUploadingTxn).set(true);
+    this.api.uploadReport(type, file).subscribe({
+      next: () => {
+        (type === 'user' ? this.nwUploadingUser : this.nwUploadingTxn).set(false);
+        input.value = '';
+        this.loadNetWorth();           // refresh status + recomputed net worth
+      },
+      error: (e) => {
+        (type === 'user' ? this.nwUploadingUser : this.nwUploadingTxn).set(false);
+        input.value = '';
+        this.nwError.set(e?.error?.detail || 'Upload failed. Check the file format.');
+      },
+    });
+  }
+
+  openNwClient(code: string): void {
+    this.nwDetailLoading.set(true);
+    this.nwDetail.set(null);
+    this.api.reportClientDetail(code).subscribe({
+      next: (d) => { this.nwDetail.set(d); this.nwDetailLoading.set(false); },
+      error: (e) => { this.nwDetailLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+  }
+  closeNwClient(): void { this.nwDetail.set(null); }
+
+  loadVillasLive(): void {
+    this.api.villasLive().subscribe({ next: (v) => this.nwVillas.set(v), error: () => {} });
+  }
+  setNwSub(sub: 'clients' | 'villas' | 'buckets'): void {
+    this.nwSub.set(sub);
+    if (sub === 'villas') this.loadVillasLive();
+    if (sub === 'buckets' && !this.nwBuckets().length) {
+      this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
+    }
+  }
+
+  // bucket builder
+  addFundToBucket(): void {
+    const name = this.newFundName().trim();
+    if (!name) return;
+    this.newBucketFunds.update((f) => [...f, { scheme_name: name, target_weight: 0 }]);
+    this.newFundName.set('');
+  }
+  removeFundFromBucket(i: number): void {
+    this.newBucketFunds.update((f) => f.filter((_, idx) => idx !== i));
+  }
+  saveBucket(): void {
+    const name = this.newBucketName().trim();
+    if (!name || !this.newBucketFunds().length) return;
+    this.bucketSaving.set(true);
+    this.api.createBucket({
+      name, tier: this.newBucketTier().trim() || undefined, funds: this.newBucketFunds(),
+    }).subscribe({
+      next: () => {
+        this.bucketSaving.set(false);
+        this.newBucketName.set(''); this.newBucketTier.set(''); this.newBucketFunds.set([]);
+        this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
+      },
+      error: () => this.bucketSaving.set(false),
+    });
+  }
+  removeBucket(id: string): void {
+    this.api.deleteBucket(id).subscribe({
+      next: () => this.nwBuckets.update((b) => b.filter((x) => x.id !== id)),
+    });
+  }
+  villaLiveTotal(v: VillaLive): number {
+    return v.funds.reduce((s, f) => s + (f.nav || 0), 0);
+  }
 
   seeding = signal(false);
   /** One-time: load the sample clients into Supabase, then refresh the list. */

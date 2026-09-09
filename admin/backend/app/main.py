@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import (
+    Body,
     FastAPI,
     File,
     Form,
@@ -36,6 +37,7 @@ from app import availability as availability_svc
 from app import bookings as bookings_svc
 from app import clients as clients_svc
 from app import documents as documents_svc
+from app import reports as reports_svc
 from app.config import get_settings
 from app.schemas import (
     AdminLockBody,
@@ -452,6 +454,91 @@ def admin_delete_document(
     _require_admin(authorization)
     if not documents_svc.delete_document(doc_id):
         raise HTTPException(status_code=404, detail="Document not found")
+    return {"status": "deleted"}
+
+
+# --- Admin daily reports → net worth & villa live pricing -----------------
+@app.post("/admin/reports/upload")
+async def admin_upload_report(
+    report_type: str = Form(...),
+    report_date: Optional[str] = Form(default=None),
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    content = await file.read()
+    try:
+        return reports_svc.upload_report(
+            report_type, file.filename or "report", content, report_date or None)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Parse/upload failed: {e}")
+
+
+@app.get("/admin/reports/uploads")
+def admin_report_uploads(authorization: Optional[str] = Header(default=None)) -> list[dict]:
+    _require_admin(authorization)
+    return reports_svc.list_uploads()
+
+
+@app.get("/admin/reports/today")
+def admin_report_today(
+    report_date: Optional[str] = None,
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    from datetime import date as _date
+    return reports_svc.today_status(report_date or _date.today().isoformat())
+
+
+@app.get("/admin/reports/clients")
+def admin_report_clients(authorization: Optional[str] = Header(default=None)) -> list[dict]:
+    _require_admin(authorization)
+    return reports_svc.list_clients_summary()
+
+
+@app.get("/admin/reports/clients/{code}")
+def admin_report_client_detail(
+    code: str, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    d = reports_svc.client_detail(code)
+    if not d:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return d
+
+
+@app.get("/admin/reports/villas")
+def admin_report_villas_live(authorization: Optional[str] = Header(default=None)) -> list[dict]:
+    _require_admin(authorization)
+    return reports_svc.villas_live()
+
+
+@app.get("/admin/reports/buckets")
+def admin_report_buckets(authorization: Optional[str] = Header(default=None)) -> list[dict]:
+    _require_admin(authorization)
+    return reports_svc.list_buckets()
+
+
+@app.post("/admin/reports/buckets")
+def admin_report_create_bucket(
+    payload: dict = Body(...),
+    authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name required")
+    return reports_svc.create_bucket(name, payload.get("tier"), payload.get("funds") or [])
+
+
+@app.delete("/admin/reports/buckets/{bucket_id}")
+def admin_report_delete_bucket(
+    bucket_id: str, authorization: Optional[str] = Header(default=None),
+) -> dict:
+    _require_admin(authorization)
+    reports_svc.delete_bucket(bucket_id)
     return {"status": "deleted"}
 
 

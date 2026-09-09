@@ -299,4 +299,73 @@ export class AdminService {
   deleteDocument(id: string): Observable<{ status: string }> {
     return this.http.delete<{ status: string }>(`${this.base}/admin/documents/${id}`, this.opts);
   }
+
+  // ── daily reports → net worth & villa live pricing ───────────────────────
+  uploadReport(reportType: 'user' | 'transaction', file: File, reportDate?: string):
+    Observable<ReportUpload> {
+    const fd = new FormData();
+    fd.append('report_type', reportType);
+    if (reportDate) fd.append('report_date', reportDate);
+    fd.append('file', file);
+    return this.http.post<ReportUpload>(`${this.base}/admin/reports/upload`, fd, this.opts);
+  }
+  reportUploads(): Observable<ReportUpload[]> {
+    return this.http.get<ReportUpload[]>(`${this.base}/admin/reports/uploads`, this.opts);
+  }
+  reportToday(date?: string): Observable<TodayStatus> {
+    const q = date ? `?report_date=${date}` : '';
+    return this.http.get<TodayStatus>(`${this.base}/admin/reports/today${q}`, this.opts);
+  }
+  reportClients(): Observable<NetWorthRow[]> {
+    return this.http.get<NetWorthRow[]>(`${this.base}/admin/reports/clients`, this.opts);
+  }
+  reportClientDetail(code: string): Observable<ClientNetWorth> {
+    return this.http.get<ClientNetWorth>(`${this.base}/admin/reports/clients/${code}`, this.opts);
+  }
+  villasLive(): Observable<VillaLive[]> {
+    return this.http.get<VillaLive[]>(`${this.base}/admin/reports/villas`, this.opts);
+  }
+  reportBuckets(): Observable<VillaBucket[]> {
+    return this.http.get<VillaBucket[]>(`${this.base}/admin/reports/buckets`, this.opts);
+  }
+  createBucket(body: { name: string; tier?: string; funds: BucketFund[] }): Observable<VillaBucket> {
+    return this.http.post<VillaBucket>(`${this.base}/admin/reports/buckets`, body, this.opts);
+  }
+  deleteBucket(id: string): Observable<{ status: string }> {
+    return this.http.delete<{ status: string }>(`${this.base}/admin/reports/buckets/${id}`, this.opts);
+  }
+}
+
+// ── report types ────────────────────────────────────────────────────────────
+export interface ReportUpload {
+  id?: string; report_date: string; report_type: 'user' | 'transaction';
+  filename: string; storage_path?: string; size_bytes?: number;
+  row_count?: number; status?: string; uploaded_at?: string;
+}
+export interface TodayStatus {
+  report_date: string; user: ReportUpload | null; transaction: ReportUpload | null;
+}
+export interface NetWorthRow {
+  client_code: string; name: string; city?: string; phone?: string;
+  net_worth: number; invested: number; gain: number; gain_pct: number; holdings_count: number;
+}
+export interface Holding {
+  scheme_name: string; scheme_code?: number; folio_no?: string;
+  units: number; invested: number; nav?: number; nav_date?: string;
+  current_value: number; gain: number;
+}
+export interface VillaMatch {
+  bucket_id: string; name: string; tier?: string; owned_count: number;
+  total_funds: number; complete: boolean; value: number; invested: number;
+  gain: number; funds: Holding[];
+}
+export interface ClientNetWorth {
+  client: any; net_worth: number; invested: number; gain: number; gain_pct: number;
+  villas: VillaMatch[]; villa_count: number; extra: Holding[]; holdings: Holding[];
+}
+export interface BucketFund { scheme_name: string; scheme_code?: number; target_weight?: number; }
+export interface VillaBucket { id: string; name: string; tier?: string; funds: BucketFund[]; }
+export interface VillaLive {
+  bucket_id: string; name: string; tier?: string; nav_sum: number;
+  funds: { scheme_name: string; scheme_code?: number; nav?: number; nav_date?: string; target_weight?: number }[];
 }

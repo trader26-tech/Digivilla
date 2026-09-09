@@ -77,6 +77,7 @@
     <nav class="top-tabs">
       <button [class.on]="tab() === 'calendar'" (click)="tab.set('calendar')">Calendar</button>
       <button [class.on]="tab() === 'documents'" (click)="tab.set('documents')">Clients</button>
+      <button [class.on]="tab() === 'networth'" (click)="tab.set('networth'); loadNetWorth()">Net Worth</button>
     </nav>
     <div class="top-right">
       <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">{{ lockCountdown() }}</span>
@@ -506,4 +507,207 @@
       </section>
     </div>
   </div>
+
+  <!-- ─────────── NET WORTH TAB (daily reports) ─────────── -->
+  <div class="wrap wide" *ngIf="tab() === 'networth'">
+
+    <!-- daily upload strip -->
+    <section class="nw-upload card">
+      <div class="nw-up-head">
+        <div>
+          <h2 class="nw-h">Today’s reports</h2>
+          <p class="nw-sub">Upload the User Report + Transaction Report each day. Re-uploading a day replaces it — no duplicates.</p>
+        </div>
+        <span class="nw-date-chip">{{ nwToday()?.report_date || '—' }}</span>
+      </div>
+      <div class="nw-slots">
+        <!-- USER report -->
+        <label class="nw-slot" [class.done]="nwToday()?.user">
+          <input type="file" accept=".xlsx,.csv" hidden (change)="onReportFile('user', $event)" />
+          <span class="nw-slot-ic">👤</span>
+          <div class="nw-slot-body">
+            <b>User Report</b>
+            <span *ngIf="nwToday()?.user as u">✓ {{ u.filename }} · {{ u.row_count }} clients</span>
+            <span *ngIf="!nwToday()?.user" class="nw-slot-empty">.xlsx — client master (PAN, contact…)</span>
+          </div>
+          <span class="nw-slot-cta" *ngIf="!nwUploadingUser()">{{ nwToday()?.user ? 'Replace' : 'Upload' }}</span>
+          <span class="nw-spin" *ngIf="nwUploadingUser()"></span>
+        </label>
+        <!-- TRANSACTION report -->
+        <label class="nw-slot" [class.done]="nwToday()?.transaction">
+          <input type="file" accept=".csv" hidden (change)="onReportFile('transaction', $event)" />
+          <span class="nw-slot-ic">📈</span>
+          <div class="nw-slot-body">
+            <b>Transaction Report</b>
+            <span *ngIf="nwToday()?.transaction as t">✓ {{ t.filename }} · {{ t.row_count }} holdings</span>
+            <span *ngIf="!nwToday()?.transaction" class="nw-slot-empty">.csv — units, NAV, amount per scheme</span>
+          </div>
+          <span class="nw-slot-cta" *ngIf="!nwUploadingTxn()">{{ nwToday()?.transaction ? 'Replace' : 'Upload' }}</span>
+          <span class="nw-spin" *ngIf="nwUploadingTxn()"></span>
+        </label>
+      </div>
+      <p class="nw-err" *ngIf="nwError()">{{ nwError() }}</p>
+    </section>
+
+    <!-- KPI header -->
+    <section class="nw-kpis">
+      <div class="nw-kpi">
+        <small>Total net worth · live</small>
+        <b class="nw-figure">{{ money(nwTotal()) }}</b>
+        <span class="nw-kpi-sub">{{ nwClients().length }} clients</span>
+      </div>
+      <div class="nw-kpi">
+        <small>Total invested</small>
+        <b class="nw-figure">{{ money(nwTotalInvested()) }}</b>
+      </div>
+      <div class="nw-kpi">
+        <small>Total gain</small>
+        <b class="nw-figure" [class.pos]="nwTotal() >= nwTotalInvested()" [class.neg]="nwTotal() < nwTotalInvested()">
+          {{ money(nwTotal() - nwTotalInvested()) }}
+        </b>
+      </div>
+    </section>
+
+    <!-- sub-tabs -->
+    <nav class="nw-subtabs">
+      <button [class.on]="nwSub() === 'clients'" (click)="setNwSub('clients')">Clients</button>
+      <button [class.on]="nwSub() === 'villas'" (click)="setNwSub('villas')">Villa live prices</button>
+      <button [class.on]="nwSub() === 'buckets'" (click)="setNwSub('buckets')">Villa buckets</button>
+    </nav>
+
+    <!-- ===== CLIENTS sub-tab ===== -->
+    <ng-container *ngIf="nwSub() === 'clients'">
+      <div class="nw-searchbar">
+        <input class="nw-search" placeholder="Search name, phone or code…" [ngModel]="nwSearch()" (ngModelChange)="nwSearch.set($event)" />
+      </div>
+      <div class="nw-loading" *ngIf="nwLoading()">Loading…</div>
+      <div class="nw-empty" *ngIf="!nwLoading() && !nwClients().length">
+        No clients yet. Upload today’s reports above to build the database.
+      </div>
+      <div class="nw-table" *ngIf="nwFiltered().length">
+        <div class="nw-tr nw-thead">
+          <span>Client</span><span class="num">Invested</span><span class="num">Net worth</span><span class="num">Gain</span><span class="num">Funds</span>
+        </div>
+        <button class="nw-tr" *ngFor="let c of nwFiltered()" (click)="openNwClient(c.client_code)">
+          <span class="nw-name"><b>{{ c.name }}</b><small>{{ c.city }} · {{ c.client_code }}</small></span>
+          <span class="num">{{ money(c.invested) }}</span>
+          <span class="num strong">{{ money(c.net_worth) }}</span>
+          <span class="num" [class.pos]="c.gain >= 0" [class.neg]="c.gain < 0">{{ c.gain_pct }}%</span>
+          <span class="num">{{ c.holdings_count }}</span>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ===== VILLA LIVE PRICES sub-tab ===== -->
+    <ng-container *ngIf="nwSub() === 'villas'">
+      <div class="nw-empty" *ngIf="!nwVillas().length">
+        No villa buckets defined yet. Create one under “Villa buckets”, then live prices appear here.
+      </div>
+      <div class="nw-villas">
+        <div class="nw-villa card" *ngFor="let v of nwVillas()">
+          <div class="nw-villa-head">
+            <div><b>{{ v.name }}</b><span class="nw-villa-tier" *ngIf="v.tier">{{ v.tier }}</span></div>
+            <div class="nw-villa-nav">
+              <small>Live NAV sum</small>
+              <b>₹{{ v.nav_sum | number:'1.2-4' }}</b>
+            </div>
+          </div>
+          <div class="nw-villa-fund" *ngFor="let f of v.funds">
+            <span class="nw-vf-name">{{ f.scheme_name }}</span>
+            <span class="nw-vf-nav" *ngIf="f.nav">₹{{ f.nav | number:'1.2-4' }}<small *ngIf="f.nav_date"> · {{ f.nav_date }}</small></span>
+            <span class="nw-vf-nav muted" *ngIf="!f.nav">no NAV</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ===== BUCKET BUILDER sub-tab ===== -->
+    <ng-container *ngIf="nwSub() === 'buckets'">
+      <div class="nw-bucket-grid">
+        <!-- builder -->
+        <section class="nw-builder card">
+          <h3 class="nw-h">New villa bucket</h3>
+          <p class="nw-sub">A villa = a named set of fund schemes. Client holdings are matched into it; only these count toward villa value.</p>
+          <input class="nw-inp" placeholder="Villa name (e.g. Balanced Villa)" [ngModel]="newBucketName()" (ngModelChange)="newBucketName.set($event)" />
+          <input class="nw-inp" placeholder="Tier (optional — 10L / 50L / 1Cr)" [ngModel]="newBucketTier()" (ngModelChange)="newBucketTier.set($event)" />
+          <div class="nw-fund-add">
+            <input class="nw-inp" placeholder="Add a fund scheme name…" [ngModel]="newFundName()" (ngModelChange)="newFundName.set($event)" (keyup.enter)="addFundToBucket()" />
+            <button class="nw-add-btn" (click)="addFundToBucket()">+</button>
+          </div>
+          <div class="nw-draft-funds">
+            <div class="nw-draft-fund" *ngFor="let f of newBucketFunds(); let i = index">
+              <span>{{ f.scheme_name }}</span>
+              <button (click)="removeFundFromBucket(i)" aria-label="Remove">×</button>
+            </div>
+          </div>
+          <button class="nw-save" [disabled]="!newBucketName().trim() || !newBucketFunds().length || bucketSaving()" (click)="saveBucket()">
+            {{ bucketSaving() ? 'Saving…' : 'Create villa bucket' }}
+          </button>
+        </section>
+
+        <!-- existing buckets -->
+        <section class="nw-bucket-list">
+          <div class="nw-empty" *ngIf="!nwBuckets().length">No buckets yet.</div>
+          <div class="nw-bucket card" *ngFor="let b of nwBuckets()">
+            <div class="nw-bucket-head">
+              <div><b>{{ b.name }}</b><span class="nw-villa-tier" *ngIf="b.tier">{{ b.tier }}</span></div>
+              <button class="nw-del" (click)="removeBucket(b.id)" aria-label="Delete">Delete</button>
+            </div>
+            <div class="nw-bucket-fund" *ngFor="let f of b.funds">
+              <span>{{ f.scheme_name }}</span>
+              <small [class.muted]="!f.scheme_code">{{ f.scheme_code ? 'code ' + f.scheme_code : 'unresolved' }}</small>
+            </div>
+          </div>
+        </section>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- ===== CLIENT NET-WORTH DETAIL (drawer) ===== -->
+  <div class="nw-drawer-scrim" *ngIf="nwDetail() || nwDetailLoading()" (click)="closeNwClient()"></div>
+  <aside class="nw-drawer" *ngIf="nwDetail() || nwDetailLoading()">
+    <div class="nw-dr-loading" *ngIf="nwDetailLoading()">Loading client…</div>
+    <ng-container *ngIf="nwDetail() as d">
+      <header class="nw-dr-head">
+        <button class="nw-dr-close" (click)="closeNwClient()" aria-label="Close">←</button>
+        <div>
+          <h2 class="nw-dr-name">{{ d.client.name }}</h2>
+          <p class="nw-dr-meta">{{ d.client.pan }} · {{ d.client.phone }} · {{ d.client.city }}</p>
+        </div>
+      </header>
+
+      <div class="nw-dr-kpis">
+        <div><small>Net worth</small><b>{{ money(d.net_worth) }}</b></div>
+        <div><small>Invested</small><b>{{ money(d.invested) }}</b></div>
+        <div><small>Gain</small><b [class.pos]="d.gain >= 0" [class.neg]="d.gain < 0">{{ money(d.gain) }} ({{ d.gain_pct }}%)</b></div>
+      </div>
+
+      <!-- villas the client owns -->
+      <section class="nw-dr-block" *ngIf="d.villas.length">
+        <h3 class="nw-dr-h">Villas · {{ d.villa_count }}</h3>
+        <div class="nw-dr-villa" *ngFor="let v of d.villas">
+          <div class="nw-dr-villa-top">
+            <b>{{ v.name }}</b>
+            <span class="nw-badge" [class.complete]="v.complete">{{ v.owned_count }}/{{ v.total_funds }} funds</span>
+            <b class="nw-dr-villa-val">{{ money(v.value) }}</b>
+          </div>
+          <div class="nw-dr-villa-fund" *ngFor="let f of v.funds">
+            <span>{{ f.scheme_name }}</span>
+            <span class="num">{{ f.units | number:'1.0-2' }} u × ₹{{ f.nav | number:'1.2-2' }}</span>
+            <b class="num">{{ money(f.current_value) }}</b>
+          </div>
+        </div>
+      </section>
+
+      <!-- extra (non-bucket) holdings -->
+      <section class="nw-dr-block" *ngIf="d.extra.length">
+        <h3 class="nw-dr-h">Other holdings <small>(not in a villa bucket)</small></h3>
+        <div class="nw-dr-fund" *ngFor="let f of d.extra">
+          <span class="nw-dr-fund-name">{{ f.scheme_name }}</span>
+          <span class="num">{{ f.units | number:'1.0-2' }} u × ₹{{ f.nav | number:'1.2-2' }}</span>
+          <b class="num">{{ money(f.current_value) }}</b>
+        </div>
+      </section>
+    </ng-container>
+  </aside>
 </div>
