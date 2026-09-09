@@ -77,6 +77,16 @@ export interface VillaSipDetail {
   };
 }
 
+/** One account transaction (from GET /me/transactions). */
+export interface AccountTxn {
+  date: string;
+  kind: string;            // 'sip' | 'lump_sum' | 'rent'
+  amount: number;
+  direction: 'in' | 'out';
+  villa: string;
+  status: string;
+}
+
 export interface Tile {
   id: string;
   type: TileType;
@@ -163,6 +173,12 @@ export class EstateService {
   /** One Villa SIP with its full fund mix + blended overall returns. */
   villaSip(id: string): import('rxjs').Observable<VillaSipDetail> {
     return this.http.get<VillaSipDetail>(`${environment.apiUrl}/villas/sip/${id}`);
+  }
+
+  /** Every transaction on the account (SIP, lump-sum, rent/SWP), newest first. */
+  transactions(): import('rxjs').Observable<{ transactions: AccountTxn[] }> {
+    return this.http.get<{ transactions: AccountTxn[] }>(
+      `${environment.apiUrl}/me/transactions`, { headers: this.authHeaders });
   }
 
   /** Pull this user's estate + real net worth from the backend. */

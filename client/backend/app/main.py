@@ -390,6 +390,14 @@ def get_my_portfolio(authorization: Optional[str] = Header(default=None)) -> dic
     return client_portfolio.portfolio_summary(owner)
 
 
+@app.get("/me/transactions")
+def get_my_transactions(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Every transaction on this user's account (SIP, lump-sum, rent/SWP), newest
+    first — for the Settings → View transactions screen."""
+    owner = _owner_or_401(authorization)
+    return {"transactions": estate_svc.transactions_for(owner)}
+
+
 @app.patch("/me/profile")
 def patch_my_profile(
     body: dict = Body(default={}), authorization: Optional[str] = Header(default=None)

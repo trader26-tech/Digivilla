@@ -3,7 +3,8 @@ import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, 
 
 import { AuthService } from './auth/auth.service';
 import { BookingService, Booking } from './booking.service';
-import { EstateService } from './estate.service';
+import { EstateService, AccountTxn } from './estate.service';
+import { compact } from './shared/format.util';
 import { AppUpdateService } from './shared/app-update.service';
 import { PresentationComponent } from './presentation.component';
 
@@ -57,6 +58,7 @@ export class CallsComponent implements OnInit {
   private bookings = inject(BookingService);
   private appUpdate = inject(AppUpdateService);
   readonly est = inject(EstateService);
+  compact = compact;
 
   /** True while the force-update is running (shows the spinner). */
   refreshing = signal(false);
@@ -66,6 +68,30 @@ export class CallsComponent implements OnInit {
     this.refreshing.set(true);
     if (navigator.vibrate) navigator.vibrate(6);
     this.appUpdate.forceUpdate();   // clears SW + caches, then hard-reloads
+  }
+
+  /** The fund manager's number the "Call" row dials. */
+  readonly ADMIN_PHONE = '+918925188870';
+  get adminPhonePretty(): string { return '+91 89251 88870'; }
+  /** App version shown next to "Update to latest". */
+  readonly APP_VERSION = '1.4';
+
+  /** Which settings sub-panel is open: null | 'details' | 'txns'. */
+  panel = signal<null | 'details' | 'txns'>(null);
+  openPanel(p: 'details' | 'txns'): void { this.panel.set(p); if (navigator.vibrate) navigator.vibrate(4); }
+  closePanel(): void { this.panel.set(null); }
+
+  /** Account transactions (SIP / lump-sum / rent-SWP). */
+  txns = signal<AccountTxn[]>([]);
+  txnsLoading = signal(false);
+  private txnsLoaded = false;
+  loadTxns(): void {
+    if (this.txnsLoaded) return;
+    this.txnsLoading.set(true);
+    this.est.transactions().subscribe({
+      next: (r) => { this.txns.set(r.transactions || []); this.txnsLoaded = true; this.txnsLoading.set(false); },
+      error: () => { this.txns.set([]); this.txnsLoading.set(false); },
+    });
   }
 
   @Output() signOut = new EventEmitter<void>();

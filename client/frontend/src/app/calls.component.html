@@ -22,195 +22,92 @@
     </button>
   </section>
 
-  <!-- ===== REFRESH APP: force the PWA to the latest deployed version ===== -->
-  <button class="ca-refresh" (click)="refreshApp()" [class.spinning]="refreshing()" [disabled]="refreshing()">
-    <span class="ca-refresh-ic" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 11a8 8 0 1 0-.6 3M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </span>
-    <span class="ca-refresh-body">
-      <b>{{ refreshing() ? 'Updating…' : 'Update to latest' }}</b>
-      <span>Refresh the app to the newest version.</span>
-    </span>
-  </button>
+  <!-- ===== SETTINGS LIST — five items ===== -->
+  <div class="st-list">
+    <!-- 1 · Personal details -->
+    <button class="st-item" (click)="openPanel('details')">
+      <span class="st-ic" data-c="purple" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="21" height="21"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      <span class="st-body"><b>Personal details</b><span>Your profile & account info</span></span>
+      <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
 
-  <!-- ===== PRESENT: open the pitch deck full-screen, for the advisor to walk
-       a client through from their phone ===== -->
-  <button class="ca-present" (click)="openPresentation()">
-    <span class="ca-present-ic" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 16v3m-4 1h8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M8 11l2.4-2.4 2 2L16 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </span>
-    <span class="ca-present-body">
-      <b>Play the presentation</b>
-      <span>₹1 crore, two ways — walk a client through it, full-screen.</span>
-    </span>
-    <svg class="ca-present-arr" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
+    <!-- 2 · Play the presentation -->
+    <button class="st-item" (click)="openPresentation()">
+      <span class="st-ic" data-c="brass" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="21" height="21"><rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 16v3m-4 1h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 8.5l4 2.5-4 2.5z" fill="currentColor"/></svg>
+      </span>
+      <span class="st-body"><b>Play the presentation</b><span>The ₹1 crore story, full-screen</span></span>
+      <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
 
-  <!-- ===== CALLS header + the SCHEDULE button ===== -->
-  <div class="ca-section-h">
-    <span>Your calls</span>
-    <button class="ca-add" (click)="openSheet()" aria-label="Schedule a call">
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-      <span>Schedule</span>
+    <!-- 3 · Call the admin (direct dial) -->
+    <a class="st-item" [href]="'tel:' + ADMIN_PHONE">
+      <span class="st-ic" data-c="green" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="21" height="21"><path d="M6 3h3l2 5-2 1.5a11 11 0 0 0 5 5L18 12l3 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 2-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="st-body"><b>Call your fund manager</b><span>{{ adminPhonePretty }}</span></span>
+      <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+
+    <!-- 4 · View transactions -->
+    <button class="st-item" (click)="openPanel('txns'); loadTxns()">
+      <span class="st-ic" data-c="blue" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 7h13l-3-3M20 17H7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="st-body"><b>View transactions</b><span>Every SIP, lump-sum & payout</span></span>
+      <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <!-- 5 · Update to latest -->
+    <button class="st-item" (click)="refreshApp()" [disabled]="refreshing()">
+      <span class="st-ic" data-c="green" [class.spinning]="refreshing()" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="21" height="21"><path d="M20 11a8 8 0 1 0-.6 3M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="st-body"><b>{{ refreshing() ? 'Updating…' : 'Update to latest' }}</b><span>Current v{{ APP_VERSION }} · get the newest version</span></span>
+      <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
 
-  <div class="ca-loading" *ngIf="loading()">Loading your calls…</div>
-
-  <ng-container *ngIf="!loading()">
-    <!-- EMPTY: nudge them to book their first call with a big, obvious CTA -->
-    <div class="ca-empty" *ngIf="!hasAny()">
-      <div class="ca-empty-ic">📞</div>
-      <p>No calls scheduled yet</p>
-      <span>Book a call with your fund manager for a quarterly review, or any question about your villas.</span>
-      <button class="ca-empty-cta" (click)="openSheet()">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        Schedule a call
-      </button>
+  <!-- ============ PERSONAL DETAILS panel ============ -->
+  <div class="pn-scrim" *ngIf="panel() === 'details'" (click)="closePanel()"></div>
+  <section class="pn" *ngIf="panel() === 'details'" role="dialog" aria-modal="true">
+    <div class="pn-grip" aria-hidden="true"></div>
+    <header class="pn-head"><h2>Personal details</h2><button class="pn-x" (click)="closePanel()" aria-label="Close">✕</button></header>
+    <div class="pn-rows">
+      <div class="pn-row"><span>Name</span><b>{{ userName || '—' }}</b></div>
+      <div class="pn-row"><span>Phone</span><b>{{ phonePretty || '—' }}</b></div>
+      <div class="pn-row" *ngIf="userCity"><span>City</span><b>{{ userCity }}</b></div>
+      <div class="pn-row"><span>Estate</span><b>{{ est.estateName ? est.estateName + '’s City' : 'Your City' }}</b></div>
+      <div class="pn-row"><span>Portfolio worth</span><b>{{ compact(est.estateValue) }}</b></div>
+      <div class="pn-row"><span>Total invested</span><b>{{ compact(est.invested) }}</b></div>
+      <div class="pn-row"><span>Total gain</span><b [class.pos]="est.gain >= 0">{{ est.gain >= 0 ? '+' : '' }}{{ compact(est.gain) }}</b></div>
+      <div class="pn-row"><span>Total SWP received</span><b>{{ compact(est.totalSwp) }}</b></div>
+      <div class="pn-row"><span>Villas held</span><b>{{ est.tiles().length }}</b></div>
     </div>
-
-    <ng-container *ngIf="hasAny()">
-      <!-- HERO: the very next call -->
-      <section class="ca-hero" *ngIf="next() as c">
-        <span class="ca-hero-k">Next call</span>
-        <div class="ca-hero-when">
-          <b class="ca-hero-date">{{ c.dateLabel }}</b>
-          <span class="ca-hero-time">{{ c.timeLabel }}</span>
-        </div>
-        <p class="ca-hero-reason" *ngIf="c.note">{{ c.note }}</p>
-        <span class="ca-pill hero-pill" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
-        <!-- Join lights up around call time; before that, a live countdown -->
-        <button class="ca-join" *ngIf="joinOpen(c)" (click)="join(c.meetLink)">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 10l6-3v10l-6-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-          Join video call
-        </button>
-        <div class="ca-join-wait" *ngIf="!joinOpen(c) && c.meetLink">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          {{ joinHint(c) }}
-        </div>
-      </section>
-
-      <!-- more upcoming -->
-      <section class="ca-group" *ngIf="restUpcoming().length">
-        <h2 class="ca-group-h">Upcoming</h2>
-        <div class="ca-row" *ngFor="let c of restUpcoming()" [class.auto]="c.auto">
-          <span class="ca-date-chip" aria-hidden="true">
-            <b>{{ c.day }}</b><span>{{ c.monthLabel }}</span>
-          </span>
-          <div class="ca-row-main">
-            <b class="ca-row-title">{{ c.note }}</b>
-            <span class="ca-row-sub">{{ c.dateLabel }}<ng-container *ngIf="c.timeLabel"> · {{ c.timeLabel }}</ng-container></span>
-          </div>
-          <button class="ca-join sm" *ngIf="joinOpen(c)" (click)="join(c.meetLink)" aria-label="Join call">Join</button>
-          <span class="ca-pill sm" [attr.data-s]="c.status" *ngIf="!joinOpen(c)">{{ statusText(c.status) }}</span>
-        </div>
-      </section>
-
-      <!-- past -->
-      <section class="ca-group" *ngIf="past().length">
-        <h2 class="ca-group-h">Past</h2>
-        <div class="ca-row past" *ngFor="let c of past()">
-          <span class="ca-date-chip" aria-hidden="true">
-            <b>{{ c.day }}</b><span>{{ c.monthLabel }}</span>
-          </span>
-          <div class="ca-row-main">
-            <b class="ca-row-title">{{ c.note }}</b>
-            <span class="ca-row-sub">{{ c.dateLabel }}<ng-container *ngIf="c.timeLabel"> · {{ c.timeLabel }}</ng-container></span>
-          </div>
-          <span class="ca-pill sm" [attr.data-s]="c.status">{{ statusText(c.status) }}</span>
-        </div>
-      </section>
-    </ng-container>
-  </ng-container>
-
-  <!-- ============================ SCHEDULE SHEET ============================ -->
-  <div class="sheet-scrim" *ngIf="sheetStep() > 0" (click)="closeSheet()"></div>
-
-  <section class="sheet" *ngIf="sheetStep() > 0" role="dialog" aria-modal="true" aria-label="Schedule a call">
-    <div class="sheet-grip" aria-hidden="true"></div>
-
-    <!-- STEP 1 · pick the reason -->
-    <ng-container *ngIf="sheetStep() === 1">
-      <header class="sheet-head">
-        <h2 class="sheet-title">Talk to your fund manager</h2>
-        <p class="sheet-sub">What’s this call about?</p>
-      </header>
-      <div class="reasons">
-        <button class="reason" *ngFor="let r of REASONS" (click)="pickReason(r)">
-          <span class="reason-ic">{{ r.icon }}</span>
-          <span class="reason-body">
-            <b>{{ r.title }}</b>
-            <span>{{ r.blurb }}</span>
-          </span>
-          <svg class="reason-arr" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-    </ng-container>
-
-    <!-- STEP 2 · pick a free slot from the fund manager's calendar -->
-    <ng-container *ngIf="sheetStep() === 2">
-      <header class="sheet-head row">
-        <button class="sheet-back" (click)="backToReason()" aria-label="Back">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <div>
-          <h2 class="sheet-title sm">Pick a time</h2>
-          <p class="sheet-sub">{{ chosenReason()?.title }} · fund manager’s free slots</p>
-        </div>
-      </header>
-
-      <div class="slots-loading" *ngIf="slotsLoading()">
-        <span class="ca-spin"></span> Finding open times…
-      </div>
-
-      <ng-container *ngIf="!slotsLoading()">
-        <p class="slots-none" *ngIf="!freeDays().length">
-          No open slots in the next few days. Your fund manager will reach out — or try again later.
-        </p>
-
-        <ng-container *ngIf="freeDays().length">
-          <!-- day rail -->
-          <div class="day-rail">
-            <button class="day-chip" *ngFor="let d of freeDays(); let i = index"
-                    [class.on]="i === activeDay()" (click)="pickDay(i)">
-              {{ d.label }}
-            </button>
-          </div>
-
-          <!-- time grid for the active day -->
-          <div class="slot-grid" *ngIf="currentDay as d">
-            <button class="slot" *ngFor="let s of d.slots"
-                    [class.on]="isChosen(s)" (click)="pickSlot(s)">
-              {{ s.time }}
-            </button>
-          </div>
-        </ng-container>
-      </ng-container>
-
-      <p class="book-err" *ngIf="bookErr()">{{ bookErr() }}</p>
-
-      <button class="sheet-cta" [disabled]="!chosenSlot() || booking()" (click)="confirmBooking()">
-        <span *ngIf="!booking()">
-          {{ chosenSlot() ? 'Request ' + (chosenReason()?.title || 'call') : 'Select a time' }}
-        </span>
-        <span *ngIf="booking()" class="ca-spin light"></span>
-      </button>
-    </ng-container>
-
-    <!-- STEP 3 · booked -->
-    <ng-container *ngIf="sheetStep() === 3">
-      <div class="booked">
-        <div class="booked-tick" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="34" height="34"><path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <h2 class="booked-title">Call requested</h2>
-        <p class="booked-when">{{ chosenReason()?.title }}<br>{{ bookedSummary }}</p>
-        <p class="booked-note">Your fund manager will confirm and share the meeting link before the call. You’ll see it here.</p>
-        <button class="sheet-cta solid" (click)="closeSheet()">Done</button>
-      </div>
-    </ng-container>
+    <button class="pn-signout" (click)="doSignOut()">Log off</button>
   </section>
 
-  <!-- ===== PRESENTATION overlay (full-screen, landscape) ===== -->
+  <!-- ============ TRANSACTIONS panel ============ -->
+  <div class="pn-scrim" *ngIf="panel() === 'txns'" (click)="closePanel()"></div>
+  <section class="pn tall" *ngIf="panel() === 'txns'" role="dialog" aria-modal="true">
+    <div class="pn-grip" aria-hidden="true"></div>
+    <header class="pn-head"><h2>Transactions</h2><button class="pn-x" (click)="closePanel()" aria-label="Close">✕</button></header>
+    <div class="pn-loading" *ngIf="txnsLoading()"><span class="ca-spin"></span> Loading…</div>
+    <p class="pn-empty" *ngIf="!txnsLoading() && !txns().length">No transactions yet.</p>
+    <div class="tx-list" *ngIf="!txnsLoading() && txns().length">
+      <div class="tx-row" *ngFor="let t of txns()">
+        <span class="tx-ic" [attr.data-k]="t.kind" aria-hidden="true">{{ t.kind === 'rent' ? '🪙' : t.kind === 'sip' ? '🔁' : '💰' }}</span>
+        <span class="tx-main">
+          <b>{{ t.kind === 'rent' ? 'SWP payout' : t.kind === 'sip' ? 'SIP instalment' : 'Lump-sum' }}</b>
+          <span>{{ t.villa }} · {{ t.date | date:'d MMM y' }}</span>
+        </span>
+        <b class="tx-amt" [class.out]="t.direction === 'out'">{{ t.direction === 'out' ? '−' : '+' }}{{ compact(t.amount) }}</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PRESENTATION overlay (full-screen) ===== -->
   <app-presentation *ngIf="presenting()" (close)="closePresentation()"></app-presentation>
 </main>

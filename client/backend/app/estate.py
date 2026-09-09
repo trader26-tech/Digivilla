@@ -169,6 +169,45 @@ def _tiles_from_crm(owner: str) -> list[dict]:
 MONTHLY_INCOME_RATE = 0.003
 
 
+def transactions_for(owner: str) -> list[dict]:
+    """Every transaction on this user's account — SIP, lump-sum and rent/SWP —
+    newest first, shaped for the client's transactions list."""
+    try:
+        from app.supabase_client import get_supabase
+        cl = get_supabase()
+        urows = cl.table("users").select("id").eq("owner", owner).limit(1).execute().data or []
+        if not urows:
+            return []
+        uid = urows[0]["id"]
+        uv = cl.table("user_villas").select("id,villa_id").eq("user_id", uid).execute().data or []
+        if not uv:
+            return []
+        villa_by_uv = {h["id"]: h.get("villa_id") for h in uv}
+        villas = {v["id"]: v.get("name") for v in (cl.table("villas").select("id,name").execute().data or [])}
+        ids = list(villa_by_uv.keys())
+        txns = cl.table("transactions").select("*").in_("user_villa_id", ids).execute().data or []
+    except Exception:
+        return []
+
+    def m(v):
+        try: return float(v or 0)
+        except (TypeError, ValueError): return 0.0
+
+    out = []
+    for t in txns:
+        kind = t.get("kind") or "sip"
+        out.append({
+            "date": t.get("txn_date"),
+            "kind": kind,                                   # sip | lump_sum | rent
+            "amount": round(m(t.get("amount"))),
+            "direction": "out" if kind == "rent" else "in",  # rent/SWP is paid TO you
+            "villa": villas.get(villa_by_uv.get(t.get("user_villa_id")), "Villa"),
+            "status": t.get("status") or "paid",
+        })
+    out.sort(key=lambda x: x["date"] or "", reverse=True)
+    return out
+
+
 def total_swp(owner: str) -> float:
     """Total SWP paid out to this user so far — the sum of all PAID `rent`
     (income/SWP) transactions across their holdings. 0 if none."""
