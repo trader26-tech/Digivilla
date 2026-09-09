@@ -95,35 +95,15 @@ def _public(row: dict) -> dict:
 
 
 def get_tiles(owner: str) -> list[dict]:
-    """Every tile this user owns (empty list for a brand-new account).
+    """Every tile this user owns, built ONLY from their REAL portfolio.
 
-    SOURCE OF TRUTH, in order:
-    1. The client's REAL portfolio — `client_holdings` (units × live NAV),
-       matched to this login by phone. If the admin has provisioned this client
-       (their phone resolves to a `client_code`), we return those tiles VERBATIM,
-       even when empty — a real client with no holdings yet sees an EMPTY estate,
-       never seed/demo villas. `client_holdings` wins over any stale `user_villas`.
-    2. Otherwise (no client_code — demo/dev accounts) the legacy CRM `user_villas`
-       tiles, then the `estate_tiles` store."""
+    SINGLE SOURCE OF TRUTH: `client_holdings` (units × live NAV), grouped into the
+    admin's villa buckets and matched to this login by phone. A user with no
+    matched real holdings sees an EMPTY estate (worth ₹0, no villas) — we never
+    show seed/demo `user_villas` or legacy `estate_tiles` as if they were real.
+    Empty until the admin uploads (and the phone matches) real holdings."""
     from app import client_portfolio
-    if client_portfolio.client_code_for_owner(owner) is not None:
-        return client_portfolio.portfolio_tiles(owner)
-
-    crm = _tiles_from_crm(owner)
-    if crm:
-        return crm
-    if _use_supabase():
-        try:
-            from app.supabase_client import get_supabase
-
-            rows = (get_supabase().table(_TABLE).select("*")
-                    .eq("owner", owner).execute().data or [])
-        except Exception:
-            rows = []
-    else:
-        rows = [r for r in _load_local() if r.get("owner") == owner]
-    rows.sort(key=lambda r: r.get("bought_at", 0))
-    return [_public(r) for r in rows]
+    return client_portfolio.portfolio_tiles(owner)
 
 
 def _tiles_from_crm(owner: str) -> list[dict]:
