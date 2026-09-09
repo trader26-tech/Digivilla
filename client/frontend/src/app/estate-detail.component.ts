@@ -9,6 +9,7 @@ import {
   schemeName, schemeLocality, past3y, past5y,
 } from './property-package.data';
 import { RevealDirective } from './reveal.directive';
+import { VillaSipModalComponent } from './villa-sip-modal.component';
 import { inr, compact, pct } from './shared/format.util';
 
 export type LandVariantKey = VariantKey;
@@ -97,7 +98,7 @@ interface ChartSource {
 @Component({
   selector: 'app-estate-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RevealDirective, BookingSheetComponent],
+  imports: [CommonModule, FormsModule, RevealDirective, BookingSheetComponent, VillaSipModalComponent],
   templateUrl: './estate-detail.component.html',
   styleUrl: './estate-detail.component.scss',
 })
@@ -115,6 +116,18 @@ export class EstateDetailComponent implements OnInit, OnDestroy {
   openBooking(kind: 'consultation' | 'sip' | 'buy' | 'withdraw' = 'consultation'): void {
     this.bookingKind.set(kind);
     this.booking.set(true);
+    if (navigator.vibrate) navigator.vibrate(5);
+  }
+
+  /** Whether the "Villa SIP" preview modal is open. */
+  sipModalOpen = signal(false);
+  /** Name hint passed to the SIP modal — matched (contains) against the
+   *  canonical villa list, e.g. "Moderate Digi Villa". */
+  get sipVillaName(): string {
+    return `${this.activeVariant().name} ${this.propName}`;
+  }
+  openSipPreview(): void {
+    this.sipModalOpen.set(true);
     if (navigator.vibrate) navigator.vibrate(5);
   }
 

@@ -757,6 +757,26 @@
 .act-btn.own { border-color: var(--brass); color: var(--brass); font-weight: 750; }
 .act-btn.own:hover { background: color-mix(in srgb, var(--brass) 16%, transparent); }
 
+/* Secondary text link — "Preview the SIP mix". Sits inside the light cta-row,
+   so it reads as a subtle brass link under the action buttons. */
+.sip-preview-link {
+  flex: 1 1 100%;
+  border: none;
+  background: transparent;
+  color: var(--brass);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.15rem 0 0;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.sip-preview-link:hover { filter: brightness(1.12); }
+
 /* ---------- disclaimer ---------- */
 .disclaimer { margin: 0.5rem 0 0; font-size: 0.72rem; line-height: 1.5; font-weight: 500; color: var(--terracotta); text-align: center; }
 .disclaimer .star { font-weight: 700; }

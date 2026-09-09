@@ -3,8 +3,8 @@
 // per-environment without rebuilding.
 window.__env = {
   // Same-origin API by default ('' → the app calls /... on its own host).
-  // Set to e.g. 'http://localhost:8000' for a local split backend.
-  apiUrl: '',
+  // Local test: the client backend runs on :8004 (8000 was taken locally).
+  apiUrl: 'http://localhost:8004',
 
   // ── Firebase web config — enables REAL phone-OTP SMS. ────────────────────
   // Fill these from the Firebase Console:

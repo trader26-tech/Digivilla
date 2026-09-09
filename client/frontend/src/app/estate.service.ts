@@ -38,6 +38,37 @@ export interface VillaTier {
   funds: VillaFundMix[];
 }
 
+/** One canonical "Villa SIP" in the list (from /villas/sip). */
+export interface VillaSipItem {
+  id: string;
+  name: string;
+  tier?: string;
+  fund_count: number;
+}
+/** One fund row inside a Villa SIP mix. Returns may be null (no history). */
+export interface VillaSipFund {
+  scheme_name: string;
+  scheme_code?: string;
+  category: string;
+  allocation: number;          // a percent, e.g. 36
+  ret_1y: number | null;
+  ret_3y: number | null;
+  ret_5y: number | null;
+}
+/** A single Villa SIP with its funds + blended overall returns (from /villas/sip/{id}). */
+export interface VillaSipDetail {
+  id: string;
+  name: string;
+  tier?: string;
+  allocation_total: number;
+  funds: VillaSipFund[];
+  overall: {
+    ret_1y: number | null;
+    ret_3y: number | null;
+    ret_5y: number | null;
+  };
+}
+
 export interface Tile {
   id: string;
   type: TileType;
@@ -96,6 +127,16 @@ export class EstateService {
    *  income, growth projection and fund mix. */
   catalog(): import('rxjs').Observable<{ villas: VillaTier[] }> {
     return this.http.get<{ villas: VillaTier[] }>(`${environment.apiUrl}/villas/catalog`);
+  }
+
+  /** The canonical Villa SIP list — id, name, tier and fund count. */
+  villaSipList(): import('rxjs').Observable<{ villas: VillaSipItem[] }> {
+    return this.http.get<{ villas: VillaSipItem[] }>(`${environment.apiUrl}/villas/sip`);
+  }
+
+  /** One Villa SIP with its full fund mix + blended overall returns. */
+  villaSip(id: string): import('rxjs').Observable<VillaSipDetail> {
+    return this.http.get<VillaSipDetail>(`${environment.apiUrl}/villas/sip/${id}`);
   }
 
   /** Pull this user's estate from the backend and replace local state. */

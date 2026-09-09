@@ -410,6 +410,26 @@ def villas_catalog() -> dict:
     return {"villas": estate_svc.villa_catalog()}
 
 
+@app.get("/villas/sip")
+def villas_sip_list() -> dict:
+    """Public: the canonical villas (buckets defined in the admin app) for a
+    picker — id, name, tier, fund count. Single source of truth."""
+    from app import villa_sip as _vsip
+    return {"villas": _vsip.list_villas()}
+
+
+@app.get("/villas/sip/{bucket_id}")
+def villas_sip_detail(bucket_id: str) -> dict:
+    """Public: the SIP modal for one villa — its funds with category + allocation
+    and LIVE 1/3/5-Yr returns (from real NAV history), plus the allocation-
+    weighted overall returns. Reads the SAME villa_buckets the admin writes."""
+    from app import villa_sip as _vsip
+    v = _vsip.villa_sip(bucket_id)
+    if not v:
+        raise HTTPException(status_code=404, detail="Villa not found")
+    return v
+
+
 @app.put("/me/estate")
 def put_my_estate(
     body: dict, authorization: Optional[str] = Header(default=None)

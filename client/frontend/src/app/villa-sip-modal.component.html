@@ -1,0 +1,64 @@
+<!-- Dark scrim; clicking it closes the modal. -->
+<div class="vs-scrim" (click)="onScrim()"></div>
+
+<!-- Centered card. stopPropagation so clicks inside don't close it. -->
+<div class="vs-card" role="dialog" aria-modal="true" [attr.aria-label]="title()" (click)="$event.stopPropagation()">
+  <button class="vs-x" type="button" (click)="onClose()" aria-label="Close">×</button>
+
+  <!-- ===== Loading ===== -->
+  <div class="vs-state" *ngIf="loading()">
+    <div class="vs-spinner" aria-hidden="true"></div>
+    <p class="vs-state-tx">Loading the SIP mix…</p>
+  </div>
+
+  <!-- ===== Error ===== -->
+  <div class="vs-state" *ngIf="!loading() && error()">
+    <p class="vs-state-tx">Couldn't load this villa</p>
+  </div>
+
+  <!-- ===== Content ===== -->
+  <ng-container *ngIf="!loading() && !error() && detail() as d">
+    <header class="vs-head">
+      <h2 class="vs-title">{{ title() }}</h2>
+      <p class="vs-summary" *ngIf="allocSummary()">{{ allocSummary() }}</p>
+    </header>
+
+    <div class="vs-table-wrap">
+      <table class="vs-table">
+        <thead>
+          <tr class="vs-hr-1">
+            <th class="vs-th vs-scheme" rowspan="2">Scheme Name</th>
+            <th class="vs-th vs-cat" rowspan="2">Category</th>
+            <th class="vs-th vs-alloc" rowspan="2">Allocation</th>
+            <th class="vs-th vs-returns" colspan="3">Past Returns (p.a.)</th>
+          </tr>
+          <tr class="vs-hr-2">
+            <th class="vs-th vs-yr">1 Yr</th>
+            <th class="vs-th vs-yr">3 Yr</th>
+            <th class="vs-th vs-yr">5 Yr</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="vs-row" *ngFor="let f of d.funds">
+            <td class="vs-td vs-scheme">{{ f.scheme_name }}</td>
+            <td class="vs-td vs-cat"><span class="vs-chip">{{ f.category }}</span></td>
+            <td class="vs-td vs-alloc">{{ fmtAlloc(f.allocation) }}</td>
+            <td class="vs-td vs-yr vs-ret">{{ fmtRet(f.ret_1y) }}</td>
+            <td class="vs-td vs-yr vs-ret">{{ fmtRet(f.ret_3y) }}</td>
+            <td class="vs-td vs-yr vs-ret">{{ fmtRet(f.ret_5y) }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="vs-foot">
+            <td class="vs-td vs-scheme">Overall Portfolio Returns</td>
+            <td class="vs-td vs-cat"></td>
+            <td class="vs-td vs-alloc">100%</td>
+            <td class="vs-td vs-yr vs-ret">{{ fmtRet(d.overall.ret_1y) }}</td>
+            <td class="vs-td vs-yr vs-ret">{{ fmtRet(d.overall.ret_3y) }}</td>
+            <td class="vs-td vs-yr vs-ret">{{ fmtRet(d.overall.ret_5y) }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </ng-container>
+</div>

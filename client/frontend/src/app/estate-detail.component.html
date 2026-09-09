@@ -352,6 +352,9 @@
         <button class="act-btn sip" type="button" (click)="openBooking('sip')">Start SIP</button>
         <button class="act-btn wd" type="button" (click)="openBooking('withdraw')">Withdraw</button>
       </div>
+
+      <!-- Secondary: preview the exact fund mix behind this villa's SIP. -->
+      <button class="sip-preview-link" type="button" (click)="openSipPreview()">Preview the SIP mix</button>
     </section>
   </ng-container>
 
@@ -366,6 +369,13 @@
     [amount]="amount()"
     (close)="booking.set(false)"
   ></app-booking-sheet>
+
+  <!-- Villa SIP preview — the canonical fund mix behind this villa. -->
+  <app-villa-sip-modal
+    *ngIf="sipModalOpen()"
+    [villaName]="sipVillaName"
+    (close)="sipModalOpen.set(false)"
+  ></app-villa-sip-modal>
 
   <p class="disclaimer">
     <span class="star">*</span> Past growth, from each fund's real NAV history — similar may be expected ahead,
