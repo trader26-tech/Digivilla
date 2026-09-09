@@ -573,6 +573,7 @@
       <button [class.on]="nwSub() === 'clients'" (click)="setNwSub('clients')">Clients</button>
       <button [class.on]="nwSub() === 'villas'" (click)="setNwSub('villas')">Villa live prices</button>
       <button [class.on]="nwSub() === 'buckets'" (click)="setNwSub('buckets')">Villa buckets</button>
+      <button [class.on]="nwSub() === 'calendar'" (click)="setNwSub('calendar')">Upload calendar</button>
     </nav>
 
     <!-- ===== CLIENTS sub-tab ===== -->
@@ -636,9 +637,38 @@
           </div>
           <div class="nw-draft-funds">
             <div class="nw-draft-fund" *ngFor="let f of newBucketFunds(); let i = index">
-              <span>{{ f.scheme_name }}</span>
-              <button (click)="removeFundFromBucket(i)" aria-label="Remove">×</button>
+              <div class="nw-df-top">
+                <span class="nw-df-name">{{ f.scheme_name }}</span>
+                <button (click)="removeFundFromBucket(i)" aria-label="Remove">×</button>
+              </div>
+              <div class="nw-df-grid">
+                <label>Category
+                  <select class="nw-df-inp" [ngModel]="f.category" (ngModelChange)="editDraftFund(i, 'category', $event)">
+                    <option value="Equity">Equity</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Debt">Debt</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label>Alloc %
+                  <input type="number" class="nw-df-inp" [ngModel]="f.target_weight" (ngModelChange)="editDraftFund(i, 'target_weight', $event)" />
+                </label>
+                <label>1 Yr %
+                  <input type="number" class="nw-df-inp" [ngModel]="f.ret_1y" (ngModelChange)="editDraftFund(i, 'ret_1y', $event)" />
+                </label>
+                <label>3 Yr %
+                  <input type="number" class="nw-df-inp" [ngModel]="f.ret_3y" (ngModelChange)="editDraftFund(i, 'ret_3y', $event)" />
+                </label>
+                <label>5 Yr %
+                  <input type="number" class="nw-df-inp" [ngModel]="f.ret_5y" (ngModelChange)="editDraftFund(i, 'ret_5y', $event)" />
+                </label>
+              </div>
             </div>
+          </div>
+          <div class="nw-alloc-bar" *ngIf="newBucketFunds().length" [class.ok]="draftAllocTotal() === 100">
+            <span>Allocation</span>
+            <b>{{ draftAllocTotal() }}%</b>
+            <small class="nw-alloc-hint" *ngIf="draftAllocTotal() !== 100">should total 100%</small>
           </div>
           <button class="nw-save" [disabled]="!newBucketName().trim() || !newBucketFunds().length || bucketSaving()" (click)="saveBucket()">
             {{ bucketSaving() ? 'Saving…' : 'Create villa bucket' }}
@@ -653,12 +683,88 @@
               <div><b>{{ b.name }}</b><span class="nw-villa-tier" *ngIf="b.tier">{{ b.tier }}</span></div>
               <button class="nw-del" (click)="removeBucket(b.id)" aria-label="Delete">Delete</button>
             </div>
-            <div class="nw-bucket-fund" *ngFor="let f of b.funds">
-              <span>{{ f.scheme_name }}</span>
-              <small [class.muted]="!f.scheme_code">{{ f.scheme_code ? 'code ' + f.scheme_code : 'unresolved' }}</small>
+            <div class="nw-bk-head-row">
+              <span>Fund</span><span class="num">Alloc</span><span class="num">1Y</span><span class="num">3Y</span><span class="num">5Y</span>
+            </div>
+            <div class="nw-bk-fund" *ngFor="let f of b.funds">
+              <span class="nw-bk-name">{{ f.scheme_name }}<small class="nw-bk-cat" *ngIf="f.category">{{ f.category }}</small></span>
+              <span class="num">{{ f.target_weight != null ? f.target_weight + '%' : '—' }}</span>
+              <span class="num" [class.pos]="(f.ret_1y || 0) > 0" [class.neg]="(f.ret_1y || 0) < 0">{{ f.ret_1y != null ? f.ret_1y + '%' : '—' }}</span>
+              <span class="num" [class.pos]="(f.ret_3y || 0) > 0" [class.neg]="(f.ret_3y || 0) < 0">{{ f.ret_3y != null ? f.ret_3y + '%' : '—' }}</span>
+              <span class="num" [class.pos]="(f.ret_5y || 0) > 0" [class.neg]="(f.ret_5y || 0) < 0">{{ f.ret_5y != null ? f.ret_5y + '%' : '—' }}</span>
+            </div>
+            <div class="nw-bk-fund nw-bk-overall">
+              <span class="nw-bk-name">Overall</span>
+              <span class="num" [class.pos]="bucketAllocTotal(b.funds) === 100">{{ bucketAllocTotal(b.funds) }}%</span>
+              <span class="num" [class.pos]="(weightedReturn(b.funds, 'ret_1y') || 0) > 0" [class.neg]="(weightedReturn(b.funds, 'ret_1y') || 0) < 0">{{ weightedReturn(b.funds, 'ret_1y') != null ? (weightedReturn(b.funds, 'ret_1y') | number:'1.1-1') + '%' : '—' }}</span>
+              <span class="num" [class.pos]="(weightedReturn(b.funds, 'ret_3y') || 0) > 0" [class.neg]="(weightedReturn(b.funds, 'ret_3y') || 0) < 0">{{ weightedReturn(b.funds, 'ret_3y') != null ? (weightedReturn(b.funds, 'ret_3y') | number:'1.1-1') + '%' : '—' }}</span>
+              <span class="num" [class.pos]="(weightedReturn(b.funds, 'ret_5y') || 0) > 0" [class.neg]="(weightedReturn(b.funds, 'ret_5y') || 0) < 0">{{ weightedReturn(b.funds, 'ret_5y') != null ? (weightedReturn(b.funds, 'ret_5y') | number:'1.1-1') + '%' : '—' }}</span>
             </div>
           </div>
         </section>
+      </div>
+    </ng-container>
+
+    <!-- ===== UPLOAD CALENDAR sub-tab ===== -->
+    <ng-container *ngIf="nwSub() === 'calendar'">
+      <div class="nw-cal card">
+        <div class="nw-cal-top">
+          <button class="nw-cal-nav" (click)="calPrevMonth()" aria-label="Previous month">◀</button>
+          <div class="nw-cal-title">
+            <b>{{ calMonthLabel() }}</b>
+            <span class="nw-cal-stat">{{ calComplete().done }}/{{ calComplete().total }} days complete</span>
+          </div>
+          <button class="nw-cal-nav" (click)="calNextMonth()" aria-label="Next month">▶</button>
+        </div>
+
+        <div class="nw-cal-loading" *ngIf="nwCalLoading()">Loading…</div>
+
+        <div class="nw-cal-grid" *ngIf="!nwCalLoading()">
+          <div class="nw-cal-wd" *ngFor="let wd of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']">{{ wd }}</div>
+          <div class="nw-cal-pad" *ngFor="let p of calLeadPad()"></div>
+          <button class="nw-cal-cell"
+            *ngFor="let d of nwCalDays()"
+            [class.both]="d.status === 'both'"
+            [class.partial]="d.status === 'partial'"
+            [class.missing]="d.status === 'none' && !calIsFuture(d)"
+            [class.future]="calIsFuture(d)"
+            [class.today]="calIsToday(d)"
+            [class.sel]="nwCalSelected()?.date === d.date"
+            (click)="selectCalDay(d)">
+            <span class="nw-cal-dn">{{ calDayNum(d) }}</span>
+            <span class="nw-cal-mark">
+              <ng-container [ngSwitch]="d.status">
+                <ng-container *ngSwitchCase="'both'">✓</ng-container>
+                <ng-container *ngSwitchCase="'partial'">◑</ng-container>
+                <ng-container *ngSwitchDefault>{{ calIsFuture(d) ? '' : '✕' }}</ng-container>
+              </ng-container>
+            </span>
+          </button>
+        </div>
+
+        <div class="nw-cal-legend">
+          <span><i class="sw both"></i> Both</span>
+          <span><i class="sw partial"></i> One</span>
+          <span><i class="sw missing"></i> Missing</span>
+        </div>
+
+        <div class="nw-cal-detail" *ngIf="nwCalSelected() as d">
+          <div class="nw-cal-detail-head"><b>{{ d.date }}</b></div>
+          <div class="nw-cal-detail-row">
+            <span class="nw-cal-rt">User report</span>
+            <span class="nw-cal-rv" *ngIf="d.user; else noUser">
+              {{ d.user.filename }} <small>· {{ d.user.row_count }} rows</small>
+            </span>
+            <ng-template #noUser><span class="nw-cal-rv muted">Not uploaded</span></ng-template>
+          </div>
+          <div class="nw-cal-detail-row">
+            <span class="nw-cal-rt">Transaction report</span>
+            <span class="nw-cal-rv" *ngIf="d.transaction; else noTxn">
+              {{ d.transaction.filename }} <small>· {{ d.transaction.row_count }} rows</small>
+            </span>
+            <ng-template #noTxn><span class="nw-cal-rv muted">Not uploaded</span></ng-template>
+          </div>
+        </div>
       </div>
     </ng-container>
   </div>

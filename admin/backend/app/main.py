@@ -492,6 +492,18 @@ def admin_report_today(
     return reports_svc.today_status(report_date or _date.today().isoformat())
 
 
+@app.get("/admin/reports/calendar")
+def admin_report_calendar(
+    start: str,
+    end: str,
+    authorization: Optional[str] = Header(default=None),
+) -> list[dict]:
+    """Per-day upload status (both / partial / none) for the [start, end] window.
+    Powers the admin upload-tracking calendar heatmap."""
+    _require_admin(authorization)
+    return reports_svc.upload_calendar(start, end)
+
+
 @app.get("/admin/reports/clients")
 def admin_report_clients(authorization: Optional[str] = Header(default=None)) -> list[dict]:
     _require_admin(authorization)

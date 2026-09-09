@@ -1052,6 +1052,93 @@ table.ledger td.out { color: var(--positive); }
 .nw-bucket-fund { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.3rem 0; font-size: 0.85rem; color: var(--ink);
   small { color: var(--positive); font-weight: 700; &.muted { color: var(--negative); } } }
 
+/* draft fund rows (builder) */
+.nw-df-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.nw-df-name { font-weight: 700; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; }
+.nw-df-top button { border: none; background: none; color: var(--negative); font-size: 1.2rem; cursor: pointer; line-height: 1; flex: none; }
+.nw-df-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; }
+@media (max-width: 440px) { .nw-df-grid { grid-template-columns: repeat(3, 1fr); } }
+.nw-df-grid label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.nw-df-inp {
+  width: 100%; box-sizing: border-box; padding: 0.4rem 0.45rem; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 0.82rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  &:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 16%, transparent); }
+}
+.nw-draft-fund { flex-direction: column; align-items: stretch; }
+/* live allocation total */
+.nw-alloc-bar {
+  display: flex; align-items: baseline; gap: 0.5rem; padding: 0.55rem 0.8rem; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  span { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  b { font-size: 1.1rem; font-weight: 850; font-variant-numeric: tabular-nums; color: var(--brass); }
+  .nw-alloc-hint { margin-left: auto; text-transform: none; letter-spacing: 0; color: var(--brass); font-weight: 700; }
+  &.ok { border-color: color-mix(in srgb, var(--positive) 45%, transparent); background: color-mix(in srgb, var(--positive) 10%, transparent);
+    b { color: var(--positive); } }
+}
+/* existing bucket fund table */
+.nw-bk-head-row, .nw-bk-fund { display: grid; grid-template-columns: 1.6fr 0.7fr 0.7fr 0.7fr 0.7fr; gap: 0.4rem; align-items: center; }
+.nw-bk-head-row { padding: 0.25rem 0; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--border); }
+.nw-bk-fund { padding: 0.4rem 0; font-size: 0.82rem; color: var(--ink);
+  .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); &.pos { color: var(--positive); } &.neg { color: var(--negative); } } }
+.nw-bk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: baseline; gap: 0.4rem; }
+.nw-bk-cat { font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--brass); background: color-mix(in srgb, var(--brass) 13%, transparent); padding: 0.06rem 0.4rem; border-radius: 999px; flex: none; }
+.nw-bk-overall { margin-top: 0.25rem; padding-top: 0.5rem; border-top: 1.5px solid var(--border);
+  .nw-bk-name { font-weight: 850; color: var(--ink); } .num { color: var(--ink); } }
+
+/* ═══════════ upload-tracking calendar heatmap ═══════════ */
+.nw-cal { padding: 1.2rem 1.3rem; max-width: 680px; }
+.nw-cal-top { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.1rem; }
+.nw-cal-title { flex: 1; text-align: center; display: flex; flex-direction: column; gap: 0.15rem;
+  b { font-size: 1.2rem; font-weight: 850; color: var(--ink); }
+  .nw-cal-stat { font-size: 0.72rem; font-weight: 700; color: var(--muted); } }
+.nw-cal-nav {
+  flex: none; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--ink); font-size: 0.9rem; cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.1s ease;
+  &:hover { border-color: var(--brass); background: var(--surface-2); }
+  &:active { transform: scale(0.94); }
+}
+.nw-cal-loading { padding: 2.5rem 1rem; text-align: center; color: var(--muted); }
+.nw-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.4rem; }
+.nw-cal-wd { text-align: center; font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); padding-bottom: 0.2rem; }
+.nw-cal-pad { aspect-ratio: 1; }
+.nw-cal-cell {
+  aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem;
+  border-radius: 12px; border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+  font: inherit; color: var(--ink); position: relative;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+  &:hover { transform: translateY(-2px); box-shadow: 0 8px 18px -10px rgba(0,0,0,0.3); }
+  .nw-cal-dn { font-size: 0.82rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .nw-cal-mark { font-size: 0.9rem; line-height: 1; font-weight: 800; }
+}
+.nw-cal-cell.both { background: color-mix(in srgb, var(--positive) 16%, var(--surface)); border-color: color-mix(in srgb, var(--positive) 45%, transparent);
+  .nw-cal-dn, .nw-cal-mark { color: var(--positive); } }
+.nw-cal-cell.partial { background: color-mix(in srgb, var(--brass) 16%, var(--surface)); border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+  .nw-cal-dn, .nw-cal-mark { color: var(--brass); } }
+.nw-cal-cell.missing { border: 1px dashed color-mix(in srgb, var(--negative) 55%, transparent); background: color-mix(in srgb, var(--negative) 5%, var(--surface));
+  .nw-cal-dn { color: var(--ink); } .nw-cal-mark { color: color-mix(in srgb, var(--negative) 80%, transparent); } }
+.nw-cal-cell.future { opacity: 0.4; cursor: default; background: var(--surface-2); border-style: dashed;
+  &:hover { transform: none; box-shadow: none; } }
+.nw-cal-cell.today { box-shadow: 0 0 0 2px var(--brass); }
+.nw-cal-cell.sel { box-shadow: 0 0 0 2px var(--ink); }
+.nw-cal-legend { display: flex; gap: 1.1rem; margin-top: 1rem; font-size: 0.76rem; font-weight: 700; color: var(--muted);
+  span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .sw { width: 14px; height: 14px; border-radius: 5px; display: inline-block; border: 1px solid var(--border); }
+  .sw.both { background: color-mix(in srgb, var(--positive) 40%, var(--surface)); border-color: var(--positive); }
+  .sw.partial { background: color-mix(in srgb, var(--brass) 40%, var(--surface)); border-color: var(--brass); }
+  .sw.missing { background: color-mix(in srgb, var(--negative) 12%, var(--surface)); border: 1px dashed var(--negative); } }
+.nw-cal-detail { margin-top: 1.1rem; padding: 1rem 1.1rem; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border);
+  animation: nw-fade 0.2s ease; }
+@keyframes nw-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.nw-cal-detail-head { margin-bottom: 0.7rem; b { font-size: 1rem; font-weight: 850; color: var(--ink); font-variant-numeric: tabular-nums; } }
+.nw-cal-detail-row { display: flex; align-items: baseline; gap: 0.6rem; padding: 0.35rem 0; font-size: 0.84rem;
+  border-top: 1px solid var(--border); &:first-of-type { border-top: none; } }
+.nw-cal-rt { flex: none; width: 130px; font-weight: 800; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.nw-cal-rv { color: var(--ink); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  small { color: var(--muted); font-weight: 500; } &.muted { color: var(--muted); font-style: italic; } }
+
 /* client net-worth detail drawer */
 .nw-drawer-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(22,48,43,0.4); backdrop-filter: blur(2px); }
 .nw-drawer {

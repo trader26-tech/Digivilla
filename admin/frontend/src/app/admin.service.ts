@@ -334,6 +334,9 @@ export class AdminService {
   deleteBucket(id: string): Observable<{ status: string }> {
     return this.http.delete<{ status: string }>(`${this.base}/admin/reports/buckets/${id}`, this.opts);
   }
+  reportCalendar(start: string, end: string): Observable<CalDay[]> {
+    return this.http.get<CalDay[]>(`${this.base}/admin/reports/calendar?start=${start}&end=${end}`, this.opts);
+  }
 }
 
 // ── report types ────────────────────────────────────────────────────────────
@@ -363,7 +366,13 @@ export interface ClientNetWorth {
   client: any; net_worth: number; invested: number; gain: number; gain_pct: number;
   villas: VillaMatch[]; villa_count: number; extra: Holding[]; holdings: Holding[];
 }
-export interface BucketFund { scheme_name: string; scheme_code?: number; target_weight?: number; }
+export interface BucketFund {
+  scheme_name: string; scheme_code?: number; target_weight?: number;
+  category?: string; ret_1y?: number | null; ret_3y?: number | null; ret_5y?: number | null;
+}
+export interface CalDay {
+  date: string; status: 'both' | 'partial' | 'none'; user: any | null; transaction: any | null;
+}
 export interface VillaBucket { id: string; name: string; tier?: string; funds: BucketFund[]; }
 export interface VillaLive {
   bucket_id: string; name: string; tier?: string; nav_sum: number;

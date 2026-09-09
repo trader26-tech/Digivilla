@@ -18,6 +18,7 @@ import {
   VillaBucket,
   VillaLive,
   BucketFund,
+  CalDay,
 } from './admin.service';
 
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
@@ -165,13 +166,21 @@ export class AppComponent implements OnInit {
   /** villa live pricing + bucket builder */
   nwVillas = signal<VillaLive[]>([]);
   nwBuckets = signal<VillaBucket[]>([]);
-  nwSub = signal<'clients' | 'villas' | 'buckets'>('clients');
+  nwSub = signal<'clients' | 'villas' | 'buckets' | 'calendar'>('clients');
   // bucket builder draft
   newBucketName = signal('');
   newBucketTier = signal('');
   newBucketFunds = signal<BucketFund[]>([]);
   newFundName = signal('');
   bucketSaving = signal(false);
+  /** live sum of draft-fund allocation weights. */
+  draftAllocTotal = computed(() =>
+    this.newBucketFunds().reduce((s, f) => s + (Number(f.target_weight) || 0), 0));
+  // upload-tracking calendar
+  nwCalMonth = signal<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  nwCalDays = signal<CalDay[]>([]);
+  nwCalLoading = signal(false);
+  nwCalSelected = signal<CalDay | null>(null);
 
   nwFiltered = computed<NetWorthRow[]>(() => {
     const q = this.nwSearch().trim().toLowerCase();
@@ -878,23 +887,52 @@ export class AppComponent implements OnInit {
   loadVillasLive(): void {
     this.api.villasLive().subscribe({ next: (v) => this.nwVillas.set(v), error: () => {} });
   }
-  setNwSub(sub: 'clients' | 'villas' | 'buckets'): void {
+  setNwSub(sub: 'clients' | 'villas' | 'buckets' | 'calendar'): void {
     this.nwSub.set(sub);
     if (sub === 'villas') this.loadVillasLive();
     if (sub === 'buckets' && !this.nwBuckets().length) {
       this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
     }
+    if (sub === 'calendar') this.loadCalendar();
   }
 
   // bucket builder
   addFundToBucket(): void {
     const name = this.newFundName().trim();
     if (!name) return;
-    this.newBucketFunds.update((f) => [...f, { scheme_name: name, target_weight: 0 }]);
+    this.newBucketFunds.update((f) => [...f, {
+      scheme_name: name, category: 'Equity', target_weight: 0,
+      ret_1y: null, ret_3y: null, ret_5y: null,
+    }]);
     this.newFundName.set('');
+  }
+  /** immutably patch one field of a draft fund by index. */
+  editDraftFund(i: number, field: keyof BucketFund, value: any): void {
+    this.newBucketFunds.update((funds) =>
+      funds.map((f, idx) => {
+        if (idx !== i) return f;
+        const num = value === '' || value === null ? null : Number(value);
+        if (field === 'scheme_name' || field === 'category') return { ...f, [field]: value };
+        return { ...f, [field]: num };
+      }));
   }
   removeFundFromBucket(i: number): void {
     this.newBucketFunds.update((f) => f.filter((_, idx) => idx !== i));
+  }
+  /** weighted-average return for a bucket's funds over available weights (null returns excluded). */
+  weightedReturn(funds: BucketFund[], key: 'ret_1y' | 'ret_3y' | 'ret_5y'): number | null {
+    let wsum = 0, acc = 0;
+    for (const f of funds) {
+      const r = f[key];
+      if (r === null || r === undefined || isNaN(Number(r))) continue;
+      const w = Number(f.target_weight) || 0;
+      wsum += w; acc += w * Number(r);
+    }
+    if (wsum <= 0) return null;
+    return acc / wsum;
+  }
+  bucketAllocTotal(funds: BucketFund[]): number {
+    return funds.reduce((s, f) => s + (Number(f.target_weight) || 0), 0);
   }
   saveBucket(): void {
     const name = this.newBucketName().trim();
@@ -919,6 +957,58 @@ export class AppComponent implements OnInit {
   villaLiveTotal(v: VillaLive): number {
     return v.funds.reduce((s, f) => s + (f.nav || 0), 0);
   }
+
+  // ── upload-tracking calendar ─────────────────────────────────────────────
+  private fmtDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  /** load the visible month's calendar from the backend. */
+  loadCalendar(): void {
+    const month = this.nwCalMonth();
+    const start = new Date(month.getFullYear(), month.getMonth(), 1);
+    const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    this.nwCalLoading.set(true);
+    this.nwCalSelected.set(null);
+    this.api.reportCalendar(this.fmtDate(start), this.fmtDate(end)).subscribe({
+      next: (d) => { this.nwCalDays.set(d); this.nwCalLoading.set(false); },
+      error: (e) => { this.nwCalLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+  }
+  calPrevMonth(): void {
+    const m = this.nwCalMonth();
+    this.nwCalMonth.set(new Date(m.getFullYear(), m.getMonth() - 1, 1));
+    this.loadCalendar();
+  }
+  calNextMonth(): void {
+    const m = this.nwCalMonth();
+    this.nwCalMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1));
+    this.loadCalendar();
+  }
+  /** "September 2026" label for the visible month. */
+  calMonthLabel = computed(() =>
+    this.nwCalMonth().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
+  /** number of empty leading cells so day 1 lands on its weekday (Sun..Sat grid). */
+  calLeadPad = computed(() => {
+    const m = this.nwCalMonth();
+    return new Array(new Date(m.getFullYear(), m.getMonth(), 1).getDay()).fill(0);
+  });
+  /** day-of-month number for a CalDay (avoids timezone drift by parsing the string). */
+  calDayNum(d: CalDay): number { return Number(d.date.slice(8, 10)); }
+  /** true when the date is strictly after today (future — render faint, no alarm). */
+  calIsFuture(d: CalDay): boolean { return d.date > this.fmtDate(new Date()); }
+  calIsToday(d: CalDay): boolean { return d.date === this.fmtDate(new Date()); }
+  selectCalDay(d: CalDay): void {
+    this.nwCalSelected.set(this.nwCalSelected()?.date === d.date ? null : d);
+  }
+  /** days with both reports, out of past+today days in the visible month. */
+  calComplete = computed(() => {
+    const today = this.fmtDate(new Date());
+    const elapsed = this.nwCalDays().filter((d) => d.date <= today);
+    return { done: elapsed.filter((d) => d.status === 'both').length, total: elapsed.length };
+  });
 
   seeding = signal(false);
   /** One-time: load the sample clients into Supabase, then refresh the list. */

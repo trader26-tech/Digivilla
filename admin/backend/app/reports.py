@@ -474,6 +474,44 @@ def today_status(report_date: str) -> dict:
     }
 
 
+def upload_calendar(start: str, end: str) -> list[dict]:
+    """Per-day upload status for the [start, end] window (inclusive, ISO dates).
+
+    Powers the admin calendar heatmap: for every day we say whether the User
+    Report and Transaction Report were uploaded. status is:
+      • "both"    — both reports present
+      • "partial" — exactly one present
+      • "none"    — neither present
+    Only days that fall in the window are returned; the frontend lays them onto
+    a month grid.
+    """
+    from datetime import date, timedelta
+    d0 = date.fromisoformat(start)
+    d1 = date.fromisoformat(end)
+    if d1 < d0:
+        d0, d1 = d1, d0
+    # index uploads by day → {type: upload}
+    by_day: dict[str, dict] = {}
+    for u in list_uploads():
+        by_day.setdefault(u.get("report_date"), {})[u.get("report_type")] = u
+    out = []
+    cur = d0
+    while cur <= d1:
+        key = cur.isoformat()
+        got = by_day.get(key, {})
+        has_user = "user" in got
+        has_txn = "transaction" in got
+        n = int(has_user) + int(has_txn)
+        out.append({
+            "date": key,
+            "user": got.get("user"),
+            "transaction": got.get("transaction"),
+            "status": "both" if n == 2 else ("partial" if n == 1 else "none"),
+        })
+        cur += timedelta(days=1)
+    return out
+
+
 def _all_clients() -> list[dict]:
     if _use_supabase():
         try:
@@ -573,44 +611,62 @@ def list_buckets() -> list[dict]:
         try:
             bs = _sb().table("villa_buckets").select("*").order("sort_order").execute().data or []
             for b in bs:
-                b["funds"] = _sb().table("villa_bucket_funds").select("*").eq("bucket_id", b["id"]).execute().data or []
+                b["funds"] = _sb().table("villa_bucket_funds").select("*").eq(
+                    "bucket_id", b["id"]).order("sort_order").execute().data or []
             return bs
         except Exception:
             pass
     store = _load_local()
     bs = list(store.get("buckets", []))
     for b in bs:
-        b["funds"] = [f for f in store.get("bucket_funds", []) if f["bucket_id"] == b["id"]]
+        b["funds"] = sorted(
+            [f for f in store.get("bucket_funds", []) if f["bucket_id"] == b["id"]],
+            key=lambda f: f.get("sort_order", 0))
     return sorted(bs, key=lambda b: b.get("sort_order", 0))
 
 
+def _fund_row(bid: str, f: dict, order: int) -> dict:
+    """Normalize one fund of a bucket into a villa_bucket_funds row. Carries the
+    allocation % (target_weight), category, and past returns so a bucket renders
+    the client SIP modal (Scheme · Category · Allocation · 1/3/5-Yr returns)."""
+    def num(v):
+        try:
+            return round(float(v), 4) if v not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
+    return {
+        "id": str(uuid.uuid4()), "bucket_id": bid,
+        "scheme_name": f.get("scheme_name"), "scheme_code": f.get("scheme_code"),
+        "category": (f.get("category") or None),
+        "target_weight": num(f.get("target_weight")) or 0,
+        "ret_1y": num(f.get("ret_1y")), "ret_3y": num(f.get("ret_3y")),
+        "ret_5y": num(f.get("ret_5y")), "sort_order": order,
+    }
+
+
 def create_bucket(name: str, tier: str | None, funds: list[dict]) -> dict:
-    """funds: [{scheme_name, scheme_code?, target_weight?}]. Resolves codes."""
+    """funds: [{scheme_name, scheme_code?, category?, target_weight?,
+    ret_1y?, ret_3y?, ret_5y?}]. Resolves codes; keeps the ratio (target_weight).
+    """
     bid = str(uuid.uuid4())
     for f in funds:
         if not f.get("scheme_code") and f.get("scheme_name"):
             f["scheme_code"] = resolve_scheme_code(f["scheme_name"])
+    rows = [_fund_row(bid, f, i) for i, f in enumerate(funds)]
     if _use_supabase():
         try:
             _sb().table("villa_buckets").insert({
                 "id": bid, "name": name, "tier": tier, "sort_order": 0}).execute()
-            for f in funds:
-                _sb().table("villa_bucket_funds").insert({
-                    "id": str(uuid.uuid4()), "bucket_id": bid,
-                    "scheme_name": f.get("scheme_name"), "scheme_code": f.get("scheme_code"),
-                    "target_weight": f.get("target_weight", 0)}).execute()
-            return {"id": bid, "name": name, "tier": tier, "funds": funds}
+            for r in rows:
+                _sb().table("villa_bucket_funds").insert(r).execute()
+            return {"id": bid, "name": name, "tier": tier, "funds": rows}
         except Exception:
             pass
     store = _load_local()
     store.setdefault("buckets", []).append({"id": bid, "name": name, "tier": tier, "sort_order": 0})
-    for f in funds:
-        store.setdefault("bucket_funds", []).append({
-            "id": str(uuid.uuid4()), "bucket_id": bid,
-            "scheme_name": f.get("scheme_name"), "scheme_code": f.get("scheme_code"),
-            "target_weight": f.get("target_weight", 0)})
+    store.setdefault("bucket_funds", []).extend(rows)
     _save_local(store)
-    return {"id": bid, "name": name, "tier": tier, "funds": funds}
+    return {"id": bid, "name": name, "tier": tier, "funds": rows}
 
 
 def delete_bucket(bid: str) -> None:
