@@ -22,6 +22,17 @@
     </button>
   </section>
 
+  <!-- ===== REFRESH APP: force the PWA to the latest deployed version ===== -->
+  <button class="ca-refresh" (click)="refreshApp()" [class.spinning]="refreshing()" [disabled]="refreshing()">
+    <span class="ca-refresh-ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 11a8 8 0 1 0-.6 3M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="ca-refresh-body">
+      <b>{{ refreshing() ? 'Updating…' : 'Update to latest' }}</b>
+      <span>Refresh the app to the newest version.</span>
+    </span>
+  </button>
+
   <!-- ===== PRESENT: open the pitch deck full-screen, for the advisor to walk
        a client through from their phone ===== -->
   <button class="ca-present" (click)="openPresentation()">

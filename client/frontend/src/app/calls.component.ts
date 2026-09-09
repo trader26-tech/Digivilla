@@ -4,6 +4,7 @@ import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, 
 import { AuthService } from './auth/auth.service';
 import { BookingService, Booking } from './booking.service';
 import { EstateService } from './estate.service';
+import { AppUpdateService } from './shared/app-update.service';
 import { PresentationComponent } from './presentation.component';
 
 /** A call, shaped for the list: parsed date/time + friendly labels. */
@@ -54,7 +55,18 @@ interface FreeDay {
 export class CallsComponent implements OnInit {
   private auth = inject(AuthService);
   private bookings = inject(BookingService);
+  private appUpdate = inject(AppUpdateService);
   readonly est = inject(EstateService);
+
+  /** True while the force-update is running (shows the spinner). */
+  refreshing = signal(false);
+  /** Refresh the whole app to the latest deployed version. */
+  refreshApp(): void {
+    if (this.refreshing()) return;
+    this.refreshing.set(true);
+    if (navigator.vibrate) navigator.vibrate(6);
+    this.appUpdate.forceUpdate();   // clears SW + caches, then hard-reloads
+  }
 
   @Output() signOut = new EventEmitter<void>();
   /** The shell asks the page to open the scheduler on a reason (e.g. from a

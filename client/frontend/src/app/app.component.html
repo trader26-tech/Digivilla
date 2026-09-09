@@ -38,14 +38,14 @@
   (signOut)="onSignOut()"
 ></app-calls>
 
-<!-- BOTTOM NAV: a floating pill with three tabs — Home, Explore, Calls. -->
+<!-- BOTTOM NAV: a floating pill with three tabs — Settings, Home, Explore. -->
 <nav class="tabbar" *ngIf="onTab">
   <div class="tabbar-pill">
-    <!-- Calls (left) · Home (center) · Explore (right) -->
-    <button class="tab" [class.active]="view === 'calls'" (click)="goCalls()" aria-label="Calls">
+    <!-- Settings (left) · Home (center) · Explore (right) -->
+    <button class="tab" [class.active]="view === 'calls'" (click)="goCalls()" aria-label="Settings">
       <span class="tab-in">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 3h3l2 5-2 1.5a11 11 0 0 0 5 5L18 12l3 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 2-3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
-        <span class="tab-lbl">Calls</span>
+        <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.5v3M12 18.5v3M4.4 7l2.6 1.5M17 15.5l2.6 1.5M4.4 17l2.6-1.5M17 8.5l2.6-1.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        <span class="tab-lbl">Settings</span>
       </span>
     </button>
     <button class="tab" [class.active]="view === 'home'" (click)="goHome()" aria-label="Home">
