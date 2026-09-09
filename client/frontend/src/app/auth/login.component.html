@@ -1,10 +1,13 @@
 <main class="login">
-  <!-- STEP 1 · phone entry (the first screen a new user sees) -->
+  <!-- soft ambient glows behind everything -->
+  <div class="lg-aura" aria-hidden="true"></div>
+
+  <!-- STEP 1 · phone entry -->
   <form *ngIf="step() === 'phone'" class="lg-flow" (ngSubmit)="sendCode()" novalidate>
     <!-- brand -->
     <div class="lg-brand">
       <span class="lg-logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="18" height="18">
+        <svg viewBox="0 0 24 24" width="20" height="20">
           <path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M5 10v9h14v-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M10 19v-5h4v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -13,12 +16,15 @@
       <span class="lg-brandname">Digivilla</span>
     </div>
 
-    <!-- title + phone entry, near the top -->
-    <header class="lg-top">
-      <h1 class="lg-title">Enter your phone<br>to begin</h1>
-    </header>
+    <!-- centred hero: villa art + headline + input -->
+    <div class="lg-center">
+      <div class="lg-art" aria-hidden="true"><app-villa-art></app-villa-art></div>
 
-    <div class="lg-mid lg-mid-tight">
+      <header class="lg-top">
+        <h1 class="lg-title">Own property,<br>without the property.</h1>
+        <p class="lg-sub">Enter your phone to sign in or create your estate.</p>
+      </header>
+
       <label class="lg-field">
         <div class="lg-phone">
           <span class="lg-cc">🇮🇳 +91</span>
@@ -26,45 +32,57 @@
                  placeholder="98765 43210"
                  [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" />
         </div>
+        <p class="lg-err" *ngIf="error()">{{ error() }}</p>
       </label>
-      <p class="lg-err" *ngIf="error()">{{ error() }}</p>
     </div>
 
-    <!-- Continue, pinned to the bottom -->
+    <!-- action + trust line, pinned low -->
     <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!phoneValid || busy()">
         <span *ngIf="!busy()">Continue</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
+      <p class="lg-trust">
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Bank-grade security · OTP verified
+      </p>
     </footer>
   </form>
 
   <!-- STEP 2 · OTP -->
   <form *ngIf="step() === 'otp'" class="lg-flow" (ngSubmit)="verify()" novalidate>
-    <!-- top: title -->
-    <header class="lg-top">
-      <button class="lg-edit" type="button" (click)="editPhone()">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        +91 {{ phone() }}
-      </button>
-      <h1 class="lg-title">Enter the code</h1>
-      <p class="lg-sub">Sent to your phone by SMS.</p>
-    </header>
+    <div class="lg-brand">
+      <span class="lg-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <path d="M3 11.2 12 4l9 7.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 10v9h14v-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="lg-brandname">Digivilla</span>
+    </div>
 
-    <!-- middle: the code -->
-    <div class="lg-mid">
+    <div class="lg-center">
+      <span class="lg-otp-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="30" height="30"><rect x="3" y="5" width="18" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 8l8 5 8-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <header class="lg-top">
+        <h1 class="lg-title">Enter the code</h1>
+        <p class="lg-sub">Sent by SMS to <b>+91 {{ phone() }}</b>
+          <button class="lg-edit" type="button" (click)="editPhone()">Change</button>
+        </p>
+      </header>
+
       <input class="lg-otp" type="tel" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
              placeholder="––––––" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
       <p class="lg-err" *ngIf="error()">{{ error() }}</p>
     </div>
 
-    <!-- bottom: the action -->
     <footer class="lg-bottom">
       <button class="lg-btn" type="submit" [disabled]="!codeValid || busy()">
-        <span *ngIf="!busy()">Verify</span>
+        <span *ngIf="!busy()">Verify &amp; continue</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
-      <button class="lg-resend" type="button" (click)="resend()">Didn’t get it? <b>Resend</b></button>
+      <button class="lg-resend" type="button" (click)="resend()">Didn’t get it? <b>Resend code</b></button>
     </footer>
   </form>
 

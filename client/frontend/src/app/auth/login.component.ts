@@ -3,6 +3,7 @@ import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from './auth.service';
+import { VillaArtComponent } from '../shared/villa-art.component';
 
 /**
  * Phone-OTP login screen. Step 1 collects a name + phone and sends the code;
@@ -12,7 +13,7 @@ import { AuthService } from './auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, VillaArtComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
