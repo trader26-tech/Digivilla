@@ -21,7 +21,7 @@ import { CallScheduleComponent } from './shared/call-schedule.component';
 import { CallsService } from './shared/calls.service';
 import { VillaArtComponent } from './shared/villa-art.component';
 import { LandArtComponent } from './shared/land-art.component';
-import { EstateService, Tile, TileType, Variant } from './estate.service';
+import { EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { BASE_GRID } from './estate/iso.model';
 import {
   Cell,
@@ -124,9 +124,11 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /** The "what your estate means" key — closed by default, opens on the ? tap. */
   keyOpen = signal(false);
   toggleKey(): void { this.keyOpen.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
-  /** PORTFOLIO WORTH is masked (••••) by default; the eye reveals it. */
-  worthHidden = signal(true);
-  toggleWorth(): void { this.worthHidden.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
+
+  /** The user's fund-by-fund breakdown (from GET /me/funds) — drives the
+   *  PORTFOLIO VALUE allocation bar at the bottom of the home screen. Null until
+   *  it loads (or when signed out / offline), so the bar is gated on it. */
+  funds = signal<FundsBreakdown | null>(null);
 
   // ── settings sheet: edit the estate name + city (server-backed) ──
   /** Whether the estate-settings sheet is open. */
@@ -319,6 +321,11 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     // Load any upcoming setup call so an empty estate can show it.
     this.loadUpcomingCall();
+    // Load the fund-by-fund breakdown for the PORTFOLIO VALUE allocation bar.
+    this.est.myFunds().subscribe({
+      next: (f) => this.funds.set(f),
+      error: () => { /* signed out / offline — the bar stays hidden */ },
+    });
   }
 
   // ── setup call (shown when the estate is empty) ─────────────────────────────
@@ -684,6 +691,41 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   get buildings(): number { return this.est.countOf('building'); }
   get lands(): number { return this.est.countOf('land'); }
   get open(): number { return this.est.openPlots; }
+
+  // ── INVESTED flow subline: "{villaCount} villa{s} · {buildCount} building" ──
+  /** The invested-column context line, derived from the map tiles. Reads
+   *  gracefully when a count is 0 (drops that clause), and falls back to a
+   *  neutral line when nothing is built yet. */
+  get investedSub(): string {
+    const v = this.villas;
+    const b = this.buildings;
+    const parts: string[] = [];
+    if (v > 0) parts.push(`${v} villa${v === 1 ? '' : 's'}`);
+    if (b > 0) parts.push(`${b} building${b === 1 ? '' : 's'}`);
+    return parts.length ? parts.join(' · ') : 'your estate';
+  }
+
+  // ── PORTFOLIO VALUE allocation bar (bottom) ──
+  /** Segment colours, by allocation order, for the 5-fund allocation bar. */
+  private readonly FUND_COLORS = ['#8aa89b', '#f6c445', '#4a9d47', '#5cb85c', '#8fd48a'];
+  /** Short fund labels, by allocation order, matching the reference. */
+  private readonly FUND_LABELS = ['ARBITRAGE', 'GOLD', 'LARGE CAP', 'MID CAP', 'SMALL CAP'];
+
+  /** The user's funds, in the breakdown's own order (robust to fewer/more). */
+  get fundRows(): FundsBreakdown['funds'] {
+    return this.funds()?.funds ?? [];
+  }
+  /** Colour for the fund at position `i` (wraps if there are more than 5). */
+  fundColor(i: number): string {
+    return this.FUND_COLORS[i % this.FUND_COLORS.length];
+  }
+  /** Short display label for the fund at position `i` — the reference short
+   *  names by position, falling back to the fund's own category past the 5th. */
+  fundLabel(i: number, f: FundsBreakdown['funds'][number]): string {
+    return this.FUND_LABELS[i] ?? (f.category || f.name).toUpperCase();
+  }
+  /** Signed returns % for the meta row (server gain_pct, tile fallback). */
+  get gainPct(): number { return this.est.gainPct; }
 
   /** A warm, time-aware greeting for the top of the home screen. */
   get greeting(): string {

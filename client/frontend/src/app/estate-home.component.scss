@@ -1470,41 +1470,84 @@
    DARK HOME — reference-matched top + bottom furniture
    ============================================================ */
 
-/* PORTFOLIO WORTH (top-left) — tighter so it never collides with the chips */
-.pw { position: absolute; top: calc(1.1rem + env(safe-area-inset-top)); left: 1.25rem; z-index: 3; max-width: 45%; }
-.pw-k { display: block; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
-.pw-row { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.55rem; border: none; background: none; padding: 0; cursor: pointer; color: var(--ink); }
-.pw-v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--ink); }
-.pw-dots { display: inline-flex; gap: 7px; }
-.pw-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); opacity: 0.9; }
-.pw-eye { color: var(--muted); flex: none; }
-
-/* GAIN / INVESTED coin chips (top-right) — narrower + a hair lower so they
-   never crowd the PORTFOLIO WORTH label on the left */
-.coins { position: absolute; top: calc(1rem + env(safe-area-inset-top)); right: 0.9rem; left: auto; z-index: 3; display: flex; flex-direction: column; gap: 0.45rem; align-items: stretch; width: min(48%, 200px); }
-.coin-chip {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.4rem;
-  padding: 0.3rem 0.75rem 0.3rem 0.3rem; border-radius: 999px;
-  background: var(--card); border: 1px solid var(--survey);
-  box-shadow: 0 10px 24px -18px #000; white-space: nowrap;
+/* ===== TOP HERO — two flow columns split by a thin vertical divider.
+   WITHDRAWALS (placeholder, dimmed gold) · INVESTED (real, violet). A centred,
+   in-flow row above the hero, capped to the estate's column width. ===== */
+.flows {
+  position: relative; z-index: 3;
+  flex: none; align-self: center;
+  width: 100%; max-width: 360px; margin: 0 auto 0.4rem; padding: 0 1.25rem;
+  display: flex; align-items: stretch;
 }
-.coin { width: 22px; height: 22px; border-radius: 50%; flex: none; box-shadow: inset 0 -2px 4px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.4); }
-.coin-gold { background: radial-gradient(circle at 35% 30%, #F6DE97, #E9C15C 60%, #C79A34); }
-.coin-purple { background: radial-gradient(circle at 35% 30%, #C6BCF9, #8B7BF0 60%, #6F5CE6); }
-.coin-k { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
-.coin-v { font-size: 0.9rem; font-weight: 850; letter-spacing: -0.3px; text-align: right; padding-left: 0.4rem; }
-.coin-v.gold { color: var(--gold); }
-.coin-v.purple { color: var(--brass); }
-/* the GAIN chip (top-right) reads in GOLD to match the coin, not green */
-.coin-v.gain-pos, .coin-v.gain-neg { color: var(--gold); }
+.flow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; cursor: default; }
+/* WITHDRAWALS is a placeholder (SWP not wired) — dim it so INVESTED leads. */
+.flow.in { opacity: 0.7; }
+.flow.out { align-items: flex-end; text-align: right; }
+.flow-head { display: flex; align-items: center; gap: 6px; }
+.flow-lbl { font-size: 9px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
+.flow-arrow {
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1;
+}
+.flow.in .flow-arrow {
+  color: #6b5111;
+  background: radial-gradient(circle at 34% 28%, #ffe9a3, #f6c445 38%, #dc9a1f 72%, #a86b12);
+  box-shadow: 0 0 8px rgba(246, 196, 69, 0.35);
+}
+.flow.out .flow-arrow {
+  color: #2b2741;
+  background: radial-gradient(circle at 34% 26%, #e7e5fe, #b5abfc 36%, #796cbf 72%, #423a6a);
+  box-shadow: 0 0 8px rgba(181, 171, 252, 0.35);
+}
+.flow-fig {
+  font-family: var(--font-display); font-size: 24px; letter-spacing: -0.015em;
+  line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.flow-fig span { font-size: 11px; letter-spacing: 0; color: var(--muted); margin-left: 2px; }
+.flow-fig.gold { color: #f3dfa8; }
+.flow-fig.violet { color: var(--brass); }
+.flow-sub { font-size: 10px; color: var(--muted); white-space: nowrap; }
+.flow-div {
+  width: 1px; margin: 4px 8px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ink) 14%, transparent), transparent);
+}
 
-/* rent collected + collect prompt */
-.rc-line { text-align: center; margin: 1.6rem 0 0; font-size: 0.98rem; color: var(--muted); display: flex; align-items: baseline; justify-content: center; gap: 0.4rem; }
-.rc-v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--positive); margin-left: 0; }
-/* total SWP received — shown in BLUE (distinct from green gains) */
-.rc-v.swp { color: #57b6d6; }
-.rc-collect { display: block; margin: 0.5rem auto 0; border: none; background: none; cursor: pointer; font: inherit; font-size: 0.92rem; color: var(--positive); b { font-weight: 800; } }
-.rc-none { text-align: center; margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--muted); }
+/* ===== BOTTOM — PORTFOLIO VALUE: headline figure, returns, allocation bar ===== */
+.port {
+  position: relative; z-index: 3;
+  flex: none;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin: 1.3rem 0 0; padding: 0 16px;
+}
+.port-k { font-size: 10px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
+.port-v {
+  font-family: var(--font-display); font-size: 34px; line-height: 1.05;
+  letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.port-m {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+.port-m i { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
+.port-m b { font-weight: 400; }
+.port-m b.pos { color: #8fd65a; }
+.port-m b.neg { color: var(--negative); }
+.port-bar {
+  width: 100%; max-width: 360px; display: flex; gap: 2px;
+  height: 5px; border-radius: 3px; overflow: hidden; margin-top: 12px;
+}
+.port-bar span { height: 100%; flex-grow: 0; flex-shrink: 1; min-width: 0; }
+.port-funds {
+  width: 100%; max-width: 360px;
+  display: flex; justify-content: space-between; gap: 4px; margin-top: 10px;
+}
+.port-funds div {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.port-funds .a { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink); }
+.port-funds .n { font-size: 9px; letter-spacing: 0.06em; white-space: nowrap; }
 
 /* ===== "what does this mean?" — a tiny ? chip; the panel is hidden until
    tapped, so it never competes with the city. ===== */
