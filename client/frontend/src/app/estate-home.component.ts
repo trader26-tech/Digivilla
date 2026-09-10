@@ -259,7 +259,13 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /** True when the user owns nothing yet — the whole estate is open plots, so
    *  we don't paint the founding villa in the centre (an empty ₹0 estate should
    *  look genuinely empty and invite the first purchase). */
-  isEmptyEstate = computed<boolean>(() => {
+  // NOTE: deliberately a plain getter, NOT a computed(). A memoized computed
+  // was getting stuck "true" under the production build (its dependency on the
+  // portfolio signal wasn't re-triggering a re-render), so a user with real
+  // holdings but no estate tiles kept seeing the "Book your setup call"
+  // onboarding. A getter is re-evaluated every change-detection cycle — exactly
+  // like the estateName binding right next to it — so it can never lag the data.
+  get isEmptyEstate(): boolean {
     // Truly empty ONLY for a user with no holdings at all. A registered user who
     // has invested (server says has_holdings, or invested/worth > 0) is NEVER
     // shown the "book your setup call" onboarding — even before /me/estate tiles
@@ -267,8 +273,11 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.est.tiles().length > 0) return false;
     const p = this.est.portfolio();
     if (p && (p.has_holdings || p.invested > 0 || p.worth > 0)) return false;
+    // Don't guess before we know: until the first /me/portfolio response lands,
+    // assume NOT empty so a holder never gets a flash of the setup-call CTA.
+    if (!this.est.portfolioLoaded()) return false;
     return true;
-  });
+  }
 
   get boardW(): number { return boardSize(this.grid).w; }
   get boardH(): number { return boardSize(this.grid).h; }

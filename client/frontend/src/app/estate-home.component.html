@@ -6,7 +6,7 @@
     <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder, dimmed) · INVESTED
          (real, from live NAV), split by a thin vertical divider. Hidden on the
          empty estate, which keeps its onboarding instead. ===== -->
-    <div class="flows" *ngIf="!isEmptyEstate()">
+    <div class="flows" *ngIf="!isEmptyEstate">
       <div class="flow in">
         <div class="flow-head">
           <span class="flow-arrow" aria-hidden="true">↓</span>
@@ -156,7 +156,7 @@
             <!-- ===== THE HALL: the founding villa, dead centre — but ONLY once
                  the user owns something. An empty ₹0 estate shows an open plot
                  here instead, so nothing is implied to be owned. ===== -->
-            <g *ngIf="c.hall && !isEmptyEstate()" class="cell hall owned" (click)="tapCell(c)" role="button" tabindex="0"
+            <g *ngIf="c.hall && !isEmptyEstate" class="cell hall owned" (click)="tapCell(c)" role="button" tabindex="0"
                [attr.aria-label]="c.tile?.label">
               <use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
             </g>
@@ -164,7 +164,7 @@
             <!-- ===== EMPTY-ESTATE CENTRE: a faint "dummy" villa — the home the
                  setup call will turn real. The empty centre is the cell with
                  index -1 (no tile). Tapping it opens the setup-call sheet. ===== -->
-            <g *ngIf="!c.hall && !c.tile && c.index === -1 && isEmptyEstate()" class="cell dummy"
+            <g *ngIf="!c.hall && !c.tile && c.index === -1 && isEmptyEstate" class="cell dummy"
                (click)="openCallSheet()" role="button" tabindex="0" aria-label="Book your setup call">
               <use [attr.href]="'#tLand'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
               <g class="dummy-villa"><use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use></g>
@@ -228,7 +228,7 @@
     </div>
 
     <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
-    <ng-container *ngIf="isEmptyEstate()">
+    <ng-container *ngIf="isEmptyEstate">
       <!-- already booked → show the upcoming call -->
       <button class="call-card" *ngIf="upcomingCall() && callWhen as w" (click)="openCallSheet()">
         <span class="call-ico" [class.confirmed]="callConfirmed" aria-hidden="true">
@@ -254,7 +254,7 @@
 
     <!-- ===== PORTFOLIO VALUE: the headline figure, returns, and a 5-fund
          allocation bar. Hidden on the empty estate. ===== -->
-    <div class="port" *ngIf="!isEmptyEstate()">
+    <div class="port" *ngIf="!isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
       <div class="port-v">{{ compact(est.estateValue) }}</div>
       <div class="port-m">
@@ -265,7 +265,7 @@
     </div>
 
     <!-- ===== "What does this mean?" — collapsed to a tiny ? by default ===== -->
-    <div class="keywrap" *ngIf="!isEmptyEstate()">
+    <div class="keywrap" *ngIf="!isEmptyEstate">
       <button class="key-toggle" (click)="toggleKey()" [attr.aria-expanded]="keyOpen()" aria-label="What do Villa and Plot mean?">
         <span class="key-q">?</span> What do Villa and Plot mean
       </button>

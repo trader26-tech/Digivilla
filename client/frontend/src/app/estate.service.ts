@@ -183,6 +183,10 @@ export class EstateService {
   /** Authoritative real net worth from the server (client_holdings × live NAV).
    *  Null until loaded; the tile-derived getters are the offline fallback. */
   readonly portfolio = signal<PortfolioSummary | null>(null);
+  /** True once the first /me/portfolio response has come back (ok or error).
+   *  Lets the home hold off the "empty estate" decision until we actually know,
+   *  so a user with holdings never sees a flash of "Book your setup call". */
+  readonly portfolioLoaded = signal(false);
   /** Whose town this is, and where. Used for the home greeting. */
   readonly profile = signal<Profile>(this.loadProfile());
 
@@ -256,8 +260,8 @@ export class EstateService {
     if (!this.auth.token()) return;
     this.http.get<PortfolioSummary>(`${environment.apiUrl}/me/portfolio`, { headers: this.authHeaders })
       .subscribe({
-        next: (p) => this.portfolio.set(p),
-        error: () => { /* keep the tile-derived fallback */ },
+        next: (p) => { this.portfolio.set(p); this.portfolioLoaded.set(true); },
+        error: () => { this.portfolioLoaded.set(true); /* keep the tile-derived fallback */ },
       });
   }
 
