@@ -1,0 +1,287 @@
+<div class="el-overlay">
+  <!-- HUD -->
+  <header class="el-hud">
+    <div class="el-hud-left">
+      <button type="button" class="el-back" aria-label="Back" (click)="onBack()">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <path d="M7 2 L3 6 L7 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <div>
+        <div class="el-kicker">Your estate</div>
+        <div class="el-title">Level {{ current() }}</div>
+      </div>
+    </div>
+    <div class="el-sip">
+      <span class="el-sip-dot"></span>
+      <span class="el-sip-kicker">SIP</span>
+      <span class="el-sip-amount">{{ sipLabel() }}/mo</span>
+    </div>
+  </header>
+
+  <!-- vertical ladder: villa on top, plot at the bottom; starts scrolled to bottom -->
+  <div class="el-scroller" #scroller>
+    <div class="el-track">
+      <!-- progress rail -->
+      <div class="el-rail">
+        <div class="el-rail-bg" [style.top]="railTop"></div>
+        <div class="el-rail-fill" [style.top]="fillTop()"></div>
+        <ng-container *ngFor="let m of railMarks(); trackBy: trackMark">
+          <ng-container *ngIf="m.isNode">
+            <div class="el-rail-node" [style.top]="m.top" [style.background]="m.bg"></div>
+            <div class="el-rail-label" [style.top]="m.top" [style.color]="m.color">{{ m.label }}</div>
+          </ng-container>
+          <div *ngIf="m.isTick" class="el-rail-tick" [style.top]="m.top"></div>
+        </ng-container>
+        <!-- glowing worth pill at the fill top -->
+        <div class="el-rail-head" [style.top]="fillTop()"></div>
+        <div class="el-worth-pill" [style.top]="fillTop()">
+          <span class="el-worth-arrow"></span>
+          <span class="el-worth-coin"></span>
+          <span class="el-worth-amount">{{ worthLabel() }}</span>
+        </div>
+      </div>
+
+      <div class="el-top-spacer"></div>
+
+      <section
+        class="el-level"
+        *ngFor="let lv of levels(); trackBy: trackLevel"
+        [attr.data-screen-label]="lv.name"
+        [class.is-locked]="lv.isLocked"
+      >
+        <!-- aspirational teaser above the villa -->
+        <div class="el-above" *ngIf="lv.isTop">
+          <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 7 L5 3 L9 7" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
+          <span>Keep going → ₹25L = top 5% · ₹1Cr = top 1%</span>
+        </div>
+        <!-- next-level nudge (non-villa) -->
+        <div class="el-above" *ngIf="lv.hasAbove">
+          <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 7 L5 3 L9 7" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
+          <span>Level {{ lv.above }} · {{ lv.aboveName }}</span>
+        </div>
+
+        <!-- tile: isometric build-stage art -->
+        <div class="el-tile">
+          <div class="el-tile-glow"></div>
+          <div class="el-tile-art" [class.locked]="lv.isLocked">
+            <!-- (1) The Plot — bare grassy diamond with a fence -->
+            <svg *ngIf="lv.isPlot" class="iso" viewBox="0 0 440 376" preserveAspectRatio="xMidYMid meet" aria-label="Empty plot">
+              <ellipse cx="220" cy="300" rx="150" ry="28" fill="rgba(0,0,0,.35)"></ellipse>
+              <polygon points="220,150 380,242 220,334 60,242" fill="#8a5a33"></polygon>
+              <polygon points="220,334 60,242 60,266 220,358" fill="#6d4527"></polygon>
+              <polygon points="380,242 220,334 220,358 380,266" fill="#5c3a1c"></polygon>
+              <polygon points="220,138 380,230 220,322 60,230" fill="#6cba36"></polygon>
+              <polygon points="220,138 380,230 220,322 60,230" fill="none" stroke="#3f7a20" stroke-width="6"></polygon>
+              <!-- scattered tufts -->
+              <polygon points="180,210 190,204 185,218" fill="#59a52e"></polygon>
+              <polygon points="250,232 260,226 255,240" fill="#59a52e"></polygon>
+              <polygon points="210,250 220,244 215,258" fill="#3f7a20"></polygon>
+              <!-- fence posts along the near edges -->
+              <g fill="#9a6636">
+                <rect x="216" y="120" width="6" height="26"></rect>
+                <rect x="300" y="168" width="6" height="26"></rect>
+                <rect x="132" y="168" width="6" height="26"></rect>
+                <rect x="356" y="214" width="6" height="26"></rect>
+                <rect x="76" y="214" width="6" height="26"></rect>
+              </g>
+              <polyline points="219,128 359,224" fill="none" stroke="#7d5027" stroke-width="3"></polyline>
+              <polyline points="219,128 79,224" fill="none" stroke="#6b4522" stroke-width="3"></polyline>
+            </svg>
+
+            <!-- (2) Levelled Ground — graded flat dirt -->
+            <svg *ngIf="lv.isGrading" class="iso" viewBox="0 0 440 376" preserveAspectRatio="xMidYMid meet" aria-label="Graded ground">
+              <ellipse cx="220" cy="300" rx="150" ry="28" fill="rgba(0,0,0,.35)"></ellipse>
+              <polygon points="220,150 380,242 220,334 60,242" fill="#8a5a33"></polygon>
+              <polygon points="220,334 60,242 60,266 220,358" fill="#6d4527"></polygon>
+              <polygon points="380,242 220,334 220,358 380,266" fill="#5c3a1c"></polygon>
+              <polygon points="220,138 380,230 220,322 60,230" fill="#a97f5c"></polygon>
+              <polygon points="220,138 380,230 220,322 60,230" fill="none" stroke="#8a5a33" stroke-width="6"></polygon>
+              <!-- grading grid lines -->
+              <g stroke="#8a5a33" stroke-width="2" opacity=".6">
+                <polyline points="140,184 300,276" fill="none"></polyline>
+                <polyline points="220,138 220,322" fill="none"></polyline>
+                <polyline points="300,184 140,276" fill="none"></polyline>
+              </g>
+              <!-- a lone patch of grass at a corner -->
+              <polygon points="60,230 96,251 60,272 24,251" fill="#6cba36" opacity=".0"></polygon>
+            </svg>
+
+            <!-- (3) Foundation — concrete footings + formwork -->
+            <svg *ngIf="lv.isFoundation" class="iso" viewBox="0 0 440 376" preserveAspectRatio="xMidYMid meet" aria-label="Foundation poured">
+              <ellipse cx="220" cy="300" rx="150" ry="28" fill="rgba(0,0,0,.35)"></ellipse>
+              <polygon points="220,150 380,242 220,334 60,242" fill="#8a5a33"></polygon>
+              <polygon points="220,334 60,242 60,266 220,358" fill="#6d4527"></polygon>
+              <polygon points="380,242 220,334 220,358 380,266" fill="#5c3a1c"></polygon>
+              <polygon points="220,138 380,230 220,322 60,230" fill="#a97f5c"></polygon>
+              <!-- concrete slab -->
+              <polygon points="220,162 340,231 220,300 100,231" fill="#cbbca1"></polygon>
+              <polygon points="220,300 100,231 100,246 220,315" fill="#ad9d7d"></polygon>
+              <polygon points="340,231 220,300 220,315 340,246" fill="#9a8b6f"></polygon>
+              <!-- formwork footings (corner blocks) -->
+              <g>
+                <rect x="212" y="150" width="16" height="20" fill="#d8cfc0"></rect>
+                <rect x="300" y="200" width="16" height="20" fill="#c6b699"></rect>
+                <rect x="124" y="200" width="16" height="20" fill="#c6b699"></rect>
+                <rect x="212" y="252" width="16" height="20" fill="#ad9d7d"></rect>
+              </g>
+            </svg>
+
+            <!-- (4) Steel Frame — column + beam skeleton -->
+            <svg *ngIf="lv.isSteel" class="iso" viewBox="0 0 440 376" preserveAspectRatio="xMidYMid meet" aria-label="Steel frame up">
+              <ellipse cx="220" cy="300" rx="150" ry="28" fill="rgba(0,0,0,.35)"></ellipse>
+              <polygon points="220,150 380,242 220,334 60,242" fill="#8a5a33"></polygon>
+              <polygon points="220,334 60,242 60,266 220,358" fill="#6d4527"></polygon>
+              <polygon points="380,242 220,334 220,358 380,266" fill="#5c3a1c"></polygon>
+              <polygon points="220,138 380,230 220,322 60,230" fill="#a97f5c"></polygon>
+              <polygon points="220,162 340,231 220,300 100,231" fill="#cbbca1"></polygon>
+              <!-- vertical columns -->
+              <g stroke="#9184d9" stroke-width="6" stroke-linecap="round">
+                <line x1="220" y1="162" x2="220" y2="86"></line>
+                <line x1="340" y1="231" x2="340" y2="155"></line>
+                <line x1="100" y1="231" x2="100" y2="155"></line>
+                <line x1="220" y1="300" x2="220" y2="224"></line>
+              </g>
+              <!-- top-plane beams -->
+              <g stroke="#b5abfc" stroke-width="5" stroke-linecap="round">
+                <line x1="220" y1="86" x2="340" y2="155"></line>
+                <line x1="220" y1="86" x2="100" y2="155"></line>
+                <line x1="340" y1="155" x2="220" y2="224"></line>
+                <line x1="100" y1="155" x2="220" y2="224"></line>
+              </g>
+              <!-- mid cross-braces -->
+              <g stroke="#796cbf" stroke-width="3" opacity=".8">
+                <line x1="220" y1="124" x2="340" y2="193"></line>
+                <line x1="220" y1="124" x2="100" y2="193"></line>
+              </g>
+            </svg>
+
+            <!-- (5) The Villa — the app's canonical isometric villa -->
+            <app-villa-art *ngIf="lv.isVilla" class="iso"></app-villa-art>
+          </div>
+
+          <!-- lock chip on locked tiles -->
+          <div class="el-lock" *ngIf="lv.isLocked">
+            <svg width="14" height="14" viewBox="0 0 16 16">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+            </svg>
+            <span>Unlocks at {{ lv.startLabel }}</span>
+          </div>
+        </div>
+
+        <h1 class="el-name">{{ lv.name }}</h1>
+
+        <!-- arena banner: level · milestone -->
+        <div class="el-banner-row">
+          <div class="el-banner" [class.locked]="lv.isLocked" [class.current]="lv.isCurrent">
+            <span class="el-banner-badge">{{ lv.level }}</span>
+            <span class="el-banner-name">Level {{ lv.level }}</span>
+            <span class="el-banner-milestone">
+              <span class="el-milestone-coin"></span>
+              <span>{{ lv.milestone }}</span>
+            </span>
+          </div>
+        </div>
+
+        <p class="el-tagline">{{ lv.tagline }}</p>
+
+        <!-- percentile pill -->
+        <div class="el-pct-row">
+          <div class="el-pct" [class.locked]="lv.isLocked" [class.current]="lv.isCurrent">
+            <span class="el-pct-flag">🇮🇳</span>
+            <span class="el-pct-text">
+              <span class="el-pct-main">{{ lv.pctPrefix }}{{ lv.pctLabel }}% of Indians</span>
+              <span class="el-pct-sub">approx, by adult net worth</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- step pips -->
+        <div class="el-steps">
+          <span class="el-step" *ngFor="let s of lv.steps; trackBy: trackStep"
+                [class.done]="s.done" [class.glow]="s.glow"></span>
+          <span class="el-steps-label">{{ lv.stepsLabel }}</span>
+        </div>
+
+        <!-- fund unlocks -->
+        <div class="el-funds">
+          <span class="el-funds-kicker">Fund unlocks</span>
+          <div class="el-funds-grid">
+            <div class="el-fund" *ngFor="let f of lv.funds; trackBy: trackFund" [class.locked]="lv.isLocked">
+              <div class="el-fund-art">
+                <svg *ngIf="f.isVault" viewBox="0 0 80 72" width="60" height="54" style="overflow:visible">
+                  <rect x="16" y="10" width="52" height="54" rx="4" fill="#5f7a70"></rect>
+                  <rect x="12" y="8" width="52" height="54" rx="4" fill="#8aa89b"></rect>
+                  <rect x="17" y="13" width="42" height="44" rx="3" fill="#a9c2b6"></rect>
+                  <rect x="52" y="22" width="4" height="10" rx="1" fill="#3f5a50"></rect>
+                  <rect x="52" y="38" width="4" height="10" rx="1" fill="#3f5a50"></rect>
+                  <g class="anim-dial">
+                    <circle cx="34" cy="35" r="9" fill="#e9eee9" stroke="#3f5a50" stroke-width="2"></circle>
+                    <circle cx="34" cy="35" r="2.5" fill="#3f5a50"></circle>
+                    <rect x="33" y="27" width="2" height="6" rx="1" fill="#3f5a50"></rect>
+                  </g>
+                  <g class="anim-note">
+                    <rect x="4" y="30" width="16" height="8" rx="1.5" fill="#7fb07a" transform="rotate(-12 12 34)"></rect>
+                    <text x="12" y="36.5" font-size="6" text-anchor="middle" fill="#2c4a2a" font-family="Inter,sans-serif">₹</text>
+                  </g>
+                </svg>
+                <svg *ngIf="f.isGold" viewBox="0 0 80 72" width="60" height="54">
+                  <ellipse cx="40" cy="64" rx="18" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                  <g class="anim-coin">
+                    <circle cx="40" cy="34" r="24" fill="#b47a14"></circle>
+                    <circle cx="40" cy="32" r="24" fill="#f6c445"></circle>
+                    <circle cx="40" cy="32" r="18" fill="none" stroke="#dc9a1f" stroke-width="2"></circle>
+                    <circle cx="30" cy="22" r="4" fill="#ffe9a3" opacity=".8"></circle>
+                    <text x="40" y="41" font-size="24" text-anchor="middle" fill="#8d5a10" font-family="Inter,sans-serif" font-weight="500">₹</text>
+                  </g>
+                </svg>
+                <svg *ngIf="f.isLarge" viewBox="0 0 80 72" width="60" height="54">
+                  <ellipse cx="40" cy="66" rx="22" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                  <ellipse cx="40" cy="58" rx="20" ry="6" fill="#c9a27c"></ellipse><ellipse cx="40" cy="62" rx="20" ry="6" fill="#a97f5c"></ellipse><ellipse cx="40" cy="58" rx="20" ry="6" fill="#c9a27c"></ellipse>
+                  <g class="anim-sway">
+                    <rect x="38" y="30" width="4" height="28" rx="1" fill="#8b5a3c"></rect>
+                    <circle cx="40" cy="22" r="17" fill="#3e8a3e"></circle>
+                    <circle cx="28" cy="30" r="12" fill="#4a9d47"></circle>
+                    <circle cx="52" cy="30" r="12" fill="#357a36"></circle>
+                    <circle cx="40" cy="16" r="11" fill="#5cb85c"></circle>
+                    <circle cx="34" cy="14" r="4" fill="#8fd48a" opacity=".8"></circle>
+                  </g>
+                </svg>
+                <svg *ngIf="f.isMid" viewBox="0 0 80 72" width="60" height="54">
+                  <ellipse cx="40" cy="66" rx="18" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                  <ellipse cx="40" cy="62" rx="16" ry="5" fill="#a97f5c"></ellipse><ellipse cx="40" cy="58" rx="16" ry="5" fill="#c9a27c"></ellipse>
+                  <g class="anim-sway-b">
+                    <rect x="39" y="26" width="2.5" height="32" rx="1" fill="#4a7a3a"></rect>
+                    <ellipse cx="31" cy="46" rx="8" ry="4" fill="#4a9d47" transform="rotate(-30 31 46)"></ellipse>
+                    <ellipse cx="49" cy="46" rx="8" ry="4" fill="#3e8a3e" transform="rotate(30 49 46)"></ellipse>
+                    <ellipse cx="32" cy="36" rx="7" ry="3.5" fill="#5cb85c" transform="rotate(-35 32 36)"></ellipse>
+                    <ellipse cx="48" cy="36" rx="7" ry="3.5" fill="#4a9d47" transform="rotate(35 48 36)"></ellipse>
+                    <ellipse cx="40" cy="24" rx="3.5" ry="6" fill="#8fd48a"></ellipse>
+                  </g>
+                </svg>
+                <svg *ngIf="f.isSmall" viewBox="0 0 80 72" width="60" height="54">
+                  <ellipse cx="40" cy="66" rx="14" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                  <ellipse cx="40" cy="62" rx="12" ry="4" fill="#a97f5c"></ellipse><ellipse cx="40" cy="59" rx="12" ry="4" fill="#c9a27c"></ellipse>
+                  <g class="anim-sprout">
+                    <rect x="39.2" y="42" width="1.8" height="17" rx="1" fill="#4a7a3a"></rect>
+                    <ellipse cx="33" cy="44" rx="7" ry="3.5" fill="#5cb85c" transform="rotate(-35 33 44)"></ellipse>
+                    <ellipse cx="47" cy="44" rx="7" ry="3.5" fill="#8fd48a" transform="rotate(35 47 44)"></ellipse>
+                  </g>
+                </svg>
+              </div>
+              <span class="el-fund-name">{{ f.name }}</span>
+              <span class="el-fund-amount">{{ f.amount }}</span>
+              <div class="el-fund-bar">
+                <div class="el-fund-bar-track">
+                  <div class="el-fund-bar-fill" [style.width]="f.pct" [style.background]="f.bar"></div>
+                </div>
+                <span class="el-fund-pct">{{ f.pct }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

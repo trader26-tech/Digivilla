@@ -11,13 +11,14 @@
      user has no villa yet it shows a dummy house + the upcoming setup call; as
      they progress the same map fills with their real villas. -->
 <app-estate-home
-  *ngIf="detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'home'"
+  *ngIf="detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'home'"
   class="has-nav"
   [justVerified]="justVerified"
   (openTile)="openTile($event)"
   (explore)="goExplore()"
   (build)="openBuild()"
   (account)="openAccount()"
+  (progress)="openLevels()"
   (refresh)="onEstateRefresh()"
 ></app-estate-home>
 
@@ -72,6 +73,12 @@
   (back)="closeAccount()"
   (signOut)="onSignOut()"
 ></app-account>
+
+<!-- ESTATE LEVELS: the build-progress ladder, from the home "View progress" button. -->
+<app-estate-levels
+  *ngIf="!intro && levelsOpen"
+  (back)="closeLevels()"
+></app-estate-levels>
 
 <!-- BUILD A NEW ASSET: pick villa or land. -->
 <app-build-picker

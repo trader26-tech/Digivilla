@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
 import { AccountComponent } from './account/account.component';
+import { EstateLevelsComponent } from './estate-levels/estate-levels.component';
 import { AuthService } from './auth/auth.service';
 import { LoginComponent } from './auth/login.component';
 import { BuildPickerComponent } from './build/build-picker.component';
@@ -46,6 +47,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     VillaBuyComponent,
     LandBuyComponent,
     AccountComponent,
+    EstateLevelsComponent,
     CallsComponent,
     LoginComponent,
   ],
@@ -131,6 +133,7 @@ export class AppComponent {
       !this.intro && this.auth.signedIn() &&
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.buildFlow === null && !this.accountOpen &&
+      !this.levelsOpen &&
       (this.view === 'home' || this.view === 'explore' || this.view === 'calls')
     );
   }
@@ -172,6 +175,16 @@ export class AppComponent {
   }
   closeAccount(): void {
     this.accountOpen = false;
+  }
+
+  /** The Estate Levels progression ladder is open. */
+  levelsOpen = false;
+  openLevels(): void {
+    this.levelsOpen = true;
+    window.scrollTo({ top: 0 });
+  }
+  closeLevels(): void {
+    this.levelsOpen = false;
   }
 
   /** Log off from the account page — clears the session and returns home. */

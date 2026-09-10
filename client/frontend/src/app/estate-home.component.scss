@@ -1560,3 +1560,26 @@
 /* real gain figure — green up, red down (chips + total-gain line) */
 .gain-pos { color: var(--positive); }
 .gain-neg { color: var(--negative); }
+
+/* "View progress" pill under the hero → opens the Estate Levels ladder */
+.hero-progress {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin: 12px auto 0; padding: 8px 14px;
+  border-radius: 999px; cursor: pointer;
+  color: var(--ink); font: 600 13px/1 var(--font-body);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--brass) 22%, var(--card)),
+    var(--card));
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, var(--survey));
+  box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--brass) 80%, transparent),
+              inset 0 1px 0 rgba(255,255,255,.06);
+  transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.hero-progress:hover { border-color: var(--brass); box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--brass) 90%, transparent); }
+.hero-progress:active { transform: translateY(1px) scale(.98); }
+.hero-progress .hp-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #ffe9a3, var(--gold) 55%, #a86b12);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 70%, transparent);
+}
+.hero-progress svg { color: color-mix(in srgb, var(--brass) 90%, var(--ink)); }
