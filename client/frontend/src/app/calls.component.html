@@ -30,7 +30,6 @@
     </span>
     <span class="st-feature-body">
       <b>Play the presentation</b>
-      <span>The ₹1 crore story, full-screen</span>
     </span>
     <span class="st-feature-play" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5.5l11 6.5-11 6.5z" fill="currentColor"/></svg>
@@ -45,7 +44,7 @@
       <span class="st-ic" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </span>
-      <span class="st-body"><b>Personal details</b><span>Your profile & account info</span></span>
+      <span class="st-body"><b>Personal details</b></span>
       <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
 
@@ -54,7 +53,7 @@
       <span class="st-ic" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 7h13l-3-3M20 17H7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
-      <span class="st-body"><b>View transactions</b><span>Every SIP, lump-sum & payout</span></span>
+      <span class="st-body"><b>View transactions</b></span>
       <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
@@ -75,28 +74,52 @@
       <span class="st-ic" [class.spinning]="refreshing()" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><path d="M20 11a8 8 0 1 0-.6 3M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
-      <span class="st-body"><b>{{ refreshing() ? 'Updating…' : 'Update to latest' }}</b><span>Current v{{ APP_VERSION }} · get the newest version</span></span>
+      <span class="st-body"><b>{{ refreshing() ? 'Updating…' : 'Update to latest' }}</b></span>
       <span class="st-badge" *ngIf="!refreshing()">v{{ APP_VERSION }}</span>
       <svg class="st-arr" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
 
-  <!-- ============ PERSONAL DETAILS panel ============ -->
+  <!-- ============ PERSONAL DETAILS panel — editable ============ -->
   <div class="pn-scrim" *ngIf="panel() === 'details'" (click)="closePanel()"></div>
   <section class="pn" *ngIf="panel() === 'details'" role="dialog" aria-modal="true">
     <div class="pn-grip" aria-hidden="true"></div>
     <header class="pn-head"><h2>Personal details</h2><button class="pn-x" (click)="closePanel()" aria-label="Close">✕</button></header>
-    <div class="pn-rows">
-      <div class="pn-row"><span>Name</span><b>{{ userName || '—' }}</b></div>
-      <div class="pn-row"><span>Phone</span><b>{{ phonePretty || '—' }}</b></div>
-      <div class="pn-row" *ngIf="userCity"><span>City</span><b>{{ userCity }}</b></div>
-      <div class="pn-row"><span>Estate</span><b>{{ est.estateName ? est.estateName + '’s City' : 'Your City' }}</b></div>
-      <div class="pn-row"><span>Portfolio worth</span><b>{{ compact(est.estateValue) }}</b></div>
-      <div class="pn-row"><span>Total invested</span><b>{{ compact(est.invested) }}</b></div>
-      <div class="pn-row"><span>Total gain</span><b [class.pos]="est.gain >= 0">{{ est.gain >= 0 ? '+' : '' }}{{ compact(est.gain) }}</b></div>
-      <div class="pn-row"><span>Total SWP received</span><b>{{ compact(est.totalSwp) }}</b></div>
-      <div class="pn-row"><span>Villas held</span><b>{{ est.tiles().length }}</b></div>
+
+    <!-- Live preview: the name is your estate's name. -->
+    <div class="pn-preview">
+      <span class="pn-preview-cap">Your estate</span>
+      <b class="pn-preview-name">{{ greetingPreview }}</b>
     </div>
+
+    <div class="pn-fields">
+      <label class="pn-field">
+        <span class="pn-label">Name</span>
+        <input class="pn-input" type="text" [(ngModel)]="draftNameModel"
+          placeholder="Your name" autocomplete="off" maxlength="24" />
+        <span class="pn-hint">This names your city — shown as “{{ (draftName().trim() || 'Name') }}’s City”.</span>
+      </label>
+
+      <label class="pn-field">
+        <span class="pn-label">Nickname</span>
+        <input class="pn-input" type="text" [(ngModel)]="draftCityModel"
+          placeholder="e.g. Chennai" autocomplete="off" maxlength="24" />
+        <span class="pn-hint">An optional label for your estate.</span>
+      </label>
+
+      <div class="pn-field" *ngIf="phonePretty">
+        <span class="pn-label">Phone</span>
+        <div class="pn-static">{{ phonePretty }}</div>
+      </div>
+    </div>
+
+    <button class="pn-save" (click)="saveDetails()" [class.done]="savedTick()">
+      <ng-container *ngIf="!savedTick()">Save</ng-container>
+      <ng-container *ngIf="savedTick()">
+        <svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Saved
+      </ng-container>
+    </button>
     <button class="pn-signout" (click)="doSignOut()">Log off</button>
   </section>
 

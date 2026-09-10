@@ -389,6 +389,39 @@
 .pn-head h2 { margin: 0; font-family: var(--font-display); font-size: 1.25rem; font-weight: 850; letter-spacing: -0.4px; color: var(--ink); }
 .pn-x { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--survey); background: var(--card); color: var(--ink); font-size: 0.85rem; cursor: pointer; }
 
+/* ── editable personal details ── */
+.pn-preview {
+  display: flex; flex-direction: column; gap: 0.2rem; text-align: center;
+  padding: 1rem 1rem 1.05rem; margin-bottom: 1.1rem; border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--brass) 26%, var(--survey));
+  background: radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--brass) 14%, transparent), transparent 62%), var(--card);
+}
+.pn-preview-cap { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.pn-preview-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--ink); }
+
+.pn-fields { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; }
+.pn-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.pn-label { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.pn-input {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: 1rem; font-weight: 650;
+  padding: 0.8rem 0.95rem; border-radius: 13px; color: var(--ink);
+  background: var(--card); border: 1.5px solid var(--survey); transition: border-color 0.15s, box-shadow 0.15s;
+}
+.pn-input::placeholder { color: color-mix(in srgb, var(--muted) 80%, transparent); font-weight: 500; }
+.pn-input:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 22%, transparent); }
+.pn-hint { font-size: 0.74rem; color: var(--muted); line-height: 1.35; }
+.pn-static { font-size: 1rem; font-weight: 750; color: var(--ink); padding: 0.15rem 0; }
+
+.pn-save {
+  margin-top: 1.2rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+  padding: 0.95rem; border-radius: 14px; border: none; cursor: pointer;
+  font: inherit; font-size: 1rem; font-weight: 850; color: #fff;
+  background: linear-gradient(180deg, #9184d9, var(--brass)); box-shadow: 0 8px 22px -10px var(--brass);
+  transition: transform 0.12s, background 0.2s;
+}
+.pn-save:active { transform: scale(0.98); }
+.pn-save.done { background: var(--positive); box-shadow: 0 8px 22px -10px var(--positive); color: #06110b; }
+
 .pn-rows { display: flex; flex-direction: column; overflow-y: auto; }
 .pn-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--survey); }
 .pn-row:last-child { border-bottom: none; }
@@ -396,7 +429,7 @@
 .pn-row b { font-size: 0.98rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .pn-row b.pos { color: var(--positive); }
 .pn-signout {
-  margin-top: 1rem; padding: 0.9rem; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--negative) 45%, var(--survey));
+  margin-top: 0.7rem; padding: 0.9rem; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--negative) 45%, var(--survey));
   background: color-mix(in srgb, var(--negative) 12%, transparent); color: var(--negative);
   font: inherit; font-size: 0.95rem; font-weight: 850; cursor: pointer;
 }

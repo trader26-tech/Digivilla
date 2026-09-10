@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
 
 import { AuthService } from './auth/auth.service';
@@ -49,7 +50,7 @@ interface FreeDay {
 @Component({
   selector: 'app-calls',
   standalone: true,
-  imports: [CommonModule, PresentationComponent],
+  imports: [CommonModule, FormsModule, PresentationComponent],
   templateUrl: './calls.component.html',
   styleUrl: './calls.component.scss',
 })
@@ -78,8 +79,49 @@ export class CallsComponent implements OnInit {
 
   /** Which settings sub-panel is open: null | 'details' | 'txns'. */
   panel = signal<null | 'details' | 'txns'>(null);
-  openPanel(p: 'details' | 'txns'): void { this.panel.set(p); if (navigator.vibrate) navigator.vibrate(4); }
+  openPanel(p: 'details' | 'txns'): void {
+    if (p === 'details') this.seedDrafts();
+    this.panel.set(p);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
   closePanel(): void { this.panel.set(null); }
+
+  // ── editable personal details: the NAME maps straight to the estate, so the
+  //    home greeting becomes "[Name]'s City"; the nickname is a free city label.
+  draftName = signal('');
+  draftCity = signal('');
+  savedTick = signal(false);
+  get draftNameModel(): string { return this.draftName(); }
+  set draftNameModel(v: string) { this.draftName.set(v); }
+  get draftCityModel(): string { return this.draftCity(); }
+  set draftCityModel(v: string) { this.draftCity.set(v); }
+
+  /** Seed the edit fields from the server values whenever the panel opens. */
+  private seedDrafts(): void {
+    const realName = this.userName === 'You' ? '' : this.userName;
+    this.draftName.set(this.est.estateName || realName);
+    this.draftCity.set(this.est.estateCity);
+    this.savedTick.set(false);
+  }
+
+  /** Live preview of the greeting the home screen will show. */
+  get greetingPreview(): string {
+    const n = (this.draftName() || '').trim();
+    return n ? `${n}’s City` : 'Your City';
+  }
+
+  /** Persist the name (→ estate) + nickname. Empty clears to the server default. */
+  saveDetails(): void {
+    this.est.saveEstateProfile({
+      estate_name: this.draftName().trim(),
+      estate_city: this.draftCity().trim(),
+    });
+    // Mirror the name into the local profile so the header updates at once.
+    if (this.draftName().trim()) this.est.setProfile({ name: this.draftName().trim() });
+    if (navigator.vibrate) navigator.vibrate([6, 20, 6]);
+    this.savedTick.set(true);
+    setTimeout(() => this.savedTick.set(false), 1800);
+  }
 
   /** Account transactions (SIP / lump-sum / rent-SWP). */
   txns = signal<AccountTxn[]>([]);
