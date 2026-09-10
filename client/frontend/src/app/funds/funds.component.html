@@ -1,0 +1,106 @@
+<main class="fx">
+  <header class="fx-top">
+    <span class="fx-kicker">YOUR PORTFOLIO</span>
+    <h1 class="fx-title">How your money is doing</h1>
+  </header>
+
+  <div class="fx-loading" *ngIf="loading()"><span class="fx-spin"></span></div>
+
+  <ng-container *ngIf="!loading()">
+    <!-- ===== 1 · MOTIVATION: rank badge + next-tier nudge ===== -->
+    <section class="rank">
+      <div class="rank-glow" aria-hidden="true"></div>
+      <span class="rank-medal" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 14l-2 7 5-3 5 3-2-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 9l1.7 1.7L15 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <b class="rank-pct">{{ tier().pct }}</b>
+      <p class="rank-line">{{ tier().line }}</p>
+      <p class="rank-next" *ngIf="nextTier() as n">
+        Invest <b>{{ compact(n.gap) }}</b> more to reach <b>{{ n.pct }}</b>
+      </p>
+      <span class="rank-fine">*Illustrative, by amount invested.</span>
+    </section>
+
+    <!-- ===== 2 · LEVEL LADDER ===== -->
+    <section class="lv">
+      <div class="lv-head">
+        <span class="fx-cap">Your estate level</span>
+        <span class="lv-badge">Level {{ currentLevel() }} of 5</span>
+      </div>
+      <div class="lv-progress">
+        <div class="lv-bar"><span class="lv-fill" [style.width.%]="levelProgress() * 100"></span></div>
+        <p class="lv-tonext" *ngIf="toNextLevel() > 0">{{ compact(toNextLevel()) }} to Level {{ currentLevel() + 1 }}</p>
+        <p class="lv-tonext" *ngIf="toNextLevel() === 0">Top level reached 🎉</p>
+      </div>
+      <div class="lv-list">
+        <div class="lv-row" *ngFor="let l of levels()" [attr.data-s]="levelState(l)">
+          <span class="lv-node" aria-hidden="true">
+            <svg *ngIf="levelState(l) === 'done'" viewBox="0 0 24 24" width="13" height="13"><path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span *ngIf="levelState(l) !== 'done'">{{ l.level }}</span>
+          </span>
+          <span class="lv-txt">
+            <b>{{ l.name }}</b>
+            <span>{{ l.tagline }}</span>
+          </span>
+          <span class="lv-amt">{{ compact(l.threshold) }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3 · HEADLINE NUMBERS ===== -->
+    <section class="fx-kpis">
+      <div class="kpi"><span>Worth today</span><b>{{ compact(worth) }}</b></div>
+      <div class="kpi"><span>Invested</span><b>{{ compact(invested) }}</b></div>
+      <div class="kpi"><span>Gain</span><b [class.pos]="gain >= 0" [class.neg]="gain < 0">{{ gain >= 0 ? '+' : '' }}{{ compact(gain) }}</b></div>
+      <div class="kpi"><span>SWP received</span><b class="swp">{{ compact(data()?.total_swp || 0) }}</b></div>
+    </section>
+
+    <!-- ===== 4 · FUND-BY-FUND BREAKDOWN ===== -->
+    <section class="funds" *ngIf="funds().length">
+      <div class="funds-head">
+        <span class="fx-cap">Your funds</span>
+        <div class="win-seg">
+          <button [class.on]="window()==='1y'" (click)="setWindow('1y')">1Y</button>
+          <button [class.on]="window()==='3y'" (click)="setWindow('3y')">3Y</button>
+          <button [class.on]="window()==='5y'" (click)="setWindow('5y')">5Y</button>
+        </div>
+      </div>
+
+      <!-- blended overall -->
+      <div class="fund blend">
+        <div class="fund-r1">
+          <b class="fund-name">Blended portfolio</b>
+          <b class="fund-ret" [class.pos]="(overallRet() ?? 0) >= 0" [class.neg]="(overallRet() ?? 0) < 0">
+            {{ overallRet() != null ? (overallRet()! | number:'1.1-1') + '%' : '—' }}
+          </b>
+        </div>
+        <span class="fund-sub">{{ window() }} return · across all your funds</span>
+      </div>
+
+      <!-- each fund -->
+      <div class="fund" *ngFor="let f of funds()">
+        <div class="fund-r1">
+          <span class="fund-dot" [attr.data-cat]="f.category"></span>
+          <b class="fund-name">{{ f.name }}</b>
+          <b class="fund-ret" [class.pos]="(ret(f) ?? 0) >= 0" [class.neg]="(ret(f) ?? 0) < 0">
+            {{ ret(f) != null ? (ret(f)! >= 0 ? '+' : '') + (ret(f)! | number:'1.1-1') + '%' : '—' }}
+          </b>
+        </div>
+        <div class="fund-bar"><span class="fund-fill" [attr.data-cat]="f.category" [style.width.%]="f.allocation"></span></div>
+        <div class="fund-r2">
+          <span class="fund-cat">{{ f.category }} · {{ f.allocation | number:'1.0-0' }}%</span>
+          <span class="fund-val"><b>{{ compact(f.value) }}</b> · {{ window() }}</span>
+        </div>
+      </div>
+
+      <p class="funds-fine">Live returns from fund NAV history. Mutual funds are subject to market risks; past performance isn’t a guarantee.</p>
+    </section>
+
+    <!-- empty state -->
+    <section class="fx-empty" *ngIf="!funds().length">
+      <div class="fx-empty-ic">📊</div>
+      <p>Your fund breakdown appears here</p>
+      <span>Once your advisor sets up your villa, you’ll see every fund and how it’s performing.</span>
+    </section>
+  </ng-container>
+</main>

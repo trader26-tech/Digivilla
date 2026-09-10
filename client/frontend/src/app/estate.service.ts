@@ -77,6 +77,30 @@ export interface VillaSipDetail {
   };
 }
 
+/** One fund in the user's portfolio breakdown (from GET /me/funds). */
+export interface FundRow {
+  name: string;
+  category: string;
+  allocation: number;
+  value: number;
+  invested: number;
+  gain: number;
+  ret_1y: number | null;
+  ret_3y: number | null;
+  ret_5y: number | null;
+}
+/** The full fund-by-fund breakdown (from GET /me/funds). */
+export interface FundsBreakdown {
+  worth: number;
+  invested: number;
+  gain: number;
+  gain_pct: number;
+  total_swp: number;
+  has_holdings: boolean;
+  overall: { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null };
+  funds: FundRow[];
+}
+
 /** One account transaction (from GET /me/transactions). */
 export interface AccountTxn {
   date: string;
@@ -179,6 +203,11 @@ export class EstateService {
   transactions(): import('rxjs').Observable<{ transactions: AccountTxn[] }> {
     return this.http.get<{ transactions: AccountTxn[] }>(
       `${environment.apiUrl}/me/transactions`, { headers: this.authHeaders });
+  }
+
+  /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */
+  myFunds(): import('rxjs').Observable<FundsBreakdown> {
+    return this.http.get<FundsBreakdown>(`${environment.apiUrl}/me/funds`, { headers: this.authHeaders });
   }
 
   /** Pull this user's estate + real net worth from the backend. */

@@ -449,6 +449,45 @@ def villas_sip_list() -> dict:
     return {"villas": _vsip.list_villas()}
 
 
+@app.get("/me/funds")
+def get_my_funds(authorization: Optional[str] = Header(default=None)) -> dict:
+    """The user's portfolio broken down fund-by-fund: each fund's allocation, the
+    user's ₹ value in it (allocation × their worth), invested share, gain, and
+    LIVE 1/3/5-Yr returns. Powers the Funds tab. Uses the moderate SIP villa mix
+    as the client's basket. Empty when the user has no matched holdings."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    from app import villa_sip as _vsip
+    summary = client_portfolio.portfolio_summary(owner)
+    worth = float(summary.get("worth") or 0)
+    invested = float(summary.get("invested") or 0)
+    # the client's basket = the (first) SIP villa's fund mix
+    villas = _vsip.list_villas()
+    sip = next((v for v in villas if (v.get("kind") or "sip") == "sip"), villas[0] if villas else None)
+    detail = _vsip.villa_sip(sip["id"]) if sip else None
+    funds = []
+    if detail:
+        for f in detail.get("funds", []):
+            w = float(f.get("allocation") or 0) / 100.0
+            funds.append({
+                "name": f.get("scheme_name") or "Fund",
+                "category": f.get("category") or "",
+                "allocation": round(float(f.get("allocation") or 0), 1),
+                "value": round(worth * w),
+                "invested": round(invested * w),
+                "gain": round((worth - invested) * w),
+                "ret_1y": f.get("ret_1y"), "ret_3y": f.get("ret_3y"), "ret_5y": f.get("ret_5y"),
+            })
+    return {
+        "worth": round(worth), "invested": round(invested),
+        "gain": round(worth - invested), "gain_pct": summary.get("gain_pct", 0),
+        "total_swp": summary.get("total_swp", 0),
+        "has_holdings": summary.get("has_holdings", False),
+        "overall": (detail or {}).get("overall", {"ret_1y": None, "ret_3y": None, "ret_5y": None}),
+        "funds": funds,
+    }
+
+
 @app.get("/villas/sip/{bucket_id}")
 def villas_sip_detail(bucket_id: str) -> dict:
     """Public: the SIP modal for one villa — its funds with category + allocation
