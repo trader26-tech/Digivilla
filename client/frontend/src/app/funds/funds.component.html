@@ -56,7 +56,7 @@
     </section>
 
     <!-- ===== 4 · FUND-BY-FUND BREAKDOWN ===== -->
-    <section class="funds" *ngIf="funds().length">
+    <section class="funds" *ngIf="funds.length">
       <div class="funds-head">
         <span class="fx-cap">Your funds</span>
         <div class="win-seg">
@@ -78,7 +78,7 @@
       </div>
 
       <!-- each fund -->
-      <div class="fund" *ngFor="let f of funds()">
+      <div class="fund" *ngFor="let f of funds">
         <div class="fund-r1">
           <span class="fund-dot" [attr.data-cat]="f.category"></span>
           <b class="fund-name">{{ f.name }}</b>
@@ -97,7 +97,7 @@
     </section>
 
     <!-- empty state -->
-    <section class="fx-empty" *ngIf="!funds().length">
+    <section class="fx-empty" *ngIf="!funds.length">
       <div class="fx-empty-ic">📊</div>
       <p>Your fund breakdown appears here</p>
       <span>Once your advisor sets up your villa, you’ll see every fund and how it’s performing.</span>
