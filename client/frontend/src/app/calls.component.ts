@@ -266,10 +266,16 @@ export class CallsComponent implements OnInit {
   }
 
   // ── presentation ──
-  // Open the deck INSIDE the app (integrated overlay with our own left/right
-  // controls) — not a new tab.
-  presenting = signal(false);
-  openPresentation(): void { this.presenting.set(true); if (navigator.vibrate) navigator.vibrate(6); }
+  // Opens the shared Google Slides deck straight into full-screen present mode,
+  // in a new tab. On a phone this hands off to the Slides app / browser so the
+  // client can swipe through the slideshow themselves.
+  readonly PRESENT_URL =
+    'https://docs.google.com/presentation/d/1ZxVzy9WHg5asst1pcosWdJEU5COEIhOEV-HgWHixGpg/present';
+  presenting = signal(false);   // kept for the (now unused) native overlay
+  openPresentation(): void {
+    if (navigator.vibrate) navigator.vibrate(6);
+    window.open(this.PRESENT_URL, '_blank', 'noopener,noreferrer');
+  }
   closePresentation(): void { this.presenting.set(false); }
 
   statusText(s: string): string {
