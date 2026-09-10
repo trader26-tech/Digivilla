@@ -1476,9 +1476,9 @@
 .flows {
   position: relative; z-index: 3;
   flex: none;
-  /* hug the frame edges — only a hair of safe padding, plus notch insets */
+  /* hug the frame edges — content pinned to the very corners (only notch inset) */
   width: 100%; margin: 0.5rem 0 1.4rem;
-  padding: 0 calc(0.9rem + env(safe-area-inset-right)) 0 calc(0.9rem + env(safe-area-inset-left));
+  padding: 0 calc(0.35rem + env(safe-area-inset-right)) 0 calc(0.35rem + env(safe-area-inset-left));
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
 }
 /* hug the outer edges — left column left-aligned, right column right-aligned */
