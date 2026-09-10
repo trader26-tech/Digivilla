@@ -10,10 +10,28 @@
 
 .fx-top { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding: 0 0.2rem; }
 .fx-title { margin: 0; font-family: var(--font-display); font-size: 1.7rem; font-weight: 850; letter-spacing: -0.7px; color: var(--ink); }
-.fx-rank {
-  flex: none; font-size: 0.76rem; font-weight: 850; color: #2a1e05;
-  background: linear-gradient(180deg, #f4d987, var(--gold)); padding: 5px 12px; border-radius: 999px;
-  box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--gold) 80%, #000);
+
+/* ===== centered rank banner — badge + plain-English meaning ===== */
+.rank {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.55rem;
+  padding: 1.3rem 1.1rem; border-radius: 20px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 62%),
+    var(--card);
+  border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--survey));
+}
+.rank-medal {
+  display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%;
+  color: #2a1e05; background: linear-gradient(180deg, #f4d987, var(--gold));
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--gold) 90%, #000);
+}
+.rank-badge {
+  font-family: var(--font-display); font-size: 1.35rem; font-weight: 850; letter-spacing: -0.5px;
+  color: var(--gold);
+}
+.rank-mean {
+  margin: 0; font-size: 0.9rem; font-weight: 650; color: var(--ink);
+  max-width: 300px; line-height: 1.4;
 }
 .fx-cap { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 
