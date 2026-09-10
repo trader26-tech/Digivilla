@@ -1,42 +1,24 @@
 <main class="calls">
   <input #photoInput type="file" accept="image/*" class="ca-photo-input" (change)="onPhotoChosen($event)" />
 
-  <!-- ambient glow behind the header -->
-  <div class="st-aura" aria-hidden="true"></div>
-
-  <!-- ===== PROFILE HERO: photo, name, contact, live worth ===== -->
+  <!-- ===== PROFILE HEADER: photo, name, contact ===== -->
   <section class="st-hero">
+    <button class="st-avatar" (click)="pickPhoto()" aria-label="Change photo">
+      <img *ngIf="est.profile().photo" [src]="est.profile().photo" alt="" />
+      <span *ngIf="!est.profile().photo" class="st-avatar-fallback">{{ initial }}</span>
+      <span class="st-avatar-cam" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 8h3l1.5-2h7L18 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      </span>
+    </button>
+    <div class="st-hero-text">
+      <h1 class="st-name">{{ userName }}</h1>
+      <p class="st-contact">
+        <span *ngIf="phonePretty">{{ phonePretty }}</span>
+        <span *ngIf="userCity"> · {{ userCity }}</span>
+      </p>
+    </div>
     <button class="st-signout" (click)="doSignOut()" aria-label="Sign out">
       <svg viewBox="0 0 24 24" width="17" height="17"><path d="M15 12H4m0 0l4-4m-4 4l4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-
-    <div class="st-hero-id">
-      <button class="st-avatar" (click)="pickPhoto()" aria-label="Change photo">
-        <img *ngIf="est.profile().photo" [src]="est.profile().photo" alt="" />
-        <span *ngIf="!est.profile().photo" class="st-avatar-fallback">{{ initial }}</span>
-        <span class="st-avatar-cam" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 8h3l1.5-2h7L18 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-        </span>
-      </button>
-      <div class="st-hero-text">
-        <h1 class="st-name">{{ userName }}</h1>
-        <p class="st-contact">
-          <span *ngIf="phonePretty">{{ phonePretty }}</span>
-          <span *ngIf="userCity" class="st-city">{{ userCity }}</span>
-        </p>
-      </div>
-    </div>
-
-    <!-- live worth strip -->
-    <button class="st-worth" (click)="openPanel('details')">
-      <span class="st-worth-main">
-        <span class="st-worth-k">Portfolio worth</span>
-        <span class="st-worth-v">{{ compact(est.estateValue) }}</span>
-      </span>
-      <span class="st-worth-gain" [class.neg]="est.gain < 0">
-        <svg viewBox="0 0 24 24" width="13" height="13" [style.transform]="est.gain < 0 ? 'rotate(180deg)' : ''"><path d="M12 5v14m0-14l-5 5m5-5l5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        {{ est.gain >= 0 ? '+' : '' }}{{ compact(est.gain) }}
-      </span>
     </button>
   </section>
 
@@ -60,7 +42,7 @@
   <div class="st-list">
     <!-- 1 · Personal details -->
     <button class="st-item" (click)="openPanel('details')">
-      <span class="st-ic" data-c="purple" aria-hidden="true">
+      <span class="st-ic" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </span>
       <span class="st-body"><b>Personal details</b><span>Your profile & account info</span></span>
@@ -69,7 +51,7 @@
 
     <!-- 2 · View transactions -->
     <button class="st-item" (click)="openPanel('txns'); loadTxns()">
-      <span class="st-ic" data-c="blue" aria-hidden="true">
+      <span class="st-ic" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 7h13l-3-3M20 17H7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <span class="st-body"><b>View transactions</b><span>Every SIP, lump-sum & payout</span></span>
@@ -81,7 +63,7 @@
   <div class="st-list">
     <!-- 3 · Call the admin (direct dial) -->
     <a class="st-item" [href]="'tel:' + ADMIN_PHONE">
-      <span class="st-ic" data-c="green" aria-hidden="true">
+      <span class="st-ic" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><path d="M6 3h3l2 5-2 1.5a11 11 0 0 0 5 5L18 12l3 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 6a2 2 0 0 1 2-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       </span>
       <span class="st-body"><b>Call your fund manager</b><span>{{ adminPhonePretty }}</span></span>
@@ -90,7 +72,7 @@
 
     <!-- 4 · Update to latest -->
     <button class="st-item" (click)="refreshApp()" [disabled]="refreshing()">
-      <span class="st-ic" data-c="green" [class.spinning]="refreshing()" aria-hidden="true">
+      <span class="st-ic" [class.spinning]="refreshing()" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="21" height="21"><path d="M20 11a8 8 0 1 0-.6 3M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <span class="st-body"><b>{{ refreshing() ? 'Updating…' : 'Update to latest' }}</b><span>Current v{{ APP_VERSION }} · get the newest version</span></span>
