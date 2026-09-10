@@ -22,13 +22,19 @@
   (refresh)="onEstateRefresh()"
 ></app-estate-home>
 
-<!-- EXPLORE tab: swipeable villa tiers (dark, premium) + how-it-works. -->
+<!-- EXPLORE (reachable from Home's build flow, not the nav). -->
 <app-explore
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'explore'"
   class="has-nav"
   (own)="ownVilla($event)"
   (back)="goHome()"
 ></app-explore>
+
+<!-- FUNDS tab: full portfolio — rank, level ladder, per-fund performance. -->
+<app-funds
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'funds'"
+  class="has-nav"
+></app-funds>
 
 <!-- CALLS tab: the user's scheduled fund-manager calls. -->
 <app-calls
@@ -58,10 +64,13 @@
         <span class="tab-lbl">Home</span>
       </span>
     </button>
-    <button class="tab" [class.active]="view === 'explore'" (click)="goExplore()" aria-label="Explore">
+    <button class="tab" [class.active]="view === 'funds'" (click)="goFunds()" aria-label="Funds">
       <span class="tab-in">
-        <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg>
-        <span class="tab-lbl">Explore</span>
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">
+          <path d="M12 3a9 9 0 1 0 9 9h-9z"/>
+          <path d="M12 3v9h9a9 9 0 0 0-9-9z" fill="currentColor" stroke="none" opacity="0.35"/>
+        </svg>
+        <span class="tab-lbl">Funds</span>
       </span>
     </button>
   </div>

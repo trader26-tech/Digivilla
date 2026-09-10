@@ -16,6 +16,7 @@ import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
 import { ExploreComponent } from './explore/explore.component';
+import { FundsComponent } from './funds/funds.component';
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
@@ -48,6 +49,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     LandBuyComponent,
     AccountComponent,
     EstateLevelsComponent,
+    FundsComponent,
     CallsComponent,
     LoginComponent,
   ],
@@ -73,7 +75,7 @@ export class AppComponent {
     // Deep-link support: ?view=explore opens the Explore tab on load.
     try {
       const v = new URLSearchParams(location.search).get('view');
-      if (v === 'explore' || v === 'home' || v === 'calls') { this.view = v; this.intro = false; }
+      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds') { this.view = v; this.intro = false; }
     } catch {}
     // Never leave a user stuck on a stale cached build: as soon as the service
     // worker fetches a newer version, activate it and reload so the latest app
@@ -124,9 +126,9 @@ export class AppComponent {
   }
 
   /** Which bottom-nav tab is active. */
-  view: 'home' | 'explore' | 'calls' | 'storefront' = 'home';
+  view: 'home' | 'explore' | 'funds' | 'calls' | 'storefront' = 'home';
 
-  /** True when a top-level tab (home/explore/calls) is showing — the bottom nav
+  /** True when a top-level tab (home/funds/calls) is showing — the bottom nav
    *  is only visible then, not on detail / buy / account pages. */
   get onTab(): boolean {
     return (
@@ -134,7 +136,7 @@ export class AppComponent {
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.buildFlow === null && !this.accountOpen &&
       !this.levelsOpen &&
-      (this.view === 'home' || this.view === 'explore' || this.view === 'calls')
+      (this.view === 'home' || this.view === 'funds' || this.view === 'calls')
     );
   }
 
@@ -144,6 +146,10 @@ export class AppComponent {
   }
   goExplore(): void {
     this.view = 'explore';
+    window.scrollTo({ top: 0 });
+  }
+  goFunds(): void {
+    this.view = 'funds';
     window.scrollTo({ top: 0 });
   }
   goCalls(): void {
