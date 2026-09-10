@@ -471,6 +471,7 @@ def get_my_funds(authorization: Optional[str] = Header(default=None)) -> dict:
             w = float(f.get("allocation") or 0) / 100.0
             funds.append({
                 "name": f.get("scheme_name") or "Fund",
+                "scheme_code": f.get("scheme_code"),
                 "category": f.get("category") or "",
                 "allocation": round(float(f.get("allocation") or 0), 1),
                 "value": round(worth * w),

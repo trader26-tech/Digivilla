@@ -1,22 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
-import { EstateService, FundsBreakdown, FundRow } from '../estate.service';
+import { EstateService, FundsBreakdown, FundRow, FundNav, NavWindow } from '../estate.service';
 import { compact } from '../shared/format.util';
 
-/** A rung on the estate ladder (mirrors the design template). */
-interface Level { level: number; name: string; tagline: string; threshold: number; }
-
 /**
- * The Funds tab — the client's full portfolio, bit by bit.
+ * The Funds tab — a celebration of what the user has built, then the estate
+ * broken down fund by fund.
  *
- * Three parts, top to bottom:
- *   1. A motivating "top X% of investors in India" badge + a level ladder
- *      (Plot → Levelled Ground → Foundation → Steel Frame → Villa), driven by
- *      how much they hold, nudging them to invest more.
- *   2. The headline numbers: worth, invested, gain, SWP.
- *   3. A fund-by-fund breakdown — each fund's allocation, the money in it, and
- *      live 1/3/5-year returns, so they see exactly how each fund performs.
+ *   1. A big animated "you've saved ₹X" hero with a motivating rank
+ *      ("ahead of 80% of Indians · Top 20%") — driven by how much they've
+ *      invested, so even a small amount feels like a win.
+ *   2. One estate/house card showing today's worth; expand it to see every
+ *      fund inside — its value, gain, return and risk.
+ *   3. Tap a fund → a detail sheet with its NAV history chart, category and
+ *      the basics (current NAV, 1/3/5-Yr, high/low).
  */
 @Component({
   selector: 'app-funds',
@@ -33,6 +31,8 @@ export class FundsComponent implements OnInit {
   loading = signal(true);
   /** which return window is shown on each fund: 1y | 3y | 5y */
   window = signal<'1y' | '3y' | '5y'>('1y');
+  /** the estate card starts open so the funds are immediately visible. */
+  estateOpen = signal(true);
 
   ngOnInit(): void {
     this.est.myFunds().subscribe({
@@ -41,12 +41,23 @@ export class FundsComponent implements OnInit {
     });
   }
 
+  toggleEstate(): void { this.estateOpen.update((v) => !v); if (navigator.vibrate) navigator.vibrate(3); }
+
   get worth(): number { return this.data()?.worth ?? this.est.estateValue; }
   get invested(): number { return this.data()?.invested ?? this.est.invested; }
   get gain(): number { return this.data()?.gain ?? this.est.gain; }
   get gainPct(): number { return this.data()?.gain_pct ?? 0; }
   get funds(): FundRow[] { return this.data()?.funds ?? []; }
+  get totalSwp(): number { return this.data()?.total_swp ?? 0; }
   get overall() { return this.data()?.overall ?? { ret_1y: null, ret_3y: null, ret_5y: null }; }
+  /** The estate's name for the house card ("Sanjeev's City" → "Sanjeev's Estate"). */
+  get estateLabel(): string {
+    const n = this.est.estateName;
+    return n ? `${n}’s Estate` : 'Your Estate';
+  }
+
+  /** The headline "saved" figure — what they've actually put in (their effort). */
+  get saved(): number { return Math.max(this.invested, this.worth); }
 
   /** The return shown for a fund in the currently-selected window. */
   ret(f: FundRow): number | null {
@@ -58,48 +69,100 @@ export class FundsComponent implements OnInit {
   }
   setWindow(w: '1y' | '3y' | '5y'): void { this.window.set(w); if (navigator.vibrate) navigator.vibrate(3); }
 
-  // ── motivation: where this investor ranks (illustrative tiers by amount) ──
+  /** Risk badge for a fund, inferred from its category. */
+  risk(f: FundRow): { label: string; level: number } {
+    const c = (f.category || '').toLowerCase();
+    if (c.includes('equity')) {
+      const n = (f.name || '').toLowerCase();
+      if (n.includes('small')) return { label: 'Very high risk', level: 5 };
+      if (n.includes('mid')) return { label: 'High risk', level: 4 };
+      return { label: 'High risk', level: 4 };
+    }
+    if (c.includes('hybrid')) return { label: 'Low risk', level: 2 };
+    if (c.includes('debt')) return { label: 'Low risk', level: 1 };
+    return { label: 'Moderate risk', level: 3 };   // gold / other
+  }
+
+  // ── motivation: where this investor ranks (illustrative, by amount saved) ──
   private readonly TIERS = [
-    { min: 5_000_000, pct: 'Top 1%',  line: 'You’re among the top 1% of investors in India.' },
-    { min: 2_500_000, pct: 'Top 3%',  line: 'You’re in the top 3% of investors in India.' },
-    { min: 1_000_000, pct: 'Top 5%',  line: 'You’re in the top 5% of investors in India.' },
-    { min: 500_000,   pct: 'Top 10%', line: 'You’re in the top 10% of investors in India.' },
-    { min: 100_000,   pct: 'Top 20%', line: 'You’re ahead of 80% of Indians who don’t invest at all.' },
-    { min: 0,         pct: 'Getting started', line: 'Start your estate — most Indians never invest at all.' },
+    { min: 5_000_000, pct: 'Top 1%',  beats: 99, line: 'You’re among the top 1% of investors in India.' },
+    { min: 2_500_000, pct: 'Top 3%',  beats: 97, line: 'You’re in the top 3% of investors in India.' },
+    { min: 1_000_000, pct: 'Top 5%',  beats: 95, line: 'You’re in the top 5% of investors in India.' },
+    { min: 500_000,   pct: 'Top 10%', beats: 90, line: 'You’re in the top 10% of investors in India.' },
+    { min: 200_000,   pct: 'Top 15%', beats: 85, line: 'You’re ahead of 85% of Indians.' },
+    { min: 50_000,    pct: 'Top 20%', beats: 80, line: 'You’re ahead of 80% of Indians who never invest.' },
+    { min: 10_000,    pct: 'Top 40%', beats: 60, line: 'You’ve started — ahead of 60% of Indians.' },
+    { min: 1,         pct: 'Top 60%', beats: 40, line: 'You’ve begun your estate. A real head start.' },
+    { min: 0,         pct: '',        beats: 0,  line: 'Start your estate — most Indians never invest at all.' },
   ];
-  tier = computed(() => this.TIERS.find((t) => this.worth >= t.min) || this.TIERS[this.TIERS.length - 1]);
+  tier = computed(() => this.TIERS.find((t) => this.saved >= t.min) || this.TIERS[this.TIERS.length - 1]);
   /** The next tier up + how much more to reach it — the nudge to invest more. */
   nextTier = computed(() => {
-    const i = this.TIERS.findIndex((t) => this.worth >= t.min);
+    const i = this.TIERS.findIndex((t) => this.saved >= t.min);
     if (i <= 0) return null;                        // already top 1%
     const up = this.TIERS[i - 1];
-    return { pct: up.pct, gap: up.min - this.worth };
+    return { pct: up.pct, gap: up.min - this.saved };
   });
 
-  // ── the estate level ladder (₹1L per level, villa complete at ₹5L) ──
-  private readonly LEVELS: Level[] = [
-    { level: 1, name: 'The Plot',        tagline: 'Land in your name — 100% equity, valued at NAV.',   threshold: 100_000 },
-    { level: 2, name: 'Levelled Ground', tagline: 'The site is cleared and graded. Your money is working.', threshold: 200_000 },
-    { level: 3, name: 'Foundation',      tagline: 'Concrete poured — halfway to the villa.',            threshold: 300_000 },
-    { level: 4, name: 'Steel Frame',     tagline: 'Columns and beams up. One level to go.',             threshold: 400_000 },
-    { level: 5, name: 'The Villa',       tagline: 'Complete — monthly income arrives by SWP.',          threshold: 500_000 },
-  ];
-  levels = computed(() => this.LEVELS);
-  currentLevel = computed(() => Math.max(1, Math.min(5, Math.floor(this.worth / 100_000) + 1)));
-  /** progress 0..1 within the current level. */
-  levelProgress = computed(() => {
-    const lv = this.currentLevel();
-    const start = (lv - 1) * 100_000;
-    return Math.max(0, Math.min(1, (this.worth - start) / 100_000));
+  // ============================ FUND DETAIL SHEET ============================
+  selected = signal<FundRow | null>(null);
+  navData = signal<FundNav | null>(null);
+  navLoading = signal(false);
+  navErr = signal(false);
+  /** which NAV window the chart shows. */
+  navWindow = signal<'1y' | '3y' | '5y' | 'max'>('1y');
+
+  openFund(f: FundRow): void {
+    this.selected.set(f);
+    this.navData.set(null);
+    this.navErr.set(false);
+    this.navWindow.set('1y');
+    if (navigator.vibrate) navigator.vibrate(4);
+    if (f.scheme_code) {
+      this.navLoading.set(true);
+      this.est.fundNav(f.scheme_code).subscribe({
+        next: (d) => { this.navData.set(d); this.navLoading.set(false); },
+        error: () => { this.navErr.set(true); this.navLoading.set(false); },
+      });
+    }
+  }
+  closeFund(): void { this.selected.set(null); }
+  setNavWindow(w: '1y' | '3y' | '5y' | 'max'): void { this.navWindow.set(w); if (navigator.vibrate) navigator.vibrate(3); }
+
+  /** The currently-charted NAV window. */
+  curWindow = computed<NavWindow | null>(() => {
+    const d = this.navData();
+    if (!d) return null;
+    return d.windows.find((w) => w.window === this.navWindow()) || d.windows[0] || null;
   });
-  /** ₹ to the next level — the nudge. */
-  toNextLevel = computed(() => {
-    const lv = this.currentLevel();
-    if (lv >= 5) return 0;
-    return Math.max(0, lv * 100_000 - this.worth);
+
+  /** Build an SVG polyline path (0..100 viewBox) from the current window's NAVs. */
+  navPath = computed<string>(() => {
+    const w = this.curWindow();
+    if (!w || !w.points?.length) return '';
+    const pts = w.points;
+    const lo = w.low, hi = w.high;
+    const span = hi - lo || 1;
+    const n = pts.length;
+    return pts.map((p, i) => {
+      const x = (i / (n - 1)) * 100;
+      const y = 100 - ((p.nav - lo) / span) * 100;
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
+    }).join(' ');
   });
-  levelState(l: Level): 'done' | 'current' | 'locked' {
-    const c = this.currentLevel();
-    return l.level < c ? 'done' : l.level === c ? 'current' : 'locked';
+  /** Closed area path under the line, for the gradient fill. */
+  navArea = computed<string>(() => {
+    const line = this.navPath();
+    if (!line) return '';
+    return `${line} L100,100 L0,100 Z`;
+  });
+  /** Is the current window up over its span? (colours the chart) */
+  navUp = computed<boolean>(() => (this.curWindow()?.change_pct ?? 0) >= 0);
+
+  /** The return for the selected fund in the chart's window. */
+  selectedRet(): number | null {
+    const w = this.curWindow();
+    if (!w) return null;
+    return w.cagr_pct != null ? w.cagr_pct : w.change_pct;
   }
 }

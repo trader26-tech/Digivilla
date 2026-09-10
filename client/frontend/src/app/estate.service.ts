@@ -80,6 +80,7 @@ export interface VillaSipDetail {
 /** One fund in the user's portfolio breakdown (from GET /me/funds). */
 export interface FundRow {
   name: string;
+  scheme_code: number | null;
   category: string;
   allocation: number;
   value: number;
@@ -99,6 +100,26 @@ export interface FundsBreakdown {
   has_holdings: boolean;
   overall: { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null };
   funds: FundRow[];
+}
+
+/** A NAV point and one window's history (from GET /dashboard/funds/{code}/nav). */
+export interface NavPoint { date: string; nav: number; }
+export interface NavWindow {
+  window: string;            // '1y' | '3y' | '5y' | 'max'
+  points: NavPoint[];
+  start_nav: number;
+  end_nav: number;
+  change_pct: number | null;
+  cagr_pct: number | null;
+  high: number;
+  low: number;
+}
+export interface FundNav {
+  scheme_code: number;
+  name: string;
+  current_nav: number;
+  nav_date: string;
+  windows: NavWindow[];
 }
 
 /** One account transaction (from GET /me/transactions). */
@@ -208,6 +229,11 @@ export class EstateService {
   /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */
   myFunds(): import('rxjs').Observable<FundsBreakdown> {
     return this.http.get<FundsBreakdown>(`${environment.apiUrl}/me/funds`, { headers: this.authHeaders });
+  }
+
+  /** NAV history (1Y/3Y/5Y/max windows) for one fund — the fund-detail chart. */
+  fundNav(schemeCode: number): import('rxjs').Observable<FundNav> {
+    return this.http.get<FundNav>(`${environment.apiUrl}/dashboard/funds/${schemeCode}/nav`);
   }
 
   /** Pull this user's estate + real net worth from the backend. */

@@ -7,100 +7,162 @@
   <div class="fx-loading" *ngIf="loading()"><span class="fx-spin"></span></div>
 
   <ng-container *ngIf="!loading()">
-    <!-- ===== 1 · MOTIVATION: rank badge + next-tier nudge ===== -->
-    <section class="rank">
-      <div class="rank-glow" aria-hidden="true"></div>
-      <span class="rank-medal" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 14l-2 7 5-3 5 3-2-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 9l1.7 1.7L15 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-      <b class="rank-pct">{{ tier().pct }}</b>
-      <p class="rank-line">{{ tier().line }}</p>
-      <p class="rank-next" *ngIf="nextTier() as n">
+    <!-- ===== 1 · CELEBRATION HERO — amount saved + rank ===== -->
+    <section class="cel">
+      <div class="cel-rays" aria-hidden="true"></div>
+      <!-- confetti -->
+      <div class="cel-confetti" aria-hidden="true">
+        <span *ngFor="let c of [1,2,3,4,5,6,7,8,9,10,11,12]" class="cf" [style.--i]="c"></span>
+      </div>
+
+      <div class="cel-medal" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="30" height="30"><circle cx="12" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9 14l-2 7 5-3 5 3-2-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.4 9l1.8 1.8L15 6.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <p class="cel-cap">You&rsquo;ve saved</p>
+      <b class="cel-amt">{{ compact(saved) }}</b>
+
+      <div class="cel-rank" *ngIf="tier().beats > 0">
+        <span class="cel-rank-line">Ahead of <b>{{ tier().beats }}%</b> of Indians</span>
+        <span class="cel-badge" *ngIf="tier().pct">{{ tier().pct }}</span>
+      </div>
+      <p class="cel-sub">{{ tier().line }}</p>
+
+      <p class="cel-next" *ngIf="nextTier() as n">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Invest <b>{{ compact(n.gap) }}</b> more to reach <b>{{ n.pct }}</b>
       </p>
-      <span class="rank-fine">*Illustrative, by amount invested.</span>
     </section>
 
-    <!-- ===== 2 · LEVEL LADDER ===== -->
-    <section class="lv">
-      <div class="lv-head">
-        <span class="fx-cap">Your estate level</span>
-        <span class="lv-badge">Level {{ currentLevel() }} of 5</span>
-      </div>
-      <div class="lv-progress">
-        <div class="lv-bar"><span class="lv-fill" [style.width.%]="levelProgress() * 100"></span></div>
-        <p class="lv-tonext" *ngIf="toNextLevel() > 0">{{ compact(toNextLevel()) }} to Level {{ currentLevel() + 1 }}</p>
-        <p class="lv-tonext" *ngIf="toNextLevel() === 0">Top level reached 🎉</p>
-      </div>
-      <div class="lv-list">
-        <div class="lv-row" *ngFor="let l of levels()" [attr.data-s]="levelState(l)">
-          <span class="lv-node" aria-hidden="true">
-            <svg *ngIf="levelState(l) === 'done'" viewBox="0 0 24 24" width="13" height="13"><path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span *ngIf="levelState(l) !== 'done'">{{ l.level }}</span>
-          </span>
-          <span class="lv-txt">
-            <b>{{ l.name }}</b>
-            <span>{{ l.tagline }}</span>
-          </span>
-          <span class="lv-amt">{{ compact(l.threshold) }}</span>
-        </div>
-      </div>
-    </section>
+    <!-- ===== 2 · YOUR ESTATE — house card, expand to funds ===== -->
+    <section class="est" *ngIf="funds.length">
+      <button class="est-head" (click)="toggleEstate()" [attr.aria-expanded]="estateOpen()">
+        <span class="est-home" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 11l8-6 8 6M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/><path d="M10 19v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        <span class="est-h-body">
+          <b>{{ estateLabel }}</b>
+          <span>{{ funds.length }} funds inside</span>
+        </span>
+        <span class="est-h-val">
+          <b>{{ compact(worth) }}</b>
+          <span [class.pos]="gain >= 0" [class.neg]="gain < 0">{{ gain >= 0 ? '+' : '' }}{{ compact(gain) }}</span>
+        </span>
+        <svg class="est-chev" [class.open]="estateOpen()" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
 
-    <!-- ===== 3 · HEADLINE NUMBERS ===== -->
-    <section class="fx-kpis">
-      <div class="kpi"><span>Worth today</span><b>{{ compact(worth) }}</b></div>
-      <div class="kpi"><span>Invested</span><b>{{ compact(invested) }}</b></div>
-      <div class="kpi"><span>Gain</span><b [class.pos]="gain >= 0" [class.neg]="gain < 0">{{ gain >= 0 ? '+' : '' }}{{ compact(gain) }}</b></div>
-      <div class="kpi"><span>SWP received</span><b class="swp">{{ compact(data()?.total_swp || 0) }}</b></div>
-    </section>
-
-    <!-- ===== 4 · FUND-BY-FUND BREAKDOWN ===== -->
-    <section class="funds" *ngIf="funds.length">
-      <div class="funds-head">
-        <span class="fx-cap">Your funds</span>
-        <div class="win-seg">
-          <button [class.on]="window()==='1y'" (click)="setWindow('1y')">1Y</button>
-          <button [class.on]="window()==='3y'" (click)="setWindow('3y')">3Y</button>
-          <button [class.on]="window()==='5y'" (click)="setWindow('5y')">5Y</button>
+      <div class="est-body" *ngIf="estateOpen()">
+        <div class="est-seg">
+          <span class="est-seg-lbl">Returns</span>
+          <div class="win-seg">
+            <button [class.on]="window()==='1y'" (click)="setWindow('1y')">1Y</button>
+            <button [class.on]="window()==='3y'" (click)="setWindow('3y')">3Y</button>
+            <button [class.on]="window()==='5y'" (click)="setWindow('5y')">5Y</button>
+          </div>
         </div>
+
+        <!-- each fund -->
+        <button class="fund" *ngFor="let f of funds" (click)="openFund(f)">
+          <div class="fund-r1">
+            <span class="fund-dot" [attr.data-cat]="f.category"></span>
+            <b class="fund-name">{{ f.name }}</b>
+            <b class="fund-ret" [class.pos]="(ret(f) ?? 0) >= 0" [class.neg]="(ret(f) ?? 0) < 0">
+              {{ ret(f) != null ? (ret(f)! >= 0 ? '+' : '') + (ret(f)! | number:'1.1-1') + '%' : '—' }}
+            </b>
+          </div>
+          <div class="fund-r2">
+            <span class="fund-val"><b>{{ compact(f.value) }}</b> today</span>
+            <span class="fund-risk" [attr.data-lv]="risk(f).level">
+              <span class="rk-bars"><i></i><i></i><i></i><i></i><i></i></span>
+              {{ risk(f).label }}
+            </span>
+          </div>
+          <div class="fund-r3">
+            <span>Invested {{ compact(f.invested) }}</span>
+            <span [class.pos]="f.gain >= 0" [class.neg]="f.gain < 0">{{ f.gain >= 0 ? '+' : '' }}{{ compact(f.gain) }}</span>
+            <span class="fund-go" aria-hidden="true">Details ›</span>
+          </div>
+        </button>
+
+        <p class="est-fine">Live returns from fund NAV history. Mutual funds are subject to market risks; past performance isn&rsquo;t a guarantee.</p>
       </div>
-
-      <!-- blended overall -->
-      <div class="fund blend">
-        <div class="fund-r1">
-          <b class="fund-name">Blended portfolio</b>
-          <b class="fund-ret" [class.pos]="(overallRet() ?? 0) >= 0" [class.neg]="(overallRet() ?? 0) < 0">
-            {{ overallRet() != null ? (overallRet()! | number:'1.1-1') + '%' : '—' }}
-          </b>
-        </div>
-        <span class="fund-sub">{{ window() }} return · across all your funds</span>
-      </div>
-
-      <!-- each fund -->
-      <div class="fund" *ngFor="let f of funds">
-        <div class="fund-r1">
-          <span class="fund-dot" [attr.data-cat]="f.category"></span>
-          <b class="fund-name">{{ f.name }}</b>
-          <b class="fund-ret" [class.pos]="(ret(f) ?? 0) >= 0" [class.neg]="(ret(f) ?? 0) < 0">
-            {{ ret(f) != null ? (ret(f)! >= 0 ? '+' : '') + (ret(f)! | number:'1.1-1') + '%' : '—' }}
-          </b>
-        </div>
-        <div class="fund-bar"><span class="fund-fill" [attr.data-cat]="f.category" [style.width.%]="f.allocation"></span></div>
-        <div class="fund-r2">
-          <span class="fund-cat">{{ f.category }} · {{ f.allocation | number:'1.0-0' }}%</span>
-          <span class="fund-val"><b>{{ compact(f.value) }}</b> · {{ window() }}</span>
-        </div>
-      </div>
-
-      <p class="funds-fine">Live returns from fund NAV history. Mutual funds are subject to market risks; past performance isn’t a guarantee.</p>
     </section>
 
     <!-- empty state -->
     <section class="fx-empty" *ngIf="!funds.length">
-      <div class="fx-empty-ic">📊</div>
-      <p>Your fund breakdown appears here</p>
-      <span>Once your advisor sets up your villa, you’ll see every fund and how it’s performing.</span>
+      <div class="fx-empty-ic">🏗️</div>
+      <p>Your estate is being set up</p>
+      <span>Once your advisor maps your villa, every fund and how it&rsquo;s performing shows up here.</span>
     </section>
   </ng-container>
+
+  <!-- ============ FUND DETAIL SHEET ============ -->
+  <div class="fd-scrim" *ngIf="selected()" (click)="closeFund()"></div>
+  <section class="fd" *ngIf="selected() as f" role="dialog" aria-modal="true">
+    <div class="fd-grip" aria-hidden="true"></div>
+    <header class="fd-head">
+      <span class="fd-dot" [attr.data-cat]="f.category" aria-hidden="true"></span>
+      <div class="fd-title">
+        <b>{{ f.name }}</b>
+        <span>{{ f.category || 'Mutual fund' }} · {{ risk(f).label }}</span>
+      </div>
+      <button class="fd-x" (click)="closeFund()" aria-label="Close">✕</button>
+    </header>
+
+    <!-- your position -->
+    <div class="fd-pos">
+      <div class="fd-pos-c"><span>Your value</span><b>{{ compact(f.value) }}</b></div>
+      <div class="fd-pos-c"><span>Invested</span><b>{{ compact(f.invested) }}</b></div>
+      <div class="fd-pos-c"><span>Gain</span><b [class.pos]="f.gain >= 0" [class.neg]="f.gain < 0">{{ f.gain >= 0 ? '+' : '' }}{{ compact(f.gain) }}</b></div>
+    </div>
+
+    <!-- NAV chart -->
+    <div class="fd-chart-wrap">
+      <div class="fd-chart-top">
+        <span class="fd-cap">NAV history</span>
+        <div class="win-seg sm">
+          <button [class.on]="navWindow()==='1y'" (click)="setNavWindow('1y')">1Y</button>
+          <button [class.on]="navWindow()==='3y'" (click)="setNavWindow('3y')">3Y</button>
+          <button [class.on]="navWindow()==='5y'" (click)="setNavWindow('5y')">5Y</button>
+          <button [class.on]="navWindow()==='max'" (click)="setNavWindow('max')">Max</button>
+        </div>
+      </div>
+
+      <div class="fd-loading" *ngIf="navLoading()"><span class="fx-spin sm"></span></div>
+      <p class="fd-err" *ngIf="navErr()">NAV history unavailable right now.</p>
+
+      <ng-container *ngIf="!navLoading() && !navErr() && curWindow() as w">
+        <div class="fd-chart" [class.up]="navUp()" [class.down]="!navUp()">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient [attr.id]="'g' + f.scheme_code" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" [attr.stop-color]="navUp() ? '#64C37D' : '#E5735E'" stop-opacity="0.32"/>
+                <stop offset="100%" [attr.stop-color]="navUp() ? '#64C37D' : '#E5735E'" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path [attr.d]="navArea()" [attr.fill]="'url(#g' + f.scheme_code + ')'" stroke="none"/>
+            <path [attr.d]="navPath()" fill="none" [attr.stroke]="navUp() ? '#64C37D' : '#E5735E'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+          </svg>
+        </div>
+        <div class="fd-chart-legend">
+          <span>{{ w.points[0].date | date:'MMM y' }}</span>
+          <b class="fd-chg" [class.pos]="navUp()" [class.neg]="!navUp()">
+            {{ selectedRet() != null ? (selectedRet()! >= 0 ? '+' : '') + (selectedRet()! | number:'1.1-1') + '%' : '—' }}
+            <span class="fd-chg-lbl">{{ navWindow()==='max' ? 'all time' : navWindow()==='1y' ? '1-yr return' : navWindow()==='3y' ? '3-yr p.a.' : '5-yr p.a.' }}</span>
+          </b>
+          <span>Now</span>
+        </div>
+
+        <!-- basic stats -->
+        <div class="fd-stats">
+          <div class="fd-stat"><span>Current NAV</span><b>₹{{ navData()?.current_nav | number:'1.2-2' }}</b></div>
+          <div class="fd-stat"><span>As of</span><b>{{ navData()?.nav_date | date:'d MMM y' }}</b></div>
+          <div class="fd-stat"><span>{{ navWindow() | uppercase }} high</span><b>₹{{ w.high | number:'1.2-2' }}</b></div>
+          <div class="fd-stat"><span>{{ navWindow() | uppercase }} low</span><b>₹{{ w.low | number:'1.2-2' }}</b></div>
+        </div>
+      </ng-container>
+    </div>
+
+    <p class="fd-fine">NAV data from AMFI/mfapi. Mutual funds are subject to market risks; read all scheme documents carefully.</p>
+  </section>
 </main>
