@@ -257,7 +257,16 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /** True when the user owns nothing yet — the whole estate is open plots, so
    *  we don't paint the founding villa in the centre (an empty ₹0 estate should
    *  look genuinely empty and invite the first purchase). */
-  isEmptyEstate = computed<boolean>(() => this.est.tiles().length === 0);
+  isEmptyEstate = computed<boolean>(() => {
+    // Truly empty ONLY for a user with no holdings at all. A registered user who
+    // has invested (server says has_holdings, or invested/worth > 0) is NEVER
+    // shown the "book your setup call" onboarding — even before /me/estate tiles
+    // arrive — so the map and the CTA can't contradict each other.
+    if (this.est.tiles().length > 0) return false;
+    const p = this.est.portfolio();
+    if (p && (p.has_holdings || p.invested > 0 || p.worth > 0)) return false;
+    return true;
+  });
 
   get boardW(): number { return boardSize(this.grid).w; }
   get boardH(): number { return boardSize(this.grid).h; }
