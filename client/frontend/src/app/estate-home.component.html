@@ -215,18 +215,7 @@
       </svg>
     </div>
 
-    <!-- View your build progress → the Estate Levels ladder. Sits BELOW the
-         estate board so it reads as "here's what you've built → see the ladder". -->
-    <button class="hero-progress" (click)="progress.emit()" aria-label="View your build progress">
-      <svg class="hp-ic" viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
-        <path d="M3 14.5 L8 9.5 L11.5 12.5 L17 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="17" cy="6" r="1.6" fill="currentColor"/>
-      </svg>
-      <span class="hp-text">View progress</span>
-      <svg class="hp-go" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-        <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <!-- (Build-progress ladder moved to the Funds tab — "View build progress".) -->
 
     <!-- zoom controls -->
     <div class="zoom-ctl" *ngIf="canZoom">

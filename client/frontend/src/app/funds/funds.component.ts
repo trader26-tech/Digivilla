@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
 
 import { EstateService, FundsBreakdown, FundRow, FundNav, NavWindow } from '../estate.service';
 import { compact } from '../shared/format.util';
@@ -33,6 +33,10 @@ export class FundsComponent implements OnInit {
   window = signal<'1y' | '3y' | '5y'>('1y');
   /** the estate card starts open so the funds are immediately visible. */
   estateOpen = signal(true);
+
+  /** Opens the Estate Levels build-progress ladder (shell-owned overlay). */
+  @Output() progress = new EventEmitter<void>();
+  viewProgress(): void { if (navigator.vibrate) navigator.vibrate(4); this.progress.emit(); }
 
   ngOnInit(): void {
     this.est.myFunds().subscribe({

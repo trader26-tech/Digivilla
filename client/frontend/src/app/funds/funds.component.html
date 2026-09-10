@@ -63,6 +63,18 @@
       </div>
     </section>
 
+    <!-- ===== VIEW PROGRESS — the Estate Levels build-progress ladder ===== -->
+    <button class="prog" *ngIf="funds.length" (click)="viewProgress()">
+      <span class="prog-ic" aria-hidden="true">
+        <svg viewBox="0 0 20 20" width="18" height="18"><path d="M3 14.5 L8 9.5 L11.5 12.5 L17 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="6" r="1.6" fill="currentColor"/></svg>
+      </span>
+      <span class="prog-body">
+        <b>View build progress</b>
+        <span>See your estate rise, level by level</span>
+      </span>
+      <svg class="prog-go" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
     <!-- empty state -->
     <section class="fx-empty" *ngIf="!funds.length">
       <div class="fx-empty-ic">🏗️</div>
