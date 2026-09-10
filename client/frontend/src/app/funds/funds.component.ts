@@ -123,12 +123,19 @@ export class FundsComponent implements OnInit {
     return `${hi}your journey begins 🌱`;
   });
 
-  /** The human meaning of the rank — no jargon, spoken TO the user. */
+  /** The human meaning of the rank — informative, grounded in a real fact:
+   *  only a small share of Indians invest in mutual funds at all. */
   rankMeaning = computed(() => {
     const b = this.tier().beats;
     if (b <= 0) return '';
-    return `Most people your age never start investing — you’re already ahead of ${b} out of every 100 of them.`;
+    return `Only about 1 in 5 Indians invest in mutual funds. By putting ${compact(this.saved)} to work, you’re already ahead of an estimated ${b} out of every 100 adults.`;
   });
+
+  /** Where the "ahead of X%" estimate comes from — shown as a source note so
+   *  the number is transparent, not a black box. These are illustrative bands
+   *  based on published mutual-fund participation data, not a live percentile. */
+  readonly rankSource =
+    'Estimate based on mutual-fund participation in India (AMFI & SEBI, 2024). Illustrative, not a live ranking.';
 
   /** A gentle, personal nudge toward the next milestone (or a proud line if
    *  they're already at the top). */

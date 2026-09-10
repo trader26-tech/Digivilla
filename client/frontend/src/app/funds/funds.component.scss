@@ -37,8 +37,9 @@
   border: 1px solid color-mix(in srgb, var(--gold) 32%, transparent);
 }
 .rank-mean {
-  margin: 0.35rem 0 0; font-size: 0.9rem; font-weight: 550; color: var(--muted);
-  max-width: 320px; line-height: 1.5;
+  margin: 0.35rem 0 0; font-size: 0.9rem; font-weight: 550; color: var(--ink);
+  max-width: 330px; line-height: 1.5;
+  b { font-weight: 800; }
 }
 .rank-nudge {
   display: inline-flex; align-items: center; gap: 0.35rem; margin: 0.65rem 0 0;
@@ -47,6 +48,12 @@
   background: color-mix(in srgb, var(--brass) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--brass) 28%, transparent);
   svg { color: var(--brass); flex: none; }
+}
+.rank-src {
+  display: inline-flex; align-items: flex-start; gap: 0.35rem; margin: 0.85rem 0 0;
+  max-width: 330px; font-size: 0.7rem; font-weight: 500; line-height: 1.45;
+  color: color-mix(in srgb, var(--muted) 82%, transparent); text-align: left;
+  svg { color: var(--muted); flex: none; margin-top: 0.12rem; }
 }
 .fx-cap { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 
