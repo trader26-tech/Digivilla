@@ -15,7 +15,6 @@
         <div class="flow-fig gold">₹0<span>/mo</span></div>
         <div class="flow-sub">SWP · coming soon</div>
       </div>
-      <div class="flow-div" aria-hidden="true"></div>
       <div class="flow out">
         <div class="flow-head">
           <span class="flow-lbl">INVESTED</span>
@@ -270,13 +269,10 @@
       <span class="port-k">PORTFOLIO VALUE</span>
       <div class="port-v">{{ compact(est.estateValue) }}</div>
       <div class="port-m">
-        <span>Invested {{ compact(est.invested) }}</span>
-        <i aria-hidden="true"></i>
         <b [class.pos]="gainPct >= 0" [class.neg]="gainPct < 0">
           {{ gainPct >= 0 ? '+' : '' }}{{ gainPct | number:'1.0-1' }}% returns
         </b>
       </div>
-
     </div>
 
     <!-- ===== "What does this mean?" — collapsed to a tiny ? by default ===== -->

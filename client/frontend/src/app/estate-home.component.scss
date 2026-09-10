@@ -1475,11 +1475,12 @@
    in-flow row above the hero, capped to the estate's column width. ===== */
 .flows {
   position: relative; z-index: 3;
-  flex: none; align-self: center;
-  width: 100%; max-width: 360px; margin: 0.5rem auto 1.4rem; padding: 0 1.25rem;
-  display: flex; align-items: stretch;
+  flex: none;
+  width: 100%; margin: 0.5rem 0 1.4rem; padding: 0 1.25rem;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
 }
-.flow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; cursor: default; }
+/* hug the outer edges — left column left-aligned, right column right-aligned */
+.flow { min-width: 0; display: flex; flex-direction: column; gap: 4px; cursor: default; }
 /* WITHDRAWALS is a placeholder (SWP not wired) — dim it so INVESTED leads. */
 .flow.in { opacity: 0.7; }
 .flow.out { align-items: flex-end; text-align: right; }

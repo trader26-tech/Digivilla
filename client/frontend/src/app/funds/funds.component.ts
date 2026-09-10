@@ -96,6 +96,12 @@ export class FundsComponent implements OnInit {
     { min: 0,         pct: '',        beats: 0,  line: 'Start your estate — most Indians never invest at all.' },
   ];
   tier = computed(() => this.TIERS.find((t) => this.saved >= t.min) || this.TIERS[this.TIERS.length - 1]);
+  /** Plain-English meaning of the rank badge, e.g. "Ahead of 60% of Indian
+   *  investors". Centered under the badge so "Top 40%" is never a mystery. */
+  rankMeaning = computed(() => {
+    const b = this.tier().beats;
+    return b > 0 ? `You’re ahead of ${b}% of people who invest` : '';
+  });
   /** The next tier up + how much more to reach it — the nudge to invest more. */
   nextTier = computed(() => {
     const i = this.TIERS.findIndex((t) => this.saved >= t.min);
