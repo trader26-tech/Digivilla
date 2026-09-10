@@ -308,11 +308,11 @@ export class CallsComponent implements OnInit {
   }
 
   // ── presentation ──
-  // Opens the shared Google Slides deck straight into full-screen present mode,
-  // in a new tab. On a phone this hands off to the Slides app / browser so the
-  // client can swipe through the slideshow themselves.
+  // Opens the shared "₹1 crore, two ways" deck (a published Claude artifact) in
+  // a new tab — it presents the story far better than the raw Slides file. The
+  // artifact is shared "anyone with the link", so clients open it with no login.
   readonly PRESENT_URL =
-    'https://docs.google.com/presentation/d/1ZxVzy9WHg5asst1pcosWdJEU5COEIhOEV-HgWHixGpg/present';
+    'https://claude.ai/code/artifact/a30cfb93-c4c0-47e8-9cae-ef57ef037f54';
   presenting = signal(false);   // kept for the (now unused) native overlay
   openPresentation(): void {
     if (navigator.vibrate) navigator.vibrate(6);
