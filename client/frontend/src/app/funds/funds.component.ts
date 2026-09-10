@@ -69,6 +69,15 @@ export class FundsComponent implements OnInit {
   }
   setWindow(w: '1y' | '3y' | '5y'): void { this.window.set(w); if (navigator.vibrate) navigator.vibrate(3); }
 
+  /** A fund's gain/dip vs invested, as a positive amount (sign shown in UI). */
+  fundAbsGain(f: FundRow): number { return Math.abs(f.gain || 0); }
+  /** A fund's gain/dip as a positive % of what was invested in it. */
+  fundPct(f: FundRow): number {
+    const inv = f.invested || 0;
+    if (!inv) return 0;
+    return Math.abs((f.gain || 0) / inv) * 100;
+  }
+
   /** Risk badge for a fund, inferred from its category. */
   risk(f: FundRow): { label: string; level: number } {
     const c = (f.category || '').toLowerCase();
@@ -96,11 +105,37 @@ export class FundsComponent implements OnInit {
     { min: 0,         pct: '',        beats: 0,  line: 'Start your estate — most Indians never invest at all.' },
   ];
   tier = computed(() => this.TIERS.find((t) => this.saved >= t.min) || this.TIERS[this.TIERS.length - 1]);
-  /** Plain-English meaning of the rank badge, e.g. "Ahead of 60% of Indian
-   *  investors". Centered under the badge so "Top 40%" is never a mystery. */
+
+  /** The user's first name for warm, personal copy ("Nice going, Ranjeev"). */
+  get firstName(): string {
+    const n = (this.est.estateName || this.est.profile().name || '').trim();
+    return n ? n.split(/\s+/)[0] : '';
+  }
+
+  /** A warm, personal headline — greets them by name and celebrates the effort. */
+  rankGreeting = computed(() => {
+    const b = this.tier().beats;
+    const name = this.firstName;
+    const hi = name ? `${name}, ` : '';
+    if (b >= 90) return `${hi}you’re in rare company 🏆`;
+    if (b >= 60) return `${hi}you’re doing brilliantly 👏`;
+    if (b >= 40) return `${hi}you’ve made a strong start 🌱`;
+    return `${hi}your journey begins 🌱`;
+  });
+
+  /** The human meaning of the rank — no jargon, spoken TO the user. */
   rankMeaning = computed(() => {
     const b = this.tier().beats;
-    return b > 0 ? `You’re ahead of ${b}% of people who invest` : '';
+    if (b <= 0) return '';
+    return `Most people your age never start investing — you’re already ahead of ${b} out of every 100 of them.`;
+  });
+
+  /** A gentle, personal nudge toward the next milestone (or a proud line if
+   *  they're already at the top). */
+  rankNudge = computed(() => {
+    const n = this.nextTier();
+    if (!n) return 'You’re right at the very top. Keep it up.';
+    return `Add ${compact(n.gap)} more and you’ll reach the ${n.pct}.`;
   });
   /** The next tier up + how much more to reach it — the nudge to invest more. */
   nextTier = computed(() => {
