@@ -3,8 +3,9 @@
 // per-environment without rebuilding.
 window.__env = {
   // Same-origin API by default ('' → the app calls /... on its own host).
-  // Local test: the client backend runs on :8004 (8000 was taken locally).
-  apiUrl: 'http://localhost:8004',
+  // The client backend serves this built SPA, so the API lives on the same
+  // origin both locally (uvicorn :8010) and on Railway.
+  apiUrl: '',
 
   // ── Firebase web config — enables REAL phone-OTP SMS. ────────────────────
   // Fill these from the Firebase Console:
