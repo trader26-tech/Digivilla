@@ -1499,8 +1499,8 @@
 .coin-v.gain-pos, .coin-v.gain-neg { color: var(--gold); }
 
 /* rent collected + collect prompt */
-.rc-line { text-align: center; margin: 0.4rem 0 0; font-size: 0.98rem; color: var(--muted); }
-.rc-v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--positive); margin-left: 0.3rem; }
+.rc-line { text-align: center; margin: 1.6rem 0 0; font-size: 0.98rem; color: var(--muted); display: flex; align-items: baseline; justify-content: center; gap: 0.4rem; }
+.rc-v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 850; letter-spacing: -0.6px; color: var(--positive); margin-left: 0; }
 /* total SWP received — shown in BLUE (distinct from green gains) */
 .rc-v.swp { color: #57b6d6; }
 .rc-collect { display: block; margin: 0.5rem auto 0; border: none; background: none; cursor: pointer; font: inherit; font-size: 0.92rem; color: var(--positive); b { font-weight: 800; } }
@@ -1508,7 +1508,7 @@
 
 /* ===== "what does this mean?" — a tiny ? chip; the panel is hidden until
    tapped, so it never competes with the city. ===== */
-.keywrap { flex: none; align-self: center; width: 100%; max-width: 360px; margin: 1.4rem auto 0; display: flex; flex-direction: column; align-items: center; }
+.keywrap { flex: none; align-self: center; width: 100%; max-width: 360px; margin: 2rem auto 0; display: flex; flex-direction: column; align-items: center; }
 .key-toggle {
   display: inline-flex; align-items: center; gap: 0.45rem;
   border: none; background: none; cursor: pointer; font: inherit;
@@ -1564,33 +1564,30 @@
 /* "View progress" — its own centered row BELOW the estate board, opens the
    ladder. A confident, filled accent pill so it clearly reads as the next step
    after seeing what you've built. Stands out without shouting. */
+/* Faint, refined "View progress" pill — a quiet ghost button, not a loud
+   filled CTA. Sits on its own row with generous space above the map. */
 .hero-progress {
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  width: fit-content; margin: 20px auto 4px; padding: 12px 18px 12px 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: fit-content; margin: 26px auto 0; padding: 10px 16px 10px 14px;
   border-radius: 999px; cursor: pointer;
-  color: #fff; font: 750 14.5px/1 var(--font-body); letter-spacing: -0.01em;
-  background: linear-gradient(135deg, var(--brass), color-mix(in srgb, var(--brass) 62%, #4a3fb0));
-  border: 1px solid color-mix(in srgb, var(--brass) 70%, transparent);
-  box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--brass) 85%, transparent),
-              inset 0 1px 0 rgba(255,255,255,.22);
-  transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
+  color: color-mix(in srgb, var(--ink) 82%, transparent);
+  font: 600 13.5px/1 var(--font-body); letter-spacing: -0.01em;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow: none;
+  transition: background .2s ease, border-color .2s ease, transform .12s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .hero-progress:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 16px 32px -12px color-mix(in srgb, var(--brass) 90%, transparent),
-              inset 0 1px 0 rgba(255,255,255,.22);
+  background: color-mix(in srgb, var(--brass) 12%, transparent);
+  border-color: color-mix(in srgb, var(--brass) 38%, transparent);
+  color: var(--ink);
 }
-.hero-progress:active { transform: scale(.97); }
-/* icon sits in a soft glassy chip so the whole thing feels crafted */
-.hero-progress .hp-ic {
-  color: #fff; flex: none; display: grid; place-items: center;
-  width: 26px; height: 26px; margin: -3px 0; border-radius: 8px;
-  background: rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
-}
+.hero-progress:active { transform: scale(.98); }
+.hero-progress .hp-ic { color: var(--brass); flex: none; opacity: .9; }
 .hero-progress .hp-text { white-space: nowrap; }
-.hero-progress .hp-go { color: rgba(255,255,255,.85); flex: none; transition: transform .2s ease; }
-.hero-progress:hover .hp-go { transform: translateX(3px); color: #fff; }
+.hero-progress .hp-go { color: var(--muted); flex: none; transition: transform .2s ease; }
+.hero-progress:hover .hp-go { transform: translateX(2px); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   .hero-progress, .hero-progress .hp-go { transition: none; }
 }
