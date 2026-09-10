@@ -277,19 +277,6 @@
         </b>
       </div>
 
-      <ng-container *ngIf="fundRows.length">
-        <div class="port-bar">
-          <span *ngFor="let f of fundRows; let i = index"
-                [style.flex-basis.%]="f.allocation"
-                [style.background]="fundColor(i)"></span>
-        </div>
-        <div class="port-funds">
-          <div *ngFor="let f of fundRows; let i = index">
-            <span class="a">{{ compact(f.value) }}</span>
-            <span class="n" [style.color]="fundColor(i)">{{ fundLabel(i, f) }}</span>
-          </div>
-        </div>
-      </ng-container>
     </div>
 
     <!-- ===== "What does this mean?" — collapsed to a tiny ? by default ===== -->
