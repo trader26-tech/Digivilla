@@ -614,3 +614,99 @@ def allocation_summary(owner: str) -> dict:
             "allocation": round(alloc, 1),
         })
     return {"funds": funds}
+
+
+# ---------------------------------------------------------------------------
+# Settings tab — real orders + personal details (from the CRM report tables)
+# ---------------------------------------------------------------------------
+
+def _sleeve_tag(category: str, name: str) -> str:
+    """The short coloured sleeve tag for a fund, matching the Home allocation
+    bar. Derived from the fund's category (arbitrage / gold / large / mid /
+    small), falling back to a scan of the scheme name."""
+    c = (category or "").lower()
+    n = (name or "").lower()
+    if "arbitrage" in c or "arbitrage" in n:
+        return "ARB"
+    if "gold" in c or "gold" in n:
+        return "GOLD"
+    if "small" in c or "small" in n:
+        return "SMALL"
+    if "mid" in c or "mid" in n:
+        return "MID"
+    if "large" in c or "large" in n or "momentum" in n or "flexi" in c or "index" in c:
+        return "LARGE"
+    return ""
+
+
+def orders_for_owner(owner: str) -> list[dict]:
+    """Every real fund order on this user's account (from ``client_transactions``,
+    the parsed AssetPlus report), newest first — for Settings → Transactions.
+
+    Each row: date (YYYY-MM-DD), fund (scheme name), kind (Lumpsum/Purchase/…),
+    amount (₹), units, nav, and a coloured `tag` (ARB/GOLD/LARGE/MID/SMALL).
+    Empty list when the user has no mapped CRM client / no transactions.
+    """
+    code = client_code_for_owner(owner)
+    if not code:
+        return []
+    try:
+        rows = (_sb().table("client_transactions")
+                .select("txn_date,scheme_name,scheme_code,category,kind,amount,units,nav")
+                .eq("client_code", code).execute().data or [])
+    except Exception:
+        return []
+    out = []
+    for r in rows:
+        name = r.get("scheme_name") or "Fund"
+        kind = (r.get("kind") or "Purchase").strip() or "Purchase"
+        try:
+            amount = round(float(r.get("amount") or 0))
+        except (TypeError, ValueError):
+            amount = 0
+        out.append({
+            "date": r.get("txn_date") or "",
+            "fund": name,
+            "kind": kind,
+            "amount": amount,
+            "units": r.get("units"),
+            "nav": r.get("nav"),
+            "tag": _sleeve_tag(r.get("category") or "", name),
+            # rent/SWP payouts (if the report ever carries them) flow OUT to the user
+            "direction": "out" if "payout" in kind.lower() or "swp" in kind.lower() else "in",
+        })
+    out.sort(key=lambda x: x["date"] or "", reverse=True)
+    return out
+
+
+def details_for_owner(owner: str) -> dict:
+    """This user's KYC / personal details, straight from their ``client_master``
+    CRM record (phone-bridged). Fields the app shows: name, phone, email, PAN,
+    DOB, address, client_code, and a 'since' month. Missing fields come back "".
+    """
+    code = client_code_for_owner(owner)
+    empty = {"name": "", "phone": "", "email": "", "pan": "", "dob": "",
+             "address": "", "bank": "", "client_code": code or "", "since": ""}
+    if not code:
+        return empty
+    try:
+        rows = (_sb().table("client_master").select("*")
+                .eq("client_code", code).limit(1).execute().data or [])
+    except Exception:
+        return empty
+    if not rows:
+        return empty
+    m = rows[0]
+    addr_parts = [m.get("address"), m.get("city"), m.get("state"), m.get("pin")]
+    address = ", ".join(str(p).strip() for p in addr_parts if p and str(p).strip())
+    return {
+        "name": (m.get("name") or "").strip(),
+        "phone": (m.get("phone") or "").strip(),
+        "email": (m.get("email") or "").strip(),
+        "pan": (m.get("pan") or "").strip(),
+        "dob": (m.get("dob") or "").strip(),
+        "address": address,
+        "bank": (m.get("bank") or "").strip(),
+        "client_code": code,
+        "since": (m.get("signup") or "").strip(),
+    }

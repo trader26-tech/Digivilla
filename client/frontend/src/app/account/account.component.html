@@ -1,91 +1,191 @@
-<main class="acct">
-  <!-- header -->
-  <header class="ac-top">
-    <button class="ac-back" (click)="onBack()" aria-label="Back">‹</button>
-    <span class="ac-title">Account</span>
-    <span class="ac-spacer"></span>
-  </header>
+<!-- tVilla symbol (reused from Home) for the presentation poster miniature -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="tVilla">
+    <g transform="translate(120,80) scale(0.3) translate(-410,-250)">
+      <polygon points="721.8,264 410,444 410,516 721.8,336" fill="#8a5a33"></polygon>
+      <polygon points="410,444 98.2,264 98.2,336 410,516" fill="#6d4527"></polygon>
+      <polygon points="410,84 721.8,264 410,444 98.2,264" fill="#efe7d8"></polygon>
+      <polygon points="410,84 721.8,264 410,300 98.2,264" fill="#f6f0e5"></polygon>
+      <polygon points="410,124 634,254 410,384 186,254" fill="#c9552f"></polygon>
+      <polygon points="410,124 634,254 410,314 186,254" fill="#e0673c"></polygon>
+      <polygon points="410,314 634,254 634,300 410,360" fill="#a84424"></polygon>
+      <polygon points="410,314 186,254 186,300 410,360" fill="#8f3a20"></polygon>
+      <rect x="386" y="300" width="48" height="70" fill="#5c3a22"></rect>
+    </g>
+  </g>
+</defs></svg>
 
-  <!-- profile -->
-  <section class="ac-profile">
-    <button class="ac-avatar" [class.has-photo]="!!est.profile().photo" (click)="pickPhoto()"
-            [attr.aria-label]="est.profile().photo ? 'Change your photo' : 'Add your photo'">
-      <img *ngIf="est.profile().photo as p" class="ac-av-img" [src]="p" alt="" />
-      <svg *ngIf="!est.profile().photo" class="ac-av-ph" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
-        <circle cx="12" cy="8.5" r="3.8" fill="none" stroke="currentColor" stroke-width="1.6" />
-        <path d="M5 19c0-3.6 3-5.8 7-5.8s7 2.2 7 5.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-      </svg>
-      <span class="ac-av-edit" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+<!-- ============================ SETTINGS ============================ -->
+<div class="st">
+  <!-- 1 · identity (no box) -->
+  <div class="id">
+    <label class="id-av" title="Add a photo" (click)="pickTop()">
+      <b *ngIf="!avatar()">{{ idInitial }}</b>
+      <img *ngIf="avatar()" class="avImg" [src]="avatar()" alt="" />
+      <i><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3"></circle></svg></i>
+      <input #avFileTop type="file" accept="image/*" hidden (change)="onAvatarChosen($event)" />
+    </label>
+    <div class="id-t">
+      <div class="id-name">{{ idName }}</div>
+      <div class="id-meta">{{ idPhone }}</div>
+    </div>
+    <button type="button" class="id-out" (click)="onSignOut()">Log off</button>
+  </div>
+
+  <!-- 2 · presentation poster -->
+  <a class="st-pres" href="https://claude.ai/code/artifact/a30cfb93-c4c0-47e8-9cae-ef57ef037f54" target="_blank" rel="noopener">
+    <span class="glow"></span>
+    <svg class="mini" viewBox="20 16 200 152" aria-hidden="true"><use href="#tVilla"></use></svg>
+    <span class="dur">4 MIN · PRESENTATION</span>
+    <span class="txt"><b>How your estate works</b><span>Villas, plots, payouts — in four minutes.</span></span>
+    <span class="st-play"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg></span>
+  </a>
+
+  <!-- 3 · Account card -->
+  <div class="st-k" style="padding-top:4px">Account</div>
+  <div class="st-card acc">
+    <button type="button" class="ar" (click)="openPanel('tx')">
+      <span class="ar-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m7 15 4-5 4 3 5-7"></path></svg></span>
+      <span class="ar-t"><b>Transactions</b><span>{{ txSubline }}</span></span>
+      <span class="ar-c">›</span>
     </button>
-    <input #photoInput type="file" accept="image/*" class="ac-input" (change)="onPhotoChosen($event)" />
+    <button type="button" class="ar" (click)="openMe()">
+      <span class="ar-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+      <span class="ar-t"><b>Personal details</b><span>PAN, bank, address</span></span>
+      <span class="ar-c">›</span>
+    </button>
+    <a class="ar" href="tel:+918925188870">
+      <span class="ar-i gold"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6.2 6.2l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"></path></svg></span>
+      <span class="ar-t"><b>Call your advisor</b><span>Ranjeev · +91 89251 88870</span></span>
+      <span class="ar-c">›</span>
+    </a>
+    <button type="button" class="ar" (click)="onBook()">
+      <span class="ar-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg></span>
+      <span class="ar-t"><b>Book a call</b><span>Schedule a review with your advisor</span></span>
+      <span class="ar-c">›</span>
+    </button>
+  </div>
 
-    <b class="ac-name">{{ est.profile().name }}</b>
-    <div class="ac-meta">
-      <span class="ac-meta-row">
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6.6 10.8a12 12 0 0 0 5.6 5.6l1.9-1.9a1 1 0 0 1 1-.24 9 9 0 0 0 2.8.45 1 1 0 0 1 1 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5a1 1 0 0 1 1-1h2.3a1 1 0 0 1 1 1 9 9 0 0 0 .45 2.8 1 1 0 0 1-.24 1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        {{ est.profile().phone || 'Add phone number' }}
-      </span>
-      <span class="ac-meta-row" *ngIf="est.profile().city">
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-        {{ est.profile().city }}
-      </span>
-    </div>
-  </section>
+  <!-- 4 · Update to latest -->
+  <div class="up" [class.done]="updated()">
+    <span class="up-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M4 19h16"></path></svg></span>
+    <div class="up-t"><b>{{ updated() ? 'Up to date' : 'Update to latest' }}</b><span>{{ updateSub }}</span></div>
+    <button type="button" class="up-b" (click)="onUpdate()" [disabled]="updating()">
+      {{ updated() ? 'Done' : updating() ? '…' : 'Update' }}
+    </button>
+  </div>
 
-  <!-- summary -->
-  <section class="ac-summary">
-    <div class="ac-sum-cell">
-      <b class="ac-sum-v">{{ compact(totalInvested) }}</b>
-      <span class="ac-sum-k">Total invested</span>
-    </div>
-    <div class="ac-sum-div"></div>
-    <div class="ac-sum-cell">
-      <b class="ac-sum-v">{{ txns().length }}</b>
-      <span class="ac-sum-k">Asset{{ txns().length === 1 ? '' : 's' }}</span>
-    </div>
-  </section>
+  <!-- 5 · disclaimer -->
+  <div class="st-fine">Folios in your own name · Units at NAV · Payouts not assured</div>
+</div>
 
-  <!-- ===== settings rows ===== -->
-  <section class="ac-rows">
-    <!-- Transactions: a row that expands to reveal the list on tap -->
-    <button class="ac-row" (click)="toggleTxns()" [attr.aria-expanded]="showTxns()">
-      <span class="ac-row-ico" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h13l-3-3M20 17H7l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-      <div class="ac-row-main">
-        <b>Transactions</b>
-        <span>{{ txns().length }} in total</span>
+<!-- ==================== Transactions panel #ap-tx ==================== -->
+<div class="ap" id="ap-tx" *ngIf="panel() === 'tx'">
+  <div class="ap-h">
+    <button type="button" class="ap-x" (click)="closePanel()">‹</button>
+    <b>Transactions</b>
+    <span>{{ orders().length }}</span>
+  </div>
+  <div class="ap-tools">
+    <label class="srch">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input type="search" placeholder="Search fund" [ngModel]="txQuery()" (ngModelChange)="txQuery.set($event)" />
+    </label>
+    <div class="chips">
+      <button type="button" class="fchip" [class.on]="txFilter() === 'all'" (click)="setFilter('all')">All</button>
+      <button type="button" class="fchip" [class.on]="txFilter() === 'Lumpsum'" (click)="setFilter('Lumpsum')">Lumpsum</button>
+      <button type="button" class="fchip" [class.on]="txFilter() === 'Purchase'" (click)="setFilter('Purchase')">Purchase</button>
+      <button type="button" class="fchip" [class.on]="txFilter() === 'Payout'" (click)="setFilter('Payout')">Payouts</button>
+    </div>
+  </div>
+  <div class="ap-b">
+    <div class="tf">
+      <div class="tf-side"><span class="tf-k"><i class="in"></i>Put in</span><b>{{ money(putIn()) }}</b></div>
+      <div class="tf-side r"><span class="tf-k"><i class="out"></i>Paid out</span><b class="gold">{{ money(paidOut()) }}</b></div>
+    </div>
+    <div class="tf-bar"><i [style.width.%]="putInPct()"></i></div>
+
+    <div class="ap-sort">
+      <span>{{ shownLabel }}</span>
+      <div class="sortw">
+        <button type="button" (click)="toggleSortMenu()">{{ sortLabel }} ⌄</button>
+        <div class="sortm" *ngIf="txSortOpen()">
+          <button type="button" [class.on]="txSort() === 'date'" (click)="setSort('date')">Newest first</button>
+          <button type="button" [class.on]="txSort() === 'old'" (click)="setSort('old')">Oldest first</button>
+          <button type="button" [class.on]="txSort() === 'amt'" (click)="setSort('amt')">Largest first</button>
+          <button type="button" [class.on]="txSort() === 'fund'" (click)="setSort('fund')">By fund</button>
+        </div>
       </div>
-      <svg class="ac-row-caret" [class.open]="showTxns()" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    </div>
 
-    <!-- the list, revealed only when Transactions is pressed -->
-    <div class="ac-txns" *ngIf="showTxns()">
-      <div class="ac-txn" *ngFor="let t of txns(); trackBy: trackTxn">
-        <span class="ac-txn-ico" [class.villa]="t.kind === 'villa'" [class.land]="t.kind === 'land'" [class.build]="t.kind === 'building'" aria-hidden="true">
-          <svg *ngIf="t.kind === 'villa'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          <svg *ngIf="t.kind === 'land'" viewBox="0 0 24 24" width="20" height="20"><path d="M3 13l9-5 9 5-9 5-9-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          <svg *ngIf="t.kind === 'building'" viewBox="0 0 24 24" width="20" height="20"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <ng-container *ngFor="let g of orderGroups()">
+      <div class="ap-day">{{ g.head }}</div>
+      <div class="tx2" *ngFor="let o of g.rows">
+        <span class="tx2-d" [style.--c]="tagColour(o.tag)">{{ o.tag || '·' }}</span>
+        <span class="tx2-t">
+          <b>{{ o.fund }}</b>
+          <span>{{ groupedByFund ? (fmtInline(o.date) + ' · ' + o.kind) : o.kind }}</span>
         </span>
-        <div class="ac-txn-main">
-          <b class="ac-txn-name">{{ t.label }}</b>
-          <span class="ac-txn-sub">{{ kindLabel(t.kind) }} · {{ t.at ? (t.at | date:'d MMM y') : 'Founding villa' }}</span>
-        </div>
-        <div class="ac-txn-amt">
-          <b>−{{ compact(t.amount) }}</b>
-          <span>invested</span>
-        </div>
+        <span class="tx2-a" [class.out]="o.direction === 'out'">{{ amountLabel(o) }}</span>
       </div>
-    </div>
-  </section>
+    </ng-container>
 
-  <!-- ===== log off — the main action ===== -->
-  <button class="ac-logoff" (click)="onSignOut()">
-    <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M15 12H4m0 0l4-4m-4 4l4 4M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Log off
-  </button>
-</main>
+    <div class="ap-empty" *ngIf="orderGroups().length === 0">
+      {{ ordersLoaded() ? (orders().length ? 'Nothing matches.' : 'No transactions yet.') : 'Loading…' }}
+    </div>
+
+    <button type="button" class="ap-btn" (click)="onDownload()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M4 19h16"></path></svg>
+      {{ downloadDone() ? 'Statement coming soon' : 'Download statement' }}
+    </button>
+  </div>
+</div>
+
+<!-- ==================== Personal details panel #ap-me ==================== -->
+<div class="ap" id="ap-me" *ngIf="panel() === 'me'">
+  <div class="ap-h">
+    <button type="button" class="ap-x" (click)="closePanel()">‹</button>
+    <b>Personal details</b>
+    <span class="okp">KYC verified</span>
+  </div>
+  <div class="ap-b">
+    <div class="me-av">
+      <label class="id-av" title="Change photo" (click)="pickMe()">
+        <b *ngIf="!avatar()">{{ idInitial }}</b>
+        <img *ngIf="avatar()" class="avImg" [src]="avatar()" alt="" />
+        <i><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3"></circle></svg></i>
+        <input #avFileMe type="file" accept="image/*" hidden (change)="onAvatarChosen($event)" />
+      </label>
+      <div><b>{{ idName }}</b><span>{{ meClientLine }}</span></div>
+    </div>
+
+    <form class="me-g">
+      <label class="me"><span>Phone</span>
+        <input type="tel" [ngModel]="fPhone()" name="phone" (ngModelChange)="fPhone.set($event); onMeInput()" />
+      </label>
+      <label class="me"><span>Email</span>
+        <input type="email" [ngModel]="fEmail()" name="email" (ngModelChange)="fEmail.set($event); onMeInput()" />
+      </label>
+      <label class="me lock"><span>PAN</span>
+        <input type="text" [value]="details()?.pan || ''" readonly />
+        <i title="Verified — change via KYC"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></i>
+      </label>
+      <label class="me lock"><span>Date of birth</span>
+        <input type="text" [value]="details()?.dob || ''" readonly />
+        <i title="Verified — change via KYC"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></i>
+      </label>
+      <label class="me wide"><span>Bank for payouts</span>
+        <input type="text" [value]="details()?.bank || '—'" readonly />
+        <i class="okp" *ngIf="details()?.bank">Active</i>
+      </label>
+      <label class="me wide"><span>Address</span>
+        <textarea rows="2" [ngModel]="fAddress()" name="addr" (ngModelChange)="fAddress.set($event); onMeInput()"></textarea>
+      </label>
+    </form>
+
+    <button type="button" class="ap-btn" (click)="onSave()" [disabled]="!meDirty()">
+      {{ meSaved() ? 'Saved ✓' : 'Save changes' }}
+    </button>
+    <div class="ap-note">PAN, date of birth and bank are locked to your KYC. Phone, email and address update instantly.</div>
+  </div>
+</div>

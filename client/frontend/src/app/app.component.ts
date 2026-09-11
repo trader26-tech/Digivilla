@@ -140,8 +140,14 @@ export class AppComponent {
     );
   }
 
+  /** True when the booking / calls flow is showing over the Settings tab
+   *  (opened from the Settings → "Book a call" row). The Settings page itself
+   *  is the default for the Settings tab; this flips to the old <app-calls>. */
+  callsOpen = false;
+
   goHome(): void {
     this.view = 'home';
+    this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }
   goExplore(): void {
@@ -150,10 +156,21 @@ export class AppComponent {
   }
   goFunds(): void {
     this.view = 'funds';
+    this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }
+  /** The Settings tab: always lands on the Settings page (booking closed).
+   *  Tapping Settings again while in the booking flow returns to Settings. */
   goCalls(): void {
     this.view = 'calls';
+    this.callsOpen = false;
+    window.scrollTo({ top: 0 });
+  }
+  /** Settings → "Book a call": open the existing booking / calls flow. */
+  openBooking(): void {
+    this.view = 'calls';
+    this.callsOpen = true;
+    this.bookOnOpen = 'Portfolio review';
     window.scrollTo({ top: 0 });
   }
 

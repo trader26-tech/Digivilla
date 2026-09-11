@@ -166,6 +166,31 @@ export interface AccountTxn {
   status: string;
 }
 
+/** One REAL fund order (from GET /me/orders — the parsed AssetPlus report). */
+export interface AccountOrder {
+  date: string;            // YYYY-MM-DD
+  fund: string;            // scheme name
+  kind: string;            // 'Lumpsum' | 'Purchase' | 'Payout' | …
+  amount: number;          // ₹
+  units: number | null;
+  nav: number | null;
+  tag: string;             // 'ARB' | 'GOLD' | 'LARGE' | 'MID' | 'SMALL' | ''
+  direction: 'in' | 'out';
+}
+
+/** This user's KYC / personal details (from GET /me/details → client_master). */
+export interface ClientDetails {
+  name: string;
+  phone: string;
+  email: string;
+  pan: string;
+  dob: string;
+  address: string;
+  bank: string;
+  client_code: string;
+  since: string;
+}
+
 export interface Tile {
   id: string;
   type: TileType;
@@ -262,6 +287,20 @@ export class EstateService {
   transactions(): import('rxjs').Observable<{ transactions: AccountTxn[] }> {
     return this.http.get<{ transactions: AccountTxn[] }>(
       `${environment.apiUrl}/me/transactions`, { headers: this.authHeaders });
+  }
+
+  /** REAL fund orders from the CRM report (client_transactions), newest first —
+   *  for the Settings → Transactions panel. */
+  orders(): import('rxjs').Observable<{ orders: AccountOrder[] }> {
+    return this.http.get<{ orders: AccountOrder[] }>(
+      `${environment.apiUrl}/me/orders`, { headers: this.authHeaders });
+  }
+
+  /** This user's KYC / personal details from their CRM record — for the
+   *  Settings → Personal details panel. */
+  details(): import('rxjs').Observable<ClientDetails> {
+    return this.http.get<ClientDetails>(
+      `${environment.apiUrl}/me/details`, { headers: this.authHeaders });
   }
 
   /** The returns detail for one building/villa tile — invested vs current value,

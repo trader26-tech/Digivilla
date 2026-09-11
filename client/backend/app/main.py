@@ -433,6 +433,24 @@ def patch_my_profile(
     return client_portfolio.set_estate_profile(owner, name, city)
 
 
+@app.get("/me/orders")
+def get_my_orders(authorization: Optional[str] = Header(default=None)) -> dict:
+    """This user's REAL fund orders (from the parsed AssetPlus report,
+    ``client_transactions``), newest first — for Settings → Transactions."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    return {"orders": client_portfolio.orders_for_owner(owner)}
+
+
+@app.get("/me/details")
+def get_my_details(authorization: Optional[str] = Header(default=None)) -> dict:
+    """This user's KYC / personal details from their CRM record
+    (``client_master``, phone-bridged) — for Settings → Personal details."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    return client_portfolio.details_for_owner(owner)
+
+
 @app.get("/me/holding/{uv_id}")
 def get_my_holding(uv_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
     """Full detail for one of the user's holdings: money ledger + fund

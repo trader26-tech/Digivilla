@@ -37,9 +37,21 @@
   [tab]="true"
 ></app-estate-levels>
 
-<!-- CALLS tab: the user's scheduled fund-manager calls. -->
+<!-- SETTINGS tab: the account hub (identity, presentation, Account card,
+     Update card + Transactions / Personal-details panels). Shown on the
+     Settings tab AND from the home avatar. -->
+<app-account
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls' && !callsOpen"
+  class="has-nav"
+  (back)="goHome()"
+  (book)="openBooking()"
+  (signOut)="onSignOut()"
+></app-account>
+
+<!-- CALLS / booking flow: the user's scheduled fund-manager calls. Reached
+     from the Settings → "Book a call" row (do NOT delete — booking stays). -->
 <app-calls
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls'"
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls' && callsOpen"
   class="has-nav"
   [autoOpenReason]="bookOnOpen"
   (opened)="clearBookOnOpen()"
@@ -77,10 +89,11 @@
   </div>
 </nav>
 
-<!-- ACCOUNT: profile + transactions, from the home avatar. -->
+<!-- ACCOUNT: the same Settings page, opened from the home avatar. -->
 <app-account
   *ngIf="!intro && accountOpen"
   (back)="closeAccount()"
+  (book)="openBooking(); closeAccount()"
   (signOut)="onSignOut()"
 ></app-account>
 
