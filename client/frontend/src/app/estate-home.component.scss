@@ -1,9 +1,38 @@
 :host { display: block; }
-/* the fixed home manages its own space; ignore the shell's has-nav padding so
-   .estate stays exactly one viewport tall (no scroll). */
 :host.has-nav { padding-bottom: 0 !important; }
 
+/* ============================================================
+   REFERENCE TOKENS (Nocturne) — scoped to the component root so the home
+   screen renders in EXACTLY the reference's palette (#161826 bg, #9184d9
+   accent, its gold + neutral ramps), independent of the app's global tokens.
+   Inter is already loaded app-wide (--font-display / --font-body fall back to
+   Inter here too). Accent is used for lines/glows/active only, never as a fill.
+   ============================================================ */
 .estate {
+  --color-bg: #161826;
+  --color-surface: #1e2130;
+  --color-text: #e9e9ed;
+  --color-neutral-200: #e4e7f5;
+  --color-neutral-300: #c9c6da;
+  --color-neutral-400: #9a9aa5;
+  --color-neutral-500: #6b6e79;
+  --color-neutral-600: #75798c;
+  --color-neutral-700: #3f424d;
+  --color-neutral-800: #2b2e3a;
+  --color-neutral-900: #232634;
+  --color-neutral-950: #12141d;
+  --color-accent: #9184d9;
+  --color-accent-100: #efedfc;
+  --color-accent-200: #d2cefd;
+  --color-accent-300: #b5abfc;
+  --color-accent-800: #2b2741;
+  --color-accent-900: #1f1c30;
+  --color-divider: #2b2e3a;
+  --ref-font: Inter, system-ui, sans-serif;
+  --ref-heading: 500;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.55);
+
   max-width: 480px;
   margin: 0 auto;
   /* FIXED to the viewport — the home never scrolls; everything fits one screen. */
@@ -11,61 +40,30 @@
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--paper);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--ref-font);
+  -webkit-font-smoothing: antialiased;
   position: relative;
   overflow: hidden;
 }
+.estate :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-/* ============ TOP: avatar, hero line, then the map — in flow ============
-   The panel hugs its content (no fixed height), so there is never dead space
-   under the town. Vertical rhythm the design asks for:
-     avatar → small gap → hero → gap → the town → (divider lives below) */
+/* ============ HOME CONTENT — one centred column that fills the screen:
+   flows near the top, the fixed 3x3 board grows to absorb the middle, the
+   PORTFOLIO block + disclaimer link rest near the bottom, clear of the app's
+   own bottom nav. ============ */
 .estate-top {
   position: relative;
-  /* fills the fixed .estate exactly — no growth, no scroll. The hero + map +
-     figures + key are one centred column that always fits the screen. */
   flex: 1; min-height: 0;
   display: flex;
   flex-direction: column;
-  /* fill the screen top-to-bottom (no dead space up top): flows sit near the
-     top, the town grows to absorb the middle, figures + key rest near the
-     bottom. The board's flex:1 (below) soaks up any extra height. */
   justify-content: flex-start;
-  /* a little top breathing room (avatar/notch), bottom clears the floating nav */
-  padding: calc(1.4rem + env(safe-area-inset-top)) 0 calc(6.5rem + env(safe-area-inset-bottom));
+  /* a little top breathing room (notch), bottom clears the floating nav */
+  padding: calc(3.4rem + env(safe-area-inset-top)) 0 calc(6rem + env(safe-area-inset-bottom));
   overflow: hidden;
-  /* an ambient "scene" the town sits inside — a soft warm sky up top, a green
-     estate glow rising from the ground, and a gentle vertical wash between, so
-     the empty space above and below reads as atmosphere, not a flat void. */
-  /* dark ambient scene: a subtle green estate-glow rising from the ground and a
-     cool depth tint up top, over the near-black navy ground. */
-  background:
-    radial-gradient(120% 55% at 50% -6%, rgba(139, 123, 240, 0.10), transparent 60%),
-    radial-gradient(130% 55% at 50% 110%, rgba(100, 195, 125, 0.10), transparent 60%),
-    linear-gradient(180deg, var(--card-2), var(--paper) 52%);
 }
-/* a faint vignette on the very edges so the scene feels contained, premium.
-   z-index:0 sits it above the background but below all real content, so we
-   don't need to force position:relative on the children (which was dropping
-   the absolutely-positioned avatar into the flow). */
-.estate-top::after {
-  content: '';
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(120% 120% at 50% 50%, transparent 68%, rgba(22, 48, 43, 0.05) 100%);
-}
-/* lift the in-flow content above the vignette, but LEAVE absolutely-positioned
-   children (avatar, call button) exactly where they were. */
-.estate-top > .hero,
-.estate-top > .board-scroll,
-.estate-top > .stats,
-.estate-top > .stats-rule { position: relative; z-index: 1; }
-/* the town grows to absorb the leftover height so the column fills the screen
-   (no dead gap up top); the SVG's preserveAspectRatio keeps the art uncropped. */
-.estate-top .board-scroll { flex: 1 1 auto; min-height: 0; }
-.estate-top .stats { flex: none; padding: 0 1.25rem; margin: 1.1rem 0 0; }
-
-/* hairline under the town, before the figures */
-.stats-rule { flex: none; height: 1px; background: var(--survey); margin: 1rem 1.25rem 0; }
+.estate-top > * { position: relative; z-index: 1; }
 
 /* the small brass * on each figure */
 .star { font-size: 0.5em; font-weight: 800; color: var(--brass); vertical-align: super; margin-left: 1px; }
@@ -260,70 +258,51 @@
 }
 
 
-/* title */
-.title { text-align: center; margin-top: 0.5rem; }
-.title-cap { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
-.title h1 {
-  margin: 0.15rem 0 0.6rem;
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 850;
-  letter-spacing: -0.8px;
-  color: var(--ink);
+/* ===== TITLE — kicker YOUR ESTATE over "<name>'s City" (Inter 500, sizes
+   carry hierarchy — never bold), with a discreet edit pencil. ===== */
+.title { text-align: center; }
+.title .kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); }
+.title .name-row { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
+.title .name {
+  margin: 0;
+  font-family: var(--ref-font); font-weight: var(--ref-heading);
+  font-size: 24px; letter-spacing: -.01em; color: var(--color-text);
+  text-transform: capitalize;
 }
+.title .name-edit {
+  flex: none; display: grid; place-items: center;
+  width: 26px; height: 26px; padding: 0;
+  border: none; border-radius: 50%; background: none;
+  color: var(--color-neutral-500); cursor: pointer;
+  transition: color .18s, background .18s, transform .12s;
+  svg { display: block; }
+  &:hover { color: var(--color-accent-300); background: var(--color-accent-900); }
+  &:active { transform: scale(.9); }
+}
+.title .name-city { display: block; margin-top: 3px; font-size: 12px; color: var(--color-neutral-400); }
 
-/* the map viewport — scrolls freely in BOTH directions so the town can
-   keep growing outward from the hall */
-.board-scroll {
-  width: 100%;
-  /* zoomable (grown) mode gets a tall scrollable viewport; the fitted base
-     mode overrides this with an aspect-ratio height just below. */
-  height: 56vh;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  overscroll-behavior: contain;
-  cursor: grab;
-  /* we drive pan/pinch ourselves, so stop the browser hijacking the gestures */
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
+/* ===== ESTATE BOARD — the fixed 3x3 isometric grid, centred, with a soft
+   accent glow rising under it. Grows to fill the leftover column height; the
+   SVG's default preserveAspectRatio contains the art so no house is cropped. ===== */
+.board {
+  position: relative;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 10px;
 }
-.board-scroll::-webkit-scrollbar { display: none; }
-.board-scroll:active { cursor: grabbing; }
-.board { display: block; max-width: none; }
-/* at the base 3x3 the whole estate is framed to fit — no scrolling at all */
-/* Fitted mode: the whole 3x3 board is contained in the panel, centred, and
-   scaled up to fill it. preserveAspectRatio="xMidYMid meet" on the SVG does
-   the containing, so the artwork is never cropped. */
-.board-scroll.fit {
-  overflow: hidden;
-  display: block;
-  padding: 0;
-  /* The town is the hero. width:100% keeps it inside the screen (never spills
-     sideways), while a TALLER box than the art's natural ratio + a scaled-up
-     SVG makes the town read bigger. overflow:hidden clips only the board's own
-     empty top/bottom padding, so no house is ever cut. */
-  /* Grow to fill the flex space the column leaves (kills the top dead-space),
-     but never taller than the art needs at this width — so it reads big without
-     distorting. The SVG's preserveAspectRatio="xMidYMid meet" centres + contains
-     the town within whatever height it gets, so no house is ever cropped. */
-  height: 100%;
-  min-height: 200px;
-  max-height: min(56vh, 420px);
-  width: 100%;
-  /* nudge the town down off the hero so it settles nearer the middle of the
-     screen rather than hugging the title. */
-  margin: clamp(1rem, 6vh, 4rem) auto 0;
+.board-glow {
+  position: absolute; top: 50%; left: 50%;
+  width: 340px; height: 340px; margin: -190px 0 0 -170px;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(145,132,217,.13) 0%, transparent 66%);
 }
-.board-scroll.fit .board {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
+.board svg { position: relative; width: 100%; height: 100%; max-height: 46vh; display: block; }
 
 /* cells */
-.cell { cursor: pointer; }
+.cell { cursor: default; }
+.cell.owned { cursor: pointer; }
+.cell.owned:hover { filter: brightness(1.08); }
+.cell.building { filter: drop-shadow(0 0 6px rgba(145,132,217,.35)); }
 .cell:focus-visible { outline: none; }
 .plot-open {
   fill: rgba(22, 48, 43, 0.018);
@@ -1475,28 +1454,29 @@
   .tick-ring, .tick-mark { animation: none; stroke-dashoffset: 0; }
 }
 
+
 /* ============================================================
-   DARK HOME — reference-matched top + bottom furniture
+   REFERENCE FURNITURE — flows header, portfolio block + allocation bar, the
+   gold coin, and the disclaimer sheet. All Inter, headings weight 500 (sizes
+   carry the hierarchy, never bold); every colour from the reference ramps.
    ============================================================ */
 
-/* ===== TOP HERO — two flow columns split by a thin vertical divider.
-   WITHDRAWALS (placeholder, dimmed gold) · INVESTED (real, violet). A centred,
-   in-flow row above the hero, capped to the estate's column width. ===== */
+/* ===== FLOWS — WITHDRAWALS (placeholder, gold) · INVESTED (real, accent),
+   split by a faint vertical rule that fades at its ends. ===== */
 .flows {
-  position: relative; z-index: 3;
   flex: none;
-  /* hug the frame edges — content pinned to the very corners (only notch inset) */
-  width: 100%; margin: 0.5rem 0 1.4rem;
-  padding: 0 calc(0.35rem + env(safe-area-inset-right)) 0 calc(0.35rem + env(safe-area-inset-left));
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  display: flex; align-items: stretch;
+  margin: 0 0 4px;
+  padding: 0 22px;
 }
-/* hug the outer edges — left column left-aligned, right column right-aligned */
-.flow { min-width: 0; display: flex; flex-direction: column; gap: 4px; cursor: default; }
-/* WITHDRAWALS is a placeholder (SWP not wired) — dim it so INVESTED leads. */
-.flow.in { opacity: 0.7; }
+.flow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .flow.out { align-items: flex-end; text-align: right; }
+.flow-div {
+  width: 1px; margin: 4px 0;
+  background: linear-gradient(180deg, transparent, rgba(233,233,237,.14), transparent);
+}
 .flow-head { display: flex; align-items: center; gap: 6px; }
-.flow-lbl { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
+.flow-lbl { font-size: 9px; letter-spacing: .14em; color: var(--color-neutral-400); }
 .flow-arrow {
   width: 16px; height: 16px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -1504,131 +1484,119 @@
 }
 .flow.in .flow-arrow {
   color: #6b5111;
-  background: radial-gradient(circle at 34% 28%, #ffe9a3, #f6c445 38%, #dc9a1f 72%, #a86b12);
-  box-shadow: 0 0 8px rgba(246, 196, 69, 0.35);
+  background: radial-gradient(circle at 34% 28%, #ffe9a3 0%, #f6c445 38%, #dc9a1f 72%, #a86b12 100%);
+  box-shadow: 0 0 8px rgba(246,196,69,.35);
 }
 .flow.out .flow-arrow {
   color: #2b2741;
-  background: radial-gradient(circle at 34% 26%, #e7e5fe, #b5abfc 36%, #796cbf 72%, #423a6a);
-  box-shadow: 0 0 8px rgba(181, 171, 252, 0.35);
+  background: radial-gradient(circle at 34% 26%, #e7e5fe 0%, #b5abfc 36%, #796cbf 72%, #423a6a 100%);
+  box-shadow: 0 0 8px rgba(181,171,252,.35);
 }
 .flow-fig {
-  font-family: var(--font-display); font-size: 25px; font-weight: 850;
-  letter-spacing: -0.02em; line-height: 1.05; font-variant-numeric: tabular-nums;
+  font-family: var(--ref-font); font-weight: var(--ref-heading);
+  font-size: 34px; letter-spacing: -.015em; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
-.flow-fig span { font-size: 11px; font-weight: 600; letter-spacing: 0; color: var(--muted); margin-left: 2px; }
+.flow-fig span { font-size: 13px; letter-spacing: 0; color: var(--color-neutral-500); margin-left: 2px; }
 .flow-fig.gold { color: #f3dfa8; }
-.flow-fig.violet { color: var(--brass); }
-.flow-sub { font-size: 10px; color: var(--muted); white-space: nowrap; }
-.flow-div {
-  width: 1px; margin: 4px 8px;
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ink) 14%, transparent), transparent);
-}
+.flow-fig.violet { color: var(--color-accent-200); }
+.flow-sub { font-size: 10px; color: var(--color-neutral-500); white-space: nowrap; }
 
-/* ===== BOTTOM — PORTFOLIO VALUE: headline figure + returns ===== */
+/* ===== PORTFOLIO VALUE — headline figure, invested + returns, allocation bar
+   and the five fund columns. ===== */
 .port {
-  position: relative; z-index: 3;
   flex: none;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  margin: 2rem 0 0; padding: 0 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 0 16px; margin-top: 6px;
 }
-.port-k { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
+.port-k { font-size: 10px; letter-spacing: .16em; color: var(--color-neutral-400); }
 .port-v {
-  font-family: var(--font-display); font-size: 40px; font-weight: 850; line-height: 1.02;
-  letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--ink);
-  margin-top: 2px;
+  font-family: var(--ref-font); font-weight: var(--ref-heading);
+  font-size: 48px; line-height: 1.05; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: var(--color-text);
 }
 .port-m {
-  display: flex; align-items: center; gap: 9px; margin-top: 2px;
-  font-size: 13px; color: color-mix(in srgb, var(--ink) 72%, transparent);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--color-neutral-300);
 }
-.port-m i { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
-.port-m b { font-weight: 600; font-variant-numeric: tabular-nums; }
-.port-m b.pos { color: var(--positive); }
-.port-m b.neg { color: var(--negative); }
+.port-m i { width: 3px; height: 3px; border-radius: 50%; background: var(--color-neutral-600); }
+.port-m b { font-weight: 400; }
+.port-m b.pos { color: #8fd65a; }
+.port-m b.neg { color: #d98a8a; }
 
-/* ===== "what does this mean?" — a tiny ? chip; the panel is hidden until
-   tapped, so it never competes with the city. ===== */
-.keywrap { flex: none; align-self: center; width: 100%; max-width: 360px; margin: 2rem auto 0; display: flex; flex-direction: column; align-items: center; }
-.key-toggle {
-  display: inline-flex; align-items: center; gap: 0.45rem;
+.port-bar {
+  width: 100%; display: flex; gap: 2px; height: 5px;
+  border-radius: 3px; overflow: hidden; margin-top: 12px;
+}
+.port-bar span { height: 100%; flex-grow: 0; flex-shrink: 0; }
+.port-funds {
+  width: 100%; display: flex; justify-content: space-between; gap: 4px; margin-top: 10px;
+}
+.port-funds div {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.port-funds .a {
+  font-size: 13px; font-weight: var(--ref-heading); letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.port-funds .n { font-size: 9px; letter-spacing: .06em; white-space: nowrap; }
+
+/* ===== "What do Villa and Plot mean?" link ===== */
+.fine {
+  flex: none;
+  padding: 14px 22px 0;
+  text-align: center;
+}
+.fine-link {
   border: none; background: none; cursor: pointer; font: inherit;
-  font-size: 0.78rem; font-weight: 600; color: var(--muted);
-  padding: 0.3rem 0.5rem; border-radius: 999px; transition: color 0.2s;
-  &:hover { color: var(--ink); }
-}
-.key-q {
-  display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
-  background: color-mix(in srgb, var(--brass) 18%, transparent); color: var(--brass);
-  font-size: 0.7rem; font-weight: 800;
+  font-size: 11px; color: var(--color-neutral-500);
+  transition: color .2s;
+  span { color: var(--color-accent-300); }
+  &:hover { color: var(--color-neutral-300); }
 }
 
-.key {
-  width: 100%; margin: 0.7rem 0 0; padding: 0.85rem 1rem 0.8rem;
-  border-radius: 16px; border: 1px solid var(--survey); background: var(--card);
-  animation: keyDrop 0.28s cubic-bezier(0.22,1,0.36,1) both;
-}
-@keyframes keyDrop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.key-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; }
-.key-row + .key-row { border-top: 1px solid var(--survey); }
-.key-ico {
-  flex: none; width: 52px; height: 42px; border-radius: 10px;
-  display: grid; place-items: center; overflow: hidden;
-  background: color-mix(in srgb, var(--card-2) 70%, transparent);
-  svg { display: block; width: 100%; height: 100%; }
-}
-.key-txt { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.key-txt > b { font-size: 0.9rem; font-weight: 800; color: var(--ink); }
-.key-txt > span { font-size: 0.76rem; line-height: 1.35; color: var(--muted); }
-.key-fine {
-  margin: 0.6rem 0 0; padding-top: 0.6rem; border-top: 1px solid var(--survey);
-  font-size: 0.66rem; line-height: 1.4; color: var(--muted);
-  b { color: var(--terracotta); font-weight: 800; }
-}
+/* real gain figure — green up, red down (used by pop stats etc.) */
+.gain-pos { color: #8fd65a; }
+.gain-neg { color: #d98a8a; }
 
-/* the collect coin floating over a villa on the map */
-.coin-float { animation: coin-bob 2.2s ease-in-out infinite; }
-@keyframes coin-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-.cf-shadow { fill: rgba(0,0,0,0.4); }
-.cf-face { fill: #E9C15C; }
-.cf-ring { fill: none; stroke: #B8902F; stroke-width: 2.5; }
-.cf-shine { fill: #FBEBB0; opacity: 0.9; }
-.cf-glyph { fill: #6B5111; font-size: 17px; font-weight: 800; }
+/* ===== the gold coin bobbing above the front-most villa ===== */
+.coin-float { animation: coin-bob 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes coin-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.cf-shadow { fill: #0b0d16; opacity: .35; }
+.cf-face { fill: #e9c15c; }
+.cf-ring { fill: none; stroke: #b8902f; stroke-width: 2; }
+.cf-shine { fill: #ffe9a3; opacity: .9; }
+.cf-glyph { fill: #6b5111; font-size: 15px; font-weight: 500; font-family: var(--ref-font); }
+@media (prefers-reduced-motion: reduce) { .coin-float { animation: none; } }
 
-/* the AMFI/metaphor line, dimmed on dark */
-.home-amfi { color: var(--muted); }
-
-/* real gain figure — green up, red down (chips + total-gain line) */
-.gain-pos { color: var(--positive); }
-.gain-neg { color: var(--negative); }
-
-/* "View progress" — its own centered row BELOW the estate board, opens the
-   ladder. A confident, filled accent pill so it clearly reads as the next step
-   after seeing what you've built. Stands out without shouting. */
-/* Faint, refined "View progress" pill — a quiet ghost button, not a loud
-   filled CTA. Sits on its own row with generous space above the map. */
-.hero-progress {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: fit-content; margin: 26px auto 0; padding: 10px 16px 10px 14px;
-  border-radius: 999px; cursor: pointer;
-  color: color-mix(in srgb, var(--ink) 82%, transparent);
-  font: 600 13.5px/1 var(--font-body); letter-spacing: -0.01em;
-  background: color-mix(in srgb, var(--ink) 4%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  box-shadow: none;
-  transition: background .2s ease, border-color .2s ease, transform .12s ease;
-  -webkit-tap-highlight-color: transparent;
+/* ===== DISCLAIMER SHEET — "What you actually own" (reference fineScrim) ===== */
+.scrim {
+  position: fixed; inset: 0; z-index: 48;
+  display: none; align-items: center; justify-content: center; padding: 22px;
+  background: rgba(11,13,22,.62);
+  backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
 }
-.hero-progress:hover {
-  background: color-mix(in srgb, var(--brass) 12%, transparent);
-  border-color: color-mix(in srgb, var(--brass) 38%, transparent);
-  color: var(--ink);
+.scrim.open { display: flex; animation: scrim-fade .2s ease both; }
+@keyframes scrim-fade { from { opacity: 0; } to { opacity: 1; } }
+.sheet {
+  width: 100%; max-width: 340px; border-radius: 8px;
+  background: var(--color-surface); box-shadow: var(--shadow-lg); overflow: hidden;
+  animation: sheet-in .28s cubic-bezier(.22,1,.36,1) both;
 }
-.hero-progress:active { transform: scale(.98); }
-.hero-progress .hp-ic { color: var(--brass); flex: none; opacity: .9; }
-.hero-progress .hp-text { white-space: nowrap; }
-.hero-progress .hp-go { color: var(--muted); flex: none; transition: transform .2s ease; }
-.hero-progress:hover .hp-go { transform: translateX(2px); color: var(--ink); }
-@media (prefers-reduced-motion: reduce) {
-  .hero-progress, .hero-progress .hp-go { transition: none; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+.sheet .pad { padding: 10px 14px 14px; }
+.sheet .head { display: flex; align-items: baseline; justify-content: space-between; }
+.sheet .h { font-family: var(--ref-font); font-weight: var(--ref-heading); font-size: 17px; color: var(--color-text); }
+.sheet .close {
+  border: none; background: none; cursor: pointer; font: inherit;
+  font-size: 11px; color: var(--color-neutral-500);
+  &:hover { color: var(--color-neutral-300); }
 }
+.fine-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 14px;
+  font-size: 12px; line-height: 1.5; color: var(--color-neutral-400);
+  b { font-weight: var(--ref-heading); color: var(--color-neutral-200); }
+}
+.fine-mini { width: 40px; height: 30px; flex: none; display: block; }
+.fine-mini.lg { width: 72px; height: 54px; }
+.fine-note { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: var(--color-neutral-500); }

@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  AfterViewInit,
   Component,
   ElementRef,
   EventEmitter,
   Input,
-  OnDestroy,
   OnInit,
   Output,
   ViewChild,
@@ -22,16 +20,23 @@ import { CallsService } from './shared/calls.service';
 import { VillaArtComponent } from './shared/villa-art.component';
 import { LandArtComponent } from './shared/land-art.component';
 import { EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
-import { BASE_GRID } from './estate/iso.model';
-import {
-  Cell,
-  boardOrigin,
-  boardSize,
-  buildCells,
-  gridSize,
-} from './estate/board-layout';
-import { MapGestures, MapViewport } from './estate/map-gestures';
-import { compact } from './shared/format.util';
+import { Cell, buildCells, gridSize } from './estate/board-layout';
+import { compact, inr } from './shared/format.util';
+
+/** One parcel of the fixed 3x3 reference board. */
+interface BoardCell {
+  col: number;
+  row: number;
+  /** Offset for the tile <use>, per the reference placement formula. */
+  x: number;
+  y: number;
+  /** The owned asset here, or null for an empty (locked) lot. */
+  tile: Tile | null;
+  /** Which reference symbol paints the ground (#tVilla / #tLand / #tLocked). */
+  use: string;
+  /** True when a construction shell (#tBuild) stands on the land. */
+  building: boolean;
+}
 
 /** Ticket price for one parcel; villas and builds are multiples of it. */
 const PLOT_TICKET = 10_00_000;
@@ -44,7 +49,7 @@ const PLOT_TICKET = 10_00_000;
  * #tLocked (open tile), #tLand (bare land / building base) and #tVilla
  * (finished villa). The heavy hand-drawn hall/villa geometry is gone; each
  * cell is now a single <use> plus, for a build in progress, one construction
- * group. Layout, zoom and pointer handling are unchanged.
+ * group. The board is a FIXED 3x3 (the reference "estate board") — no pan/zoom.
  */
 @Component({
   selector: 'app-estate-home',
@@ -53,8 +58,7 @@ const PLOT_TICKET = 10_00_000;
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
-export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('scroller') scroller?: ElementRef<HTMLDivElement>;
+export class EstateHomeComponent implements OnInit {
   /** Hidden file picker behind the corner avatar. */
   @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
 
@@ -214,47 +218,88 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     input.value = ''; // allow re-picking the same file later
   }
 
-  // ------------------------------------------------------------- zooming ---
-
-  /** The default framing is the closest one; the user may step out once, and
-   *  only after the town has outgrown the base board. */
-  readonly MIN_ZOOM = 1;
-  readonly MAX_ZOOM = 1.5;
-  zoom = signal(1.5);
-
-  private readonly viewport: MapViewport = {
-    element: () => this.scroller?.nativeElement,
-    zoom: () => this.zoom(),
-    setZoom: (z) => this.zoom.set(z),
-    minZoom: this.MIN_ZOOM,
-    maxZoom: this.MAX_ZOOM,
-    enabled: () => this.canZoom,
-  };
-  private readonly gestures = new MapGestures(this.viewport);
-
-  zoomIn(): void { this.gestures.zoomBy(1.5); }
-  zoomOut(): void { this.gestures.zoomBy(1 / 1.5); }
-
-  /** Zoom only means anything once the board has grown past the base 3x3. */
-  get canZoom(): boolean { return this.grid > BASE_GRID; }
-  get canZoomIn(): boolean { return this.canZoom && this.zoom() < this.MAX_ZOOM - 0.001; }
-  get canZoomOut(): boolean { return this.canZoom && this.zoom() > this.MIN_ZOOM + 0.001; }
-
-  // gesture events, forwarded to the controller
-  onTouchStart(e: TouchEvent): void { this.gestures.onTouchStart(e); }
-  onTouchMove(e: TouchEvent): void { this.gestures.onTouchMove(e); }
-  onTouchEnd(e: TouchEvent): void { this.gestures.onTouchEnd(e); }
-  onMouseDown(e: MouseEvent): void { this.gestures.onMouseDown(e); }
-  onMouseMove(e: MouseEvent): void { this.gestures.onMouseMove(e); }
-  onMouseUp(): void { this.gestures.onMouseUp(); }
-  onWheel(e: WheelEvent): void { this.gestures.onWheel(e); }
-
   // -------------------------------------------------------------- board ----
+  // The reference is a FIXED 3x3 isometric board (no pan/zoom). Each of the
+  // nine cells is placed with the reference's exact formula:
+  //   offsetX = (col - row) * 93.6 ;  offsetY = (col + row) * 54
+  // and cells are painted in ascending (col + row) so back tiles paint over
+  // front tiles (SVG has no z-buffer — document order IS depth).
 
   get grid(): number { return gridSize(this.est.tiles().length); }
 
-  /** Every cell, owned tiles assigned and sorted back-to-front for painting. */
+  /** Every cell, owned tiles assigned and sorted back-to-front for painting.
+   *  Still used by the empty-state centre + the metaphor-key previews. */
   cells = computed<Cell[]>(() => buildCells(this.est.tiles()));
+
+  /** One rendered parcel of the fixed 3x3 reference board. */
+  // (kept small + local — this is the only geometry the static board needs.)
+  boardCells = computed<BoardCell[]>(() => {
+    // The user's real assets, most-established first (villas before builds
+    // before land), so the finished villas land on the front-most parcels.
+    const tiles = this.est.tiles();
+    const order: TileType[] = ['villa', 'building', 'land'];
+    const owned = [...tiles].sort(
+      (a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.boughtAt - b.boughtAt,
+    );
+
+    // The nine 3x3 parcels, front-most (largest col+row) filled FIRST so the
+    // owner's tiles cluster at the front of the board and empty lots recede.
+    const coords: { col: number; row: number }[] = [];
+    for (let row = 0; row < 3; row++)
+      for (let col = 0; col < 3; col++) coords.push({ col, row });
+    const byFrontFirst = [...coords].sort((a, b) => (b.col + b.row) - (a.col + a.row));
+
+    const assigned = new Map<string, Tile>();
+    byFrontFirst.forEach(({ col, row }, i) => {
+      const t = owned[i];
+      if (t) assigned.set(`${col},${row}`, t);
+    });
+
+    // Emit sorted back-to-front (ascending col+row) so depth reads right.
+    return coords
+      .map(({ col, row }) => {
+        const tile = assigned.get(`${col},${row}`) ?? null;
+        const use = !tile
+          ? '#tLocked'
+          : tile.type === 'villa'
+            ? '#tVilla'
+            : '#tLand'; // land AND building stand on bare land
+        return {
+          col,
+          row,
+          x: (col - row) * 93.6,
+          y: (col + row) * 54,
+          tile,
+          use,
+          building: tile?.type === 'building',
+        } as BoardCell;
+      })
+      .sort((a, b) => (a.col + a.row) - (b.col + b.row));
+  });
+
+  /** True once at least one finished villa exists — the gold coin bobs above
+   *  the front-most villa only when one is really there. */
+  boardCoin = computed<BoardCell | null>(() => {
+    const villas = this.boardCells().filter((c) => c.tile?.type === 'villa');
+    if (!villas.length) return null;
+    // front-most villa (largest col+row) wears the coin
+    return villas.reduce((a, b) => ((b.col + b.row) >= (a.col + a.row) ? b : a));
+  });
+
+  /** Tapping an owned parcel opens its detail page (via the shell). Empty /
+   *  locked parcels are inert. */
+  tapBoardCell(c: BoardCell): void {
+    if (!c.tile) return;
+    if (navigator.vibrate) navigator.vibrate(4);
+    this.openTile.emit(c.tile);
+  }
+
+  /** Transform placing the reference construction group (#tBuild) on a cell.
+   *  #tBuild is authored around (640,430) in its own space; re-anchor it to the
+   *  cell centre and scale to sit on the land tile. */
+  boardBuildTransform(c: BoardCell): string {
+    return `translate(${c.x + 120},${c.y + 100}) scale(0.32) translate(-640,-430)`;
+  }
 
   /** True when the user owns nothing yet — the whole estate is open plots, so
    *  we don't paint the founding villa in the centre (an empty ₹0 estate should
@@ -279,48 +324,7 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return true;
   }
 
-  get boardW(): number { return boardSize(this.grid).w; }
-  get boardH(): number { return boardSize(this.grid).h; }
-  get offX(): number { return boardOrigin(this.grid).x; }
-  get offY(): number { return boardOrigin(this.grid).y; }
-
-  /** Rendered size = intrinsic x zoom, used only once the board can scroll. */
-  private readonly ZOOM_BASE = 0.62;
-  private get scale(): number { return this.ZOOM_BASE * this.zoom(); }
-  get renderW(): number { return this.boardW * this.scale; }
-  get renderH(): number { return this.boardH * this.scale; }
-
-  // ---------------------------------------------------------- board glue ---
-  // The reference symbols are authored around their own local origin: #tLand /
-  // #tVilla / #tLocked centre on (120, 80). Our cell centres are (c.x, c.y).
-  // A <use> is placed at (c.x - 120, c.y - 80) so the symbol lands on the cell.
-  private readonly SYM_CX = 120;
-  private readonly SYM_CY = 80;
-  useX(c: Cell): number { return c.x - this.SYM_CX; }
-  useY(c: Cell): number { return c.y - this.SYM_CY; }
-
-  /** Which reference symbol paints this cell's ground. */
-  symbolFor(c: Cell): string {
-    if (c.hall) return '#tVilla';                 // the hall reads as the grandest villa
-    const t = c.tile;
-    if (!t) return '#tLocked';                    // open plot
-    if (t.type === 'villa') return '#tVilla';
-    return '#tLand';                              // land + building both stand on bare land
-  }
-
-  /** The construction group is drawn on top of #tLand while a villa builds. */
-  isBuilding(c: Cell): boolean { return c.tile?.type === 'building'; }
-
-  /** Transform placing the reference construction group on this cell. It is
-   *  authored in the reference at translate(x,y) scale(0.385) translate(-640,-430);
-   *  we re-anchor it to the cell centre and drop it slightly onto the land. */
-  buildTransform(c: Cell): string {
-    return `translate(${c.x},${c.y + 20}) scale(0.32) translate(-640,-430)`;
-  }
-
   // ------------------------------------------------------------ lifecycle --
-
-  private ro?: ResizeObserver;
 
   ngOnInit(): void {
     // Play the verified tick once, right after OTP.
@@ -435,56 +439,11 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  ngAfterViewInit(): void {
-    this.centreOnTown();
-    requestAnimationFrame(() => this.centreOnTown());
-
-    // Re-centre the first time the container reports a real size — more
-    // reliable than guessing at timings.
-    const el = this.scroller?.nativeElement;
-    if (el && typeof ResizeObserver !== 'undefined') {
-      let settled = false;
-      this.ro = new ResizeObserver(() => {
-        if (!settled && el.clientWidth > 0) {
-          settled = true;
-          this.centreOnTown();
-        }
-      });
-      this.ro.observe(el);
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.ro?.disconnect();
-  }
-
-  /** Centre the view on the hall plus everything built, so the interesting
-   *  part is always in frame rather than a corner of empty grid. */
-  private centreOnTown(): void {
-    const el = this.scroller?.nativeElement;
-    if (!el || !el.clientWidth) return;
-
-    let minX = 0, maxX = 0, minY = 0, maxY = 0;
-    for (const c of this.cells()) {
-      if (!c.tile && !c.hall) continue;
-      minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
-      minY = Math.min(minY, c.y); maxY = Math.max(maxY, c.y);
-    }
-    const cx = (this.offX + (minX + maxX) / 2) * this.scale;
-    const cy = (this.offY + (minY + maxY) / 2) * this.scale;
-    // Bias the framing downward so the hero greeting (which floats over the
-    // top of the map) never sits on top of the town.
-    const HERO_INSET = 40;
-    el.scrollLeft = Math.round(cx - el.clientWidth / 2);
-    el.scrollTop = Math.round(cy - (el.clientHeight + HERO_INSET) / 2);
-  }
-
   // ---------------------------------------------------------- interaction --
 
+  /** Open the detail popup for a cell (used by the empty-state / key previews). */
   tapCell(c: Cell): void {
-    if (this.gestures.wasGesture) return; // a pan or pinch, not a tap
     if (navigator.vibrate) navigator.vibrate(4);
-    // Every tap opens the detail popup — for a built tile OR an open plot.
     this.selected.set(c);
   }
 
@@ -695,6 +654,9 @@ export class EstateHomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   compact = compact;
+  /** Full ₹ with Indian digit grouping (₹1,70,63,583) — the reference headline
+   *  shows the full grouped number, not a compacted one. */
+  inr = inr;
 
   get villas(): number { return this.est.countOf('villa'); }
   get buildings(): number { return this.est.countOf('building'); }

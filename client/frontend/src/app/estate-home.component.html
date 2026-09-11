@@ -1,11 +1,11 @@
 <section class="estate">
-  <!-- ============ TOP: swipeable estate canvas (top half) ============ -->
+  <!-- ============ HOME CONTENT (above the app's own bottom nav) ============ -->
   <div class="estate-top">
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
-    <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder, dimmed) · INVESTED
-         (real, from live NAV), split by a thin vertical divider. Hidden on the
-         empty estate, which keeps its onboarding instead. ===== -->
+    <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder) · INVESTED (real,
+         from live NAV), split by a thin vertical divider that fades at its
+         ends. Hidden on the empty estate, which keeps its onboarding. ===== -->
     <div class="flows" *ngIf="!isEmptyEstate">
       <div class="flow in">
         <div class="flow-head">
@@ -15,56 +15,40 @@
         <div class="flow-fig gold">₹0<span>/mo</span></div>
         <div class="flow-sub">SWP · coming soon</div>
       </div>
+      <div class="flow-div" aria-hidden="true"></div>
       <div class="flow out">
         <div class="flow-head">
           <span class="flow-lbl">INVESTED</span>
           <span class="flow-arrow" aria-hidden="true">↑</span>
         </div>
-        <div class="flow-fig violet">{{ compact(est.invested) }}</div>
+        <div class="flow-fig violet">{{ inr(est.invested) }}</div>
         <div class="flow-sub">{{ investedSub }}</div>
       </div>
     </div>
 
-    <!-- ===== HERO: "YOUR ESTATE" over the estate name. ===== -->
-    <header class="hero">
-      <span class="hero-kicker">YOUR ESTATE</span>
-      <div class="hero-name">
-        <h1 class="hero-title">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
-        <button class="hero-edit" (click)="openSettings()" aria-label="Edit estate name">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <!-- ===== TITLE: kicker YOUR ESTATE over "<name>'s City", with a discreet
+         edit pencil for the estate name. ===== -->
+    <div class="title">
+      <div class="kicker">YOUR ESTATE</div>
+      <div class="name-row">
+        <h1 class="name">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
+        <button class="name-edit" (click)="openSettings()" aria-label="Edit estate name">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
             <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
             <path d="M13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
-      <span class="hero-city" *ngIf="est.estateCity">{{ est.estateCity }}</span>
-    </header>
+      <span class="name-city" *ngIf="est.estateCity">{{ est.estateCity }}</span>
+    </div>
 
-    <!-- the isometric town — below the hero. Scrolls freely in both
-         directions so the town can keep growing. -->
-    <div
-      class="board-scroll"
-      [class.fit]="!canZoom"
-      #scroller
-      (touchstart)="onTouchStart($event)"
-      (touchmove)="onTouchMove($event)"
-      (touchend)="onTouchEnd($event)"
-      (touchcancel)="onTouchEnd($event)"
-      (mousedown)="onMouseDown($event)"
-      (mousemove)="onMouseMove($event)"
-      (mouseup)="onMouseUp()"
-      (mouseleave)="onMouseUp()"
-      (wheel)="onWheel($event)"
-    >
-      <svg
-        class="board"
-        [attr.viewBox]="'0 0 ' + boardW + ' ' + boardH"
-        [attr.width]="canZoom ? renderW : null"
-        [attr.height]="canZoom ? renderH : null"
-        [attr.preserveAspectRatio]="canZoom ? 'xMidYMid meet' : 'xMidYMin meet'"
-        role="img"
-        aria-label="Your estate map"
-      >
+    <!-- ===== ESTATE BOARD: the fixed 3x3 isometric grid (the reference
+         board). A soft accent glow sits under it; owned parcels are painted
+         with the reference tile symbols and empty lots recede as dashed
+         diamonds. Hidden on the empty estate. ===== -->
+    <div class="board" *ngIf="!isEmptyEstate">
+      <div class="board-glow" aria-hidden="true"></div>
+      <svg viewBox="-175 15 590 375" role="img" aria-label="Your estate board">
         <!-- ============================================================
              Reference symbols (the "estate board" template), verbatim.
              Each parcel is painted by <use>-ing one of these three:
@@ -138,12 +122,10 @@
               <rect x="384.1" y="374.5" width="5" height="33" fill="#946035"></rect><rect x="345.2" y="352.0" width="5" height="33" fill="#946035"></rect><rect x="306.2" y="329.5" width="5" height="33" fill="#946035"></rect><rect x="267.3" y="307.0" width="5" height="33" fill="#946035"></rect><rect x="228.3" y="284.5" width="5" height="33" fill="#946035"></rect><rect x="189.4" y="262.0" width="5" height="33" fill="#946035"></rect><rect x="150.4" y="239.5" width="5" height="33" fill="#946035"></rect><rect x="111.4" y="217.0" width="5" height="33" fill="#946035"></rect>
             </g>
           </g>
+          <!-- an empty, buildable lot — a dark dashed diamond (reference #tLocked). -->
           <g id="tLocked">
-            <!-- an empty, buildable lot — DARK on the dark board, so unowned
-                 land recedes and the green estate pops (matches the reference). -->
-            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#232A36"></polygon>
-            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#2A323E" opacity="0.5"></polygon>
-            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3A4453" stroke-width="1.6" stroke-dasharray="6 5"></polygon>
+            <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#242739"></polygon>
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3f424d" stroke-width="1.5" stroke-dasharray="6 5"></polygon>
           </g>
           <!-- one construction shell, re-anchored per building cell -->
           <g id="tBuild">
@@ -151,80 +133,39 @@
           </g>
         </defs>
 
-        <g [attr.transform]="'translate(' + offX + ',' + offY + ')'">
-          <ng-container *ngFor="let c of cells()">
-            <!-- ===== THE HALL: the founding villa, dead centre — but ONLY once
-                 the user owns something. An empty ₹0 estate shows an open plot
-                 here instead, so nothing is implied to be owned. ===== -->
-            <g *ngIf="c.hall && !isEmptyEstate" class="cell hall owned" (click)="tapCell(c)" role="button" tabindex="0"
-               [attr.aria-label]="c.tile?.label">
-              <use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
+        <!-- The nine parcels, emitted back-to-front (ascending col+row) so a
+             back tile paints over the tile in front of it (SVG has no
+             z-buffer). Owned parcels use the reference symbols; empty lots are
+             dashed diamonds (#tLocked). -->
+        <ng-container *ngFor="let c of boardCells()">
+          <g class="cell"
+             [class.owned]="!!c.tile"
+             [class.building]="c.building"
+             (click)="tapBoardCell(c)"
+             [attr.role]="c.tile ? 'button' : null"
+             [attr.tabindex]="c.tile ? 0 : null"
+             [attr.aria-label]="c.tile?.label">
+            <use [attr.href]="c.use" [attr.x]="c.x" [attr.y]="c.y"></use>
+            <!-- a construction crane/shell stands on the land while a villa builds -->
+            <g *ngIf="c.building" [attr.transform]="boardBuildTransform(c)">
+              <use [attr.href]="'#tBuild'"></use>
             </g>
+          </g>
+        </ng-container>
 
-            <!-- ===== EMPTY-ESTATE CENTRE: a faint "dummy" villa — the home the
-                 setup call will turn real. The empty centre is the cell with
-                 index -1 (no tile). Tapping it opens the setup-call sheet. ===== -->
-            <g *ngIf="!c.hall && !c.tile && c.index === -1 && isEmptyEstate" class="cell dummy"
-               (click)="openCallSheet()" role="button" tabindex="0" aria-label="Book your setup call">
-              <use [attr.href]="'#tLand'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
-              <g class="dummy-villa"><use [attr.href]="'#tVilla'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use></g>
-            </g>
-
-            <!-- ===== OPEN plot: dashed diamond. Tap to build. ===== -->
-            <g *ngIf="!c.hall && !c.tile && c.index !== -1" class="cell open" (click)="tapCell(c)" role="button" tabindex="0"
-               [attr.aria-label]="'Open plot ' + (c.index + 1)">
-              <use [attr.href]="'#tLocked'" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
-              <!-- the "build here" mark — always visible on every open plot -->
-              <g class="plot-cta" [attr.transform]="'translate(' + c.x + ',' + c.y + ')'">
-                <circle class="plot-ring" r="17"></circle>
-                <path class="plot-ico" d="M0,-8 V8 M-8,0 H8"></path>
-              </g>
-            </g>
-
-            <!-- ===== OWNED tile: land / building / villa ===== -->
-            <g *ngIf="!c.hall && c.tile as t" class="cell owned" (click)="tapCell(c)" role="button" tabindex="0"
-               [attr.aria-label]="t.label">
-              <use [attr.href]="symbolFor(c)" [attr.x]="useX(c)" [attr.y]="useY(c)"></use>
-              <!-- a construction shell stands on the land while a villa builds -->
-              <g *ngIf="isBuilding(c)" [attr.transform]="buildTransform(c)">
-                <use [attr.href]="'#tBuild'"></use>
-              </g>
-            </g>
-          </ng-container>
-
-          <!-- ===== COIN OVERLAY: painted AFTER every tile so coins always sit
-               on top of the villas (one gold coin per finished villa). ===== -->
-          <ng-container *ngFor="let c of cells()">
-            <!-- the coin floats ABOVE this villa's roof; the shadow sits on the
-                 roof itself. Outer g = fixed position on the roof-top of the
-                 cell; inner g = the bob (so the animation transform never
-                 clobbers the position transform, which stacked them before). -->
-            <g *ngIf="wearsCoin(c)" [attr.transform]="'translate(' + c.x + ',' + (c.y - 44) + ')'"
-               aria-hidden="true">
-              <!-- shadow rests on the CENTRE of the villa roof (does not bob) -->
-              <ellipse class="cf-shadow" cx="0" cy="30" rx="9" ry="3"></ellipse>
-              <g class="coin-float">
-                <circle class="cf-face" r="12"></circle>
-                <circle class="cf-ring" r="12"></circle>
-                <circle class="cf-shine" cx="-3.5" cy="-4" r="3"></circle>
-                <text class="cf-glyph" x="0" y="4" text-anchor="middle">₹</text>
-              </g>
-            </g>
-          </ng-container>
+        <!-- ===== GOLD COIN: bobs above the front-most finished villa, painted
+             LAST so it always sits on top. Only shown when a villa exists. ===== -->
+        <g *ngIf="boardCoin() as c" [attr.transform]="'translate(' + (c.x + 120) + ',' + (c.y + 40) + ')'"
+           aria-hidden="true">
+          <ellipse class="cf-shadow" cx="0" cy="30" rx="10" ry="3.5"></ellipse>
+          <g class="coin-float">
+            <circle class="cf-face" r="13"></circle>
+            <circle class="cf-ring" r="13"></circle>
+            <circle class="cf-shine" cx="-3.8" cy="-4.5" r="3"></circle>
+            <text class="cf-glyph" x="0" y="4.5" text-anchor="middle">₹</text>
+          </g>
         </g>
       </svg>
-    </div>
-
-    <!-- (Build-progress ladder moved to the Funds tab — "View build progress".) -->
-
-    <!-- zoom controls -->
-    <div class="zoom-ctl" *ngIf="canZoom">
-      <button class="zb" (click)="zoomIn()" [disabled]="!canZoomIn" aria-label="Zoom in">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-      </button>
-      <button class="zb" (click)="zoomOut()" [disabled]="!canZoomOut" aria-label="Zoom out">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-      </button>
     </div>
 
     <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
@@ -252,42 +193,63 @@
       </ng-container>
     </ng-container>
 
-    <!-- ===== PORTFOLIO VALUE: the headline figure, returns, and a 5-fund
-         allocation bar. Hidden on the empty estate. ===== -->
+    <!-- ===== PORTFOLIO VALUE: the headline figure (full ₹ grouping), the
+         invested + returns line, a 5-segment allocation bar and the five fund
+         columns. Hidden on the empty estate. ===== -->
     <div class="port" *ngIf="!isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
-      <div class="port-v">{{ compact(est.estateValue) }}</div>
+      <div class="port-v">{{ inr(est.estateValue) }}</div>
       <div class="port-m">
+        <span>Invested {{ inr(est.invested) }}</span>
+        <i aria-hidden="true"></i>
         <b [class.pos]="gainPct >= 0" [class.neg]="gainPct < 0">
           {{ gainPct >= 0 ? '+' : '' }}{{ gainPct | number:'1.0-1' }}% returns
         </b>
       </div>
+
+      <!-- the allocation bar + fund columns only once the fund breakdown loads -->
+      <ng-container *ngIf="fundRows.length">
+        <div class="port-bar">
+          <span *ngFor="let f of fundRows; let i = index"
+                [style.flex-basis.%]="f.allocation"
+                [style.background]="fundColor(i)"></span>
+        </div>
+        <div class="port-funds">
+          <div *ngFor="let f of fundRows; let i = index">
+            <span class="a">{{ compact(f.value) }}</span>
+            <span class="n" [style.color]="fundColor(i)">{{ fundLabel(i, f) }}</span>
+          </div>
+        </div>
+      </ng-container>
     </div>
 
-    <!-- ===== "What does this mean?" — collapsed to a tiny ? by default ===== -->
-    <div class="keywrap" *ngIf="!isEmptyEstate">
-      <button class="key-toggle" (click)="toggleKey()" [attr.aria-expanded]="keyOpen()" aria-label="What do Villa and Plot mean?">
-        <span class="key-q">?</span> What do Villa and Plot mean
+    <!-- ===== "What do Villa and Plot mean?" — a quiet link that opens a
+         disclaimer bottom-sheet. Hidden on the empty estate. ===== -->
+    <div class="fine" *ngIf="!isEmptyEstate">
+      <button class="fine-link" (click)="toggleKey()" aria-label="What do Villa and Plot mean?">
+        What do Villa and Plot mean? <span aria-hidden="true">›</span>
       </button>
+    </div>
+  </div>
 
-      <section class="key" *ngIf="keyOpen()" aria-label="What the assets mean">
-        <div class="key-row">
-          <span class="key-ico" aria-hidden="true">
-            <svg viewBox="26 20 188 128" width="100%" height="100%"><use href="#tVilla"></use></svg>
-          </span>
-          <span class="key-txt"><b>Villa</b><span>Fully-paid holding — pays a monthly payout.</span></span>
+  <!-- ============ DISCLAIMER SHEET — "What you actually own" ============ -->
+  <div class="scrim" [class.open]="keyOpen()" (click)="keyOpen.set(false)">
+    <div class="sheet" (click)="$event.stopPropagation()">
+      <div class="pad">
+        <div class="head">
+          <span class="h">What you actually own</span>
+          <button class="close" (click)="keyOpen.set(false)">close ✕</button>
         </div>
-        <div class="key-row">
-          <span class="key-ico" aria-hidden="true">
-            <svg viewBox="26 20 188 128" width="100%" height="100%">
-              <use href="#tLand"></use>
-              <g transform="translate(120,96) scale(0.30) translate(-640,-430)"><use href="#tBuild"></use></g>
-            </svg>
-          </span>
-          <span class="key-txt"><b>Under construction</b><span>SIP still building it up.</span></span>
+        <div class="fine-row">
+          <svg class="fine-mini lg" viewBox="20 16 200 152" aria-hidden="true"><use href="#tVilla"></use></svg>
+          <span><b>Villa</b> — a picture of a 50 / 50 arbitrage + equity fund mix. The arbitrage half pays the monthly income; the equity half grows.</span>
         </div>
-        <p class="key-fine">A metaphor for mutual-fund units in your name · market-linked, <b>not guaranteed</b>.</p>
-      </section>
+        <div class="fine-row">
+          <svg class="fine-mini lg" viewBox="20 16 200 152" aria-hidden="true"><use href="#tLand"></use></svg>
+          <span><b>Plot</b> — pure equity, large / mid / small cap in the mix you choose. No income until it becomes a villa.</span>
+        </div>
+        <p class="fine-note">Both are units of a fund portfolio in your own name, valued at NAV and moving daily. Nothing here is assured.</p>
+      </div>
     </div>
   </div>
 

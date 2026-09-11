@@ -207,7 +207,7 @@
 /* ---- tile ---- */
 .el-tile {
   position: relative;
-  height: 330px;
+  height: 320px;
   margin: 0 -20px;
   flex: none;
 }
@@ -220,13 +220,12 @@
 }
 .el-tile-art {
   position: absolute; left: 50%; bottom: 0;
-  width: 350px; margin-left: -175px;
+  width: 360px; margin-left: -180px;
   animation: bob 6s ease-in-out infinite;
   transition: filter .4s, opacity .4s;
 }
 .el-tile-art.locked { filter: grayscale(1) brightness(.7); opacity: .75; }
 .el-tile-art .iso { display: block; width: 100%; height: auto; }
-.el-tile-art app-villa-art.iso { display: block; width: 100%; height: 300px; }
 
 .el-lock {
   position: absolute; left: 50%; top: 50%;

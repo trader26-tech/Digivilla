@@ -12,7 +12,6 @@ import {
 } from '@angular/core';
 
 import { EstateService } from '../estate.service';
-import { VillaArtComponent } from '../shared/villa-art.component';
 
 /** A fund inside a level's unlock mix. */
 interface FundVM {
@@ -85,7 +84,7 @@ interface RailMark {
 @Component({
   selector: 'app-estate-levels',
   standalone: true,
-  imports: [CommonModule, VillaArtComponent],
+  imports: [CommonModule],
   templateUrl: './estate-levels.component.html',
   styleUrl: './estate-levels.component.scss',
 })
