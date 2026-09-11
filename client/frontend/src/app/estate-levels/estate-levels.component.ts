@@ -573,13 +573,21 @@ export class EstateLevelsComponent implements AfterViewInit {
     if (Object.keys(tops).length) this.bannerTops.set(tops);
   };
 
+  /** Target scrollTop for a section. `.el-inner` carries a CSS `zoom`, so
+   *  `offsetTop` (unscaled layout px) does NOT match `scrollTop` (zoom-scaled px).
+   *  Measure the rendered gap from the viewport-relative rects instead, which
+   *  already include the zoom, and add the current scrollTop. */
+  private sectionTop(sec: HTMLElement, el: HTMLElement): number {
+    const top = sec.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop;
+    return Math.max(0, Math.min(top, el.scrollHeight - el.clientHeight));
+  }
+
   private scrollToLevel(lv: number, smooth: boolean): void {
     const el = this.scroller?.nativeElement;
     if (!el) return;
     const sec = el.querySelector<HTMLElement>('section[data-level="' + lv + '"]');
     if (!sec) return;
-    if (smooth) el.scrollTo({ top: sec.offsetTop, behavior: 'smooth' });
-    else el.scrollTop = sec.offsetTop;
+    el.scrollTo({ top: this.sectionTop(sec, el), behavior: smooth ? 'smooth' : 'auto' });
   }
 
   private toCurrent(): void {
@@ -587,7 +595,7 @@ export class EstateLevelsComponent implements AfterViewInit {
     if (!el) return;
     const go = () => {
       const sec = el.querySelector<HTMLElement>('section[data-current="true"]');
-      el.scrollTop = sec ? sec.offsetTop : el.scrollHeight;
+      el.scrollTop = sec ? this.sectionTop(sec, el) : el.scrollHeight;
     };
     go();
     requestAnimationFrame(go);
