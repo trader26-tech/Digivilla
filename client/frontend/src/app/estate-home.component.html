@@ -1,6 +1,9 @@
 <section class="estate">
   <!-- ============ HOME CONTENT (above the app's own bottom nav) ============ -->
   <div class="estate-top">
+    <!-- green estate halo — sits in the upper band, between the flows and the
+         "YOUR ESTATE" title, glowing behind the header (behind all content). -->
+    <div class="estate-halo" *ngIf="!isEmptyEstate" aria-hidden="true"></div>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
     <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder) · INVESTED (real,
@@ -47,7 +50,6 @@
          with the reference tile symbols and empty lots recede as dashed
          diamonds. Hidden on the empty estate. ===== -->
     <div class="board" *ngIf="!isEmptyEstate">
-      <div class="board-glow" aria-hidden="true"></div>
       <svg viewBox="-175 15 590 375" role="img" aria-label="Your estate board">
         <!-- ============================================================
              Reference symbols (the "estate board" template), verbatim.

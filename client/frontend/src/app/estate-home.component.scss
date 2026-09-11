@@ -292,12 +292,23 @@
   display: flex; align-items: center; justify-content: center;
   margin: 1.4rem 0 0.4rem;
 }
+/* green estate halo — in the UPPER BAND between the WITHDRAWALS/INVESTED flows
+   and the "YOUR ESTATE" title, glowing softly behind the header (behind all
+   content via z-index:0). */
+.estate-halo {
+  position: absolute; z-index: 0; left: 50%;
+  top: calc(4.5rem + env(safe-area-inset-top));   /* just below the flows */
+  width: 520px; height: 300px; margin-left: -260px;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(108,186,54,.24) 0%,
+    rgba(108,186,54,.11) 38%,
+    transparent 70%);
+}
 .board-glow {
-  /* green estate glow at the TOP — anchored to the top of the board and centred
-     horizontally, glowing up/behind the back edge of the town (grass #6cba36). */
   position: absolute; top: 0; left: 50%;
   width: 480px; height: 360px;
-  margin: -140px 0 0 -240px;      /* pull up above the board's top edge */
+  margin: -140px 0 0 -240px;
   border-radius: 50%; pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%,
     rgba(108,186,54,.26) 0%,
