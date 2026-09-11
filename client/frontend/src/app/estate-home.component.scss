@@ -312,7 +312,9 @@
   min-height: 200px;
   max-height: min(56vh, 420px);
   width: 100%;
-  margin: 0 auto;
+  /* nudge the town down off the hero so it settles nearer the middle of the
+     screen rather than hugging the title. */
+  margin: clamp(1rem, 6vh, 4rem) auto 0;
 }
 .board-scroll.fit .board {
   display: block;
