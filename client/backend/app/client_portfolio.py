@@ -77,23 +77,12 @@ def _last10(phone: Optional[str]) -> str:
 
 
 def _live_nav(scheme_code: Optional[int]) -> Optional[float]:
-    """Latest live NAV for a scheme (cached). None on unknown code / mfapi down."""
-    if not scheme_code:
-        return None
-    now = time.time()
-    hit = _nav_cache.get(scheme_code)
-    if hit and now - hit[0] < _NAV_TTL_SECONDS:
-        return hit[1]
-    nav: Optional[float] = None
-    try:
-        from app import dashboard
-        windows = dashboard.get_nav_windows(scheme_code)
-        if windows and windows.current_nav:
-            nav = float(windows.current_nav)
-    except Exception:
-        nav = None
-    _nav_cache[scheme_code] = (now, nav)
-    return nav
+    """Latest PUBLISHED NAV for a scheme, from the shared daily DB cache
+    (``nav_cache``). Reads scheme_nav_cache; refreshes on read if today's NAV
+    isn't stamped yet. Always the latest AMFI value, shared across workers and
+    surviving restarts — no per-user sockets (NAVs update once a day)."""
+    from app import nav_cache
+    return nav_cache.get_nav(scheme_code)
 
 
 def client_code_for_owner(owner: str) -> Optional[str]:
