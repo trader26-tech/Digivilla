@@ -82,26 +82,41 @@ export class AccountComponent {
   }
 
   // ---- identity -------------------------------------------------------------
-  /** Real name: client record → estate name → auth user → "". Never a fake. */
+  /** Title-case a raw CRM name ("RAMPRASAD RANJEEV" → "Ramprasad Ranjeev"). */
+  private titleCase(s: string): string {
+    return s.toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase());
+  }
+  /** Real name, nicely cased: client record → estate name → auth → "". */
   get idName(): string {
-    return (
+    const raw =
       this.details()?.name?.trim() ||
       this.est.estateName?.trim() ||
       this.auth.user()?.name?.trim() ||
       this.est.profile().name?.trim() ||
-      ''
-    );
+      '';
+    return raw ? this.titleCase(raw) : '';
   }
-  /** Real phone: locally edited → client record → profile → auth. */
+  /** Real phone: locally edited → client record → profile → auth, prettied. */
   private readonly editedPhone = signal<string | null>(null);
   get idPhone(): string {
-    return (
+    const raw =
       this.editedPhone() ??
       (this.details()?.phone?.trim() ||
         this.est.profile().phone?.trim() ||
         this.auth.user()?.phone?.trim() ||
-        '')
-    );
+        '');
+    return this.prettyPhone(raw);
+  }
+  /** "+918925188870" → "+91 89251 88870"; leaves other formats as-is. */
+  prettyPhone(p: string): string {
+    if (!p) return '';
+    const digits = p.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) {
+      const n = digits.slice(2);
+      return `+91 ${n.slice(0, 5)} ${n.slice(5)}`;
+    }
+    if (digits.length === 10) return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+    return p;
   }
   /** The avatar initial — first letter of the real name, or "•". */
   get idInitial(): string {
@@ -255,7 +270,7 @@ export class AccountComponent {
   private prefill(): void {
     const d = this.details();
     if (!d || this.prefilled) return;
-    this.fPhone.set(d.phone || '');
+    this.fPhone.set(this.prettyPhone(d.phone || ''));
     this.fEmail.set(d.email || '');
     this.fAddress.set(d.address || '');
     this.prefilled = true;
@@ -289,7 +304,11 @@ export class AccountComponent {
     const since = d?.since?.trim();
     const parts: string[] = [];
     if (code) parts.push(`Client ${code}`);
-    if (since) parts.push(`since ${since}`);
+    if (since) {
+      // format an ISO/date "since" as "Aug 2026"; leave free text as-is.
+      const nice = this.fmt(since, 'MMM y');
+      parts.push(`since ${nice || since}`);
+    }
     return parts.join(' · ');
   }
 

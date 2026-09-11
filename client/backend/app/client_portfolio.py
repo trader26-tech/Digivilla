@@ -650,9 +650,12 @@ def orders_for_owner(owner: str) -> list[dict]:
     code = client_code_for_owner(owner)
     if not code:
         return []
+    # NOTE: client_transactions has NO `category` column — selecting it makes
+    # PostgREST 400 and silently empties the list. Select only real columns and
+    # derive the sleeve tag from the scheme name.
     try:
         rows = (_sb().table("client_transactions")
-                .select("txn_date,scheme_name,scheme_code,category,kind,amount,units,nav")
+                .select("txn_date,scheme_name,scheme_code,kind,amount,units,nav")
                 .eq("client_code", code).execute().data or [])
     except Exception:
         return []
@@ -664,6 +667,7 @@ def orders_for_owner(owner: str) -> list[dict]:
             amount = round(float(r.get("amount") or 0))
         except (TypeError, ValueError):
             amount = 0
+        low = kind.lower()
         out.append({
             "date": r.get("txn_date") or "",
             "fund": name,
@@ -671,9 +675,9 @@ def orders_for_owner(owner: str) -> list[dict]:
             "amount": amount,
             "units": r.get("units"),
             "nav": r.get("nav"),
-            "tag": _sleeve_tag(r.get("category") or "", name),
-            # rent/SWP payouts (if the report ever carries them) flow OUT to the user
-            "direction": "out" if "payout" in kind.lower() or "swp" in kind.lower() else "in",
+            "tag": _sleeve_tag("", name),
+            # rent/SWP/redemption payouts flow OUT to the user
+            "direction": "out" if ("payout" in low or "swp" in low or "redemption" in low or "withdraw" in low) else "in",
         })
     out.sort(key=lambda x: x["date"] or "", reverse=True)
     return out
