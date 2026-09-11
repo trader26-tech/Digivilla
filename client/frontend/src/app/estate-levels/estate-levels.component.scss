@@ -147,7 +147,7 @@
 }
 .el-tocurrent:hover { border-color: #b5abfc; }
 .el-tocurrent svg { transition: transform .25s; }
-.el-tab .el-tocurrent { bottom: calc(100px + env(safe-area-inset-bottom)); }
+.el-tab .el-tocurrent { bottom: calc(172px + env(safe-area-inset-bottom)); }
 
 /* ---- scroller (the only vertical scroll) ---- */
 .el-scroller {

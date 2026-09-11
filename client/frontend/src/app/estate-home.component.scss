@@ -299,6 +299,14 @@
 .cell.owned { cursor: pointer; }
 .cell.owned:hover { filter: brightness(1.08); }
 .cell.building { filter: drop-shadow(0 0 10px rgba(108,186,54,.55)); }
+/* a started-but-under-₹1L house shows the Level-0 meadow (#tGround) with a
+   soft breathing green glow, per the m2 reference. */
+.cell.building use[href="#tGround"] { animation: groundGlow 2.8s ease-in-out infinite; }
+@keyframes groundGlow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(124, 201, 69, .35)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(124, 201, 69, .8)); }
+}
+@media (prefers-reduced-motion: reduce) { .cell.building use[href="#tGround"] { animation: none; } }
 .cell:focus-visible { outline: none; }
 .plot-open {
   fill: rgba(22, 48, 43, 0.018);
@@ -1490,10 +1498,10 @@
 }
 .flow-fig {
   font-family: var(--ref-font); font-weight: var(--ref-heading);
-  font-size: 34px; letter-spacing: -.015em; line-height: 1.1;
+  font-size: 24px; letter-spacing: -.015em; line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
-.flow-fig span { font-size: 13px; letter-spacing: 0; color: var(--color-neutral-500); margin-left: 2px; }
+.flow-fig span:last-child { font-size: 11px; letter-spacing: 0; color: var(--color-neutral-500); margin-left: 2px; }
 .flow-fig.gold { color: #f3dfa8; }
 .flow-fig.violet { color: var(--color-accent-200); }
 .flow-sub { font-size: 10px; color: var(--color-neutral-500); white-space: nowrap; }

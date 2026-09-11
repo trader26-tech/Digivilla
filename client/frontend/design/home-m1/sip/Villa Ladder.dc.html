@@ -50,7 +50,7 @@
   </div>
   <!-- back to current level -->
   <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
-    <button onClick="{{ backToCurrent }}" aria-label="Back to your level" style="position:absolute;right:22px;bottom:34px;z-index:7;width:40px;height:40px;border:1px solid #5d5294;border-radius:50%;background:#1e2130;color:#b5abfc;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 14px rgba(145,132,217,.35);animation:unlockIn .3s ease both" style-hover="border-color:#b5abfc">
+    <button onClick="{{ backToCurrent }}" aria-label="Back to your level" style="position:absolute;right:22px;bottom:{{ backBottom }};z-index:7;width:40px;height:40px;border:1px solid #5d5294;border-radius:50%;background:#1e2130;color:#b5abfc;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 14px rgba(145,132,217,.35);animation:unlockIn .3s ease both" style-hover="border-color:#b5abfc">
       <svg width="16" height="16" viewBox="0 0 12 12" style="transform:rotate({{ backRot }});transition:transform .25s"><path d="M6 2v8M2.5 6.5 6 10l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
     </button>
   </sc-if>
@@ -162,6 +162,7 @@
           </svg>
           <div style="position:absolute;left:{{ lv.artLeft }};top:{{ lv.artTop }};width:142px;animation:bob 6s ease-in-out infinite">
             <div style="position:absolute;inset:0;opacity:{{ lv.prevOpacity }}">
+              <sc-if value="{{ lv.prevGround }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Ground - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
               <sc-if value="{{ lv.prevPlot }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Plot - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
               <sc-if value="{{ lv.prevGrading }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Grading - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
               <sc-if value="{{ lv.prevFoundation }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Foundation - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
@@ -349,14 +350,10 @@
             <sc-for list="{{ emptyCells }}" as="c" hint-placeholder-count="9">
               <polygon points="{{ c.pts }}" fill="{{ c.fill }}" stroke="{{ c.stroke }}" stroke-width="{{ c.sw }}" stroke-dasharray="{{ c.dash }}" style="animation:{{ c.anim }}"></polygon>
             </sc-for>
-            <g style="animation:bob 6s ease-in-out infinite">
-              <polygon points="{{ groundR }}" fill="#3f2a18"></polygon>
-              <polygon points="{{ groundL }}" fill="#5a3d22"></polygon>
-              <polygon points="{{ groundTop }}" fill="#6cba36" stroke="#7cc945" stroke-width="1.5"></polygon>
-              <polygon points="{{ groundTop }}" fill="url(#g0shade)" opacity="{{ groundShade }}"></polygon>
-            </g>
-            <defs><linearGradient id="g0shade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#161826" stop-opacity=".55"></stop><stop offset="1" stop-color="#161826" stop-opacity="0"></stop></linearGradient></defs>
           </svg>
+          <div style="position:absolute;left:{{ g0Left }};top:{{ g0Top }};width:142px;animation:bob 6s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(124,201,69,.45))">
+            <div style="opacity:{{ g0Opacity }};transition:opacity .6s"><dc-import name="Isometric Ground - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></div>
+          </div>
           <sc-if value="{{ startDone }}" hint-placeholder-val="{{ false }}">
             <span style="position:absolute;left:50%;top:{{ emptyChipTop }};transform:translate(-50%,-50%);z-index:5;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 7px;border-radius:12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;background:rgba(88,184,88,.14);color:#8fd48f;box-shadow:0 0 0 1px rgba(88,184,88,.45),0 0 14px rgba(88,184,88,.25)">
               <svg width="12" height="12" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#58b858"></circle><path d="M4.5 8.2 7 10.6 11.6 5.8" fill="none" stroke="#0f1019" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -565,7 +562,7 @@ class Component extends DCLogic {
         funds: FUNDS.map(fd => ({ ...fd, amount: inr(Math.round((isCurrent ? worth : threshold) * fd.w)), target: inr(Math.round(threshold * fd.w)), showOf: isCurrent, border: isLocked ? '#2b2e3a' : '#3f424d', shadow: isLocked ? 'none' : '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)' })),
         thresholdLabel: inr(threshold), startLabel: inr(start),
         progress: (isCurrent ? Math.round(Math.max(0, Math.min(1, (worth - start) / L)) * 100) : isLocked ? 0 : 100) + '%',
-        prevOpacity: isCurrent ? 1 : 0, prevPlot: isCurrent && s === 1, prevGrading: isCurrent && s === 2, prevFoundation: isCurrent && s === 3, prevSteel: isCurrent && s === 4,
+        prevOpacity: isCurrent ? 1 : 0, prevGround: isCurrent && s === 0, prevPlot: isCurrent && s === 1, prevGrading: isCurrent && s === 2, prevFoundation: isCurrent && s === 3, prevSteel: isCurrent && s === 4,
         artClip: isCurrent ? Math.round((1 - Math.max(0, Math.min(1, (worth - start) / L))) * 100) + '%' : '0%', ghostOpacity: isCurrent ? .22 : 0,
         paidInLabel: lakh(worth) + ' in', toGoLabel: lakh(Math.max(0, threshold - worth)) + ' to go',
         stateLabel: isCurrent ? 'Current level' : isDone ? 'Completed' : 'Locked',
@@ -626,7 +623,7 @@ class Component extends DCLogic {
     const showBack = viewLevel !== current;
     const nextLine = complete ? 'Estate complete.' : `${inr(remaining)} to level ${current + 1}`;
     const etaLabel = complete ? '' : `${stepsLeft} step${stepsLeft === 1 ? '' : 's'} left`;
-    return { fit: this.state.fit, outerH: this.props.embedded ? (this.props.frameH ? this.props.frameH + 'px' : '874px') : '100vh', frameH: (this.props.frameH || 874) + 'px', frameRadius: this.props.embedded ? '0' : '44px', frameShadow: this.props.embedded ? 'none' : '0 0 0 1px #2b2e3a,0 0 0 9px #0b0c14,0 0 0 10px #1e2130,0 18px 48px rgba(0,0,0,.6)', levels, railMarks, railTop, railH, fillTop, emptyCells, emptyChipTop: (100 + 2 * BH - (worth >= L ? 0 : 34)) + 'px', groundTop, groundL, groundR, groundShade, startRing, startPaid, startDone: worth >= L, startRingDisplay: worth >= L ? 'none' : 'grid', startFunds: FUNDS.map(fd => ({ ...fd, amount: Math.round(fd.w * 100) + '%', showOf: false, border: '#3f424d', shadow: '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)' })), jumpToVilla: this._jumpToVilla, earnLabel, earnOpacity, showBack, backToCurrent: () => this._scrollToLevel(current, true), backRot: viewLevel > current ? '0deg' : '180deg', currentLevel: current, hudPad: this.props.embedded ? '22px' : '54px', close: this.props.onClose ?? (() => { window.location.href = 'SIP Status.dc.html'; }), worthLabel: lakh(worth), sipLabel: inr(sip), nextLine, etaLabel, scrollerRef: this.scrollerRef, railRef: this.railRef };
+    return { fit: this.state.fit, outerH: this.props.embedded ? (this.props.frameH ? this.props.frameH + 'px' : '874px') : '100vh', frameH: (this.props.frameH || 874) + 'px', frameRadius: this.props.embedded ? '0' : '44px', frameShadow: this.props.embedded ? 'none' : '0 0 0 1px #2b2e3a,0 0 0 9px #0b0c14,0 0 0 10px #1e2130,0 18px 48px rgba(0,0,0,.6)', levels, railMarks, railTop, railH, fillTop, emptyCells, emptyChipTop: (100 + 2 * BH - (worth >= L ? 0 : 34)) + 'px', g0Left: (OX - 71).toFixed(1) + 'px', g0Top: (100 + 2 * BH - 53.7).toFixed(1) + 'px', g0Opacity: (0.55 + 0.45 * p0).toFixed(2), startRing, startPaid, startDone: worth >= L, startRingDisplay: worth >= L ? 'none' : 'grid', startFunds: FUNDS.map(fd => ({ ...fd, amount: Math.round(fd.w * 100) + '%', showOf: false, border: '#3f424d', shadow: '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)' })), jumpToVilla: this._jumpToVilla, earnLabel, earnOpacity, showBack, backToCurrent: () => this._scrollToLevel(current, true), backRot: viewLevel > current ? '0deg' : '180deg', backBottom: (34 + Number(this.props.bottomInset || 0)) + 'px', currentLevel: current, hudPad: this.props.embedded ? '22px' : '54px', close: this.props.onClose ?? (() => { window.location.href = 'SIP Status.dc.html'; }), worthLabel: lakh(worth), sipLabel: inr(sip), nextLine, etaLabel, scrollerRef: this.scrollerRef, railRef: this.railRef };
   }
 }
 </script>

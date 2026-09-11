@@ -19,7 +19,7 @@ ONE number, `ESTATE_WORTH` (total ₹ invested). From it:
 - `stage   = floor(rem / 1,00,000)` → 0 ground · 1 The Plot · 2 Levelled Ground · 3 Foundation · 4 Steel Frame
 - `building = villas < 9 && rem > 0`
 Examples: ₹10,000 → 1 green ground tile. ₹25,00,000 → 5 villas, 4 open tiles. ₹26,75,000 → 5 villas + Plot 06 at "The Plot" (₹1,75,000 of ₹5,00,000). ₹45,00,000 → 9 villas.
-Header: Withdrawals = ₹1,500 × villas "/mo", sub "N villas · SWP on the 1st". Invested = ₹worth, sub "1 building · SIP on the 5th". Portfolio: Invested ₹worth · value = worth × (1 + 0.0055 × round(worth/25,000)) · returns %.
+Header: Withdrawals = ₹1,500 × villas "/mo" (heading 24px gold; only the "/mo" span is small — rule is `.flow-fig span:last-child`), sub "N villas · SWP on the 1st". Invested = ₹worth, sub "1 building · SIP on the 5th". Portfolio: Invested ₹worth · value = worth × (1 + 0.0055 × round(worth/25,000)) · returns %.
 The Progress ladder reads the same number (`ladderWorth()` → ESTATE_WORTH). Never let the two drift.
 
 ## Board geometry (the 9 squares)
@@ -31,6 +31,12 @@ The Progress ladder reads the same number (`ladderWorth()` → ESTATE_WORTH). Ne
 - Each cell: `<g class="cell [building]" data-name data-note data-state="villa|build|locked" data-col data-row [data-paid]><use …></use></g>`. `data-paid` = ₹25,000 instalments in that house (20 = complete).
 - The rent coin (`#rentCoin`, coinBob 2.4s) floats over the first villa; hidden when villas = 0.
 
+## Level 0 → Level 1 (the first thing a new user sees)
+- Stage 0 is `#tGround` on Home and `sip/Isometric Ground - reference for Claude Code.dc.html` on the ladder — the SAME polygons, generated once. A quiet meadow: soft grass patches, tufts, four wildflower clusters, a young tree at the back corner, two butterflies. No pegs, no flag, no bare soil, no FOR SALE board anywhere.
+- Level 1 (The Plot) keeps the base and grows it: mowing stripes, all the tufts, the tree at full size, pond with reeds, bushes, stones. The Plot has no sign.
+- On the ladder the plot rises out of the ground (clip-path from bottom, driven by ₹ in / ₹1,00,000), so land → plot reads as one scene.
+- On Home a started-but-under-₹1L house (₹10,000) shows `#tGround` with the breathing green glow (`.cell.building use[href="#tGround"]` → groundGlow 2.8s). It must survive the SIP preload: stage-0 cells are not queued, and sipMirror never demotes a started build to locked.
+
 ## The green halo (yes, it matters)
 - `.board` has a radial glow behind the estate: `background: radial-gradient(circle at 50% 58%, rgba(108,186,54,.16) 0%, transparent 62%)` — see `.board` in home.css.txt for the exact rule and size.
 - A building tile gets `.cell.building { filter: drop-shadow(0 0 10px rgba(108,186,54,.55)) }` and the header title has the soft top glow (`.estate` / `.flows` rules). Copy the rules verbatim; do not approximate.
@@ -41,7 +47,7 @@ The Progress ladder reads the same number (`ladderWorth()` → ESTATE_WORTH). Ne
 3. `.board` — the SVG, full width, the dominant element (~360px tall incl. glow).
 4. `.port` block, centred: PORTFOLIO VALUE kicker · value 44px/500 · "Invested ₹… • +x.x% returns" (returns in the green ramp) · `.port-bar` 5 segments 36/16/16/16/16 (#8aa89b, #f6c445, #4a9d47, #5cb85c, #8fd48a) · `.port-funds` five columns: percentage (13px/500) over fund name (9px, in the segment colour).
 5. `.fine` — "What do Villa and Plot mean? ›" link (opens the disclaimer sheet), padding-bottom 96px so it clears the bar.
-6. `.tabs` — floating pill, bottom 22px, centred: Settings (gear) · Home (house + label, active bg #2b2741, accent text) · Progress (flag). 46px tall items, 23px radius, bar bg rgba(30,33,48,.94) with 1px neutral-700 ring and blur.
+6. `.tabs` — floating pill (also over the Progress ladder; the ladder's up/down arrow is raised 72px above it via `bottom-inset`), bottom 22px, centred: Settings (gear) · Home (house + label, active bg #2b2741, accent text) · Progress (flag). 46px tall items, 23px radius, bar bg rgba(30,33,48,.94) with 1px neutral-700 ring and blur.
 
 ## Rules
 - Inter only; weights 400/500 (800 only on the ladder banners). Tokens from :root — no raw black/white.

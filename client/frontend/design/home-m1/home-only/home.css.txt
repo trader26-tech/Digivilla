@@ -343,6 +343,8 @@
   .fine { flex: none; padding: var(--space-4) 22px var(--space-6);
           font-size: 11px; line-height: 1.5; color: var(--color-neutral-500); }
 
+  .cell.building use[href="#tGround"] { animation: groundGlow 2.8s ease-in-out infinite; }
+  @keyframes groundGlow { 0%,100% { filter: drop-shadow(0 0 6px rgba(124,201,69,.35)); } 50% { filter: drop-shadow(0 0 16px rgba(124,201,69,.8)); } }
   /* ---- tab bar ---- */
   .tabs { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 60;
           display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 34px;

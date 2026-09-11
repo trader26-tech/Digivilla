@@ -39,14 +39,6 @@
       <sc-if value="{{ t.isPoly }}" hint-placeholder-val="{{ true }}"><polygon points="{{ t.pts }}" fill="{{ t.fill }}" opacity="{{ t.op }}"></polygon></sc-if>
       <sc-if value="{{ t.isEllipse }}" hint-placeholder-val="{{ false }}"><ellipse cx="{{ t.cx }}" cy="{{ t.cy }}" rx="{{ t.rx }}" ry="{{ t.ry }}" fill="{{ t.fill }}" opacity="{{ t.op }}"></ellipse></sc-if>
     </sc-for>
-    <ellipse cx="497.3" cy="343.6" rx="30" ry="11" fill="#35691b" opacity="0.35"></ellipse>
-    <!-- FOR SALE board, front-right (a=0.9, b=0.62); post foot at (497.3,343.6) -->
-    <rect x="493.8" y="271.6" width="7" height="72" fill="#8a5a2f"></rect>
-    <polygon points="467.3,297 463.8,299 463.8,333 467.3,331" fill="#7d5027"></polygon>
-    <polygon points="467.3,297 527.3,262.4 527.3,296.4 467.3,331" fill="#a97140"></polygon>
-    <polygon points="470.3,300.7 524.3,269.5 524.3,292.7 470.3,323.9" fill="#efe6d7"></polygon>
-    <text transform="translate(473.5,312.5) skewY(-30)" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="10.5" letter-spacing="0.6" fill="#5c3a1c" textLength="48" lengthAdjust="spacingAndGlyphs">FOR SALE</text>
-    <polygon points="473.5,316.6 508.5,296.4 508.5,298.6 473.5,318.8" fill="#9184d9"></polygon>
   </svg>
   <sc-if value="{{ doc }}" hint-placeholder-val="{{ true }}">
 
@@ -195,7 +187,6 @@ class Component extends DCLogic {
     let s = 11;
     const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
     const clear = (a, b) =>
-      (a > 0.78 && b > 0.5 && b < 0.76) ||           // sign
       (a < 0.34 && b < 0.34) ||                       // tree
       (a > 0.22 && a < 0.56 && b > 0.5 && b < 0.9);   // pond
     const items = [];
