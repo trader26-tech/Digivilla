@@ -390,6 +390,19 @@ def get_my_portfolio(authorization: Optional[str] = Header(default=None)) -> dic
     return client_portfolio.portfolio_summary(owner)
 
 
+@app.get("/me/building/{tile_id}")
+def get_my_building(tile_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Full returns breakdown for one building/villa tile (tapped on the home map):
+    headline value/gain, build progress to ₹5L, per-fund allocation + live 1/3/5-Yr
+    returns, and a blended growth series (with a rent/SWP overlay). 404 if unknown."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    detail = client_portfolio.building_detail(owner, tile_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    return detail
+
+
 @app.get("/me/transactions")
 def get_my_transactions(authorization: Optional[str] = Header(default=None)) -> dict:
     """Every transaction on this user's account (SIP, lump-sum, rent/SWP), newest

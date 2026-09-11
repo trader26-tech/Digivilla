@@ -134,7 +134,7 @@ export class AppComponent {
     return (
       !this.intro && this.auth.signedIn() &&
       this.detail === null && this.villa === null && this.land === null &&
-      this.construction === null && this.buildFlow === null && !this.accountOpen &&
+      this.construction === null && this.building === null && this.buildFlow === null && !this.accountOpen &&
       !this.levelsOpen &&
       (this.view === 'home' || this.view === 'funds' || this.view === 'calls')
     );
@@ -168,6 +168,10 @@ export class AppComponent {
 
   /** The under-construction tile whose detail page is open, or null. */
   construction: Tile | null = null;
+
+  /** The building/villa tile whose returns detail page is open, or null. Both
+   *  villa AND building tiles route here now (the returns page). */
+  building: Tile | null = null;
 
   /** Build flow: 'pick' shows the chooser, 'villa'/'land' the buy pages. */
   buildFlow: 'pick' | 'villa' | 'land' | null = null;
@@ -224,18 +228,13 @@ export class AppComponent {
   /** A built tile on the estate was tapped -> open its detail page.
    *  villa -> the dedicated villa page; land -> land page; building -> estate. */
   openTile(t: Tile): void {
-    if (t.type === 'villa') {
-      this.villa = t;
-      window.scrollTo({ top: 0 });
-      return;
-    }
     if (t.type === 'land') {
       this.land = t;
       window.scrollTo({ top: 0 });
       return;
     }
-    // building → the dedicated under-construction detail page
-    this.construction = t;
+    // villa OR building → the returns detail page (fed by /me/building/{id})
+    this.building = t;
     window.scrollTo({ top: 0 });
   }
 
@@ -249,6 +248,10 @@ export class AppComponent {
 
   closeConstruction(): void {
     this.construction = null;
+  }
+
+  closeBuilding(): void {
+    this.building = null;
   }
 
   /** Explore tab -> the storefront catalog to browse tiers. */

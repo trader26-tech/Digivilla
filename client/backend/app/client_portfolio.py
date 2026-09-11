@@ -378,3 +378,214 @@ def portfolio_tiles(owner: str) -> list[dict]:
     # Digivilla has no "land" concept: unmapped/other holdings are NOT shown on
     # the map (they still count in net worth via /me/portfolio). Only villas show.
     return tiles
+
+
+# ============================================================================
+# BUILDING / VILLA RETURNS DETAIL (tapped tile → full breakdown + growth chart)
+# ============================================================================
+def _building_scheme_holdings(client_code: str, tile_id: str) -> Optional[list[dict]]:
+    """The per-scheme holdings that make up ONE building/villa tile.
+
+    Returns [{scheme_code, scheme_name, units, invested}] or None if unknown.
+    - cvilla_<villa_id>  → that villa's mapped client_transactions, aggregated per scheme.
+    - villa_N            → the auto ₹5L-split path: this villa's slice of the villa-bucket
+                           holdings (proportional to its ₹5L share of total villa invested).
+    """
+    if tile_id.startswith("cvilla_"):
+        villa_id = tile_id[len("cvilla_"):]
+        try:
+            txns = _sb().table("client_transactions").select(
+                "scheme_code,scheme_name,units,amount").eq(
+                "client_code", client_code).eq("villa_id", villa_id).execute().data or []
+        except Exception:
+            return None
+        agg: dict[int, dict] = {}
+        for t in txns:
+            code = t.get("scheme_code")
+            if not code:
+                continue
+            e = agg.setdefault(code, {"scheme_code": code,
+                                      "scheme_name": t.get("scheme_name"),
+                                      "units": 0.0, "invested": 0.0})
+            e["units"] += _num(t.get("units"))
+            e["invested"] += _num(t.get("amount"))
+        return list(agg.values()) if agg else []
+
+    if tile_id.startswith("villa_"):
+        # auto path: villa N holds a ₹5L slice of the villa-forming holdings. We
+        # apportion each scheme's units/invested by this villa's share of the total.
+        try:
+            idx = int(tile_id[len("villa_"):])
+        except ValueError:
+            return None
+        hs = _valued_holdings(client_code)
+        codes_in_villa = _villa_scheme_codes()
+        villa_hs = [h for h in hs if h.get("scheme_code") in codes_in_villa]
+        total_inv = sum(h["invested"] for h in villa_hs)
+        if total_inv <= 0:
+            return []
+        # this villa's rupee span within the stacked ₹5L pillars
+        lo = idx * VILLA_UNIT
+        hi = min((idx + 1) * VILLA_UNIT, total_inv)
+        share = max(0.0, (hi - lo)) / total_inv if total_inv else 0.0
+        if share <= 0:
+            return []
+        return [{
+            "scheme_code": h["scheme_code"], "scheme_name": h.get("scheme_name"),
+            "units": h["units"] * share, "invested": round(h["invested"] * share, 2),
+        } for h in villa_hs]
+
+    return None
+
+
+def _villa_scheme_codes() -> set:
+    """scheme_codes belonging to SIP (villa-forming) buckets — mirrors portfolio_tiles."""
+    codes: set = set()
+    try:
+        buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
+        vids = {b["id"] for b in buckets if _is_villa_bucket(b)}
+        if vids:
+            bf = _sb().table("villa_bucket_funds").select("bucket_id,scheme_code").execute().data or []
+            for f in bf:
+                if f.get("scheme_code") and f.get("bucket_id") in vids:
+                    codes.add(f["scheme_code"])
+    except Exception:
+        pass
+    return codes
+
+
+def _tile_meta(client_code: str, tile_id: str) -> dict:
+    """name + status (building|constructed) for a tile id."""
+    if tile_id.startswith("cvilla_"):
+        vid = tile_id[len("cvilla_"):]
+        try:
+            rows = _sb().table("client_villas").select("name,status").eq("id", vid).limit(1).execute().data or []
+            if rows:
+                return {"name": rows[0].get("name") or "Villa",
+                        "status": rows[0].get("status") or "building"}
+        except Exception:
+            pass
+    return {"name": "Villa", "status": "building"}
+
+
+def _fund_category(scheme_code: int) -> Optional[str]:
+    """Category from the villa_bucket_funds definition, if present."""
+    try:
+        rows = _sb().table("villa_bucket_funds").select("category").eq(
+            "scheme_code", scheme_code).limit(1).execute().data or []
+        return rows[0].get("category") if rows else None
+    except Exception:
+        return None
+
+
+def _blended_growth(funds: list[dict]) -> list[dict]:
+    """A blended 'growth of your money' series for the building, weighted by each
+    fund's invested amount, using real NAV history. Returns [{date, value, rent}]
+    where value = today's-money grown back over time, rent = cumulative SWP (0 for
+    now). Robust: funds with no history are skipped from the blend."""
+    from app import dashboard
+    total_inv = sum(f["invested"] for f in funds) or 1.0
+    # gather each fund's max-window NAV points → date→growth-factor (nav/nav_start)
+    series = []
+    for f in funds:
+        try:
+            nav = dashboard.get_nav_windows(f["scheme_code"])
+        except Exception:
+            nav = None
+        if not nav or not nav.windows:
+            continue
+        win = next((w for w in nav.windows if w.window == "5y"), None) or \
+              next((w for w in nav.windows if w.window == "max"), None)
+        pts = [p for p in (win.points if win else []) if p.nav]
+        if len(pts) < 2:
+            continue
+        base = pts[0].nav
+        w = f["invested"] / total_inv
+        series.append((w, base, {p.date: p.nav for p in pts}, [p.date for p in pts]))
+    if not series:
+        return []
+    # union of dates (sorted); blended value at each date = Σ w * invested_total * (nav/base)
+    all_dates = sorted({d for _, _, m, _ in series for d in m})
+    # downsample to ~120 points for a light payload
+    if len(all_dates) > 120:
+        step = len(all_dates) // 120
+        all_dates = all_dates[::step]
+    out = []
+    for d in all_dates:
+        factor = 0.0
+        for w, base, m, ds in series:
+            # nearest prior nav on/of this date
+            nav = m.get(d)
+            if nav is None:
+                # carry last known ≤ d
+                prior = [x for x in ds if x <= d]
+                nav = m[prior[-1]] if prior else base
+            factor += w * (nav / base)
+        out.append({"date": d, "value": round(total_inv * factor, 2), "rent": 0.0})
+    return out
+
+
+def building_detail(owner: str, tile_id: str) -> Optional[dict]:
+    """Full returns breakdown for one building/villa tile: headline gain, build
+    progress, per-fund allocation + live 1/3/5-Yr returns, and a blended growth
+    series (with a cumulative rent/SWP overlay, 0 until SWP is wired)."""
+    from app import villa_sip
+    code = client_code_for_owner(owner)
+    if not code:
+        return None
+    holdings = _building_scheme_holdings(code, tile_id)
+    if holdings is None:
+        return None
+
+    meta = _tile_meta(code, tile_id)
+    total_inv = sum(h["invested"] for h in holdings)
+
+    funds = []
+    cur_total = 0.0
+    wsum = {"1y": 0.0, "3y": 0.0, "5y": 0.0}
+    wt = {"1y": 0.0, "3y": 0.0, "5y": 0.0}
+    for h in holdings:
+        scheme = h["scheme_code"]
+        nav = _live_nav(scheme)
+        cur = round(h["units"] * nav, 2) if (nav and h["units"]) else round(h["invested"], 2)
+        cur_total += cur
+        rets = villa_sip._live_returns(scheme)
+        alloc = round(h["invested"] / total_inv * 100, 1) if total_inv else 0.0
+        funds.append({
+            "scheme_name": h.get("scheme_name"),
+            "scheme_code": scheme,
+            "category": _fund_category(scheme) or "Other",
+            "allocation": alloc,
+            "invested": round(h["invested"], 2),
+            "current_value": cur,
+            "gain": round(cur - h["invested"], 2),
+            "ret_1y": rets["ret_1y"], "ret_3y": rets["ret_3y"], "ret_5y": rets["ret_5y"],
+        })
+        for k, rk in (("1y", "ret_1y"), ("3y", "ret_3y"), ("5y", "ret_5y")):
+            if rets[rk] is not None and h["invested"] > 0:
+                wsum[k] += rets[rk] * h["invested"]
+                wt[k] += h["invested"]
+    funds.sort(key=lambda f: -f["allocation"])
+
+    overall = {f"ret_{k}": (round(wsum[k] / wt[k], 2) if wt[k] else None) for k in ("1y", "3y", "5y")}
+    gain = round(cur_total - total_inv, 2)
+
+    return {
+        "tile_id": tile_id,
+        "name": meta["name"],
+        "status": meta["status"],
+        "invested": round(total_inv, 2),
+        "current_value": round(cur_total, 2),
+        "gain": gain,
+        "gain_pct": round(gain / total_inv * 100, 2) if total_inv else 0.0,
+        "overall": overall,
+        "rent_paid": 0.0,   # SWP not wired yet — modeled into growth as a 0 band
+        "progress": {
+            "unit": VILLA_UNIT,
+            "funded": round(total_inv, 2),
+            "remaining": round(max(0.0, VILLA_UNIT - total_inv), 2),
+            "pct": round(min(1.0, total_inv / VILLA_UNIT) * 100, 1) if VILLA_UNIT else 0.0,
+        },
+        "funds": funds,
+        "growth": _blended_growth(holdings),
+    }

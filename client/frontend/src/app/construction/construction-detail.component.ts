@@ -1,30 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 
-import { environment } from '../../environments/environment';
-import { AuthService } from '../auth/auth.service';
-import { BookingService } from '../booking.service';
-import { compact, compactK } from '../shared/format.util';
-import {
-  HoldingFund,
-  VillaPlan,
-  assetColor,
-  assetLabel,
-  villaPlan,
-} from '../villa/villa-detail.model';
+import { BuildingDetail, EstateService, GrowthPt } from '../estate.service';
+import { compact } from '../shared/format.util';
 
-/** One row of the money ledger (a contribution or a rent payout). */
-interface LedgerRow { kind?: string; amount: number; date: string; status?: string; note?: string; }
-/** A fund inside the villa, with how much of the invested money sits in it. */
-interface HoldFund { fund_name: string; role: string; weight: number; invested: number; target: number; }
+/** A resolved point on the chart: date + value (₹) + cumulative rent (₹). */
+interface ChartPt { date: string; value: number; rent: number; }
+
+/** Per-fund accent palette, cycled by index. */
+const FUND_COLORS = ['#8aa89b', '#f6c445', '#4a9d47', '#5cb85c', '#8fd48a'];
 
 /**
- * The under-construction detail page — a villa still being built. Mirrors the
- * villa page's shape (image · figures · funds · withdraw) but the numbers are
- * about the BUILD: how much is in, how much is left, when it completes, and
- * the rent it will pay once done. Self-contained; the withdraw flow books a
- * call with the fund manager, exactly like the villa page.
+ * The building/villa RETURNS page. Tapping a villa or building tile on the home
+ * map opens this. It fetches GET /me/building/{tileId} and shows: the headline
+ * value & gain, build progress (for a building), a blended growth chart with a
+ * "rent paid out" band, and a per-fund breakdown. Self-contained, animated.
  */
 @Component({
   selector: 'app-construction-detail',
@@ -34,251 +24,184 @@ interface HoldFund { fund_name: string; role: string; weight: number; invested: 
   styleUrl: './construction-detail.component.scss',
 })
 export class ConstructionDetailComponent implements OnInit {
-  private http = inject(HttpClient);
-  private auth = inject(AuthService);
-  private bookingSvc = inject(BookingService);
+  private estate = inject(EstateService);
 
-  /** Target villa cost this build is working toward. */
-  @Input() cost = 40_00_000;
-  /** Monthly SIP feeding the build. */
-  @Input() sipMonthly = 25_000;
-  /** How much has accrued so far. */
-  @Input() sipAccrued = 6_00_000;
-  /** Display name, e.g. "Under Construction 1". */
-  @Input() name = 'Under Construction';
-  /** When the build was started (epoch ms). */
-  @Input() boughtAt = Date.now();
-  /** The holding id (user_villas id) — used to fetch the ledger + funds. */
-  @Input() holdingId = '';
+  /** The tapped tile's id — the only input; everything else comes from the API. */
+  @Input() tileId = '';
   @Output() back = new EventEmitter<void>();
 
-  // ── live detail: money ledger + fund concentration (fetched by holdingId) ──
-  contributions = signal<LedgerRow[]>([]);
-  rentLog = signal<LedgerRow[]>([]);
-  funds = signal<HoldFund[]>([]);
-  tab = signal<'contrib' | 'rent'>('contrib');   // Contributions ↔ Rent paid
-  fundsOpen = signal(false);       // "Funds inside" starts collapsed
-  currentValue = signal(0);        // combined value (NAV) of all funds today
-  invested = signal(0);            // total money put in (SIP + lump-sum)
-  monthlyIncome = signal(0);
-  rentPaidTotal = signal(0);       // total income/rent paid to the client so far
-  nextPayment = signal<Date | null>(null);  // when the next SIP is due
-
-  private loadDetail(): void {
-    if (!this.holdingId || !this.auth.token()) return;
-    const headers = { Authorization: `Bearer ${this.auth.token()}` };
-    this.http.get<any>(`${environment.apiUrl}/me/holding/${this.holdingId}`, { headers }).subscribe({
-      next: (d) => {
-        this.contributions.set(d.contributions || []);
-        this.rentLog.set(d.rent_log || []);
-        this.funds.set(d.funds || []);
-        this.currentValue.set(d.current_value || d.invested || 0);
-        this.invested.set(d.invested || this.sipAccrued);
-        this.monthlyIncome.set(d.monthly_income || 0);
-        this.rentPaidTotal.set(d.rent_paid_total || 0);
-        this.nextPayment.set(this.computeNextPayment(d));
-      },
-      error: () => {},
-    });
-  }
-
-  /** Next SIP due date: the stored date if present & future, else one month
-   *  after the most recent contribution (or one month from today). */
-  private computeNextPayment(d: any): Date | null {
-    if (!d.sip_monthly) return null;                 // no SIP → no next payment
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (d.sip_next_payment) {
-      const p = new Date(d.sip_next_payment);
-      if (!isNaN(p.getTime()) && p >= today) return p;
-    }
-    // derive from the last contribution date + 1 month
-    const last = (d.contributions || [])[0]?.date;
-    const base = last ? new Date(last) : new Date();
-    const next = new Date(base); next.setMonth(next.getMonth() + 1);
-    while (next < today) next.setMonth(next.getMonth() + 1);   // roll forward if overdue
-    return next;
-  }
-
-  toggleFundsInside(): void { this.fundsOpen.update((v) => !v); }
-
-  /** Rent is paid on the 1st of each month — the next upcoming payout date. */
-  nextRent(): Date {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 1);
-  }
-
-  plan!: VillaPlan;
-
-  // build figures
-  investedSoFar = 0;
-  monthsTotal = 0;
-  monthsDone = 0;
-  monthsLeft = 0;
-  pct = 0;
-  rentWhenBuilt = 0;
-  completesOn = new Date();
+  detail = signal<BuildingDetail | null>(null);
+  loading = signal(true);
+  error = signal(false);
 
   compact = compact;
-  compactK = compactK;
-  assetColor = assetColor;
-  assetLabel = assetLabel;
+  fundColors = FUND_COLORS;
 
   ngOnInit(): void {
-    this.plan = villaPlan(this.cost, 20);
-
-    this.investedSoFar = this.sipAccrued;
-    this.invested.set(this.sipAccrued);
-    this.currentValue.set(this.sipAccrued);   // until the live NAV loads
-    this.monthsTotal = this.sipMonthly > 0 ? Math.round(this.cost / this.sipMonthly) : 60;
-    this.monthsDone = this.sipMonthly > 0 ? Math.round(this.sipAccrued / this.sipMonthly) : 0;
-    this.monthsDone = Math.min(this.monthsDone, this.monthsTotal);
-    this.monthsLeft = Math.max(0, this.monthsTotal - this.monthsDone);
-    this.pct = this.monthsTotal > 0 ? Math.round((this.monthsDone / this.monthsTotal) * 100) : 0;
-    this.rentWhenBuilt = Math.round((this.cost * 0.06) / 12);   // ~6%/yr once built
-
-    const d = new Date();
-    d.setMonth(d.getMonth() + this.monthsLeft);
-    this.completesOn = d;
-
-    this.buildPerks();
-    this.loadDetail();
-  }
-
-  onBack(): void {
-    this.back.emit();
-  }
-
-  // --- "why this beats a real villa" carousel (swipe-only) ---
-  PERKS: { theme: string; ico: string; stat: string; unit: string; vs: string }[] = [];
-  perk = signal(0);
-
-  private static readonly ICO: Record<string, string> = {
-    tag:   'M4 13V4h9l7 7-9 9zM8 8h.01',
-    coin:  'M12 3v18M8 7h5a3 3 0 0 1 0 6H8m0 0h6',
-    chart: 'M4 20V6M4 20h16M8 20v-6M12 20V9M16 20v-9',
-    tool:  'M14 7a4 4 0 0 0-5 5l-5 5 2 2 5-5a4 4 0 0 0 5-5l-2 2-2-2z',
-    bolt:  'M13 3L5 13h5l-1 8 8-10h-5z',
-    swap:  'M4 8h13l-3-3M20 16H7l3 3',
-    door:  'M5 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M9 12h.5',
-  };
-
-  private buildPerks(): void {
-    const I = ConstructionDetailComponent.ICO;
-    const rent = compact(this.rentWhenBuilt);
-    const stampSaved = compact(Math.round(this.cost * 0.07));
-    this.PERKS = [
-      { theme: 'rent',  ico: I['coin'],  stat: rent,       unit: 'rent soon', vs: 'starts the day it completes' },
-      { theme: 'stamp', ico: I['tag'],   stat: stampSaved, unit: 'saved',     vs: 'in 7% stamp duty & registration' },
-      { theme: 'care',  ico: I['tool'],  stat: '₹0',       unit: 'maintenance', vs: 'no repairs, no upkeep' },
-      { theme: 'live',  ico: I['chart'], stat: 'Live',     unit: 'progress',  vs: 'track the build any time' },
-      { theme: 'time',  ico: I['bolt'],  stat: '30 sec',   unit: 'to own',    vs: 'not 45 days of paperwork' },
-      { theme: 'cash',  ico: I['swap'],  stat: '2 days',   unit: 'to cash out', vs: 'not 6+ months of brokers' },
-      { theme: 'entry', ico: I['door'],  stat: '₹10L',    unit: 'to start',  vs: 'not a ₹1 Cr down-payment' },
-    ];
-  }
-
-  goPerk(i: number): void { this.perk.set((i + this.PERKS.length) % this.PERKS.length); }
-  stepPerk(dir: 1 | -1): void { this.goPerk(this.perk() + dir); }
-
-  private swipeX: number | null = null;
-  onPerkDown(e: PointerEvent): void {
-    this.swipeX = e.clientX;
-    const el = e.currentTarget as HTMLElement;
-    try { el.setPointerCapture(e.pointerId); } catch {}
-  }
-  onPerkUp(e: PointerEvent): void {
-    if (this.swipeX === null) return;
-    const dx = e.clientX - this.swipeX;
-    this.swipeX = null;
-    const el = e.currentTarget as HTMLElement;
-    try { el.releasePointerCapture(e.pointerId); } catch {}
-    if (Math.abs(dx) > 40) this.stepPerk(dx < 0 ? 1 : -1);
-  }
-
-  trackFund(_i: number, f: HoldingFund): string {
-    return f.name;
-  }
-
-  // --- withdraw: one-screen slot picker → real request in the admin calendar ---
-  withdrawOpen = signal(false);
-  wdDays = signal<{ iso: string; label: string; slots: { label: string; slot: string }[] }[]>([]);
-  wdDaysLoading = signal(false);
-  wdSlotIso = signal<string | null>(null);
-  wdSlotLabel = signal('');
-  wdSubmitting = signal(false);
-  wdError = signal('');
-  booked = signal(false);
-  justBooked = signal(false);
-
-  openWithdraw(): void {
-    this.booked.set(false);
-    this.justBooked.set(false);
-    this.wdSlotIso.set(null); this.wdSlotLabel.set(''); this.wdError.set('');
-    this.withdrawOpen.set(true);
-    if (navigator.vibrate) navigator.vibrate(4);
-    this.loadWdDays();
-  }
-  closeWithdraw(): void { this.withdrawOpen.set(false); }
-
-  private loadWdDays(): void {
-    this.wdDaysLoading.set(true);
-    this.wdDays.set([]);
-    const wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    this.bookingSvc.freeDays(4).subscribe({
-      next: (r) => {
-        this.wdDays.set((r.days || []).map((day) => {
-          const [y, m, d] = day.date.split('-').map(Number);
-          const dt = new Date(y, m - 1, d);
-          return {
-            iso: day.date,
-            label: `${wk[dt.getDay()]}, ${dt.getDate()} ${mo[dt.getMonth()]}`,
-            slots: (day.slots || []).map((s) => ({ label: this.slotLabel(s.time), slot: s.slot })),
-          };
-        }));
-        this.wdDaysLoading.set(false);
-      },
-      error: () => { this.wdDays.set([]); this.wdDaysLoading.set(false); },
+    if (!this.tileId) { this.loading.set(false); this.error.set(true); return; }
+    this.estate.buildingDetail(this.tileId).subscribe({
+      next: (d) => { this.detail.set(d); this.loading.set(false); },
+      error: () => { this.error.set(true); this.loading.set(false); },
     });
   }
-  private slotLabel(hm: string): string {
-    const [h, m] = hm.split(':').map(Number);
-    const ap = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return m === 0 ? `${h12}:00 ${ap}` : `${h12}:${String(m).padStart(2, '0')} ${ap}`;
-  }
-  wdPick(dayLabel: string, s: { label: string; slot: string }): void {
-    this.wdSlotIso.set(s.slot);
-    this.wdSlotLabel.set(`${dayLabel} · ${s.label}`);
-    this.wdError.set('');
-    if (navigator.vibrate) navigator.vibrate(4);
-  }
-  wdIsSlot(s: { slot: string }): boolean { return this.wdSlotIso() === s.slot; }
 
-  wdConfirm(): void {
-    if (this.wdSubmitting() || !this.wdSlotIso()) return;
-    const u = this.auth.user();
-    const name = (u?.name || '').trim() || 'Client';
-    const phone = (u?.phone || '').replace(/\D/g, '').slice(-10);
-    this.wdSubmitting.set(true);
-    this.wdError.set('');
-    this.bookingSvc.createBooking({
-      name, phone,
-      kind: 'withdraw',
-      property: 'villa',
-      variant: 'balanced',
-      amount: this.investedSoFar,
-      slot: this.wdSlotIso()!,
-      note: `Withdraw · ${this.name}`,
-    }).subscribe({
-      next: () => {
-        this.wdSubmitting.set(false);
-        this.booked.set(true);
-        this.justBooked.set(true);
-        if (navigator.vibrate) navigator.vibrate([6, 40, 12]);
-        setTimeout(() => this.justBooked.set(false), 1600);
-      },
-      error: () => { this.wdSubmitting.set(false); this.wdError.set('Could not book that slot. Please try again.'); },
-    });
+  onBack(): void { this.back.emit(); }
+
+  fundColor(i: number): string { return FUND_COLORS[i % FUND_COLORS.length]; }
+  trackFund(i: number, f: { scheme_code: string }): string { return f.scheme_code || String(i); }
+
+  // ── time-range tabs ──────────────────────────────────────────────────────────
+  readonly ranges: { key: string; label: string; months: number }[] = [
+    { key: '1y', label: '1Y', months: 12 },
+    { key: '3y', label: '3Y', months: 36 },
+    { key: '5y', label: '5Y', months: 60 },
+    { key: 'max', label: 'Max', months: 0 },
+  ];
+  chartRange = signal<string>('5y');
+  setRange(key: string): void { this.chartRange.set(key); this.hoverIdx.set(null); }
+
+  /** The full growth series (value already in ₹). */
+  private allPts = computed<ChartPt[]>(() => {
+    const g = this.detail()?.growth ?? [];
+    return g.map((p: GrowthPt) => ({ date: p.date, value: p.value, rent: p.rent }));
+  });
+
+  /** The growth series sliced to the selected time range (from the last date back). */
+  windowedGrowth = computed<ChartPt[]>(() => {
+    const pts = this.allPts();
+    if (!pts.length) return [];
+    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 0;
+    if (!months) return pts;                       // Max — the whole series
+    const last = pts[pts.length - 1].date;
+    const cut = new Date(last);
+    if (isNaN(cut.getTime())) return pts;
+    cut.setMonth(cut.getMonth() - months);
+    const cutIso = cut.toISOString().slice(0, 10);
+    const sliced = pts.filter(p => p.date >= cutIso);
+    return sliced.length > 1 ? sliced : pts;       // never show a single point
+  });
+
+  // ── SVG geometry (ported from estate-detail) ────────────────────────────────
+  readonly chartW = 680;
+  readonly chartH = 260;
+  readonly padL = 58;
+  readonly padR = 10;
+  readonly padT = 12;
+  readonly padB = 30;
+
+  private get plotW() { return this.chartW - this.padL - this.padR; }
+  private get plotH() { return this.chartH - this.padT - this.padB; }
+
+  /** Value bounds of the windowed series — spans both value and rent so the
+   *  rent band shares the same scale when it eventually lifts off zero. */
+  private vBounds = computed<{ lo: number; hi: number } | null>(() => {
+    const w = this.windowedGrowth();
+    if (!w.length) return null;
+    const vals = w.map(g => g.value);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (lo === hi) { lo = lo * 0.98; hi = hi * 1.02 || 1; }   // avoid a flat span
+    return { lo, hi };
+  });
+
+  private xAt(i: number, n: number): number {
+    return this.padL + (n <= 1 ? 0 : (i / (n - 1)) * this.plotW);
   }
+  private yAt(v: number, lo: number, hi: number): number {
+    const span = hi - lo || 1;
+    return this.padT + (1 - (v - lo) / span) * this.plotH;
+  }
+
+  growthPath = computed<string>(() => {
+    const w = this.windowedGrowth(); const b = this.vBounds();
+    if (!w.length || !b) return '';
+    return w.map((g, i) =>
+      `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`
+    ).join(' ');
+  });
+
+  growthArea = computed<string>(() => {
+    const line = this.growthPath();
+    const w = this.windowedGrowth();
+    if (!line || !w.length) return '';
+    const baseY = this.chartH - this.padB;
+    const lastX = this.xAt(w.length - 1, w.length);
+    return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
+  });
+
+  /** A second, faint band: cumulative rent paid out. Flat-zero for now, but
+   *  wired so it shows the moment rent > 0. Hidden when the whole band is zero. */
+  hasRent = computed<boolean>(() => this.windowedGrowth().some(g => g.rent > 0));
+
+  rentArea = computed<string>(() => {
+    const w = this.windowedGrowth(); const b = this.vBounds();
+    if (!w.length || !b || !this.hasRent()) return '';
+    const baseY = this.chartH - this.padB;
+    const line = w.map((g, i) =>
+      `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.rent, b.lo, b.hi).toFixed(1)}`
+    ).join(' ');
+    const lastX = this.xAt(w.length - 1, w.length);
+    return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
+  });
+
+  /** Y-axis ticks: 4 evenly spaced ₹ amounts across the value range. */
+  yTicks = computed<{ y: number; label: string }[]>(() => {
+    const b = this.vBounds();
+    if (!b) return [];
+    const n = 4;
+    const out: { y: number; label: string }[] = [];
+    for (let i = 0; i <= n; i++) {
+      const v = b.lo + (i / n) * (b.hi - b.lo);
+      out.push({ y: this.yAt(v, b.lo, b.hi), label: compact(v) });
+    }
+    return out;
+  });
+
+  /** X-axis ticks: ~5 dates. Long ranges show the year; short ranges "Mon 'YY". */
+  xTicks = computed<{ x: number; label: string }[]>(() => {
+    const w = this.windowedGrowth();
+    if (!w.length) return [];
+    const n = w.length;
+    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 60;
+    const shortRange = months > 0 && months <= 24;
+    const count = Math.min(5, n);
+    const out: { x: number; label: string }[] = [];
+    for (let i = 0; i < count; i++) {
+      const idx = count <= 1 ? 0 : Math.round((i / (count - 1)) * (n - 1));
+      const d = w[idx].date || '';
+      out.push({ x: this.xAt(idx, n), label: shortRange ? this.monLabel(d) : d.slice(0, 4) });
+    }
+    return out;
+  });
+
+  private monLabel(ymd: string): string {
+    const [y, mo] = ymd.split('-');
+    const MON = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return mo ? `${MON[+mo] || ''} '${(y || '').slice(2)}` : (y || '');
+  }
+
+  // ── Hover ────────────────────────────────────────────────────────────────────
+  hoverIdx = signal<number | null>(null);
+
+  onChartMove(ev: MouseEvent): void {
+    const svg = ev.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    const w = this.windowedGrowth();
+    if (!w.length || rect.width === 0) return;
+    const xView = ((ev.clientX - rect.left) / rect.width) * this.chartW;
+    const frac = Math.max(0, Math.min(1, (xView - this.padL) / this.plotW));
+    this.hoverIdx.set(Math.round(frac * (w.length - 1)));
+  }
+  onChartLeave(): void { this.hoverIdx.set(null); }
+
+  hover = computed(() => {
+    const i = this.hoverIdx();
+    const w = this.windowedGrowth(); const b = this.vBounds();
+    if (i == null || !w.length || !b || !w[i]) return null;
+    const g = w[i];
+    const x = this.xAt(i, w.length);
+    const y = this.yAt(g.value, b.lo, b.hi);
+    const base = w[0]?.value ?? g.value;
+    const growthPct = base > 0 ? (g.value / base - 1) * 100 : 0;
+    return { x, y, value: g.value, date: g.date, rent: g.rent, growthPct };
+  });
 }

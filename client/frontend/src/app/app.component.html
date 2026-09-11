@@ -11,7 +11,7 @@
      user has no villa yet it shows a dummy house + the upcoming setup call; as
      they progress the same map fills with their real villas. -->
 <app-estate-home
-  *ngIf="detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'home'"
+  *ngIf="detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'home'"
   class="has-nav"
   [justVerified]="justVerified"
   (openTile)="openTile($event)"
@@ -24,7 +24,7 @@
 
 <!-- EXPLORE (reachable from Home's build flow, not the nav). -->
 <app-explore
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'explore'"
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'explore'"
   class="has-nav"
   (own)="ownVilla($event)"
   (back)="goHome()"
@@ -33,13 +33,13 @@
 <!-- PROGRESS tab: the Estate Levels build-progress ladder, shown as a tab
      (no back button, sits under the floating nav). -->
 <app-estate-levels
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'funds'"
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'funds'"
   [tab]="true"
 ></app-estate-levels>
 
 <!-- CALLS tab: the user's scheduled fund-manager calls. -->
 <app-calls
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && buildFlow === null && !accountOpen && view === 'calls'"
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls'"
   class="has-nav"
   [autoOpenReason]="bookOnOpen"
   (opened)="clearBookOnOpen()"
@@ -112,19 +112,10 @@
 
 <!-- The storefront (Explore): the four property tiers to browse/buy. -->
 <app-storefront
-  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && view === 'storefront'"
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && view === 'storefront'"
   (openProperty)="openProperty($event)"
   (back)="backToHome()"
 ></app-storefront>
-
-<!-- A villa tapped on the estate -> its dedicated detail page. -->
-<app-villa-detail
-  *ngIf="!intro && villa"
-  [price]="villa.cost"
-  [name]="villa.label"
-  [boughtAt]="villa.boughtAt"
-  (back)="closeVilla()"
-></app-villa-detail>
 
 <!-- A land plot tapped on the estate -> its dedicated detail page (mirrors villa). -->
 <app-land-page
@@ -137,16 +128,12 @@
   (back)="closeLand()"
 ></app-land-page>
 
-<!-- An under-construction tile tapped -> its dedicated build-detail page. -->
+<!-- A villa OR building tile tapped on the estate -> the returns detail page,
+     fed by GET /me/building/{tileId}. -->
 <app-construction-detail
-  *ngIf="!intro && construction"
-  [holdingId]="construction.id"
-  [cost]="construction.cost"
-  [sipMonthly]="construction.sipMonthly"
-  [sipAccrued]="construction.sipAccrued"
-  [name]="construction.label"
-  [boughtAt]="construction.boughtAt"
-  (back)="closeConstruction()"
+  *ngIf="!intro && building"
+  [tileId]="building.id"
+  (back)="closeBuilding()"
 ></app-construction-detail>
 
 <!-- Land bought from the storefront keeps the buy/projection page. -->

@@ -1,202 +1,172 @@
-<main class="cx" *ngIf="plan">
-  <!-- header -->
+<main class="cx">
+  <!-- ── header: back · name · status chip ── -->
   <header class="top reveal" style="--i:0">
-    <button class="back" (click)="onBack()" aria-label="Back">‹</button>
-    <h1 class="page-title">{{ name }}</h1>
+    <button class="back" (click)="onBack()" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <ng-container *ngIf="detail() as d">
+      <div class="top-row">
+        <h1 class="page-title">{{ d.name }}</h1>
+        <span class="chip" [class.chip-build]="d.status === 'building'" [class.chip-done]="d.status === 'constructed'">
+          {{ d.status === 'building' ? 'Under construction' : 'Constructed' }}
+        </span>
+      </div>
+    </ng-container>
+    <h1 class="page-title" *ngIf="!detail() && loading()">Villa</h1>
   </header>
 
-  <!-- 1 · the build image: bare land + the construction shell, centred -->
-  <section class="art reveal" style="--i:1">
-    <svg viewBox="20 30 200 152" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Under construction">
-      <!-- land pad -->
-      <g transform="translate(120,88)">
-        <polygon points="93.6,4 0,58 0,79.6 93.6,25.6" fill="#8a5a33"/>
-        <polygon points="0,58 -93.6,4 -93.6,25.6 0,79.6" fill="#6d4527"/>
-        <polygon points="0,-54 93.6,0 0,54 -93.6,0" fill="#6cba36"/>
-        <polygon points="0,-54 93.6,0 0,54 -93.6,0" fill="none" stroke="#3f7a20" stroke-width="2.5"/>
-      </g>
-      <!-- construction shell (the same #tBuild geometry, re-anchored & scaled) -->
-      <g transform="translate(120,110) scale(0.30) translate(-640,-430)">
-        <polygon points="484.8,389.1 520.6,409.8 496.7,423.6 460.9,402.9" fill="#a97140"/><polygon points="520.6,409.8 496.7,423.6 496.7,427.7 520.6,413.9" fill="#8a5a2f"/><polygon points="735.5,451.2 759.4,465.0 731.5,481.1 707.7,467.3" fill="#b0b6bd"/><polygon points="759.4,465.0 731.5,481.1 731.5,496.7 759.4,480.6" fill="#7c8189"/><polygon points="735.5,367.9 640.0,423.1 640.0,476.0 735.5,420.8" fill="#efe6d7"/><polygon points="640.0,423.1 536.5,363.3 536.5,416.2 640.0,476.0" fill="#d3c5ab"/><polygon points="632.0,308.1 735.5,367.9 640.0,423.1 536.5,363.3" fill="#b9ab90"/><polygon points="608.2,404.7 570.4,382.9 570.4,435.8 608.2,457.6" fill="#8b7f68"/><rect x="605.7" y="404.7" width="5" height="52.9" fill="#9a6636"/><rect x="591.7" y="396.7" width="5" height="52.9" fill="#9a6636"/><rect x="579.8" y="389.8" width="5" height="52.9" fill="#9a6636"/><rect x="567.9" y="382.9" width="5" height="52.9" fill="#9a6636"/><polygon points="717.6,392.0 685.8,410.5 685.8,435.8 717.6,417.3" fill="#3a5f7a"/><rect x="628.5" y="248.3" width="7" height="96.6" fill="#7d5027"/><rect x="759.9" y="324.2" width="7" height="96.6" fill="#8a5a2f"/><rect x="636.5" y="395.5" width="7" height="96.6" fill="#8a5a2f"/><rect x="505.2" y="319.6" width="7" height="96.6" fill="#7d5027"/><polyline points="632.0,301.2 763.4,377.1 640.0,448.4 508.7,372.5 632.0,301.2" fill="none" stroke="#a97140" stroke-width="5" stroke-linejoin="round"/><polyline points="632.0,259.8 763.4,335.7 640.0,407.0 508.7,331.1 632.0,259.8" fill="none" stroke="#a97140" stroke-width="5" stroke-linejoin="round"/></g>
-    </svg>
-  </section>
-
-  <!-- 2 · headline figures: current value (combined NAV) · money invested -->
-  <section class="value reveal" style="--i:2">
-    <div class="val-cell">
-      <b class="val-big">{{ compact(currentValue()) }}</b>
-      <span class="val-k">Current value</span>
-    </div>
-    <div class="val-cell right">
-      <b class="val-big">{{ compact(invested()) }}</b>
-      <span class="val-k">Investment</span>
-    </div>
-  </section>
-
-  <!-- 3 · one clean toggle: Contributions ↔ Rent paid -->
-  <section class="tabs reveal" style="--i:3">
-    <div class="tabseg">
-      <button [class.on]="tab() === 'contrib'" (click)="tab.set('contrib')">Contributions</button>
-      <button [class.on]="tab() === 'rent'" (click)="tab.set('rent')">Rent paid</button>
-    </div>
-
-    <!-- ── CONTRIBUTIONS: build progress + every SIP / lump-sum ── -->
-    <div class="pane" *ngIf="tab() === 'contrib'">
-      <!-- build progress lives inside contributions -->
-      <div class="prog">
-        <div class="prog-head">
-          <span class="sec-cap">Build progress</span>
-          <b class="prog-pct">{{ pct }}%</b>
-        </div>
-        <div class="prog-bar"><span class="prog-fill" [style.width.%]="pct"></span></div>
-        <div class="prog-meta">
-          <span>{{ compact(invested()) }} of {{ compact(cost) }}</span>
-          <span *ngIf="nextPayment()">Next SIP · {{ nextPayment() | date:'d MMM' }}</span>
-          <span *ngIf="!nextPayment()">Ready by {{ completesOn | date:'MMM y' }}</span>
-        </div>
-      </div>
-
-      <ul class="ledger">
-        <li class="led-row" *ngFor="let r of contributions()">
-          <span class="led-ico" [attr.data-kind]="r.kind">{{ r.kind === 'sip' ? '🔁' : '💰' }}</span>
-          <span class="led-main">
-            <b class="led-title">{{ r.kind === 'sip' ? 'SIP instalment' : 'Lump-sum' }}</b>
-            <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
-          </span>
-          <b class="led-amt">+{{ compact(r.amount) }}</b>
-        </li>
-        <li class="led-empty" *ngIf="!contributions().length">No contributions yet.</li>
-      </ul>
-    </div>
-
-    <!-- ── RENT PAID: total · next payout · history ── -->
-    <div class="pane" *ngIf="tab() === 'rent'">
-      <div class="rent-sum">
-        <div class="rs-cell">
-          <b class="rs-big">{{ compact(rentPaidTotal()) }}</b>
-          <span class="rs-k">Total rent paid</span>
-        </div>
-        <div class="rs-cell right">
-          <b class="rs-nxt">{{ nextRent() | date:'d MMM' }}</b>
-          <span class="rs-k">Next payment · {{ compact(monthlyIncome()) }}</span>
-        </div>
-      </div>
-
-      <ul class="ledger">
-        <li class="led-row" *ngFor="let r of rentLog()">
-          <span class="led-ico" data-kind="rent">🪙</span>
-          <span class="led-main">
-            <b class="led-title">Rent payout</b>
-            <span class="led-date">{{ r.date | date:'d MMM y' }}</span>
-          </span>
-          <b class="led-amt pos">+{{ compact(r.amount) }}</b>
-        </li>
-        <li class="led-empty" *ngIf="!rentLog().length">
-          No rent received yet — your first payout is on {{ nextRent() | date:'d MMM' }}.
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- 6 · why this beats a real villa (swipeable) -->
-  <section class="why reveal" style="--i:5">
-    <span class="sec-cap">Your eVilla perks</span>
-    <div class="why-stage" (pointerdown)="onPerkDown($event)" (pointerup)="onPerkUp($event)"
-         (pointercancel)="onPerkUp($event)">
-      <div class="why-card" *ngFor="let p of PERKS; let i = index"
-           [attr.data-theme]="p.theme" [class.on]="perk() === i" [class.prev]="i < perk()" aria-hidden="true">
-        <svg class="why-ico" viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="p.ico" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span class="why-badge">eVilla</span>
-        <div class="why-stat-row"><b class="why-stat">{{ p.stat }}</b><span class="why-unit">{{ p.unit }}</span></div>
-        <p class="why-line">{{ p.vs }}</p>
-      </div>
-    </div>
-    <div class="why-dots">
-      <button class="why-dot" *ngFor="let p of PERKS; let i = index"
-              [class.on]="perk() === i" (click)="goPerk(i)" [attr.aria-label]="p.stat + ' ' + p.unit"></button>
-    </div>
-  </section>
-
-  <!-- 7 · Funds inside — real concentration, collapsed by default. Each fund
-       shows how much of the invested money sits in it (progress toward target). -->
-  <section class="fi reveal" style="--i:7">
-    <button class="fi-head" (click)="toggleFundsInside()" [attr.aria-expanded]="fundsOpen()">
-      <span class="sec-cap">Funds inside</span>
-      <span class="fi-caret" [class.open]="fundsOpen()">▾</span>
-    </button>
-    <div class="fi-body" *ngIf="fundsOpen()">
-      <p class="fi-lead">Your {{ compact(investedSoFar) }} invested so far, split across the villa’s mix:</p>
-      <div class="fi-fund" *ngFor="let f of funds()">
-        <div class="fi-row1">
-          <span class="fi-dot" [attr.data-role]="f.role"></span>
-          <b class="fi-name">{{ f.fund_name }}</b>
-          <span class="fi-wt">{{ (f.weight * 100) | number:'1.0-0' }}%</span>
-        </div>
-        <div class="fi-bar"><span class="fi-fill" [attr.data-role]="f.role"
-          [style.width.%]="f.target ? (f.invested / f.target) * 100 : 0"></span></div>
-        <div class="fi-row2">
-          <span class="fi-role">{{ f.role }}</span>
-          <span class="fi-amt"><b>{{ compact(f.invested) }}</b> of {{ compact(f.target) }}</span>
-        </div>
-      </div>
-      <p class="fi-empty" *ngIf="!funds().length">Fund breakdown will appear here.</p>
-    </div>
-  </section>
-
-  <!-- 8 · withdraw -->
-  <button class="withdraw reveal" style="--i:6" (click)="openWithdraw()">
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    Withdraw
-  </button>
-</main>
-
-<!-- ============ withdraw — one-screen slot picker (real booking) ============ -->
-<div class="sheet-backdrop" *ngIf="withdrawOpen()" (click)="closeWithdraw()"></div>
-<aside class="sheet wd-sheet" *ngIf="withdrawOpen()" role="dialog" aria-modal="true" aria-label="Withdraw">
-  <span class="sheet-grab" aria-hidden="true"></span>
-
-  <ng-container *ngIf="!booked()">
-    <div class="sheet-head">
-      <span class="sheet-title">Withdraw · book a call</span>
-      <button class="sheet-close" (click)="closeWithdraw()" aria-label="Close">✕</button>
-    </div>
-    <p class="wd-lead">Pick a slot — your fund manager calls to process the withdrawal (money in your bank within 2 working days).</p>
-
-    <p class="wd-empty" *ngIf="wdDaysLoading()">Finding open slots…</p>
-    <p class="wd-empty" *ngIf="!wdDaysLoading() && !wdDays().length">No open slots right now. Please try again later.</p>
-
-    <div class="wd-days" *ngIf="!wdDaysLoading()">
-      <div class="wd-day" *ngFor="let day of wdDays()">
-        <span class="wd-day-lbl">{{ day.label }}</span>
-        <div class="wd-slots">
-          <button class="wd-slot" *ngFor="let s of day.slots" [class.on]="wdIsSlot(s)"
-            (click)="wdPick(day.label, s)">{{ s.label }}</button>
-        </div>
-      </div>
-    </div>
-
-    <ng-container *ngIf="wdSlotIso()">
-      <p class="wd-err" *ngIf="wdError()">{{ wdError() }}</p>
-      <button class="wd-confirm" [disabled]="wdSubmitting()" (click)="wdConfirm()">
-        {{ wdSubmitting() ? 'Booking…' : 'Confirm · ' + wdSlotLabel() }}
-      </button>
-    </ng-container>
+  <!-- ── loading skeleton ── -->
+  <ng-container *ngIf="loading()">
+    <div class="sk sk-headline reveal" style="--i:1"></div>
+    <div class="sk sk-row reveal" style="--i:2"></div>
+    <div class="sk sk-chart reveal" style="--i:3"></div>
+    <div class="sk sk-card reveal" style="--i:4"></div>
   </ng-container>
 
-  <div class="wd-done" *ngIf="booked()">
-    <div class="wd-tick" [class.pop]="justBooked()" aria-hidden="true">
-      <svg viewBox="0 0 52 52"><circle class="wd-tick-ring" cx="26" cy="26" r="24"/><path class="wd-tick-mark" d="M15 27l7 7 15-15"/></svg>
-    </div>
-    <b class="wd-done-title">Call booked</b>
-    <p class="wd-done-sub">
-      Your fund manager will call on<br>
-      <b>{{ wdSlotLabel() }}</b><br>
-      to process your withdrawal.
-    </p>
-    <button class="wd-done-btn" (click)="closeWithdraw()">Done</button>
+  <!-- ── error state ── -->
+  <div class="err reveal" style="--i:1" *ngIf="error() && !loading()">
+    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M12 7v6M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <b>Couldn't load this villa</b>
+    <span>Please check your connection and try again.</span>
   </div>
-</aside>
+
+  <!-- ═══════════ the real page ═══════════ -->
+  <ng-container *ngIf="detail() as d">
+    <!-- 1 · headline: current value + gain + return pills -->
+    <section class="head reveal" style="--i:1">
+      <b class="head-big">{{ compact(d.current_value) }}</b>
+      <div class="head-line" [class.pos]="d.gain >= 0" [class.neg]="d.gain < 0">
+        <span class="head-inv">Invested {{ compact(d.invested) }}</span>
+        <span class="head-dot">·</span>
+        <span class="head-gain">
+          {{ d.gain >= 0 ? '+' : '' }}{{ compact(d.gain) }}
+          ({{ d.gain_pct >= 0 ? '+' : '' }}{{ d.gain_pct | number:'1.0-1' }}%)
+        </span>
+      </div>
+      <div class="pills">
+        <span class="pill">1Y <b>{{ d.overall.ret_1y == null ? '—' : (d.overall.ret_1y | number:'1.0-1') + '%' }}</b></span>
+        <span class="pill">3Y <b>{{ d.overall.ret_3y == null ? '—' : (d.overall.ret_3y | number:'1.0-1') + '%' }}</b></span>
+        <span class="pill">5Y <b>{{ d.overall.ret_5y == null ? '—' : (d.overall.ret_5y | number:'1.0-1') + '%' }}</b></span>
+      </div>
+    </section>
+
+    <!-- 2 · build progress (buildings only) -->
+    <section class="prog reveal" style="--i:2" *ngIf="d.status === 'building'">
+      <div class="prog-head">
+        <span class="sec-cap">Build progress</span>
+        <b class="prog-pct">{{ d.progress.pct | number:'1.0-0' }}%</b>
+      </div>
+      <div class="prog-bar"><span class="prog-fill" [style.width.%]="d.progress.pct"></span></div>
+      <div class="prog-meta">
+        <span>{{ compact(d.progress.funded) }} of {{ compact(d.progress.unit) }}</span>
+        <span>{{ compact(d.progress.remaining) }} to go</span>
+      </div>
+    </section>
+
+    <!-- 3 · growth chart -->
+    <section class="chart-sec reveal" style="--i:3">
+      <div class="chart-top">
+        <h2 class="sec-cap">How your money has grown</h2>
+        <div class="range-tabs" role="tablist" aria-label="Time range">
+          <button *ngFor="let r of ranges" class="range-tab" type="button" role="tab"
+                  [class.on]="chartRange() === r.key" [attr.aria-selected]="chartRange() === r.key"
+                  (click)="setRange(r.key)">{{ r.label }}</button>
+        </div>
+      </div>
+
+      <!-- empty state -->
+      <div class="chart-empty" *ngIf="!growthPath()">
+        Growth history isn't available for this villa yet.
+      </div>
+
+      <ng-container *ngIf="growthPath()">
+        <!-- re-key on range so the line re-draws when the window changes -->
+        <div class="chart-wrap" *ngFor="let _ of [chartRange()]">
+          <svg class="growth-svg" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" role="img"
+               aria-label="Growth over time"
+               (mousemove)="onChartMove($event)" (mouseleave)="onChartLeave()">
+            <defs>
+              <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--positive)" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="var(--positive)" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="rfill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--gold)" stop-opacity="0.20"/>
+                <stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <g class="axis y-axis">
+              <ng-container *ngFor="let t of yTicks()">
+                <line class="grid" [attr.x1]="padL" [attr.x2]="chartW - padR" [attr.y1]="t.y" [attr.y2]="t.y"/>
+                <text class="tick-lbl y-lbl" [attr.x]="padL - 8" [attr.y]="t.y + 3">{{ t.label }}</text>
+              </ng-container>
+            </g>
+            <!-- rent band (faint gold) — flat-zero now, shows when rent>0 -->
+            <path class="r-area" [attr.d]="rentArea()" fill="url(#rfill)"/>
+            <!-- value area + line -->
+            <path class="g-area" [attr.d]="growthArea()" fill="url(#gfill)"/>
+            <path class="g-line" [attr.d]="growthPath()"/>
+            <g class="axis x-axis">
+              <text *ngFor="let t of xTicks()" class="tick-lbl x-lbl" [attr.x]="t.x" [attr.y]="chartH - 8">{{ t.label }}</text>
+            </g>
+            <g class="hover-g" *ngIf="hover() as h">
+              <line class="hover-line" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="padT" [attr.y2]="chartH - padB"/>
+              <circle class="hover-dot" [attr.cx]="h.x" [attr.cy]="h.y" r="4"/>
+            </g>
+          </svg>
+
+          <div class="tip" *ngIf="hover() as h"
+               [style.left.%]="(h.x / chartW) * 100"
+               [class.flip]="(h.x / chartW) > 0.62">
+            <span class="tip-date">{{ h.date }}</span>
+            <span class="tip-val">{{ compact(h.value) }}</span>
+            <span class="tip-grow" [class.pos]="h.growthPct >= 0" [class.neg]="h.growthPct < 0">
+              {{ h.growthPct >= 0 ? '+' : '' }}{{ h.growthPct | number:'1.0-0' }}% vs start
+            </span>
+            <span class="tip-rent" *ngIf="h.rent > 0">Rent paid {{ compact(h.rent) }}</span>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span class="lg lg-val"><i></i> Value</span>
+          <span class="lg lg-rent"><i></i> Rent paid</span>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- 4 · per-fund breakdown -->
+    <section class="funds reveal" style="--i:4">
+      <h2 class="sec-cap">The funds inside</h2>
+      <div class="fund" *ngFor="let f of d.funds; let i = index; trackBy: trackFund"
+           [style.--fc]="fundColor(i)">
+        <div class="fund-r1">
+          <span class="fund-dot"></span>
+          <b class="fund-name">{{ f.scheme_name }}</b>
+          <span class="fund-alloc">{{ f.allocation | number:'1.0-0' }}%</span>
+        </div>
+        <div class="fund-cat"><span class="cat-chip">{{ f.category }}</span></div>
+        <div class="fund-bar"><span class="fund-fill" [style.width.%]="f.allocation"></span></div>
+        <div class="fund-r2">
+          <span class="fund-money">
+            invested {{ compact(f.invested) }} <span class="arr">→</span> {{ compact(f.current_value) }} value
+          </span>
+        </div>
+        <div class="fund-rets">
+          <span class="ret"><span class="ret-k">1Y</span>
+            <b [class.pos]="(f.ret_1y ?? 0) > 0">{{ f.ret_1y == null ? '—' : (f.ret_1y | number:'1.0-1') + '%' }}</b></span>
+          <span class="ret"><span class="ret-k">3Y</span>
+            <b [class.pos]="(f.ret_3y ?? 0) > 0">{{ f.ret_3y == null ? '—' : (f.ret_3y | number:'1.0-1') + '%' }}</b></span>
+          <span class="ret"><span class="ret-k">5Y</span>
+            <b [class.pos]="(f.ret_5y ?? 0) > 0">{{ f.ret_5y == null ? '—' : (f.ret_5y | number:'1.0-1') + '%' }}</b></span>
+        </div>
+      </div>
+      <p class="fund-empty" *ngIf="!d.funds.length">Fund breakdown will appear here.</p>
+    </section>
+  </ng-container>
+</main>

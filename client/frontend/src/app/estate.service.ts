@@ -77,6 +77,40 @@ export interface VillaSipDetail {
   };
 }
 
+/** One fund inside a building/villa, from GET /me/building/{tileId}. Returns may be null. */
+export interface BuildingFund {
+  scheme_name: string;
+  scheme_code: string;
+  category: string;
+  allocation: number;          // percent of this building, e.g. 36
+  invested: number;
+  current_value: number;
+  gain: number;
+  ret_1y: number | null;
+  ret_3y: number | null;
+  ret_5y: number | null;
+}
+
+/** One point on a building's blended growth curve. `value` is already in ₹;
+ *  `rent` is the cumulative rent paid out to date (0 until SWP is wired). */
+export interface GrowthPt { date: string; value: number; rent: number; }
+
+/** The returns detail for one building/villa tile (from GET /me/building/{tileId}). */
+export interface BuildingDetail {
+  tile_id: string;
+  name: string;
+  status: 'building' | 'constructed';
+  invested: number;
+  current_value: number;
+  gain: number;
+  gain_pct: number;
+  overall: { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null };
+  rent_paid: number;
+  progress: { unit: number; funded: number; remaining: number; pct: number };  // pct 0..100
+  funds: BuildingFund[];        // sorted by allocation desc
+  growth: GrowthPt[];           // blended growth over ~5y
+}
+
 /** One fund in the user's portfolio breakdown (from GET /me/funds). */
 export interface FundRow {
   name: string;
@@ -228,6 +262,13 @@ export class EstateService {
   transactions(): import('rxjs').Observable<{ transactions: AccountTxn[] }> {
     return this.http.get<{ transactions: AccountTxn[] }>(
       `${environment.apiUrl}/me/transactions`, { headers: this.authHeaders });
+  }
+
+  /** The returns detail for one building/villa tile — invested vs current value,
+   *  overall + per-fund returns, build progress and a ~5y blended growth series. */
+  buildingDetail(tileId: string): import('rxjs').Observable<BuildingDetail> {
+    return this.http.get<BuildingDetail>(
+      `${environment.apiUrl}/me/building/${tileId}`, { headers: this.authHeaders });
   }
 
   /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */
