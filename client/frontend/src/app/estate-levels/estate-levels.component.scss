@@ -27,15 +27,10 @@
   overflow: hidden;
 }
 
-/* TAB MODE: shown as the bottom-nav "Progress" tab, not a full overlay.
-   Sits below the floating nav (z-index 30) and leaves room for it. */
-.el-overlay.el-tab {
-  z-index: 1;
-}
-.el-tab .el-scroller {
-  padding-bottom: calc(112px + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-}
+/* TAB MODE: shown as the bottom-nav "Progress" tab, not a full overlay. Sits
+   below the floating nav (z-index 30) and leaves room for it at the bottom. */
+.el-overlay.el-tab { z-index: 1; }
+.el-tab .el-scroller { padding-bottom: calc(112px + env(safe-area-inset-bottom)); box-sizing: border-box; }
 
 /* ---- HUD ---- */
 .el-hud {
