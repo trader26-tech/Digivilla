@@ -214,7 +214,7 @@
         </div>
         <div class="port-funds">
           <div *ngFor="let f of fundRows; let i = index">
-            <span class="a">{{ inr(fundValue(f)) }}</span>
+            <span class="a">{{ fundPct(f) }}</span>
             <span class="n" [style.color]="fundColor(i)">{{ fundLabel(i, f) }}</span>
           </div>
         </div>

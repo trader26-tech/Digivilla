@@ -695,6 +695,10 @@ export class EstateHomeComponent implements OnInit {
   fundValue(f: { allocation: number }): number {
     return Math.round(this.est.estateValue * (f.allocation || 0) / 100);
   }
+  /** This fund's share of the portfolio as a whole-number percent (e.g. "36%"). */
+  fundPct(f: { allocation: number }): string {
+    return Math.round(f.allocation || 0) + '%';
+  }
   /** Colour for the fund at position `i` (wraps if there are more than 5). */
   fundColor(i: number): string {
     return this.FUND_COLORS[i % this.FUND_COLORS.length];
