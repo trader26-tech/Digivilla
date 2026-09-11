@@ -276,6 +276,13 @@ export class EstateService {
     return this.http.get<FundsBreakdown>(`${environment.apiUrl}/me/funds`, { headers: this.authHeaders });
   }
 
+  /** INSTANT fund allocation for the home bar (name/category/allocation only —
+   *  no slow live-returns). The bar's ₹ values are allocation × portfolio value. */
+  allocation(): import('rxjs').Observable<{ funds: { name: string; scheme_code?: number; category: string; allocation: number }[] }> {
+    return this.http.get<{ funds: { name: string; scheme_code?: number; category: string; allocation: number }[] }>(
+      `${environment.apiUrl}/me/allocation`, { headers: this.authHeaders });
+  }
+
   /** NAV history (1Y/3Y/5Y/max windows) for one fund — the fund-detail chart. */
   fundNav(schemeCode: number): import('rxjs').Observable<FundNav> {
     return this.http.get<FundNav>(`${environment.apiUrl}/dashboard/funds/${schemeCode}/nav`);

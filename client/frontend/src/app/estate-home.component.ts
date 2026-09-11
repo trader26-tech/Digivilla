@@ -133,6 +133,8 @@ export class EstateHomeComponent implements OnInit {
    *  PORTFOLIO VALUE allocation bar at the bottom of the home screen. Null until
    *  it loads (or when signed out / offline), so the bar is gated on it. */
   funds = signal<FundsBreakdown | null>(null);
+  /** Instant fund allocation (name/category/allocation) for the PORTFOLIO bar. */
+  alloc = signal<{ name: string; scheme_code?: number; category: string; allocation: number }[]>([]);
 
   // ── settings sheet: edit the estate name + city (server-backed) ──
   /** Whether the estate-settings sheet is open. */
@@ -334,9 +336,11 @@ export class EstateHomeComponent implements OnInit {
     }
     // Load any upcoming setup call so an empty estate can show it.
     this.loadUpcomingCall();
-    // Load the fund-by-fund breakdown for the PORTFOLIO VALUE allocation bar.
-    this.est.myFunds().subscribe({
-      next: (f) => this.funds.set(f),
+    // Load the fund allocation for the PORTFOLIO VALUE bar — the INSTANT endpoint
+    // (name/category/allocation only); ₹ values are derived from the portfolio
+    // value on the fly, so the bar appears immediately, not after a slow fetch.
+    this.est.allocation().subscribe({
+      next: (a) => this.alloc.set(a.funds || []),
       error: () => { /* signed out / offline — the bar stays hidden */ },
     });
   }
@@ -682,9 +686,14 @@ export class EstateHomeComponent implements OnInit {
   /** Short fund labels, by allocation order, matching the reference. */
   private readonly FUND_LABELS = ['ARBITRAGE', 'GOLD', 'LARGE CAP', 'MID CAP', 'SMALL CAP'];
 
-  /** The user's funds, in the breakdown's own order (robust to fewer/more). */
-  get fundRows(): FundsBreakdown['funds'] {
-    return this.funds()?.funds ?? [];
+  /** The fund allocation rows for the bar (name/category/allocation). Values are
+   *  derived from the portfolio value via fundValue() so the bar is instant. */
+  get fundRows(): { name: string; scheme_code?: number; category: string; allocation: number }[] {
+    return this.alloc();
+  }
+  /** This fund's ₹ value = its allocation × the live portfolio value. */
+  fundValue(f: { allocation: number }): number {
+    return Math.round(this.est.estateValue * (f.allocation || 0) / 100);
   }
   /** Colour for the fund at position `i` (wraps if there are more than 5). */
   fundColor(i: number): string {
@@ -692,7 +701,7 @@ export class EstateHomeComponent implements OnInit {
   }
   /** Short display label for the fund at position `i` — the reference short
    *  names by position, falling back to the fund's own category past the 5th. */
-  fundLabel(i: number, f: FundsBreakdown['funds'][number]): string {
+  fundLabel(i: number, f: { category: string; name: string }): string {
     return this.FUND_LABELS[i] ?? (f.category || f.name).toUpperCase();
   }
   /** Signed returns % for the meta row (server gain_pct, tile fallback). */

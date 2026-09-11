@@ -589,3 +589,28 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
         "funds": funds,
         "growth": _blended_growth(holdings),
     }
+
+
+def allocation_summary(owner: str) -> dict:
+    """INSTANT fund-allocation for the home allocation bar — just the client's SIP
+    villa mix (name/category/allocation %), two cheap DB reads. No worth/NAV or
+    live-return computation (that's the slow part in /me/funds/portfolio). The
+    frontend multiplies each allocation by its already-loaded portfolio value."""
+    from app import villa_sip
+    try:
+        buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
+        sip = next((b for b in buckets if (b.get("kind") or "sip") == "sip"), buckets[0] if buckets else None)
+        rows = (_sb().table("villa_bucket_funds").select("scheme_name,scheme_code,category,target_weight,sort_order")
+                .eq("bucket_id", sip["id"]).order("sort_order").execute().data or []) if sip else []
+    except Exception:
+        rows = []
+    funds = []
+    for r in rows:
+        alloc = villa_sip._to_pct_weight(r.get("target_weight"))
+        funds.append({
+            "name": r.get("scheme_name") or "Fund",
+            "scheme_code": r.get("scheme_code"),
+            "category": r.get("category") or "",
+            "allocation": round(alloc, 1),
+        })
+    return {"funds": funds}

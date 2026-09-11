@@ -390,6 +390,15 @@ def get_my_portfolio(authorization: Optional[str] = Header(default=None)) -> dic
     return client_portfolio.portfolio_summary(owner)
 
 
+@app.get("/me/allocation")
+def get_my_allocation(authorization: Optional[str] = Header(default=None)) -> dict:
+    """FAST fund allocation for the home allocation bar (name/category/allocation/
+    value) — no live-return computation, so it returns instantly (unlike /me/funds)."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    return client_portfolio.allocation_summary(owner)
+
+
 @app.get("/me/building/{tile_id}")
 def get_my_building(tile_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
     """Full returns breakdown for one building/villa tile (tapped on the home map):
