@@ -260,13 +260,13 @@
 
 /* ===== TITLE — kicker YOUR ESTATE over "<name>'s City" (Inter 500, sizes
    carry hierarchy — never bold), with a discreet edit pencil. ===== */
-.title { text-align: center; }
-.title .kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); }
-.title .name-row { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
+.title { text-align: center; margin-top: 1.6rem; }
+.title .kicker { font-size: 11px; letter-spacing: .16em; color: var(--color-neutral-400); }
+.title .name-row { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
 .title .name {
   margin: 0;
   font-family: var(--ref-font); font-weight: var(--ref-heading);
-  font-size: 24px; letter-spacing: -.01em; color: var(--color-text);
+  font-size: 34px; line-height: 1.05; letter-spacing: -.02em; color: var(--color-text);
   text-transform: capitalize;
 }
 .title .name-edit {
@@ -286,9 +286,11 @@
    SVG's default preserveAspectRatio contains the art so no house is cropped. ===== */
 .board {
   position: relative;
+  /* grow to take the slack, but don't balloon — keeps the board near the title
+     and the portfolio block a comfortable distance below (matches reference). */
   flex: 1 1 auto; min-height: 0;
   display: flex; align-items: center; justify-content: center;
-  margin-top: 10px;
+  margin: 1.4rem 0 0.4rem;
 }
 .board-glow {
   position: absolute; top: 50%; left: 50%;
@@ -296,7 +298,7 @@
   border-radius: 50%; pointer-events: none;
   background: radial-gradient(circle, rgba(145,132,217,.13) 0%, transparent 66%);
 }
-.board svg { position: relative; width: 100%; height: 100%; max-height: 46vh; display: block; }
+.board svg { position: relative; width: 100%; height: 100%; max-height: 42vh; display: block; }
 
 /* cells */
 .cell { cursor: default; }
