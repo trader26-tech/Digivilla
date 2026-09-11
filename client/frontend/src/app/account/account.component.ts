@@ -72,7 +72,7 @@ export class AccountComponent {
     // Load both feeds on init so the identity header and the Account row
     // sublines are correct before the panels are opened.
     this.est.details().subscribe({
-      next: (d) => this.details.set(d),
+      next: (d) => { this.details.set(d); this.prefill(); },
       error: () => this.details.set(null),
     });
     this.est.orders().subscribe({
