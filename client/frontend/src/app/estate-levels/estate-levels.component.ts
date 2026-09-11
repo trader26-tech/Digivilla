@@ -9,6 +9,7 @@ import {
   ViewChild,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 
 import { EstateService } from '../estate.service';
@@ -17,8 +18,9 @@ import { EstateService } from '../estate.service';
 interface FundVM {
   name: string;
   amount: string;
-  pct: string;
   bar: string;
+  border: string;
+  shadow: string;
   isVault: boolean;
   isGold: boolean;
   isLarge: boolean;
@@ -26,14 +28,17 @@ interface FundVM {
   isSmall: boolean;
 }
 
-/** One step marker inside the ladder card. */
-interface StepVM { done: boolean; glow: boolean; }
+/** One isometric board cell (dashed empty plot). */
+interface CellVM { pts: string; fill: string; stroke: string; sw: number; dash: string; anim: string; }
+/** A completed-villa symbol placement on the board. */
+interface VillaVM { tf: string; }
+/** A fountaining coin on a paid-out credit panel. */
+interface BurstVM { left: string; size: string; delay: string; }
 
-/** A fully-derived level rung in the ladder. */
+/** A fully-derived level rung in the ladder (ported 1:1 from renderVals). */
 interface LevelVM {
   level: number;
   name: string;
-  tagline: string;
   milestone: string;
   startLabel: string;
   threshold: number;
@@ -41,45 +46,100 @@ interface LevelVM {
   isDone: boolean;
   isCurrent: boolean;
   isLocked: boolean;
-  // stage
+  // stage flags
   isPlot: boolean;
   isGrading: boolean;
   isFoundation: boolean;
   isSteel: boolean;
   isVilla: boolean;
-  // steps
-  steps: StepVM[];
-  stepsLabel: string;
-  // percentile
-  pctLabel: string;      // e.g. "10"
-  pctPrefix: string;     // "You're in the top ~" | "Reach this → top ~" | "Top ~"
-  // above-teaser (villa only)
+  // board
+  backCells: CellVM[];
+  frontCells: CellVM[];
+  backVillas: VillaVM[];
+  frontVillas: VillaVM[];
+  boardVB: string;
+  tileH: string;
+  artLeft: string;
+  artTop: string;
+  nextX: number;
+  nextY: number;
+  nextTY: number;
+  nextDisplay: string;
+  mapLabel: string;
+  mapLabelColor: string;
+  boardFilter: string;
+  // chips
+  showStatus: boolean;
+  chipTop: string;
+  statusText: string;
+  statusBg: string;
+  statusColor: string;
+  statusBorder: string;
+  statusGlow: string;
+  // title + banner
+  titleColor: string;
+  titleGlow: string;
+  bannerTop: string;
+  bannerBottom: string;
+  pillBorder: string;
+  // credit panel (villa only)
+  incomeLabel: string;
+  payLocked: boolean;
+  housePct: string;
+  paidLabel: string;
+  goalLabel: string;
+  payBg: string;
+  payShadow: string;
+  payGlowA: string;
+  payColor: string;
+  payTextGlow: string;
+  payFilter: string;
+  coinFilter: string;
+  payRight: string;
+  unlockLabel: string;
+  burst: BurstVM[];
+  unlockAnim: string;
+  coinAnim: string;
+  ringAnim: string;
+  ringAnim2: string;
+  sheenAnim: string;
+  // funds
+  funds: FundVM[];
+  tileFilter: string;
+  tileOpacity: number;
+  // above-teaser
   isTop: boolean;
   hasAbove: boolean;
   above: number;
   aboveName: string;
-  // funds
-  funds: FundVM[];
 }
 
-/** One marker on the vertical rail. */
+/** One marker on the vertical rail (villa-completion checkpoint or the ₹0 base). */
 interface RailMark {
-  isNode: boolean;
-  isTick: boolean;
   top: string;
-  bg?: string;
-  color?: string;
-  label?: string;
+  size: string;
+  reached: boolean;
+  isFlag: boolean;
+  flagFill: string;
+  bg: string;
+  glow: string;
+  color: string;
+  tagBg: string;
+  label: string;
 }
 
 /**
- * Estate Levels — a full-screen, game-style vertical level ladder showing how the
- * user's SIP builds one villa across five ₹1L rungs (villa complete at ₹5L). A
- * live progress rail on the left fills from ₹0 up to the current worth, and each
- * rung carries a "top ~X% of Indians" wealth-percentile pill.
+ * Estate Levels — the 45-level, game-style estate ladder (Progress screen).
+ * 9 houses × 5 build stages (The Plot · Levelled Ground · Foundation ·
+ * Steel Frame · The Villa), each stage = ₹1L. A live rail on the left fills
+ * from ₹0 to the user's real portfolio worth; each rung shows the isometric
+ * build-stage art on a 3×3 estate board, the fund unlock mix, and — on villa
+ * rungs — the ₹1,500×h/month income plan.
  *
- * Ported from the decompiled design reference (renderVals): the level model,
- * rail geometry (SEC/OFF/RT/RB spans + yFor), fund mix, and keyframe animations.
+ * Ported verbatim from the decompiled reference (Villa Ladder renderVals):
+ * the level model, board geometry (BW/BH/OX/ORDER + depth sort), rail geometry
+ * (SEC/OFF/RT/RB + yFor), fund mix, HUD earn target, and every keyframe.
+ * Worth is read from EstateService.estateValue (real ₹).
  */
 @Component({
   selector: 'app-estate-levels',
@@ -99,23 +159,23 @@ export class EstateLevelsComponent implements AfterViewInit {
 
   // --- constants (ported from renderVals) ---
   private readonly L = 100000;
-  private readonly STEPS = 4;
+  private readonly HOUSES = 9;
+  private readonly STAGES_N = 5;
+  private readonly TOTAL = this.HOUSES * this.STAGES_N; // 45
+  private readonly INCOME = 1500;
   private readonly SIP = 25000;
 
-  // rail section geometry (px): each section is SEC tall; the rail is drawn from
-  // RT (below the HUD) to RB (above the section bottom), split into 4 partitions.
-  private readonly SEC = 754;
-  private readonly OFF = 100;
-  private readonly RT = 40;
-  private readonly RB = this.SEC - 300;               // 454
-  private readonly SPAN = this.RB - this.RT;          // 414
+  private readonly STAGES = [
+    { key: 'plot', name: 'The Plot' },
+    { key: 'grading', name: 'Levelled Ground' },
+    { key: 'foundation', name: 'Foundation' },
+    { key: 'steel', name: 'Steel Frame' },
+    { key: 'villa', name: 'The Villa' },
+  ];
 
-  /** Wealth percentile per level, top ~X% of Indian adults by net worth.
-   *  Source: Credit Suisse Global Wealth Report — ~91% of Indian adults hold
-   *  under ₹7.3L, and the top 1% hold ≈ ₹1.5Cr. The ladder's ₹1L–₹5L rungs sit
-   *  inside the broad middle, so the percentile tightens slowly:
-   *  ₹1L→~35%, ₹2L→~25%, ₹3L→~18%, ₹4L→~13%, ₹5L (villa)→~10%. */
-  private readonly PERCENTILE = ['35', '25', '18', '13', '10'];
+  private readonly ORDER: [number, number][] = [
+    [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
+  ];
 
   private readonly FUNDS = [
     { name: 'Arbitrage', w: 0.36, bar: '#8aa89b', isVault: true, isGold: false, isLarge: false, isMid: false, isSmall: false },
@@ -125,140 +185,252 @@ export class EstateLevelsComponent implements AfterViewInit {
     { name: 'Small cap', w: 0.16, bar: '#8fd48a', isVault: false, isGold: false, isLarge: false, isMid: false, isSmall: true },
   ];
 
-  private readonly DEFS = [
-    { level: 1, name: 'The Plot', tagline: 'Land in your name. 100% equity, valued at NAV, moving daily.' },
-    { level: 2, name: 'Levelled Ground', tagline: 'The site is cleared and graded flat. Your first lakh is working.' },
-    { level: 3, name: 'Foundation', tagline: 'Formwork set, concrete poured. Halfway to the villa.' },
-    { level: 4, name: 'Steel Frame', tagline: 'Columns and beams up. One more level and the house is yours.' },
-    { level: 5, name: 'The Villa', tagline: 'Monthly income of ₹15,000 arrives automatically by SWP.' },
-  ];
+  // board geometry — Home's proportions, shifted right of the rail
+  private readonly BW = 54;
+  private readonly BH = 31.2;
+  private readonly OX = 201;
+  private readonly ART_DX = 71;
+  private readonly ART_DY = 53.7;
+  private readonly VS = this.BW / 93.6;
+
+  // rail section geometry (px)
+  private readonly SEC = 754;
+  private readonly OFF = 100;
+  private readonly RT = 40;
+  private readonly RB = this.SEC - 300;      // 454
+  private readonly SPAN = this.RB - this.RT; // 414
+
+  // --- villa count-up (0→1 over 1400ms, cubic ease-out) feeding income figures ---
+  private readonly count = signal(1);
+  private cuRaf = 0;
+
+  // --- viewLevel from scroll (drives HUD earn button + back arrow) ---
+  private readonly viewLevel = signal(0);
+  private scRaf = 0;
 
   // --- currency helpers ---
-  private inr(n: number): string { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  private inr(n: number): string { return '₹' + n.toLocaleString('en-IN'); }
   private lakh(n: number): string {
     return n >= 100000
-      ? '₹' + (n / 100000).toFixed(n % 100000 ? 2 : 0).replace(/\.?0+$/, '') + 'L'
+      ? '₹' + (n % 100000 ? (n / 100000).toFixed(2).replace(/0+$/, '').replace(/\.$/, '') : String(n / 100000)) + 'L'
       : n >= 1000 ? '₹' + Math.round(n / 1000) + 'k' : this.inr(n);
   }
 
-  /** Live worth (₹) from the estate service. */
+  /** Live worth (₹) from the estate service — everything derives from it. */
   readonly worth = computed(() => Math.max(0, this.est.estateValue));
-  /** Current level: 1..5, one past the last fully-crossed lakh. */
-  readonly current = computed(() => Math.min(5, Math.floor(this.worth() / this.L) + 1));
+  /** Current level: 1..45, one past the last fully-crossed lakh. */
+  readonly currentLevel = computed(() => Math.min(this.TOTAL, Math.floor(this.worth() / this.L) + 1));
 
   readonly worthLabel = computed(() => this.lakh(this.worth()));
-  readonly sipLabel = computed(() => this.inr(this.SIP));
 
-  /** The five rungs, villa first (top of the scroll) and plot last (bottom). */
+  /** All 45 rungs, reversed — highest level at the top, ₹0 at the bottom. */
   readonly levels = computed<LevelVM[]>(() => {
     const worth = this.worth();
-    const current = this.current();
-    return this.DEFS.map((d) => {
-      const threshold = d.level * this.L;
-      const start = threshold - this.L;
-      const isDone = d.level < current;
-      const isCurrent = d.level === current;
-      const isLocked = d.level > current;
-      const done = isDone ? this.STEPS : isLocked ? 0 : Math.min(this.STEPS, Math.floor((worth - start) / this.SIP));
-      const steps: StepVM[] = Array.from({ length: this.STEPS }, (_, i) => ({
-        done: i < done,
-        glow: i < done && isCurrent,
-      }));
-      const funds: FundVM[] = this.FUNDS.map((f) => ({
-        name: f.name,
-        amount: this.inr(threshold * f.w),
-        pct: Math.round(f.w * 100) + '%',
-        bar: f.bar,
-        isVault: f.isVault,
-        isGold: f.isGold,
-        isLarge: f.isLarge,
-        isMid: f.isMid,
-        isSmall: f.isSmall,
-      }));
-      const pctPrefix = isCurrent ? "You're in the top ~" : isLocked ? 'Reach this → top ~' : 'Top ~';
-      return {
-        level: d.level,
-        name: d.name,
-        tagline: d.tagline,
-        milestone: this.inr(threshold),
-        startLabel: this.inr(start),
-        threshold,
-        isDone,
-        isCurrent,
-        isLocked,
-        isPlot: d.level === 1,
-        isGrading: d.level === 2,
-        isFoundation: d.level === 3,
-        isSteel: d.level === 4,
-        isVilla: d.level === 5,
-        steps,
-        stepsLabel: isLocked ? 'Locked' : `${done} of ${this.STEPS} steps`,
-        pctLabel: this.PERCENTILE[d.level - 1],
-        pctPrefix,
-        isTop: d.level === 5,
-        hasAbove: d.level < 5,
-        above: d.level + 1,
-        aboveName: this.DEFS[d.level] ? this.DEFS[d.level].name : '',
-        funds,
+    const current = this.currentLevel();
+    const count = this.count();
+    const { BW, BH, OX, ART_DX, ART_DY, VS, L, HOUSES, TOTAL, INCOME } = this;
+    const lakh = (n: number) => this.lakh(n);
+    const inr = (n: number) => this.inr(n);
+    const levels: LevelVM[] = [];
+
+    for (let k = 1; k <= TOTAL; k++) {
+      const h = Math.ceil(k / 5), s = (k - 1) % 5, st = this.STAGES[s];
+      const threshold = k * L, start = threshold - L;
+      const isDone = k < current, isCurrent = k === current, isLocked = k > current;
+      const isVilla = s === 4, houseDone = worth >= 5 * h * L;
+      const y0 = isVilla ? 56 : 120, boardH = isVilla ? 214 : 330;
+      const cellAt = (c: number, r: number) => {
+        const cx = OX + (c - r) * BW, cy = y0 + (c + r) * BH;
+        return { cx, cy, pts: `${cx},${cy - BH} ${cx + BW},${cy} ${cx},${cy + BH} ${cx - BW},${cy}` };
       };
-    }).reverse();
+      const [hc, hr] = this.ORDER[h - 1], hd = hc + hr;
+      const before = (c: number, r: number) => (c + r < hd) || (c + r === hd && c < hc);
+      const nextIdx = h < HOUSES ? h : -1;
+      const [nc, nr] = nextIdx >= 0 ? this.ORDER[nextIdx] : [-1, -1];
+      const backCells: (CellVM & { d: number; c: number })[] = [];
+      const frontCells: (CellVM & { d: number; c: number })[] = [];
+      const backVillas: (VillaVM & { d: number; c: number })[] = [];
+      const frontVillas: (VillaVM & { d: number; c: number })[] = [];
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        if (c === hc && r === hr) continue;
+        const idx = this.ORDER.findIndex(o => o[0] === c && o[1] === r), p = cellAt(c, r);
+        const builtVilla = idx < h - 1;
+        if (builtVilla) {
+          const v = { tf: `translate(${(p.cx - 120 * VS).toFixed(1)},${(p.cy - 80 * VS).toFixed(1)}) scale(${VS.toFixed(4)})`, d: c + r, c };
+          (before(c, r) ? backVillas : frontVillas).push(v);
+        } else {
+          const isNext = isVilla && houseDone && c === nc && r === nr;
+          const cell = { pts: p.pts, d: c + r, c, fill: '#242739', stroke: isNext ? '#9184d9' : '#3f424d', sw: 1.5, dash: '6 5', anim: isNext ? 'mapPulse 2s ease-in-out infinite' : 'none' };
+          (before(c, r) ? backCells : frontCells).push(cell);
+        }
+      }
+      const byDepth = (a: { d: number; c: number }, b: { d: number; c: number }) => (a.d - b.d) || (a.c - b.c);
+      backCells.sort(byDepth); frontCells.sort(byDepth); backVillas.sort(byDepth); frontVillas.sort(byDepth);
+      const hp = cellAt(hc, hr), nx = nextIdx >= 0 ? cellAt(nc, nr) : { cx: 0, cy: 0 };
+
+      levels.push({
+        level: k, name: st.name, threshold, isDone, isCurrent, isLocked,
+        isPlot: s === 0, isGrading: s === 1, isFoundation: s === 2, isSteel: s === 3, isVilla,
+        backCells, frontCells, backVillas, frontVillas, boardVB: `0 0 402 ${boardH}`, tileH: boardH + 'px',
+        artLeft: (hp.cx - ART_DX).toFixed(1) + 'px', artTop: (hp.cy - ART_DY).toFixed(1) + 'px',
+        nextX: nx.cx, nextY: nx.cy, nextTY: nx.cy + 5, nextDisplay: (isVilla && houseDone && nextIdx >= 0) ? 'block' : 'none',
+        mapLabel: `House ${h} of ${HOUSES}` + (isVilla && houseDone ? ' · complete' : isLocked ? '' : ' · building'),
+        mapLabelColor: isLocked ? '#6b6e79' : '#b5abfc', boardFilter: isLocked ? 'grayscale(1) brightness(.75)' : 'none',
+        sheenAnim: houseDone ? 'sheen 3.2s ease-in-out infinite' : 'none',
+        ringAnim: houseDone ? 'ringOut 2.4s ease-out infinite' : 'none',
+        ringAnim2: houseDone ? 'ringOut 2.4s ease-out 1.2s infinite' : 'none',
+        incomeLabel: '+' + inr(Math.round(INCOME * h * (houseDone ? count : 1))),
+        payLocked: !houseDone, housePct: Math.round(Math.max(0, Math.min(1, worth / (5 * h * L))) * 100) + '%',
+        paidLabel: lakh(Math.min(worth, 5 * h * L)) + ' in', goalLabel: lakh(5 * h * L),
+        payBg: houseDone ? 'linear-gradient(120deg,#4a3b12 0%,#2e2308 55%,#1d1605 100%)' : 'linear-gradient(120deg,#26221a 0%,#1e1b16 60%,#1b1e2c 100%)',
+        payShadow: houseDone ? '0 0 0 1.5px #f6c445,0 0 30px rgba(246,196,69,.4)' : '0 0 0 1px #3f3a2c',
+        payGlowA: houseDone ? '.4' : '.12', payColor: houseDone ? '#ffe9a3' : '#c9b47a', payTextGlow: houseDone ? '0 0 18px rgba(246,196,69,.6)' : 'none',
+        coinFilter: 'none', payFilter: houseDone ? 'none' : 'grayscale(1) brightness(.85)',
+        payRight: houseDone ? '1st credit\n5 Oct' : lakh(Math.max(0, 5 * h * L - worth)) + '\nto go',
+        burst: houseDone ? [0, 1, 2, 3, 4, 5].map(i => ({ left: (14 + i * 9 + (i % 2) * 5) + 'px', size: (6 + (i % 3) * 2) + 'px', delay: (i * .38).toFixed(2) + 's' })) : [],
+        unlockLabel: houseDone ? 'Villa ' + h + ' pays you · credited on the 5th' : 'From villa ' + h,
+        unlockAnim: houseDone ? 'unlockIn .7s cubic-bezier(.2,.9,.2,1.1) both, goldPulse 2.6s ease-in-out .7s infinite' : 'none',
+        coinAnim: houseDone ? 'coinSpin 2.6s ease-in-out infinite' : 'none',
+        milestone: inr(threshold),
+        titleColor: isLocked ? '#9a9aa5' : '#e9e9ed',
+        titleGlow: isLocked ? 'transparent' : 'rgba(145,132,217,.55)',
+        bannerTop: isLocked ? '#232739' : '#4a3f8a', bannerBottom: isLocked ? '#1b1e2c' : '#2f2760',
+        pillBorder: isCurrent ? '#5d5294' : '#2b2e3a',
+        funds: this.FUNDS.map(fd => ({
+          name: fd.name, amount: inr(Math.round(threshold * fd.w)), bar: fd.bar,
+          isVault: fd.isVault, isGold: fd.isGold, isLarge: fd.isLarge, isMid: fd.isMid, isSmall: fd.isSmall,
+          border: isLocked ? '#2b2e3a' : '#3f424d',
+          shadow: isLocked ? 'none' : '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)',
+        })),
+        startLabel: inr(start),
+        showStatus: isDone, chipTop: (y0 + 2 * BH) + 'px',
+        statusText: isDone ? 'Completed · paid ' + lakh(threshold) : 'In progress · ' + Math.round(Math.max(0, Math.min(1, (worth - start) / L)) * 100) + '%',
+        statusBg: isDone ? 'rgba(88,184,88,.14)' : 'rgba(145,132,217,.14)', statusColor: isDone ? '#8fd48f' : '#d2cefd',
+        statusBorder: isDone ? 'rgba(88,184,88,.45)' : '#5d5294', statusGlow: isDone ? 'rgba(88,184,88,.25)' : 'rgba(145,132,217,.3)',
+        tileFilter: isLocked ? 'grayscale(1) brightness(.7)' : 'none', tileOpacity: isLocked ? 0.75 : 1,
+        isTop: k === TOTAL, hasAbove: k < TOTAL,
+        above: k + 1, aboveName: k < TOTAL ? this.STAGES[k % 5].name : '',
+      });
+    }
+    levels.reverse();
+    return levels;
   });
 
   // --- rail geometry (ported from yFor / railMarks) ---
   private yFor(v: number): number {
-    const vv = Math.min(5 * this.L, Math.max(0, v));
-    const n = Math.min(5, Math.floor(vv / this.L) + 1);
-    const f = (vv - (n - 1) * this.L) / this.L;
-    return this.OFF + (5 - n) * this.SEC + this.RB - f * this.SPAN;
+    const vv = Math.min(this.TOTAL * this.L, Math.max(0, v));
+    const n = Math.min(this.TOTAL, Math.floor(vv / this.L) + 1);
+    const fr = (vv - (n - 1) * this.L) / this.L;
+    return this.OFF + (this.TOTAL - n) * this.SEC + this.RB - fr * this.SPAN;
   }
 
   readonly fillTop = computed(() => Math.round(this.yFor(this.worth())) + 'px');
   readonly railTop = this.RT + 'px';
+  readonly railH = (this.OFF + this.TOTAL * this.SEC) + 'px';
 
+  /** Checkpoint nodes: villa completions (₹5L … ₹45L) plus the ₹0 base dot. */
   readonly railMarks = computed<RailMark[]>(() => {
     const worth = this.worth();
     const marks: RailMark[] = [];
-    for (let n = 5; n >= 1; n--) {
-      const top = this.OFF + (5 - n) * this.SEC;
-      // top node of the section = ₹N·L
+    for (let h = this.HOUSES; h >= 1; h--) {
+      const k = 5 * h, top = this.OFF + (this.TOTAL - k) * this.SEC + this.RT, v = k * this.L;
+      const reached = v <= worth;
       marks.push({
-        isNode: true,
-        isTick: false,
-        top: (top + this.RT) + 'px',
-        bg: n * this.L <= worth ? '#d2cefd' : '#3f424d',
-        color: n * this.L <= worth ? '#c9c6da' : '#6b6e79',
-        label: this.lakh(n * this.L),
-      });
-      for (let i = 1; i < this.STEPS; i++) {
-        marks.push({
-          isNode: false,
-          isTick: true,
-          top: Math.round(top + this.RB - (i / this.STEPS) * this.SPAN) + 'px',
-        });
-      }
-      // bottom node of the section = ₹(N−1)L
-      marks.push({
-        isNode: true,
-        isTick: false,
-        top: (top + this.RB) + 'px',
-        bg: (n - 1) * this.L <= worth ? '#d2cefd' : '#3f424d',
-        color: (n - 1) * this.L <= worth ? '#c9c6da' : '#6b6e79',
-        label: n === 1 ? '₹0' : '',
+        top: top + 'px', size: '20px', reached, isFlag: !reached, flagFill: '#6b6e79',
+        bg: reached ? '#8fd48f' : '#232634',
+        glow: reached ? '0 0 12px rgba(88,184,88,.5)' : 'inset 0 0 0 1.5px #3f424d',
+        color: reached ? '#8fd48f' : '#6b6e79',
+        tagBg: reached ? 'rgba(88,184,88,.12)' : 'transparent',
+        label: 'Villa ' + h + ' · ' + this.lakh(v),
       });
     }
+    marks.push({
+      top: (this.OFF + (this.TOTAL - 1) * this.SEC + this.RB) + 'px', size: '14px', reached: false,
+      isFlag: false, flagFill: '#6b6e79', bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0',
+    });
     return marks;
   });
 
-  /** Start scrolled to the bottom — the plot rung — so the user climbs upward. */
+  // --- HUD earn button (targets the next villa above the level on screen) ---
+  private earnTarget = 0;
+  private readonly viewOrCurrent = computed(() => this.viewLevel() || this.currentLevel());
+
+  readonly earnLabel = computed(() => {
+    const viewLevel = this.viewOrCurrent();
+    const viewHouse = viewLevel % 5 === 0 ? Math.floor(viewLevel / 5) + 1 : Math.ceil(viewLevel / 5);
+    const earnHouse = Math.min(this.HOUSES, viewHouse);
+    const earnDone = viewLevel % 5 === 0 && viewLevel === this.TOTAL;
+    this.earnTarget = earnDone ? 0 : earnHouse * 5;
+    return earnDone ? 'Estate complete' : 'Earn ' + this.inr(this.INCOME * earnHouse) + '/mo';
+  });
+  readonly earnOpacity = computed(() => (this.viewOrCurrent() % 5 === 0 && this.viewOrCurrent() === this.TOTAL) ? .6 : 1);
+
+  readonly showBack = computed(() => this.viewOrCurrent() !== this.currentLevel());
+  readonly backRot = computed(() => this.viewOrCurrent() > this.currentLevel() ? '0deg' : '180deg');
+
+  // --- interactions ---
   ngAfterViewInit(): void {
     const el = this.scroller?.nativeElement;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    el.addEventListener('scroll', this.onScroll, { passive: true });
+    this.toCurrent();
+    this.countUp();
   }
+
+  private onScroll = (): void => {
+    if (this.scRaf) return;
+    this.scRaf = requestAnimationFrame(() => {
+      this.scRaf = 0;
+      const el = this.scroller?.nativeElement;
+      if (!el) return;
+      const v = Math.max(1, Math.min(this.TOTAL, this.TOTAL - Math.round((el.scrollTop - 100) / this.SEC)));
+      if (v !== this.viewLevel()) this.viewLevel.set(v);
+    });
+  };
+
+  private scrollToLevel(lv: number, smooth: boolean): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    const sec = el.querySelector<HTMLElement>('section[data-level="' + lv + '"]');
+    if (!sec) return;
+    if (smooth) el.scrollTo({ top: sec.offsetTop, behavior: 'smooth' });
+    else el.scrollTop = sec.offsetTop;
+  }
+
+  private toCurrent(): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    const go = () => {
+      const sec = el.querySelector<HTMLElement>('section[data-current="true"]');
+      el.scrollTop = sec ? sec.offsetTop : el.scrollHeight;
+    };
+    go();
+    requestAnimationFrame(go);
+    setTimeout(go, 150);
+  }
+
+  private countUp(): void {
+    cancelAnimationFrame(this.cuRaf);
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const p = Math.min(1, (t - t0) / 1400);
+      this.count.set(1 - Math.pow(1 - p, 3));
+      if (p < 1) this.cuRaf = requestAnimationFrame(step);
+    };
+    this.cuRaf = requestAnimationFrame(step);
+  }
+
+  /** HUD "Earn" tap → smooth-scroll to that villa card. */
+  jumpToVilla(): void { if (this.earnTarget) this.scrollToLevel(this.earnTarget, true); }
+  /** Bottom-right arrow → smooth-scroll back to the current level. */
+  backToCurrent(): void { this.scrollToLevel(this.currentLevel(), true); }
 
   onBack(): void { this.back.emit(); }
 
   trackLevel(_i: number, lv: LevelVM): number { return lv.level; }
   trackMark(i: number, _m: RailMark): number { return i; }
   trackFund(_i: number, f: FundVM): string { return f.name; }
-  trackStep(i: number, _s: StepVM): number { return i; }
+  trackCell(i: number, _c: CellVM): number { return i; }
+  trackVilla(i: number, _v: VillaVM): number { return i; }
+  trackBurst(i: number, _b: BurstVM): number { return i; }
 }
