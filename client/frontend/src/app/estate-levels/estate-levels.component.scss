@@ -92,7 +92,8 @@
 /* ---- HUD ---- */
 .el-hud {
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 402px; max-width: 100%;
   z-index: 5;
   padding: max(20px, env(safe-area-inset-top)) 20px 12px;
   display: flex;
@@ -151,6 +152,10 @@
 /* ---- scroller (the only vertical scroll) ---- */
 .el-scroller {
   height: 100%;
+  /* the whole ladder is authored on a 402px phone frame (board at left:0
+     width:402px, rail at left:10px). Constrain to a centred 402px column so the
+     board, rail, title, banner and fund tiles all share one centre on any width. */
+  width: 402px; max-width: 100%; margin: 0 auto;
   overflow-y: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
