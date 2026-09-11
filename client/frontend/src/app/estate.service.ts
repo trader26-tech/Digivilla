@@ -82,6 +82,8 @@ export interface BuildingFund {
   scheme_name: string;
   scheme_code: string;
   category: string;
+  /** Sleeve tag for the coloured chip: 'ARB' | 'GOLD' | 'LARGE' | 'MID' | 'SMALL' | ''. */
+  tag: string;
   allocation: number;          // percent of this building, e.g. 36
   invested: number;
   current_value: number;
@@ -95,11 +97,25 @@ export interface BuildingFund {
  *  `rent` is the cumulative rent paid out to date (0 until SWP is wired). */
 export interface GrowthPt { date: string; value: number; rent: number; }
 
+/** One month on the drained-value chart: what the mix was worth after that
+ *  month's payout was sold out of it. `withdrawn` is cumulative ₹ paid out. */
+export interface DrainPt { month: string; value: number; withdrawn: number; }
+
 /** The returns detail for one building/villa tile (from GET /me/building/{tileId}). */
 export interface BuildingDetail {
   tile_id: string;
   name: string;
   status: 'building' | 'constructed';
+  /** Build stage: 0 ground · 1 plot · 2 levelled · 3 foundation · 4 steel · 5 villa. */
+  stage: number;
+  /** The real "you invested on" date (earliest order behind this tile), ISO or "". */
+  since: string;
+  /** The monthly payout this house makes (0 until it is a finished villa). */
+  payout: { monthly: number; next_credit: string; from_fund: string };
+  /** Drained-value backtest of THIS mix over the trailing 1/3/5 years — real
+   *  month-end NAVs, real weights, `monthly` ₹ sold out each month (0 while
+   *  building). A range key is absent when the funds lack that much history. */
+  withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y', DrainPt[]>> };
   invested: number;
   current_value: number;
   gain: number;

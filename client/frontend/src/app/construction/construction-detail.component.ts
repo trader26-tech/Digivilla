@@ -1,20 +1,58 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 
-import { BuildingDetail, EstateService, GrowthPt } from '../estate.service';
-import { compact } from '../shared/format.util';
+import { BuildingDetail, DrainPt, EstateService } from '../estate.service';
+import { compact, inr } from '../shared/format.util';
 
-/** A resolved point on the chart: date + value (₹) + cumulative rent (₹). */
-interface ChartPt { date: string; value: number; rent: number; }
+/** The three drained-value windows the backend can return, in tab order. */
+type RangeKey = '1y' | '3y' | '5y';
+const RANGE_ORDER: RangeKey[] = ['1y', '3y', '5y'];
 
-/** Per-fund accent palette, cycled by index. */
-const FUND_COLORS = ['#8aa89b', '#f6c445', '#4a9d47', '#5cb85c', '#8fd48a'];
+/** Sleeve tag → chip colour (from design/villa-report). '' = an untagged fund. */
+const TAG_COLOUR: Record<string, string> = {
+  ARB: '#8fb7b0', SMALL: '#58b858', MID: '#6ac86a', GOLD: '#e9c15c', LARGE: '#9184d9', '': '#9a9aa5',
+};
+
+/** Acronyms that stay upper-case when an ALL-CAPS scheme name is title-cased. */
+const ACRONYMS = new Set(['ICICI', 'SBI', 'HDFC', 'DSP', 'UTI', 'PPFAS', 'ETF', 'FOF', 'IDFC', 'LIC', 'HSBC', 'BNP', 'JM', 'ITI', 'NJ', 'PGIM', 'WOC', 'PSU', 'IT', 'MNC']);
+
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** One x-axis label on the drained-value chart. */
+interface AxisLabel { x: string; text: string; anchor: 'start' | 'middle' | 'end'; }
+/** One gold withdrawal dot on the drained-value chart. */
+interface Dot { cx: string; cy: string; }
 
 /**
- * The building/villa RETURNS page. Tapping a villa or building tile on the home
- * map opens this. It fetches GET /me/building/{tileId} and shows: the headline
- * value & gain, build progress (for a building), a blended growth chart with a
- * "rent paid out" band, and a per-fund breakdown. Self-contained, animated.
+ * The drained-value chart, fully resolved from `withdraw.ranges[range]` — a
+ * straight port of the reference `vrMain()` geometry (W 320 · H 120 · pad 8 ·
+ * padB 18) with the seeded series replaced by the real month-end points.
+ */
+interface Chart {
+  W: number; H: number; pad: number; padB: number;
+  n: number;                // points − 1 (the number of monthly steps)
+  d: string;                // the value line
+  area: string;             // the value line closed down to the baseline
+  invY: string;             // y of the dashed "amount put in" line
+  col: string;              // green when the end ≥ invested, else red
+  up: boolean;
+  endValue: number;         // last point's ₹ value
+  endPct: string;           // signed % vs invested, 0 decimals
+  dots: Dot[];              // one per withdrawal (empty while building)
+  labels: AxisLabel[];
+  withdrawn: number;        // cumulative ₹ withdrawn at the last point
+  dotR: number;
+}
+
+/**
+ * The tapped-property "villa report". Opens for ANY non-locked parcel on the
+ * home board — a finished villa or any build stage — and renders the reference
+ * design/villa-report page bound 100% to GET /me/building/{tileId}:
+ *   1. header: the property's stage art + invested → worth today
+ *   2. chart: what this mix became while the payout was drained out of it
+ *   3. pays you (finished villas only)
+ *   4. inside this villa/plot: one card per fund
+ *   5. fine print
  */
 @Component({
   selector: 'app-construction-detail',
@@ -26,16 +64,18 @@ const FUND_COLORS = ['#8aa89b', '#f6c445', '#4a9d47', '#5cb85c', '#8fd48a'];
 export class ConstructionDetailComponent implements OnInit {
   private estate = inject(EstateService);
 
-  /** The tapped tile's id — the only input; everything else comes from the API. */
+  /** The tapped tile's id — everything on the page comes from its API detail. */
   @Input() tileId = '';
+  /** The board label (Villa 03 / Plot 06). The backend `name` is a generic "Villa". */
+  @Input() title = '';
   @Output() back = new EventEmitter<void>();
 
   detail = signal<BuildingDetail | null>(null);
   loading = signal(true);
   error = signal(false);
 
+  inr = inr;
   compact = compact;
-  fundColors = FUND_COLORS;
 
   ngOnInit(): void {
     if (!this.tileId) { this.loading.set(false); this.error.set(true); return; }
@@ -47,161 +87,151 @@ export class ConstructionDetailComponent implements OnInit {
 
   onBack(): void { this.back.emit(); }
 
-  fundColor(i: number): string { return FUND_COLORS[i % FUND_COLORS.length]; }
   trackFund(i: number, f: { scheme_code: string }): string { return f.scheme_code || String(i); }
+  trackKey(_: number, k: string): string { return k; }
 
-  // ── time-range tabs ──────────────────────────────────────────────────────────
-  readonly ranges: { key: string; label: string; months: number }[] = [
-    { key: '1y', label: '1Y', months: 12 },
-    { key: '3y', label: '3Y', months: 36 },
-    { key: '5y', label: '5Y', months: 60 },
-    { key: 'max', label: 'Max', months: 0 },
-  ];
-  chartRange = signal<string>('5y');
-  setRange(key: string): void { this.chartRange.set(key); this.hoverIdx.set(null); }
+  // ── header ──────────────────────────────────────────────────────────────────
 
-  /** The full growth series (value already in ₹). */
-  private allPts = computed<ChartPt[]>(() => {
-    const g = this.detail()?.growth ?? [];
-    return g.map((p: GrowthPt) => ({ date: p.date, value: p.value, rent: p.rent }));
-  });
-
-  /** The growth series sliced to the selected time range (from the last date back). */
-  windowedGrowth = computed<ChartPt[]>(() => {
-    const pts = this.allPts();
-    if (!pts.length) return [];
-    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 0;
-    if (!months) return pts;                       // Max — the whole series
-    const last = pts[pts.length - 1].date;
-    const cut = new Date(last);
-    if (isNaN(cut.getTime())) return pts;
-    cut.setMonth(cut.getMonth() - months);
-    const cutIso = cut.toISOString().slice(0, 10);
-    const sliced = pts.filter(p => p.date >= cutIso);
-    return sliced.length > 1 ? sliced : pts;       // never show a single point
-  });
-
-  // ── SVG geometry (ported from estate-detail) ────────────────────────────────
-  readonly chartW = 680;
-  readonly chartH = 260;
-  readonly padL = 58;
-  readonly padR = 10;
-  readonly padT = 12;
-  readonly padB = 30;
-
-  private get plotW() { return this.chartW - this.padL - this.padR; }
-  private get plotH() { return this.chartH - this.padT - this.padB; }
-
-  /** Value bounds of the windowed series — spans both value and rent so the
-   *  rent band shares the same scale when it eventually lifts off zero. */
-  private vBounds = computed<{ lo: number; hi: number } | null>(() => {
-    const w = this.windowedGrowth();
-    if (!w.length) return null;
-    const vals = w.map(g => g.value);
-    let lo = Math.min(...vals), hi = Math.max(...vals);
-    if (lo === hi) { lo = lo * 0.98; hi = hi * 1.02 || 1; }   // avoid a flat span
-    return { lo, hi };
-  });
-
-  private xAt(i: number, n: number): number {
-    return this.padL + (n <= 1 ? 0 : (i / (n - 1)) * this.plotW);
-  }
-  private yAt(v: number, lo: number, hi: number): number {
-    const span = hi - lo || 1;
-    return this.padT + (1 - (v - lo) / span) * this.plotH;
+  /** Tile-art symbol for the property's build stage (0 ground … 5 villa). */
+  artHref(d: BuildingDetail): string {
+    if (d.status === 'constructed') return '#tVilla';
+    const map = ['#tGround', '#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
+    const s = Math.max(0, Math.min(5, Math.floor(Number(d.stage) || 0)));
+    return map[s];
   }
 
-  growthPath = computed<string>(() => {
-    const w = this.windowedGrowth(); const b = this.vBounds();
-    if (!w.length || !b) return '';
-    return w.map((g, i) =>
-      `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.value, b.lo, b.hi).toFixed(1)}`
-    ).join(' ');
+  isUp(v: number): boolean { return v >= 0; }
+  dir(v: number): string { return v >= 0 ? 'vr-up' : 'vr-dn'; }
+  arrow(v: number): string { return v >= 0 ? '▲' : '▼'; }
+
+  /** Signed percentage: "+2.5" / "-0.9"; a value that rounds to zero is "0.0", never "-0.0". */
+  signedPct(v: number, decimals = 1): string {
+    const abs = Math.abs(v || 0).toFixed(decimals);
+    if (Number(abs) === 0) return abs;
+    return (v > 0 ? '+' : '-') + abs;
+  }
+
+  /** "+₹8,243" / "−₹2" — the movement in rupees, with the typographic minus. */
+  signedInr(v: number): string { return (v >= 0 ? '+' : '−') + inr(Math.abs(v)); }
+
+  // ── chart ───────────────────────────────────────────────────────────────────
+
+  /** Range tabs: only the keys the backend actually returned, in 1y/3y/5y order. */
+  rangeKeys = computed<RangeKey[]>(() => {
+    const ranges = this.detail()?.withdraw?.ranges ?? {};
+    return RANGE_ORDER.filter(k => Array.isArray(ranges[k]) && (ranges[k] as DrainPt[]).length > 0);
   });
 
-  growthArea = computed<string>(() => {
-    const line = this.growthPath();
-    const w = this.windowedGrowth();
-    if (!line || !w.length) return '';
-    const baseY = this.chartH - this.padB;
-    const lastX = this.xAt(w.length - 1, w.length);
-    return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
+  private chosenRange = signal<RangeKey | null>(null);
+  /** The selected range: the user's pick, else '1y' when present, else the first available. */
+  range = computed<RangeKey | null>(() => {
+    const keys = this.rangeKeys();
+    const pick = this.chosenRange();
+    if (pick && keys.includes(pick)) return pick;
+    return keys.includes('1y') ? '1y' : (keys[0] ?? null);
+  });
+  setRange(k: RangeKey): void { this.chosenRange.set(k); }
+  rangeLabel(k: RangeKey): string { return k.toUpperCase(); }
+
+  /** The points behind the selected range. */
+  private pts = computed<DrainPt[]>(() => {
+    const r = this.range(); const d = this.detail();
+    if (!r || !d) return [];
+    return d.withdraw.ranges[r] ?? [];
   });
 
-  /** A second, faint band: cumulative rent paid out. Flat-zero for now, but
-   *  wired so it shows the moment rent > 0. Hidden when the whole band is zero. */
-  hasRent = computed<boolean>(() => this.windowedGrowth().some(g => g.rent > 0));
+  chart = computed<Chart | null>(() => {
+    const d = this.detail(); const pts = this.pts();
+    if (!d || pts.length < 2) return null;
+    const W = 320, H = 120, pad = 8, padB = 18;
+    const n = pts.length - 1, inv = d.invested;
+    const val = pts.map(p => p.value);
+    // vrMain: min ×.985 / max ×1.01 — `inv` joins the pool so the dashed line is always on-canvas.
+    let min = Math.min(...val, inv) * .985, max = Math.max(...val, inv) * 1.01;
+    if (max - min <= 0) { max = min + 1; }
+    const X = (i: number) => pad + i * (W - 2 * pad) / n;
+    const Y = (y: number) => H - padB - (y - min) / (max - min) * (H - padB - pad);
+    const dPath = val.map((y, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(y).toFixed(1)).join('');
+    const end = Math.round(val[n]), up = end >= inv, col = up ? '#8fd48f' : '#e0a0a0';
+    const step = n <= 12 ? 1 : n <= 36 ? 6 : 12;
 
-  rentArea = computed<string>(() => {
-    const w = this.windowedGrowth(); const b = this.vBounds();
-    if (!w.length || !b || !this.hasRent()) return '';
-    const baseY = this.chartH - this.padB;
-    const line = w.map((g, i) =>
-      `${i === 0 ? 'M' : 'L'}${this.xAt(i, w.length).toFixed(1)} ${this.yAt(g.rent, b.lo, b.hi).toFixed(1)}`
-    ).join(' ');
-    const lastX = this.xAt(w.length - 1, w.length);
-    return `${line} L${lastX.toFixed(1)} ${baseY} L${this.padL} ${baseY} Z`;
-  });
-
-  /** Y-axis ticks: 4 evenly spaced ₹ amounts across the value range. */
-  yTicks = computed<{ y: number; label: string }[]>(() => {
-    const b = this.vBounds();
-    if (!b) return [];
-    const n = 4;
-    const out: { y: number; label: string }[] = [];
-    for (let i = 0; i <= n; i++) {
-      const v = b.lo + (i / n) * (b.hi - b.lo);
-      out.push({ y: this.yAt(v, b.lo, b.hi), label: compact(v) });
+    const dots: Dot[] = [];
+    if (d.withdraw.monthly > 0) {
+      for (let k = 1; k <= n; k++) dots.push({ cx: X(k).toFixed(1), cy: Y(val[k]).toFixed(1) });
     }
-    return out;
-  });
 
-  /** X-axis ticks: ~5 dates. Long ranges show the year; short ranges "Mon 'YY". */
-  xTicks = computed<{ x: number; label: string }[]>(() => {
-    const w = this.windowedGrowth();
-    if (!w.length) return [];
-    const n = w.length;
-    const months = this.ranges.find(r => r.key === this.chartRange())?.months ?? 60;
-    const shortRange = months > 0 && months <= 24;
-    const count = Math.min(5, n);
-    const out: { x: number; label: string }[] = [];
-    for (let i = 0; i < count; i++) {
-      const idx = count <= 1 ? 0 : Math.round((i / (count - 1)) * (n - 1));
-      const d = w[idx].date || '';
-      out.push({ x: this.xAt(idx, n), label: shortRange ? this.monLabel(d) : d.slice(0, 4) });
+    const firstYear = this.yearOf(pts[0].month);
+    const labels: AxisLabel[] = [];
+    for (let m = 0; m <= n; m += step) {
+      const mi = this.monthIdx(pts[m].month), yr = this.yearOf(pts[m].month) - firstYear;
+      const text = n <= 12 ? MON[mi] : (yr ? "'" + String(this.yearOf(pts[m].month)).slice(-2) : MON[mi]);
+      labels.push({ x: X(m).toFixed(1), text, anchor: m === 0 ? 'start' : m === n ? 'end' : 'middle' });
     }
-    return out;
+
+    return {
+      W, H, pad, padB, n, col, up,
+      d: dPath,
+      area: dPath + ' L' + X(n).toFixed(1) + ' ' + (H - padB) + ' L' + pad + ' ' + (H - padB) + ' Z',
+      invY: Y(inv).toFixed(1),
+      endValue: val[n],
+      endPct: inv > 0 ? this.signedPct((end / inv - 1) * 100, 0) : '0',
+      dots, labels,
+      withdrawn: pts[n].withdrawn,
+      dotR: n <= 12 ? 3.2 : 1.8,
+    };
   });
 
-  private monLabel(ymd: string): string {
-    const [y, mo] = ymd.split('-');
-    const MON = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return mo ? `${MON[+mo] || ''} '${(y || '').slice(2)}` : (y || '');
+  private yearOf(ym: string): number { return Number((ym || '').slice(0, 4)) || 0; }
+  private monthIdx(ym: string): number { const m = Number((ym || '').slice(5, 7)); return m >= 1 && m <= 12 ? m - 1 : 0; }
+
+  // ── funds ───────────────────────────────────────────────────────────────────
+
+  tagColour(tag: string): string { return TAG_COLOUR[tag] ?? TAG_COLOUR['']; }
+
+  /** The fund's role in this mix, by sleeve tag. */
+  role(tag: string, d: BuildingDetail): string {
+    switch (tag) {
+      case 'ARB': return d.status === 'constructed' ? `Fuels your ${inr(d.payout.monthly)} a month` : 'Will fuel your payout';
+      case 'SMALL': return 'Growth · small cap';
+      case 'MID': return 'Growth · mid cap';
+      case 'LARGE': return 'Growth · large cap';
+      case 'GOLD': return 'Cushion · gold';
+      default: return 'Part of the mix';
+    }
   }
 
-  // ── Hover ────────────────────────────────────────────────────────────────────
-  hoverIdx = signal<number | null>(null);
-
-  onChartMove(ev: MouseEvent): void {
-    const svg = ev.currentTarget as SVGSVGElement;
-    const rect = svg.getBoundingClientRect();
-    const w = this.windowedGrowth();
-    if (!w.length || rect.width === 0) return;
-    const xView = ((ev.clientX - rect.left) / rect.width) * this.chartW;
-    const frac = Math.max(0, Math.min(1, (xView - this.padL) / this.plotW));
-    this.hoverIdx.set(Math.round(frac * (w.length - 1)));
+  /** "Kotak Arbitrage Fund Growth" → "Kotak Arbitrage"; strips plan/option/vehicle noise. */
+  shortName(name: string): string {
+    let s = (name || '').trim();
+    s = s.replace(/\s*[-–]\s*(direct|regular)\s*plan\b.*$/i, '')
+         .replace(/\s*\((direct|regular)\s*plan\)/ig, '')
+         .replace(/\s*\b(direct|regular)\s*plan\b/ig, '')
+         .replace(/\s*[-–]\s*growth(\s*option)?\b.*$/i, '')
+         .replace(/\s*\(g(rowth)?\)\s*$/i, '')
+         .replace(/\s+growth(\s*option)?\s*$/i, '')
+         .replace(/\s+etf\s+fof\s*$/i, '')
+         .replace(/\s+fund\s+of\s+funds?\s*$/i, '')
+         .replace(/\s+fund\s*$/i, '')
+         .replace(/\s*[-–]\s*$/, '')
+         .trim();
+    if (s && s === s.toUpperCase() && /[A-Z]/.test(s)) {
+      s = s.split(/\s+/).map(w => ACRONYMS.has(w) ? w : w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+    }
+    return s || name;
   }
-  onChartLeave(): void { this.hoverIdx.set(null); }
 
-  hover = computed(() => {
-    const i = this.hoverIdx();
-    const w = this.windowedGrowth(); const b = this.vBounds();
-    if (i == null || !w.length || !b || !w[i]) return null;
-    const g = w[i];
-    const x = this.xAt(i, w.length);
-    const y = this.yAt(g.value, b.lo, b.hi);
-    const base = w[0]?.value ?? g.value;
-    const growthPct = base > 0 ? (g.value / base - 1) * 100 : 0;
-    return { x, y, value: g.value, date: g.date, rent: g.rent, growthPct };
-  });
+  /** Per-fund move as % of what went in. */
+  fundPct(f: { gain: number; invested: number }): number {
+    return f.invested > 0 ? (f.gain / f.invested) * 100 : 0;
+  }
+  /** Movement bar: invested share of the larger of invested/now. */
+  invWidth(f: { invested: number; current_value: number }): string {
+    const m = Math.max(f.invested, f.current_value) || 1;
+    return Math.min(100, 100 * f.invested / m).toFixed(1);
+  }
+  /** Movement bar: the gain/loss segment's share. */
+  gainWidth(f: { invested: number; current_value: number; gain: number }): string {
+    const m = Math.max(f.invested, f.current_value) || 1;
+    return Math.min(100, 100 * Math.abs(f.gain) / m).toFixed(1);
+  }
 }

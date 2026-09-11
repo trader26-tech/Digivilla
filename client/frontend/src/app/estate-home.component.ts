@@ -29,6 +29,8 @@ interface BoardCell {
   row: number;
   /** Painting depth = col + row (ascending emits back-to-front). */
   d: number;
+  /** 0-based house index (position in ORDER) — the ₹5L pillar this parcel is. */
+  idx: number;
   /** Offset for the tile <use>, per the reference placement formula. */
   x: number;
   y: number;
@@ -296,7 +298,7 @@ export class EstateHomeComponent implements OnInit {
 
     const cells: BoardCell[] = ORDER.map(([col, row], i) => {
       const n = ('0' + (i + 1)).slice(-2);
-      const base = { col, row, d: col + row, x: (col - row) * 93.6, y: (col + row) * 54 };
+      const base = { col, row, d: col + row, idx: i, x: (col - row) * 93.6, y: (col + row) * 54 };
       if (i < villas) {
         return {
           ...base, st: 'villa', href: '#tVilla', name: `Villa ${n}`,
@@ -335,8 +337,20 @@ export class EstateHomeComponent implements OnInit {
   tapBoardCell(c: BoardCell): void {
     if (c.st === 'locked') return;
     if (navigator.vibrate) navigator.vibrate(4);
-    if (c.tile) { this.openTile.emit(c.tile); return; }
-    this.selectedBoard.set(c);
+    // EVERY parcel — finished villa or any build stage — opens the real report for
+    // ITS ₹5L pillar (villa_<idx>): the same invested-driven slice the board was
+    // generated from, so the page's numbers match what the board shows.
+    this.openTile.emit({
+      id: `villa_${c.idx}`,
+      type: c.st === 'villa' ? 'villa' : 'building',
+      variant: 'balanced',
+      cost: HOUSE,
+      sipMonthly: 0,
+      sipAccrued: c.paid ? c.paid * 25_000 : 0,
+      rentMonthly: c.st === 'villa' ? INCOME : 0,
+      boughtAt: Date.now(),
+      label: c.name,
+    });
   }
 
   /** The generated parcel whose local detail popup is open (no real tile). */

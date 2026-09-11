@@ -146,6 +146,7 @@
 <app-construction-detail
   *ngIf="!intro && building"
   [tileId]="building.id"
+  [title]="building.label"
   (back)="closeBuilding()"
 ></app-construction-detail>
 

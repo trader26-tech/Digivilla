@@ -478,30 +478,31 @@ def _fund_category(scheme_code: int) -> Optional[str]:
         return None
 
 
-def _blended_growth(funds: list[dict]) -> list[dict]:
+def _blended_growth(funds: list[dict], navfull: Optional[dict] = None) -> list[dict]:
     """A blended 'growth of your money' series for the building, weighted by each
     fund's invested amount, using real NAV history. Returns [{date, value, rent}]
     where value = today's-money grown back over time, rent = cumulative SWP (0 for
-    now). Robust: funds with no history are skipped from the blend."""
-    from app import dashboard
+    now). Robust: funds with no history are skipped from the blend.
+
+    Pass the `navfull` map from _nav_full_map() to reuse an already-fetched
+    history (the report page fetches each fund exactly once); else it fetches."""
+    from datetime import date, timedelta
     total_inv = sum(f["invested"] for f in funds) or 1.0
-    # gather each fund's max-window NAV points → date→growth-factor (nav/nav_start)
+    if navfull is None:
+        navfull = _nav_full_map(funds)
+    # each fund's trailing-5y NAV points (all of them if shorter) → growth factor
     series = []
     for f in funds:
-        try:
-            nav = dashboard.get_nav_windows(f["scheme_code"])
-        except Exception:
-            nav = None
-        if not nav or not nav.windows:
-            continue
-        win = next((w for w in nav.windows if w.window == "5y"), None) or \
-              next((w for w in nav.windows if w.window == "max"), None)
-        pts = [p for p in (win.points if win else []) if p.nav]
+        pts = [p for p in (navfull.get(f["scheme_code"]) or []) if p.nav]
         if len(pts) < 2:
             continue
-        base = pts[0].nav
+        cutoff = (date.fromisoformat(pts[-1].date) - timedelta(days=365 * 5)).isoformat()
+        win = [p for p in pts if p.date >= cutoff]
+        if len(win) < 2:
+            win = pts
+        base = win[0].nav
         w = f["invested"] / total_inv
-        series.append((w, base, {p.date: p.nav for p in pts}, [p.date for p in pts]))
+        series.append((w, base, {p.date: p.nav for p in win}, [p.date for p in win]))
     if not series:
         return []
     # union of dates (sorted); blended value at each date = Σ w * invested_total * (nav/base)
@@ -525,10 +526,129 @@ def _blended_growth(funds: list[dict]) -> list[dict]:
     return out
 
 
+def _nav_full_map(holdings: list[dict]) -> dict:
+    """ONE live NAV-history fetch per scheme → {scheme_code: [NavPoint…] ascending}.
+    Shared by the growth series and the drained-value backtest so the report
+    page never fetches the same fund twice."""
+    from app import dashboard
+    out: dict = {}
+    for h in holdings:
+        code = h.get("scheme_code")
+        if not code or code in out:
+            continue
+        try:
+            out[code] = dashboard._fetch_full_nav(code) or []
+        except Exception:
+            out[code] = []
+    return out
+
+
+def _month_map(points: list) -> dict:
+    """Month-end NAVs {'YYYY-MM': nav} from an ascending daily series."""
+    m: dict = {}
+    for p in points:
+        if p.nav:
+            m[p.date[:7]] = p.nav          # ascending → last write is the month end
+    return m
+
+
+# Monthly payout per finished villa (₹) — the gold withdrawal on the home header.
+VILLA_INCOME = 1500.0
+
+
+def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
+                    monthly: float) -> dict:
+    """What `invested` in THIS villa's real mix became over the trailing
+    12 / 36 / 60 months while `monthly` ₹ was withdrawn every month — the chart
+    the report page draws. Real month-end NAVs, real weights (each fund's share
+    of invested). The withdrawal is sold from the ARBITRAGE sleeve while it lasts
+    (the app's payout model), then pro-rata across the rest so the payout never
+    silently stops. A range is omitted when the funds don't share enough history.
+
+    Returns {"1y"|"3y"|"5y": [{month:'YYYY-MM', value:int, withdrawn:int}, …]}.
+    """
+    if invested <= 0 or not holdings:
+        return {}
+    total_inv = sum(_num(h.get("invested")) for h in holdings) or 1.0
+    funds = []
+    for h in holdings:
+        code = h.get("scheme_code")
+        mm = _month_map(navfull.get(code) or [])
+        if len(mm) < 3:
+            continue
+        w = _num(h.get("invested")) / total_inv
+        funds.append({"code": code, "w": w, "nav": mm,
+                      "arb": _sleeve_tag("", h.get("scheme_name") or "") == "ARB"})
+    if not funds:
+        return {}
+    common = None
+    for f in funds:
+        keys = set(f["nav"].keys())
+        common = keys if common is None else (common & keys)
+    months_all = sorted(common or [])
+    out: dict = {}
+    for key, n in (("1y", 12), ("3y", 36), ("5y", 60)):
+        months = months_all[-(n + 1):]
+        if len(months) < 3:
+            continue
+        units = {f["code"]: (invested * f["w"]) / f["nav"][months[0]] for f in funds}
+        arb = [f for f in funds if f["arb"]]
+        pts = []
+        withdrawn = 0.0
+        for i, mk in enumerate(months):
+            if i and monthly > 0:
+                need = monthly
+                # 1) sell from the arbitrage sleeve first
+                for f in arb:
+                    if need <= 0:
+                        break
+                    px = f["nav"][mk]
+                    sold = min(need / px, units[f["code"]])
+                    units[f["code"]] -= sold
+                    need -= sold * px
+                # 2) whatever is left, pro-rata across every fund still holding units
+                if need > 0:
+                    live = [f for f in funds if units[f["code"]] > 0]
+                    tot = sum(units[f["code"]] * f["nav"][mk] for f in live)
+                    if tot > 0:
+                        for f in live:
+                            px = f["nav"][mk]
+                            take = min(need * (units[f["code"]] * px / tot) / px, units[f["code"]])
+                            units[f["code"]] -= take
+                            need -= take * px
+                withdrawn += monthly - max(0.0, need)
+            value = sum(units[f["code"]] * f["nav"][mk] for f in funds)
+            pts.append({"month": mk, "value": round(value), "withdrawn": round(withdrawn)})
+        out[key] = pts
+    return out
+
+
+def _since_date(client_code: str, tile_id: str) -> str:
+    """The real 'you invested on' date — the earliest order behind this tile
+    (that villa's mapped orders for cvilla_…, else the client's first order)."""
+    try:
+        q = _sb().table("client_transactions").select("txn_date").eq("client_code", client_code)
+        if tile_id.startswith("cvilla_"):
+            q = q.eq("villa_id", tile_id[len("cvilla_"):])
+        rows = q.execute().data or []
+    except Exception:
+        return ""
+    ds = sorted(r["txn_date"] for r in rows if r.get("txn_date"))
+    return ds[0] if ds else ""
+
+
+def _next_credit_date() -> str:
+    """The 1st of next month (payouts land 'on the 1st'), ISO."""
+    from datetime import date
+    today = date.today()
+    y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+    return date(y, m, 1).isoformat()
+
+
 def building_detail(owner: str, tile_id: str) -> Optional[dict]:
     """Full returns breakdown for one building/villa tile: headline gain, build
-    progress, per-fund allocation + live 1/3/5-Yr returns, and a blended growth
-    series (with a cumulative rent/SWP overlay, 0 until SWP is wired)."""
+    progress, per-fund allocation + live 1/3/5-Yr returns, a blended growth
+    series, and the drained-value chart (what this mix did while paying out)."""
     from app import villa_sip
     code = client_code_for_owner(owner)
     if not code:
@@ -539,6 +659,13 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
 
     meta = _tile_meta(code, tile_id)
     total_inv = sum(h["invested"] for h in holdings)
+    # A generated villa_N pillar is 'constructed' once its ₹5L slice is full;
+    # a manual cvilla_ keeps the admin's status. stage 0..4 = build stage, 5 = villa.
+    constructed = (meta["status"] == "constructed") if tile_id.startswith("cvilla_") \
+        else total_inv >= VILLA_UNIT - 1
+    status = "constructed" if constructed else "building"
+    stage = 5 if constructed else min(4, int(total_inv // 100_000))
+    navfull = _nav_full_map(holdings)
 
     funds = []
     cur_total = 0.0
@@ -560,6 +687,7 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
             "current_value": cur,
             "gain": round(cur - h["invested"], 2),
             "ret_1y": rets["ret_1y"], "ret_3y": rets["ret_3y"], "ret_5y": rets["ret_5y"],
+            "tag": _sleeve_tag(_fund_category(scheme) or "", h.get("scheme_name") or ""),
         })
         for k, rk in (("1y", "ret_1y"), ("3y", "ret_3y"), ("5y", "ret_5y")):
             if rets[rk] is not None and h["invested"] > 0:
@@ -570,16 +698,30 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
     overall = {f"ret_{k}": (round(wsum[k] / wt[k], 2) if wt[k] else None) for k in ("1y", "3y", "5y")}
     gain = round(cur_total - total_inv, 2)
 
+    monthly = VILLA_INCOME if constructed else 0.0
+    arb_fund = next((f["scheme_name"] for f in funds if f["tag"] == "ARB"), None)
+
     return {
         "tile_id": tile_id,
         "name": meta["name"],
-        "status": meta["status"],
+        "status": status,
+        "stage": stage,
+        "since": _since_date(code, tile_id),
         "invested": round(total_inv, 2),
         "current_value": round(cur_total, 2),
         "gain": gain,
         "gain_pct": round(gain / total_inv * 100, 2) if total_inv else 0.0,
         "overall": overall,
         "rent_paid": 0.0,   # SWP not wired yet — modeled into growth as a 0 band
+        "payout": {
+            "monthly": round(monthly),
+            "next_credit": _next_credit_date() if constructed else "",
+            "from_fund": arb_fund or "your arbitrage fund",
+        },
+        "withdraw": {
+            "monthly": round(monthly),
+            "ranges": _drained_ranges(holdings, navfull, total_inv, monthly),
+        },
         "progress": {
             "unit": VILLA_UNIT,
             "funded": round(total_inv, 2),
@@ -587,7 +729,7 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
             "pct": round(min(1.0, total_inv / VILLA_UNIT) * 100, 1) if VILLA_UNIT else 0.0,
         },
         "funds": funds,
-        "growth": _blended_growth(holdings),
+        "growth": _blended_growth(holdings, navfull),
     }
 
 

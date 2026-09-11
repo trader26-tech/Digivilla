@@ -137,3 +137,15 @@ html, body {
   border-radius: 999px; background: var(--survey);
   color: var(--ink);
 }
+
+/* Stage-tile keyframes referenced by the tile art's INLINE animation styles
+   (tiles-defs.svg: grading puffs · foundation drips · steel sparks). They must
+   be global: Angular scopes @keyframes inside component styles, so an inline
+   style="animation:st_spark …" on a template element can never resolve them. */
+@keyframes gr_puff { 0% { opacity: 0; transform: translate(0, 0) scale(.5); } 20% { opacity: .55; } 100% { opacity: 0; transform: translate(-14px, -30px) scale(1.6); } }
+@keyframes gr_rumble { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(0, -.8px); } 50% { transform: translate(.4px, 0); } 75% { transform: translate(0, .6px); } }
+@keyframes gr_blade { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, -2px); } }
+@keyframes fd_sheen { 0%, 100% { opacity: .25; } 50% { opacity: .6; } }
+@keyframes fd_drip { 0% { opacity: 0; transform: translate(0, 0); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(0, 14px); } }
+@keyframes st_swing { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, -6px); } }
+@keyframes st_spark { 0%, 100% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: .2; } 60% { opacity: .9; } }
