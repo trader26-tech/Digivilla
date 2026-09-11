@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>body{margin:0;background:#161826;overflow:hidden}</style>
+</helmet>
+<div style="width:402px;height:{{ h }};overflow:hidden;background:#161826">
+  <dc-import name="Villa Ladder" embedded="{{ true }}" frame-h="{{ hN }}" worth="{{ worth }}" on-close="{{ close }}" reset-key="{{ key }}" hint-size="402px,100%"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":402,"height":790}}'>
+class Component extends DCLogic {
+  state = { worth: 2300000, key: 1, h: 790 };
+  _onMsg = e => { const m = e.data || {}; if (m.type === 'ladder:init') this.setState(s => ({ worth: Number(m.worth) || 0, h: m.height || s.h, key: s.key + 1 })); };
+  componentDidMount() { window.addEventListener('message', this._onMsg); if (window.parent !== window) window.parent.postMessage({ type: 'ladder:ready' }, '*'); }
+  componentWillUnmount() { window.removeEventListener('message', this._onMsg); }
+  renderVals() { return { worth: this.state.worth, key: this.state.key, h: this.state.h + 'px', hN: this.state.h, close: () => { if (window.parent !== window) window.parent.postMessage({ type: 'ladder:close' }, '*'); } }; }
+}
+</script>
+</body>
+</html>

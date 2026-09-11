@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/nocturne-2ba555a5-6641-47cd-a036-9a3d96755b31/styles.css">
+  <script src="_ds/nocturne-2ba555a5-6641-47cd-a036-9a3d96755b31/_ds_bundle.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Instrument+Serif&display=swap">
+  <style>
+    body{margin:0;background:#161826;font-family:var(--font-body,Inter,sans-serif);}
+    a{color:var(--color-accent-300,#b5abfc)} a:hover{color:var(--color-accent-200,#d2cefd)}
+    @keyframes pop{0%{opacity:0;transform:translateY(14px)}15%{opacity:1}70%{opacity:1;transform:translateY(-10px)}100%{opacity:0;transform:translateY(-26px)}}
+    @keyframes spin{0%{transform:translateY(0)}30%{transform:translateY(-14px)}55%{transform:translateY(0)}72%{transform:translateY(-5px)}100%{transform:translateY(0)}}
+    @keyframes spin2{0%{transform:translateY(0)}30%{transform:translateY(-14px)}55%{transform:translateY(0)}72%{transform:translateY(-5px)}100%{transform:translateY(0)}}
+    @keyframes coinflip{0%{transform:rotateY(0)}100%{transform:rotateY(720deg)}}
+    @keyframes coinflip2{0%{transform:rotateY(0)}100%{transform:rotateY(720deg)}}
+    @keyframes glowpulse{0%{opacity:.35;transform:translate(-50%,-50%) scale(1)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}100%{opacity:.35;transform:translate(-50%,-50%) scale(1)}}
+    @keyframes glowpulse2{0%{opacity:.35;transform:translate(-50%,-50%) scale(1)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}100%{opacity:.35;transform:translate(-50%,-50%) scale(1)}}
+    @keyframes pX{0%{transform:translateX(var(--sx));opacity:0}3%{opacity:1}90%{opacity:1}100%{transform:translateX(var(--ex));opacity:0}}
+    @keyframes pYcoin{0%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}12%{transform:translateY(var(--hop));animation-timing-function:cubic-bezier(.45,0,.9,.6)}58%{transform:translateY(var(--ey));animation-timing-function:cubic-bezier(.1,.6,.4,1)}72%{transform:translateY(calc(var(--ey) - var(--b1)));animation-timing-function:cubic-bezier(.5,0,.9,.5)}84%{transform:translateY(var(--ey));animation-timing-function:cubic-bezier(.1,.6,.4,1)}91%{transform:translateY(calc(var(--ey) - var(--b2)));animation-timing-function:cubic-bezier(.5,0,.9,.5)}97%,100%{transform:translateY(var(--ey))}}
+    @keyframes pYnote{0%{transform:translateY(0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}14%{transform:translateY(var(--hop));animation-timing-function:cubic-bezier(.3,0,.8,.7)}78%{transform:translateY(var(--ey));animation-timing-function:ease-out}100%{transform:translateY(calc(var(--ey) + 3px))}}
+    @keyframes coinTumble{0%{transform:rotate(var(--rz)) rotateX(0) scale(.4)}10%{transform:rotate(var(--rz)) rotateX(60deg) scale(1)}58%{transform:rotate(var(--rz)) rotateX(var(--spin)) scale(1)}92%{transform:rotate(var(--rz)) rotateX(var(--spin)) scale(.9)}100%{transform:rotate(var(--rz)) rotateX(var(--spin)) scale(.55)}}
+    @keyframes noteFlutter{0%{transform:rotate(var(--r0)) rotateX(0) scale(.5)}10%{transform:rotate(var(--r0)) rotateX(50deg) scale(1)}30%{transform:rotate(var(--r0)) rotateX(-45deg)}52%{transform:rotate(var(--r1)) rotateX(50deg)}78%{transform:rotate(var(--r1)) rotateX(62deg) scale(1)}100%{transform:rotate(var(--r1)) rotateX(62deg) scale(.6)}}
+    @keyframes shadowCoin{0%,15%{opacity:0;transform:translate(-50%,-50%) scale(.2)}58%{opacity:.6;transform:translate(-50%,-50%) scale(1)}72%{opacity:.3;transform:translate(-50%,-50%) scale(.7)}84%{opacity:.6;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
+    @keyframes shadowNote{0%,20%{opacity:0;transform:translate(-50%,-50%) scale(.2)}78%{opacity:.5;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.8)}}
+    @keyframes sparkle{0%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(0)}30%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(30deg)}100%{opacity:0;transform:translate(-50%,calc(-50% - 18px)) scale(.2) rotate(90deg)}}
+    @keyframes landRing{0%{opacity:.8;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+    @keyframes toast{0%{transform:translateY(-140%);opacity:0;animation-timing-function:cubic-bezier(.2,.8,.3,1)}11%{transform:translateY(8px);opacity:1}17%{transform:translateY(0)}82%{transform:translateY(0);opacity:1;animation-timing-function:cubic-bezier(.6,0,.9,.6)}100%{transform:translateY(-140%);opacity:0}}
+    @keyframes drain{0%,17%{transform:scaleX(1)}82%,100%{transform:scaleX(0)}}
+    @keyframes drain2{0%,17%{transform:scaleX(1)}82%,100%{transform:scaleX(0)}}
+    @keyframes sweep{0%,14%{transform:translateX(-140%) skewX(-20deg)}42%,100%{transform:translateX(480%) skewX(-20deg)}}
+    @keyframes sweep2{0%,14%{transform:translateX(-140%) skewX(-20deg)}42%,100%{transform:translateX(480%) skewX(-20deg)}}
+    @keyframes toast2{0%{transform:translateY(-140%);opacity:0;animation-timing-function:cubic-bezier(.2,.8,.3,1)}11%{transform:translateY(8px);opacity:1}17%{transform:translateY(0)}82%{transform:translateY(0);opacity:1;animation-timing-function:cubic-bezier(.6,0,.9,.6)}100%{transform:translateY(-140%);opacity:0}}
+    @keyframes shine{0%,55%{left:-12px}80%,100%{left:40px}}
+    @keyframes sheetIn{0%{transform:translateY(100%) scale(.96);opacity:.4}60%{transform:translateY(-10px) scale(1)}100%{transform:translateY(0) scale(1);opacity:1}}
+    @keyframes sheetOut{0%{transform:translateY(0);opacity:1}100%{transform:translateY(100%);opacity:.4}}
+    @keyframes heroPress{0%{transform:scale(1)}40%{transform:scale(.96)}100%{transform:scale(1)}}
+    @keyframes hintUp{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-4px);opacity:1}}
+    @keyframes stageIn{0%{opacity:0;transform:translateY(40px) scale(.9)}55%{opacity:1;transform:translateY(-10px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes stageOut{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(1.04)}}
+    @keyframes stageIn2{0%{opacity:0;transform:translateY(40px) scale(.9)}55%{opacity:1;transform:translateY(-10px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes stageOut2{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(1.04)}}
+    @keyframes burst{0%{opacity:.9;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+    @keyframes pop2{0%{opacity:0;transform:translateY(14px)}15%{opacity:1}70%{opacity:1;transform:translateY(-10px)}100%{opacity:0;transform:translateY(-26px)}}
+  </style>
+</helmet>
+<div style="height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden"><div style="transform:scale({{ fit }});transform-origin:center;flex-shrink:0;width:402px;height:874px;background:var(--color-bg);color:var(--color-text);display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:var(--font-body);border-radius:44px;box-shadow:0 0 0 1px var(--color-neutral-700,#2b2e3a),0 0 0 9px #0b0c14,0 0 0 10px var(--color-neutral-800,#1e2130),0 18px 48px rgba(0,0,0,.6)" data-screen-label="SIP Status">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px 0;font-size:12px;color:var(--color-neutral-400)"><span>9:41</span><span style="display:flex;gap:6px"><span>●●●</span><span>▮</span></span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 0">
+    <a href="#" onClick="{{ goHome }}" style="font-size:13px;color:var(--color-neutral-300);text-decoration:none">← Home</a>
+    <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-400)">Your SIP · {{ tileName }}</span>
+    <span style="width:44px"></span>
+  </div>
+
+  <!-- Villa hero with the value on top -->
+  <div ref="{{ heroRef }}" style="position:relative;margin:4px 0 0;height:700px">
+    <div style="position:absolute;left:50%;top:52%;width:360px;height:220px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(oklch(0.74 0.125 150 / .2),transparent 70%);filter:blur(20px);pointer-events:none;opacity:{{ glowBase }};animation:{{ glowAnim }}"></div>
+    <div onClick="{{ openLadder }}" role="button" aria-label="Open your estate levels" style="position:absolute;left:0;bottom:190px;width:402px;transform-origin:50% 60%;animation:{{ spinAnim }};cursor:pointer">
+    <div style="position:relative;width:402px">
+    <!-- stage 0: bare (wireframe) villa; lights up as the first lakh is paid -->
+    <div style="position:relative;width:402px;opacity:{{ bareOpacity }};animation:{{ bareAnim }};pointer-events:none;visibility:{{ bareVis }}">
+    <svg viewBox="0 0 820 620" style="width:402px;height:auto;display:block;overflow:visible">
+    <!-- plinth -->
+    <polygon points="410,100 794.5,322 410,544 25.5,322" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="794.5,322 410,544 410,595 794.5,373" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="410,544 25.5,322 25.5,373 410,595" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <rect x="470" y="470" width="150" height="9" fill="#0b0c14" transform="skewY(-30) translate(0 302)" opacity="1" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <!-- earth block -->
+    <polygon points="721.8,264 410,444 410,516 721.8,336" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="410,444 98.2,264 98.2,336 410,516" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="721.8,264 410,444 410,458 721.8,278" fill="#0b0c14" opacity="1" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- grass rim band -->
+    <polygon points="721.8,250 410,430 410,444 721.8,264" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="410,430 98.2,250 98.2,264 410,444" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- rim tufts -->
+    <polygon points="688.2,283.4 705.6,273.4 696.9,293.4" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="650.7,305 668.1,295 659.4,315" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="613.3,326.6 630.7,316.6 622.0,336.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="575.9,348.2 593.3,338.2 584.6,358.2" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="538.5,369.8 555.9,359.8 547.2,379.8" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="501.1,391.4 518.5,381.4 509.8,401.4" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="463.7,413 481.1,403 472.4,423" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="426.3,434.6 443.7,424.6 435.0,444.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="376.4,424.6 393.8,434.6 385.1,444.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="338.9,403 356.3,413 347.6,423" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="301.5,381.4 318.9,391.4 310.2,401.4" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="264.1,359.8 281.5,369.8 272.8,379.8" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="226.7,338.2 244.1,348.2 235.4,358.2" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="189.3,316.6 206.7,326.6 198.0,336.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="151.9,295 169.3,305 160.6,315" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="114.5,273.4 131.9,283.4 123.2,293.4" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- turf top face -->
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.5"></polygon>
+    <!-- cast shadows -->
+    <polygon points="424.8,163 544.3,232 440.4,292 320.9,223" fill="#0b0c14" opacity="1" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="507.9,253 575.5,292 489.8,341.5 422.2,302.5" fill="#0b0c14" opacity="1" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- boundary fence, back edges -->
+    <polyline points="410,52 682.8,209.5" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="3.5"></polyline>
+    <polyline points="410,66 682.8,223.5" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="3.5"></polyline>
+    <polyline points="410,52 137.2,209.5" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="3.5"></polyline>
+    <polyline points="410,66 137.2,223.5" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="3.5"></polyline>
+    <rect x="407.5" y="46.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="446.4" y="68.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="485.4" y="91.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="524.4" y="113.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="563.4" y="136.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="602.4" y="158.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="641.3" y="181.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="680.3" y="203.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="368.5" y="68.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="329.5" y="91.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="290.6" y="113.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="251.6" y="136.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="212.6" y="158.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="173.6" y="181.0" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="134.7" y="203.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <!-- tree behind the villa -->
+    <rect x="613" y="240" width="9" height="24" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <polygon points="664.6,166 617.8,193 617.8,244 664.6,217" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="617.8,193 571.1,166 571.1,217 617.8,244" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="617.8,139 664.6,166 617.8,193 571.1,166" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- main mass -->
+    <polygon points="524.3,112 420.4,172 420.4,280 524.3,220" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="420.4,172 300.9,103 300.9,211 420.4,280" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- cantilevered roof slab -->
+    <polygon points="415.2,23.8 545.1,104.8 420.4,176.8 280.1,95.8" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="545.1,104.8 420.4,176.8 420.4,184 545.1,112" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="420.4,176.8 280.1,95.8 280.1,103 420.4,184" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- glazing, sun side -->
+    <polygon points="503.5,154 462.0,178 462.0,226 503.5,202" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="446.4,187 425.6,199 425.6,247 446.4,235" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- glazing + door, shade side -->
+    <polygon points="311.3,148 350.3,170.5 350.3,218.5 311.3,196" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="311.3,118 386.6,161.5 386.6,185.5 311.3,142" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="363.2,196 386.6,209.5 386.6,260.5 363.2,247" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- wing -->
+    <polygon points="555.5,217 469.8,266.5 469.8,329.5 555.5,280" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="469.8,266.5 402.2,227.5 402.2,290.5 469.8,329.5" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="487.9,178 555.5,217 469.8,266.5 402.2,227.5" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="539.9,238 487.9,268 487.9,301 539.9,271" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- terrace deck -->
+    <polygon points="300.9,206 420.4,275 358.0,311 238.5,242" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="420.4,275 358.0,311 358.0,317 420.4,281" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="358.0,311 238.5,242 238.5,248 358.0,317" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- pool -->
+    <polygon points="295.7,222.4 358.0,258.4 321.7,279.4 259.3,243.4" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polyline points="303.5,226.9 350.2,253.9" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="2" opacity="1"></polyline>
+    <polygon points="295.7,222.4 358.0,258.4 321.7,279.4 259.3,243.4" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="2"></polygon>
+    <!-- hedges -->
+    <polygon points="379.9,286.6 359.1,298.6 359.1,322.6 379.9,310.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="359.1,298.6 338.3,286.6 338.3,310.6 359.1,322.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="359.1,274.6 379.9,286.6 359.1,298.6 338.3,286.6" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="319.1,192.5 298.3,204.5 298.3,228.5 319.1,216.5" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="298.3,204.5 277.5,192.5 277.5,216.5 298.3,228.5" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <polygon points="298.3,180.5 319.1,192.5 298.3,204.5 277.5,192.5" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="1.2" stroke-linejoin="round"></polygon>
+    <!-- boundary fence, sun-side edge -->
+    <polyline points="706.2,223 433.4,380.5" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="4"></polyline>
+    <polyline points="706.2,237 433.4,394.5" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="4"></polyline>
+    <rect x="703.7" y="217" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="664.8" y="239.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="625.8" y="262" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="586.8" y="284.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="547.8" y="307" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="508.9" y="329.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="469.9" y="352" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="430.9" y="374.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <!-- boundary fence, shade-side edge -->
+    <polyline points="386.6,380.5 113.8,223" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="4"></polyline>
+    <polyline points="386.6,394.5 113.8,237" fill="none" stroke="oklch(0.74 0.125 150 / .55)" stroke-width="4"></polyline>
+    <rect x="384.1" y="374.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="345.1" y="352" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="306.1" y="329.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="267.2" y="307" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="228.2" y="284.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="189.2" y="262" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="150.2" y="239.5" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    <rect x="111.3" y="217" width="5" height="33" fill="#0b0c14" stroke="oklch(0.74 0.125 150 / .45)" stroke-width="1"></rect>
+    </svg>
+    <div style="position:absolute;inset:0;clip-path:inset({{ litClip }} 0 0 0);transition:clip-path .9s cubic-bezier(.3,.7,.3,1);filter:drop-shadow(0 0 10px oklch(0.74 0.125 150 / .45))">
+    <svg viewBox="0 0 820 620" style="width:402px;height:auto;display:block;overflow:visible;position:absolute;left:0;top:0">
+    <!-- plinth -->
+    <polygon points="410,100 794.5,322 410,544 25.5,322" fill="#232739"></polygon>
+    <polygon points="794.5,322 410,544 410,595 794.5,373" fill="#1b1e2c"></polygon>
+    <polygon points="410,544 25.5,322 25.5,373 410,595" fill="#12141d"></polygon>
+    <rect x="470" y="470" width="150" height="9" fill="#9184d9" transform="skewY(-30) translate(0 302)" opacity="0.9"></rect>
+    <!-- earth block -->
+    <polygon points="721.8,264 410,444 410,516 721.8,336" fill="#8a5a33"></polygon>
+    <polygon points="410,444 98.2,264 98.2,336 410,516" fill="#6d4527"></polygon>
+    <polygon points="721.8,264 410,444 410,458 721.8,278" fill="#3f2a18" opacity="0.35"></polygon>
+    <!-- grass rim band -->
+    <polygon points="721.8,250 410,430 410,444 721.8,264" fill="#59a52e"></polygon>
+    <polygon points="410,430 98.2,250 98.2,264 410,444" fill="#3f7a20"></polygon>
+    <!-- rim tufts -->
+    <polygon points="688.2,283.4 705.6,273.4 696.9,293.4" fill="#59a52e"></polygon>
+    <polygon points="650.7,305 668.1,295 659.4,315" fill="#59a52e"></polygon>
+    <polygon points="613.3,326.6 630.7,316.6 622.0,336.6" fill="#59a52e"></polygon>
+    <polygon points="575.9,348.2 593.3,338.2 584.6,358.2" fill="#59a52e"></polygon>
+    <polygon points="538.5,369.8 555.9,359.8 547.2,379.8" fill="#59a52e"></polygon>
+    <polygon points="501.1,391.4 518.5,381.4 509.8,401.4" fill="#59a52e"></polygon>
+    <polygon points="463.7,413 481.1,403 472.4,423" fill="#59a52e"></polygon>
+    <polygon points="426.3,434.6 443.7,424.6 435.0,444.6" fill="#59a52e"></polygon>
+    <polygon points="376.4,424.6 393.8,434.6 385.1,444.6" fill="#3f7a20"></polygon>
+    <polygon points="338.9,403 356.3,413 347.6,423" fill="#3f7a20"></polygon>
+    <polygon points="301.5,381.4 318.9,391.4 310.2,401.4" fill="#3f7a20"></polygon>
+    <polygon points="264.1,359.8 281.5,369.8 272.8,379.8" fill="#3f7a20"></polygon>
+    <polygon points="226.7,338.2 244.1,348.2 235.4,358.2" fill="#3f7a20"></polygon>
+    <polygon points="189.3,316.6 206.7,326.6 198.0,336.6" fill="#3f7a20"></polygon>
+    <polygon points="151.9,295 169.3,305 160.6,315" fill="#3f7a20"></polygon>
+    <polygon points="114.5,273.4 131.9,283.4 123.2,293.4" fill="#3f7a20"></polygon>
+    <!-- turf top face -->
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="#6cba36"></polygon>
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#7cc945" stroke-width="1.5"></polygon>
+    <!-- cast shadows -->
+    <polygon points="424.8,163 544.3,232 440.4,292 320.9,223" fill="#43861f" opacity="0.55"></polygon>
+    <polygon points="507.9,253 575.5,292 489.8,341.5 422.2,302.5" fill="#43861f" opacity="0.55"></polygon>
+    <!-- boundary fence, back edges -->
+    <polyline points="410,52 682.8,209.5" fill="none" stroke="#7d5027" stroke-width="3.5"></polyline>
+    <polyline points="410,66 682.8,223.5" fill="none" stroke="#6b4522" stroke-width="3.5"></polyline>
+    <polyline points="410,52 137.2,209.5" fill="none" stroke="#6b4522" stroke-width="3.5"></polyline>
+    <polyline points="410,66 137.2,223.5" fill="none" stroke="#5c3a1c" stroke-width="3.5"></polyline>
+    <rect x="407.5" y="46.0" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="446.4" y="68.5" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="485.4" y="91.0" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="524.4" y="113.5" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="563.4" y="136.0" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="602.4" y="158.5" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="641.3" y="181.0" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="680.3" y="203.5" width="5" height="33" fill="#8a5a2f"></rect>
+    <rect x="368.5" y="68.5" width="5" height="33" fill="#7d5027"></rect>
+    <rect x="329.5" y="91.0" width="5" height="33" fill="#7d5027"></rect>
+    <rect x="290.6" y="113.5" width="5" height="33" fill="#7d5027"></rect>
+    <rect x="251.6" y="136.0" width="5" height="33" fill="#7d5027"></rect>
+    <rect x="212.6" y="158.5" width="5" height="33" fill="#7d5027"></rect>
+    <rect x="173.6" y="181.0" width="5" height="33" fill="#7d5027"></rect>
+    <rect x="134.7" y="203.5" width="5" height="33" fill="#7d5027"></rect>
+    <!-- tree behind the villa -->
+    <rect x="613" y="240" width="9" height="24" fill="#9a6636"></rect>
+    <polygon points="664.6,166 617.8,193 617.8,244 664.6,217" fill="#4b8f26"></polygon>
+    <polygon points="617.8,193 571.1,166 571.1,217 617.8,244" fill="#3f7a20"></polygon>
+    <polygon points="617.8,139 664.6,166 617.8,193 571.1,166" fill="#6cba36"></polygon>
+    <!-- boundary fence, sun-side edge -->
+    <polyline points="706.2,223 433.4,380.5" fill="none" stroke="#9a6636" stroke-width="4"></polyline>
+    <polyline points="706.2,237 433.4,394.5" fill="none" stroke="#8a5a2f" stroke-width="4"></polyline>
+    <rect x="703.7" y="217" width="5" height="33" fill="#a97140"></rect>
+    <rect x="664.8" y="239.5" width="5" height="33" fill="#a97140"></rect>
+    <rect x="625.8" y="262" width="5" height="33" fill="#a97140"></rect>
+    <rect x="586.8" y="284.5" width="5" height="33" fill="#a97140"></rect>
+    <rect x="547.8" y="307" width="5" height="33" fill="#a97140"></rect>
+    <rect x="508.9" y="329.5" width="5" height="33" fill="#a97140"></rect>
+    <rect x="469.9" y="352" width="5" height="33" fill="#a97140"></rect>
+    <rect x="430.9" y="374.5" width="5" height="33" fill="#a97140"></rect>
+    <!-- boundary fence, shade-side edge -->
+    <polyline points="386.6,380.5 113.8,223" fill="none" stroke="#8a5a2f" stroke-width="4"></polyline>
+    <polyline points="386.6,394.5 113.8,237" fill="none" stroke="#7d5027" stroke-width="4"></polyline>
+    <rect x="384.1" y="374.5" width="5" height="33" fill="#946035"></rect>
+    <rect x="345.1" y="352" width="5" height="33" fill="#946035"></rect>
+    <rect x="306.1" y="329.5" width="5" height="33" fill="#946035"></rect>
+    <rect x="267.2" y="307" width="5" height="33" fill="#946035"></rect>
+    <rect x="228.2" y="284.5" width="5" height="33" fill="#946035"></rect>
+    <rect x="189.2" y="262" width="5" height="33" fill="#946035"></rect>
+    <rect x="150.2" y="239.5" width="5" height="33" fill="#946035"></rect>
+    <rect x="111.3" y="217" width="5" height="33" fill="#946035"></rect>
+    </svg>
+    </div>
+    <div style="position:absolute;left:0;right:0;top:{{ litClip }};height:2px;background:linear-gradient(90deg,transparent 10%,oklch(0.86 0.15 150),transparent 90%);opacity:.9;transition:top .9s cubic-bezier(.3,.7,.3,1);pointer-events:none"></div>
+    </div>
+    <!-- stages 1-5: built tiles, swapped in as each lakh completes -->
+    <sc-if value="{{ showStage }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:0;bottom:-10px;width:402px;animation:{{ stageAnim }};transform-origin:50% 70%">
+        <sc-if value="{{ stagePlot }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Plot - reference for Claude Code" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+        <sc-if value="{{ stageGrading }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Grading - reference for Claude Code" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+        <sc-if value="{{ stageFoundation }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Foundation - reference for Claude Code" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+        <sc-if value="{{ stageSteel }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Steel Frame - reference for Claude Code" tile="{{ true }}" hero="{{ true }}" hint-size="402px,387px"></dc-import></sc-if>
+        <sc-if value="{{ stageVilla }}" hint-placeholder-val="{{ false }}"><dc-import name="Villa Tile" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showPrev }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:0;bottom:-10px;width:402px;animation:{{ prevAnim }};transform-origin:50% 70%;pointer-events:none">
+        <sc-if value="{{ prevPlot }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Plot - reference for Claude Code" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+        <sc-if value="{{ prevGrading }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Grading - reference for Claude Code" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+        <sc-if value="{{ prevFoundation }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Foundation - reference for Claude Code" tile="{{ true }}" hint-size="402px,343px"></dc-import></sc-if>
+        <sc-if value="{{ prevSteel }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Steel Frame - reference for Claude Code" tile="{{ true }}" hero="{{ true }}" hint-size="402px,387px"></dc-import></sc-if>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showBurst }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:50%;top:55%;width:360px;height:200px;border-radius:50%;border:2px solid oklch(0.86 0.15 150 / .8);box-shadow:0 0 30px oklch(0.74 0.125 150 / .6);animation:burst 1s ease-out both;pointer-events:none"></div>
+    </sc-if>
+    </div>
+    </div>
+    {{ notesLayer }}
+    <!-- top stats: invested (animated counter) over monthly income, centred -->
+    <div style="position:absolute;left:0;right:0;top:16px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:2">
+      <span style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-neutral-400)">Monthly income</span>
+      <div onClick="{{ payClick }}" role="button" aria-label="Simulate a SIP debit" style="position:relative;display:flex;align-items:center;gap:10px;cursor:pointer">
+        <span ref="{{ coinRef }}" style="position:relative;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe9a3,#f6c445 38%,#dc9a1f 72%,#a86b12);box-shadow:inset 0 -2px 5px rgba(90,50,10,.55),0 0 0 1.5px #8d5a10,0 4px 12px rgba(0,0,0,.45);overflow:hidden;flex-shrink:0;animation:{{ coinAnim }};opacity:{{ coinOpacity }};transition:opacity .6s">
+          <span style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(141,90,16,.55)"></span>
+          <span style="position:absolute;top:-4px;left:-10px;width:8px;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-25deg);animation:shine 3.2s ease-in-out infinite"></span>
+        </span>
+        <span style="display:flex;align-items:baseline;gap:5px">
+          <span style="font-size:22px;font-weight:500;letter-spacing:-.01em;color:{{ swpColor }};transform:{{ swpTf }};transition:transform .14s cubic-bezier(.2,.8,.3,1),color .6s;display:inline-block">₹10,500</span>
+          <span style="font-size:12px;color:var(--color-neutral-500)">a month</span>
+        </span>
+        <span style="position:absolute;top:-6px;right:-58px;font-size:12px;color:#f6c445;opacity:0;animation:{{ popAnim }};pointer-events:none;white-space:nowrap">{{ swpPop }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:2px">
+        <div style="display:flex;gap:4px">
+          <sc-for list="{{ lakhSegs }}" as="sg" hint-placeholder-count="5">
+            <span style="position:relative;width:34px;height:4px;border-radius:2px;background:{{ sg.bg }};box-shadow:{{ sg.glow }};transition:background .5s,box-shadow .5s">
+              <sc-if value="{{ sg.last }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:-3px;top:-4px;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe9a3,#f6c445 38%,#dc9a1f 72%,#a86b12);box-shadow:0 0 0 1px #8d5a10"></span></sc-if>
+            </span>
+          </sc-for>
+        </div>
+        <span style="font-size:11px;color:var(--color-neutral-300)">{{ incomeLine }}<span style="color:oklch(0.80 0.13 150)">{{ incomeToGo }}</span></span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:18px">
+        <span style="font-family:'Instrument Serif','Times New Roman',serif;font-weight:700;font-size:34px;line-height:1;letter-spacing:.01em;color:var(--color-text);text-shadow:0 2px 0 rgba(0,0,0,.5),0 0 24px oklch(0.74 0.125 150 / .35)">{{ stageName }}</span>
+        <span style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:oklch(0.80 0.13 150)">{{ stageTag }}</span>
+      </div>
+    </div>
+    <!-- bottom: where the money went — allocation across the five funds -->
+    <div onClick="{{ openPort }}" role="button" aria-label="Open portfolio" style="position:absolute;left:20px;right:20px;bottom:0;display:flex;flex-direction:column;gap:10px;cursor:pointer">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-400)">Portfolio value</span>
+        <span style="font-family:'Instrument Serif','Times New Roman',serif;font-size:46px;line-height:1;letter-spacing:-.02em;color:var(--color-text);white-space:nowrap">{{ curValue }}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--color-neutral-300)">Invested {{ investedInr }}</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:var(--color-neutral-600)"></span>
+          <span style="font-size:12px;color:oklch(0.80 0.13 150)">{{ gainLabel }}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:2px;height:4px;border-radius:2px;overflow:hidden;margin-top:2px">
+        <sc-for list="{{ funds }}" as="f" hint-placeholder-count="5"><span style="width:{{ f.pct }};background:{{ f.color }};box-shadow:{{ f.glow }};transition:box-shadow .5s"></span></sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:4px">
+        <sc-for list="{{ funds }}" as="f" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;flex:1">
+            <span style="font-size:12px;font-weight:500;color:var(--color-text);white-space:nowrap;letter-spacing:-.01em;font-variant-numeric:tabular-nums">{{ f.investedInr }}</span>
+            <span style="font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:{{ f.color }};white-space:nowrap">{{ f.short }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <!-- SIP received banner: drops in when the backend posts a debit; the shower spills from its lower edge -->
+    <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;top:-66px;left:14px;right:14px;height:62px;z-index:6;display:flex;align-items:center;gap:12px;padding:0 16px 0 12px;border-radius:16px;background:linear-gradient(180deg,var(--color-neutral-800,#1e2130),var(--color-neutral-900,#151726));box-shadow:0 0 0 1px var(--color-neutral-700,#2b2e3a),inset 0 1px 0 rgba(233,233,237,.06),0 14px 36px rgba(0,0,0,.6),0 0 40px oklch(0.74 0.125 150 / .12);overflow:hidden;opacity:0;animation:{{ toastAnim }};pointer-events:none">
+        <span style="position:absolute;top:-10px;bottom:-10px;left:0;width:26%;background:linear-gradient(90deg,transparent,rgba(233,233,237,.07),transparent);transform:skewX(-20deg);animation:{{ toastSweepAnim }}"></span>
+        <span style="position:relative;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe9a3,#f6c445 38%,#dc9a1f 72%,#a86b12);box-shadow:inset 0 -2px 5px rgba(90,50,10,.55),0 0 0 1.5px #8d5a10,0 0 14px rgba(246,196,69,.35);flex-shrink:0;display:grid;place-items:center;font-size:17px;font-weight:500;color:#6a4108;text-shadow:0 1px 0 rgba(255,233,163,.6)">₹<span style="position:absolute;inset:6px;border-radius:50%;border:1px solid rgba(141,90,16,.5)"></span></span>
+        <span style="display:flex;flex-direction:column;gap:1px;min-width:0;flex:1">
+          <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:oklch(0.80 0.13 150)">SIP received</span>
+          <span style="font-family:'Instrument Serif','Times New Roman',serif;font-size:24px;line-height:1.05;letter-spacing:-.01em;color:var(--color-text)">₹25,000</span>
+        </span>
+        <span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <span style="display:flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 6px;border-radius:10px;background:oklch(0.74 0.125 150 / .14);color:oklch(0.86 0.13 150);font-size:10px;letter-spacing:.06em;text-transform:uppercase"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5.5 L4 8 L8.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>Debited</span>
+          <span style="font-size:11px;color:var(--color-neutral-400);white-space:nowrap">{{ toastDate }}</span>
+        </span>
+        <span style="position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,oklch(0.62 0.13 150),oklch(0.84 0.14 150));transform-origin:left;animation:{{ toastBarAnim }}"></span>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- bottom nav -->
+  <div style="position:absolute;left:0;right:0;bottom:0;padding:10px 20px 22px;background:linear-gradient(180deg,rgba(22,24,38,0),var(--color-bg) 40%);display:flex;justify-content:space-around;align-items:flex-end;z-index:5">
+    <div role="button" aria-label="Home" style="display:flex;flex-direction:column;align-items:center;gap:5px;width:72px;padding:6px 0;cursor:pointer;color:var(--color-accent-300,#b5abfc)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"></path><path d="M5.5 9.5V20h13V9.5"></path><path d="M10 20v-5.5h4V20"></path></svg>
+      <span style="font-size:10px;letter-spacing:.06em">Home</span>
+      <span style="width:4px;height:4px;border-radius:50%;background:var(--color-accent,#9184d9);box-shadow:0 0 8px var(--color-accent,#9184d9)"></span>
+    </div>
+    <div onClick="{{ openPort }}" role="button" aria-label="Explore" style="display:flex;flex-direction:column;align-items:center;gap:5px;width:72px;padding:6px 0;cursor:pointer;color:var(--color-neutral-400)" style-hover="color:var(--color-neutral-200)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>
+      <span style="font-size:10px;letter-spacing:.06em">Explore</span>
+      <span style="width:4px;height:4px"></span>
+    </div>
+    <div onClick="{{ openLadder }}" role="button" aria-label="Progress" style="display:flex;flex-direction:column;align-items:center;gap:5px;width:72px;padding:6px 0;cursor:pointer;color:var(--color-neutral-400)" style-hover="color:var(--color-neutral-200)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V13"></path><path d="M10 20V8"></path><path d="M16 20V4"></path><path d="M22 20V10"></path></svg>
+      <span style="font-size:10px;letter-spacing:.06em">Progress</span>
+      <span style="width:4px;height:4px"></span>
+    </div>
+  </div>
+
+  <!-- portfolio sheet -->
+  <sc-if value="{{ portMounted }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closePort }}" style="position:absolute;inset:0;z-index:20;background:rgba(15,16,25,.55);backdrop-filter:blur(3px);opacity:{{ portDim }};transition:opacity .3s"></div>
+    <div data-screen-label="Portfolio" style="position:absolute;inset:0;z-index:21;border-radius:24px 24px 0 0;overflow:hidden;background:var(--color-bg);box-shadow:0 -12px 40px rgba(0,0,0,.6),0 0 0 1px var(--color-neutral-800);animation:{{ portAnim }};transform-origin:50% 100%;display:flex;flex-direction:column">
+      <div style="position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--color-neutral-600)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:54px 20px 0">
+        <button onClick="{{ closePort }}" aria-label="Back" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--color-neutral-700,#2b2e3a);background:var(--color-neutral-800,#1e2130);color:var(--color-neutral-300);display:grid;place-items:center;cursor:pointer;padding:0">
+          <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 5 L6 9 L10 5" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </button>
+        <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-400)">Portfolio</span>
+        <span style="width:32px"></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;padding:22px 20px 0">
+        <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-400)">Current value</span>
+        <span style="font-family:'Instrument Serif','Times New Roman',serif;font-size:44px;line-height:1;letter-spacing:-.02em;color:var(--color-text)">{{ curValue }}</span>
+        <span style="display:flex;gap:14px;font-size:12px;color:var(--color-neutral-400);margin-top:4px"><span>Invested <span style="color:var(--color-neutral-200)">{{ investedInr }}</span></span><span>Returns <span style="color:oklch(0.80 0.13 150)">{{ gainInr }}</span></span></span>
+      </div>
+      <div style="display:flex;gap:2px;height:8px;margin:18px 20px 0;border-radius:4px;overflow:hidden">
+        <sc-for list="{{ funds }}" as="f" hint-placeholder-count="5"><span style="width:{{ f.pct }};background:{{ f.color }}"></span></sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:16px 20px 20px;overflow:auto;flex:1">
+        <sc-for list="{{ funds }}" as="f" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;background:var(--color-neutral-800,#1e2130);box-shadow:0 0 0 1px var(--color-neutral-700,#2b2e3a)">
+            <span style="width:10px;height:28px;border-radius:3px;background:{{ f.color }};flex-shrink:0"></span>
+            <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+              <span style="font-size:13px;color:var(--color-text)">{{ f.name }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-400)">{{ f.pct }} · invested {{ f.investedInr }}</span>
+            </span>
+            <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+              <span style="font-size:14px;font-weight:500;color:var(--color-text);white-space:nowrap">{{ f.valueInr }}</span>
+              <span style="font-size:11px;color:oklch(0.80 0.13 150)">{{ f.gain }}</span>
+            </span>
+          </div>
+        </sc-for>
+        <p style="margin:4px 0 0;font-size:11px;line-height:1.5;color:var(--color-neutral-500);text-wrap:pretty">Values are indicative and update after each day's NAV.</p>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- cash-flow calendar sheet -->
+  <sc-if value="{{ calMounted }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCal }}" style="position:absolute;inset:0;z-index:20;background:rgba(15,16,25,.55);backdrop-filter:blur(3px);opacity:{{ calDim }};transition:opacity .3s"></div>
+    <div data-screen-label="Cash flow" style="position:absolute;inset:0;z-index:21;border-radius:24px 24px 0 0;overflow:hidden;background:var(--color-bg);box-shadow:0 -12px 40px rgba(0,0,0,.6),0 0 0 1px var(--color-neutral-800);animation:{{ calAnim }};transform-origin:50% 100%;display:flex;flex-direction:column">
+      <div style="position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--color-neutral-600)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:54px 20px 0">
+        <button onClick="{{ closeCal }}" aria-label="Back" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--color-neutral-700,#2b2e3a);background:var(--color-neutral-800,#1e2130);color:var(--color-neutral-300);display:grid;place-items:center;cursor:pointer;padding:0">
+          <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 5 L6 9 L10 5" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </button>
+        <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-400)">Cash flow</span>
+        <span style="width:32px"></span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0">
+        <button onClick="{{ prevMonth }}" aria-label="Previous month" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--color-neutral-700,#2b2e3a);background:var(--color-neutral-800,#1e2130);color:var(--color-neutral-300);display:grid;place-items:center;cursor:pointer;padding:0;opacity:{{ prevOp }}">
+          <svg width="12" height="12" viewBox="0 0 12 12"><path d="M7 2 L3 6 L7 10" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </button>
+        <span style="font-size:18px;font-weight:500;color:var(--color-text)">{{ calTitle }}</span>
+        <button onClick="{{ nextMonth }}" aria-label="Next month" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--color-neutral-700,#2b2e3a);background:var(--color-neutral-800,#1e2130);color:var(--color-neutral-300);display:grid;place-items:center;cursor:pointer;padding:0">
+          <svg width="12" height="12" viewBox="0 0 12 12"><path d="M5 2 L9 6 L5 10" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px 20px 0">
+        <div style="padding:10px 12px;border-radius:10px;background:var(--color-neutral-800,#1e2130);box-shadow:0 0 0 1px var(--color-neutral-700,#2b2e3a);display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-400)">Withdrawn</span>
+          <span style="font-size:16px;font-weight:500;color:oklch(0.80 0.13 150)">{{ monthIn }}</span>
+        </div>
+        <div style="padding:10px 12px;border-radius:10px;background:var(--color-neutral-800,#1e2130);box-shadow:0 0 0 1px var(--color-neutral-700,#2b2e3a);display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-400)">Invested</span>
+          <span style="font-size:16px;font-weight:500;color:var(--color-text)">{{ monthOut }}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px;padding:16px 20px 0">
+        <sc-for list="{{ weekdays }}" as="w" hint-placeholder-count="7"><span style="text-align:center;font-size:10px;letter-spacing:.1em;color:var(--color-neutral-500);padding-bottom:4px">{{ w }}</span></sc-for>
+        <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="35">
+          <div style="height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:8px;background:{{ d.bg }};box-shadow:{{ d.ring }}">
+            <span style="font-size:13px;color:{{ d.color }}">{{ d.n }}</span>
+            <span style="display:flex;gap:3px;height:5px">
+              <sc-if value="{{ d.credit }}" hint-placeholder-val="{{ false }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ d.creditBg }}"></span></sc-if>
+              <sc-if value="{{ d.debit }}" hint-placeholder-val="{{ false }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ d.debitBg }}"></span></sc-if>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:14px;padding:10px 20px 0;font-size:10px;color:var(--color-neutral-400)">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:oklch(0.72 0.13 150)"></span>SWP credit</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:#f6c445"></span>SIP debit</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:14px 20px 20px;overflow:auto;flex:1">
+        <sc-for list="{{ calEvents }}" as="ev" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--color-neutral-800,#1e2130);box-shadow:0 0 0 1px var(--color-neutral-700,#2b2e3a);opacity:{{ ev.op }}">
+            <span style="display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:{{ ev.iconBg }};color:{{ ev.iconColor }};flex-shrink:0">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{ ev.path }}"></path></svg>
+            </span>
+            <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+              <span style="font-size:13px;color:var(--color-text)">{{ ev.title }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-400)">{{ ev.sub }}</span>
+            </span>
+            <span style="font-size:14px;font-weight:500;color:{{ ev.amtColor }};white-space:nowrap">{{ ev.amt }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- estate ladder sheet -->
+  <sc-if value="{{ sheetMounted }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeLadder }}" style="position:absolute;inset:0;z-index:20;background:rgba(15,16,25,.55);backdrop-filter:blur(3px);opacity:{{ dimOpacity }};transition:opacity .3s"></div>
+    <div style="position:absolute;inset:0;z-index:21;border-radius:24px 24px 0 0;overflow:hidden;background:var(--color-bg);box-shadow:0 -12px 40px rgba(0,0,0,.6),0 0 0 1px var(--color-neutral-800);animation:{{ sheetAnim }};transform-origin:50% 100%">
+      <div style="position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--color-neutral-600);z-index:30"></div>
+      <dc-import name="Villa Ladder" embedded="{{ true }}" worth="{{ ladderWorth }}" on-close="{{ closeLadder }}" reset-key="{{ sheetKey }}" hint-size="402px,874px"></dc-import>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:402,&quot;height&quot;:874}}">
+class Component extends DCLogic {
+  _fit = () => { const s = Math.min(1, (window.innerHeight - 24) / 874); if (s !== this.state.fit) this.setState({ fit: s }); };
+  state = { extra: 0, shown: 0, flash: false, bump: {}, popKey: 0, sheet: 'closed', sheetKey: 0, cal: 'closed', calMonth: 0, port: 'closed', stage: 0, prevStage: -1, stageKey: 0, fit: 1 };
+  _onMsg = (e) => {
+    const m = e.data || {};
+    if (m.type === 'sip:init') {
+      const n = m.paid || 0, stage = Math.min(5, Math.floor(25000 * n / 100000));
+      this.setState({ extra: n, shown: 25000 * n, stage, prevStage: -1, tileName: m.tile || '' });
+      if (m.ladder) setTimeout(() => this.setState(st => ({ sheet: 'open', sheetKey: st.sheetKey + 1 })), 120);
+      setTimeout(() => this._postStage(), 1200);
+    }
+  };
+  _postStage() {
+    if (!window.parent || window.parent === window) return;
+    const stage = this.state.stage, paid = this.state.extra;
+    let svg = null;
+    const host = this.heroRef.current;
+    if (host && stage > 0) {
+      const all = host.querySelectorAll('[data-tile-wrap] svg, div[style*="padding:0"] > svg');
+      const el = all[all.length - 1];
+      if (el && el.getAttribute('viewBox') !== '0 0 820 620') svg = el.innerHTML;
+    }
+    window.parent.postMessage({ type: 'sip:stage', stage, paid, svg }, '*');
+  }
+  componentDidMount() { this._fit(); window.addEventListener('resize', this._fit); window.addEventListener('message', this._onMsg); if (window.parent !== window) window.parent.postMessage({ type: 'sip:ready' }, '*'); }
+  componentWillUnmount() { window.removeEventListener('resize', this._fit); window.removeEventListener('message', this._onMsg); }
+  coinRef = React.createRef(); heroRef = React.createRef();
+  notesLayer() {
+    return null; // coin shower disabled
+    const k = this.state.popKey; if (!k) return null;
+    if (!this._notes || this._notes.key !== k) {
+      const rnd = (a, b) => a + Math.random() * (b - a), tri = () => Math.random() + Math.random() - 1;
+      // origin: the banner's lower edge (hero px); pieces spill out along its width and fall onto the plot's top diamond (centre ~201,322)
+      const o = { x: 201, y: -6 };
+      const land = () => { const u = tri() * .72, v = tri() * .72; return { x: 201 + (u - v) / 2 * 188 - o.x, y: 322 + (u + v) / 2 * 109 - o.y }; };
+      const ps = [];
+      for (let i = 0; i < 36; i++) {
+        const coin = true, L = land();
+        ps.push({ coin, sx: Math.max(-150, Math.min(150, L.x + rnd(-45, 45))), ex: L.x, ey: L.y, hop: -rnd(3, 10), b1: rnd(9, 22), b2: rnd(2, 7), rz: rnd(-40, 40), spin: Math.floor(rnd(2, 4)) * 360 + 62, r0: rnd(-30, 30), r1: rnd(-15, 15),
+          kx: rnd(-8, 8), ky: rnd(-12, -2), dur: coin ? rnd(1.05, 1.35) : rnd(1.5, 1.9), delay: .4 + i * .02 + rnd(0, .18), ring: coin && i % 4 === 0, spark: coin && i % 2 === 0 });
+      }
+      this._notes = { key: k, ps, sparks: [], o };
+    }
+    const { ps, sparks, o } = this._notes, E = React.createElement, px = n => n.toFixed(1) + 'px';
+    const base = { position: 'absolute', left: px(o.x), top: px(o.y), pointerEvents: 'none' };
+    const kids = [];
+    ps.forEach((p, i) => {
+      const t = p.dur.toFixed(2) + 's ', d = p.delay.toFixed(2) + 's both';
+      const face = p.coin
+        ? E('span', { style: { display: 'block', position: 'relative', width: '18px', height: '18px', borderRadius: '50%', marginLeft: '-9px', marginTop: '-9px', background: 'radial-gradient(circle at 34% 28%,#ffe9a3,#f6c445 40%,#dc9a1f 75%,#a86b12)', boxShadow: 'inset 0 -1.5px 3px rgba(90,50,10,.55),0 0 0 1px #8d5a10,0 0 10px rgba(246,196,69,.35)', '--rz': p.rz.toFixed(0) + 'deg', '--spin': p.spin + 'deg', animation: 'coinTumble ' + t + 'linear ' + d } },
+            E('span', { style: { position: 'absolute', inset: '3px', borderRadius: '50%', border: '1px solid rgba(141,90,16,.5)' } }))
+        : E('span', { style: { display: 'block', position: 'relative', width: '26px', height: '13px', borderRadius: '2px', marginLeft: '-13px', marginTop: '-6px', boxSizing: 'border-box', background: 'linear-gradient(180deg,oklch(0.80 0.14 150),oklch(0.62 0.13 150))', border: '1px solid oklch(0.90 0.12 150 / .8)', boxShadow: '0 0 6px oklch(0.74 0.125 150 / .5)', '--r0': p.r0.toFixed(0) + 'deg', '--r1': p.r1.toFixed(0) + 'deg', animation: 'noteFlutter ' + t + 'linear ' + d } },
+            E('span', { style: { position: 'absolute', inset: '3px 9px', borderRadius: '50%', border: '1px solid oklch(0.92 0.1 150 / .7)' } }));
+      kids.push(E('span', { key: 'p' + i, style: { ...base, opacity: 0, '--sx': px(p.sx), '--ex': px(p.ex), animation: 'pX ' + t + 'linear ' + d } },
+        E('span', { style: { display: 'block', '--hop': px(p.hop), '--ey': px(p.ey), '--b1': px(p.b1), '--b2': px(p.b2), animation: (p.coin ? 'pYcoin ' : 'pYnote ') + t + d } }, face)));
+      kids.push(E('span', { key: 's' + i, style: { ...base, left: px(o.x + p.ex), top: px(o.y + p.ey + 9), width: p.coin ? '18px' : '26px', height: '7px', borderRadius: '50%', background: 'radial-gradient(rgba(0,0,0,.6),transparent 70%)', opacity: 0, animation: (p.coin ? 'shadowCoin ' : 'shadowNote ') + t + 'linear ' + d } }));
+      const landAt = (p.delay + p.dur * (p.coin ? .58 : .78)).toFixed(2) + 's both';
+      if (p.spark) kids.push(E('span', { key: 'k' + i, style: { ...base, left: px(o.x + p.ex + p.kx), top: px(o.y + p.ey + p.ky), width: '10px', height: '10px', background: '#fff3c4', clipPath: 'polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)', filter: 'drop-shadow(0 0 3px #f6c445)', opacity: 0, animation: 'sparkle .5s ease-out ' + landAt } }));
+      if (p.ring) kids.push(E('span', { key: 'r' + i, style: { ...base, left: px(o.x + p.ex), top: px(o.y + p.ey + 8), width: '34px', height: '14px', borderRadius: '50%', border: '1.5px solid oklch(0.86 0.15 150 / .75)', boxSizing: 'border-box', opacity: 0, animation: 'landRing .55s ease-out ' + landAt } }));
+    });
+    sparks.forEach((s, i) => kids.push(E('span', { key: 'q' + i, style: { ...base, width: '5px', height: '5px', marginLeft: '-2.5px', marginTop: '-2.5px', borderRadius: '50%', background: '#ffe9a3', boxShadow: '0 0 6px #f6c445', '--dx': px(s.dx), '--dy': px(s.dy), animation: 'sparkOut .5s cubic-bezier(.1,.6,.3,1) ' + s.d.toFixed(2) + 's both' } })));
+    return E('div', { key: k, style: { position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', overflow: 'visible' } }, kids);
+  }
+  animateTo(target) {
+    const from = this.state.shown, start = performance.now(), dur = 1300, steps = 14;
+    cancelAnimationFrame(this._raf); clearTimeout(this._bumpT);
+    this.setState({ flash: true });
+    let last = -1;
+    const tick = now => {
+      const t = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - t, 2.2);
+      const step = Math.floor(e * steps);
+      if (step !== last || t >= 1) {
+        last = step;
+        const val = t >= 1 ? target : Math.round((from + (target - from) * step / steps) / 1000) * 1000;
+        const prev = Math.round(this.state.shown).toLocaleString('en-IN'), next = Math.round(val).toLocaleString('en-IN');
+        const bump = {}; const pad = next.length - prev.length;
+        next.split('').forEach((ch, i) => { if (ch !== prev[i - pad]) bump[i] = true; });
+        this.setState({ shown: val, bump });
+        clearTimeout(this._bumpT); this._bumpT = setTimeout(() => this.setState({ bump: {} }), 30);
+      }
+      if (t < 1) this._raf = requestAnimationFrame(tick); else setTimeout(() => this.setState({ flash: false }), 300);
+    };
+    this._raf = requestAnimationFrame(tick);
+  }
+  _pay() {
+    const n = this.state.extra + 1; this.setState(s => ({ extra: n, popKey: s.popKey + 1 })); this.animateTo(25000 * n);
+    if (window.parent !== window) window.parent.postMessage({ type: 'sip:paid', paid: n }, '*');
+    const stage = Math.min(5, Math.floor(25000 * n / 100000));
+    if (stage !== this.state.stage) {
+      clearTimeout(this._stageT);
+      // let the counter land first, then swap the stage with a rise + burst
+      this._stageT = setTimeout(() => {
+        this.setState(s => ({ prevStage: s.stage, stage, stageKey: s.stageKey + 1 }));
+        this._stageT = setTimeout(() => { this.setState({ prevStage: -1 }); setTimeout(() => this._postStage(), 200); }, 900);
+      }, 900);
+    }
+  }
+  fmtL(n) { return n >= 1e7 ? '₹' + (n / 1e7).toFixed(2) + 'Cr' : '₹' + (n / 1e5).toFixed(1) + 'L'; }
+  segDigits(n, on, glow, off) {
+    const map = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
+    const bump = this.state.bump || {};
+    return Math.round(n).toLocaleString('en-IN').split('').map((ch, i) => {
+      const tf = bump[i] ? 'translateY(-6px) scaleY(.75)' : 'none', fl = bump[i] ? 'brightness(1.6)' : 'none';
+      if (ch === ',') return { w: '6px', tf, fl, comma: on, gcomma: glow, a: 'transparent', b: 'transparent', c: 'transparent', d: 'transparent', e: 'transparent', f: 'transparent', g: 'transparent', ga: 'none', gb: 'none', gc: 'none', gd: 'none', ge: 'none', gf: 'none', gg: 'none' };
+      const d = { w: '22px', tf, fl, comma: 'transparent', gcomma: 'none' }; 'abcdefg'.split('').forEach(s => { const lit = map[ch].includes(s); d[s] = lit ? on : off; d['g' + s] = lit ? glow : 'none'; });
+      return d;
+    });
+  }
+  renderVals() {
+    const instalments = this.state.extra, invested = 25000 * instalments;
+    const flash = this.state.flash;
+    const mon = i => { const d = new Date(2026, 8 + i, 5); return '5 ' + d.toLocaleString('en', { month: 'short' }) + ' ' + d.getFullYear(); };
+    const road = [instalments - 1, instalments - 2].filter(k => k >= 0).map(k => ({ date: mon(k) }));
+    const levelSize = 4e5, nextLevel = Math.floor(invested / levelSize) + 1;
+    const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+    // SWP: 3% of invested, credited on the 1st of the month after each SIP (SIPs debit on the 5th, from Sep 2026)
+    const rate = 15000, credits = Math.max(0, instalments - 20), withdrawn = rate * credits, monthly = instalments >= 20 ? rate : 0;
+    const monShort = d => d.toLocaleString('en', { month: 'short' });
+    const nextCredit = new Date(2026, 8 + Math.max(20, instalments), 1);
+    const today = instalments ? new Date(2026, 8 + instalments - 1, 5) : new Date(2026, 8, 4);
+    const cm = this.state.calMonth, first = new Date(2026, 8 + cm, 1), dim = new Date(2026, 9 + cm, 0).getDate(), lead = (first.getDay() + 6) % 7;
+    const green = 'oklch(0.72 0.13 150)', gold = '#f6c445';
+    const calDays = Array.from({ length: lead }, (_, i) => ({ n: '', bg: 'transparent', ring: 'none', color: 'transparent' })).concat(Array.from({ length: dim }, (_, i) => {
+      const d = i + 1, date = new Date(2026, 8 + cm, d), past = date <= today, isToday = date.getTime() === today.getTime() && instalments > 0;
+      return { n: d, credit: d === 1 && cm >= 20, debit: d === 5, creditBg: past ? green : 'oklch(0.72 0.13 150 / .35)', debitBg: past ? gold : 'rgba(246,196,69,.35)',
+        color: past || isToday ? 'var(--color-text)' : 'var(--color-neutral-500)', bg: isToday ? 'var(--color-neutral-800)' : 'transparent', ring: isToday ? '0 0 0 1px var(--color-accent-700,#5d5294)' : 'none' };
+    }));
+    const calEvents = [];
+    if (cm >= 20) { const past = new Date(2026, 8 + cm, 1) <= today; calEvents.push({ title: 'SWP credit', sub: '1 ' + monShort(first) + (past ? ' · Credited to bank' : ' · Scheduled'), amt: '+ ' + inr(rate), amtColor: 'oklch(0.80 0.13 150)', iconBg: 'oklch(0.74 0.125 150 / .14)', iconColor: 'oklch(0.80 0.13 150)', path: 'M7 2v9M3.5 7.5 7 11l3.5-3.5', op: past ? 1 : .55 }); }
+    { const past = new Date(2026, 8 + cm, 5) <= today; calEvents.push({ title: 'SIP debit', sub: '5 ' + monShort(first) + (past ? ' · Auto-debited' : ' · Scheduled'), amt: '− ₹25,000', amtColor: 'var(--color-text)', iconBg: 'rgba(246,196,69,.12)', iconColor: gold, path: 'M7 12V3M3.5 6.5 7 3l3.5 3.5', op: past ? 1 : .55 }); }
+    const shown = this.state.shown, shownInst = shown / 25000;
+    const FUNDS = [
+      { name: 'Arbitrage fund', w: .36, g: .004, color: '#8aa89b' }, { name: 'Gold', w: .16, g: .007, color: '#f6c445' },
+      { name: 'Large cap', w: .16, g: .005, color: '#4a9d47' }, { name: 'Mid cap', w: .16, g: .0065, color: '#5cb85c' }, { name: 'Small cap', w: .16, g: .008, color: '#8fd48a' },
+    ];
+    const C = 2 * Math.PI * 18; let acc = 0;
+    const SHORT = ['Arbitrage', 'Gold', 'Large cap', 'Mid cap', 'Small cap'];
+    const funds = FUNDS.map((f, i) => { const inv = shown * f.w, short = SHORT[i], glow = shown ? '0 0 8px ' + f.color + '55' : 'none', colorDeep = f.color + 'aa', val = inv * (1 + f.g * instalments), len = C * f.w, o = acc; acc += len; return { ...f, short, glow, colorDeep, pct: Math.round(f.w * 100) + '%', investedInr: inr(inv), valueInr: inr(val), gain: instalments ? '+' + (f.g * instalments * 100).toFixed(1) + '%' : '—', dash: (len - 2).toFixed(2) + ' ' + (C - len + 2).toFixed(2), offset: (-o - 1).toFixed(2) }; });
+    const monthDots = Array.from({ length: 12 }, (_, i) => ({ bg: i < credits ? 'oklch(0.72 0.13 150)' : 'transparent', ring: i < credits ? '0 0 6px oklch(0.74 0.125 150 / .5)' : 'inset 0 0 0 1px var(--color-neutral-600,#4a4d59)' }));
+    const curValue = funds.reduce((a, f) => a + shown * f.w * (1 + f.g * shownInst), 0), gainPct = shown ? ((curValue / shown - 1) * 100).toFixed(1) : null;
+    const nextDebit = new Date(2026, 8 + instalments, 5);
+    return {
+      tileName: this.state.tileName || '',
+      goHome: e => { if (e && e.preventDefault) e.preventDefault(); if (window.parent !== window) window.parent.postMessage({ type: 'sip:close' }, '*'); },
+      curValue: inr(curValue), investedInr: inr(shown), gainInr: '+ ' + inr(curValue - invested), gainLabel: gainPct ? '+' + gainPct + '% returns' : 'Across 5 funds', funds, monthDots, nextDebitMon: monShort(nextDebit), swpPop: instalments === 20 ? 'Unlocked' : '',
+      portMounted: this.state.port !== 'closed', portDim: this.state.port === 'open' ? 1 : 0,
+      portAnim: this.state.port === 'open' ? 'sheetIn .55s cubic-bezier(.2,.9,.3,1.1) both' : 'sheetOut .3s cubic-bezier(.4,0,.8,.4) both',
+      openPort: e => { if (e && e.stopPropagation) e.stopPropagation(); clearTimeout(this._portT); this.setState({ port: 'open' }); },
+      closePort: () => { this.setState({ port: 'closing' }); clearTimeout(this._portT); this._portT = setTimeout(() => this.setState({ port: 'closed' }), 320); },
+      withdrawn: inr(withdrawn), withdrawnSub: credits ? inr(monthly) + ' a month' : instalments ? inr(monthly) + ' from 1 ' + monShort(nextCredit) : 'After first SIP',
+      nextCreditMon: monShort(nextCredit), nextCreditDay: '1',
+      calMounted: this.state.cal !== 'closed', calDim: this.state.cal === 'open' ? 1 : 0,
+      calAnim: this.state.cal === 'open' ? 'sheetIn .55s cubic-bezier(.2,.9,.3,1.1) both' : 'sheetOut .3s cubic-bezier(.4,0,.8,.4) both',
+      openCal: e => { if (e && e.stopPropagation) e.stopPropagation(); clearTimeout(this._calT); this.setState({ cal: 'open', calMonth: Math.max(0, instalments - 1) }); },
+      closeCal: () => { this.setState({ cal: 'closing' }); clearTimeout(this._calT); this._calT = setTimeout(() => this.setState({ cal: 'closed' }), 320); },
+      prevMonth: () => this.setState(st => ({ calMonth: Math.max(0, st.calMonth - 1) })), nextMonth: () => this.setState(st => ({ calMonth: Math.min(35, st.calMonth + 1) })), prevOp: cm === 0 ? .4 : 1,
+      calTitle: monShort(first) + ' ' + first.getFullYear(), weekdays: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], calDays, calEvents,
+      monthIn: cm >= 20 ? inr(rate) : '₹0', monthOut: '₹25,000',
+      fit: this.state.fit,
+      litClip: (83.2 - Math.min(1, this.state.shown / 1e5) * 71.9).toFixed(1) + '%', glowBase: (0.2 + Math.min(1, this.state.shown / 5e5) * 0.8).toFixed(2),
+      coinOpacity: this.state.stage < 5 ? .45 : 1, swpColor: this.state.stage < 5 ? 'var(--color-neutral-400)' : 'var(--color-text)',
+      lakhSegs: [0, 1, 2, 3, 4].map(i => { const on = this.state.shown >= (i + 1) * 1e5 - 1; return { bg: on ? 'oklch(0.72 0.13 150)' : 'var(--color-neutral-700,#2b2e3a)', glow: on ? '0 0 8px oklch(0.74 0.125 150 / .5)' : 'none', last: i === 4 && !on }; }),
+      incomeLine: this.state.stage < 5 ? 'Starts at ₹5,00,000 · ' : 'Paid on the 1st · ', incomeToGo: this.state.stage < 5 ? '₹' + Math.max(0, 5e5 - Math.round(this.state.shown)).toLocaleString('en-IN') + ' to go' : 'Villa complete',
+      swpTf: Object.keys(this.state.bump || {}).length ? 'translateY(-3px)' : 'none',
+      bareOpacity: this.state.stage > 0 ? 0 : 1, bareVis: this.state.stage > 0 && this.state.prevStage !== 0 ? 'hidden' : 'visible', bareAnim: this.state.stage > 0 && this.state.prevStage === 0 ? 'stageOut .7s cubic-bezier(.4,0,.6,1) both' : 'none',
+      showStage: this.state.stage > 0, stageAnim: (this.state.stageKey % 2 ? 'stageIn' : 'stageIn2') + ' .9s cubic-bezier(.2,.9,.3,1.15) both',
+      stagePlot: this.state.stage === 1, stageGrading: this.state.stage === 2, stageFoundation: this.state.stage === 3, stageSteel: this.state.stage === 4, stageVilla: this.state.stage === 5,
+      showPrev: this.state.prevStage > 0, prevAnim: (this.state.stageKey % 2 ? 'stageOut' : 'stageOut2') + ' .7s cubic-bezier(.4,0,.6,1) both',
+      prevPlot: this.state.prevStage === 1, prevGrading: this.state.prevStage === 2, prevFoundation: this.state.prevStage === 3, prevSteel: this.state.prevStage === 4,
+      showBurst: this.state.prevStage >= 0 && this.state.stage > 0,
+      stageName: ['Bare land', 'The Plot', 'Levelled Ground', 'Foundation', 'Steel Frame', 'The Villa'][this.state.stage],
+      stageTag: this.state.stage === 0 ? Math.round(this.state.shown / 1e5 * 100) + '% lit' : this.state.stage === 5 ? 'Complete' : 'Level ' + (this.state.stage + 1),
+      litPct: Math.round(this.state.shown / 5e5 * 100) + '%', toVilla: this.fmtL(Math.max(0, 5e5 - this.state.shown)),
+      road, nextLevel, level: nextLevel - 1, toNext: this.fmtL(nextLevel * levelSize - invested), levelPct: Math.round((invested - (nextLevel - 1) * levelSize) / levelSize * 100) + '%',
+      panelShadow: flash ? 'var(--shadow-sm),inset 0 1px 0 rgba(233,233,237,.04),0 0 0 1px var(--color-accent-600),0 0 36px rgba(145,132,217,.35)' : 'var(--shadow-sm),inset 0 1px 0 rgba(233,233,237,.04)',
+      glowOpacity: flash ? 1 : 0.45,
+      digits: (() => { const bump = this.state.bump || {}; return Math.round(this.state.shown).toLocaleString('en-IN').split('').map((ch, i) => ({ ch, w: ch === ',' ? '10px' : '30px', tf: bump[i] ? 'translateY(-8px)' : 'none', fl: bump[i] ? 'brightness(1.4)' : 'none' })); })(),
+      invested: this.fmtL(invested),
+      notesLayer: this.notesLayer(), coinRef: this.coinRef, heroRef: this.heroRef,
+      showToast: this.state.popKey > 0, toastDate: mon(Math.max(0, instalments - 1)),
+      toastAnim: this.state.popKey ? (this.state.popKey % 2 ? 'toast' : 'toast2') + ' 3.4s both' : 'none',
+      toastBarAnim: this.state.popKey ? (this.state.popKey % 2 ? 'drain' : 'drain2') + ' 3.4s linear both' : 'none',
+      toastSweepAnim: this.state.popKey ? (this.state.popKey % 2 ? 'sweep' : 'sweep2') + ' 3.4s cubic-bezier(.3,.6,.3,1) both' : 'none',
+      payClick: e => { if (e && e.stopPropagation) e.stopPropagation(); this._pay(); },
+      openLadder: e => { if (e && e.stopPropagation) e.stopPropagation(); clearTimeout(this._sheetT); this.setState(s => ({ sheet: 'open', sheetKey: s.sheetKey + 1 })); },
+      closeLadder: () => { this.setState({ sheet: 'closing' }); clearTimeout(this._sheetT); this._sheetT = setTimeout(() => this.setState({ sheet: 'closed' }), 320); },
+      sheetMounted: this.state.sheet !== 'closed', dimOpacity: this.state.sheet === 'open' ? 1 : 0,
+      sheetAnim: this.state.sheet === 'open' ? 'sheetIn .55s cubic-bezier(.2,.9,.3,1.1) both' : 'sheetOut .3s cubic-bezier(.4,0,.8,.4) both',
+      ladderWorth: 25000 * this.state.extra, sheetKey: this.state.sheetKey,
+      levelNo: Math.min(5, Math.floor(25000 * this.state.extra / 100000) + 1),
+      pay: () => this._pay(),
+      spinAnim: this.state.popKey ? (this.state.popKey % 2 ? 'spin' : 'spin2') + ' 1.1s cubic-bezier(.3,.7,.3,1) both' : 'none',
+      coinAnim: this.state.popKey ? (this.state.popKey % 2 ? 'coinflip' : 'coinflip2') + ' 1.1s cubic-bezier(.3,.6,.2,1) both' : 'none',
+      glowAnim: this.state.popKey ? (this.state.popKey % 2 ? 'glowpulse' : 'glowpulse2') + ' 1.4s ease-out .8s both' : 'none',
+      popAnim: this.state.popKey ? (this.state.popKey % 2 ? 'pop' : 'pop2') + ' 1.5s cubic-bezier(.2,.7,.2,1) forwards' : 'none',
+    };
+  }
+}
+</script>
+</body>
+</html>

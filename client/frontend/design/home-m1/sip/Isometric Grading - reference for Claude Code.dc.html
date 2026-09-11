@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/nocturne-2ba555a5-6641-47cd-a036-9a3d96755b31/styles.css">
+  <script src="_ds/nocturne-2ba555a5-6641-47cd-a036-9a3d96755b31/_ds_bundle.js"></script>
+  <style>
+    body { margin:0; background:#161826; color:#e9e9ed; font:14px/1.5 Inter, system-ui, sans-serif; }
+    a { color:#b5abfc; } a:hover { color:#d2cefd; }
+    @keyframes puff { 0% { opacity:0; transform:translate(0,0) scale(.5) } 20% { opacity:.55 } 100% { opacity:0; transform:translate(-14px,-30px) scale(1.6) } }
+    @keyframes rumble { 0%,100% { transform:translate(0,0) } 25% { transform:translate(0,-.8px) } 50% { transform:translate(.4px,0) } 75% { transform:translate(0,.6px) } }
+    @keyframes blade { 0%,100% { transform:translate(0,0) } 50% { transform:translate(0,-2px) } }
+  </style>
+</helmet>
+<div style="max-width:920px;margin:0 auto;padding:{{ wrapPad }}" data-tile-wrap="1">
+  <sc-if value="{{ doc }}" hint-placeholder-val="{{ true }}">
+  <h1 style="font-weight:500;font-size:26px;letter-spacing:-.01em;margin:0 0 6px">Isometric plot — grading</h1>
+  <p style="color:#9a9aa5;margin:0 0 28px">Stage 2 of the ladder — the buyer owns the plot and is levelling it. Same base as the plot and villa; a bulldozer has cleared the front-right half down to flat earth, the back-left half is still meadow. Hand this whole file to a coding agent. Previous stage: <a href="Isometric Plot - reference for Claude Code.dc.html">the empty plot</a>.</p>
+
+  </sc-if>
+  <svg viewBox="0 -60 820 700" style="width:100%;height:auto;display:block">
+    <polygon points="410,100 794.5,322 410,544 25.5,322" fill="#232739"></polygon>
+    <polygon points="794.5,322 410,544 410,595 794.5,373" fill="#1b1e2c"></polygon>
+    <polygon points="410,544 25.5,322 25.5,373 410,595" fill="#12141d"></polygon>
+    <polygon points="721.8,264 410,444 410,516 721.8,336" fill="#8a5a33"></polygon>
+    <polygon points="410,444 98.2,264 98.2,336 410,516" fill="#6d4527"></polygon>
+    <polygon points="721.8,264 410,444 410,458 721.8,278" fill="#3f2a18" opacity="0.35"></polygon>
+    <!-- edge bands: right edge is now bare earth, left edge grass only where the meadow remains -->
+    <polygon points="721.8,250 410,430 410,444 721.8,264" fill="#7a4d2b"></polygon>
+    <polygon points="410,430 229.2,325.6 229.2,339.6 410,444" fill="#5c3a1c"></polygon>
+    <polygon points="229.2,325.6 98.2,250 98.2,264 229.2,339.6" fill="#3f7a20"></polygon>
+    <sc-for list="{{ fringe }}" as="f" hint-placeholder-count="0"><polygon points="{{ f.pts }}" fill="{{ f.fill }}"></polygon></sc-for>
+    <!-- graded earth (front-right), then remaining meadow with its cut sod edge -->
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="#9a6a3f"></polygon>
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#6d4527" stroke-width="8"></polygon>
+    <sc-for list="{{ treads }}" as="t" hint-placeholder-count="0"><polygon points="{{ t.pts }}" fill="#7a4d2b" opacity="0.55"></polygon></sc-for>
+    <polygon points="{{ meadow }}" fill="#6cba36"></polygon>
+    <polygon points="{{ meadow }}" fill="none" stroke="#3f7a20" stroke-width="8"></polygon>
+    <sc-for list="{{ stripes }}" as="s" hint-placeholder-count="0"><polygon points="{{ s.pts }}" fill="#74c43c" opacity="0.4"></polygon></sc-for>
+    <sc-for list="{{ scene }}" as="t" hint-placeholder-count="0">
+      <sc-if value="{{ t.isPoly }}" hint-placeholder-val="{{ true }}"><polygon points="{{ t.pts }}" fill="{{ t.fill }}" opacity="{{ t.op }}"></polygon></sc-if>
+      <sc-if value="{{ t.isEllipse }}" hint-placeholder-val="{{ false }}"><ellipse cx="{{ t.cx }}" cy="{{ t.cy }}" rx="{{ t.rx }}" ry="{{ t.ry }}" fill="{{ t.fill }}" opacity="{{ t.op }}"></ellipse></sc-if>
+    </sc-for>
+    {{ dozer }}
+    {{ dust }}
+  </svg>
+  <sc-if value="{{ doc }}" hint-placeholder-val="{{ true }}">
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">What this asset is</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">The plot after purchase, mid-grading. Base plinth and soil skirt are byte-identical to the plot and villa. The grass top is split at <code>a = 0.42</code>: everything at higher <code>a</code> (front-right) is flat earth <code>#9a6a3f</code>; the meadow keeps its clumps, one tree and a bush. The split is a jittered polyline, stroked <code>#3f7a20</code>, so it reads as a cut sod edge.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">What reads as "being levelled": twin tread marks running from the sod edge to the machine, sod and topsoil heaps at the front corner, a fresh stump where the second tree stood, a drying puddle where the pond was, and the dozer itself with an earth mound against the blade.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">The board is gone — it has been bought. No fence, no structures yet. Next stage: <code>Isometric Construction</code> (foundation → walls → villa).</li>
+  </ul>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">The bulldozer</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">Built entirely from axis-aligned iso boxes. A box spans tile coords <code>a0..a1 × b0..b1</code> and heights <code>h0..h1</code> (px). Its three visible faces: top at <code>h1</code>; the <code>+a</code> face (lit); the <code>+b</code> face (shaded). Corner <code>(a,b,h) → (410 + (a−b)·311.8, 70 + (a+b)·180 − h)</code>.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Parts, back-to-front: far track → hull → cab (glass box, yellow roof) → exhaust → near track → push arms → blade → earth mound. Machine yellow <code>#f6c445 / #dc9a1f / #a86b12</code> (the gold-coin ramp), tracks <code>#3f424d / #2b2e3a / #232634</code>, glass <code>#3a5f7a / #2f4f66</code>, blade steel <code>#b0b6bd / #9aa0a7 / #7c8189</code>.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Motion: the hull group idles on a 0.5s <code>rumble</code> (sub-pixel translate), the blade group on a 1.6s <code>blade</code> bob, and three dust ellipses cycle a 2.2s <code>puff</code> with staggered delays. Transforms only — geometry is never rotated or skewed.</li>
+  </ul>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Paint order</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">Plinth → soil skirt → edge bands + fringe → full earth top + earth boundary → tread marks → meadow polygon + sod stroke → mowing stripes → scattered props sorted by <code>a + b</code> → dozer group → dust.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Strokes only for parcel boundary and sod edge. Flat polygons and ellipses; no gradients.</li>
+  </ul>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Prompt that works</h2>
+  <pre style="background:#1e2130;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:12px;color:#c9c6da;margin:0;white-space:pre-wrap">Draw an isometric plot being levelled by a bulldozer as inline SVG.
+
+Projection: fixed 2:1 isometric, same as the plot. Tile coords a,b in
+[0,1] map to x = 410 + (a-b)*311.8, y = 70 + (a+b)*180 - h. Never
+rotate or skew geometry.
+
+Base identical to the plot parcel. Grass top: earth #9a6a3f under
+everything, then a meadow polygon covering a &lt; 0.42 in #6cba36 with a
+jittered edge stroked #3f7a20 8px. Two tread stripes #7a4d2b @.55 run
+along the a-axis from the sod edge to the machine.
+
+Bulldozer at a=0.58, b=0.5 facing +a, made only of iso boxes
+(top, +a lit face, +b shaded face): two tracks, hull, cab with glass,
+exhaust, push arms, steel blade, earth mound at the blade. Yellow
+#f6c445/#dc9a1f/#a86b12, tracks #3f424d/#2b2e3a/#232634.
+
+Props: one tree + bush + grass clumps on the meadow, a stump and sod
+heaps on the earth, a drying puddle. Three dust ellipses on a 2.2s
+fade-and-rise loop; hull on a 0.5s sub-pixel rumble.
+
+Paint back-to-front by a+b. No gradients. No strokes for shading.</pre>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Reuse</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">Copy the <code>&lt;svg&gt;</code> block plus the three <code>@keyframes</code>. For a static board tile drop the animation styles — the silhouette alone reads.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">On a grid tile: <code>&lt;g transform="translate(TX,TY) scale(S) translate(-410,-250)"&gt;</code> — same wrapper as the plot and villa.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">To animate progress, move the sod edge <code>a</code> from 0.42 toward 0 and the dozer with it; at <code>a = 0</code> the whole top is earth and the construction stage begins.</li>
+  </ul>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const W = 311.8, H = 180, SPLIT = 0.42;
+    const px = (a, b) => 410 + (a - b) * W, py = (a, b, h = 0) => 70 + (a + b) * H - h;
+    const r1 = n => Math.round(n * 10) / 10;
+    const P = arr => arr.map(([x, y]) => `${r1(x)},${r1(y)}`).join(' ');
+    const E = (cx, cy, rx, ry, fill, op = 1) => ({ isEllipse: true, cx: r1(cx), cy: r1(cy), rx: r1(rx), ry: r1(ry), fill, op });
+    const PG = (pts, fill, op = 1) => ({ isPoly: true, pts, fill, op });
+    const pt = (a, b, h) => [px(a, b), py(a, b, h)];
+
+    // fringe: soil-coloured on the +a edge, grass only on the meadow part of the +b edge
+    const fringe = [];
+    for (let i = 0; i < 8; i++) {
+      const x = 688.2 - i * 37.45, y = 283.4 + i * 21.6;
+      fringe.push({ pts: P([[x, y], [x + 17.4, y - 10], [x + 8.7, y + 10]]), fill: '#8a5a33' });
+      const lx = 376.4 - i * 37.45, ly = 424.6 - i * 21.6;
+      fringe.push({ pts: P([[lx, ly], [lx + 17.4, ly + 10], [lx + 8.7, ly + 20]]), fill: i >= 5 ? '#3f7a20' : '#6d4527' });
+    }
+    // meadow polygon with jittered sod edge
+    let s = 5;
+    const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const edge = [];
+    for (let i = 0; i <= 12; i++) edge.push([SPLIT + (i === 0 || i === 12 ? 0 : (rnd() - 0.5) * 0.05), i / 12]);
+    const meadow = P([pt(0, 0, 0), ...edge.map(([a, b]) => pt(a, b, 0)), pt(0, 1, 0)]);
+    // mowing stripes on the meadow only
+    const stripes = [];
+    for (let b0 = 0.05; b0 < 0.95; b0 += 0.2) {
+      const b1 = Math.min(b0 + 0.1, 0.97);
+      stripes.push({ pts: P([pt(0.03, b0, 0), pt(SPLIT - 0.04, b0, 0), pt(SPLIT - 0.04, b1, 0), pt(0.03, b1, 0)]) });
+    }
+    // dozer geometry
+    const CA = 0.58, CB = 0.5, L = 0.26, WD = 0.17;
+    const treads = [CB - WD / 2, CB + WD / 2 - 0.045].map(b => ({
+      pts: P([pt(SPLIT + 0.02, b, 0), pt(CA + 0.02, b, 0), pt(CA + 0.02, b + 0.045, 0), pt(SPLIT + 0.02, b + 0.045, 0)]),
+    }));
+
+    // props
+    const shadow = (x, y, r) => E(x, y, r, r * 0.42, '#35691b', 0.32);
+    const tree = (gx, gy, k) => [
+      shadow(gx, gy, 34 * k),
+      PG(P([[gx - 4 * k, gy], [gx - 4 * k, gy - 50 * k], [gx + 4 * k, gy - 50 * k], [gx + 4 * k, gy]]), '#8a5a2f'),
+      PG(P([[gx, gy], [gx, gy - 50 * k], [gx + 4 * k, gy - 50 * k], [gx + 4 * k, gy]]), '#6b4522'),
+      E(gx - 8 * k, gy - 62 * k, 30 * k, 30 * k, '#3f7a20'),
+      E(gx + 4 * k, gy - 70 * k, 31 * k, 31 * k, '#4b8f26'),
+      E(gx - 6 * k, gy - 80 * k, 20 * k, 20 * k, '#59a52e'),
+      E(gx + 12 * k, gy - 84 * k, 13 * k, 13 * k, '#7cc945'),
+      E(gx + 16 * k, gy - 90 * k, 5 * k, 5 * k, '#8fd65a'),
+    ];
+    const bush = (gx, gy, k) => [
+      shadow(gx, gy + 2 * k, 24 * k),
+      E(gx - 3 * k, gy - 10 * k, 23 * k, 16 * k, '#3f7a20'),
+      E(gx + 2 * k, gy - 13 * k, 20 * k, 14 * k, '#4b8f26'),
+      E(gx + 7 * k, gy - 19 * k, 10 * k, 6 * k, '#7cc945'),
+    ];
+    const clump = (x, y, k) => {
+      const back = [[-9, 0], [-7, -9], [-4, 0], [-2, -13], [1, 0], [4, -11], [7, 0], [9, -7], [11, 0]];
+      const front = [[-5, 0], [-3, -16], [-1, 0], [1, -19], [3, 0], [6, -14], [8, 0]];
+      return [PG(P(back.map(([dx, dy]) => [x + dx * k, y + dy * k])), '#3f7a20'), PG(P(front.map(([dx, dy]) => [x + dx * k, y + dy * k])), '#8fd65a')];
+    };
+    const stump = (gx, gy) => [
+      E(gx, gy, 14, 6, '#5c3a1c', 0.5),
+      PG(P([[gx - 9, gy - 2], [gx - 9, gy - 14], [gx, gy - 9], [gx, gy + 3]]), '#6b4522'),
+      PG(P([[gx, gy + 3], [gx, gy - 9], [gx + 9, gy - 14], [gx + 9, gy - 2]]), '#8a5a2f'),
+      E(gx, gy - 14, 9, 5.2, '#c9a97a'),
+      E(gx, gy - 14, 5, 2.9, '#b98553'),
+      E(gx, gy - 14, 2, 1.2, '#c9a97a'),
+    ];
+    const heap = (gx, gy, k, cols) => [
+      E(gx, gy + 2, 30 * k, 12 * k, '#5c3a1c', 0.35),
+      E(gx, gy - 6 * k, 28 * k, 14 * k, cols[2]),
+      E(gx + 4 * k, gy - 9 * k, 22 * k, 11 * k, cols[1]),
+      E(gx + 8 * k, gy - 13 * k, 11 * k, 5 * k, cols[0]),
+    ];
+    const clod = (gx, gy, k) => [E(gx, gy, 5 * k, 3 * k, '#6d4527'), E(gx + 1.5 * k, gy - 1 * k, 3 * k, 1.6 * k, '#8a5a33')];
+    const puddle = (gx, gy) => [
+      E(gx, gy, 40, 22, '#6d4527', 0.55),
+      E(gx + 2, gy - 1, 24, 12, '#2f4f66'),
+      E(gx + 6, gy - 3, 14, 6, '#3a5f7a'),
+      E(gx + 10, gy - 5, 5, 1.6, '#c9e8ee', 0.6),
+    ];
+
+    const items = [];
+    const at = (a, b, fn, ...rest) => ({ d: a + b, shapes: fn(px(a, b), py(a, b), ...rest) });
+    const onMeadow = (a, b) => a < SPLIT - 0.06 && !(a < 0.34 && b < 0.34) && !(a > 0.26 && b > 0.56 && b < 0.9);
+    for (let i = 0; i < 40; i++) {
+      const a = 0.05 + rnd() * 0.9, b = 0.07 + rnd() * 0.86, k = 0.7 + rnd() * 0.6;
+      if (onMeadow(a, b)) items.push({ d: a + b, shapes: clump(px(a, b), py(a, b), k) });
+    }
+    for (let i = 0; i < 14; i++) {
+      const a = SPLIT + 0.03 + rnd() * 0.5, b = 0.06 + rnd() * 0.88;
+      if (Math.abs(b - CB) > WD / 2 + 0.06 || a > CA + L) items.push({ d: a + b, shapes: clod(px(a, b), py(a, b), 0.7 + rnd()) });
+    }
+    items.push(at(0.18, 0.18, tree, 1.15));
+    items.push(at(0.12, 0.6, bush, 1));
+    items.push(at(0.34, 0.74, puddle));
+    items.push(at(0.9, 0.1, stump));
+    items.push(at(0.9, 0.86, heap, 1, ['#7cc945', '#4b8f26', '#6d4527']));
+    items.push(at(0.7, 0.9, heap, 0.8, ['#b98553', '#8a5a33', '#6d4527']));
+    items.push(at(0.84, 0.72, heap, 0.6, ['#b98553', '#8a5a33', '#6d4527']));
+    items.sort((p, q) => p.d - q.d);
+    const scene = items.flatMap(it => it.shapes);
+
+    // --- bulldozer: iso boxes, rendered via createElement so its idle animation survives re-renders
+    const h = React.createElement;
+    const box = (a0, b0, a1, b1, h0, h1, [top, right, left]) => [
+      h('polygon', { key: `${a0}${b0}${h0}l`, points: P([pt(a0, b1, h1), pt(a1, b1, h1), pt(a1, b1, h0), pt(a0, b1, h0)]), fill: left }),
+      h('polygon', { key: `${a0}${b0}${h0}r`, points: P([pt(a1, b0, h1), pt(a1, b1, h1), pt(a1, b1, h0), pt(a1, b0, h0)]), fill: right }),
+      h('polygon', { key: `${a0}${b0}${h0}t`, points: P([pt(a0, b0, h1), pt(a1, b0, h1), pt(a1, b1, h1), pt(a0, b1, h1)]), fill: top }),
+    ];
+    const YEL = ['#f6c445', '#dc9a1f', '#a86b12'], TRK = ['#4a4e5b', '#2b2e3a', '#232634'], STL = ['#b0b6bd', '#9aa0a7', '#7c8189'], GLS = ['#f6c445', '#3a5f7a', '#2f4f66'];
+    const a0 = CA - L / 2, a1 = CA + L / 2, b0 = CB - WD / 2, b1 = CB + WD / 2;
+    const track = (bb) => [
+      ...box(a0, bb, a1 - 0.02, bb + 0.045, 0, 20, TRK),
+      ...box(a0 + 0.01, bb + 0.008, a1 - 0.03, bb + 0.037, 20, 23, ['#5d6170', '#3f424d', '#2b2e3a']),
+    ];
+    const dozer = h('g', { style: { animation: 'rumble .5s steps(1) infinite' } },
+      h('ellipse', { cx: r1(px(CA, CB)), cy: r1(py(CA, CB) + 4), rx: 92, ry: 40, fill: '#3f2a18', opacity: 0.35 }),
+      ...track(b0),
+      ...box(a0 + 0.02, b0 + 0.035, a1 - 0.05, b1 - 0.035, 14, 44, YEL),
+      ...box(a0 + 0.03, b0 + 0.045, a0 + 0.12, b1 - 0.045, 44, 78, GLS),
+      ...box(a0 + 0.02, b0 + 0.035, a0 + 0.13, b1 - 0.035, 78, 85, YEL),
+      ...box(a0 + 0.15, b0 + 0.05, a0 + 0.165, b0 + 0.065, 44, 66, ['#5d6170', '#3f424d', '#2b2e3a']),
+      ...track(b1 - 0.045),
+      ...box(a1 - 0.05, b0 + 0.01, a1 + 0.04, b0 + 0.03, 18, 26, ['#dc9a1f', '#a86b12', '#7d5027']),
+      ...box(a1 - 0.05, b1 - 0.03, a1 + 0.04, b1 - 0.01, 18, 26, ['#dc9a1f', '#a86b12', '#7d5027']),
+      h('g', { style: { animation: 'blade 1.6s ease-in-out infinite' } },
+        ...box(a1 + 0.035, b0 - 0.02, a1 + 0.06, b1 + 0.02, 2, 40, STL),
+        ...box(a1 + 0.06, b0 - 0.02, a1 + 0.066, b1 + 0.02, 2, 12, ['#7c8189', '#5d6170', '#3f424d']),
+      ),
+      h('ellipse', { cx: r1(px(a1 + 0.12, CB)), cy: r1(py(a1 + 0.12, CB) - 8), rx: 44, ry: 22, fill: '#6d4527' }),
+      h('ellipse', { cx: r1(px(a1 + 0.13, CB) + 4), cy: r1(py(a1 + 0.13, CB) - 12), rx: 34, ry: 16, fill: '#8a5a33' }),
+      h('ellipse', { cx: r1(px(a1 + 0.14, CB) + 8), cy: r1(py(a1 + 0.14, CB) - 17), rx: 16, ry: 7, fill: '#b98553' }),
+    );
+    const dust = h('g', null,
+      ...[0, 0.75, 1.5].map((delay, i) => h('ellipse', {
+        key: i, cx: r1(px(a0 - 0.02 + i * 0.03, b1 + 0.03)), cy: r1(py(a0 - 0.02 + i * 0.03, b1 + 0.03) - 8),
+        rx: 14, ry: 9, fill: '#c9a97a', style: { transformOrigin: `${r1(px(a0, b1 + 0.03))}px ${r1(py(a0, b1 + 0.03))}px`, animation: `puff 2.2s ease-out ${delay}s infinite` },
+      })),
+      ...[0.4, 1.3].map((delay, i) => h('ellipse', {
+        key: 'b' + i, cx: r1(px(a1 + 0.1, b1 + 0.02) + i * 10), cy: r1(py(a1 + 0.1, b1 + 0.02) - 20),
+        rx: 12, ry: 8, fill: '#c9a97a', style: { transformOrigin: `${r1(px(a1 + 0.1, b1))}px ${r1(py(a1 + 0.1, b1))}px`, animation: `puff 2.2s ease-out ${delay}s infinite` },
+      })),
+    );
+    return { doc: !this.props.tile, wrapPad: this.props.tile ? '0' : '48px 24px 80px', fringe, meadow, stripes, treads, scene, dozer, dust };
+  }
+}
+</script>
+</body>
+</html>

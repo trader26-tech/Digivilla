@@ -17,26 +17,55 @@ import { AuthService } from './auth/auth.service';
 import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { CallsService } from './shared/calls.service';
-import { VillaArtComponent } from './shared/villa-art.component';
-import { LandArtComponent } from './shared/land-art.component';
 import { EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
-import { Cell, buildCells, gridSize } from './estate/board-layout';
+import { Cell, buildCells } from './estate/board-layout';
 import { compact, inr } from './shared/format.util';
 
-/** One parcel of the fixed 3x3 reference board. */
+/** One parcel of the fixed 3x3 reference board — GENERATED from the invested ₹
+ *  (villas = floor(invested / ₹5,00,000), plus one building tile from the
+ *  remainder), painted with the reference tile symbols. */
 interface BoardCell {
   col: number;
   row: number;
+  /** Painting depth = col + row (ascending emits back-to-front). */
+  d: number;
   /** Offset for the tile <use>, per the reference placement formula. */
   x: number;
   y: number;
-  /** The owned asset here, or null for an empty (locked) lot. */
+  /** villa | build | locked (the reference cell states). */
+  st: 'villa' | 'build' | 'locked';
+  /** Which reference symbol paints the tile (#tVilla / #tLand / #tGrade / …). */
+  href: string;
+  /** The tile name ("Villa 03" / "Plot 06" / "Tile 09"). */
+  name: string;
+  /** The one-line note the detail popup shows. */
+  note: string;
+  /** ₹25,000 instalments in this house (20 = complete); null for a locked tile. */
+  paid: number | null;
+  /** A real backing tile for this parcel, if the user owns a matching one —
+   *  villas map to real villa tiles in order, the build to the first real
+   *  building tile — so a tap can deep-link its live returns page as before. */
   tile: Tile | null;
-  /** Which reference symbol paints the ground (#tVilla / #tLand / #tLocked). */
-  use: string;
-  /** True when a construction shell (#tBuild) stands on the land. */
-  building: boolean;
 }
+
+// ---- the estate model (ported verbatim from design/home-m1/estate-model.js) --
+/** ₹1 lakh. */
+const L = 100_000;
+/** One finished villa costs ₹5,00,000. */
+const HOUSE = 5 * L;
+/** Nine parcels on the board. */
+const HOUSES = 9;
+/** A finished villa pays this each month (the gold withdrawal). */
+const INCOME = 1500;
+/** House h (1-based) occupies ORDER[h-1] (col,row): centre, front corner, … */
+const ORDER: [number, number][] = [
+  [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
+];
+/** Build-stage symbol per stage index (0 ground · 1 The Plot · 2 Levelled ·
+ *  3 Foundation · 4 Steel · 5 The Villa). Stage 1 falls back to #tLand. */
+const FALLBACK_TILE = ['#tLocked', '#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
+/** Stage names, matching the reference. */
+const STAGE_NAME = ['Open tile', 'The Plot', 'Levelled Ground', 'Foundation', 'Steel Frame', 'The Villa'];
 
 /** Ticket price for one parcel; villas and builds are multiples of it. */
 const PLOT_TICKET = 10_00_000;
@@ -54,7 +83,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, VillaArtComponent, LandArtComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -221,87 +250,98 @@ export class EstateHomeComponent implements OnInit {
   }
 
   // -------------------------------------------------------------- board ----
-  // The reference is a FIXED 3x3 isometric board (no pan/zoom). Each of the
-  // nine cells is placed with the reference's exact formula:
-  //   offsetX = (col - row) * 93.6 ;  offsetY = (col + row) * 54
+  // The board is GENERATED from the user's invested ₹, per the reference model
+  // (applyEstate, ported verbatim): villas = floor(invested / ₹5,00,000) capped
+  // at 9, plus one building tile whose stage comes from the remainder. Each of
+  // the nine cells is placed with the reference's exact formula:
+  //   x = (col - row) * 93.6 ;  y = (col + row) * 54
   // and cells are painted in ascending (col + row) so back tiles paint over
   // front tiles (SVG has no z-buffer — document order IS depth).
 
-  get grid(): number { return gridSize(this.est.tiles().length); }
-
-  /** Every cell, owned tiles assigned and sorted back-to-front for painting.
-   *  Still used by the empty-state centre + the metaphor-key previews. */
+  /** Still used by the empty-state centre + the metaphor-key previews. */
   cells = computed<Cell[]>(() => buildCells(this.est.tiles()));
 
-  /** One rendered parcel of the fixed 3x3 reference board. */
-  // (kept small + local — this is the only geometry the static board needs.)
+  /** The ₹ that drives the board — the user's live INVESTED amount, clamped to
+   *  0..₹45,00,000 (nine finished villas). NOT the portfolio value. */
+  get boardWorth(): number {
+    return Math.min(HOUSES * HOUSE, Math.max(0, this.est.invested));
+  }
+  /** Finished villas = floor(worth / ₹5,00,000), max 9. */
+  get villaCount(): number { return Math.min(HOUSES, Math.floor(this.boardWorth / HOUSE)); }
+  /** ₹ in the house currently being built (0 once all nine are finished). */
+  get buildRem(): number { return this.boardWorth - this.villaCount * HOUSE; }
+  /** Build stage of the plot in progress (0 ground · 1 Plot · … · 4 Steel). */
+  get buildStage(): number { return this.villaCount >= HOUSES ? 0 : Math.floor(this.buildRem / L); }
+  /** True while a plot is under construction (some remainder, not yet full). */
+  get building(): boolean { return this.villaCount < HOUSES && this.buildRem > 0; }
+
+  /** The nine parcels, generated + sorted back-to-front for painting. Ported
+   *  verbatim from applyEstate(): villas fill ORDER[0..villas-1], the build (if
+   *  any) sits at ORDER[villas], the rest are locked. */
   boardCells = computed<BoardCell[]>(() => {
-    // The user's real assets, most-established first (villas before builds
-    // before land), so the finished villas land on the front-most parcels.
-    const tiles = this.est.tiles();
-    const order: TileType[] = ['villa', 'building', 'land'];
-    const owned = [...tiles].sort(
-      (a, b) => order.indexOf(a.type) - order.indexOf(b.type) || a.boughtAt - b.boughtAt,
+    const worth = this.boardWorth;
+    const villas = Math.min(HOUSES, Math.floor(worth / HOUSE));
+    const rem = worth - villas * HOUSE;
+    const stage = villas >= HOUSES ? 0 : Math.floor(rem / L);
+    const building = villas < HOUSES && rem > 0;
+
+    // Real holdings, most-established first, so a generated villa/build can be
+    // backed by (and deep-link to) a real tile when the user owns one.
+    const typeOrder: TileType[] = ['villa', 'building', 'land'];
+    const owned = [...this.est.tiles()].sort(
+      (a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) || a.boughtAt - b.boughtAt,
     );
+    const realVillas = owned.filter((t) => t.type === 'villa');
+    const realBuild = owned.find((t) => t.type === 'building' || t.type === 'land') ?? null;
 
-    // The nine 3x3 parcels, front-most (largest col+row) filled FIRST so the
-    // owner's tiles cluster at the front of the board and empty lots recede.
-    const coords: { col: number; row: number }[] = [];
-    for (let row = 0; row < 3; row++)
-      for (let col = 0; col < 3; col++) coords.push({ col, row });
-    const byFrontFirst = [...coords].sort((a, b) => (b.col + b.row) - (a.col + a.row));
-
-    const assigned = new Map<string, Tile>();
-    byFrontFirst.forEach(({ col, row }, i) => {
-      const t = owned[i];
-      if (t) assigned.set(`${col},${row}`, t);
-    });
-
-    // Emit sorted back-to-front (ascending col+row) so depth reads right.
-    return coords
-      .map(({ col, row }) => {
-        const tile = assigned.get(`${col},${row}`) ?? null;
-        const use = !tile
-          ? '#tLocked'
-          : tile.type === 'villa'
-            ? '#tVilla'
-            : '#tLand'; // land AND building stand on bare land
+    const cells: BoardCell[] = ORDER.map(([col, row], i) => {
+      const n = ('0' + (i + 1)).slice(-2);
+      const base = { col, row, d: col + row, x: (col - row) * 93.6, y: (col + row) * 54 };
+      if (i < villas) {
         return {
-          col,
-          row,
-          x: (col - row) * 93.6,
-          y: (col + row) * 54,
-          tile,
-          use,
-          building: tile?.type === 'building',
-        } as BoardCell;
-      })
-      .sort((a, b) => (a.col + a.row) - (b.col + b.row));
+          ...base, st: 'villa', href: '#tVilla', name: `Villa ${n}`,
+          note: 'Complete · ₹5,00,000 · pays ₹1,500 a month', paid: 20,
+          tile: realVillas[i] ?? null,
+        };
+      }
+      if (i === villas && building) {
+        return {
+          ...base, st: 'build',
+          href: stage === 0 ? '#tGround' : FALLBACK_TILE[stage],
+          name: `Plot ${n}`,
+          note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(rem)} of ₹5,00,000`,
+          paid: Math.round(rem / 25000),
+          tile: realBuild,
+        };
+      }
+      return { ...base, st: 'locked', href: '#tLocked', name: `Tile ${n}`, note: 'open', paid: null, tile: null };
+    });
+    // Paint back-to-front: (col+row) ascending, ties by col ascending.
+    return cells.sort((a, b) => a.d - b.d || a.col - b.col);
   });
 
-  /** True once at least one finished villa exists — the gold coin bobs above
-   *  the front-most villa only when one is really there. */
-  boardCoin = computed<BoardCell | null>(() => {
-    const villas = this.boardCells().filter((c) => c.tile?.type === 'villa');
-    if (!villas.length) return null;
-    // front-most villa (largest col+row) wears the coin
-    return villas.reduce((a, b) => ((b.col + b.row) >= (a.col + a.row) ? b : a));
-  });
+  /** The rent coin bobs over the centre parcel (ORDER[0] = (1,1)), shown only
+   *  once at least one villa exists — exactly as the reference markup fixes it
+   *  at (120,124) over the first villa. */
+  boardCoin = computed<boolean>(() => this.villaCount > 0);
+  /** The centre-cell offset the coin (authored at 120,124) is drawn over. */
+  get coinX(): number { return (1 - 1) * 93.6; }
+  get coinY(): number { return (1 + 1) * 54; }
 
-  /** Tapping an owned parcel opens its detail page (via the shell). Empty /
-   *  locked parcels are inert. */
+  /** Tapping a villa/build parcel opens its detail — deep-linking a real
+   *  backing tile's live returns page when the user owns one, otherwise the
+   *  self-contained detail popup (which needs no server tile). Locked parcels
+   *  are inert, as before. */
   tapBoardCell(c: BoardCell): void {
-    if (!c.tile) return;
+    if (c.st === 'locked') return;
     if (navigator.vibrate) navigator.vibrate(4);
-    this.openTile.emit(c.tile);
+    if (c.tile) { this.openTile.emit(c.tile); return; }
+    this.selectedBoard.set(c);
   }
 
-  /** Transform placing the reference construction group (#tBuild) on a cell.
-   *  #tBuild is authored around (640,430) in its own space; re-anchor it to the
-   *  cell centre and scale to sit on the land tile. */
-  boardBuildTransform(c: BoardCell): string {
-    return `translate(${c.x + 120},${c.y + 100}) scale(0.32) translate(-640,-430)`;
-  }
+  /** The generated parcel whose local detail popup is open (no real tile). */
+  selectedBoard = signal<BoardCell | null>(null);
+  closeBoardDetail(): void { this.selectedBoard.set(null); }
 
   /** True when the user owns nothing yet — the whole estate is open plots, so
    *  we don't paint the founding villa in the centre (an empty ₹0 estate should
@@ -667,17 +707,20 @@ export class EstateHomeComponent implements OnInit {
   get lands(): number { return this.est.countOf('land'); }
   get open(): number { return this.est.openPlots; }
 
-  // ── INVESTED flow subline: "{villaCount} villa{s} · {buildCount} building" ──
-  /** The invested-column context line, derived from the map tiles. Reads
-   *  gracefully when a count is 0 (drops that clause), and falls back to a
-   *  neutral line when nothing is built yet. */
+  // ── HEADER FLOWS — ported verbatim from applyEstate() ────────────────────
+  /** WITHDRAWALS (gold): ₹1,500 per finished villa, per month. */
+  get withdrawAmt(): number { return INCOME * this.villaCount; }
+  /** WITHDRAWALS sub-line: "N villa(s) · SWP on the 1st", else the primer. */
+  get withdrawSub(): string {
+    const v = this.villaCount;
+    return v ? `${v} villa${v === 1 ? '' : 's'} · SWP on the 1st` : 'Starts with your first villa';
+  }
+  /** INVESTED (violet) figure: the board worth (clamped invested ₹). */
+  get investedAmt(): number { return this.boardWorth; }
+  /** INVESTED sub-line: reflects the plot in progress / estate completion. */
   get investedSub(): string {
-    const v = this.villas;
-    const b = this.buildings;
-    const parts: string[] = [];
-    if (v > 0) parts.push(`${v} villa${v === 1 ? '' : 's'}`);
-    if (b > 0) parts.push(`${b} building${b === 1 ? '' : 's'}`);
-    return parts.length ? parts.join(' · ') : 'your estate';
+    if (this.building) return '1 building · SIP on the 5th';
+    return this.villaCount >= HOUSES ? 'Estate complete' : 'Next plot · SIP on the 5th';
   }
 
   // ── PORTFOLIO VALUE allocation bar (bottom) ──

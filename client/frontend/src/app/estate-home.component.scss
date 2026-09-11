@@ -298,7 +298,7 @@
 .cell { cursor: default; }
 .cell.owned { cursor: pointer; }
 .cell.owned:hover { filter: brightness(1.08); }
-.cell.building { filter: drop-shadow(0 0 6px rgba(145,132,217,.35)); }
+.cell.building { filter: drop-shadow(0 0 10px rgba(108,186,54,.55)); }
 .cell:focus-visible { outline: none; }
 .plot-open {
   fill: rgba(22, 48, 43, 0.018);

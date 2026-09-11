@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/nocturne-2ba555a5-6641-47cd-a036-9a3d96755b31/styles.css">
+  <script src="_ds/nocturne-2ba555a5-6641-47cd-a036-9a3d96755b31/_ds_bundle.js"></script>
+  <style>
+    body { margin:0; background:#161826; color:#e9e9ed; font:14px/1.5 Inter, system-ui, sans-serif; }
+    a { color:#b5abfc; } a:hover { color:#d2cefd; }
+    @keyframes swing { 0%,100% { transform:translate(0,0) } 50% { transform:translate(0,-6px) } }
+    @keyframes spark { 0%,100% { opacity:0 } 20% { opacity:1 } 40% { opacity:.2 } 60% { opacity:.9 } }
+  </style>
+</helmet>
+<div style="max-width:920px;margin:0 auto;padding:{{ wrapPad }}" data-tile-wrap="1">
+  <sc-if value="{{ doc }}" hint-placeholder-val="{{ true }}">
+  <h1 style="font-weight:500;font-size:26px;letter-spacing:-.01em;margin:0 0 6px">Isometric plot — steel frame</h1>
+  <p style="color:#9a9aa5;margin:0 0 28px">Stage 4 of the ladder — the slab has cured and the steel goes up: columns on the 3×3 grid, beams tying them at two levels, a scaffold tower and a crane lifting the last beam. Hand this whole file to a coding agent. Previous stage: <a href="Isometric Foundation - reference for Claude Code.dc.html">foundation</a>.</p>
+
+  </sc-if>
+  <svg viewBox="{{ viewBox }}" style="width:100%;height:auto;display:block">
+    <polygon points="410,100 794.5,322 410,544 25.5,322" fill="#232739"></polygon>
+    <polygon points="794.5,322 410,544 410,595 794.5,373" fill="#1b1e2c"></polygon>
+    <polygon points="410,544 25.5,322 25.5,373 410,595" fill="#12141d"></polygon>
+    <polygon points="721.8,264 410,444 410,516 721.8,336" fill="#8a5a33"></polygon>
+    <polygon points="410,444 98.2,264 98.2,336 410,516" fill="#6d4527"></polygon>
+    <polygon points="721.8,264 410,444 410,458 721.8,278" fill="#3f2a18" opacity="0.35"></polygon>
+    <polygon points="721.8,250 410,430 410,444 721.8,264" fill="#59a52e"></polygon>
+    <polygon points="410,430 98.2,250 98.2,264 410,444" fill="#3f7a20"></polygon>
+    <sc-for list="{{ fringe }}" as="f" hint-placeholder-count="0"><polygon points="{{ f.pts }}" fill="{{ f.fill }}"></polygon></sc-for>
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="#6cba36"></polygon>
+    <polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#3f7a20" stroke-width="8"></polygon>
+    <sc-for list="{{ stripes }}" as="s" hint-placeholder-count="0"><polygon points="{{ s.pts }}" fill="#74c43c" opacity="0.4"></polygon></sc-for>
+    <polygon points="{{ track }}" fill="#8a5a33" opacity="0.32"></polygon>
+    <sc-for list="{{ scene }}" as="t" hint-placeholder-count="0">
+      <sc-if value="{{ t.isPoly }}" hint-placeholder-val="{{ true }}"><polygon points="{{ t.pts }}" fill="{{ t.fill }}" opacity="{{ t.op }}"></polygon></sc-if>
+      <sc-if value="{{ t.isEllipse }}" hint-placeholder-val="{{ false }}"><ellipse cx="{{ t.cx }}" cy="{{ t.cy }}" rx="{{ t.rx }}" ry="{{ t.ry }}" fill="{{ t.fill }}" opacity="{{ t.op }}"></ellipse></sc-if>
+    </sc-for>
+    {{ live }}
+  </svg>
+  <sc-if value="{{ doc }}" hint-placeholder-val="{{ true }}">
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">What this asset is</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">The plot after the foundation: formwork struck, slab fully set (<code>#b0b4ba</code>) with control joints, the pit backfilled so the slab sits 6px proud of the lawn. Base plinth, soil skirt, grass and boundary are byte-identical to the earlier stages.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Steel: nine H-columns on the <code>a,b ∈ {0.32, 0.5, 0.68}</code> grid, 120px tall, each on a square base plate. Primary beams run in <code>a</code> at levels 60 and 120; secondary beams run in <code>b</code> at the same levels. The front-right bay's top beam is still missing — it hangs from the crane hook. Steel is one hue, three values: <code>#c9ced4 / #9aa0a7 / #6f7580</code>; base plates and bolts <code>#5d6170</code>.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Site: a tower crane on the −a edge at <code>a=0.08, b=0.34</code>, clear of the frame silhouette (lattice mast, jib running toward the slab, counterweight, hook cable, swinging beam), a 2-lift scaffold tower with a plank deck on the +b side, a rack of pipes on the grass near the +a edge, a site container at the back-right, a wheelbarrow, and the worn access track. No planting.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Next stage: <a href="Isometric Villa - reference for Claude Code.html">villa</a> — the finished house, final stage of the ladder.</li>
+  </ul>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Geometry rules</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">One fixed 2:1 isometric diamond: <code>(a,b,h) → (410 + (a−b)·311.8, 70 + (a+b)·180 − h)</code>. Height is a vertical offset only. Never rotate or skew geometry.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Every member is an axis-aligned iso box (top, <code>+a</code> lit, <code>+b</code> shaded). Columns are boxes 0.018 wide; beams are boxes 0.012 wide and 6px deep. Crane lattice is a thin box with lighter diagonal slats on the two visible faces.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">The viewBox grows upward (<code>0 -300 820 940</code>) to hold the crane; the parcel stays at the same coordinates, so it still drops onto the grid with the same wrapper.</li>
+  </ul>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Paint order</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">Plinth → soil → edge bands + fringe → grass + boundary → stripes → track → everything else sorted by <code>a + b</code> of its footprint: crane base + mast → container → slab → columns and beams, each bay back-to-front → scaffold → pipe rack → barrow → jib, hook and hanging beam last (they overhang everything) → live layer (swing, welding spark).</li>
+    <li style="color:#c9c6da;margin-bottom:5px">Strokes only for the parcel boundary. Flat polygons and ellipses; no gradients.</li>
+  </ul>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Prompt that works</h2>
+  <pre style="background:#1e2130;padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:12px;color:#c9c6da;margin:0;white-space:pre-wrap">Draw an isometric grass plot with a cured concrete slab and a steel
+frame going up, as inline SVG, no libraries.
+
+Projection: fixed 2:1 isometric. Tile coords a,b in [0,1] map to
+x = 410 + (a-b)*311.8, y = 70 + (a+b)*180 - h. Never rotate or skew.
+
+Base identical to the plot parcel: grass top #6cba36, 8px #3f7a20
+boundary stroke, faint mowing stripes, worn access track from +a.
+
+Slab a,b in [0.235,0.765], 6px proud, #b0b4ba/#9aa0a7/#7c8189 with two
+faint control joints. Nine steel H-columns on a,b in {0.32,0.5,0.68},
+120px tall on #5d6170 base plates; beams in a and b at h=60 and h=120;
+leave the front-right top beam out — it hangs from a crane hook. Steel
+#c9ced4 / #9aa0a7 / #6f7580.
+
+Props: tower crane on the -a edge at a=0.08,b=0.34 (lattice mast to h=300,
+jib toward the slab, counterweight, cable, hook, swinging beam), a
+two-lift scaffold tower with plank deck on the +b side, a pipe rack
+near the +a edge, a site container at the back-right, a wheelbarrow.
+No trees, bushes or flowers.
+
+Paint back-to-front by a+b, crane jib last. Flat polygons and ellipses
+only. No gradients. No strokes for shading.</pre>
+
+  <h2 style="font-weight:500;font-size:15px;margin:32px 0 8px">Reuse</h2>
+  <ul style="padding-left:20px;margin:0">
+    <li style="color:#c9c6da;margin-bottom:5px">Copy the <code>&lt;svg&gt;</code> block plus the two <code>@keyframes</code>. For a static board tile drop the animations.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">On a grid tile: <code>&lt;g transform="translate(TX,TY) scale(S) translate(-410,-250)"&gt;</code> — same wrapper as every stage; the crane will overhang the cell above, which is intended.</li>
+    <li style="color:#c9c6da;margin-bottom:5px">To animate progress, raise column height 0 → 120, then draw beams level by level, then lower the hanging beam into its bay.</li>
+  </ul>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const W = 311.8, H = 180;
+    const px = (a, b) => 410 + (a - b) * W, py = (a, b, h = 0) => 70 + (a + b) * H - h;
+    const r1 = n => Math.round(n * 10) / 10;
+    const P = arr => arr.map(([x, y]) => `${r1(x)},${r1(y)}`).join(' ');
+    const E = (cx, cy, rx, ry, fill, op = 1) => ({ isEllipse: true, cx: r1(cx), cy: r1(cy), rx: r1(rx), ry: r1(ry), fill, op });
+    const PG = (pts, fill, op = 1) => ({ isPoly: true, pts, fill, op });
+    const pt = (a, b, h = 0) => [px(a, b), py(a, b, h)];
+    const box = (a0, b0, a1, b1, h0, h1, [top, right, left]) => [
+      PG(P([pt(a0, b1, h1), pt(a1, b1, h1), pt(a1, b1, h0), pt(a0, b1, h0)]), left),
+      PG(P([pt(a1, b0, h1), pt(a1, b1, h1), pt(a1, b1, h0), pt(a1, b0, h0)]), right),
+      PG(P([pt(a0, b0, h1), pt(a1, b0, h1), pt(a1, b1, h1), pt(a0, b1, h1)]), top),
+    ];
+
+    const fringe = [];
+    for (let i = 0; i < 8; i++) {
+      const x = 688.2 - i * 37.45, y = 283.4 + i * 21.6;
+      fringe.push({ pts: P([[x, y], [x + 17.4, y - 10], [x + 8.7, y + 10]]), fill: '#59a52e' });
+      const lx = 376.4 - i * 37.45, ly = 424.6 - i * 21.6;
+      fringe.push({ pts: P([[lx, ly], [lx + 17.4, ly + 10], [lx + 8.7, ly + 20]]), fill: '#3f7a20' });
+    }
+    const stripes = [];
+    for (let b0 = 0.05; b0 < 0.95; b0 += 0.2) {
+      const b1 = Math.min(b0 + 0.1, 0.97);
+      stripes.push({ pts: P([pt(0.03, b0), pt(0.97, b0), pt(0.97, b1), pt(0.03, b1)]) });
+    }
+    const track = P([pt(0.8, 0.44), pt(1, 0.42), pt(1, 0.6), pt(0.8, 0.58)]);
+
+    const CON = ['#b0b4ba', '#9aa0a7', '#7c8189'], STL = ['#c9ced4', '#9aa0a7', '#6f7580'], DRK = ['#5d6170', '#3f424d', '#2b2e3a'];
+    const YEL = ['#f6c445', '#dc9a1f', '#a86b12'], WOOD = ['#c9a97a', '#a97140', '#8a5a2f'];
+    const S0 = 0.235, S1 = 0.765, TOP = 6;
+    const slab = [
+      E(px(0.5, 0.5), py(0.5, 0.5) + 4, 200, 92, '#35691b', 0.22),
+      ...box(S0, S0, S1, S1, 0, TOP, CON),
+      PG(P([pt(S0, 0.5, TOP), pt(S1, 0.5, TOP), pt(S1, 0.505, TOP), pt(S0, 0.505, TOP)]), '#7c8189', 0.45),
+      PG(P([pt(0.5, S0, TOP), pt(0.505, S0, TOP), pt(0.505, S1, TOP), pt(0.5, S1, TOP)]), '#7c8189', 0.45),
+    ];
+
+    // ---- steel frame
+    const G = [0.32, 0.5, 0.68], CW = 0.018, BW = 0.012, LVLS = [60, 120], COLH = 120;
+    const frame = [];
+    const column = (a, b) => [
+      ...box(a - 0.03, b - 0.03, a + 0.03, b + 0.03, TOP, TOP + 2, DRK),
+      ...box(a - CW / 2, b - CW / 2, a + CW / 2, b + CW / 2, TOP + 2, TOP + COLH, STL),
+    ];
+    const beamA = (a0, a1, b, h) => box(a0 + CW / 2, b - BW / 2, a1 - CW / 2, b + BW / 2, TOP + h - 6, TOP + h, STL);
+    const beamB = (a, b0, b1, h) => box(a - BW / 2, b0 + CW / 2, a + BW / 2, b1 - CW / 2, TOP + h - 6, TOP + h, STL);
+    // paint per grid cell back to front; each cell owns the column at (a,b) and the beams leaving it toward -a/-b
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+      const a = G[i], b = G[j];
+      for (const h of LVLS) {
+        if (i > 0 && !(h === 120 && i === 2 && j === 2)) frame.push(...beamA(G[i - 1], a, b, h));
+        if (j > 0 && !(h === 120 && i === 2 && j === 2)) frame.push(...beamB(a, G[j - 1], b, h));
+      }
+      frame.push(...column(a, b));
+    }
+    // scattered bolts on the slab near the missing beam
+    for (const [a, b] of [[0.72, 0.6], [0.7, 0.66], [0.75, 0.7]]) frame.push(E(px(a, b), py(a, b, TOP), 2.2, 1.3, '#5d6170'));
+
+    // ---- crane (footprint back-left corner)
+    const tile = !!this.props.tile, hero = !!this.props.hero;
+    const CA = 0.08, CB = tile ? 0.6 : 0.34, MW = 0.03, MH = tile ? (hero ? 190 : 110) : 300, APEX = tile ? (hero ? 38 : 30) : 46;
+    const crane = [];
+    crane.push(E(px(CA, CB), py(CA, CB) + 3, 30, 13, '#35691b', 0.3));
+    crane.push(...box(CA - 0.045, CB - 0.045, CA + 0.045, CB + 0.045, 0, 8, CON));
+    crane.push(...box(CA - MW / 2, CB - MW / 2, CA + MW / 2, CB + MW / 2, 8, MH, YEL));
+    // lattice slats on the two visible faces
+    for (let h = 20; h < MH - 10; h += 22) {
+      crane.push(PG(P([pt(CA + MW / 2, CB - MW / 2, h), pt(CA + MW / 2, CB + MW / 2, h + 14), pt(CA + MW / 2, CB + MW / 2, h + 18), pt(CA + MW / 2, CB - MW / 2, h + 4)]), '#a86b12', 0.55));
+      crane.push(PG(P([pt(CA - MW / 2, CB + MW / 2, h + 14), pt(CA + MW / 2, CB + MW / 2, h), pt(CA + MW / 2, CB + MW / 2, h + 4), pt(CA - MW / 2, CB + MW / 2, h + 18)]), '#7d5027', 0.55));
+    }
+    crane.push(...box(CA - 0.02, CB - 0.02, CA + 0.02, CB + 0.02, MH, MH + 14, DRK));      // slew ring
+    crane.push(...box(CA - 0.024, CB - 0.024, CA + 0.024, CB + 0.024, MH + 14, MH + 34, YEL)); // cab block
+    crane.push(...box(CA + 0.006, CB - 0.02, CA + 0.026, CB + 0.02, MH + 20, MH + 32, ['#f6c445', '#3a5f7a', '#2f4f66'])); // cab glass
+    const JH = MH + 34, JIB_END = 0.66;
+    const jib = [
+      ...box(CA - 0.14, CB - 0.01, CA, CB + 0.01, JH, JH + 8, YEL),           // counter-jib toward -a
+      ...box(CA - 0.14, CB - 0.02, CA - 0.1, CB + 0.02, JH - 22, JH + 8, CON), // counterweight
+      ...box(CA, CB - 0.01, JIB_END, CB + 0.01, JH, JH + 8, YEL),             // main jib toward +a
+      ...box(CA - 0.006, CB - 0.006, CA + 0.006, CB + 0.006, JH + 8, JH + APEX, YEL), // apex
+    ];
+    for (let a = CA + 0.04; a < JIB_END; a += 0.05) {
+      jib.push(PG(P([pt(a, CB + 0.01, JH + 8), pt(a + 0.025, CB + 0.01, JH), pt(a + 0.028, CB + 0.01, JH), pt(a + 0.003, CB + 0.01, JH + 8)]), '#a86b12', 0.6));
+    }
+    const [ax, ay] = pt(CA, CB, JH + APEX);
+    const [tipx, tipy] = pt(JIB_END, CB, JH + 8), [cwx, cwy] = pt(CA - 0.13, CB, JH + 8);
+    jib.push(PG(P([[ax - 0.7, ay], [ax + 0.7, ay], [tipx + 0.7, tipy], [tipx - 0.7, tipy]]), '#c9ced4'));
+    jib.push(PG(P([[ax - 0.7, ay], [ax + 0.7, ay], [cwx + 0.7, cwy], [cwx - 0.7, cwy]]), '#c9ced4'));
+    // trolley over the missing bay
+    const TA = 0.59, HOOKH = tile ? TOP + 128 : TOP + 150; // trolley over the jib line b=CB; hook lowers the beam toward its bay
+    jib.push(...box(TA - 0.012, CB - 0.014, TA + 0.012, CB + 0.014, JH - 8, JH, DRK));
+
+    // ---- scaffold tower on the +b side
+    const scaf = [];
+    const SA0 = 0.42, SA1 = 0.56, SB0 = 0.8, SB1 = 0.86, PW = 0.008;
+    for (const [a, b] of [[SA0, SB0], [SA1, SB0], [SA0, SB1], [SA1, SB1]]) {
+      scaf.push(E(px(a, b), py(a, b) + 1, 5, 2.2, '#35691b', 0.35));
+      scaf.push(...box(a - PW / 2, b - PW / 2, a + PW / 2, b + PW / 2, 0, 128, STL));
+    }
+    for (const h of [40, 84, 128]) {
+      scaf.push(...box(SA0, SB0 - PW / 2, SA1, SB0 + PW / 2, h - 4, h, STL));
+      scaf.push(...box(SA0, SB1 - PW / 2, SA1, SB1 + PW / 2, h - 4, h, STL));
+      scaf.push(...box(SA0 - PW / 2, SB0, SA0 + PW / 2, SB1, h - 4, h, STL));
+      scaf.push(...box(SA1 - PW / 2, SB0, SA1 + PW / 2, SB1, h - 4, h, STL));
+    }
+    scaf.push(...box(SA0, SB0, SA1, SB1, 84, 88, WOOD)); // plank deck
+    scaf.push(...box(SA0, SB0, SA1, SB1, 40, 44, WOOD));
+    // diagonal brace on the lit face
+    scaf.push(PG(P([pt(SA1, SB0, 4), pt(SA1, SB1, 40), pt(SA1, SB1, 44), pt(SA1, SB0, 8)]), '#9aa0a7'));
+
+    // ---- pipe rack near +a edge
+    const rack = [];
+    const RA = 0.9, RB0 = 0.14, RB1 = 0.34;
+    rack.push(E(px(RA, 0.24), py(RA, 0.24) + 3, 40, 17, '#35691b', 0.3));
+    rack.push(...box(RA - 0.03, RB0, RA + 0.03, RB0 + 0.012, 0, 6, WOOD));
+    rack.push(...box(RA - 0.03, RB1 - 0.012, RA + 0.03, RB1, 0, 6, WOOD));
+    const PR = 0.007;
+    for (let row = 0; row < 3; row++) for (let k = 0; k < 4 - row; k++) {
+      const a = RA - 0.022 + k * 0.0145 + row * 0.007, h0 = 6 + row * 4.2;
+      rack.push(...box(a - PR, RB0, a + PR, RB1, h0, h0 + 4.4, STL));
+      rack.push(E(px(a, RB1), py(a, RB1, h0 + 2.2), 2.1, 2.5, '#3f424d'));
+    }
+
+    // ---- site container at back-right
+    const cont = [
+      E(px(0.88, 0.1), py(0.88, 0.1) + 3, 48, 20, '#35691b', 0.3),
+      ...box(0.8, 0.06, 0.96, 0.14, 0, 40, ['#3a5f7a', '#2f4f66', '#243c50']),
+      ...box(0.84, 0.14, 0.9, 0.142, 8, 32, ['#c9ced4', '#c9ced4', '#b0b6bd']), // door
+      ...box(0.8, 0.06, 0.96, 0.14, 40, 42, ['#4f7692', '#3a5f7a', '#2f4f66']),
+    ];
+    for (let i = 0; i < 6; i++) cont.push(PG(P([pt(0.82 + i * 0.024, 0.14, 4), pt(0.822 + i * 0.024, 0.14, 4), pt(0.822 + i * 0.024, 0.14, 38), pt(0.82 + i * 0.024, 0.14, 38)]), '#243c50', 0.7));
+
+    const barrow = (a, b) => {
+      const [wx, wy] = pt(a + 0.085, b + 0.03, 0);
+      return [
+        E(px(a + 0.045, b + 0.03), py(a + 0.045, b + 0.03) + 2, 34, 14, '#35691b', 0.3),
+        ...box(a - 0.01, b + 0.008, a + 0.005, b + 0.016, 6, 16, ['#7c8189', '#5d6170', '#3f424d']),
+        ...box(a - 0.01, b + 0.044, a + 0.005, b + 0.052, 6, 16, ['#7c8189', '#5d6170', '#3f424d']),
+        ...box(a + 0.005, b, a + 0.085, b + 0.06, 14, 32, YEL),
+        E(wx, wy - 8, 8, 8, '#2b2e3a'), E(wx, wy - 8, 3, 3, '#5d6170'),
+      ];
+    };
+
+    const items = [
+      { d: CA + CB, shapes: crane },
+      { d: 0.9, shapes: cont },
+      { d: 1.0, shapes: [...slab, ...frame] },
+      { d: 1.7, shapes: scaf },
+      { d: 1.15, shapes: rack },
+      { d: 1.66, shapes: barrow(0.7, 0.9) },
+      { d: 9, shapes: jib },
+    ];
+    items.sort((p, q) => p.d - q.d);
+    const scene = items.flatMap(it => it.shapes);
+
+    // live layer: cable + hook + hanging beam (swings), welding spark on a column
+    const h = React.createElement;
+    const [hx, hyTop] = pt(TA, CB, JH - 8);
+    const [, hyHook] = pt(TA, CB, HOOKH);
+    const beam = beamA(G[1], G[2], G[2], 0).map(s => s.pts);
+    // move the beam from its slot to hang under the hook: same beam, offset to hook position
+    const [bx0, by0] = pt(0.59, G[2], TOP - 3); // beam center; shifted under the hook
+    const dxs = hx - bx0, dys = (hyHook + 12) - by0;
+    const shift = pts => pts.split(' ').map(p => { const [x, y] = p.split(',').map(Number); return `${r1(x + dxs)},${r1(y + dys)}`; }).join(' ');
+    const [wx, wy] = pt(0.5, 0.5, TOP + 120);
+    const live = h('g', null,
+      h('g', { style: { animation: 'swing 4s ease-in-out infinite' } },
+        h('polygon', { points: P([[hx - 0.6, hyTop], [hx + 0.6, hyTop], [hx + 0.6, hyHook], [hx - 0.6, hyHook]]), fill: '#c9ced4' }),
+        h('polygon', { points: P([[hx - 4, hyHook], [hx + 4, hyHook], [hx + 4, hyHook + 8], [hx - 4, hyHook + 8]]), fill: '#3f424d' }),
+        h('polygon', { points: P([[hx - 1, hyHook + 8], [hx + 1, hyHook + 8], [hx + 1, hyHook + 12], [hx - 1, hyHook + 12]]), fill: '#c9ced4' }),
+        h('polygon', { points: P([[hx, hyHook + 12], [hx - 14, hyHook + 8], [hx - 14, hyHook + 20]]), fill: '#c9ced4', opacity: .0 }),
+        h('polygon', { points: shift(beam[0]), fill: STL[2] }),
+        h('polygon', { points: shift(beam[1]), fill: STL[1] }),
+        h('polygon', { points: shift(beam[2]), fill: STL[0] }),
+        h('polygon', { points: P([[hx - 26, hyHook + 12], [hx, hyHook + 22], [hx + 26, hyHook + 12], [hx + 26, hyHook + 13], [hx, hyHook + 23], [hx - 26, hyHook + 13]]), fill: '#c9ced4' }),
+      ),
+      h('ellipse', { cx: r1(wx + 3), cy: r1(wy + 4), rx: 4, ry: 4, fill: '#f9d56a', style: { animation: 'spark .9s steps(1) infinite' } }),
+      h('ellipse', { cx: r1(wx + 3), cy: r1(wy + 4), rx: 9, ry: 9, fill: '#f6c445', opacity: .35, style: { animation: 'spark .9s steps(1) .2s infinite' } }),
+    );
+    return { doc: !this.props.tile, wrapPad: this.props.tile ? '0' : '48px 24px 80px', viewBox: this.props.tile ? (this.props.hero ? '0 -150 820 790' : '0 -60 820 700') : '0 -300 820 940', fringe, stripes, track, scene, live };
+  }
+}
+</script>
+</body>
+</html>

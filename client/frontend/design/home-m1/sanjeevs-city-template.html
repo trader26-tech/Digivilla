@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sanjeev's City — estate board template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ---- tokens (Nocturne) ---- */
+  :root {
+    --color-bg: #161826;
+    --color-surface: #1e2130;
+    --color-text: #e9e9ed;
+    --color-neutral-200: #e4e7f5;
+    --color-neutral-300: #c9c6da;
+    --color-neutral-400: #9a9aa5;
+    --color-neutral-500: #6b6e79;
+    --color-neutral-600: #75798c;
+    --color-neutral-700: #3f424d;
+    --color-neutral-800: #2b2e3a;
+    --color-neutral-900: #232634;
+    --color-neutral-950: #12141d;
+    --color-accent: #9184d9;
+    --color-accent-100: #efedfc;
+    --color-accent-200: #d2cefd;
+    --color-accent-300: #b5abfc;
+    --color-accent-400: #b5abfc;
+    --color-accent-500: #968ae0;
+    --color-accent-600: #796cbf;
+    --color-accent-700: #5d5294;
+    --color-accent-800: #2b2741;
+    --color-accent-900: #1f1c30;
+    --color-divider: #2b2e3a;
+    --font-heading: Inter, system-ui, sans-serif;
+    --font-heading-weight: 500;
+    --font-body: Inter, system-ui, sans-serif;
+    --space-2: 4px; --space-3: 6px; --space-4: 10px; --space-6: 14px; --space-8: 20px;
+    --radius-sm: 5px; --radius-md: 8px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.55);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--color-bg); color: var(--color-text);
+    font-family: var(--font-body); -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--color-accent-300); }
+  a:hover { color: var(--color-accent-200); }
+
+  /* ---- phone shell (drop this if you're mounting in your own frame) ---- */
+  .phone {
+    position: relative; width: 402px; height: 874px; margin: 32px auto;
+    border-radius: 44px; overflow: hidden; background: var(--color-bg);
+    box-shadow: var(--shadow-lg);
+    display: flex; flex-direction: column;
+  }
+
+  /* ---- HUD pills ---- */
+  .one-toast { position: absolute; left: 22px; right: 22px; bottom: 96px; z-index: 50; padding: 10px 14px; border-radius: var(--radius-md);
+               background: var(--color-surface); box-shadow: var(--shadow-lg), 0 0 0 1px var(--color-neutral-800); font-size: 12px; text-align: center;
+               color: var(--color-neutral-200); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .25s, transform .25s; }
+  .one-toast.show { opacity: 1; transform: none; }
+  /* ---- explore: villa carousel ---- */
+  .vseg { position: absolute; top: 56px; left: 22px; right: 22px; z-index: 6; display: flex; padding: 2px; border-radius: 999px;
+          background: var(--color-neutral-900); box-shadow: inset 0 0 0 1px var(--color-neutral-800); }
+  .vseg > span:not(.vseg-pill) { position: relative; z-index: 1; flex: 1; text-align: center; padding: 6px 0; font-size: 11px; letter-spacing: .02em; color: var(--color-neutral-400); cursor: pointer; transition: color .3s; }
+  .vseg > span.on { color: var(--color-text); }
+  .vseg-pill { position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / 3); border-radius: 999px;
+               background: var(--color-neutral-800); box-shadow: inset 0 0 0 1px var(--color-neutral-700); transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+  .vstack { position: absolute; left: 0; right: 0; top: 92px; bottom: 0; overflow: hidden; touch-action: pan-y; }
+  .vtrack { position: absolute; top: 0; bottom: 0; left: 0; width: 300%; display: flex; transition: transform .5s cubic-bezier(.2,.8,.2,1); will-change: transform; }
+  .vcard { position: relative; flex: 0 0 calc(100% / 3); width: calc(100% / 3); min-width: 0; box-sizing: border-box; padding: 0 22px 12px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+  .vcard::-webkit-scrollbar { display: none; }
+  .vcard-glow { position: absolute; top: -30px; left: 50%; width: 340px; height: 260px; margin-left: -170px; pointer-events: none;
+                background: radial-gradient(circle, oklch(0.74 0.125 150 / 0.24) 0%, transparent 65%); }
+  .vcard-art { position: relative; flex: none; height: 168px; width: 100%; display: flex; align-items: center; justify-content: center; animation: exBob 6s ease-in-out infinite; }
+  .vcard-art svg { height: 100%; width: auto; display: block; }
+  .vcard-title { font-family: var(--font-heading); font-size: 24px; font-weight: 500; letter-spacing: -.015em; margin-top: 2px; }
+  .lvl-pill { margin-top: 8px; display: flex; align-items: center; gap: 12px; padding: 5px 14px 5px 6px; border-radius: 999px;
+              background: linear-gradient(180deg, var(--color-accent-700), var(--color-accent-900)); box-shadow: inset 0 1px 0 rgba(233,233,237,.14), 0 0 0 1px var(--color-accent-800), 0 6px 18px rgba(0,0,0,.35); }
+  .lvl-pill .mix { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent-100); padding-left: 6px; }
+  .lvl-pill .price { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; letter-spacing: -.01em; color: #f6e2a4; font-variant-numeric: tabular-nums; }
+  .lvl-pill .price i { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 9px; font-weight: 500; color: #6a4108;
+                       background: radial-gradient(circle at 34% 28%, #ffe9a3 0%, #f6c445 38%, #dc9a1f 72%, #a86b12 100%); box-shadow: inset 0 -1px 2px rgba(120,70,0,.5), 0 0 0 1px #8d5a10; }
+  .vcard-sub { margin-top: 8px; font-size: 12px; text-align: center; color: var(--color-neutral-300); }
+  .vcard-k { margin-top: 10px; font-size: 9px; letter-spacing: .16em; color: var(--color-neutral-400); }
+  .fgrid { width: 100%; display: grid; gap: 6px; grid-template-columns: repeat(6, 1fr); margin-top: 8px; }
+  .fgrid.n5 .fcard { grid-column: span 2; }
+  .fgrid.n5 .fcard:nth-child(4) { grid-column: 2 / span 2; }
+  .fgrid.n5 .fcard:nth-child(5) { grid-column: 4 / span 2; }
+  .fgrid.n4 .fcard { grid-column: span 3; }
+  .fcard { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 6px 7px; min-width: 0; border-radius: 12px;
+           background: linear-gradient(180deg, var(--color-neutral-900), var(--color-neutral-950, #12141d)); box-shadow: inset 0 0 0 1px var(--color-neutral-800), var(--shadow-sm); }
+  .fn { font-size: 8px; letter-spacing: .1em; color: var(--color-neutral-400); white-space: nowrap; margin-top: 2px; }
+  .fa { font-size: 13px; font-weight: 500; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fb { width: 100%; display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .fb i { flex: 1; height: 3px; border-radius: 2px; background: var(--color-neutral-800); position: relative; overflow: hidden; }
+  .fb i b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+  .fb em { font-style: normal; font-size: 9px; color: var(--color-neutral-500); font-variant-numeric: tabular-nums; }
+  .fi { width: 36px; height: 36px; display: grid; place-items: center; position: relative; }
+  .fi.vault::before { content: ''; width: 28px; height: 24px; border-radius: 8px; background: linear-gradient(180deg, #a3bcae, #6f8a7d); box-shadow: inset 0 -3px 5px rgba(0,0,0,.35), 0 0 0 1px #4f6a5c; }
+  .fi.vault i { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 3px solid #2f4a3c; background: #d7e6dc; }
+  .fi.coin i { display: block; width: 10px; height: 24px; border-radius: 4px; transform: rotate(18deg); background: linear-gradient(90deg, #a86b12, #f6c445 40%, #ffe9a3 55%, #dc9a1f); box-shadow: 0 0 0 1px #8d5a10, 0 4px 8px rgba(0,0,0,.4); }
+  .fi.cap::after { content: ''; position: absolute; bottom: 4px; width: 20px; height: 8px; border-radius: 3px 3px 5px 5px; background: linear-gradient(180deg, #8a5a33, #5c3a1c); }
+  .fi.cap i { display: block; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #cfeec4, var(--c) 60%); box-shadow: inset 0 -4px 6px rgba(0,0,0,.28); position: relative; z-index: 1; }
+  .fi.cap i.L { width: 20px; height: 20px; margin-bottom: 9px; }
+  .fi.cap i.M { width: 15px; height: 15px; margin-bottom: 11px; }
+  .fi.cap i.S { width: 11px; height: 11px; margin-bottom: 12px; }
+  .fi.cap i::after { content: ''; position: absolute; left: 50%; top: 100%; width: 3px; height: 8px; margin-left: -1.5px; background: #5c8a3a; }
+  .vcard-worth { width: 100%; display: flex; align-items: baseline; gap: 8px; margin-top: 10px; padding-top: 8px;
+                 border-top: 1px solid transparent; border-image: linear-gradient(90deg, transparent, var(--color-neutral-800) 20%, var(--color-neutral-800) 80%, transparent) 1; }
+  .vcard-worth span { font-size: 11px; color: var(--color-neutral-400); }
+  .vcard-worth b { font-weight: 500; font-size: 20px; letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+  .vcard-worth small { margin-left: auto; font-size: 10px; color: var(--color-neutral-500); white-space: nowrap; }
+  @keyframes exBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+
+  /* ---- inflow / outflow header ---- */
+  .flows { position: absolute; top: 58px; left: 22px; right: 22px; z-index: 30; display: flex; align-items: stretch; }
+  .flows[hidden] { display: none; }
+  .flow { flex: 1; min-width: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+  .flow.out { align-items: flex-end; text-align: right; }
+  .flow:hover .flow-fig { filter: brightness(1.12); }
+  .flow-div { width: 1px; margin: 4px 0; background: linear-gradient(180deg, transparent, rgba(233,233,237,.14), transparent); }
+  .flow-head { display: flex; align-items: center; gap: 6px; }
+  .flow-lbl { font-size: 9px; letter-spacing: .14em; color: var(--color-neutral-400); }
+  .flow-arrow { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                font-size: 11px; line-height: 1; }
+  .flow.in .flow-arrow { color: #6b5111; background: radial-gradient(circle at 34% 28%, #ffe9a3 0%, #f6c445 38%, #dc9a1f 72%, #a86b12 100%); box-shadow: 0 0 8px rgba(246,196,69,.35); }
+  .flow.out .flow-arrow { color: #2b2741; background: radial-gradient(circle at 34% 26%, #e7e5fe 0%, #b5abfc 36%, #796cbf 72%, #423a6a 100%); box-shadow: 0 0 8px rgba(181,171,252,.35); }
+  .flow-fig { font-family: var(--font-heading); font-size: 24px; letter-spacing: -.015em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .flow-fig span:last-child { font-size: 11px; letter-spacing: 0; color: var(--color-neutral-500); margin-left: 2px; }
+  .flow-fig.gold { color: #f3dfa8; }
+  .flow-fig.violet { color: var(--color-accent-200); }
+  .flow-sub { font-size: 10px; color: var(--color-neutral-500); white-space: nowrap; }
+  .hud { position: absolute; top: 58px; right: 18px; z-index: 30;
+         display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .pill { display: flex; align-items: center; cursor: pointer; height: 26px; }
+  .pill .coin { position: relative; z-index: 2; width: 26px; height: 26px; border-radius: 50%;
+                overflow: hidden; display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,.45); }
+  .pill .coin.gold { background: radial-gradient(circle at 34% 28%, #ffe9a3 0%, #f6c445 38%, #dc9a1f 72%, #a86b12 100%);
+                     border: 1.5px solid #8d5a10; }
+  .pill .coin.violet { background: radial-gradient(circle at 34% 26%, #e7e5fe 0%, #b5abfc 36%, #796cbf 72%, #423a6a 100%);
+                       border: 1.5px solid #2b2741; }
+  .pill .coin .face { width: 11px; height: 11px; border-radius: 3px; transform: rotate(45deg);
+                      background: linear-gradient(135deg, #fff3c9, #e8b53c); }
+  .pill .coin.violet .face { width: 10px; height: 13px; border-radius: 50%/62% 62% 38% 38%;
+                             background: linear-gradient(160deg, #f5f4ff, #968ae0 70%, #5d5294); }
+  .pill .coin .sheen { position: absolute; top: 0; left: 0; width: 10px; height: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
+    animation: shine 3.4s ease-in-out infinite; }
+  .pill .body { margin-left: -9px; display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; height: 20px; min-width: 154px; width: auto; white-space: nowrap; padding: 0 10px 0 15px; border-radius: 10px;
+    background: rgba(35,37,50,.92); box-shadow: inset 0 0 0 1px rgba(233,233,237,.10); }
+  .pill .label { flex: none; font-size: 9px; letter-spacing: .12em; color: var(--color-neutral-400); }
+  .pill .value { font-family: var(--font-heading); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .pill .value.gold { color: #f3dfa8; }
+  .pill .value.violet { color: var(--color-accent-200); }
+
+  /* ---- board ---- */
+  .stage { position: relative; flex: 1; min-height: 0;
+           padding: 150px 6px 0; display: flex; flex-direction: column;
+           justify-content: space-evenly; gap: 0; }
+  .glow { position: absolute; top: -40px; left: 50%; width: 340px; height: 340px;
+          margin-left: -170px; border-radius: 50%; pointer-events: none;
+          background: radial-gradient(circle, rgba(108,186,54,.13) 0%, transparent 66%); }
+  .title { text-align: center; }
+  .title .kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); }
+  .title .name { margin-top: 2px; font-family: var(--font-heading); font-size: 24px; letter-spacing: -.01em; }
+
+  .board { position: relative; }
+  .board svg { width: 100%; height: auto; display: block; margin: -10px auto -6px; }
+  .cell { cursor: pointer; }
+  .cell:hover { filter: brightness(1.08); }
+
+  .rent { text-align: center; }
+  .rent .row { display: flex; align-items: baseline; justify-content: center; gap: var(--space-3); }
+  .rent .lbl { font-size: 11px; color: var(--color-neutral-400); }
+  .rent .amt { font-family: var(--font-heading); font-size: 20px; color: var(--color-neutral-200); }
+  .rent .note { margin-top: 3px; font-size: 11px; color: var(--color-neutral-500); }
+  .rent .note b { font-weight: 400; color: var(--color-neutral-300); }
+
+  .legend { display: flex; justify-content: center; gap: var(--space-8);
+            font-size: 11px; color: var(--color-neutral-400); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 9px; height: 9px; }
+  .legend i.villa { background: #efe6d7; }
+  .legend i.plot { background: #6cba36; }
+  .legend i.open { border: 1px dashed var(--color-neutral-700); }
+
+  /* ---- portfolio value + fund mix ---- */
+  .port { padding: 0 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .port-k { font-size: 10px; letter-spacing: .16em; color: var(--color-neutral-400); }
+  .port-v { font-family: var(--font-heading); font-size: 34px; line-height: 1.05; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .port-m { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-neutral-300); }
+  .port-m i { width: 3px; height: 3px; border-radius: 50%; background: var(--color-neutral-600); }
+  .port-m b { font-weight: 400; color: #8fd65a; }
+  .port-bar { width: 100%; display: flex; gap: 2px; height: 5px; border-radius: 3px; overflow: hidden; margin-top: 12px; }
+  .port-bar span { height: 100%; }
+  .port-funds { width: 100%; display: flex; justify-content: space-between; gap: 4px; margin-top: 10px; }
+  .port-funds div { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .port-funds .a { font-size: 13px; font-weight: 500; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .port-funds .n { font-size: 9px; letter-spacing: .06em; white-space: nowrap; }
+
+  .port-ctas { margin-top: 14px; width: 100%; display: flex; gap: 8px; }
+  .port-cta .lv { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 500; color: var(--color-accent-100);
+                  background: linear-gradient(180deg, var(--color-accent-700), var(--color-accent-900)); box-shadow: inset 0 1px 0 rgba(233,233,237,.14); }
+  .port-cta { display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-width: 0; padding: 11px 16px; border-radius: var(--radius-md); cursor: pointer;
+              border: 1px solid var(--color-accent); color: var(--color-accent-100); background: transparent; font-size: 13px; letter-spacing: .01em; position: relative; overflow: hidden;
+              transition: background .25s, transform .15s; }
+  .port-cta:hover { background: var(--color-accent-900); }
+  .port-cta:active { transform: scale(.985); }
+  .port-cta::after { content: ''; position: absolute; top: 0; left: -40%; width: 30%; height: 100%; background: linear-gradient(90deg, transparent, rgba(145,132,217,.22), transparent); transform: skewX(-18deg); animation: ctaSheen 4.2s ease-in-out infinite; }
+  .port-cta b { font-weight: 500; }
+  .port-cta i { font-style: normal; color: var(--color-accent-300); transition: transform .25s; }
+  .port-cta:hover i { transform: translateX(3px); }
+  @keyframes ctaSheen { 0%,60% { left: -40%; } 100% { left: 120%; } }
+
+  /* ---- portfolio page ---- */
+  #scr-portfolio { overflow-y: auto; scrollbar-width: none; }
+  #scr-portfolio::-webkit-scrollbar { display: none; }
+  .pf { padding: 56px 22px 28px; display: flex; flex-direction: column; }
+  .pf-k { font-size: 10px; letter-spacing: .16em; color: var(--color-neutral-400); }
+  .pf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .pf-v { font-family: var(--font-heading); font-size: 36px; line-height: 1.05; letter-spacing: -.025em; font-variant-numeric: tabular-nums; margin-top: 8px; }
+  .pf-delta { margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-neutral-400); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pf-head > div:first-child { min-width: 0; }
+  .pf-delta b { font-weight: 500; color: #8fd48a; }
+  .pf-delta i { width: 3px; height: 3px; border-radius: 50%; background: var(--color-neutral-600); }
+  .pf-lvl { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 12px 7px; border-radius: 12px; margin-top: 4px;
+            background: linear-gradient(180deg, var(--color-accent-800), var(--color-accent-900)); box-shadow: inset 0 1px 0 rgba(233,233,237,.12), 0 0 0 1px var(--color-accent-800); }
+  .pf-lvl b { font-family: var(--font-heading); font-size: 20px; font-weight: 500; line-height: 1; color: var(--color-accent-100); }
+  .pf-lvl span { font-size: 8px; letter-spacing: .14em; color: var(--color-accent-300); }
+  .pf-chart { position: relative; margin: 14px -6px 0; height: 118px; }
+  .pf-chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .pf-chart .ln { fill: none; stroke: var(--color-accent); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1000; stroke-dashoffset: 1000; }
+  .pf-chart .ar { fill: url(#pfGrad); opacity: 0; }
+  .pf-chart .inv { fill: none; stroke: var(--color-neutral-600); stroke-width: 1; stroke-dasharray: 3 4; }
+  .pf-chart .dot { fill: var(--color-accent-100); stroke: var(--color-accent); stroke-width: 2; opacity: 0; transform-origin: center; transform-box: fill-box; }
+  .pf.live .pf-chart .ln { animation: pfDraw 1.6s cubic-bezier(.4,0,.2,1) forwards; }
+  .pf.live .pf-chart .ar { animation: pfFade .8s .9s forwards; }
+  .pf.live .pf-chart .dot { animation: pfPop .5s 1.5s cubic-bezier(.2,1.4,.4,1) forwards; }
+  @keyframes pfDraw { to { stroke-dashoffset: 0; } }
+  @keyframes pfFade { to { opacity: 1; } }
+  @keyframes pfPop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+  .pf-axis { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: .06em; color: var(--color-neutral-500); margin-top: 2px; }
+  .pf-axis span:last-child { color: var(--color-neutral-300); }
+
+  .pf-rank { margin-top: 22px; display: grid; grid-template-columns: 72px 1fr; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 14px;
+             background: linear-gradient(135deg, var(--color-neutral-900), var(--color-neutral-950, #12141d)); box-shadow: inset 0 0 0 1px var(--color-neutral-800), var(--shadow-sm); position: relative; overflow: hidden; }
+  .pf-rank::before { content: ''; position: absolute; right: -40px; top: -60px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(145,132,217,.18), transparent 70%); pointer-events: none; }
+  .pf-ring { position: relative; width: 72px; height: 72px; }
+  .pf-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .pf-ring .bg { fill: none; stroke: var(--color-neutral-800); stroke-width: 5; }
+  .pf-ring .fg { fill: none; stroke: var(--color-accent); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 201; stroke-dashoffset: 201; }
+  .pf.live .pf-ring .fg { animation: pfRing 1.4s .4s cubic-bezier(.4,0,.2,1) forwards; }
+  @keyframes pfRing { to { stroke-dashoffset: var(--off); } }
+  .pf-ring b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-heading); font-size: 15px; font-weight: 500; letter-spacing: -.02em; }
+  .pf-rank h3 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: -.01em; line-height: 1.3; }
+  .pf-rank h3 em { font-style: normal; color: var(--color-accent-200); }
+  .pf-rank p { margin: 4px 0 0; font-size: 11px; line-height: 1.4; color: var(--color-neutral-400); }
+  .pf-rank { padding: 12px 14px; }
+
+  .pf-keys { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pf-keys > div { padding: 12px 14px; border-radius: 12px; background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-neutral-800); opacity: 0; transform: translateY(8px); }
+  .pf.live .pf-keys > div { animation: pfUp .5s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 60ms + .35s); }
+  .pf-keys b { display: block; font-family: var(--font-heading); font-size: 20px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .pf-keys span { display: block; font-size: 11px; color: var(--color-neutral-300); margin-top: 3px; }
+  .pf-keys small { display: block; font-size: 10px; color: var(--color-neutral-500); margin-top: 2px; }
+  .pf-keys > div:first-child b { color: #f3dfa8; }
+  .pf-ladder { margin-top: 18px; }
+  .pf-ladder-h { display: flex; align-items: baseline; justify-content: space-between; }
+  .pf-ladder-h span { flex: none; white-space: nowrap; font-size: 11px; color: var(--color-neutral-400); }
+  .pf-ladder-h b { font-weight: 500; font-size: 11px; color: var(--color-neutral-300); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pf-ladder-h > b { color: var(--color-accent-300); font-weight: 400; }
+  .pf-tiles { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; margin-top: 8px; }
+  .pf-tiles i { display: block; height: 6px; border-radius: 3px; background: var(--color-neutral-800); transform: scaleX(0); transform-origin: left; }
+  .pf-tiles i.own { background: var(--color-accent); }
+  .pf-tiles i.bld { background: repeating-linear-gradient(90deg, var(--color-accent-400) 0 3px, var(--color-accent-800) 3px 6px); }
+  .pf.live .pf-tiles i { animation: pfTile .5s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 60ms + .3s); }
+  @keyframes pfTile { to { transform: scaleX(1); } }
+  .pf-ladder-n { margin-top: 7px; font-size: 11px; color: var(--color-neutral-500); }
+  .pf-ladder-n b { font-weight: 400; color: var(--color-neutral-300); }
+
+  .pf-sec { margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between; }
+  .pf-sec h2 { margin: 0; font-size: 17px; font-weight: 500; letter-spacing: -.015em; }
+  .pf-sec span { font-size: 11px; color: var(--color-neutral-500); }
+  .pf-hold { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .hd { border-radius: 14px; background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-neutral-800), var(--shadow-sm); overflow: hidden; opacity: 0; transform: translateY(10px); }
+  .pf.live .hd { animation: pfUp .55s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 70ms + .5s); }
+  @keyframes pfUp { to { opacity: 1; transform: none; } }
+  .hd-top { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px 12px 10px; cursor: pointer; }
+  .hd-top:hover { background: var(--color-neutral-900); }
+  .hd-art { width: 54px; height: 44px; display: grid; place-items: center; }
+  .hd-art svg { width: 54px; height: 44px; overflow: visible; }
+  .hd-name { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; letter-spacing: -.01em; }
+  .hd-tag { font-size: 8px; letter-spacing: .12em; padding: 3px 7px; border-radius: 999px; background: var(--color-accent-900); color: var(--color-accent-200); box-shadow: inset 0 0 0 1px var(--color-accent-800); }
+  .hd-tag.bld { background: var(--color-neutral-900); color: var(--color-neutral-300); box-shadow: inset 0 0 0 1px var(--color-neutral-700); }
+  .hd-sub { margin-top: 4px; font-size: 11px; color: var(--color-neutral-500); font-variant-numeric: tabular-nums; }
+  .hd-mix { margin-top: 7px; display: flex; gap: 2px; height: 3px; border-radius: 2px; overflow: hidden; }
+  .hd-mix span { height: 100%; }
+  .hd-val { text-align: right; font-variant-numeric: tabular-nums; }
+  .hd-val b { display: block; font-weight: 500; font-size: 15px; letter-spacing: -.015em; }
+  .hd-val span { display: block; font-size: 11px; color: #8fd48a; margin-top: 2px; }
+  .hd-val em { display: block; font-style: normal; font-size: 10px; color: var(--color-neutral-500); margin-top: 6px; transition: transform .3s; }
+  .hd.open .hd-val em { transform: rotate(180deg); }
+  .hd-body { max-height: 0; overflow: hidden; transition: max-height .45s cubic-bezier(.4,0,.2,1); }
+  .hd.open .hd-body { max-height: 420px; }
+  .hd-funds { padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 1px; border-top: 1px solid transparent; border-image: linear-gradient(90deg, transparent, var(--color-neutral-800) 15%, var(--color-neutral-800) 85%, transparent) 1; }
+  .hf { display: grid; grid-template-columns: 8px 1fr 76px auto; gap: 10px; align-items: center; padding: 9px 0; }
+  .hf + .hf { border-top: 1px solid var(--color-neutral-900); }
+  .hf i { width: 8px; height: 8px; border-radius: 2px; }
+  .hf .n { font-size: 12px; }
+  .hf .n small { display: block; font-size: 10px; color: var(--color-neutral-500); margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .hf svg { width: 76px; height: 22px; overflow: visible; }
+  .hf svg path { fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .hf .v { text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+  .hf .v small { display: block; font-size: 10px; color: #8fd48a; margin-top: 1px; }
+  .hd-note { padding: 0 14px 12px; font-size: 10px; line-height: 1.5; color: var(--color-neutral-500); }
+
+  .pf-funds { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .pfund { display: grid; grid-template-columns: 34px 1fr 64px; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-neutral-800); opacity: 0; transform: translateY(8px); }
+  .pf.live .pfund { animation: pfUp .5s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 60ms + .9s); }
+  .pfund .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--color-neutral-900); }
+  .pfund .ic i { display: block; width: 12px; height: 12px; border-radius: 50%; }
+  .pfund .n { font-size: 12px; font-weight: 500; }
+  .pfund .n small { display: block; font-size: 10px; color: var(--color-neutral-500); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .pfund .bar { margin-top: 6px; height: 3px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden; }
+  .pfund .bar i { display: block; height: 100%; border-radius: 2px; transform: scaleX(0); transform-origin: left; }
+  .pf.live .pfund .bar i { animation: pfTile .9s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i) * 60ms + 1.2s); }
+  .pfund .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .pfund .r b { display: block; font-weight: 500; font-size: 15px; letter-spacing: -.015em; color: #8fd48a; }
+  .pfund .r small { display: block; font-size: 9px; letter-spacing: .06em; color: var(--color-neutral-500); margin-top: 2px; }
+  .pf-more { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 12px; cursor: pointer; font-size: 12px; color: var(--color-neutral-300);
+             box-shadow: inset 0 0 0 1px var(--color-neutral-800); }
+  .pf-more:hover { background: var(--color-neutral-900); }
+  .pf-more i { font-style: normal; color: var(--color-accent-300); }
+  .pf-fine { margin-top: 16px; font-size: 10px; line-height: 1.5; color: var(--color-neutral-500); }
+  .pf-back { position: absolute; top: 56px; left: 22px; z-index: 5; font-size: 12px; color: var(--color-accent-300); cursor: pointer; }
+
+  .fine-row { display: flex; align-items: center; gap: var(--space-4); font-size: 12px; line-height: 1.5; color: var(--color-neutral-400); }
+  .fine-mini { width: 40px; height: 30px; flex: none; display: block; }
+  .fine-mini.lg { width: 72px; height: 54px; }
+  .fine-link { text-align: center; font-size: 11px; color: var(--color-neutral-500); cursor: pointer; }
+  .fine-link span { color: var(--color-accent-300); }
+  .fine-link:hover { color: var(--color-neutral-300); }
+  .fine-row b { font-weight: 400; color: var(--color-neutral-300); }
+  .fine-note { margin-top: 2px; text-align: center; }
+  .fine { flex: none; padding: var(--space-4) 22px var(--space-6);
+          font-size: 11px; line-height: 1.5; color: var(--color-neutral-500); }
+
+  /* ---- tab bar ---- */
+  .tabs { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 60;
+          display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 34px;
+          background: rgba(30,33,48,.94); box-shadow: 0 0 0 1px var(--color-neutral-700,#2b2e3a), 0 12px 30px rgba(0,0,0,.5);
+          backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .tabs div { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 23px;
+              cursor: pointer; color: var(--color-neutral-400); transition: background .25s, padding .25s, color .25s; }
+  .tabs div.on { color: var(--color-accent-300); background: #2b2741; padding: 0 22px; }
+  .tabs div svg, .tabs div > span:first-child { flex: none; }
+  .tabs span.lbl { display: none; font-size: 15px; font-weight: 500; letter-spacing: -.01em; }
+  .tabs div.on span.lbl { display: inline; }
+  .tabs div[data-tab="explore"] { display: none; }
+
+  /* ---- modal ---- */
+  .scrim { position: absolute; inset: 0; z-index: 40; display: none;
+    align-items: center; justify-content: center; padding: 22px;
+    background: rgba(11,13,22,.62); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
+  .scrim.open { display: flex; }
+  .sheet { width: 100%; max-width: 340px; border-radius: var(--radius-md);
+           background: var(--color-surface); box-shadow: var(--shadow-lg); overflow: hidden; }
+  .sheet .hero { height: 118px; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 62%, rgba(108,186,54,.24) 0%, transparent 68%); }
+  .sheet .hero svg { width: 78%; height: 100%; display: block; }
+  .sheet .pad { padding: var(--space-4) var(--space-6) var(--space-6); }
+  .sheet .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .sheet .h { font-family: var(--font-heading); font-size: 17px; }
+  .sheet .close { cursor: pointer; font-size: 11px; color: var(--color-neutral-500); }
+  .sheet .sub { margin-top: 6px; font-size: 12px; color: var(--color-neutral-400); }
+  .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px;
+         letter-spacing: .04em; background: var(--color-accent-800); color: var(--color-accent-200); }
+
+  /* ---- SIP status sheet (opens from an open tile) ---- */
+  .sip { position: absolute; inset: 0; z-index: 45; display: none; flex-direction: column;
+         background: var(--color-bg); }
+  .sip.open { display: flex; animation: sipIn .45s cubic-bezier(.2,.9,.3,1.05) both; }
+  @keyframes sipIn { 0% { transform: translateY(100%); opacity: .4 } 100% { transform: translateY(0); opacity: 1 } }
+  .sip-nav { display: flex; align-items: center; justify-content: space-between; padding: 58px 22px 0; }
+  .sip-back { font-size: 13px; color: var(--color-accent-300); cursor: pointer; }
+  .sip-kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); }
+  .sip-body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+  .sip-top { position: relative; z-index: 2; padding: 18px 22px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .sip-income { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .sip-income .coin { width: 30px; height: 30px; }
+  .sip-income .coin.dim { opacity: .45; }
+  .sip-fig { font-size: 22px; font-family: var(--font-heading); letter-spacing: -.01em; color: var(--color-neutral-400); }
+  .sip-fig.on { color: var(--color-text); }
+  .sip-segs { display: flex; gap: 4px; margin-top: 4px; }
+  .sip-segs span { width: 34px; height: 4px; border-radius: 2px; background: var(--color-neutral-800); transition: background .5s, box-shadow .5s; }
+  .sip-segs span.on { background: #6cba36; box-shadow: 0 0 8px rgba(108,186,54,.5); }
+  .sip-line { font-size: 11px; color: var(--color-neutral-300); }
+  .sip-line b { font-weight: 400; color: #8fd65a; }
+  .sip-stage { margin-top: 14px; text-align: center; }
+  .sip-stage .n { font-family: var(--font-heading); font-size: 30px; letter-spacing: -.01em; }
+  .sip-stage .t { margin-top: 4px; font-size: 10px; letter-spacing: .16em; color: #8fd65a; }
+  .sip-hero { position: absolute; left: 0; right: 0; top: 150px; bottom: 170px; display: flex; align-items: center; justify-content: center;
+              background: radial-gradient(ellipse at 50% 55%, rgba(108,186,54,.18) 0%, transparent 62%); }
+  .sip-hero svg { width: 92%; height: 100%; display: block; overflow: visible; }
+  .sip-hero.pop svg { animation: sipPop .9s cubic-bezier(.2,.9,.3,1.15) both; }
+  @keyframes sipPop { 0% { transform: translateY(30px) scale(.92); opacity: .3 } 60% { transform: translateY(-8px) scale(1.02); opacity: 1 } 100% { transform: none } }
+  .sip-bottom { position: absolute; left: 22px; right: 22px; bottom: 18px; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .sip-val { font-family: var(--font-heading); font-size: 40px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .sip-meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--color-neutral-300); }
+  .sip-meta i { width: 3px; height: 3px; border-radius: 50%; background: var(--color-neutral-600); }
+  .sip-meta b { font-weight: 400; color: #8fd65a; }
+  .sip-cta { margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px;
+             border-radius: var(--radius-md); border: 1px solid var(--color-accent); color: var(--color-accent-200); font-size: 13px; cursor: pointer; }
+  .sip-cta:hover { background: var(--color-accent-900); }
+  .sip-cta:active { transform: scale(.98); }
+  .sip-fine { font-size: 10px; line-height: 1.5; color: var(--color-neutral-500); text-align: center; }
+  .sip-toast { position: absolute; top: 96px; left: 14px; right: 14px; z-index: 6; display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 12px;
+               border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg), 0 0 0 1px var(--color-neutral-800);
+               pointer-events: none; opacity: 0; }
+  .sip-toast.show { animation: sipToast 2.6s both; }
+  @keyframes sipToast { 0% { transform: translateY(-120%); opacity: 0 } 12% { transform: translateY(0); opacity: 1 } 80% { transform: translateY(0); opacity: 1 } 100% { transform: translateY(-120%); opacity: 0 } }
+  .sip-toast .coin { width: 30px; height: 30px; }
+  .sip-toast .k { font-size: 10px; letter-spacing: .14em; color: #8fd65a; }
+  .sip-toast .v { font-family: var(--font-heading); font-size: 18px; }
+  .sip-toast .d { margin-left: auto; font-size: 11px; color: var(--color-neutral-400); white-space: nowrap; }
+  .cell.building { filter: drop-shadow(0 0 6px rgba(108,186,54,.35)); }
+
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+  /* ---- settings ---- */
+  .st { flex: 1; min-height: 0; overflow-y: auto; padding: 58px 22px 24px; display: flex; flex-direction: column; gap: 22px; }
+  .st > * { flex: none; }
+  .st-k { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-neutral-400); }
+  .st-id { display: flex; align-items: center; gap: 14px; }
+  .st-av { position: relative; width: 56px; height: 56px; border-radius: 16px; flex: none; display: flex; align-items: center; justify-content: center;
+           font-family: var(--font-heading); font-size: 24px; color: var(--color-accent-100);
+           background: radial-gradient(circle at 30% 25%, var(--color-accent-500), var(--color-accent-800));
+           box-shadow: 0 0 0 1px var(--color-accent-700), 0 8px 22px -8px var(--color-accent-700); }
+  .st-av i { position: absolute; right: -4px; bottom: -4px; width: 20px; height: 20px; border-radius: 50%; background: var(--color-surface);
+             box-shadow: 0 0 0 1px var(--color-neutral-700); display: flex; align-items: center; justify-content: center; color: var(--color-accent-300); }
+  .st-name { font-family: var(--font-heading); font-size: 20px; line-height: 1.2; }
+  .st-sub { font-size: 12px; color: var(--color-neutral-400); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .st-kyc { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 6px; border-radius: 999px; font-size: 10px; letter-spacing: .06em;
+            background: rgba(88,184,88,.12); color: #8fd48f; }
+  .st-kyc::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #58b858; box-shadow: 0 0 0 3px rgba(88,184,88,.18); }
+  .st-out { margin-left: auto; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--color-neutral-800); background: transparent;
+            color: var(--color-neutral-400); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .st-out:hover { background: var(--color-neutral-900); color: var(--color-neutral-200); }
+
+  /* presentation: poster with a miniature of the estate and a pulsing play ring */
+  .st-pres { position: relative; display: block; border-radius: 16px; overflow: hidden; height: 160px; cursor: pointer;
+             background: linear-gradient(160deg, #23263a 0%, #191b2a 60%, #161826 100%); box-shadow: 0 0 0 1px var(--color-neutral-800), 0 14px 30px -14px rgba(0,0,0,.7); }
+  .st-pres:hover .st-play { transform: scale(1.06); }
+  .st-pres .mini { position: absolute; right: -6px; top: -8px; width: 196px; opacity: .95; filter: drop-shadow(0 18px 26px rgba(0,0,0,.5)); }
+  .st-pres .glow { position: absolute; right: 30px; top: 30px; width: 200px; height: 130px; border-radius: 50%; pointer-events: none;
+                   background: radial-gradient(circle, rgba(145,132,217,.28), transparent 70%); }
+  .st-pres .txt { position: absolute; left: 18px; bottom: 16px; right: 150px; }
+  .st-pres .txt b { display: block; font-weight: 500; font-size: 16px; line-height: 1.25; }
+  .st-pres .txt span { display: block; font-size: 11px; color: var(--color-neutral-400); margin-top: 4px; }
+  .st-pres .dur { position: absolute; left: 18px; top: 14px; font-size: 10px; letter-spacing: .12em; color: var(--color-accent-300); display: flex; gap: 6px; align-items: center; }
+  .st-pres .dur::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--color-accent); }
+  .st-play { position: absolute; right: 16px; bottom: 16px; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+             background: var(--color-accent-100); color: #2b2741; transition: transform .25s ease; }
+  .st-play::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid var(--color-accent-300); animation: playRing 2.2s ease-out infinite; }
+  @keyframes playRing { 0% { transform: scale(.85); opacity: .9 } 100% { transform: scale(1.5); opacity: 0 } }
+
+  /* transactions */
+  .st-card { border-radius: 16px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); overflow: hidden; }
+  .st-card-h { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 16px 6px; }
+  .st-card-h a { font-size: 12px; color: var(--color-accent-300); text-decoration: none; }
+  .tx { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-top: 1px solid var(--color-divider); }
+  .tx:first-child { border-top: 0; }
+  .tx { opacity: 0; transform: translateY(6px); animation: txIn .45s ease forwards; }
+  .tx:nth-child(2) { animation-delay: .05s } .tx:nth-child(3) { animation-delay: .1s } .tx:nth-child(4) { animation-delay: .15s } .tx:nth-child(5) { animation-delay: .2s } .tx:nth-child(6) { animation-delay: .25s }
+  @keyframes txIn { to { opacity: 1; transform: none } }
+  .tx-ic { width: 32px; height: 32px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; }
+  .tx-ic.in { background: rgba(233,193,92,.14); color: #e9c15c; }
+  .tx-ic.out { background: rgba(145,132,217,.14); color: var(--color-accent-300); }
+  .tx-t { flex: 1; min-width: 0; }
+  .tx-t b { display: block; font-weight: 500; font-size: 13px; line-height: 1.25; }
+  .tx-t span { display: block; font-size: 11px; color: var(--color-neutral-500); margin-top: 1px; }
+  .tx-a { text-align: right; font-variant-numeric: tabular-nums; }
+  .tx-a b { display: block; font-weight: 500; font-size: 13px; }
+  .tx-a.in b { color: #e9c15c; } .tx-a.out b { color: var(--color-accent-200); }
+  .tx-a span { display: block; font-size: 10px; letter-spacing: .02em; color: var(--color-neutral-500); margin-top: 1px; line-height: 1.3; }
+  .tx-a { flex: none; max-width: 96px; }
+
+  /* mandate + manager */
+  .st-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+  .st-row + .st-row { border-top: 1px solid var(--color-divider); }
+  .st-row:hover { background: var(--color-neutral-900); }
+  .st-ic { width: 36px; height: 36px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--color-neutral-900); color: var(--color-neutral-300); }
+  .st-row .t { flex: 1; min-width: 0; } .st-row .t b { display: block; font-weight: 500; font-size: 14px; } .st-row .t span { display: block; font-size: 11px; color: var(--color-neutral-500); margin-top: 2px; }
+  .st-row .r { font-size: 11px; color: var(--color-neutral-500); display: flex; align-items: center; gap: 8px; }
+  .st-row .r i { color: var(--color-neutral-600); font-style: normal; }
+  .ring { position: relative; width: 36px; height: 36px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--color-accent-200);
+          background: conic-gradient(var(--color-accent) calc(var(--p) * 1%), var(--color-neutral-800) 0); }
+  .ring::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--color-surface); }
+  .ring span { position: relative; }
+  .st-mgr { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  .st-mgr .av { width: 40px; height: 40px; border-radius: 50%; flex: none; background: radial-gradient(circle at 35% 30%, #5b5f75, #2b2e3a); box-shadow: 0 0 0 1px var(--color-neutral-700);
+                display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--color-neutral-200); }
+  .st-mgr .t { flex: 1; min-width: 0; } .st-mgr .t b { display: block; font-weight: 500; font-size: 14px; } .st-mgr .t span { display: block; font-size: 11px; color: var(--color-neutral-500); margin-top: 2px; }
+  .st-act { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--color-accent-700); color: var(--color-accent-200); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .st-act:hover { background: rgba(145,132,217,.12); }
+  .st-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .st-stats > div { padding: 12px 14px; border-radius: 14px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); }
+  .st-stats span { display: block; font-size: 9px; letter-spacing: .14em; color: var(--color-neutral-400); }
+  .st-stats b { display: block; font-weight: 500; font-size: 22px; letter-spacing: -.01em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .st-stats > div:nth-child(2) b { color: var(--color-accent-200); }
+  .st-stats i { display: block; font-style: normal; font-size: 10px; color: var(--color-neutral-500); margin-top: 3px; }
+  .tx-ic.lump { background: rgba(145,132,217,.22); color: var(--color-accent-100); }
+  .tx-more[hidden] { display: none; }
+  .tx-more .tx { animation-delay: 0s; }
+  .fo { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 11px 16px; }
+  .fo + .fo { border-top: 1px solid var(--color-divider); }
+  .fo b { font-weight: 500; font-size: 13px; } .fo span { grid-row: 2; font-size: 10px; color: var(--color-neutral-500); letter-spacing: .04em; }
+  .fo em { grid-row: 1 / span 2; align-self: center; font-style: normal; font-size: 13px; color: var(--color-neutral-200); font-variant-numeric: tabular-nums; }
+  .kv { display: grid; grid-template-columns: 16px 1fr; gap: 12px; align-items: center; padding: 11px 16px; font-size: 12px; }
+  .kv + .kv { border-top: 1px solid var(--color-divider); }
+  .kv span { color: var(--color-neutral-500); display: flex; } .kv b { font-weight: 400; color: var(--color-neutral-200); word-break: break-word; line-height: 1.4; }
+  .st-hero { position: relative; padding: 18px 18px 16px; border-radius: 18px; overflow: hidden; background: linear-gradient(160deg, #23263a 0%, #1b1d2d 55%, #161826 100%);
+             box-shadow: 0 0 0 1px var(--color-neutral-800), 0 14px 30px -14px rgba(0,0,0,.7); }
+  .st-hero::before { content: ''; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(145,132,217,.22), transparent 70%); }
+  .st-hero-k { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); }
+  .st-hero-v { font-family: var(--font-heading); font-size: 36px; letter-spacing: -.02em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .st-hero-s { font-size: 11px; color: var(--color-neutral-500); margin-top: 4px; }
+  .st-alloc { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 16px; gap: 2px; }
+  .st-alloc i { display: block; height: 100%; border-radius: 2px; transform-origin: left; animation: growX .8s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes growX { from { transform: scaleX(0) } }
+  .st-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 11px; color: var(--color-neutral-300); }
+  .st-legend span { display: inline-flex; align-items: center; gap: 6px; } .st-legend s, .st-cal-f s, .fo s { text-decoration: none; display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
+
+  .st-cal { padding: 14px 16px 12px; border-radius: 16px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); }
+  .st-cal-h { display: flex; justify-content: space-between; align-items: baseline; } .st-cal-m { font-size: 11px; color: var(--color-neutral-500); }
+  .st-cal-track { position: relative; height: 62px; margin: 22px 4px 0; }
+  .st-cal-track::before { content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: linear-gradient(90deg, transparent, var(--color-neutral-700) 8%, var(--color-neutral-700) 92%, transparent); }
+  .ev { position: absolute; top: 0; width: 0; }
+  .ev i { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--color-surface); border: 2px solid var(--color-accent); box-sizing: border-box; }
+  .ev.done i { background: var(--color-accent); } .ev.in i { border-color: #e9c15c; } .ev.now i { border-color: var(--color-neutral-200); width: 10px; height: 10px; left: -5px; top: 2px; }
+  .ev.now i::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 1px solid var(--color-neutral-400); animation: playRing 2s ease-out infinite; }
+  .ev b, .ev span, .ev em { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; text-align: center; font-style: normal; }
+  .ev b { top: 22px; font-weight: 500; font-size: 11px; } .ev span { top: 37px; font-size: 10px; color: var(--color-neutral-500); } .ev em { top: 38px; font-size: 11px; color: var(--color-accent-200); font-variant-numeric: tabular-nums; }
+  .ev.in em { color: #e9c15c; }
+  .st-cal-f { display: flex; gap: 14px; margin-top: 8px; font-size: 10px; color: var(--color-neutral-500); } .st-cal-f span { display: inline-flex; align-items: center; gap: 6px; }
+  .st-cal-f .dot { border-radius: 50%; } .st-cal-f .dot.done { background: var(--color-accent); } .st-cal-f .dot.in { background: #e9c15c; }
+
+  .swp { display: flex; align-items: center; gap: 12px; padding: 14px 16px; } .swp + .swp { border-top: 1px solid var(--color-divider); }
+  .swp-ic { width: 36px; height: 36px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; }
+  .swp-ic.gold { background: rgba(233,193,92,.14); color: #e9c15c; }
+  .swp .t { flex: 1; min-width: 0; } .swp .t > b { display: block; font-weight: 500; font-size: 15px; } .swp .t > b small { font-size: 11px; font-weight: 400; color: var(--color-neutral-400); }
+  .swp .t > span { display: block; font-size: 11px; color: var(--color-neutral-500); margin-top: 2px; }
+  .swp-run { height: 4px; border-radius: 2px; background: var(--color-neutral-800); margin-top: 10px; overflow: hidden; } .swp-run i { display: block; height: 100%; background: #e9c15c; min-width: 3px; border-radius: 2px; }
+  .swp-n { display: block; font-size: 10px; color: var(--color-neutral-500); margin-top: 5px; }
+
+  .fo { display: grid; grid-template-columns: 8px 1fr auto; grid-template-rows: auto auto; gap: 4px 10px; align-items: center; padding: 12px 16px; }
+  .fo + .fo { border-top: 1px solid var(--color-divider); }
+  .fo s { grid-row: 1; border-radius: 50% !important; } .fo .t { grid-column: 2; min-width: 0; } .fo .a { grid-column: 3; text-align: right; font-variant-numeric: tabular-nums; }
+  .fo .t b, .fo .a b { display: block; font-weight: 500; font-size: 13px; } .fo .t span, .fo .a span { display: block; font-size: 10px; color: var(--color-neutral-500); margin-top: 1px; letter-spacing: .02em; }
+  .fo .bar { grid-column: 2 / 4; height: 3px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden; } .fo .bar i { display: block; height: 100%; min-width: 2px; border-radius: 2px; transform-origin: left; animation: growX .8s cubic-bezier(.2,.7,.2,1) both; }
+
+  .st-upd { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--color-accent-700); background: rgba(145,132,217,.08); color: var(--color-text); cursor: pointer; text-align: left; font: inherit; }
+  .st-upd:hover { background: rgba(145,132,217,.14); }
+  .st-upd-ic { width: 36px; height: 36px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--color-accent-800); color: var(--color-accent-100); }
+  .st-upd.busy .st-upd-ic svg { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg) } }
+  .st-upd .t { flex: 1; min-width: 0; } .st-upd .t b { display: block; font-weight: 500; font-size: 14px; } .st-upd .t span { display: block; font-size: 11px; color: var(--color-neutral-400); margin-top: 2px; }
+  .st-upd-arrow { color: var(--color-neutral-500); }
+  .st-foot { text-align: center; font-size: 11px; color: var(--color-neutral-500); padding: 4px 0 10px; }
+  .st-foot b { font-weight: 400; color: var(--color-neutral-400); }
+
+  /* ---- screens ---- */
+  .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .screen[hidden] { display: none; }
+  .hud[hidden] { display: none; }
+  .pane { flex: 1; min-height: 0; overflow-y: auto; padding: 62px 22px var(--space-8); }
+
+  .tier[hidden] { display: none; }
+  .ph-navrow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .ph-back { font-size: 13px; color: var(--color-accent-300); cursor: pointer; }
+  .ph-more { margin-top: var(--space-6); text-align: center; font-size: 13px;
+             color: var(--color-neutral-400); cursor: pointer; }
+  .ph-more:hover, .ph-back:hover { color: var(--color-accent-200); }
+  .ph-kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); }
+  .ph-hero { height: 190px; display: flex; align-items: center; justify-content: center;
+             background: radial-gradient(circle at 50% 60%, rgba(108,186,54,.16) 0%, transparent 68%); }
+  .ph-hero svg { width: 86%; height: 100%; display: block; }
+  .ph-h1 { margin: var(--space-4) 0 0; font-family: var(--font-heading); font-weight: 500;
+           font-size: 42px; letter-spacing: -.015em; text-align: center; }
+  .ph-sub { margin-top: 8px; text-align: center; font-size: 15px; color: var(--color-neutral-300); }
+  .ph-figrow { margin-top: var(--space-6); display: flex; align-items: baseline;
+               justify-content: center; gap: var(--space-3); }
+  .ph-big { font-family: var(--font-heading); font-size: 38px; letter-spacing: -.015em; }
+  .ph-mid { font-family: var(--font-heading); font-size: 30px; letter-spacing: -.015em; }
+  .ph-tag { font-size: 13px; color: var(--color-accent-300); white-space: nowrap; }
+  .ph-lbl { font-size: 10px; letter-spacing: .12em; color: var(--color-neutral-400); }
+  .ph-split { margin-top: var(--space-3); display: flex; justify-content: center; flex-wrap: wrap;
+              gap: var(--space-3); font-size: 11px; color: var(--color-neutral-400); }
+  .ph-split b { font-weight: 400; color: var(--color-neutral-300); }
+  .ph-split i { color: var(--color-neutral-700); font-style: normal; }
+  .acc { color: var(--color-accent-200); }
+  .gold { color: #d9b463; }
+
+  .ph-rail { margin-top: var(--space-8); display: flex; justify-content: space-between;
+             font-size: 12px; color: var(--color-neutral-500);
+             border-top: 1px solid var(--color-neutral-800); padding-top: var(--space-6); }
+  .ph-rail .sel { color: var(--color-accent-200); }
+
+  .ph-cost { margin-top: var(--space-6); padding: var(--space-4) var(--space-6);
+             border-radius: var(--radius-md); background: var(--color-accent-800);
+             font-size: 12px; color: var(--color-accent-200); }
+  .ph-cost b { font-family: var(--font-heading); font-weight: 500; font-size: 20px;
+               color: var(--color-accent-100); margin-right: 6px; }
+  .ph-fine { margin-top: var(--space-6); font-size: 11px; line-height: 1.5; color: var(--color-neutral-500); }
+
+  .ph-hl { margin-top: 8px; font-family: var(--font-heading); font-size: 24px;
+           line-height: 1.25; letter-spacing: -.01em; }
+  .ph-cards { display: flex; gap: var(--space-4); margin-top: var(--space-6); }
+  .ph-card { flex: 1; padding: var(--space-4) var(--space-6); border-radius: var(--radius-md);
+             background: var(--color-surface); box-shadow: var(--shadow-sm); }
+  .ph-card-top { display: flex; align-items: center; gap: 7px; }
+  .chip { width: 19px; height: 19px; flex: none; border-radius: 50%; display: flex;
+          align-items: center; justify-content: center; font-size: 11px; }
+  .chip.gold { background: linear-gradient(180deg,#ffe9a3,#f6c445 50%,#dc9a1f); color: #6b5111; }
+  .chip.violet { background: var(--color-accent-800); color: var(--color-accent-100); }
+  .ph-card-fig { margin-top: 6px; font-family: var(--font-heading); font-size: 26px;
+                 letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+  .ph-card-fig.gold { color: #f3dfa8; }
+  .ph-bar { margin-top: 6px; height: 4px; border-radius: 2px; background: var(--color-neutral-900); overflow: hidden; }
+  .ph-bar.tall { margin-top: var(--space-6); height: 10px; border-radius: 5px; background: #12141d; }
+  .ph-bar i { display: block; height: 100%; border-radius: inherit; }
+  .ph-card-sub { margin-top: 6px; font-size: 11px; color: var(--color-neutral-500); }
+
+  .ph-sechd { margin-top: var(--space-8); display: flex; justify-content: space-between;
+              align-items: baseline; font-size: 10px; letter-spacing: .12em; color: var(--color-neutral-400); }
+  .ph-mut { font-size: 11px; letter-spacing: 0; color: var(--color-neutral-500); }
+  .ph-tl { display: flex; margin-top: var(--space-6); }
+  .ph-tl > div { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; }
+  .ph-tl > div:not(:last-child)::after { content: ''; position: absolute; top: 11px; left: 50%;
+    right: -50%; height: 1px; background: var(--color-divider); }
+  .ph-tl .node { position: relative; z-index: 1; width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--color-neutral-800); border: 1.5px solid var(--color-neutral-700); }
+  .ph-tl .node i { font-style: normal; font-family: var(--font-heading); font-size: 12px; color: var(--color-neutral-300); }
+  .ph-tl .node.now { background: linear-gradient(180deg,#ffe9a3,#f6c445 45%,#dc9a1f);
+    border-color: #a86b12; box-shadow: 0 2px 5px rgba(0,0,0,.45); }
+  .ph-tl .node.now i { color: #6b5111; }
+  .ph-tl .m { margin-top: var(--space-4); font-size: 11px; letter-spacing: .06em; color: var(--color-neutral-400); }
+  .ph-tl .a { margin-top: 3px; font-family: var(--font-heading); font-size: 13px; color: var(--color-neutral-300); }
+  .ph-tl .on { color: var(--color-text); }
+
+  .ph-vault { margin-top: var(--space-8); padding: var(--space-6); border-radius: var(--radius-md);
+    background: linear-gradient(180deg,#262a38 0%,#1d2029 60%,#171a22 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), var(--shadow-sm); }
+  .ph-vault-top { display: flex; align-items: center; justify-content: space-between; }
+  .ph-vault-fig { margin-top: 4px; font-family: var(--font-heading); font-size: 38px;
+    letter-spacing: -.02em; color: #f3dfa8; font-variant-numeric: tabular-nums; }
+  .ph-vault-foot { display: flex; justify-content: space-between; margin-top: var(--space-2);
+    font-size: 11px; color: var(--color-neutral-500); }
+
+  .ph-call { margin-top: var(--space-8); display: flex; align-items: center; gap: var(--space-4);
+    padding: var(--space-4) var(--space-6); border-radius: var(--radius-md);
+    background: var(--color-surface); box-shadow: var(--shadow-sm); cursor: pointer; }
+  .ph-callicon { width: 36px; height: 36px; flex: none; border-radius: 50%;
+    background: var(--color-accent-900); display: flex; align-items: center; justify-content: center; }
+  .ph-callbody { flex: 1; min-width: 0; }
+  .ph-callbody b { display: block; font-weight: 400; font-size: 14px; }
+  .ph-callbody i { display: block; font-style: normal; font-size: 11px;
+    color: var(--color-neutral-500); margin-top: 2px; }
+
+  /* ---- animations ---- */
+  @keyframes shine { 0%,72% { transform: translateX(-140%) skewX(-18deg) }
+                     100%  { transform: translateX(240%)  skewX(-18deg) } }
+  @keyframes coinBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-7px) } }
+  @keyframes hammer  { 0%,100% { transform: rotate(-8deg) } 40% { transform: rotate(-72deg) } 62% { transform: rotate(6deg) } }
+  @keyframes spark   { 0%,58% { opacity: 0; transform: scale(.4) } 64% { opacity: 1; transform: scale(1) }
+                       78%,100% { opacity: 0; transform: scale(1.5) } }
+  @keyframes ppFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+  @keyframes ppGlow { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
+  @keyframes glowPulse { 0%,100% { opacity: .75 } 50% { opacity: 1 } }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#161826">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="120" fill="#161826"></rect>
+    <polygon points="60,44 96,64 60,84 24,64" fill="#6cba36"></polygon>
+    <polygon points="96,64 60,84 60,88 96,68" fill="#59a52e"></polygon>
+    <polygon points="60,84 24,64 24,68 60,88" fill="#3f7a20"></polygon>
+    <polygon points="60,30 78,41 60,52 42,41" fill="#e4d8c2"></polygon>
+    <polygon points="78,41 60,52 60,66 78,55" fill="#efe6d7"></polygon>
+    <polygon points="60,52 42,41 42,55 60,66" fill="#d3c5ab"></polygon>
+    <circle cx="60" cy="20" r="8" fill="#f6c445" stroke="#a86b12" stroke-width="1.5"></circle>
+  </svg>
+</template>
+</head>
+<body>
+
+<div class="phone">
+
+  <div class="flows" id="worth">
+    <div class="flow in" data-hud="rent">
+      <div class="flow-head"><span class="flow-arrow">↓</span><span class="flow-lbl">WITHDRAWALS</span></div>
+      <div class="flow-fig gold"><span id="hudSwp">₹42,000</span><span>/mo</span></div>
+      <div class="flow-sub" id="hudSwpSub">4 villas · SWP on the 1st</div>
+    </div>
+    <div class="flow-div"></div>
+    <div class="flow out" data-hud="build">
+      <div class="flow-head"><span class="flow-lbl">INVESTED</span><span class="flow-arrow">↑</span></div>
+      <div class="flow-fig violet"><span id="hudInv">₹26,75,000</span><span></span></div>
+      <div class="flow-sub" id="hudSipSub">1 building · SIP on the 5th</div>
+    </div>
+  </div>
+  <div class="screen" id="scr-home">
+  <div class="stage">
+    <div class="glow"></div>
+
+    <div class="title">
+      <div class="kicker">YOUR ESTATE</div>
+      <div class="name">Sanjeev&rsquo;s City</div>
+    </div>
+
+    <div class="board">
+      <!--
+        THE GRID — nine interchangeable parcels.
+          offsetX = (col - row) * 93.6
+          offsetY = (col + row) * 54
+        Cells are emitted sorted by (col + row) ASCENDING. SVG has no z-buffer,
+        so document order IS depth — a back cell emitted late paints over the
+        cell in front of it. Keep this order when you add or swap parcels.
+
+        Each .cell takes one of four states by swapping its <use href>:
+          #tLocked  open tile (dashed)
+          #tLand    bare land
+          #tVilla   finished villa
+          #tLand + the construction group  = building
+      -->
+      <svg viewBox="-175 15 590 375" aria-label="Estate board">
+<defs>
+<g id="tLand">
+<polygon points="213.6,84 120,138 120,159.6 213.6,105.6" fill="#8a5a33"></polygon>
+<polygon points="120,138 26.4,84 26.4,105.6 120,159.6" fill="#6d4527"></polygon>
+<polygon points="213.6,80 120,134 120,138 213.6,84" fill="#59a52e"></polygon>
+<polygon points="120,134 26.4,80 26.4,84 120,138" fill="#3f7a20"></polygon>
+<polygon points="120,26 213.6,80 120,134 26.4,80" fill="#6cba36"></polygon>
+<polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3f7a20" stroke-width="2.5"></polygon>
+</g>
+<g id="tVilla">
+<g transform="translate(120,80) scale(0.3) translate(-410,-250)">
+<polygon points="721.8,264 410,444 410,516 721.8,336" fill="#8a5a33"></polygon>
+<polygon points="410,444 98.2,264 98.2,336 410,516" fill="#6d4527"></polygon>
+<polygon points="721.8,264 410,444 410,458 721.8,278" fill="#3f2a18" opacity="0.35"></polygon>
+<polygon points="721.8,250 410,430 410,444 721.8,264" fill="#59a52e"></polygon>
+<polygon points="410,430 98.2,250 98.2,264 410,444" fill="#3f7a20"></polygon>
+<polygon points="688.2,283.4 705.6,273.4 696.9,293.4" fill="#59a52e"></polygon><polygon points="650.8,305.0 668.1,295.0 659.5,315.0" fill="#59a52e"></polygon><polygon points="613.3,326.6 630.7,316.6 622.0,336.6" fill="#59a52e"></polygon><polygon points="575.9,348.2 593.3,338.2 584.6,358.2" fill="#59a52e"></polygon><polygon points="538.4,369.8 555.8,359.8 547.1,379.8" fill="#59a52e"></polygon><polygon points="501.0,391.4 518.4,381.4 509.7,401.4" fill="#59a52e"></polygon><polygon points="463.5,413.0 480.9,403.0 472.2,423.0" fill="#59a52e"></polygon><polygon points="426.1,434.6 443.4,424.6 434.8,444.6" fill="#59a52e"></polygon><polygon points="376.4,424.6 393.8,434.6 385.1,444.6" fill="#3f7a20"></polygon><polygon points="338.9,403.0 356.3,413.0 347.6,423.0" fill="#3f7a20"></polygon><polygon points="301.5,381.4 318.9,391.4 310.2,401.4" fill="#3f7a20"></polygon><polygon points="264.0,359.8 281.4,369.8 272.7,379.8" fill="#3f7a20"></polygon><polygon points="226.6,338.2 244.0,348.2 235.3,358.2" fill="#3f7a20"></polygon><polygon points="189.1,316.6 206.5,326.6 197.8,336.6" fill="#3f7a20"></polygon><polygon points="151.7,295.0 169.1,305.0 160.4,315.0" fill="#3f7a20"></polygon><polygon points="114.2,273.4 131.6,283.4 122.9,293.4" fill="#3f7a20"></polygon>
+<polygon points="410,70 721.8,250 410,430 98.2,250" fill="#6cba36"></polygon>
+<polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#3f7a20" stroke-width="8"></polygon>
+<polygon points="424.8,163 544.3,232 440.4,292 320.9,223" fill="#43861f" opacity="0.55"></polygon>
+<polygon points="507.9,253 575.5,292 489.8,341.5 422.2,302.5" fill="#43861f" opacity="0.55"></polygon>
+<polyline points="410,52 682.8,209.5" fill="none" stroke="#7d5027" stroke-width="3.5"></polyline>
+<polyline points="410,66 682.8,223.5" fill="none" stroke="#6b4522" stroke-width="3.5"></polyline>
+<polyline points="410,52 137.2,209.5" fill="none" stroke="#6b4522" stroke-width="3.5"></polyline>
+<polyline points="410,66 137.2,223.5" fill="none" stroke="#5c3a1c" stroke-width="3.5"></polyline>
+<rect x="407.5" y="46.0" width="5" height="33" fill="#8a5a2f"></rect><rect x="446.4" y="68.5" width="5" height="33" fill="#8a5a2f"></rect><rect x="485.4" y="91.0" width="5" height="33" fill="#8a5a2f"></rect><rect x="524.4" y="113.5" width="5" height="33" fill="#8a5a2f"></rect><rect x="563.3" y="136.0" width="5" height="33" fill="#8a5a2f"></rect><rect x="602.3" y="158.5" width="5" height="33" fill="#8a5a2f"></rect><rect x="641.2" y="181.0" width="5" height="33" fill="#8a5a2f"></rect><rect x="680.2" y="203.5" width="5" height="33" fill="#8a5a2f"></rect><rect x="368.6" y="68.5" width="5" height="33" fill="#7d5027"></rect><rect x="329.6" y="91.0" width="5" height="33" fill="#7d5027"></rect><rect x="290.6" y="113.5" width="5" height="33" fill="#7d5027"></rect><rect x="251.7" y="136.0" width="5" height="33" fill="#7d5027"></rect><rect x="212.8" y="158.5" width="5" height="33" fill="#7d5027"></rect><rect x="173.8" y="181.0" width="5" height="33" fill="#7d5027"></rect><rect x="134.8" y="203.5" width="5" height="33" fill="#7d5027"></rect>
+<rect x="613" y="240" width="9" height="24" fill="#9a6636"></rect>
+<polygon points="664.6,166 617.8,193 617.8,244 664.6,217" fill="#4b8f26"></polygon>
+<polygon points="617.8,193 571.1,166 571.1,217 617.8,244" fill="#3f7a20"></polygon>
+<polygon points="617.8,139 664.6,166 617.8,193 571.1,166" fill="#6cba36"></polygon>
+<polygon points="524.3,112 420.4,172 420.4,280 524.3,220" fill="#efe6d7"></polygon>
+<polygon points="420.4,172 300.9,103 300.9,211 420.4,280" fill="#d3c5ab"></polygon>
+<polygon points="415.2,23.8 545.1,104.8 420.4,176.8 280.1,95.8" fill="#e4d8c2"></polygon>
+<polygon points="545.1,104.8 420.4,176.8 420.4,184 545.1,112" fill="#c6b699"></polygon>
+<polygon points="420.4,176.8 280.1,95.8 280.1,103 420.4,184" fill="#ad9d7d"></polygon>
+<polygon points="503.5,154 462.0,178 462.0,226 503.5,202" fill="#3a5f7a"></polygon>
+<polygon points="446.4,187 425.6,199 425.6,247 446.4,235" fill="#3a5f7a"></polygon>
+<polygon points="311.3,148 350.3,170.5 350.3,218.5 311.3,196" fill="#2f4f66"></polygon>
+<polygon points="311.3,118 386.6,161.5 386.6,185.5 311.3,142" fill="#2f4f66"></polygon>
+<polygon points="363.2,196 386.6,209.5 386.6,260.5 363.2,247" fill="#9a6636"></polygon>
+<polygon points="555.5,217 469.8,266.5 469.8,329.5 555.5,280" fill="#e6dbc9"></polygon>
+<polygon points="469.8,266.5 402.2,227.5 402.2,290.5 469.8,329.5" fill="#cbbca1"></polygon>
+<polygon points="487.9,178 555.5,217 469.8,266.5 402.2,227.5" fill="#ded1b8"></polygon>
+<polygon points="539.9,238 487.9,268 487.9,301 539.9,271" fill="#3a5f7a"></polygon>
+<polygon points="300.9,206 420.4,275 358.0,311 238.5,242" fill="#d8cfc0"></polygon>
+<polygon points="420.4,275 358.0,311 358.0,317 420.4,281" fill="#bfb5a3"></polygon>
+<polygon points="358.0,311 238.5,242 238.5,248 358.0,317" fill="#aca291"></polygon>
+<polygon points="295.7,222.4 358.0,258.4 321.7,279.4 259.3,243.4" fill="#4fb9cc"></polygon>
+<polygon points="295.7,222.4 358.0,258.4 321.7,279.4 259.3,243.4" fill="none" stroke="#c9d3d2" stroke-width="2"></polygon>
+<polygon points="379.9,286.6 359.1,298.6 359.1,322.6 379.9,310.6" fill="#3f7a20"></polygon>
+<polygon points="359.1,298.6 338.3,286.6 338.3,310.6 359.1,322.6" fill="#35691b"></polygon>
+<polygon points="359.1,274.6 379.9,286.6 359.1,298.6 338.3,286.6" fill="#4b8f26"></polygon>
+<polygon points="319.1,192.5 298.3,204.5 298.3,228.5 319.1,216.5" fill="#3f7a20"></polygon>
+<polygon points="298.3,204.5 277.5,192.5 277.5,216.5 298.3,228.5" fill="#35691b"></polygon>
+<polygon points="298.3,180.5 319.1,192.5 298.3,204.5 277.5,192.5" fill="#4b8f26"></polygon>
+<polyline points="706.2,223 433.4,380.5" fill="none" stroke="#9a6636" stroke-width="4"></polyline>
+<polyline points="706.2,237 433.4,394.5" fill="none" stroke="#8a5a2f" stroke-width="4"></polyline>
+<rect x="703.7" y="217.0" width="5" height="33" fill="#a97140"></rect><rect x="664.8" y="239.5" width="5" height="33" fill="#a97140"></rect><rect x="625.8" y="262.0" width="5" height="33" fill="#a97140"></rect><rect x="586.9" y="284.5" width="5" height="33" fill="#a97140"></rect><rect x="547.9" y="307.0" width="5" height="33" fill="#a97140"></rect><rect x="509.0" y="329.5" width="5" height="33" fill="#a97140"></rect><rect x="470.0" y="352.0" width="5" height="33" fill="#a97140"></rect><rect x="431.1" y="374.5" width="5" height="33" fill="#a97140"></rect>
+<polyline points="386.6,380.5 113.8,223" fill="none" stroke="#8a5a2f" stroke-width="4"></polyline>
+<polyline points="386.6,394.5 113.8,237" fill="none" stroke="#7d5027" stroke-width="4"></polyline>
+<rect x="384.1" y="374.5" width="5" height="33" fill="#946035"></rect><rect x="345.2" y="352.0" width="5" height="33" fill="#946035"></rect><rect x="306.2" y="329.5" width="5" height="33" fill="#946035"></rect><rect x="267.3" y="307.0" width="5" height="33" fill="#946035"></rect><rect x="228.3" y="284.5" width="5" height="33" fill="#946035"></rect><rect x="189.4" y="262.0" width="5" height="33" fill="#946035"></rect><rect x="150.4" y="239.5" width="5" height="33" fill="#946035"></rect><rect x="111.4" y="217.0" width="5" height="33" fill="#946035"></rect>
+</g>
+</g>
+<g id="tGround">
+<polygon points="213.6,80 120,134 120,143 213.6,89" fill="#3f2a18"></polygon>
+<polygon points="120,134 26.4,80 26.4,89 120,143" fill="#5a3d22"></polygon>
+<polygon points="120,26 213.6,80 120,134 26.4,80" fill="#6cba36" stroke="#7cc945" stroke-width="1.5"></polygon>
+</g>
+<g id="tLocked">
+<polygon points="213.6,80 120,134 26.4,80 120,26" fill="#242739"></polygon>
+<polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3f424d" stroke-width="1.5" stroke-dasharray="6 5"></polygon>
+</g>
+</defs>
+<g id="cells"></g>
+
+        <!-- the collectable rent coin, floating over the first villa -->
+        <g id="rentCoin" style="cursor:pointer;animation:coinBob 2.4s ease-in-out infinite">
+          <ellipse cx="120" cy="152" rx="13" ry="4.5" fill="#0b0d16" opacity="0.35"></ellipse>
+          <circle cx="120" cy="124" r="15" fill="#e9c15c" stroke="#b8902f" stroke-width="2"></circle>
+          <circle cx="120" cy="124" r="10" fill="none" stroke="#b8902f" stroke-width="1.2"></circle>
+          <text x="120" y="130" text-anchor="middle" font-family="Inter, system-ui, sans-serif"
+                font-weight="500" font-size="14" fill="#6b5111">₹</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="rent" hidden>
+      <div class="row">
+        <span class="lbl">withdrawals to date</span>
+        <span class="amt" id="rentTotal">₹7.56L</span>
+      </div>
+      <div class="note" id="rentSplit"><b id="rentGain">₹4.21L</b> gain · <b id="rentCap">₹3.35L</b> capital returned</div>
+      <div class="note" id="rentNote">next payout 5 Sep · ₹42,000, paid automatically</div>
+    </div>
+
+    <div class="port">
+      <span class="port-k">PORTFOLIO VALUE</span>
+      <span class="port-v" id="portV">₹1,70,42,860</span>
+      <div class="port-m"><span id="portInv">Invested ₹1,55,00,000</span><i></i><b id="portRet">+9.9% returns</b></div>
+      <div class="port-bar"><span style="width:36%;background:#8aa89b"></span><span style="width:16%;background:#f6c445"></span><span style="width:16%;background:#4a9d47"></span><span style="width:16%;background:#5cb85c"></span><span style="width:16%;background:#8fd48a"></span></div>
+      <div class="port-funds"><div><span class="a">36%</span><span class="n" style="color:#8aa89b">ARBITRAGE</span></div><div><span class="a">16%</span><span class="n" style="color:#f6c445">GOLD</span></div><div><span class="a">16%</span><span class="n" style="color:#4a9d47">LARGE CAP</span></div><div><span class="a">16%</span><span class="n" style="color:#5cb85c">MID CAP</span></div><div><span class="a">16%</span><span class="n" style="color:#8fd48a">SMALL CAP</span></div></div>
+
+    </div>
+  </div>
+
+  <div class="fine" style="padding-bottom:96px">
+    <div class="fine-link" id="fineOpen" role="button" tabindex="0">What do Villa and Plot mean? <span>›</span></div>
+  </div>
+  </div>
+
+  <div class="screen" id="scr-explore" hidden>
+<div style="position:absolute;top:0;left:0;right:0;height:600px;pointer-events:none;background:radial-gradient(120% 70% at 50% 34%,oklch(0.74 0.125 150 / 0.22) 0%,transparent 62%)"></div>
+<div style="position:absolute;top:120px;left:50%;width:300px;height:300px;margin-left:-150px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,oklch(0.74 0.125 150 / 0.26) 0%,transparent 66%);animation:ppGlow 5.5s ease-in-out infinite"></div>
+
+<div style="flex:none;position:relative;padding:56px 22px 0;display:flex;justify-content:space-between;align-items:center">
+<div id="exKicker" style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">EXPLORE · PLOT · 1 OF 3</div>
+<div style="display:flex;gap:6px;align-items:center">
+<span data-act="high" style="width:16px;height:5px;border-radius:3px;cursor:pointer;background:var(--color-accent-400)"></span>
+<span data-act="detail" style="width:16px;height:5px;border-radius:3px;cursor:pointer;background:var(--color-neutral-700)"></span>
+</div>
+</div>
+
+<div style="flex:1;min-height:0;position:relative;overflow:hidden">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;height:200%;transition:transform .5s cubic-bezier(.4,0,.2,1);transform:translateY(0)">
+
+<div style="height:50%;position:relative;overflow:hidden">
+<div data-ex-x style="position:absolute;inset:0;display:flex;width:200%;transition:transform .45s cubic-bezier(.4,0,.2,1);transform:translateX(0)">
+
+
+<div style="width:50%;display:flex;flex-direction:column;padding:0 0 var(--space-6)">
+<div style="flex:1;min-height:0;position:relative">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 14px;box-sizing:border-box;animation:ppFloat 6s ease-in-out infinite">
+<svg viewBox="0 0 820 640" style="width:100%;height:100%;display:block;overflow:visible" aria-hidden="true">
+<polygon points="410,100 794.5,322 410,544 25.5,322" fill="#232739"></polygon>
+<polygon points="794.5,322 410,544 410,595 794.5,373" fill="#1b1e2c"></polygon>
+<polygon points="410,544 25.5,322 25.5,373 410,595" fill="#12141d"></polygon>
+<rect x="470" y="470" width="150" height="9" fill="#9184d9" transform="skewY(-30) translate(0 302)" opacity="0.9"></rect>
+<polygon points="721.8,264 410,444 410,516 721.8,336" fill="#8a5a33"></polygon>
+<polygon points="410,444 98.2,264 98.2,336 410,516" fill="#6d4527"></polygon>
+<polygon points="721.8,264 410,444 410,458 721.8,278" fill="#3f2a18" opacity="0.35"></polygon>
+<polygon points="721.8,250 410,430 410,444 721.8,264" fill="#59a52e"></polygon>
+<polygon points="410,430 98.2,250 98.2,264 410,444" fill="#3f7a20"></polygon>
+<polygon points="688.2,283.4 705.6,273.4 696.9,293.4" fill="#59a52e"></polygon>
+<polygon points="650.7,305 668.1,295 659.4,315" fill="#59a52e"></polygon>
+<polygon points="613.3,326.6 630.7,316.6 622.0,336.6" fill="#59a52e"></polygon>
+<polygon points="575.9,348.2 593.3,338.2 584.6,358.2" fill="#59a52e"></polygon>
+<polygon points="538.5,369.8 555.9,359.8 547.2,379.8" fill="#59a52e"></polygon>
+<polygon points="501.1,391.4 518.5,381.4 509.8,401.4" fill="#59a52e"></polygon>
+<polygon points="463.7,413 481.1,403 472.4,423" fill="#59a52e"></polygon>
+<polygon points="426.3,434.6 443.7,424.6 435.0,444.6" fill="#59a52e"></polygon>
+<polygon points="376.4,424.6 393.8,434.6 385.1,444.6" fill="#3f7a20"></polygon>
+<polygon points="338.9,403 356.3,413 347.6,423" fill="#3f7a20"></polygon>
+<polygon points="301.5,381.4 318.9,391.4 310.2,401.4" fill="#3f7a20"></polygon>
+<polygon points="264.1,359.8 281.5,369.8 272.8,379.8" fill="#3f7a20"></polygon>
+<polygon points="226.7,338.2 244.1,348.2 235.4,358.2" fill="#3f7a20"></polygon>
+<polygon points="189.3,316.6 206.7,326.6 198.0,336.6" fill="#3f7a20"></polygon>
+<polygon points="151.9,295 169.3,305 160.6,315" fill="#3f7a20"></polygon>
+<polygon points="114.5,273.4 131.9,283.4 123.2,293.4" fill="#3f7a20"></polygon>
+<polygon points="410,70 721.8,250 410,430 98.2,250" fill="#6cba36"></polygon>
+<polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#3f7a20" stroke-width="8"></polygon>
+<ellipse cx="497" cy="256" rx="13" ry="6" fill="#2f5e18" opacity="0.45"></ellipse>
+<ellipse cx="575" cy="305" rx="13" ry="6" fill="#2f5e18" opacity="0.45"></ellipse>
+<rect x="493" y="218" width="6" height="38" rx="1.5" fill="#5a4028"></rect>
+<rect x="573" y="267" width="6" height="38" rx="1.5" fill="#452f1c"></rect>
+<g transform="translate(492,166) skewY(30)">
+<rect x="0" y="0" width="88" height="54" rx="4" fill="#eceaf6"></rect>
+<rect x="0" y="46" width="88" height="8" fill="#c9c6da"></rect>
+<rect x="4.5" y="4.5" width="79" height="45" rx="2" fill="none" stroke="#9184d9" stroke-width="2"></rect>
+<text x="12" y="24" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="15" letter-spacing="1.5" fill="#2b2741">FOR</text>
+<text x="12" y="41" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="15" letter-spacing="1.5" fill="#5d5294">SALE</text>
+</g>
+</svg>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:90px;pointer-events:none;background:linear-gradient(to bottom,transparent,var(--color-bg))"></div>
+<div style="position:absolute;top:22px;right:22px;padding:7px 12px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm);text-align:right">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-neutral-400)">COST TO OWN</div>
+<div style="font-family:var(--font-heading);font-size:20px;line-height:1.2">₹10,00,000</div>
+</div>
+</div>
+
+<div style="flex:none;padding:0 22px">
+<div style="text-align:center">
+<h1 style="margin:0;font-family:var(--font-heading);font-weight:var(--font-heading-weight);font-size:42px;letter-spacing:-.015em">Plot</h1>
+<div style="margin-top:8px;font-size:15px;line-height:1.5;color:var(--color-neutral-300)">Buy it once, leave it alone, let it compound.</div>
+</div>
+
+<div style="margin-top:var(--space-6);display:flex;align-items:baseline;justify-content:center;gap:var(--space-3)">
+<span style="font-family:var(--font-heading);font-size:38px;letter-spacing:-.015em" class="jsPlotValue">₹80.6L</span>
+<span style="font-size:13px;white-space:nowrap;color:var(--color-accent-300)" class="jsPlotMult">8.1× in 20 years</span>
+</div>
+<div style="margin-top:4px;text-align:center;font-size:11px;color:var(--color-neutral-500)">₹10,00,000 put in, held <span class="jsHeld">20 years</span> — an illustration, not a promise</div>
+
+<div style="position:relative;margin:var(--space-6) 2px var(--space-2)">
+<div style="height:2px;background:var(--color-neutral-800)"></div>
+<div class="jsRailFill" style="position:absolute;top:0;left:0;height:2px;background:var(--color-accent);transition:width .35s ease;width:100%"></div>
+<div style="position:absolute;top:-6px;left:0;right:0;display:flex;justify-content:space-between">
+<span data-act="yr5" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr10" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr15" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr20" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.01em">
+<span data-act="yr5" style="cursor:pointer;color:var(--color-neutral-500)">5 yrs</span>
+<span data-act="yr10" style="cursor:pointer;color:var(--color-neutral-500)">10 yrs</span>
+<span data-act="yr15" style="cursor:pointer;color:var(--color-neutral-500)">15 yrs</span>
+<span data-act="yr20" style="cursor:pointer;color:var(--color-accent-200)">20 yrs</span>
+</div>
+
+<div style="margin-top:var(--space-6);display:flex;align-items:center;justify-content:center;gap:var(--space-8)">
+<span data-act="detail" style="cursor:pointer;font-size:13px;color:var(--color-accent-300)">Full sheet →</span>
+<span data-act="villa" style="cursor:pointer;font-size:13px;color:var(--color-neutral-400)">Villa ↓</span>
+</div>
+</div>
+</div>
+
+<div style="width:50%;display:flex;flex-direction:column;padding:0 22px var(--space-6);box-sizing:border-box;overflow-y:auto">
+<div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 0 var(--space-4)">
+<span data-act="high" style="cursor:pointer;font-size:13px;color:var(--color-accent-300)">← Plot</span>
+<span style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">PRODUCT SHEET</span>
+</div>
+
+<div style="flex:none;padding-bottom:var(--space-4)">
+<div style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400);margin-bottom:var(--space-3)">YOUR MIX</div>
+<div style="display:flex;gap:var(--space-2);padding:3px;border-radius:var(--radius-md);background:var(--color-neutral-900)">
+<span data-act="mix-cons" style="flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;background:transparent;color:var(--color-neutral-400)">Conservative</span>
+<span data-act="mix-mod" style="flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;background:var(--color-accent-800);color:var(--color-accent-100)">Moderate</span>
+<span data-act="mix-agg" style="flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;background:transparent;color:var(--color-neutral-400)">Aggressive</span>
+</div>
+</div>
+
+<div style="flex:none;display:flex;align-items:baseline;gap:8px;padding:var(--space-4) var(--space-6);border-radius:var(--radius-md);background:var(--color-accent-800)">
+<span style="font-family:var(--font-heading);font-size:20px;color:var(--color-accent-100)">₹1.4L</span>
+<span style="font-size:12px;color:var(--color-accent-200)">of buying costs avoided on day one</span>
+</div>
+
+<div style="flex:none;padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;align-items:baseline;gap:var(--space-3)">
+<span style="font-family:var(--font-heading);font-size:32px;letter-spacing:-.015em" class="jsPlotValue">₹80.6L</span>
+<span style="font-size:13px;white-space:nowrap;color:var(--color-accent-300)" class="jsPlotMult">8.1× in 20 years</span>
+</div>
+<div style="display:flex;height:30px;border-radius:var(--radius-sm);overflow:hidden;margin-top:var(--space-6)">
+<div style="background:var(--color-neutral-700);transition:width .35s ease;width:12.4%" class="jsPutBar"></div>
+<div style="background:var(--color-accent-500);transition:width .35s ease;width:87.6%" class="jsGrowBar"></div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:var(--space-3);font-size:12px">
+<span><span style="color:var(--color-neutral-300)">₹10L</span> <span style="color:var(--color-neutral-500)">your work</span></span>
+<span style="text-align:right"><span style="color:var(--color-accent-200)" class="jsPlotGrowth">₹70.6L</span> <span style="color:var(--color-accent-300)">your money's work</span></span>
+</div>
+<div style="position:relative;margin:var(--space-8) 2px var(--space-2)">
+<div style="height:2px;background:var(--color-neutral-800)"></div>
+<div class="jsRailFill" style="position:absolute;top:0;left:0;height:2px;background:var(--color-accent);transition:width .35s ease;width:100%"></div>
+<div style="position:absolute;top:-6px;left:0;right:0;display:flex;justify-content:space-between">
+<span data-act="yr5" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr10" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr15" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr20" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:12px">
+<span data-act="yr5" style="cursor:pointer;color:var(--color-neutral-500)">5 yrs</span>
+<span data-act="yr10" style="cursor:pointer;color:var(--color-neutral-500)">10 yrs</span>
+<span data-act="yr15" style="cursor:pointer;color:var(--color-neutral-500)">15 yrs</span>
+<span data-act="yr20" style="cursor:pointer;color:var(--color-accent-200)">20 yrs</span>
+</div>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;gap:var(--space-4);margin-top:0">
+<div style="flex:1;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-accent-900)">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-accent-300)">ASSUMED</div>
+<div style="font-family:var(--font-heading);font-size:20px;margin-top:2px;color:var(--color-accent-200)" class="jsRate">11–13% a year</div>
+</div>
+<div style="flex:1;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-neutral-900)">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-neutral-400)">WORST YEAR</div>
+<div class="jsRisk" style="font-family:var(--font-heading);font-size:20px;margin-top:2px;color:var(--color-neutral-200)">−28%</div>
+</div>
+</div>
+<div style="margin-top:var(--space-6)"><div style="display:flex;height:12px;border-radius:6px;overflow:hidden">
+<div class="jsSegL" style="background:var(--color-accent-400);transition:width .35s ease;width:33%"></div>
+<div class="jsSegM" style="background:var(--color-accent-600);transition:width .35s ease;width:33%;border-left:1px solid var(--color-surface);border-right:1px solid var(--color-surface)"></div>
+<div class="jsSegS" style="background:var(--color-accent-800);transition:width .35s ease;width:33%"></div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:var(--space-3);font-size:11px;color:var(--color-neutral-300)">
+<span class="jsLblL">Large 33%</span><span class="jsLblM">Mid 33%</span><span class="jsLblS">Small 33%</span>
+</div>
+</div>
+
+</div>
+
+
+
+<div style="flex:none;margin-top:var(--space-4);font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">COSTS AVOIDED VS A ₹10L FLAT</div>
+<div style="flex:none;display:flex;flex-direction:column;gap:1px;margin-top:var(--space-3);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm)">
+<div style="display:flex;gap:var(--space-3);padding:7px 14px;background:var(--color-neutral-900);font-size:10px;letter-spacing:.1em;color:var(--color-neutral-400)">
+<span style="flex:1">COST ITEM</span><span style="width:96px;text-align:right">FLAT</span><span style="width:82px;text-align:right">HERE</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Stamp duty &amp; registration</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹1,00,000</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Brokerage to buy</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹20,000</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Legal &amp; documentation</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹20,000</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Maintenance &amp; repairs</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹20,000/yr</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Cost to sell</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">1–2% + 1% TDS</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil after 1 yr</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Time to get your money</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">3–6 months</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">1–3 days</span>
+</div>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);font-size:11px;line-height:1.5;color:var(--color-neutral-500)">Illustration on the assumption shown. Not a forecast, not assured, not capital protected.</div>
+
+<div style="flex:none;margin-top:auto;padding-top:var(--space-4)">
+<a class="btn btn-primary btn-block" href="#3a" style="text-decoration:none;text-align:center">Start a SIP here</a>
+</div>
+</div>
+</div>
+</div>
+
+<div style="height:50%;position:relative;overflow:hidden">
+<div data-ex-x style="position:absolute;inset:0;display:flex;width:200%;transition:transform .45s cubic-bezier(.4,0,.2,1);transform:translateX(0)">
+<div style="width:50%;display:flex;flex-direction:column;padding:0 0 var(--space-6)">
+<div style="flex:1;min-height:0;position:relative;height:100%">
+<div class="vseg" id="vseg">
+  <span class="vseg-pill" id="vsegPill"></span>
+  <span data-v="0" class="on">Conservative</span><span data-v="1">Moderate</span><span data-v="2">Aggressive</span>
+</div>
+<div class="vstack" id="vstack">
+  <div class="vtrack" id="vtrack">
+<div class="vcard" data-vi="0">
+  <div class="vcard-glow"></div>
+  <div class="vcard-art"><svg viewBox="20 16 200 150" preserveAspectRatio="xMidYMid meet"><use href="#tVilla" x="0" y="0"></use></svg></div>
+  <div class="vcard-title">The Villa</div>
+  <div class="lvl-pill"><span class="mix">Conservative</span><span class="price"><i>₹</i>₹50,00,000</span></div>
+  <div class="vcard-sub">Monthly income of ₹15,000 arrives automatically by SWP.</div>
+  <div class="vcard-k">FUND UNLOCKS · EVERY ₹5L</div>
+  <div class="fgrid n5"><div class="fcard">
+<span class="fi vault"><i></i></span>
+<span class="fn">ARBITRAGE</span>
+<span class="fa">₹1,80,000</span>
+<span class="fb"><i><b style="width:36%;background:#8aa89b"></b></i><em>36%</em></span>
+</div><div class="fcard">
+<span class="fi coin"><i></i></span>
+<span class="fn">GOLD</span>
+<span class="fa">₹80,000</span>
+<span class="fb"><i><b style="width:16%;background:#f6c445"></b></i><em>16%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#4a9d47"><i class="L"></i></span>
+<span class="fn">LARGE CAP</span>
+<span class="fa">₹80,000</span>
+<span class="fb"><i><b style="width:16%;background:#4a9d47"></b></i><em>16%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#5cb85c"><i class="M"></i></span>
+<span class="fn">MID CAP</span>
+<span class="fa">₹80,000</span>
+<span class="fb"><i><b style="width:16%;background:#5cb85c"></b></i><em>16%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#8fd48a"><i class="S"></i></span>
+<span class="fn">SMALL CAP</span>
+<span class="fa">₹80,000</span>
+<span class="fb"><i><b style="width:16%;background:#8fd48a"></b></i><em>16%</em></span>
+</div></div>
+  <div class="vcard-worth"><span>worth in <em class="jsYears">20</em> years</span><b class="jsVW" data-vi="0">—</b><small class="jsVWsub" data-vi="0"></small></div>
+</div>
+<div class="vcard" data-vi="1">
+  <div class="vcard-glow"></div>
+  <div class="vcard-art"><svg viewBox="20 16 200 150" preserveAspectRatio="xMidYMid meet"><use href="#tVilla" x="0" y="0"></use></svg></div>
+  <div class="vcard-title">The Villa</div>
+  <div class="lvl-pill"><span class="mix">Moderate</span><span class="price"><i>₹</i>₹50,00,000</span></div>
+  <div class="vcard-sub">Monthly income of ₹15,000 arrives automatically by SWP.</div>
+  <div class="vcard-k">FUND UNLOCKS · EVERY ₹5L</div>
+  <div class="fgrid n4"><div class="fcard">
+<span class="fi vault"><i></i></span>
+<span class="fn">ARBITRAGE</span>
+<span class="fa">₹1,80,000</span>
+<span class="fb"><i><b style="width:36%;background:#8aa89b"></b></i><em>36%</em></span>
+</div><div class="fcard">
+<span class="fi coin"><i></i></span>
+<span class="fn">GOLD</span>
+<span class="fa">₹80,000</span>
+<span class="fb"><i><b style="width:16%;background:#f6c445"></b></i><em>16%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#5cb85c"><i class="M"></i></span>
+<span class="fn">MID CAP</span>
+<span class="fa">₹1,20,000</span>
+<span class="fb"><i><b style="width:24%;background:#5cb85c"></b></i><em>24%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#8fd48a"><i class="S"></i></span>
+<span class="fn">SMALL CAP</span>
+<span class="fa">₹1,20,000</span>
+<span class="fb"><i><b style="width:24%;background:#8fd48a"></b></i><em>24%</em></span>
+</div></div>
+  <div class="vcard-worth"><span>worth in <em class="jsYears">20</em> years</span><b class="jsVW" data-vi="1">—</b><small class="jsVWsub" data-vi="1"></small></div>
+</div>
+<div class="vcard" data-vi="2">
+  <div class="vcard-glow"></div>
+  <div class="vcard-art"><svg viewBox="20 16 200 150" preserveAspectRatio="xMidYMid meet"><use href="#tVilla" x="0" y="0"></use></svg></div>
+  <div class="vcard-title">The Villa</div>
+  <div class="lvl-pill"><span class="mix">Aggressive</span><span class="price"><i>₹</i>₹50,00,000</span></div>
+  <div class="vcard-sub">No monthly withdrawal — everything compounds.</div>
+  <div class="vcard-k">FUND UNLOCKS · EVERY ₹5L</div>
+  <div class="fgrid n4"><div class="fcard">
+<span class="fi coin"><i></i></span>
+<span class="fn">GOLD</span>
+<span class="fa">₹1,25,000</span>
+<span class="fb"><i><b style="width:25%;background:#f6c445"></b></i><em>25%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#4a9d47"><i class="L"></i></span>
+<span class="fn">LARGE CAP</span>
+<span class="fa">₹1,25,000</span>
+<span class="fb"><i><b style="width:25%;background:#4a9d47"></b></i><em>25%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#5cb85c"><i class="M"></i></span>
+<span class="fn">MID CAP</span>
+<span class="fa">₹1,25,000</span>
+<span class="fb"><i><b style="width:25%;background:#5cb85c"></b></i><em>25%</em></span>
+</div><div class="fcard">
+<span class="fi cap" style="--c:#8fd48a"><i class="S"></i></span>
+<span class="fn">SMALL CAP</span>
+<span class="fa">₹1,25,000</span>
+<span class="fb"><i><b style="width:25%;background:#8fd48a"></b></i><em>25%</em></span>
+</div></div>
+  <div class="vcard-worth"><span>worth in <em class="jsYears">20</em> years</span><b class="jsVW" data-vi="2">—</b><small class="jsVWsub" data-vi="2"></small></div>
+</div>
+  </div>
+</div>
+</div>
+
+<div style="flex:none;padding:0 22px">
+
+
+<div style="position:relative;margin:var(--space-8) 2px var(--space-2)">
+<div style="height:2px;background:var(--color-neutral-800)"></div>
+<div class="jsRailFill" style="position:absolute;top:0;left:0;height:2px;background:var(--color-accent);transition:width .35s ease;width:100%"></div>
+<div style="position:absolute;top:-6px;left:0;right:0;display:flex;justify-content:space-between">
+<span data-act="yr5" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr10" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr15" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr20" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-bg);cursor:pointer;background:var(--color-accent)"></span>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:12px">
+<span data-act="yr5" style="cursor:pointer;color:var(--color-neutral-500)">5 yrs</span>
+<span data-act="yr10" style="cursor:pointer;color:var(--color-neutral-500)">10 yrs</span>
+<span data-act="yr15" style="cursor:pointer;color:var(--color-neutral-500)">15 yrs</span>
+<span data-act="yr20" style="cursor:pointer;color:var(--color-accent-200)">20 yrs</span>
+</div>
+
+<div style="margin-top:var(--space-6);display:flex;justify-content:center">
+<span data-act="detail" style="cursor:pointer;font-size:13px;color:var(--color-accent-300)">Full sheet →</span>
+</div>
+</div>
+</div>
+
+<div style="width:50%;display:flex;flex-direction:column;padding:0 22px var(--space-6);box-sizing:border-box;overflow-y:auto">
+<div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 0 var(--space-4)">
+<span data-act="high" style="cursor:pointer;font-size:13px;color:var(--color-accent-300)">← Villa</span>
+<span style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">PRODUCT SHEET</span>
+</div>
+
+<div style="flex:none;padding-bottom:var(--space-4)">
+<div style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400);margin-bottom:var(--space-3)">YOUR MIX — THE EQUITY HALF</div>
+<div style="display:flex;gap:var(--space-2);padding:3px;border-radius:var(--radius-md);background:var(--color-neutral-900)">
+<span data-act="mix-cons" style="flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;background:transparent;color:var(--color-neutral-400)">Conservative</span>
+<span data-act="mix-mod" style="flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;background:var(--color-accent-800);color:var(--color-accent-100)">Moderate</span>
+<span data-act="mix-agg" style="flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;background:transparent;color:var(--color-neutral-400)">Aggressive</span>
+</div>
+</div>
+
+<div style="flex:none;display:flex;align-items:baseline;gap:8px;padding:var(--space-4) var(--space-6);border-radius:var(--radius-md);background:var(--color-accent-800)">
+<span style="font-family:var(--font-heading);font-size:20px;color:var(--color-accent-100)">₹4.5L</span>
+<span style="font-size:12px;color:var(--color-accent-200)">of buying costs avoided on day one</span>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;align-items:baseline;gap:var(--space-3)">
+<span style="font-family:var(--font-heading);font-size:32px;letter-spacing:-.015em" class="jsVillaValue">₹2.52Cr</span>
+<span style="font-size:13px;white-space:nowrap;color:var(--color-accent-300)" class="jsVillaMult">5.0× in 20 years</span>
+</div>
+<div style="display:flex;height:30px;border-radius:var(--radius-sm);overflow:hidden;margin-top:var(--space-6)">
+<div style="background:var(--color-neutral-700);transition:width .35s ease;width:19.8%" class="jsVPutBar"></div>
+<div style="background:var(--color-accent-500);transition:width .35s ease;width:80.2%" class="jsVGrowBar"></div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:var(--space-3);font-size:12px">
+<span><span style="color:var(--color-neutral-300)">₹50L</span> <span style="color:var(--color-neutral-500)">put in</span></span>
+<span style="text-align:right"><span style="color:var(--color-accent-200)" class="jsVillaFig">₹2.02Cr</span> <span style="color:var(--color-accent-300)">rent + growth</span></span>
+</div>
+<div style="position:relative;margin:var(--space-8) 2px var(--space-2)">
+<div style="height:2px;background:var(--color-neutral-800)"></div>
+<div class="jsRailFill" style="position:absolute;top:0;left:0;height:2px;background:var(--color-accent);transition:width .35s ease;width:100%"></div>
+<div style="position:absolute;top:-6px;left:0;right:0;display:flex;justify-content:space-between">
+<span data-act="yr5" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr10" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr15" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+<span data-act="yr20" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--color-surface);cursor:pointer;background:var(--color-accent)"></span>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:12px">
+<span data-act="yr5" style="cursor:pointer;color:var(--color-neutral-500)">5 yrs</span>
+<span data-act="yr10" style="cursor:pointer;color:var(--color-neutral-500)">10 yrs</span>
+<span data-act="yr15" style="cursor:pointer;color:var(--color-neutral-500)">15 yrs</span>
+<span data-act="yr20" style="cursor:pointer;color:var(--color-accent-200)">20 yrs</span>
+</div>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;gap:var(--space-4)">
+<div style="flex:1;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-accent-900)">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-accent-300)">MONTHLY</div>
+<div style="font-family:var(--font-heading);font-size:20px;margin-top:2px;color:var(--color-accent-200)">₹10,500</div>
+</div>
+<div style="flex:1;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-neutral-900)">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-neutral-400)">IN 20 YEARS</div>
+<div style="font-family:var(--font-heading);font-size:20px;margin-top:2px;color:var(--color-neutral-200)" class="jsRent">₹25.2L</div>
+</div>
+</div>
+<div style="margin-top:var(--space-4);font-size:12px;line-height:1.5;color:var(--color-neutral-300)">Paid from the arbitrage half. Taxed as equity after 12 months — not as rent at your slab. No tenant, no vacancy, no repairs.</div>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;gap:var(--space-4)">
+<div style="flex:1;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-accent-900)">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-accent-300)">ASSUMED</div>
+<div style="font-family:var(--font-heading);font-size:20px;margin-top:2px;color:var(--color-accent-200)" class="jsRate">11–13% a year</div>
+<div style="font-size:11px;color:var(--color-accent-300);margin-top:2px">on the ₹25L growth half</div>
+</div>
+<div style="flex:1;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-neutral-900)">
+<div style="font-size:10px;letter-spacing:.12em;color:var(--color-neutral-400)">WORST YEAR</div>
+<div class="jsRiskHalf" style="font-family:var(--font-heading);font-size:20px;margin-top:2px;color:var(--color-neutral-200)">−28% on half</div>
+</div>
+</div>
+<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-top:var(--space-6)">
+<div style="width:50%;background:var(--color-neutral-600)"></div>
+<div style="width:50%;display:flex;border-left:1px solid var(--color-surface)">
+<div class="jsSegL" style="background:var(--color-accent-400);transition:width .35s ease;width:33%"></div>
+<div class="jsSegM" style="background:var(--color-accent-600);transition:width .35s ease;width:33%"></div>
+<div class="jsSegS" style="background:var(--color-accent-800);transition:width .35s ease;width:33%"></div>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:var(--space-3);font-size:11px;color:var(--color-neutral-300)">
+<span>Arbitrage 50% — pays the income</span><span class="jsEquityLbl">Equity 50% — 33%/33%/33%</span>
+</div>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">COSTS AVOIDED VS A ₹50L FLAT</div>
+<div style="flex:none;display:flex;flex-direction:column;gap:1px;margin-top:var(--space-3);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm)">
+<div style="display:flex;gap:var(--space-3);padding:7px 14px;background:var(--color-neutral-900);font-size:10px;letter-spacing:.1em;color:var(--color-neutral-400)">
+<span style="flex:1">COST ITEM</span><span style="width:96px;text-align:right">FLAT</span><span style="width:82px;text-align:right">HERE</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Stamp duty &amp; registration</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹3,00,000</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Brokerage to buy</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹1,00,000</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Legal &amp; documentation</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹50,000</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Maintenance &amp; repairs</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">₹1,00,000/yr</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">nil</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Tax on the income</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">slab, ~22%</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">12.5% after 1 yr</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-3);padding:9px 14px;background:var(--color-surface);font-size:12px">
+<span style="flex:1;color:var(--color-neutral-300)">Time to get your money</span>
+<span style="width:96px;color:var(--color-neutral-500);text-align:right">3–6 months</span>
+<span style="width:82px;text-align:right;color:var(--color-accent-200)">1–3 days</span>
+</div>
+</div>
+
+<div style="flex:none;margin-top:var(--space-4);font-size:11px;line-height:1.5;color:var(--color-neutral-500)">Illustration on the assumptions shown. Income is not fixed or assured, and the equity half can fall in a bad year.</div>
+
+<div style="flex:none;margin-top:auto;padding-top:var(--space-4)">
+<a class="btn btn-primary btn-block" href="#3a" style="text-decoration:none;text-align:center">Start a SIP here</a>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+  </div>
+
+  <div class="screen" id="scr-ladder" hidden style="position:absolute;inset:0;z-index:5;background:var(--color-bg)"><iframe id="ladderFrame" title="Progress" src="sip/Ladder Page.dc.html" style="border:0;width:100%;height:100%;display:block;background:var(--color-bg)"></iframe></div>
+  <div class="screen" id="scr-portfolio" hidden>
+<div class="pf" id="pf">
+  <div class="pf-head">
+    <div>
+      <div class="pf-k">PORTFOLIO</div>
+      <div class="pf-v" id="pfVal">₹0</div>
+      <div class="pf-delta"><span><span id="pfInv">—</span> invested</span><i></i><b id="pfGain">—</b></div>
+    </div>
+    <div class="pf-lvl"><b id="pfLvl">5</b><span>LEVEL</span></div>
+  </div>
+  <div class="pf-chart">
+    <svg viewBox="0 0 360 118" preserveAspectRatio="none" id="pfSvg">
+      <defs><linearGradient id="pfGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9184d9" stop-opacity=".28"></stop><stop offset="1" stop-color="#9184d9" stop-opacity="0"></stop></linearGradient></defs>
+      <path class="ar" id="pfArea"></path>
+      <path class="inv" id="pfInvLine"></path>
+      <path class="ln" id="pfLine"></path>
+      <circle class="dot" id="pfDot" r="3.5"></circle>
+    </svg>
+  </div>
+  <div class="pf-axis"><span>SEP 24</span><span>MAR 25</span><span>SEP 25</span><span>MAR 26</span><span>TODAY</span></div>
+
+  <div class="pf-rank">
+    <div class="pf-ring"><svg viewBox="0 0 72 72"><circle class="bg" cx="36" cy="36" r="32"></circle><circle class="fg" id="pfRing" cx="36" cy="36" r="32"></circle></svg><b id="pfRankPct">—</b></div>
+    <div><h3 id="pfRankH">—</h3><p id="pfRankP">—</p></div>
+  </div>
+
+  <div class="pf-keys" id="pfKeys"></div>
+
+  <div class="pf-ladder">
+    <div class="pf-ladder-h"><span><b id="pfTilesLbl">4 built · 1 building · 4 open</b></span><b id="pfNext">—</b></div>
+    <div class="pf-tiles" id="pfTiles"></div>
+
+  </div>
+
+  <div class="pf-sec"><h2>Houses</h2></div>
+  <div class="pf-hold" id="pfHold"></div>
+
+  <div class="pf-sec"><h2>Funds</h2><span>1 yr</span></div>
+  <div class="pf-funds" id="pfFunds"></div>
+
+  <div class="pf-more" data-act="open-payments"><span>Payments, streak &amp; your advisor</span><i>→</i></div>
+  <div class="pf-fine">Units at NAV, moving daily. Not a forecast. Rank: illustrative, AMFI folio data.</div>
+</div>
+  </div>
+
+  <div class="screen" id="scr-progress" hidden>
+<div class="pf-back" data-act="open-portfolio">← Portfolio</div>
+<div style="flex:none;padding:72px 22px 0">
+<div style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">PROGRESS</div>
+<div style="margin-top:8px;font-family:var(--font-heading);font-size:24px;line-height:1.25;letter-spacing:-.01em">Let your money do<br><span style="color:var(--color-accent-200)">the building.</span></div>
+<div style="display:flex;gap:var(--space-4);margin-top:var(--space-6)">
+<div data-act="p-in" style="flex:1;cursor:pointer;padding:var(--space-4) var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)">
+<span style="display:flex;align-items:center;gap:7px">
+<span style="width:19px;height:19px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;background:linear-gradient(180deg,#ffe9a3,#f6c445 50%,#dc9a1f);color:#6b5111">↓</span>
+<span style="font-size:10px;letter-spacing:.12em;color:#d9b463">MONTHLY INCOME</span>
+</span>
+<span style="font-size:12px;color:var(--color-neutral-500)">›</span>
+</div>
+<div style="margin-top:6px;font-family:var(--font-heading);font-size:26px;letter-spacing:-.015em;font-variant-numeric:tabular-nums;color:#f3dfa8">₹42,000</div>
+<div style="margin-top:6px;height:4px;border-radius:2px;background:var(--color-neutral-900);overflow:hidden">
+<div style="width:90%;height:100%;border-radius:2px;background:linear-gradient(90deg,#a86b12,#f6c445)"></div>
+</div>
+<div style="margin-top:6px;font-size:11px;color:var(--color-neutral-500)">4 villas paying you</div>
+</div>
+<div data-act="p-out" style="flex:1;cursor:pointer;padding:var(--space-4) var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)">
+<span style="display:flex;align-items:center;gap:7px">
+<span style="width:19px;height:19px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;background:var(--color-accent-800);color:var(--color-accent-100)">↑</span>
+<span style="font-size:10px;letter-spacing:.12em;color:var(--color-accent-300)">BUILD OUT</span>
+</span>
+<span style="font-size:12px;color:var(--color-neutral-500)">›</span>
+</div>
+<div style="margin-top:6px;font-family:var(--font-heading);font-size:26px;letter-spacing:-.015em;font-variant-numeric:tabular-nums;color:var(--color-text)">₹35,000</div>
+<div style="margin-top:6px;height:4px;border-radius:2px;background:var(--color-neutral-900);overflow:hidden">
+<div style="width:100%;height:100%;border-radius:2px;background:var(--color-accent-500)"></div>
+</div>
+<div style="margin-top:6px;font-size:11px;color:var(--color-neutral-500)">2 plots going up</div>
+</div>
+</div>
+</div>
+
+<div style="flex:1;min-height:0;padding:var(--space-8) 22px 0;display:flex;flex-direction:column;justify-content:center">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--space-6)">
+<span style="font-size:10px;letter-spacing:.12em;color:var(--color-neutral-400)">LAST 5 PAYMENTS · 5TH OF EVERY MONTH</span>
+<span style="font-size:11px;color:var(--color-neutral-500)">none missed</span>
+</div>
+<div style="display:flex;align-items:flex-start;margin-top:var(--space-3)">
+<div style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center">
+<div style="position:absolute;top:6px;left:50%;right:-50%;height:1px;background:var(--color-divider)"></div>
+<div style="position:relative;width:22px;height:22px;margin-top:-5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;line-height:1;background:var(--color-neutral-800);border:1.5px solid var(--color-neutral-700);color:var(--color-neutral-300);box-shadow:none">₹</div>
+<div style="margin-top:var(--space-4);font-size:11px;letter-spacing:.06em;color:var(--color-neutral-400)">Apr</div>
+<div style="margin-top:3px;font-family:var(--font-heading);font-size:13px;color:var(--color-neutral-300)">₹35,000</div>
+</div>
+<div style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center">
+<div style="position:absolute;top:6px;left:50%;right:-50%;height:1px;background:var(--color-divider)"></div>
+<div style="position:relative;width:22px;height:22px;margin-top:-5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;line-height:1;background:var(--color-neutral-800);border:1.5px solid var(--color-neutral-700);color:var(--color-neutral-300);box-shadow:none">₹</div>
+<div style="margin-top:var(--space-4);font-size:11px;letter-spacing:.06em;color:var(--color-neutral-400)">May</div>
+<div style="margin-top:3px;font-family:var(--font-heading);font-size:13px;color:var(--color-neutral-300)">₹35,000</div>
+</div>
+<div style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center">
+<div style="position:absolute;top:6px;left:50%;right:-50%;height:1px;background:var(--color-divider)"></div>
+<div style="position:relative;width:22px;height:22px;margin-top:-5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;line-height:1;background:var(--color-neutral-800);border:1.5px solid var(--color-neutral-700);color:var(--color-neutral-300);box-shadow:none">₹</div>
+<div style="margin-top:var(--space-4);font-size:11px;letter-spacing:.06em;color:var(--color-neutral-400)">Jun</div>
+<div style="margin-top:3px;font-family:var(--font-heading);font-size:13px;color:var(--color-neutral-300)">₹35,000</div>
+</div>
+<div style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center">
+<div style="position:absolute;top:6px;left:50%;right:-50%;height:1px;background:var(--color-divider)"></div>
+<div style="position:relative;width:22px;height:22px;margin-top:-5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;line-height:1;background:var(--color-neutral-800);border:1.5px solid var(--color-neutral-700);color:var(--color-neutral-300);box-shadow:none">₹</div>
+<div style="margin-top:var(--space-4);font-size:11px;letter-spacing:.06em;color:var(--color-neutral-400)">Jul</div>
+<div style="margin-top:3px;font-family:var(--font-heading);font-size:13px;color:var(--color-neutral-300)">₹35,000</div>
+</div>
+<div style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center">
+
+<div style="position:relative;width:22px;height:22px;margin-top:-5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;line-height:1;background:linear-gradient(180deg,#ffe9a3,#f6c445 45%,#dc9a1f);border:1.5px solid #a86b12;color:#6b5111;box-shadow:0 2px 5px rgba(0,0,0,0.45)">₹</div>
+<div style="margin-top:var(--space-4);font-size:11px;letter-spacing:.06em;color:var(--color-text)">Aug</div>
+<div style="margin-top:3px;font-family:var(--font-heading);font-size:13px;color:var(--color-text)">₹35,000</div>
+</div>
+</div>
+<div style="margin-top:var(--space-4);font-size:11px;color:var(--color-neutral-500)">Plot 04 · ₹35,000 debited on the 5th</div>
+</div>
+
+<div style="flex:none;padding:var(--space-8) 22px 0">
+<div data-act="p-saved" style="position:relative;cursor:pointer;padding:var(--space-6);border-radius:var(--radius-md);background:linear-gradient(180deg,#262a38 0%,#1d2029 60%,#171a22 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),var(--shadow-sm);overflow:hidden">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4)">
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+<span style="font-size:10px;letter-spacing:.12em;color:#d9b463">MONEY YOU KEPT</span>
+<span style="font-size:12px;color:var(--color-neutral-500)">›</span>
+</div>
+<div style="margin-top:4px;font-family:var(--font-heading);font-size:38px;letter-spacing:-.02em;color:#f3dfa8;font-variant-numeric:tabular-nums">₹21.5L</div>
+<div style="margin-top:2px;font-size:11px;white-space:nowrap;color:var(--color-neutral-400)">costs a flat would have taken</div>
+</div>
+<div style="position:relative;width:66px;height:58px;flex:none">
+<div style="position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle,rgba(246,196,69,0.2) 0%,transparent 68%);animation:ppGlow 4.5s ease-in-out infinite"></div>
+<svg viewBox="0 0 66 58" style="position:relative;width:100%;height:100%;display:block" aria-hidden="true">
+<ellipse cx="33" cy="52" rx="24" ry="4" fill="#0b0d16" opacity="0.5"></ellipse>
+<g stroke="#a86b12" stroke-width="1.4">
+<ellipse cx="20" cy="44" rx="15" ry="5.5" fill="#dc9a1f"></ellipse>
+<ellipse cx="20" cy="38" rx="15" ry="5.5" fill="#e8b53c"></ellipse>
+<ellipse cx="20" cy="32" rx="15" ry="5.5" fill="#f6c445"></ellipse>
+<ellipse cx="46" cy="46" rx="12" ry="4.5" fill="#dc9a1f"></ellipse>
+<ellipse cx="46" cy="41" rx="12" ry="4.5" fill="#f6c445"></ellipse>
+</g>
+<circle cx="49" cy="18" r="12" fill="#ffe9a3" stroke="#a86b12" stroke-width="1.6"></circle>
+<text x="49" y="24" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="14" fill="#6b5111">₹</text>
+</svg>
+</div>
+</div>
+
+<div style="margin-top:var(--space-6);height:10px;border-radius:5px;background:#12141d;box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);overflow:hidden">
+<div style="width:62%;height:100%;border-radius:5px;background:linear-gradient(90deg,#a86b12,#f6c445)"></div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:var(--space-2);font-size:11px;color:var(--color-neutral-500)">
+<span>₹13.5L of it on day one</span>
+<span>₹3.2L more a year at this pace</span>
+</div>
+</div>
+</div>
+
+<div style="flex:none;padding:var(--space-6) 22px 0">
+<div data-act="p-call" style="cursor:pointer;display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+<div style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--color-accent-900);display:flex;align-items:center;justify-content:center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-200)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M15 10l6-4v12l-6-4z"></path><rect x="3" y="6" width="12" height="12" rx="2"></rect></svg>
+</div>
+<div style="flex:1;min-width:0">
+<div style="font-size:14px">Talk to your fund manager</div>
+<div style="font-size:11px;color:var(--color-neutral-500);margin-top:2px">20-minute video call · next slot today 11:00</div>
+</div>
+<span style="flex:none;font-size:12px;color:var(--color-neutral-500)">›</span>
+</div>
+</div>
+
+<div style="flex:none;padding:var(--space-4) 22px var(--space-4);font-size:11px;line-height:1.5;color:var(--color-neutral-500)">Payment history only. Nothing on this screen depends on what the market did.</div>
+
+<div id="p2Scrim" hidden>
+<div data-act="p-close" style="position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:22px;box-sizing:border-box;background:rgba(11,13,22,0.62);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)">
+<div data-act="p-stop" style="width:100%;max-width:340px;box-shadow:var(--shadow-lg);border-radius:var(--radius-md)">
+
+<div id="p2In" hidden>
+<div style="padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface)">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font-size:10px;letter-spacing:.14em;color:var(--color-accent-300)">WHERE THE INCOME COMES FROM</span>
+<span data-act="p-close" style="cursor:pointer;font-size:11px;color:var(--color-neutral-500)">close ✕</span>
+</div>
+<div style="font-family:var(--font-heading);font-size:30px;letter-spacing:-.015em;margin-top:4px;color:var(--color-accent-200)">₹42,000</div>
+<div style="margin-top:var(--space-4)">
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:9px 0;border-top:1px solid var(--color-divider)">
+<div><div style="font-size:13px">Villa 01</div><div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">Moderate · arbitrage sleeve</div></div>
+<div style="font-family:var(--font-heading);font-size:15px">₹10,500</div>
+</div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:9px 0;border-top:1px solid var(--color-divider)">
+<div><div style="font-size:13px">Villa 05</div><div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">Conservative · arbitrage sleeve</div></div>
+<div style="font-family:var(--font-heading);font-size:15px">₹10,500</div>
+</div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:9px 0;border-top:1px solid var(--color-divider)">
+<div><div style="font-size:13px">Villa 06</div><div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">Aggressive · arbitrage sleeve</div></div>
+<div style="font-family:var(--font-heading);font-size:15px">₹10,500</div>
+</div>
+</div>
+<div style="margin-top:var(--space-4);font-size:11px;line-height:1.5;color:var(--color-neutral-500)">Credited on the 1st. Not fixed or assured — the payout tracks the arbitrage sleeve.</div>
+</div>
+</div>
+
+<div id="p2Call" hidden>
+<div style="padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface)">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font-size:10px;letter-spacing:.14em;color:var(--color-accent-300)">BOOK A VIDEO CALL</span>
+<span data-act="p-close" style="cursor:pointer;font-size:11px;color:var(--color-neutral-500)">close ✕</span>
+</div>
+<div style="margin-top:4px;font-family:var(--font-heading);font-size:20px">Anand R · fund manager</div>
+<div style="margin-top:2px;font-size:11px;color:var(--color-neutral-500)">20 minutes · available slots this week</div>
+<div style="padding:10px 0;border-top:1px solid var(--color-divider)">
+<div style="display:flex;align-items:baseline;gap:8px">
+<span style="font-size:13px">Mon 31 Aug</span>
+<span style="font-size:11px;color:var(--color-neutral-500)">today</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-3)">
+<span data-act="slot1" style="padding:8px 0;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--color-accent-700);cursor:pointer;font-size:12px;color:var(--color-accent-200)">11:00</span>
+<span data-act="slot2" style="padding:8px 0;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--color-accent-700);cursor:pointer;font-size:12px;color:var(--color-accent-200)">16:30</span>
+</div>
+</div>
+<div style="padding:10px 0;border-top:1px solid var(--color-divider)">
+<div style="display:flex;align-items:baseline;gap:8px">
+<span style="font-size:13px">Tue 1 Sep</span>
+<span style="font-size:11px;color:var(--color-neutral-500)"></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-3)">
+<span data-act="slot3" style="padding:8px 0;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--color-accent-700);cursor:pointer;font-size:12px;color:var(--color-accent-200)">09:30</span>
+<span data-act="slot4" style="padding:8px 0;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--color-accent-700);cursor:pointer;font-size:12px;color:var(--color-accent-200)">18:00</span>
+</div>
+</div>
+<div style="padding:10px 0;border-top:1px solid var(--color-divider)">
+<div style="display:flex;align-items:baseline;gap:8px">
+<span style="font-size:13px">Wed 2 Sep</span>
+<span style="font-size:11px;color:var(--color-neutral-500)"></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-3)">
+<span data-act="slot5" style="padding:8px 0;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--color-accent-700);cursor:pointer;font-size:12px;color:var(--color-accent-200)">12:00</span>
+</div>
+</div>
+<div style="padding:10px 0;border-top:1px solid var(--color-divider)">
+<div style="display:flex;align-items:baseline;gap:8px">
+<span style="font-size:13px">Thu 3 Sep</span>
+<span style="font-size:11px;color:var(--color-neutral-500)"></span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-3)">
+<span data-act="slot6" style="padding:8px 0;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--color-accent-700);cursor:pointer;font-size:12px;color:var(--color-accent-200)">15:00</span>
+</div>
+</div>
+<div id="p2Slot" hidden>
+<div style="margin-top:var(--space-4);padding:var(--space-4);border-radius:var(--radius-sm);background:var(--color-accent-900);font-size:12px;color:var(--color-accent-100)">Requested · <span id="p2SlotName"></span> — a video link will arrive by SMS.</div>
+</div>
+</div>
+</div>
+
+<div id="p2Saved" hidden>
+<div style="padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface)">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font-size:10px;letter-spacing:.14em;color:var(--color-accent-300)">MONEY YOU KEPT</span>
+<span data-act="p-close" style="cursor:pointer;font-size:11px;color:var(--color-neutral-500)">close ✕</span>
+</div>
+<div style="font-family:var(--font-heading);font-size:30px;letter-spacing:-.015em;margin-top:4px;color:var(--color-accent-200)">₹21.5L</div>
+<div style="margin-top:var(--space-4)">
+<div style="display:flex;align-items:baseline;gap:var(--space-4);padding:8px 0;border-top:1px solid var(--color-divider)">
+<div style="flex:1;min-width:0">
+<div style="font-size:13px">Stamp duty &amp; registration</div>
+<div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">4 villas at ₹50L, 1 under construction</div>
+</div>
+<div style="flex:none;font-family:var(--font-heading);font-size:15px;color:var(--color-accent-200)">₹11.0L</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-4);padding:8px 0;border-top:1px solid var(--color-divider)">
+<div style="flex:1;min-width:0">
+<div style="font-size:13px">Brokerage to buy</div>
+<div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">2% on a flat, nil here</div>
+</div>
+<div style="flex:none;font-family:var(--font-heading);font-size:15px;color:var(--color-accent-200)">₹3.4L</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-4);padding:8px 0;border-top:1px solid var(--color-divider)">
+<div style="flex:1;min-width:0">
+<div style="font-size:13px">Legal &amp; documentation</div>
+<div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">per property, nil here</div>
+</div>
+<div style="flex:none;font-family:var(--font-heading);font-size:15px;color:var(--color-accent-200)">₹1.9L</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:var(--space-4);padding:8px 0;border-top:1px solid var(--color-divider)">
+<div style="flex:1;min-width:0">
+<div style="font-size:13px">Maintenance &amp; repairs</div>
+<div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">since Jun 2024, nil here</div>
+</div>
+<div style="flex:none;font-family:var(--font-heading);font-size:15px;color:var(--color-accent-200)">₹5.2L</div>
+</div>
+</div>
+<div style="margin-top:var(--space-4);font-size:11px;line-height:1.5;color:var(--color-neutral-500)">Costs you would have paid buying the same value as flats. Avoided, not earned.</div>
+</div>
+</div>
+
+<div id="p2Out" hidden>
+<div style="padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface)">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font-size:10px;letter-spacing:.14em;color:var(--color-neutral-400)">WHERE THE OUTGO GOES</span>
+<span data-act="p-close" style="cursor:pointer;font-size:11px;color:var(--color-neutral-500)">close ✕</span>
+</div>
+<div style="font-family:var(--font-heading);font-size:30px;letter-spacing:-.015em;margin-top:4px">₹35,000</div>
+<div style="margin-top:var(--space-4)">
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:9px 0;border-top:1px solid var(--color-divider)">
+<div><div style="font-size:13px">Plot 04</div><div style="font-size:11px;color:var(--color-neutral-500);margin-top:1px">e-NACH · 16 of 20 paid · due 5 Oct</div></div>
+<div style="font-family:var(--font-heading);font-size:15px">₹35,000</div>
+</div>
+</div>
+<div style="margin-top:var(--space-4);font-size:11px;line-height:1.5;color:var(--color-neutral-500)">Each plot tops out as a villa when it reaches ₹50L.</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+  </div>
+
+  <div class="screen" id="scr-settings" hidden>
+  <div class="st">
+    <div class="st-id">
+      <div class="st-av">R<i><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg></i></div>
+      <div style="min-width:0">
+        <div class="st-name">Ranjeev Ramprasad</div>
+        <div class="st-sub"><span>+91 89251 88870</span><span class="st-kyc">1735669</span></div>
+      </div>
+      <button class="st-out" type="button" title="Sign out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5v16h5"></path><path d="M14 8l4 4-4 4"></path><path d="M18 12H9"></path></svg></button>
+    </div>
+
+    <div class="st-cal">
+      <div class="st-cal-h"><span class="st-k">Calendar</span><span class="st-cal-m">Sep – Oct</span></div>
+      <div class="st-cal-track">
+        <div class="ev done" style="left:4%"><i></i><b>7 Sep</b><em>₹9,999</em></div>
+        <div class="ev done" style="left:22%"><i></i><b>10 Sep</b><em>₹4,99,975</em></div>
+        <div class="ev now" style="left:40%"><i></i><b>Today</b></div>
+        <div class="ev in" style="left:58%"><i></i><b>15 Sep</b><em>+₹500</em></div>
+        <div class="ev in" style="left:86%"><i></i><b>5 Oct</b><em>+₹1,500</em></div>
+      </div>
+      <div class="st-cal-f"><span><s class="dot done"></s>In</span><span><s class="dot in"></s>To you</span></div>
+    </div>
+
+    <div>
+      <div class="st-k" style="margin-bottom:8px">Monthly to you</div>
+      <div class="st-card">
+        <div class="swp">
+          <div class="swp-ic gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="m6 13 6 6 6-6"></path></svg></div>
+          <div class="t"><b>₹1,500</b><span>Kotak Arbitrage · 5 Oct →</span><div class="swp-run"><i style="width:0%"></i></div></div><div class="ring" style="--p:0"><span>0/100</span></div>
+        </div>
+        <div class="swp">
+          <div class="swp-ic gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="m6 13 6 6 6-6"></path></svg></div>
+          <div class="t"><b>₹500</b><span>Nippon Small Cap · 15 Sep →</span><div class="swp-run"><i style="width:0%"></i></div></div><div class="ring" style="--p:0"><span>0/2</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="st-card-h" style="padding:0 0 8px"><span class="st-k">Transactions</span><a href="#" data-act="tx-all">All 10 ›</a></div>
+      <div class="st-card" id="txCard">
+        <div class="tx"><div class="tx-ic out lump"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m6 11 6-6 6 6"></path></svg></div><div class="tx-t"><b>Kotak Arbitrage Fund</b><span>10 Sep · Lumpsum</span></div><div class="tx-a out"><b>₹1,79,991</b><span>4,474.116 U<br>@ 40.2294</span></div></div>
+        <div class="tx"><div class="tx-ic out lump"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m6 11 6-6 6 6"></path></svg></div><div class="tx-t"><b>Bandhan Small Cap Fund</b><span>10 Sep · Lumpsum</span></div><div class="tx-a out"><b>₹1,19,994</b><span>2,296.668 U<br>@ 52.2470</span></div></div>
+        <div class="tx"><div class="tx-ic out lump"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m6 11 6-6 6 6"></path></svg></div><div class="tx-t"><b>Edelweiss Mid Cap Fund</b><span>10 Sep · Lumpsum</span></div><div class="tx-a out"><b>₹1,19,994</b><span>1,102.066 U<br>@ 108.8810</span></div></div>
+        <div class="tx"><div class="tx-ic out lump"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m6 11 6-6 6 6"></path></svg></div><div class="tx-t"><b>ICICI Pru Gold ETF FOF</b><span>10 Sep · Lumpsum</span></div><div class="tx-a out"><b>₹79,996</b><span>1,703.536 U<br>@ 46.9588</span></div></div>
+        <div class="tx"><div class="tx-ic out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v5h5"></path></svg></div><div class="tx-t"><b>Bandhan Nifty 500 Momentum 50</b><span>9 Sep · SIP</span></div><div class="tx-a out"><b>₹100</b><span>10.898 U<br>@ 9.1757</span></div></div>
+        <div class="tx-more" hidden>
+        <div class="tx"><div class="tx-ic out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v5h5"></path></svg></div><div class="tx-t"><b>Kotak Arbitrage Fund</b><span>7 Sep · SIP</span></div><div class="tx-a out"><b>₹3,599.82</b><span>89.629 U<br>@ 40.1637</span></div></div>
+        <div class="tx"><div class="tx-ic out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v5h5"></path></svg></div><div class="tx-t"><b>Edelweiss Mid Cap Fund</b><span>7 Sep · SIP</span></div><div class="tx-a out"><b>₹2,399.88</b><span>21.933 U<br>@ 109.4190</span></div></div>
+        <div class="tx"><div class="tx-ic out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v5h5"></path></svg></div><div class="tx-t"><b>ICICI Pru Gold ETF FOF</b><span>7 Sep · SIP</span></div><div class="tx-a out"><b>₹1,599.92</b><span>34.263 U<br>@ 46.6956</span></div></div>
+        <div class="tx"><div class="tx-ic out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v5h5"></path></svg></div><div class="tx-t"><b>Nippon India Small Cap Fund</b><span>7 Sep · SIP</span></div><div class="tx-a out"><b>₹1,199.94</b><span>6.450 U<br>@ 186.0380</span></div></div>
+        <div class="tx"><div class="tx-ic out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v5h5"></path></svg></div><div class="tx-t"><b>Bandhan Small Cap Fund</b><span>7 Sep · SIP</span></div><div class="tx-a out"><b>₹1,199.94</b><span>22.953 U<br>@ 52.2790</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="st-k" style="margin-bottom:8px">Folios</div>
+      <div class="st-card">
+        <div class="fo"><s style="background:#8fb7b0"></s><div class="t"><b>Kotak Arbitrage Fund</b><span>19774439</span></div><div class="a"><b>36%</b><span>4,563.745 U</span></div><div class="bar"><i style="width:36.0%;background:#8fb7b0"></i></div></div>
+        <div class="fo"><s style="background:#58b858"></s><div class="t"><b>Bandhan Small Cap Fund</b><span>10156075/57</span></div><div class="a"><b>24%</b><span>2,319.621 U</span></div><div class="bar"><i style="width:23.8%;background:#58b858"></i></div></div>
+        <div class="fo"><s style="background:#6ac86a"></s><div class="t"><b>Edelweiss Mid Cap Fund</b><span>91052469113</span></div><div class="a"><b>24%</b><span>1,123.999 U</span></div><div class="bar"><i style="width:24.0%;background:#6ac86a"></i></div></div>
+        <div class="fo"><s style="background:#e9c15c"></s><div class="t"><b>ICICI Pru Gold ETF FOF</b><span>46358822/97</span></div><div class="a"><b>16%</b><span>1,737.799 U</span></div><div class="bar"><i style="width:16.0%;background:#e9c15c"></i></div></div>
+        <div class="fo"><s style="background:#4aa04a"></s><div class="t"><b>Nippon India Small Cap Fund</b><span>477505368841</span></div><div class="a"><b>0.2%</b><span>6.450 U</span></div><div class="bar"><i style="width:0.2%;background:#4aa04a"></i></div></div>
+        <div class="fo"><s style="background:#9184d9"></s><div class="t"><b>Bandhan Nifty 500 Momentum 50</b><span>10156075/57</span></div><div class="a"><b>0.0%</b><span>10.898 U</span></div><div class="bar"><i style="width:0.0%;background:#9184d9"></i></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="st-k" style="margin-bottom:8px">You</div>
+      <div class="st-card">
+        <div class="kv"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M7 10h5M7 14h10"></path></svg></span><b>FZHPR1556K</b></div>
+        <div class="kv"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span><b>10 Dec 2003</b></div>
+        <div class="kv"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg></span><b>ranjeev2003@gmail.com</b></div>
+        <div class="kv"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span><b>117/D A3 Nutech Sainiketha, K K Nagar, Chennai 600078</b></div>
+      </div>
+    </div>
+
+    <a class="st-pres" href="https://claude.ai/code/artifact/a30cfb93-c4c0-47e8-9cae-ef57ef037f54" target="_blank" rel="noopener">
+      <div class="glow"></div>
+      <svg class="mini" viewBox="-80 0 400 360">
+        <use href="#tLocked" x="0" y="216"></use><use href="#tLocked" x="93.6" y="162"></use><use href="#tLocked" x="-93.6" y="162"></use>
+        <use href="#tVilla" x="0" y="0"></use><use href="#tVilla" x="93.6" y="54"></use><use href="#tVilla" x="-93.6" y="54"></use><use href="#tVilla" x="0" y="108"></use>
+      </svg>
+      <div class="txt"><b>Your presentation</b></div>
+      <div class="st-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></div>
+    </a>
+
+    <button class="st-upd" type="button" id="updBtn" data-act="update-app">
+      <span class="st-upd-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg></span>
+      <span class="t"><b>Update</b><span id="updSub">v1.4</span></span>
+      <span class="st-upd-arrow">›</span>
+    </button>
+
+    <div class="st-foot">Folios in your name · AssetPlus</div>
+  </div>
+  </div>
+
+  <div class="tabs">
+    <div data-tab="explore"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="120" fill="#161826"></rect>
+    <polygon points="60,44 96,64 60,84 24,64" fill="#6cba36"></polygon>
+    <polygon points="96,64 60,84 60,88 96,68" fill="#59a52e"></polygon>
+    <polygon points="60,84 24,64 24,68 60,88" fill="#3f7a20"></polygon>
+    <polygon points="60,30 78,41 60,52 42,41" fill="#e4d8c2"></polygon>
+    <polygon points="78,41 60,52 60,66 78,55" fill="#efe6d7"></polygon>
+    <polygon points="60,52 42,41 42,55 60,66" fill="#d3c5ab"></polygon>
+    <circle cx="60" cy="20" r="8" fill="#f6c445" stroke="#a86b12" stroke-width="1.5"></circle>
+  </svg><span class="lbl">Explore</span></div>
+    <div data-tab="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg><span class="lbl">Settings</span></div>
+    <div class="on" data-tab="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"></path><path d="M5.5 9.5V20h13V9.5"></path><path d="M10 20v-5.5h4V20"></path></svg><span class="lbl">Home</span></div>
+    <div data-tab="progress"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"></path><path d="M5 4h11l-2 4 2 4H5"></path></svg><span class="lbl">Progress</span></div>
+  </div>
+
+  <div class="sip" id="sip"><iframe id="sipFrame" title="Your SIP" style="border:0;width:100%;height:100%;display:block;background:var(--color-bg)"></iframe></div>
+
+  <div class="one-toast" id="oneToast"></div>
+
+  <div class="scrim" id="fineScrim">
+    <div class="sheet">
+      <div class="pad">
+        <div class="head"><span class="h">What you actually own</span><span class="close" id="fineClose">close &#10005;</span></div>
+        <div class="fine-row" style="margin-top:var(--space-6)">
+          <svg class="fine-mini lg" viewBox="20 16 200 152" aria-hidden="true"><use href="#tVilla"></use></svg>
+          <span><b>Villa</b> — a picture of a 50 / 50 arbitrage + equity fund mix. The arbitrage half pays the monthly income; the equity half grows.</span>
+        </div>
+        <div class="fine-row" style="margin-top:var(--space-6)">
+          <svg class="fine-mini lg" viewBox="20 16 200 152" aria-hidden="true"><use href="#tLand"></use></svg>
+          <span><b>Plot</b> — pure equity, large / mid / small cap in the mix you choose. No income until it becomes a villa.</span>
+        </div>
+        <div class="fine-note" style="margin-top:var(--space-6);text-align:left">Both are units of a fund portfolio in your own name, valued at NAV and moving daily. Nothing here is assured.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scrim" id="scrim">
+    <div class="sheet">
+      <div class="hero"><svg viewBox="18 14 204 152"><use href="#tVilla" id="heroTile"></use></svg></div>
+      <div class="pad">
+        <div class="head">
+          <span><span class="h" id="mName">Villa 01</span> <span class="tag" id="mTag">Moderate</span></span>
+          <span class="close" id="mClose">close &#10005;</span>
+        </div>
+        <div class="sub" id="mNote">33 / 33 / 33 large · mid · small</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---- build-stage tiles: grading / foundation / steel, generated on the plot projection ----
+  (function () {
+    var W = 311.8, H = 180, NS = 'http://www.w3.org/2000/svg';
+    function px(a, b) { return 410 + (a - b) * W; }
+    function py(a, b, h) { return 70 + (a + b) * H - (h || 0); }
+    function pt(a, b, h) { return [px(a, b), py(a, b, h)]; }
+    function P(arr) { return arr.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '); }
+    function poly(pts, fill, op) { return '<polygon points="' + pts + '" fill="' + fill + '"' + (op != null ? ' opacity="' + op + '"' : '') + '></polygon>'; }
+    function ell(cx, cy, rx, ry, fill, op) { return '<ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="' + rx + '" ry="' + ry + '" fill="' + fill + '"' + (op != null ? ' opacity="' + op + '"' : '') + '></ellipse>'; }
+    function box(a0, b0, a1, b1, h0, h1, c) {
+      return poly(P([pt(a0, b1, h1), pt(a1, b1, h1), pt(a1, b1, h0), pt(a0, b1, h0)]), c[2]) +
+             poly(P([pt(a1, b0, h1), pt(a1, b1, h1), pt(a1, b1, h0), pt(a1, b0, h0)]), c[1]) +
+             poly(P([pt(a0, b0, h1), pt(a1, b0, h1), pt(a1, b1, h1), pt(a0, b1, h1)]), c[0]);
+    }
+    var base = poly('721.8,264 410,444 410,516 721.8,336', '#8a5a33') + poly('410,444 98.2,264 98.2,336 410,516', '#6d4527') +
+               poly('721.8,264 410,444 410,458 721.8,278', '#3f2a18', 0.35) +
+               poly('721.8,250 410,430 410,444 721.8,264', '#59a52e') + poly('410,430 98.2,250 98.2,264 410,444', '#3f7a20') +
+               poly('410,70 721.8,250 410,430 98.2,250', '#6cba36') +
+               '<polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#3f7a20" stroke-width="8"></polygon>';
+    var CON = ['#b0b4ba', '#9aa0a7', '#7c8189'], STL = ['#c9ced4', '#9aa0a7', '#6f7580'], DRK = ['#5d6170', '#3f424d', '#2b2e3a'],
+        YEL = ['#f6c445', '#dc9a1f', '#a86b12'], WOOD = ['#c9a97a', '#a97140', '#8a5a2f'], TRK = ['#4a4e5b', '#2b2e3a', '#232634'], GLS = ['#f6c445', '#3a5f7a', '#2f4f66'];
+
+    // stage 2 — grading: front-right half stripped to earth, dozer at work
+    var grade = poly('721.8,264 410,444 410,516 721.8,336', '#8a5a33') + poly('410,444 98.2,264 98.2,336 410,516', '#6d4527') +
+                poly('721.8,250 410,430 410,444 721.8,264', '#7a4d2b') + poly('410,430 98.2,250 98.2,264 410,444', '#3f7a20') +
+                poly('410,70 721.8,250 410,430 98.2,250', '#9a6a3f') +
+                '<polygon points="410,70 721.8,250 410,430 98.2,250" fill="none" stroke="#6d4527" stroke-width="8"></polygon>' +
+                poly(P([pt(0,0), pt(.42,0), pt(.40,.25), pt(.43,.5), pt(.41,.75), pt(.42,1), pt(0,1)]), '#6cba36') +
+                '<polygon points="' + P([pt(0,0), pt(.42,0), pt(.40,.25), pt(.43,.5), pt(.41,.75), pt(.42,1), pt(0,1)]) + '" fill="none" stroke="#3f7a20" stroke-width="8"></polygon>' +
+                poly(P([pt(.44,.415), pt(.62,.415), pt(.62,.46), pt(.44,.46)]), '#7a4d2b', .55) + poly(P([pt(.44,.54), pt(.62,.54), pt(.62,.585), pt(.44,.585)]), '#7a4d2b', .55) +
+                ell(px(.58,.5), py(.58,.5) + 4, 92, 40, '#3f2a18', .35) +
+                box(.45,.415,.69,.46,0,20,TRK) + box(.47,.45,.66,.55,14,44,YEL) + box(.48,.46,.57,.54,44,78,GLS) + box(.47,.45,.58,.55,78,85,YEL) +
+                box(.45,.54,.69,.585,0,20,TRK) + box(.745,.395,.77,.605,2,40,['#b0b6bd','#9aa0a7','#7c8189']) +
+                ell(px(.83,.5), py(.83,.5) - 8, 44, 22, '#6d4527') + ell(px(.84,.5) + 4, py(.84,.5) - 12, 34, 16, '#8a5a33') + ell(px(.85,.5) + 8, py(.85,.5) - 17, 16, 7, '#b98553') +
+                ell(px(.18,.18), py(.18,.18), 34, 14, '#35691b', .32) + poly(P([[px(.18,.18)-4, py(.18,.18)], [px(.18,.18)-4, py(.18,.18)-50], [px(.18,.18)+4, py(.18,.18)-50], [px(.18,.18)+4, py(.18,.18)]]), '#8a5a2f') +
+                ell(px(.18,.18)-8, py(.18,.18)-62, 30, 30, '#3f7a20') + ell(px(.18,.18)+4, py(.18,.18)-70, 31, 31, '#4b8f26') + ell(px(.18,.18)-6, py(.18,.18)-80, 20, 20, '#59a52e');
+
+    // stage 3 — foundation: pit, formwork, half-set slab, starter bars
+    var D = 14, TOP = 6, T = .012;
+    var found = base +
+      poly(P([pt(.2,.2,-D), pt(.8,.2,-D), pt(.8,.8,-D), pt(.2,.8,-D)]), '#6b6157') +
+      poly(P([pt(.2,.2,0), pt(.2,.8,0), pt(.2,.8,-D), pt(.2,.2,-D)]), '#8a5a33') + poly(P([pt(.2,.2,0), pt(.8,.2,0), pt(.8,.2,-D), pt(.2,.2,-D)]), '#6d4527') +
+      box(.2,.2,.2+T,.8,-D,10,WOOD) + box(.2,.2,.8,.2+T,-D,10,WOOD) +
+      box(.235,.2+T,.5,.765,-D,TOP,CON) + box(.5,.2+T,.765,.765,-D,TOP,['#8e939a','#7c8189','#656a72']) +
+      box(.8-T,.2,.8,.8,-D,10,WOOD) + box(.2,.8-T,.8,.8,-D,10,WOOD) +
+      ell(px(.69,.4), py(.69,.4,TOP), 34, 15, '#7c8189', .7) + ell(px(.69,.4), py(.69,.4,TOP), 22, 9, '#9aa0a7', .6);
+    [.32,.5,.68].forEach(function (a) { [.32,.5,.68].forEach(function (b) {
+      var p = pt(a, b, TOP);
+      found += poly(P([[p[0]-1.2,p[1]],[p[0]-1.2,p[1]-30],[p[0]+1.2,p[1]-30],[p[0]+1.2,p[1]]]), '#7d5027') + poly(P([[p[0]-1.2,p[1]-30],[p[0]-1.2,p[1]-33],[p[0]+1.2,p[1]-33],[p[0]+1.2,p[1]-30]]), '#a86b12');
+    }); });
+    found += ell(px(.09,.56), py(.09,.56) - 5, 26, 13, '#c9a97a') + ell(px(.09,.56) + 4, py(.09,.56) - 9, 18, 9, '#e3cfa3') +
+             box(.86,.1,.92,.128,0,9,['#efe6d7','#d8d0c0','#b8b0a2']) + box(.86,.13,.92,.158,0,9,['#efe6d7','#d8d0c0','#b8b0a2']) + box(.863,.115,.917,.143,9,18,['#efe6d7','#d8d0c0','#b8b0a2']);
+
+    // stage 4 — steel frame: cured slab, 3x3 columns, beams, scaffold, crane
+    var steel = base + ell(px(.5,.5), py(.5,.5) + 4, 200, 92, '#35691b', .22) + box(.235,.235,.765,.765,0,TOP,CON);
+    var G = [.32,.5,.68], CW = .018, BW = .012;
+    steel += ell(px(.08,.6), py(.08,.6) + 3, 30, 13, '#35691b', .3) + box(.035,.555,.125,.645,0,8,CON) + box(.065,.585,.095,.615,8,190,YEL);
+    for (var hh = 20; hh < 180; hh += 22) steel += poly(P([pt(.095,.585,hh), pt(.095,.615,hh+14), pt(.095,.615,hh+18), pt(.095,.585,hh+4)]), '#a86b12', .55);
+    steel += box(.06,.58,.1,.62,190,204,DRK) + box(.056,.576,.104,.624,204,224,YEL) + box(.086,.58,.106,.62,210,222,GLS);
+    G.forEach(function (a, i) { G.forEach(function (b, j) {
+      [60,120].forEach(function (h) {
+        var skip = h === 120 && i === 2 && j === 2;
+        if (i > 0 && !skip) steel += box(G[i-1]+CW/2, b-BW/2, a-CW/2, b+BW/2, TOP+h-6, TOP+h, STL);
+        if (j > 0 && !skip) steel += box(a-BW/2, G[j-1]+CW/2, a+BW/2, b-CW/2, TOP+h-6, TOP+h, STL);
+      });
+      steel += box(a-.03,b-.03,a+.03,b+.03,TOP,TOP+2,DRK) + box(a-CW/2,b-CW/2,a+CW/2,b+CW/2,TOP+2,TOP+120,STL);
+    }); });
+    [[.42,.8],[.56,.8],[.42,.86],[.56,.86]].forEach(function (c) { steel += box(c[0]-.004,c[1]-.004,c[0]+.004,c[1]+.004,0,128,STL); });
+    steel += box(.42,.8,.56,.86,84,88,WOOD) + box(.42,.8,.56,.86,40,44,WOOD);
+    var JH = 224;
+    steel += box(-.06,.59,.08,.61,JH,JH+8,YEL) + box(-.06,.58,-.02,.62,JH-22,JH+8,CON) + box(.08,.59,.66,.61,JH,JH+8,YEL) + box(.074,.594,.086,.606,JH+8,JH+38,YEL);
+    var hx = px(.59,.6), hy0 = py(.59,.6,JH-8), hy1 = py(.59,.6,TOP+128);
+    steel += box(.578,.586,.602,.614,JH-8,JH,DRK) + poly(P([[hx-.6,hy0],[hx+.6,hy0],[hx+.6,hy1],[hx-.6,hy1]]), '#c9ced4') + poly(P([[hx-4,hy1],[hx+4,hy1],[hx+4,hy1+8],[hx-4,hy1+8]]), '#3f424d') +
+             box(.5+CW/2,.68-BW/2,.68-CW/2,.68+BW/2,TOP+128-14,TOP+128-8,STL);
+
+    function sym(id, inner, wrap) {
+      var g = document.createElementNS(NS, 'g'); g.setAttribute('id', id);
+      g.innerHTML = wrap === false ? inner : '<g transform="translate(120,80) scale(0.3) translate(-410,-250)">' + inner + '</g>';
+      document.querySelector('.board svg defs').appendChild(g);
+    }
+    sym('tGrade', grade); sym('tFound', found); sym('tSteel', steel);
+    // stage 0 — bare: the plot silhouette as a lit-edge outline
+    sym('tBare', '<polygon points="213.6,84 120,138 120,159.6 213.6,105.6" fill="#0f1019" stroke="rgba(108,186,54,.5)" stroke-width="1"></polygon>' +
+      '<polygon points="120,138 26.4,84 26.4,105.6 120,159.6" fill="#0f1019" stroke="rgba(108,186,54,.5)" stroke-width="1"></polygon>' +
+      '<polygon points="120,26 213.6,80 120,134 26.4,80" fill="#12141d" stroke="rgba(108,186,54,.6)" stroke-width="1.2"></polygon>' +
+      '<polygon class="stagePulse" points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#6cba36" stroke-width="1.2" opacity=".5"></polygon>', false);
+  })();
+
+  // ---- SIP status: the real SIP Status page in a frame, one build per tile ----
+  var FALLBACK_TILE = ['#tLocked', '#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
+  var STAGE_NAME = ['Open tile', 'The Plot', 'Levelled Ground', 'Foundation', 'Steel Frame', 'The Villa'];
+  var sipBuilds = {}, sipCell = null, sipReady = false;
+  var sipEl = document.getElementById('sip'), sipFrame = document.getElementById('sipFrame');
+  function inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  function sipStage(n) { return Math.min(5, Math.floor(25000 * n / 100000)); }
+  var oneToast = document.getElementById('oneToast'), oneT;
+  var sipLadder = false;
+  function sipOpen(cell, opts) {
+    sipLadder = !!(opts && opts.ladder);
+    // one build at a time: an open tile stays locked while another plot is under construction
+    if (cell.dataset.state === 'locked' && !sipLadder) {
+      var busy = document.querySelector('.cell[data-state="build"]');
+      if (busy) {
+        oneToast.textContent = 'Finish ' + busy.dataset.name + ' first — one build at a time.';
+        oneToast.classList.add('show'); clearTimeout(oneT); oneT = setTimeout(function () { oneToast.classList.remove('show'); }, 2200);
+        return;
+      }
+    }
+    sipQueue.length = 0; sipPreloading = false;
+    sipCell = cell; sipReady = false;
+    sipBuilds[cell.dataset.name] = sipBuilds[cell.dataset.name] || { paid: 0 };
+    sipFrame.src = 'sip/SIP Status.dc.html';
+    sipEl.classList.add('open');
+  }
+  function sipClose() { sipEl.classList.remove('open'); sipFrame.src = 'about:blank'; }
+  function sipInit() {
+    if (!sipCell || !sipFrame.contentWindow) return;
+    sipFrame.contentWindow.postMessage({ type: 'sip:init', paid: sipBuilds[sipCell.dataset.name].paid, tile: sipCell.dataset.name, ladder: sipLadder && sipEl.classList.contains('open') }, '*');
+  }
+  // exact stage art arrives from the frame; wrap it on the board's parcel transform
+  function sipSymbol(stage, inner) {
+    var id = 'tStage' + stage, defs = document.querySelector('.board svg defs'), g = document.getElementById(id);
+    if (!g) { g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('id', id); defs.appendChild(g); }
+    g.innerHTML = '<g transform="translate(120,80) scale(0.3) translate(-410,-250)">' + inner + '</g>';
+    return '#' + id;
+  }
+  function sipMirror(stage, svg) {
+    if (!sipCell) return;
+    var b = sipBuilds[sipCell.dataset.name], inv = 25000 * b.paid;
+    var href = stage === 0 ? '#tLocked' : stage === 5 ? '#tVilla' : (svg ? sipSymbol(stage, svg) : (document.getElementById('tStage' + stage) ? '#tStage' + stage : FALLBACK_TILE[stage]));
+    sipCell.querySelector('use').setAttribute('href', href);
+    sipCell.dataset.state = stage === 5 ? 'villa' : stage === 0 ? 'locked' : 'build';
+    sipCell.dataset.note = stage === 5 ? 'Moderate · 33 / 33 / 33 large · mid · small' : stage === 0 ? 'open' : STAGE_NAME[stage] + ' · ' + inr(inv) + ' of ₹5,00,000';
+    sipCell.classList.toggle('building', stage > 0 && stage < 5);
+  }
+  // ---- estate model: one number drives the board, the header and the ladder ----
+  var L = 100000, HOUSE = 5 * L, HOUSES = 9, INCOME = 1500;
+  var ORDER = [[1,1],[2,2],[1,2],[2,1],[0,2],[2,0],[0,1],[1,0],[0,0]];
+  var ESTATE_WORTH = (function () { var q = new URLSearchParams(location.search).get('worth'); var n = q ? Number(q) : NaN; return isFinite(n) && n >= 0 ? Math.min(HOUSES * HOUSE, n) : 2675000; })();
+  function lakhShort(n) { return n >= 1e7 ? '₹' + (n / 1e7).toFixed(2).replace(/\.?0+$/, '') + 'Cr' : n >= 1e5 ? '₹' + (n / 1e5).toFixed(2).replace(/\.?0+$/, '') + 'L' : inr(n); }
+  function applyEstate(worth) {
+    ESTATE_WORTH = worth;
+    var villas = Math.min(HOUSES, Math.floor(worth / HOUSE)), rem = worth - villas * HOUSE, stage = villas >= HOUSES ? 0 : Math.floor(rem / L), building = villas < HOUSES && rem > 0;
+    var cells = ORDER.map(function (o, i) {
+      var col = o[0], row = o[1], n = ('0' + (i + 1)).slice(-2), st, href, name, note, paid;
+      if (i < villas) { st = 'villa'; href = '#tVilla'; name = 'Villa ' + n; note = 'Complete · ₹5,00,000 · pays ₹1,500 a month'; paid = 20; }
+      else if (i === villas && building) { st = 'build'; href = stage === 0 ? '#tGround' : FALLBACK_TILE[stage]; name = 'Plot ' + n; note = (stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]) + ' · ' + inr(rem) + ' of ₹5,00,000'; paid = Math.round(rem / 25000); }
+      else { st = 'locked'; href = '#tLocked'; name = 'Tile ' + n; note = 'open'; paid = null; }
+      return { col: col, row: row, d: col + row, st: st, href: href, name: name, note: note, paid: paid };
+    });
+    cells.sort(function (a, b) { return (a.d - b.d) || (a.col - b.col); });
+    document.getElementById('cells').innerHTML = cells.map(function (c) {
+      return '<g class="cell' + (c.st === 'build' ? ' building' : '') + '" data-name="' + c.name + '" data-note="' + c.note + '" data-state="' + c.st + '" data-col="' + c.col + '" data-row="' + c.row + '"' + (c.paid !== null ? ' data-paid="' + c.paid + '"' : '') + '><use href="' + c.href + '" x="' + ((c.col - c.row) * 93.6).toFixed(1) + '" y="' + ((c.col + c.row) * 54).toFixed(1) + '"></use></g>';
+    }).join('');
+    // header + portfolio
+    var swp = INCOME * villas;
+    document.getElementById('hudSwp').textContent = inr(swp);
+    document.getElementById('hudSwpSub').textContent = villas ? villas + (villas === 1 ? ' villa' : ' villas') + ' · SWP on the 1st' : 'Starts with your first villa';
+    document.getElementById('hudInv').textContent = inr(worth);
+    document.getElementById('hudSipSub').textContent = building ? '1 building · SIP on the 5th' : villas >= HOUSES ? 'Estate complete' : 'Next plot · SIP on the 5th';
+    var months = Math.max(1, Math.round(worth / 25000)), value = worth * (1 + 0.0055 * months), ret = worth ? (value / worth - 1) * 100 : 0;
+    document.getElementById('portV').textContent = inr(value);
+    document.getElementById('portInv').textContent = 'Invested ' + inr(worth);
+    document.getElementById('portRet').textContent = (ret >= 0 ? '+' : '') + ret.toFixed(1) + '% returns';
+    var coin = document.getElementById('rentCoin'); if (coin) coin.style.display = villas ? '' : 'none';
+  }
+  applyEstate(ESTATE_WORTH);
+  window.setEstateWorth = function (n) { applyEstate(Math.max(0, Math.min(HOUSES * HOUSE, Number(n) || 0))); ladderInit(); };
+  var sipQueue = [], sipPreloading = false;
+  document.querySelectorAll('.cell[data-paid]').forEach(function (c) {
+    var paid = parseInt(c.dataset.paid, 10) || 0;
+    sipBuilds[c.dataset.name] = { paid: paid };
+    if (sipStage(paid) >= 5) return;
+    if (sipStage(paid) > 0) c.querySelector('use').setAttribute('href', FALLBACK_TILE[sipStage(paid)]);
+    c.classList.add('building');
+    sipQueue.push(c);
+  });
+  function sipPreloadNext() {
+    if (!sipQueue.length) { sipPreloading = false; sipCell = null; sipFrame.src = 'about:blank'; return; }
+    sipPreloading = true; sipCell = sipQueue.shift();
+    sipFrame.src = 'about:blank';
+    setTimeout(function () { sipFrame.src = 'sip/SIP Status.dc.html'; }, 30);
+  }
+  sipPreloadNext();
+  window.addEventListener('message', function (e) {
+    var m = e.data || {};
+    if (m.type === 'sip:ready') { sipReady = true; sipInit(); }
+    else if (m.type === 'sip:stage' && sipPreloading) { if (sipCell) { sipMirror(m.stage, m.svg); } sipPreloadNext(); return; }
+    else if (m.type === 'sip:paid') { if (sipCell) sipBuilds[sipCell.dataset.name].paid = m.paid; }
+    else if (m.type === 'sip:stage') { if (sipCell) { sipBuilds[sipCell.dataset.name].paid = m.paid; sipMirror(m.stage, m.svg); } }
+    else if (m.type === 'sip:close') sipClose();
+  });
+
+  // ---- tap a parcel ----
+  var scrim = document.getElementById('scrim');
+  document.querySelectorAll('.cell').forEach(function (cell) {
+    cell.addEventListener('click', function () {
+      var state = cell.dataset.state;
+      sipOpen(cell); return;
+      document.getElementById('mName').textContent = cell.dataset.name;
+      document.getElementById('mNote').textContent = cell.dataset.note;
+      document.getElementById('mTag').textContent =
+        state === 'villa' ? 'Villa' : state === 'build' ? 'Building' : state === 'land' ? 'Bare land' : 'Open tile';
+      document.getElementById('heroTile').setAttribute('href',
+        state === 'villa' ? '#tVilla' : state === 'locked' ? '#tLocked' : '#tLand');
+      scrim.classList.add('open');
+    });
+  });
+  scrim.addEventListener('click', function (e) { if (e.target === scrim) scrim.classList.remove('open'); });
+  document.getElementById('mClose').addEventListener('click', function () { scrim.classList.remove('open'); });
+
+  // ---- tabs ----
+  document.querySelectorAll('.tabs [data-tab]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var name = tab.dataset.tab;
+      document.querySelectorAll('.tabs [data-tab]').forEach(function (t) {
+        t.classList.toggle('on', t === tab);
+      });
+      var target = name === 'progress' ? 'ladder' : name;
+      ['home', 'explore', 'progress', 'portfolio', 'settings', 'ladder'].forEach(function (s) {
+        var el = document.getElementById('scr-' + s); if (el) el.hidden = s !== target;
+      });
+      if (target === 'ladder') ladderInit();
+      document.getElementById('worth').hidden = name !== 'home';
+      p2Close(); sipClose(); fineScrim.classList.remove('open');
+      if (name === 'explore') { exTier = 1; exPage = 0; exApply(); }
+      if (target === 'portfolio') pfShow();
+      scrim.classList.remove('open');
+    });
+  });
+  // ladder worth = ₹5L per finished villa + the current build's paid instalments (₹25k each)
+  var ladderFrame = document.getElementById('ladderFrame'), ladderReady = false;
+  function ladderWorth() { return ESTATE_WORTH; }
+  function ladderInit() { if (!ladderReady || !ladderFrame.contentWindow) return; ladderFrame.contentWindow.postMessage({ type: 'ladder:init', worth: ladderWorth(), height: document.getElementById('scr-ladder').clientHeight || 874 }, '*'); }
+  window.addEventListener('message', function (e) {
+    var m = e.data || {};
+    if (m.type === 'ladder:ready') { ladderReady = true; ladderInit(); }
+    if (m.type === 'ladder:close') goTab('home');
+  });
+  function goTab(name) { var t = document.querySelector('.tabs [data-tab="' + name + '"]'); if (t) t.click(); }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-act="open-portfolio"]'); if (a) { goTab('progress'); return; }
+    var up = e.target.closest('[data-act="update-app"]'); if (up) {
+      up.classList.add('busy'); document.getElementById('updSub').textContent = 'Checking…';
+      var reload = function () { location.reload(); };
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.update(); }));
+        }).then(function () { return caches && caches.keys ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : null; })
+          .catch(function () {}).then(function () { document.getElementById('updSub').textContent = 'Reloading…'; setTimeout(reload, 500); });
+      } else { setTimeout(reload, 600); }
+      return;
+    }
+    var ta = e.target.closest('[data-act="tx-all"]'); if (ta) { e.preventDefault(); var more = document.querySelector('#txCard .tx-more'); var open = more.hidden; more.hidden = !open; ta.textContent = open ? 'Less ›' : 'All 10 ›'; return; }
+    var es = e.target.closest('[data-act="open-estate"]'); if (es) {
+      var c = document.querySelector('.cell[data-state="build"]') || document.querySelector('.cell[data-state="locked"]');
+      if (c) sipOpen(c, { ladder: true }); return;
+    }
+    var p = e.target.closest('[data-act="open-payments"]'); if (p) {
+      document.getElementById('scr-portfolio').hidden = true;
+      document.getElementById('scr-progress').hidden = false;
+      document.getElementById('scr-progress').scrollTop = 0;
+    }
+  });
+
+  // ---- portfolio page ----
+  var PF_FUNDS = [
+    { k: 'arb',  name: 'Arbitrage',  color: '#8aa89b', r1: 0.071, note: 'Pays the monthly income · low volatility' },
+    { k: 'gold', name: 'Gold',       color: '#f6c445', r1: 0.142, note: 'Hedge · moves opposite to equity' },
+    { k: 'L',    name: 'Large cap',  color: '#4a9d47', r1: 0.128, note: 'Top 100 companies · steady' },
+    { k: 'M',    name: 'Mid cap',    color: '#5cb85c', r1: 0.164, note: 'Ranked 101–250 · growth' },
+    { k: 'S',    name: 'Small cap',  color: '#8fd48a', r1: 0.189, note: 'Beyond 250 · highest swing' }
+  ];
+  var PF_MIX = {
+    Conservative: { arb: .36, gold: .16, L: .16, M: .16, S: .16 },
+    Moderate:     { arb: .36, gold: .16, L: 0,   M: .24, S: .24 },
+    Aggressive:   { arb: 0,   gold: .25, L: .25, M: .25, S: .25 }
+  };
+  // one model portfolio for everyone — each house is ₹5L blocks bought over time; 'age' scales since-purchase return
+  var PF_HOLD = [
+    { name: 'Villa 01', mix: 'Moderate',     inv: 4100000, age: .90, since: 'Sep 2024', state: 'villa' },
+    { name: 'Villa 02', mix: 'Moderate',     inv: 4000000, age: .80, since: 'Jan 2025', state: 'villa' },
+    { name: 'Villa 05', mix: 'Conservative', inv: 3500000, age: .70, since: 'May 2025', state: 'villa' },
+    { name: 'Villa 06', mix: 'Aggressive',   inv: 3500000, age: .60, since: 'Sep 2025', state: 'villa' },
+    { name: 'Plot 04',  mix: 'Moderate',     inv: 400000,  age: .25, since: 'Jun 2026', state: 'build', paid: '₹4L of ₹5L · Steel Frame' }
+  ];
+  var pfBuilt = false;
+  function inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  function lakh(n) { return n >= 1e7 ? '₹' + (n / 1e7).toFixed(2) + 'Cr' : '₹' + (n / 1e5).toFixed(1) + 'L'; }
+  function pct(x) { return (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%'; }
+  function spark(color, r, seed) {
+    var pts = [], v = 0; for (var i = 0; i < 12; i++) { v += r * 100 / 12 + Math.sin(i * 1.7 + seed) * 1.6 * (1 + r * 4); pts.push(v); }
+    var min = Math.min.apply(null, pts), max = Math.max.apply(null, pts), d = '';
+    pts.forEach(function (p, i) { var x = i * (76 / 11), y = 20 - (p - min) / (max - min || 1) * 18; d += (i ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1); });
+    return '<svg viewBox="0 0 76 22"><path d="' + d + '" stroke="' + color + '"></path></svg>';
+  }
+  function pfBuild() {
+    pfBuilt = true;
+    var totInv = 0, totVal = 0, fundInv = {}, fundVal = {};
+    PF_FUNDS.forEach(function (fd) { fundInv[fd.k] = 0; fundVal[fd.k] = 0; });
+    PF_HOLD.forEach(function (h) {
+      var w = PF_MIX[h.mix]; h.val = 0; h.funds = [];
+      PF_FUNDS.forEach(function (fd) {
+        var wt = w[fd.k]; if (!wt) return;
+        var inv = h.inv * wt, val = inv * (1 + fd.r1 * h.age);
+        h.funds.push({ fd: fd, wt: wt, inv: inv, val: val }); h.val += val; fundInv[fd.k] += inv; fundVal[fd.k] += val;
+      });
+      totInv += h.inv; totVal += h.val;
+    });
+    var gain = totVal - totInv;
+    document.getElementById('pfInv').textContent = lakh(totInv);
+    document.getElementById('pfGain').textContent = lakh(gain) + ' (' + pct(gain / totInv) + ')';
+    // Home's portfolio block is owned by applyEstate (the estate worth); the portfolio page keeps its own totals
+    var wf = document.getElementById('worthFig'); if (wf && wf.textContent.indexOf('•') < 0) wf.textContent = lakh(totVal);
+
+    // key numbers: annualised return, income, runway, bad-year floor
+    var MONTHS = { 'Sep 2024': 24, 'Jan 2025': 20, 'May 2025': 16, 'Sep 2025': 12, 'Jun 2026': 3 };
+    var wYears = 0; PF_HOLD.forEach(function (h) { wYears += h.inv * (MONTHS[h.since] || 12) / 12; });
+    var annual = gain / wYears;
+    var arbVal = fundVal.arb, growVal = totVal - arbVal, villas = PF_HOLD.filter(function (h) { return h.state === 'villa'; }).length;
+    var income = villas * 10500, runwayY = arbVal / (income * 12), floor = arbVal + growVal * 0.70;
+    document.getElementById('pfKeys').innerHTML =
+      '<div style="--i:0"><b>' + inr(income) + '</b><span>income / month</span><small>' + villas + ' villas · SWP</small></div>' +
+      '<div style="--i:1"><b>' + (annual * 100).toFixed(1) + '%</b><span>a year</span><small>annualised, since purchase</small></div>' +
+      '<div style="--i:2"><b>' + runwayY.toFixed(0) + ' yrs</b><span>income runway</span><small>' + lakh(arbVal) + ' in arbitrage</small></div>' +
+      '<div style="--i:3"><b>' + lakh(floor) + '</b><span>bad-year floor</span><small>growth half −30%</small></div>';
+    // level + tiles
+    var HOUSE = 500000, tiles = 0, building = null;
+    PF_HOLD.forEach(function (h) { if (h.state === 'villa') tiles++; else if (h.state === 'build') building = h; });
+    var level = tiles + (building ? 1 : 0);
+    document.getElementById('pfLvl').textContent = level; var hl = document.getElementById('homeLvl'); if (hl) hl.textContent = level;
+    document.getElementById('pfTilesLbl').textContent = tiles + ' built' + (building ? ' · 1 building' : '') + ' · ' + (9 - level) + ' open';
+    document.getElementById('pfNext').textContent = building ? lakh(HOUSE - building.inv) + ' to finish ' + building.name : (level >= 9 ? 'City complete' : lakh(HOUSE) + ' starts the next house');
+    var th = ''; for (var i = 0; i < 9; i++) th += '<i class="' + (i < tiles ? 'own' : (i === tiles && building ? 'bld' : '')) + '" style="--i:' + i + '"></i>';
+    document.getElementById('pfTiles').innerHTML = th;
+
+    // rank — illustrative bands from AMFI folio distribution
+    var band = totInv >= 1e7 ? [1, 'Top 1% of Indian investors', 'Above ₹1Cr · 1 in 100 of 5.4Cr MF investors']
+             : totInv >= 25e5 ? [5, 'Top 5% of Indian investors', 'Above ₹25L · 1 in 20 MF investors']
+             : totInv >= 5e5 ? [25, 'Top 25% of Indian investors', 'Above ₹5L · ahead of 3 in 4']
+             : [50, 'Top 50% of Indian investors', 'Above ₹1L · ahead of half'];
+    document.getElementById('pfRankPct').textContent = band[0] + '%';
+    document.getElementById('pfRankH').innerHTML = band[1].replace(/Top \d+%/, function (m) { return '<em>' + m + '</em>'; });
+    document.getElementById('pfRankP').textContent = band[2];
+    document.getElementById('pfRing').style.setProperty('--off', String(201 * (1 - (100 - band[0]) / 100)));
+
+    // chart — invested step line vs value curve
+    var W = 360, H = 118, N = 24, inv = [], val = [];
+    var buys = [[0, 4100000], [4, 4000000], [8, 3500000], [12, 3500000], [21, 400000]];
+    var mr = 0.011; // ~14% a year, monthly, so the growth wedge reads
+    for (var m = 0; m <= N; m++) {
+      var ci = 0, cv = 0;
+      buys.forEach(function (b) { if (m >= b[0]) { ci += b[1]; cv += b[1] * Math.pow(1 + mr, m - b[0]) * (1 + 0.012 * Math.sin(m * 1.3 + b[0])); } });
+      inv.push(ci); val.push(m === N ? totVal : Math.max(cv, ci * 0.985));
+    }
+    var max = Math.max.apply(null, val) * 1.04, x = function (i) { return i * (W / N); }, y = function (v) { return H - 6 - v / max * (H - 16); };
+    var dInv = '', dVal = '';
+    for (var k = 0; k <= N; k++) { dInv += (k ? 'L' : 'M') + x(k).toFixed(1) + ',' + y(inv[k]).toFixed(1); dVal += (k ? 'L' : 'M') + x(k).toFixed(1) + ',' + y(val[k]).toFixed(1); }
+    document.getElementById('pfInvLine').setAttribute('d', dInv);
+    document.getElementById('pfLine').setAttribute('d', dVal);
+    document.getElementById('pfArea').setAttribute('d', dVal + 'L' + W + ',' + H + 'L0,' + H + 'Z');
+    var dot = document.getElementById('pfDot'); dot.setAttribute('cx', W); dot.setAttribute('cy', y(val[N]).toFixed(1));
+
+    // holdings
+    var hh = '';
+    PF_HOLD.forEach(function (h, i) {
+      var mixBar = h.funds.map(function (f) { return '<span style="width:' + (f.wt * 100) + '%;background:' + f.fd.color + '"></span>'; }).join('');
+      var art = h.state === 'villa' ? '<svg viewBox="20 16 200 150"><use href="#tVilla"></use></svg>' : '<svg viewBox="20 16 200 150"><use href="#tLand"></use></svg>';
+      var rows = h.funds.map(function (f, j) {
+        return '<div class="hf"><i style="background:' + f.fd.color + '"></i><div class="n">' + f.fd.name + '<small>' + Math.round(f.wt * 100) + '% · ' + lakh(f.inv) + ' in</small></div>' + spark(f.fd.color, f.fd.r1 * h.age, i * 3 + j) + '<div class="v">' + lakh(f.val) + '<small>' + pct(f.val / f.inv - 1) + '</small></div></div>';
+      }).join('');
+      hh += '<div class="hd" style="--i:' + i + '"><div class="hd-top">' +
+        '<div class="hd-art">' + art + '</div>' +
+        '<div><div class="hd-name">' + h.name + '<span class="hd-tag' + (h.state === 'build' ? ' bld' : '') + '">' + (h.state === 'build' ? 'BUILDING' : h.mix.toUpperCase()) + '</span></div>' +
+        '<div class="hd-sub">' + (h.state === 'build' ? h.paid : lakh(h.inv) + ' · since ' + h.since) + '</div><div class="hd-mix">' + mixBar + '</div></div>' +
+        '<div class="hd-val"><b>' + lakh(h.val) + '</b><span>' + pct(h.val / h.inv - 1) + '</span><em>⌵</em></div></div>' +
+        '<div class="hd-body"><div class="hd-funds">' + rows + '</div><div class="hd-note">' + (h.state === 'build' ? 'Units bought so far are already invested in the ' + h.mix + ' mix — the house completes at ₹5L, then keeps growing with every SIP.' : 'Income of ₹10,500 a month is drawn from the arbitrage sleeve by SWP. The growth sleeves are left to compound.') + '</div></div></div>';
+    });
+    document.getElementById('pfHold').innerHTML = hh;
+    document.querySelectorAll('#pfHold .hd-top').forEach(function (t) { t.addEventListener('click', function () { t.parentNode.classList.toggle('open'); }); });
+
+    // funds across the city
+    var maxR = Math.max.apply(null, PF_FUNDS.map(function (fd) { return fd.r1; }));
+    document.getElementById('pfFunds').innerHTML = PF_FUNDS.map(function (fd, i) {
+      var inv = fundInv[fd.k], val = fundVal[fd.k];
+      return '<div class="pfund" style="--i:' + i + '"><div class="ic"><i style="background:' + fd.color + '"></i></div><div><div class="n">' + fd.name + '<small>' + lakh(inv) + ' → ' + lakh(val) + ' · ' + fd.note + '</small></div><div class="bar"><i style="width:' + (fd.r1 / maxR * 100) + '%;background:' + fd.color + '"></i></div></div><div class="r"><b>' + pct(fd.r1) + '</b><small>1 YR</small></div></div>';
+    }).join('');
+    pfTotal = totVal;
+  }
+  var pfTotal = 0;
+  function pfShow() {
+    if (!pfBuilt) pfBuild();
+    var pf = document.getElementById('pf'); pf.classList.remove('live');
+    document.getElementById('scr-portfolio').scrollTop = 0;
+    // count-up
+    var el = document.getElementById('pfVal'), t0 = null, dur = 1400;
+    function step(ts) { if (!t0) t0 = ts; var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = inr(pfTotal * e); if (p < 1) requestAnimationFrame(step); }
+    requestAnimationFrame(function () { pf.classList.add('live'); requestAnimationFrame(step); });
+  }
+  pfBuild();
+
+  // ---- explore: vertical tiers (plot <-> villa) + horizontal pages (overview <-> sheet) ----
+  var exY = document.querySelector('#scr-explore [style*="translateY"]');
+  var exTier = 1, exPage = 0;
+  function exApply() {
+    var k = document.getElementById('exKicker');
+    if (k) {
+      k.textContent = 'EXPLORE · VILLAS';
+      k.style.visibility = exPage ? 'hidden' : 'visible';
+    }
+    if (exY) exY.style.transform = 'translateY(' + (exTier ? '-50%' : '0') + ')';
+    document.querySelectorAll('#scr-explore [data-ex-x]').forEach(function (t) {
+      t.style.transform = 'translateX(' + (exPage ? '-50%' : '0') + ')';
+    });
+  }
+  // ---- explore: mix + horizon recompute ----
+  var exMix = 1, exYears = 20;
+  var MIXES = [
+    { rate: 0.10,  band: '10–11% a year', risk: '−22%', split: [60, 20, 20] },
+    { rate: 0.11,  band: '11–13% a year', risk: '−28%', split: [33, 33, 33] },
+    { rate: 0.125, band: '12–15% a year', risk: '−35%', split: [20, 40, 40] }
+  ];
+
+  function fmtL(lakhs) {
+    return lakhs >= 100 ? '₹' + (lakhs / 100).toFixed(2) + 'Cr' : '₹' + lakhs.toFixed(1) + 'L';
+  }
+  function setAll(cls, text) {
+    document.querySelectorAll('#scr-explore .' + cls).forEach(function (el) { el.textContent = text; });
+  }
+  function setBars(cls, pct) {
+    document.querySelectorAll('#scr-explore .' + cls).forEach(function (el) { el.style.width = pct.toFixed(1) + '%'; });
+  }
+
+  // ---- villa card stack ----
+  var VILLAS = [
+    { rate: 0.091, pay: 0.036 },   // conservative: 36 arb · 16 gold · 16/16/16
+    { rate: 0.097, pay: 0.036 },   // moderate: 36 arb · 16 gold · 24 mid · 24 small
+    { rate: 0.110, pay: 0 }        // aggressive: 25 gold · 25/25/25, no withdrawal
+  ];
+  var vFront = 0, vtrack = document.getElementById('vtrack');
+  function vApply() {
+    vtrack.style.transform = 'translateX(' + (-vFront * 100 / 3) + '%)';
+    document.getElementById('vsegPill').style.transform = 'translateX(' + (vFront * 100) + '%)';
+    document.querySelectorAll('#vseg > span:not(.vseg-pill)').forEach(function (s, i) { s.classList.toggle('on', i === vFront); });
+  }
+  function vGo(i) { vFront = Math.max(0, Math.min(2, i)); exMix = vFront; vApply(); exRecalc(); }
+  document.querySelectorAll('#vseg > span[data-v]').forEach(function (s) { s.addEventListener('click', function () { vGo(+s.dataset.v); }); });
+  (function () {
+    var x0 = null, dx = 0, el = document.getElementById('vstack');
+    function start(x) { x0 = x; dx = 0; vtrack.style.transition = 'none'; }
+    function move(x) { if (x0 == null) return; dx = x - x0; vtrack.style.transform = 'translateX(calc(' + (-vFront * 100 / 3) + '% + ' + dx + 'px))'; }
+    function end() { if (x0 == null) return; vtrack.style.transition = ''; if (dx < -50) vGo(vFront + 1); else if (dx > 50) vGo(vFront - 1); else vApply(); x0 = null; }
+    el.addEventListener('touchstart', function (e) { start(e.touches[0].clientX); }, { passive: true });
+    el.addEventListener('touchmove', function (e) { move(e.touches[0].clientX); }, { passive: true });
+    el.addEventListener('touchend', end);
+    el.addEventListener('mousedown', function (e) { start(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function (e) { move(e.clientX); });
+    window.addEventListener('mouseup', end);
+  })();
+  function vRecalc() {
+    var y = exYears;
+    document.querySelectorAll('.jsYears').forEach(function (e) { e.textContent = y; });
+    VILLAS.forEach(function (v, i) {
+      var val = 50 * Math.pow(1 + v.rate - v.pay, y), wd = 50 * v.pay * y;
+      document.querySelectorAll('.jsVW[data-vi="' + i + '"]').forEach(function (e) { e.textContent = fmtL(val); });
+      document.querySelectorAll('.jsVWsub[data-vi="' + i + '"]').forEach(function (e) { e.textContent = wd ? '+ ' + fmtL(wd) + ' withdrawn along the way' : 'nothing withdrawn'; });
+    });
+  }
+
+  function exRecalc() {
+    vRecalc();
+    var m = MIXES[exMix], r = m.rate, y = exYears;
+    var grow = Math.pow(1 + r, y);
+
+    // plot: ₹10L compounding
+    var pv = 10 * grow;
+    setAll('jsPlotValue', fmtL(pv));
+    setAll('jsPlotMult', (pv / 10).toFixed(1) + '× in ' + y + ' years');
+    setAll('jsPlotGrowth', fmtL(pv - 10));
+    setBars('jsPutBar', 10 / pv * 100);
+    setBars('jsGrowBar', 100 - 10 / pv * 100);
+
+    // villa: ₹25L growth half + ₹25L income half + rent drawn
+    var eq = 25 * grow, rent = 10500 * 12 * y / 1e5, vv = eq + 25 + rent;
+    setAll('jsVillaValue', fmtL(vv));
+    setAll('jsVillaMult', (vv / 50).toFixed(1) + '× in ' + y + ' years');
+    setAll('jsVillaFig', fmtL(eq));
+    setAll('jsRent', fmtL(rent));
+    setBars('jsVPutBar', 50 / vv * 100);
+    setBars('jsVGrowBar', 100 - 50 / vv * 100);
+
+    setAll('jsRate', m.band);
+    setAll('jsRisk', m.risk);
+    setAll('jsRiskHalf', m.risk + ' on half');
+    setAll('jsHeld', y + (y === 1 ? ' year' : ' years'));
+
+    // allocation: segments + labels
+    var s = m.split;
+    ['jsSegL', 'jsSegM', 'jsSegS'].forEach(function (cls, i) { setBars(cls, s[i]); });
+    setAll('jsLblL', 'Large ' + s[0] + '%');
+    setAll('jsLblM', 'Mid ' + s[1] + '%');
+    setAll('jsLblS', 'Small ' + s[2] + '%');
+    setAll('jsEquityLbl', 'Equity 50% — ' + s.join('/') + '%');
+
+    // year rail: fill + dots + labels
+    var idx = [5, 10, 15, 20].indexOf(y);
+    document.querySelectorAll('#scr-explore .jsRailFill').forEach(function (el) {
+      el.style.width = (idx / 3 * 100) + '%';
+    });
+    [5, 10, 15, 20].forEach(function (n, i) {
+      document.querySelectorAll('#scr-explore [data-act="yr' + n + '"]').forEach(function (el) {
+        var on = i <= idx, sel = i === idx;
+        if (el.textContent.trim()) {
+          el.style.color = sel ? 'var(--color-accent-200)' : 'var(--color-neutral-500)';
+        } else {
+          el.style.background = on ? 'var(--color-accent)' : 'var(--color-neutral-800)';
+        }
+      });
+    });
+
+    // mix picker highlight + allocation split
+    ['mix-cons', 'mix-mod', 'mix-agg'].forEach(function (a, i) {
+      document.querySelectorAll('#scr-explore [data-act="' + a + '"]').forEach(function (el) {
+        el.style.background = i === exMix ? 'var(--color-accent-800)' : 'transparent';
+        el.style.color = i === exMix ? 'var(--color-accent-100)' : 'var(--color-neutral-400)';
+      });
+    });
+  }
+
+  document.querySelectorAll('#scr-explore [data-act]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var a = el.dataset.act;
+      if (a === 'villa') { exTier = 1; exPage = 0; exApply(); }
+      else if (a === 'plot') { }
+      else if (a === 'detail') { exPage = 1; exApply(); }
+      else if (a === 'high') { exPage = 0; exApply(); }
+      else if (a.indexOf('yr') === 0) { exYears = parseInt(a.slice(2), 10); exRecalc(); }
+      else if (a === 'mix-cons') { exMix = 0; exRecalc(); }
+      else if (a === 'mix-mod') { exMix = 1; exRecalc(); }
+      else if (a === 'mix-agg') { exMix = 2; exRecalc(); }
+    });
+  });
+  exApply();
+  exRecalc();
+
+  // ---- progress widgets ----
+  var p2 = { scrim: 'p2Scrim', panels: ['p2In','p2Out','p2Saved','p2Call'] };
+  function p2Open(which) {
+    p2.panels.forEach(function (id) { document.getElementById(id).hidden = id !== which; });
+    document.getElementById(p2.scrim).hidden = false;
+  }
+  function p2Close() {
+    document.getElementById(p2.scrim).hidden = true;
+    document.getElementById('p2Slot').hidden = true;
+  }
+  var slotNames = {
+    slot1: 'Mon 31 Aug · 11:00', slot2: 'Mon 31 Aug · 16:30',
+    slot3: 'Tue 1 Sep · 09:30',  slot4: 'Tue 1 Sep · 18:00',
+    slot5: 'Wed 2 Sep · 12:00',  slot6: 'Thu 3 Sep · 15:00'
+  };
+  document.querySelectorAll('#scr-progress [data-act]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      var a = el.dataset.act;
+      if (a === 'p-stop') { e.stopPropagation(); return; }
+      if (a === 'p-close') { p2Close(); return; }
+      if (a === 'p-in') return p2Open('p2In');
+      if (a === 'p-out') return p2Open('p2Out');
+      if (a === 'p-saved') return p2Open('p2Saved');
+      if (a === 'p-call') return p2Open('p2Call');
+      if (slotNames[a]) {
+        document.getElementById('p2SlotName').textContent = slotNames[a];
+        document.getElementById('p2Slot').hidden = false;
+      }
+    });
+  });
+  document.getElementById(p2.scrim).addEventListener('click', function (e) {
+    if (e.target === this) p2Close();
+  });
+
+  // ---- reveal portfolio worth ----
+  var worthShown = true, worthEye = document.getElementById('worthEye') || document.createElement('span');
+  function worthApply() {
+    var wf = document.getElementById('worthFig'); if (wf) wf.textContent = worthShown ? '₹1.70Cr' : '••••••';
+    worthEye.classList.toggle('off', worthShown);
+    worthEye.setAttribute('aria-label', worthShown ? 'Hide portfolio worth' : 'Show portfolio worth');
+  }
+  if (worthEye.id) worthEye.addEventListener('click', function () { worthShown = !worthShown; worthApply(); });
+  worthEye.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); worthShown = !worthShown; worthApply(); }
+  });
+  worthApply();
+
+  // ---- what the pieces mean ----
+  var fineScrim = document.getElementById('fineScrim');
+  document.getElementById('fineOpen').addEventListener('click', function () { fineScrim.classList.add('open'); });
+  document.getElementById('fineClose').addEventListener('click', function () { fineScrim.classList.remove('open'); });
+  fineScrim.addEventListener('click', function (e) { if (e.target === fineScrim) fineScrim.classList.remove('open'); });
+
+  // ---- collect the coin ----
+  var rent = 7.56, rentGain = 4.21, rentCap = 3.35;
+  document.getElementById('rentCoin').addEventListener('click', function () {
+    rent += 0.315; rentGain += 0.176; rentCap += 0.139;
+    document.getElementById('rentTotal').textContent = '₹' + rent.toFixed(2) + 'L';
+    document.getElementById('rentGain').textContent = '₹' + rentGain.toFixed(2) + 'L';
+    document.getElementById('rentCap').textContent = '₹' + rentCap.toFixed(2) + 'L';
+    document.getElementById('rentNote').textContent = 'paid 5 Sep · next payout 5 Oct';
+    this.remove();
+  });
+</script>
+
+</body>
+</html>
