@@ -157,10 +157,11 @@
      the phone and stay one centred column. */
   width: 100%; margin: 0 auto;
   overflow-y: auto;
+  overflow-x: hidden;   /* NEVER scroll sideways — only vertical */
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-.el-inner { width: 402px; margin: 0 auto; }
+.el-inner { width: 402px; max-width: 100%; margin: 0 auto; }
 .el-scroller::-webkit-scrollbar { display: none; }
 .el-inner { position: relative; }
 .el-spacer { height: 100px; flex: none; }
