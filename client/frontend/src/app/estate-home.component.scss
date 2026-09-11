@@ -299,14 +299,9 @@
 .cell.owned { cursor: pointer; }
 .cell.owned:hover { filter: brightness(1.08); }
 .cell.building { filter: drop-shadow(0 0 10px rgba(108,186,54,.55)); }
-/* a started-but-under-₹1L house shows the Level-0 meadow (#tGround) with a
-   soft breathing green glow, per the m2 reference. */
-.cell.building use[href="#tGround"] { animation: groundGlow 2.8s ease-in-out infinite; }
-@keyframes groundGlow {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(124, 201, 69, .35)); }
-  50%      { filter: drop-shadow(0 0 16px rgba(124, 201, 69, .8)); }
-}
-@media (prefers-reduced-motion: reduce) { .cell.building use[href="#tGround"] { animation: none; } }
+/* The Level-0 meadow (#tGround) is a detailed asset that needs no glow —
+   kill the drop-shadow halo on the ground tile (user asked for it removed). */
+.cell.ground { filter: none !important; animation: none !important; }
 .cell:focus-visible { outline: none; }
 .plot-open {
   fill: rgba(22, 48, 43, 0.018);

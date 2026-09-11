@@ -284,6 +284,7 @@
           <g class="cell"
              [class.owned]="c.st !== 'locked'"
              [class.building]="c.st === 'build'"
+             [class.ground]="c.href === '#tGround'"
              (click)="tapBoardCell(c)"
              [attr.role]="c.st !== 'locked' ? 'button' : null"
              [attr.tabindex]="c.st !== 'locked' ? 0 : null"
