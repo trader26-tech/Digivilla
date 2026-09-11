@@ -293,14 +293,17 @@
   margin: 1.4rem 0 0.4rem;
 }
 .board-glow {
-  /* the reference's green "estate glow" — sits toward the TOP, rising behind the
-     back edge of the town (grass #6cba36), not centred under it. Anchored to the
-     board's centre and lifted up so it haloes the top of the isometric diamond. */
-  position: absolute; top: 50%; left: 50%;
-  width: 380px; height: 340px;
-  margin: -320px 0 0 -190px;      /* lift the glow well above centre → top of board */
+  /* a large soft green aura CENTRED ON THE ESTATE ISLAND — the villas/land sit
+     inside it and it glows out into the dark (grass #6cba36), like the reference.
+     Slightly above the board centre so it hugs the town, not the front soil. */
+  position: absolute; top: 44%; left: 50%;
+  width: 520px; height: 430px;
+  margin: -215px 0 0 -260px;
   border-radius: 50%; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%, rgba(108,186,54,.18) 0%, transparent 64%);
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(108,186,54,.26) 0%,
+    rgba(108,186,54,.12) 34%,
+    transparent 70%);
 }
 .board svg { position: relative; width: 100%; height: 100%; max-height: 42vh; display: block; }
 
