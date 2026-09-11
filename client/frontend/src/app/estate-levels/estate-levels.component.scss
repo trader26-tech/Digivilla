@@ -92,8 +92,8 @@
 /* ---- HUD ---- */
 .el-hud {
   position: absolute;
-  top: 0; left: 50%; transform: translateX(-50%);
-  width: 402px; max-width: 100%;
+  top: 0; left: 0; right: 0;
+  width: 100%; max-width: 460px; margin: 0 auto;
   z-index: 5;
   padding: max(20px, env(safe-area-inset-top)) 20px 12px;
   display: flex;
@@ -152,14 +152,15 @@
 /* ---- scroller (the only vertical scroll) ---- */
 .el-scroller {
   height: 100%;
-  /* the whole ladder is authored on a 402px phone frame (board at left:0
-     width:402px, rail at left:10px). Constrain to a centred 402px column so the
-     board, rail, title, banner and fund tiles all share one centre on any width. */
-  width: 402px; max-width: 100%; margin: 0 auto;
+  /* fill the viewport; the inner 402px-authored column is zoom-scaled up to the
+     width (capped ~460px) so the board, rail, title, banner and fund tiles fill
+     the phone and stay one centred column. */
+  width: 100%; margin: 0 auto;
   overflow-y: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
+.el-inner { width: 402px; margin: 0 auto; }
 .el-scroller::-webkit-scrollbar { display: none; }
 .el-inner { position: relative; }
 .el-spacer { height: 100px; flex: none; }

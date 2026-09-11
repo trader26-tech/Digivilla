@@ -24,17 +24,17 @@
 
   <!-- vertical ladder -->
   <div #scroller class="el-scroller">
-    <div class="el-inner">
+    <div class="el-inner" [style.zoom]="frameScale()">
       <!-- progress rail -->
       <div class="el-rail" [style.height]="railH">
         <div class="el-rail-track" [style.top]="railTop"></div>
         <div class="el-rail-fill" [style.top]="fillTop()"></div>
         <ng-container *ngFor="let m of railMarks(); trackBy: trackMark">
-          <div class="el-rail-node" [style.top]="m.top" [style.width]="m.size" [style.height]="m.size" [style.background]="m.bg" [style.box-shadow]="'0 0 0 2px #161826,' + m.glow">
-            <svg *ngIf="m.reached" width="10" height="10" viewBox="0 0 16 16"><path d="M4 8.4 6.8 11 12 5.5" fill="none" stroke="#161826" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <div class="el-rail-node" [class.el-rail-tick]="m.isTick" [style.top]="m.top" [style.width]="m.size" [style.height]="m.size" [style.background]="m.bg" [style.box-shadow]="'0 0 0 2px #161826,' + m.glow">
+            <svg *ngIf="m.reached && !m.isTick" width="10" height="10" viewBox="0 0 16 16"><path d="M4 8.4 6.8 11 12 5.5" fill="none" stroke="#161826" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             <svg *ngIf="m.isFlag" width="9" height="9" viewBox="0 0 12 12"><path d="M3 11V2h6l-1.5 2L9 6H3" [attr.fill]="m.flagFill"></path></svg>
           </div>
-          <div class="el-rail-tag" [style.top]="m.top" [style.background]="m.tagBg" [style.color]="m.color">{{ m.label }}</div>
+          <div class="el-rail-tag" *ngIf="m.label" [style.top]="m.top" [style.background]="m.tagBg" [style.color]="m.color">{{ m.label }}</div>
         </ng-container>
         <div class="el-rail-dot" [style.top]="fillTop()"></div>
         <div class="el-rail-pill" [style.top]="fillTop()"><span>{{ worthLabel() }}</span></div>

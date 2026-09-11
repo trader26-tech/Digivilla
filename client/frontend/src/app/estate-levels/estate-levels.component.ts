@@ -126,6 +126,8 @@ interface RailMark {
   color: string;
   tagBg: string;
   label: string;
+  /** A small per-level checkpoint dot (no label) vs a big labelled villa milestone. */
+  isTick: boolean;
 }
 
 /**
@@ -184,6 +186,17 @@ export class EstateLevelsComponent implements AfterViewInit {
     { name: 'Mid cap', w: 0.16, bar: '#5cb85c', isVault: false, isGold: false, isLarge: false, isMid: true, isSmall: false },
     { name: 'Small cap', w: 0.16, bar: '#8fd48a', isVault: false, isGold: false, isLarge: false, isMid: false, isSmall: true },
   ];
+
+  /** The ladder is authored on a 402px frame; on a wider phone we scale the whole
+   *  column up to fill the width (capped so it stays phone-shaped on desktop). */
+  readonly FRAME = 402;
+  readonly frameScale = signal(1);
+  private _measureFrame = () => {
+    const w = typeof window !== 'undefined' ? window.innerWidth : this.FRAME;
+    // fill the viewport up to a comfortable phone cap (~460px), never below 1x
+    const target = Math.min(w, 460);
+    this.frameScale.set(Math.max(1, target / this.FRAME));
+  };
 
   // board geometry — Home's proportions, shifted right of the rail
   private readonly BW = 54;
@@ -332,21 +345,36 @@ export class EstateLevelsComponent implements AfterViewInit {
   readonly railMarks = computed<RailMark[]>(() => {
     const worth = this.worth();
     const marks: RailMark[] = [];
-    for (let h = this.HOUSES; h >= 1; h--) {
-      const k = 5 * h, top = this.OFF + (this.TOTAL - k) * this.SEC + this.RT, v = k * this.L;
+    // a checkpoint for EVERY level (k = 1..45), placed at that level's threshold on
+    // the rail. Villa completions (k % 5 === 0) are the big, labelled milestones;
+    // the other levels get a small dot so progress reads off the bar at a glance.
+    for (let k = this.TOTAL; k >= 1; k--) {
+      const top = this.OFF + (this.TOTAL - k) * this.SEC + this.RT, v = k * this.L;
       const reached = v <= worth;
-      marks.push({
-        top: top + 'px', size: '20px', reached, isFlag: !reached, flagFill: '#6b6e79',
-        bg: reached ? '#8fd48f' : '#232634',
-        glow: reached ? '0 0 12px rgba(88,184,88,.5)' : 'inset 0 0 0 1.5px #3f424d',
-        color: reached ? '#8fd48f' : '#6b6e79',
-        tagBg: reached ? 'rgba(88,184,88,.12)' : 'transparent',
-        label: 'Villa ' + h + ' · ' + this.lakh(v),
-      });
+      const isVilla = k % 5 === 0;
+      if (isVilla) {
+        const h = k / 5;
+        marks.push({
+          top: top + 'px', size: '20px', reached, isFlag: !reached, flagFill: reached ? '#8fd48f' : '#6b6e79',
+          bg: reached ? '#8fd48f' : '#232634',
+          glow: reached ? '0 0 12px rgba(88,184,88,.5)' : 'inset 0 0 0 1.5px #3f424d',
+          color: reached ? '#8fd48f' : '#6b6e79',
+          tagBg: reached ? 'rgba(88,184,88,.12)' : 'transparent',
+          label: 'Villa ' + h + ' · ' + this.lakh(v), isTick: false,
+        });
+      } else {
+        // a small per-level dot (no label) — reached ones glow accent, ahead ones dim
+        marks.push({
+          top: top + 'px', size: '8px', reached, isFlag: false, flagFill: '#6b6e79',
+          bg: reached ? '#b5abfc' : '#3f424d',
+          glow: reached ? '0 0 6px rgba(145,132,217,.5)' : 'none',
+          color: '#6b6e79', tagBg: 'transparent', label: '', isTick: true,
+        });
+      }
     }
     marks.push({
       top: (this.OFF + (this.TOTAL - 1) * this.SEC + this.RB) + 'px', size: '14px', reached: false,
-      isFlag: false, flagFill: '#6b6e79', bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0',
+      isFlag: false, flagFill: '#6b6e79', bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0', isTick: false,
     });
     return marks;
   });
@@ -370,6 +398,8 @@ export class EstateLevelsComponent implements AfterViewInit {
 
   // --- interactions ---
   ngAfterViewInit(): void {
+    this._measureFrame();
+    if (typeof window !== 'undefined') window.addEventListener('resize', this._measureFrame);
     const el = this.scroller?.nativeElement;
     if (!el) return;
     el.addEventListener('scroll', this.onScroll, { passive: true });
@@ -383,7 +413,9 @@ export class EstateLevelsComponent implements AfterViewInit {
       this.scRaf = 0;
       const el = this.scroller?.nativeElement;
       if (!el) return;
-      const v = Math.max(1, Math.min(this.TOTAL, this.TOTAL - Math.round((el.scrollTop - 100) / this.SEC)));
+      // scrollTop is in the zoom-scaled space, so scale the section metrics too
+      const z = this.frameScale();
+      const v = Math.max(1, Math.min(this.TOTAL, this.TOTAL - Math.round((el.scrollTop - 100 * z) / (this.SEC * z))));
       if (v !== this.viewLevel()) this.viewLevel.set(v);
     });
   };
