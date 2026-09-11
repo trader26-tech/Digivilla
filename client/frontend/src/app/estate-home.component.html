@@ -1,9 +1,6 @@
 <section class="estate">
   <!-- ============ HOME CONTENT (above the app's own bottom nav) ============ -->
   <div class="estate-top">
-    <!-- green estate halo — sits in the upper band, between the flows and the
-         "YOUR ESTATE" title, glowing behind the header (behind all content). -->
-    <div class="estate-halo" *ngIf="!isEmptyEstate" aria-hidden="true"></div>
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
     <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder) · INVESTED (real,
