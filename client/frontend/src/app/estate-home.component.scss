@@ -27,9 +27,12 @@
   flex: 1; min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  /* bottom padding clears the floating nav pill so nothing hides behind it */
-  padding: calc(4.8rem + env(safe-area-inset-top)) 0 calc(6.5rem + env(safe-area-inset-bottom));
+  /* fill the screen top-to-bottom (no dead space up top): flows sit near the
+     top, the town grows to absorb the middle, figures + key rest near the
+     bottom. The board's flex:1 (below) soaks up any extra height. */
+  justify-content: flex-start;
+  /* a little top breathing room (avatar/notch), bottom clears the floating nav */
+  padding: calc(1.4rem + env(safe-area-inset-top)) 0 calc(6.5rem + env(safe-area-inset-bottom));
   overflow: hidden;
   /* an ambient "scene" the town sits inside — a soft warm sky up top, a green
      estate glow rising from the ground, and a gentle vertical wash between, so
@@ -56,8 +59,9 @@
 .estate-top > .board-scroll,
 .estate-top > .stats,
 .estate-top > .stats-rule { position: relative; z-index: 1; }
-/* the town keeps its own height; the group is centred, not stretched */
-.estate-top .board-scroll { flex: none; }
+/* the town grows to absorb the leftover height so the column fills the screen
+   (no dead gap up top); the SVG's preserveAspectRatio keeps the art uncropped. */
+.estate-top .board-scroll { flex: 1 1 auto; min-height: 0; }
 .estate-top .stats { flex: none; padding: 0 1.25rem; margin: 1.1rem 0 0; }
 
 /* hairline under the town, before the figures */
@@ -300,10 +304,13 @@
      sideways), while a TALLER box than the art's natural ratio + a scaled-up
      SVG makes the town read bigger. overflow:hidden clips only the board's own
      empty top/bottom padding, so no house is ever cut. */
-  height: auto;
-  aspect-ratio: 585.6 / 408;   /* the board's natural ratio — no distortion */
-  /* capped so the hero + map + figures + key all fit one fixed screen (no scroll) */
-  max-height: min(46vh, 340px);
+  /* Grow to fill the flex space the column leaves (kills the top dead-space),
+     but never taller than the art needs at this width — so it reads big without
+     distorting. The SVG's preserveAspectRatio="xMidYMid meet" centres + contains
+     the town within whatever height it gets, so no house is ever cropped. */
+  height: 100%;
+  min-height: 200px;
+  max-height: min(56vh, 420px);
   width: 100%;
   margin: 0 auto;
 }
