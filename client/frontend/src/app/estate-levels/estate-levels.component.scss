@@ -221,7 +221,10 @@
 .el-section {
   height: 754px; position: relative;
   display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 0 20px 18px; box-sizing: border-box;
+  /* The rail sits in the left ~18px of the frame. Reserve it on the left and
+     mirror that on the right so the 300px content blocks get an EQUAL gutter
+     from the rail and from the right edge (balanced whitespace). */
+  padding: 0 26px 18px 44px; box-sizing: border-box;
 }
 .el-above {
   position: absolute; top: 0; left: 0; right: 0; height: 24px;

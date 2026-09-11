@@ -360,10 +360,9 @@ export class EstateLevelsComponent implements AfterViewInit {
         pillBorder: isCurrent ? '#5d5294' : '#2b2e3a',
         funds: this.FUNDS.map(fd => ({
           name: fd.name,
-          // on the current level show what's ACTUALLY in (worth·weight) + "of ₹target";
-          // done/locked levels show the full threshold share.
-          amount: inr(Math.round((isCurrent ? worth : threshold) * fd.w)),
-          target: inr(Math.round(threshold * fd.w)), showOf: isCurrent,
+          // just the fund's share of the level's target, in compact form (₹36k).
+          amount: lakh(Math.round(threshold * fd.w)),
+          target: '', showOf: false,
           bar: fd.bar,
           isVault: fd.isVault, isGold: fd.isGold, isLarge: fd.isLarge, isMid: fd.isMid, isSmall: fd.isSmall,
           border: isLocked ? '#2b2e3a' : '#3f424d',
