@@ -59,7 +59,7 @@
   <div ref="{{ scrollerRef }}" style="height:100%;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
    <div style="position:relative">
     <!-- progress rail: scrolls with the ladder; fills from the plot upward to the current worth -->
-    <div style="position:absolute;left:10px;top:0;width:8px;height:{{ railH }};z-index:4;pointer-events:none">
+    <div ref="{{ railRef }}" style="position:absolute;left:10px;top:0;width:8px;height:{{ railH }};z-index:4;pointer-events:none">
       <div style="position:absolute;left:0;right:0;top:{{ railTop }};bottom:30px;border-radius:5px;background:#232634;box-shadow:inset 0 0 0 1px #2b2e3a"></div>
       <div style="position:absolute;left:0;right:0;top:{{ fillTop }};bottom:30px;border-radius:5px;background:linear-gradient(180deg,#b5abfc,#9184d9 30%,#796cbf);box-shadow:0 0 14px rgba(145,132,217,.6);transition:top .5s ease"></div>
       <sc-for list="{{ railMarks }}" as="m" hint-placeholder-count="5">
@@ -71,7 +71,8 @@
           <div style="position:absolute;left:16px;top:{{ m.top }};transform:translateY(-50%);display:flex;align-items:center;gap:5px;height:18px;padding:0 7px;border-radius:9px;background:{{ m.tagBg }};font-size:10px;letter-spacing:.06em;color:{{ m.color }};white-space:nowrap;font-weight:500">{{ m.label }}</div>
         </sc-if>
         <sc-if value="{{ m.isTick }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;left:-2px;right:-2px;top:{{ m.top }};height:2px;transform:translateY(-50%);background:#161826"></div>
+          <div style="position:absolute;left:50%;top:{{ m.top }};transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:{{ m.bg }};box-shadow:0 0 0 2px #161826,{{ m.glow }}"></div>
+          <div style="position:absolute;left:14px;top:{{ m.top }};transform:translateY(-50%);font-size:9px;letter-spacing:.04em;color:{{ m.color }};white-space:nowrap">{{ m.label }}</div>
         </sc-if>
       </sc-for>
       <div style="position:absolute;left:50%;top:{{ fillTop }};transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#e9e9ed;box-shadow:0 0 0 3px #9184d9,0 0 14px rgba(145,132,217,.8);transition:top .5s ease"></div>
@@ -160,11 +161,26 @@
             </sc-for>
           </svg>
           <div style="position:absolute;left:{{ lv.artLeft }};top:{{ lv.artTop }};width:142px;animation:bob 6s ease-in-out infinite">
+            <div style="position:absolute;inset:0;opacity:{{ lv.prevOpacity }}">
+              <sc-if value="{{ lv.prevPlot }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Plot - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.prevGrading }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Grading - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.prevFoundation }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Foundation - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.prevSteel }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Steel Frame - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+            </div>
+            <div style="position:absolute;inset:0;opacity:{{ lv.ghostOpacity }};filter:grayscale(1) brightness(.6)">
+              <sc-if value="{{ lv.isPlot }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Plot - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.isGrading }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Grading - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.isFoundation }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Foundation - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.isSteel }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Steel Frame - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+              <sc-if value="{{ lv.isVilla }}" hint-placeholder-val="{{ false }}"><dc-import name="Villa Tile" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+            </div>
+            <div style="position:relative;clip-path:inset({{ lv.artClip }} 0 0 0);transition:clip-path .9s cubic-bezier(.3,.7,.3,1)">
             <sc-if value="{{ lv.isPlot }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Plot - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
             <sc-if value="{{ lv.isGrading }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Grading - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
             <sc-if value="{{ lv.isFoundation }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Foundation - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
             <sc-if value="{{ lv.isSteel }}" hint-placeholder-val="{{ false }}"><dc-import name="Isometric Steel Frame - reference for Claude Code" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
             <sc-if value="{{ lv.isVilla }}" hint-placeholder-val="{{ false }}"><dc-import name="Villa Tile" tile="{{ true }}" hint-size="142px,121px"></dc-import></sc-if>
+            </div>
           </div>
           <svg viewBox="{{ lv.boardVB }}" style="position:absolute;left:0;top:0;width:402px;height:100%;overflow:visible;pointer-events:none">
             <sc-for list="{{ lv.frontCells }}" as="c" hint-placeholder-count="3">
@@ -196,7 +212,7 @@
         <h1 style="font-weight:800;font-size:32px;letter-spacing:.01em;margin:0;position:relative;z-index:2;text-align:center;color:{{ lv.titleColor }};text-shadow:0 2px 0 rgba(0,0,0,.55),0 0 22px {{ lv.titleGlow }}">{{ lv.name }}</h1>
         <!-- arena banner: level · milestone -->
         <div style="display:flex;justify-content:center;margin-top:10px;position:relative;z-index:2">
-          <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;width:300px;height:46px;padding:0 12px 0 8px;border-radius:10px;background:linear-gradient(180deg,{{ lv.bannerTop }},{{ lv.bannerBottom }});border:2px solid {{ lv.pillBorder }};box-shadow:0 4px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(233,233,237,.14)">
+          <div data-banner="{{ lv.level }}" style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;width:300px;height:46px;padding:0 12px 0 8px;border-radius:10px;background:linear-gradient(180deg,{{ lv.bannerTop }},{{ lv.bannerBottom }});border:2px solid {{ lv.pillBorder }};box-shadow:0 4px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(233,233,237,.14)">
             <span style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#ffe9a3,#f6c445 40%,#dc9a1f 80%);box-shadow:0 0 0 2px #8d5a10,0 2px 0 2px rgba(0,0,0,.4);font-size:15px;font-weight:800;color:#6a4108;flex-shrink:0">{{ lv.level }}</span>
             <span style="flex:1;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#e9e9ed;text-shadow:0 1px 0 rgba(0,0,0,.5);white-space:nowrap">Level {{ lv.level }}</span>
             <span style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -205,6 +221,12 @@
             </span>
           </div>
         </div>
+        <sc-if value="{{ lv.isCurrent }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:8px auto 0;width:300px;position:relative;z-index:2">
+            <div style="display:flex;justify-content:space-between;font-size:10px;letter-spacing:.06em;margin-bottom:5px"><span style="color:#e9e9ed;font-weight:500">{{ lv.paidInLabel }}</span><span style="color:#9a9aa5">{{ lv.toGoLabel }}</span></div>
+            <div style="height:4px;border-radius:2px;background:#2b2e3a;overflow:hidden"><div style="height:100%;width:{{ lv.progress }};border-radius:2px;background:linear-gradient(90deg,#796cbf,#b5abfc);box-shadow:0 0 10px rgba(145,132,217,.6);transition:width .6s ease"></div></div>
+          </div>
+        </sc-if>
         <sc-if value="{{ lv.isVilla }}" hint-placeholder-val="{{ false }}">
           <div style="margin:10px auto 0;width:300px;position:relative;z-index:2;display:flex;flex-direction:column;gap:6px">
             <div style="position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;height:82px;padding:0 12px;border-radius:14px;background:{{ lv.payBg }};box-shadow:{{ lv.payShadow }};animation:{{ lv.unlockAnim }};filter:{{ lv.payFilter }}">
@@ -312,6 +334,7 @@
                 </div>
                 <span style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#6b6e79;margin-top:2px">{{ f.name }}</span>
                 <span style="font-size:13px;font-weight:500;color:#e9e9ed;white-space:nowrap">{{ f.amount }}</span>
+                <sc-if value="{{ f.showOf }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px;color:#6b6e79;white-space:nowrap;margin-top:-1px">of {{ f.target }}</span></sc-if>
                 <div style="width:22px;height:2px;border-radius:1px;margin-top:5px;background:{{ f.bar }}"></div>
               </div>
             </sc-for>
@@ -319,6 +342,128 @@
         </div>
       </section>
     </sc-for>
+      <section data-screen-label="Empty Ground" data-level="0" style="height:754px;position:relative;display:flex;flex-direction:column;justify-content:flex-start;padding:0 20px 18px;box-sizing:border-box">
+        <div style="position:absolute;top:0;left:0;right:0;height:24px;display:flex;justify-content:center;gap:6px;align-items:center;font-size:11px;color:#6b6e79;letter-spacing:.08em;text-transform:uppercase"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M2 8 6 4l4 4" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>Level 1 · The Plot</div>
+        <div style="position:relative;height:300px;margin:0 -20px;flex:none">
+          <svg viewBox="0 0 402 300" style="position:absolute;left:0;top:0;width:402px;height:100%;overflow:visible;pointer-events:none">
+            <sc-for list="{{ emptyCells }}" as="c" hint-placeholder-count="9">
+              <polygon points="{{ c.pts }}" fill="{{ c.fill }}" stroke="{{ c.stroke }}" stroke-width="{{ c.sw }}" stroke-dasharray="{{ c.dash }}" style="animation:{{ c.anim }}"></polygon>
+            </sc-for>
+            <g style="animation:bob 6s ease-in-out infinite">
+              <polygon points="{{ groundR }}" fill="#3f2a18"></polygon>
+              <polygon points="{{ groundL }}" fill="#5a3d22"></polygon>
+              <polygon points="{{ groundTop }}" fill="#6cba36" stroke="#7cc945" stroke-width="1.5"></polygon>
+              <polygon points="{{ groundTop }}" fill="url(#g0shade)" opacity="{{ groundShade }}"></polygon>
+            </g>
+            <defs><linearGradient id="g0shade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#161826" stop-opacity=".55"></stop><stop offset="1" stop-color="#161826" stop-opacity="0"></stop></linearGradient></defs>
+          </svg>
+          <sc-if value="{{ startDone }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;left:50%;top:{{ emptyChipTop }};transform:translate(-50%,-50%);z-index:5;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 7px;border-radius:12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;background:rgba(88,184,88,.14);color:#8fd48f;box-shadow:0 0 0 1px rgba(88,184,88,.45),0 0 14px rgba(88,184,88,.25)">
+              <svg width="12" height="12" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#58b858"></circle><path d="M4.5 8.2 7 10.6 11.6 5.8" fill="none" stroke="#0f1019" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span>Completed</span>
+            </span>
+          </sc-if>
+          <div style="position:absolute;left:50%;top:{{ emptyChipTop }};transform:translate(-50%,-50%);z-index:5;width:76px;height:76px;display:{{ startRingDisplay }};place-items:center">
+            <svg width="76" height="76" viewBox="0 0 76 76" style="position:absolute;inset:0;transform:rotate(-90deg)">
+              <circle cx="38" cy="38" r="33" fill="rgba(22,24,38,.9)" stroke="#2b2e3a" stroke-width="5"></circle>
+              <circle cx="38" cy="38" r="33" fill="none" stroke="#b5abfc" stroke-width="5" stroke-linecap="round" stroke-dasharray="{{ startRing }}" style="filter:drop-shadow(0 0 6px rgba(145,132,217,.8));transition:stroke-dasharray .8s ease"></circle>
+            </svg>
+            <span style="position:relative;font-size:14px;font-weight:500;color:#e9e9ed;letter-spacing:-.01em">{{ startPaid }}</span>
+          </div>
+        </div>
+        <h1 style="font-weight:800;font-size:32px;letter-spacing:.01em;margin:0;position:relative;z-index:2;text-align:center;color:#e9e9ed;text-shadow:0 2px 0 rgba(0,0,0,.55),0 0 22px rgba(145,132,217,.55)">Your Land</h1>
+        <div style="display:flex;justify-content:center;margin-top:10px;position:relative;z-index:2">
+          <div data-banner="0" style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;width:300px;height:46px;padding:0 12px 0 8px;border-radius:10px;background:linear-gradient(180deg,#4a3f8a,#2f2760);box-shadow:0 4px 0 #1b1740,0 8px 18px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12)">
+            <span style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#1e2130;box-shadow:inset 0 0 0 1.5px #5d5294;font-size:15px;font-weight:800;color:#d2cefd">0</span>
+            <span style="flex:1;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#e9e9ed;text-shadow:0 1px 0 rgba(0,0,0,.5);white-space:nowrap">Start</span>
+            <span style="font-size:15px;font-weight:800;color:#ffe9a3;text-shadow:0 1px 0 rgba(0,0,0,.5);white-space:nowrap">₹0</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;position:relative;z-index:2;align-items:center">
+          <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9a9aa5">Your mix</span>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:300px">
+            <sc-for list="{{ startFunds }}" as="f" hint-placeholder-count="5">
+              <div style="width:92px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 5px 6px;border-radius:10px;background:linear-gradient(180deg,#232739,#1b1e2c);border:1px solid {{ f.border }};box-shadow:{{ f.shadow }};filter:{{ lv.tileFilter }};opacity:{{ lv.tileOpacity }}">
+                <div style="width:72px;height:54px;border-radius:8px;background:radial-gradient(ellipse at 50% 85%,rgba(233,233,237,.08),transparent 70%);display:grid;place-items:center;overflow:visible">
+                  <sc-if value="{{ f.isVault }}" hint-placeholder-val="{{ true }}">
+                    <svg viewBox="0 0 80 72" width="60" height="54" style="overflow:visible">
+                      <rect x="16" y="10" width="52" height="54" rx="4" fill="#5f7a70"></rect>
+                      <rect x="12" y="8" width="52" height="54" rx="4" fill="#8aa89b"></rect>
+                      <rect x="17" y="13" width="42" height="44" rx="3" fill="#a9c2b6"></rect>
+                      <rect x="52" y="22" width="4" height="10" rx="1" fill="#3f5a50"></rect>
+                      <rect x="52" y="38" width="4" height="10" rx="1" fill="#3f5a50"></rect>
+                      <g style="transform-origin:34px 35px;animation:dial 4s ease-in-out infinite">
+                        <circle cx="34" cy="35" r="9" fill="#e9eee9" stroke="#3f5a50" stroke-width="2"></circle>
+                        <circle cx="34" cy="35" r="2.5" fill="#3f5a50"></circle>
+                        <rect x="33" y="27" width="2" height="6" rx="1" fill="#3f5a50"></rect>
+                      </g>
+                      <g style="animation:noteOut 4s ease-in-out infinite">
+                        <rect x="4" y="30" width="16" height="8" rx="1.5" fill="#7fb07a" transform="rotate(-12 12 34)"></rect>
+                        <text x="12" y="36.5" font-size="6" text-anchor="middle" fill="#2c4a2a" font-family="Inter,sans-serif">₹</text>
+                      </g>
+                    </svg>
+                  </sc-if>
+                  <sc-if value="{{ f.isGold }}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 80 72" width="60" height="54">
+                      <ellipse cx="40" cy="64" rx="18" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                      <g style="transform-origin:40px 34px;animation:coinTurn 3.6s ease-in-out infinite">
+                        <circle cx="40" cy="34" r="24" fill="#b47a14"></circle>
+                        <circle cx="40" cy="32" r="24" fill="#f6c445"></circle>
+                        <circle cx="40" cy="32" r="18" fill="none" stroke="#dc9a1f" stroke-width="2"></circle>
+                        <circle cx="30" cy="22" r="4" fill="#ffe9a3" opacity=".8"></circle>
+                        <text x="40" y="41" font-size="24" text-anchor="middle" fill="#8d5a10" font-family="Inter,sans-serif" font-weight="500">₹</text>
+                      </g>
+                    </svg>
+                  </sc-if>
+                  <sc-if value="{{ f.isLarge }}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 80 72" width="60" height="54">
+                      <ellipse cx="40" cy="66" rx="22" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                      <ellipse cx="40" cy="58" rx="20" ry="6" fill="#c9a27c"></ellipse><ellipse cx="40" cy="62" rx="20" ry="6" fill="#a97f5c"></ellipse><ellipse cx="40" cy="58" rx="20" ry="6" fill="#c9a27c"></ellipse>
+                      <g style="transform-origin:40px 58px;animation:sway 5s ease-in-out infinite">
+                        <rect x="38" y="30" width="4" height="28" rx="1" fill="#8b5a3c"></rect>
+                        <circle cx="40" cy="22" r="17" fill="#3e8a3e"></circle>
+                        <circle cx="28" cy="30" r="12" fill="#4a9d47"></circle>
+                        <circle cx="52" cy="30" r="12" fill="#357a36"></circle>
+                        <circle cx="40" cy="16" r="11" fill="#5cb85c"></circle>
+                        <circle cx="34" cy="14" r="4" fill="#8fd48a" opacity=".8"></circle>
+                      </g>
+                    </svg>
+                  </sc-if>
+                  <sc-if value="{{ f.isMid }}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 80 72" width="60" height="54">
+                      <ellipse cx="40" cy="66" rx="18" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                      <ellipse cx="40" cy="62" rx="16" ry="5" fill="#a97f5c"></ellipse><ellipse cx="40" cy="58" rx="16" ry="5" fill="#c9a27c"></ellipse>
+                      <g style="transform-origin:40px 58px;animation:sway 4.4s ease-in-out infinite .6s">
+                        <rect x="39" y="26" width="2.5" height="32" rx="1" fill="#4a7a3a"></rect>
+                        <ellipse cx="31" cy="46" rx="8" ry="4" fill="#4a9d47" transform="rotate(-30 31 46)"></ellipse>
+                        <ellipse cx="49" cy="46" rx="8" ry="4" fill="#3e8a3e" transform="rotate(30 49 46)"></ellipse>
+                        <ellipse cx="32" cy="36" rx="7" ry="3.5" fill="#5cb85c" transform="rotate(-35 32 36)"></ellipse>
+                        <ellipse cx="48" cy="36" rx="7" ry="3.5" fill="#4a9d47" transform="rotate(35 48 36)"></ellipse>
+                        <ellipse cx="40" cy="24" rx="3.5" ry="6" fill="#8fd48a"></ellipse>
+                      </g>
+                    </svg>
+                  </sc-if>
+                  <sc-if value="{{ f.isSmall }}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 80 72" width="60" height="54">
+                      <ellipse cx="40" cy="66" rx="14" ry="3" fill="rgba(0,0,0,.35)"></ellipse>
+                      <ellipse cx="40" cy="62" rx="12" ry="4" fill="#a97f5c"></ellipse><ellipse cx="40" cy="59" rx="12" ry="4" fill="#c9a27c"></ellipse>
+                      <g style="transform-origin:40px 59px;animation:sprout 3.2s ease-in-out infinite">
+                        <rect x="39.2" y="42" width="1.8" height="17" rx="1" fill="#4a7a3a"></rect>
+                        <ellipse cx="33" cy="44" rx="7" ry="3.5" fill="#5cb85c" transform="rotate(-35 33 44)"></ellipse>
+                        <ellipse cx="47" cy="44" rx="7" ry="3.5" fill="#8fd48a" transform="rotate(35 47 44)"></ellipse>
+                      </g>
+                    </svg>
+                  </sc-if>
+                </div>
+                <span style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#6b6e79;margin-top:2px">{{ f.name }}</span>
+                <span style="font-size:13px;font-weight:500;color:#e9e9ed;white-space:nowrap">{{ f.amount }}</span>
+                <sc-if value="{{ f.showOf }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px;color:#6b6e79;white-space:nowrap;margin-top:-1px">of {{ f.target }}</span></sc-if>
+                <div style="width:22px;height:2px;border-radius:1px;margin-top:5px;background:{{ f.bar }}"></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
    </div>
   </div>
 </div>
@@ -326,12 +471,13 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:402,&quot;height&quot;:874},&quot;worth&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:25000,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:0,&quot;max&quot;:500000,&quot;step&quot;:25000,&quot;unit&quot;:&quot;₹&quot;,&quot;section&quot;:&quot;Portfolio&quot;},&quot;embedded&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;resetKey&quot;:{&quot;editor&quot;:null,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;}}">
 class Component extends DCLogic {
-  state = { sip: null, fit: 1, count: 1, viewLevel: 0 };
-  _onScroll = () => { if (this._sc) return; this._sc = requestAnimationFrame(() => { this._sc = 0; const el = this.scrollerRef.current; if (!el) return; const v = Math.max(1, Math.min(45, 45 - Math.round((el.scrollTop - 100) / 754))); if (v !== this.state.viewLevel) this.setState({ viewLevel: v }); }); };
+  state = { sip: null, fit: 1, count: 1, viewLevel: null };
+  _onScroll = () => { if (this._sc) return; this._sc = requestAnimationFrame(() => { this._sc = 0; const el = this.scrollerRef.current; if (!el) return; const v = Math.max(0, Math.min(45, 45 - Math.round((el.scrollTop - 100) / 754))); if (v !== this.state.viewLevel) this.setState({ viewLevel: v }); }); };
   _scrollToLevel = (lv, smooth) => { const el = this.scrollerRef.current; if (!el) return; const sec = el.querySelector('section[data-level="' + lv + '"]'); if (!sec) return; if (smooth) el.scrollTo({ top: sec.offsetTop, behavior: 'smooth' }); else el.scrollTop = sec.offsetTop; };
   _fit = () => { if (this.props.embedded) return; const s = Math.min(1, (window.innerHeight - 24) / 874); if (s !== this.state.fit) this.setState({ fit: s }); };
   componentWillUnmount() { window.removeEventListener('resize', this._fit); const el = this.scrollerRef.current; if (el) el.removeEventListener('scroll', this._onScroll); }
-  scrollerRef = React.createRef();
+  scrollerRef = React.createRef(); railRef = React.createRef();
+  _measure = () => { const el = this.scrollerRef.current, rail = this.railRef.current; if (!el || !rail) return; const r0 = rail.getBoundingClientRect(), k = (r0.height / (parseFloat(rail.style.height) || rail.offsetHeight)) || 1, tops = {}; el.querySelectorAll('[data-banner]').forEach(b => { const rb = b.getBoundingClientRect(); tops[b.dataset.banner] = (rb.top + rb.height / 2 - r0.top) / k; }); if (Object.keys(tops).length) this.setState({ bannerTops: tops }); };
   _countUp = () => { cancelAnimationFrame(this._cu); const t0 = performance.now(); const step = t => { const p = Math.min(1, (t - t0) / 1400); this.setState({ count: 1 - Math.pow(1 - p, 3) }); if (p < 1) this._cu = requestAnimationFrame(step); }; this._cu = requestAnimationFrame(step); };
   _jumpToVilla = () => { const t = this._earnTarget; if (t) this._scrollToLevel(t, true); };
   _toCurrent = () => {
@@ -339,8 +485,8 @@ class Component extends DCLogic {
     const go = () => { const sec = el.querySelector('section[data-current="true"]'); el.scrollTop = sec ? sec.offsetTop : el.scrollHeight; };
     go(); requestAnimationFrame(go); setTimeout(go, 150);
   };
-  componentDidMount() { const el = this.scrollerRef.current; if (el) el.addEventListener('scroll', this._onScroll, { passive: true }); this._toCurrent(); this._countUp(); this._fit(); window.addEventListener('resize', this._fit); }
-  componentDidUpdate(prev) { if (this.props.resetKey !== prev.resetKey) { this._toCurrent(); this._countUp(); } }
+  componentDidMount() { const el = this.scrollerRef.current; if (el) el.addEventListener('scroll', this._onScroll, { passive: true }); requestAnimationFrame(this._measure); setTimeout(this._measure, 400); setTimeout(this._measure, 1200); this._toCurrent(); this._countUp(); this._fit(); window.addEventListener('resize', this._fit); }
+  componentDidUpdate(prev) { if (this.props.resetKey !== prev.resetKey) { this._toCurrent(); this._countUp(); setTimeout(this._measure, 400); } }
   renderVals() {
     const inr = n => '₹' + n.toLocaleString('en-IN');
     const lakh = n => n >= 100000 ? '₹' + (n % 100000 ? (n / 100000).toFixed(2).replace(/0+$/, '').replace(/\.$/, '') : String(n / 100000)) + 'L' : n >= 1000 ? '₹' + Math.round(n / 1000) + 'k' : inr(n);
@@ -416,11 +562,14 @@ class Component extends DCLogic {
         steps: [], stepsLabel: '', milestone: inr(threshold),
         titleGlow: isLocked ? 'transparent' : 'rgba(145,132,217,.55)',
         bannerTop: isLocked ? '#232739' : '#4a3f8a', bannerBottom: isLocked ? '#1b1e2c' : '#2f2760',
-        funds: FUNDS.map(fd => ({ ...fd, amount: inr(Math.round(threshold * fd.w)), border: isLocked ? '#2b2e3a' : '#3f424d', shadow: isLocked ? 'none' : '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)' })),
+        funds: FUNDS.map(fd => ({ ...fd, amount: inr(Math.round((isCurrent ? worth : threshold) * fd.w)), target: inr(Math.round(threshold * fd.w)), showOf: isCurrent, border: isLocked ? '#2b2e3a' : '#3f424d', shadow: isLocked ? 'none' : '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)' })),
         thresholdLabel: inr(threshold), startLabel: inr(start),
         progress: (isCurrent ? Math.round(Math.max(0, Math.min(1, (worth - start) / L)) * 100) : isLocked ? 0 : 100) + '%',
+        prevOpacity: isCurrent ? 1 : 0, prevPlot: isCurrent && s === 1, prevGrading: isCurrent && s === 2, prevFoundation: isCurrent && s === 3, prevSteel: isCurrent && s === 4,
+        artClip: isCurrent ? Math.round((1 - Math.max(0, Math.min(1, (worth - start) / L))) * 100) + '%' : '0%', ghostOpacity: isCurrent ? .22 : 0,
+        paidInLabel: lakh(worth) + ' in', toGoLabel: lakh(Math.max(0, threshold - worth)) + ' to go',
         stateLabel: isCurrent ? 'Current level' : isDone ? 'Completed' : 'Locked',
-        showStatus: isDone, chipTop: (y0 + 2 * BH) + 'px', statusText: isDone ? 'Completed · paid ' + lakh(threshold) : 'In progress · ' + Math.round(Math.max(0, Math.min(1, (worth - start) / L)) * 100) + '%',
+        showStatus: isDone, chipTop: (y0 + 2 * BH) + 'px', statusText: isDone ? 'Completed' : 'In progress · ' + Math.round(Math.max(0, Math.min(1, (worth - start) / L)) * 100) + '%',
         statusBg: isDone ? 'rgba(88,184,88,.14)' : 'rgba(145,132,217,.14)', statusColor: isDone ? '#8fd48f' : '#d2cefd',
         statusBorder: isDone ? 'rgba(88,184,88,.45)' : '#5d5294', statusGlow: isDone ? 'rgba(88,184,88,.25)' : 'rgba(145,132,217,.3)',
         tileFilter: isLocked ? 'grayscale(1) brightness(.7)' : 'none', tileOpacity: isLocked ? 0.75 : 1,
@@ -433,27 +582,42 @@ class Component extends DCLogic {
       });
     }
     levels.reverse();
+    const emptyCells = [];
+    for (let rr = 0; rr < 3; rr++) for (let c = 0; c < 3; c++) { const cx = OX + (c - rr) * BW, cy = 100 + (c + rr) * BH, centre = c === 1 && rr === 1; emptyCells.push({ d: c + rr, c, pts: `${cx},${cy - BH} ${cx + BW},${cy} ${cx},${cy + BH} ${cx - BW},${cy}`, fill: centre ? '#2a2d44' : '#242739', stroke: centre ? '#9184d9' : '#3f424d', sw: centre ? 2 : 1.5, dash: centre ? '0' : '6 5', anim: centre ? 'mapPulse 2s ease-in-out infinite' : 'none' }); }
+    emptyCells.sort((a, b) => (a.d - b.d) || (a.c - b.c));
+    const g0 = { cx: OX, cy: 100 + 2 * BH }, GH = 9;
+    const groundTop = `${g0.cx},${g0.cy - BH} ${g0.cx + BW},${g0.cy} ${g0.cx},${g0.cy + BH} ${g0.cx - BW},${g0.cy}`;
+    const groundR = `${g0.cx + BW},${g0.cy} ${g0.cx},${g0.cy + BH} ${g0.cx},${g0.cy + BH + GH} ${g0.cx + BW},${g0.cy + GH}`;
+    const groundL = `${g0.cx},${g0.cy + BH} ${g0.cx - BW},${g0.cy} ${g0.cx - BW},${g0.cy + GH} ${g0.cx},${g0.cy + BH + GH}`;
+    const p0 = Math.max(0, Math.min(1, worth / L));
+    const groundShade = (1 - p0).toFixed(2);
+    const startRing = (2 * Math.PI * 33 * p0).toFixed(1) + ' ' + (2 * Math.PI * 33).toFixed(1);
+    const startPaid = lakh(Math.min(worth, L));
+    const startDots = Array.from({ length: 10 }, (_, i) => { const on = worth >= (i + 1) * 10000; return { bg: on ? 'rgba(145,132,217,.22)' : '#1e2130', glow: on ? '0 0 0 1px #5d5294,0 0 10px rgba(145,132,217,.45)' : '0 0 0 1px #2b2e3a', dot: on ? '#b5abfc' : '#3f424d' }; });
     const complete = worth >= TOTAL * L;
     const remaining = Math.max(0, current * L - worth);
     const stepsLeft = Math.ceil(remaining / sip);
     // rail: one continuous track across all levels; nodes only where a villa completes
-    const SEC = 754, OFF = 100, RT = 40, RB = SEC - 300, SPAN = RB - RT;
+    const SEC = 754, OFF = 100, RT = 40, RB = SEC - 300, SPAN = RB - RT, SEC0 = 754, Z0 = OFF + TOTAL * SEC + 150;
+    const BT = this.state.bannerTops || {};
+    const posOf = k => BT[k] ?? (k === 0 ? Z0 : OFF + (TOTAL - k) * SEC + RT);
     const yFor = v => {
       const vv = Math.min(TOTAL * L, Math.max(0, v));
       const n = Math.min(TOTAL, Math.floor(vv / L) + 1), fr = (vv - (n - 1) * L) / L;
-      return OFF + (TOTAL - n) * SEC + RB - fr * SPAN;
+      return posOf(n - 1) - fr * (posOf(n - 1) - posOf(n));
     };
     const fillTop = Math.round(yFor(worth)) + 'px';
-    const railTop = RT + 'px', railH = (OFF + TOTAL * SEC) + 'px';
+    const railTop = RT + 'px', railH = (OFF + TOTAL * SEC + SEC0) + 'px';
     const railMarks = [];
     for (let h = HOUSES; h >= 1; h--) {
-      const k = 5 * h, top = OFF + (TOTAL - k) * SEC + RT, v = k * L;
+      const k = 5 * h, top = posOf(k), v = k * L;
       const reached = v <= worth;
       railMarks.push({ isNode: true, top: top + 'px', size: '20px', reached, isFlag: !reached, flagFill: '#6b6e79', bg: reached ? '#8fd48f' : '#232634', glow: reached ? '0 0 12px rgba(88,184,88,.5)' : 'inset 0 0 0 1.5px #3f424d', color: reached ? '#8fd48f' : '#6b6e79', tagBg: reached ? 'rgba(88,184,88,.12)' : 'transparent', label: 'Villa ' + h + ' · ' + lakh(v) });
     }
-    railMarks.push({ isNode: true, top: (OFF + (TOTAL - 1) * SEC + RB) + 'px', size: '14px', reached: false, isFlag: false, bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0' });
+    for (let k = 1; k <= TOTAL; k++) { if (k % 5 === 0) continue; const v = k * L, reached = v <= worth; railMarks.push({ isTick: true, top: posOf(k) + 'px', bg: reached ? '#b5abfc' : '#232634', glow: reached ? '0 0 8px rgba(145,132,217,.6)' : 'inset 0 0 0 1.5px #3f424d', color: reached ? '#c9c6da' : '#4f525e', label: lakh(v) }); }
+    railMarks.push({ isNode: true, top: posOf(0) + 'px', size: '14px', reached: false, isFlag: false, bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0' });
     // the earn button targets the next villa ABOVE whatever level is on screen
-    const viewLevel = this.state.viewLevel || current;
+    const viewLevel = this.state.viewLevel ?? current;
     const viewHouse = viewLevel % 5 === 0 ? Math.floor(viewLevel / 5) + 1 : Math.ceil(viewLevel / 5);
     const earnHouse = Math.min(HOUSES, viewHouse), earnDone = viewLevel % 5 === 0 && viewLevel === TOTAL;
     this._earnTarget = earnDone ? null : earnHouse * 5;
@@ -461,7 +625,7 @@ class Component extends DCLogic {
     const showBack = viewLevel !== current;
     const nextLine = complete ? 'Estate complete.' : `${inr(remaining)} to level ${current + 1}`;
     const etaLabel = complete ? '' : `${stepsLeft} step${stepsLeft === 1 ? '' : 's'} left`;
-    return { fit: this.state.fit, outerH: this.props.embedded ? '874px' : '100vh', frameRadius: this.props.embedded ? '0' : '44px', frameShadow: this.props.embedded ? 'none' : '0 0 0 1px #2b2e3a,0 0 0 9px #0b0c14,0 0 0 10px #1e2130,0 18px 48px rgba(0,0,0,.6)', levels, railMarks, railTop, railH, fillTop, jumpToVilla: this._jumpToVilla, earnLabel, earnOpacity, showBack, backToCurrent: () => this._scrollToLevel(current, true), backRot: viewLevel > current ? '0deg' : '180deg', currentLevel: current, hudPad: this.props.embedded ? '22px' : '54px', close: this.props.onClose ?? (() => { window.location.href = 'SIP Status.dc.html'; }), worthLabel: lakh(worth), sipLabel: inr(sip), nextLine, etaLabel, scrollerRef: this.scrollerRef };
+    return { fit: this.state.fit, outerH: this.props.embedded ? '874px' : '100vh', frameRadius: this.props.embedded ? '0' : '44px', frameShadow: this.props.embedded ? 'none' : '0 0 0 1px #2b2e3a,0 0 0 9px #0b0c14,0 0 0 10px #1e2130,0 18px 48px rgba(0,0,0,.6)', levels, railMarks, railTop, railH, fillTop, emptyCells, emptyChipTop: (100 + 2 * BH - (worth >= L ? 0 : 34)) + 'px', groundTop, groundL, groundR, groundShade, startRing, startPaid, startDone: worth >= L, startRingDisplay: worth >= L ? 'none' : 'grid', startFunds: FUNDS.map(fd => ({ ...fd, amount: Math.round(fd.w * 100) + '%', showOf: false, border: '#3f424d', shadow: '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)' })), jumpToVilla: this._jumpToVilla, earnLabel, earnOpacity, showBack, backToCurrent: () => this._scrollToLevel(current, true), backRot: viewLevel > current ? '0deg' : '180deg', currentLevel: current, hudPad: this.props.embedded ? '22px' : '54px', close: this.props.onClose ?? (() => { window.location.href = 'SIP Status.dc.html'; }), worthLabel: lakh(worth), sipLabel: inr(sip), nextLine, etaLabel, scrollerRef: this.scrollerRef, railRef: this.railRef };
   }
 }
 </script>

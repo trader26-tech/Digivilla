@@ -18,6 +18,10 @@ import { EstateService } from '../estate.service';
 interface FundVM {
   name: string;
   amount: string;
+  /** On the current level: "of ₹target" — the full threshold share. */
+  target: string;
+  /** Whether to show the "of {target}" line (current level only). */
+  showOf: boolean;
   bar: string;
   border: string;
   shadow: string;
@@ -52,6 +56,18 @@ interface LevelVM {
   isFoundation: boolean;
   isSteel: boolean;
   isVilla: boolean;
+  // current-level art blending (three stacked layers)
+  prevOpacity: number;
+  prevPlot: boolean;
+  prevGrading: boolean;
+  prevFoundation: boolean;
+  prevSteel: boolean;
+  ghostOpacity: number;
+  artClip: string;
+  // current-level progress strip
+  progress: string;
+  paidInLabel: string;
+  toGoLabel: string;
   // board
   backCells: CellVM[];
   frontCells: CellVM[];
@@ -114,7 +130,7 @@ interface LevelVM {
   aboveName: string;
 }
 
-/** One marker on the vertical rail (villa-completion checkpoint or the ₹0 base). */
+/** One marker on the vertical rail (villa-completion checkpoint, per-level tick, or ₹0 base). */
 interface RailMark {
   top: string;
   size: string;
@@ -126,8 +142,25 @@ interface RailMark {
   color: string;
   tagBg: string;
   label: string;
-  /** A small per-level checkpoint dot (no label) vs a big labelled villa milestone. */
+  /** A big, labelled node: villa milestone (20px) or the ₹0 base (14px). */
+  isNode: boolean;
+  /** A small per-level checkpoint dot (10px) with a tiny ₹ label. */
   isTick: boolean;
+}
+
+/** The five funds shown as percentages on the Level-0 "Your mix" section. */
+interface StartFundVM {
+  name: string;
+  amount: string;
+  showOf: boolean;
+  bar: string;
+  border: string;
+  shadow: string;
+  isVault: boolean;
+  isGold: boolean;
+  isLarge: boolean;
+  isMid: boolean;
+  isSmall: boolean;
 }
 
 /**
@@ -156,8 +189,13 @@ export class EstateLevelsComponent implements AfterViewInit {
    *  and leaves room for the floating nav pill (vs the full-screen overlay). */
   @Input() tab = false;
   @ViewChild('scroller') scroller!: ElementRef<HTMLDivElement>;
+  @ViewChild('rail') railRef!: ElementRef<HTMLDivElement>;
 
   private est = inject(EstateService);
+
+  /** Measured centre-Y of every [data-banner] (un-scaled), keyed by level (0..45).
+   *  Empty until the first layout measurement — the rail falls back to section math. */
+  private readonly bannerTops = signal<Record<number, number>>({});
 
   // --- constants (ported from renderVals) ---
   private readonly L = 100000;
@@ -218,7 +256,9 @@ export class EstateLevelsComponent implements AfterViewInit {
   private cuRaf = 0;
 
   // --- viewLevel from scroll (drives HUD earn button + back arrow) ---
-  private readonly viewLevel = signal(0);
+  // null until the first scroll (then falls back to the current level, like the
+  // reference's `viewLevel ?? current`); a real 0 means the Level-0 section.
+  private readonly viewLevel = signal<number | null>(null);
   private scRaf = 0;
 
   // --- currency helpers ---
@@ -284,6 +324,15 @@ export class EstateLevelsComponent implements AfterViewInit {
       levels.push({
         level: k, name: st.name, threshold, isDone, isCurrent, isLocked,
         isPlot: s === 0, isGrading: s === 1, isFoundation: s === 2, isSteel: s === 3, isVilla,
+        // current-level art blending: prev stage at full, target stage as grey ghost,
+        // target stage rising via clip-path as this level's lakh fills.
+        prevOpacity: isCurrent ? 1 : 0,
+        prevPlot: isCurrent && s === 1, prevGrading: isCurrent && s === 2,
+        prevFoundation: isCurrent && s === 3, prevSteel: isCurrent && s === 4,
+        ghostOpacity: isCurrent ? .22 : 0,
+        artClip: isCurrent ? Math.round((1 - Math.max(0, Math.min(1, (worth - start) / L))) * 100) + '%' : '0%',
+        progress: (isCurrent ? Math.round(Math.max(0, Math.min(1, (worth - start) / L)) * 100) : isLocked ? 0 : 100) + '%',
+        paidInLabel: lakh(worth) + ' in', toGoLabel: lakh(Math.max(0, threshold - worth)) + ' to go',
         backCells, frontCells, backVillas, frontVillas, boardVB: `0 0 402 ${boardH}`, tileH: boardH + 'px',
         artLeft: (hp.cx - ART_DX).toFixed(1) + 'px', artTop: (hp.cy - ART_DY).toFixed(1) + 'px',
         nextX: nx.cx, nextY: nx.cy, nextTY: nx.cy + 5, nextDisplay: (isVilla && houseDone && nextIdx >= 0) ? 'block' : 'none',
@@ -310,7 +359,12 @@ export class EstateLevelsComponent implements AfterViewInit {
         bannerTop: isLocked ? '#232739' : '#4a3f8a', bannerBottom: isLocked ? '#1b1e2c' : '#2f2760',
         pillBorder: isCurrent ? '#5d5294' : '#2b2e3a',
         funds: this.FUNDS.map(fd => ({
-          name: fd.name, amount: inr(Math.round(threshold * fd.w)), bar: fd.bar,
+          name: fd.name,
+          // on the current level show what's ACTUALLY in (worth·weight) + "of ₹target";
+          // done/locked levels show the full threshold share.
+          amount: inr(Math.round((isCurrent ? worth : threshold) * fd.w)),
+          target: inr(Math.round(threshold * fd.w)), showOf: isCurrent,
+          bar: fd.bar,
           isVault: fd.isVault, isGold: fd.isGold, isLarge: fd.isLarge, isMid: fd.isMid, isSmall: fd.isSmall,
           border: isLocked ? '#2b2e3a' : '#3f424d',
           shadow: isLocked ? 'none' : '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)',
@@ -329,59 +383,126 @@ export class EstateLevelsComponent implements AfterViewInit {
     return levels;
   });
 
-  // --- rail geometry (ported from yFor / railMarks) ---
+  // --- rail geometry (m2: each checkpoint sits at its banner, measured after
+  //     layout; fall back to section math until bannerTops is populated) ---
+  /** Height of the extra section below the last level (the Level-0 "Your Land"). */
+  private readonly SEC0 = 754;
+  /** Fallback Y for the ₹0 (Level-0) banner before it has been measured. */
+  private readonly Z0 = this.OFF + this.TOTAL * this.SEC + 150;
+
+  /** The banner Y for checkpoint level k — measured if available, else section math. */
+  private posOf(k: number): number {
+    const bt = this.bannerTops();
+    const m = bt[k];
+    if (m != null) return m;
+    return k === 0 ? this.Z0 : this.OFF + (this.TOTAL - k) * this.SEC + this.RT;
+  }
+
+  /** Rail Y for a given worth: linear interpolation between the two neighbouring
+   *  checkpoint banners (posOf(n-1) .. posOf(n)). */
   private yFor(v: number): number {
     const vv = Math.min(this.TOTAL * this.L, Math.max(0, v));
     const n = Math.min(this.TOTAL, Math.floor(vv / this.L) + 1);
     const fr = (vv - (n - 1) * this.L) / this.L;
-    return this.OFF + (this.TOTAL - n) * this.SEC + this.RB - fr * this.SPAN;
+    return this.posOf(n - 1) - fr * (this.posOf(n - 1) - this.posOf(n));
   }
 
   readonly fillTop = computed(() => Math.round(this.yFor(this.worth())) + 'px');
   readonly railTop = this.RT + 'px';
-  readonly railH = (this.OFF + this.TOTAL * this.SEC) + 'px';
+  readonly railH = (this.OFF + this.TOTAL * this.SEC + this.SEC0) + 'px';
 
-  /** Checkpoint nodes: villa completions (₹5L … ₹45L) plus the ₹0 base dot. */
+  /** Checkpoint marks aligned to each level's banner: villa nodes (₹5L…₹45L),
+   *  per-level ticks, and the ₹0 base node. Positions follow `posOf` so they track
+   *  the measured banners (and reflow once bannerTops updates). */
   readonly railMarks = computed<RailMark[]>(() => {
     const worth = this.worth();
+    // depend on measured positions so marks reflow after layout
+    this.bannerTops();
     const marks: RailMark[] = [];
-    // a checkpoint for EVERY level (k = 1..45), placed at that level's threshold on
-    // the rail. Villa completions (k % 5 === 0) are the big, labelled milestones;
-    // the other levels get a small dot so progress reads off the bar at a glance.
-    for (let k = this.TOTAL; k >= 1; k--) {
-      const top = this.OFF + (this.TOTAL - k) * this.SEC + this.RT, v = k * this.L;
-      const reached = v <= worth;
-      const isVilla = k % 5 === 0;
-      if (isVilla) {
-        const h = k / 5;
-        marks.push({
-          top: top + 'px', size: '20px', reached, isFlag: !reached, flagFill: reached ? '#8fd48f' : '#6b6e79',
-          bg: reached ? '#8fd48f' : '#232634',
-          glow: reached ? '0 0 12px rgba(88,184,88,.5)' : 'inset 0 0 0 1.5px #3f424d',
-          color: reached ? '#8fd48f' : '#6b6e79',
-          tagBg: reached ? 'rgba(88,184,88,.12)' : 'transparent',
-          label: 'Villa ' + h + ' · ' + this.lakh(v), isTick: false,
-        });
-      } else {
-        // a small per-level dot (no label) — reached ones glow accent, ahead ones dim
-        marks.push({
-          top: top + 'px', size: '8px', reached, isFlag: false, flagFill: '#6b6e79',
-          bg: reached ? '#b5abfc' : '#3f424d',
-          glow: reached ? '0 0 6px rgba(145,132,217,.5)' : 'none',
-          color: '#6b6e79', tagBg: 'transparent', label: '', isTick: true,
-        });
-      }
+    // big villa nodes (top → down)
+    for (let h = this.HOUSES; h >= 1; h--) {
+      const k = 5 * h, v = k * this.L, reached = v <= worth;
+      marks.push({
+        isNode: true, isTick: false, top: this.posOf(k) + 'px', size: '20px', reached,
+        isFlag: !reached, flagFill: '#6b6e79',
+        bg: reached ? '#8fd48f' : '#232634',
+        glow: reached ? '0 0 12px rgba(88,184,88,.5)' : 'inset 0 0 0 1.5px #3f424d',
+        color: reached ? '#8fd48f' : '#6b6e79',
+        tagBg: reached ? 'rgba(88,184,88,.12)' : 'transparent',
+        label: 'Villa ' + h + ' · ' + this.lakh(v),
+      });
     }
+    // small per-level ticks (every non-villa level) with a tiny ₹ label
+    for (let k = 1; k <= this.TOTAL; k++) {
+      if (k % 5 === 0) continue;
+      const v = k * this.L, reached = v <= worth;
+      marks.push({
+        isNode: false, isTick: true, top: this.posOf(k) + 'px', size: '10px', reached,
+        isFlag: false, flagFill: '#6b6e79',
+        bg: reached ? '#b5abfc' : '#232634',
+        glow: reached ? '0 0 8px rgba(145,132,217,.6)' : 'inset 0 0 0 1.5px #3f424d',
+        color: reached ? '#c9c6da' : '#4f525e', tagBg: 'transparent', label: this.lakh(v),
+      });
+    }
+    // the ₹0 base node on the START banner
     marks.push({
-      top: (this.OFF + (this.TOTAL - 1) * this.SEC + this.RB) + 'px', size: '14px', reached: false,
-      isFlag: false, flagFill: '#6b6e79', bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0', isTick: false,
+      isNode: true, isTick: false, top: this.posOf(0) + 'px', size: '14px', reached: false,
+      isFlag: false, flagFill: '#6b6e79', bg: '#d2cefd', glow: 'none', color: '#c9c6da', tagBg: 'transparent', label: '₹0',
     });
     return marks;
   });
 
+  // --- Level 0 "Your Land": the bare plot at ₹0, rendered LAST (bottom of list) ---
+  /** Dashed 3×3 empty board; centre tile is the accented ground plot. */
+  readonly emptyCells = computed<CellVM[]>(() => {
+    const { OX, BW, BH } = this;
+    const cells: (CellVM & { d: number; c: number })[] = [];
+    for (let rr = 0; rr < 3; rr++) for (let c = 0; c < 3; c++) {
+      const cx = OX + (c - rr) * BW, cy = 100 + (c + rr) * BH, centre = c === 1 && rr === 1;
+      cells.push({
+        d: c + rr, c, pts: `${cx},${cy - BH} ${cx + BW},${cy} ${cx},${cy + BH} ${cx - BW},${cy}`,
+        fill: centre ? '#2a2d44' : '#242739', stroke: centre ? '#9184d9' : '#3f424d',
+        sw: centre ? 2 : 1.5, dash: centre ? '0' : '6 5',
+        anim: centre ? 'mapPulse 2s ease-in-out infinite' : 'none',
+      });
+    }
+    cells.sort((a, b) => (a.d - b.d) || (a.c - b.c));
+    return cells;
+  });
+
+  // ground block geometry (centre tile), GH = block depth
+  private readonly GH = 9;
+  private get g0() { return { cx: this.OX, cy: 100 + 2 * this.BH }; }
+  readonly groundTop = computed(() => {
+    const g = this.g0, { BW, BH } = this;
+    return `${g.cx},${g.cy - BH} ${g.cx + BW},${g.cy} ${g.cx},${g.cy + BH} ${g.cx - BW},${g.cy}`;
+  });
+  readonly groundR = computed(() => {
+    const g = this.g0, { BW, BH, GH } = this;
+    return `${g.cx + BW},${g.cy} ${g.cx},${g.cy + BH} ${g.cx},${g.cy + BH + GH} ${g.cx + BW},${g.cy + GH}`;
+  });
+  readonly groundL = computed(() => {
+    const g = this.g0, { BW, BH, GH } = this;
+    return `${g.cx},${g.cy + BH} ${g.cx - BW},${g.cy} ${g.cx - BW},${g.cy + GH} ${g.cx},${g.cy + BH + GH}`;
+  });
+  /** p0 = 0 at ₹0, 1 at ₹1L — drives the dark overlay and the progress ring. */
+  private readonly p0 = computed(() => Math.max(0, Math.min(1, this.worth() / this.L)));
+  readonly groundShade = computed(() => (1 - this.p0()).toFixed(2));
+  readonly startRing = computed(() => (2 * Math.PI * 33 * this.p0()).toFixed(1) + ' ' + (2 * Math.PI * 33).toFixed(1));
+  readonly startPaid = computed(() => this.lakh(Math.min(this.worth(), this.L)));
+  readonly startDone = computed(() => this.worth() >= this.L);
+  readonly startRingDisplay = computed(() => this.worth() >= this.L ? 'none' : 'grid');
+  readonly emptyChipTop = computed(() => (100 + 2 * this.BH - (this.worth() >= this.L ? 0 : 34)) + 'px');
+  /** The five funds as PERCENTAGES (the mix), for the Level-0 "Your mix" row. */
+  readonly startFunds = computed<StartFundVM[]>(() => this.FUNDS.map(fd => ({
+    name: fd.name, amount: Math.round(fd.w * 100) + '%', showOf: false, bar: fd.bar,
+    border: '#3f424d', shadow: '0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(233,233,237,.05)',
+    isVault: fd.isVault, isGold: fd.isGold, isLarge: fd.isLarge, isMid: fd.isMid, isSmall: fd.isSmall,
+  })));
+
   // --- HUD earn button (targets the next villa above the level on screen) ---
   private earnTarget = 0;
-  private readonly viewOrCurrent = computed(() => this.viewLevel() || this.currentLevel());
+  private readonly viewOrCurrent = computed(() => this.viewLevel() ?? this.currentLevel());
 
   readonly earnLabel = computed(() => {
     const viewLevel = this.viewOrCurrent();
@@ -399,13 +520,25 @@ export class EstateLevelsComponent implements AfterViewInit {
   // --- interactions ---
   ngAfterViewInit(): void {
     this._measureFrame();
-    if (typeof window !== 'undefined') window.addEventListener('resize', this._measureFrame);
+    if (typeof window !== 'undefined') window.addEventListener('resize', this._onResize);
     const el = this.scroller?.nativeElement;
     if (!el) return;
     el.addEventListener('scroll', this.onScroll, { passive: true });
     this.toCurrent();
     this.countUp();
+    // measure banner positions after layout settles (rAF + a couple of delayed
+    // passes, matching the reference) so the rail marks align to each banner.
+    requestAnimationFrame(this._measure);
+    setTimeout(this._measure, 400);
+    setTimeout(this._measure, 1200);
   }
+
+  /** A frame-scale change rescales the whole column, so re-measure the banners. */
+  private _onResize = (): void => {
+    this._measureFrame();
+    requestAnimationFrame(this._measure);
+    setTimeout(this._measure, 200);
+  };
 
   private onScroll = (): void => {
     if (this.scRaf) return;
@@ -413,11 +546,32 @@ export class EstateLevelsComponent implements AfterViewInit {
       this.scRaf = 0;
       const el = this.scroller?.nativeElement;
       if (!el) return;
-      // scrollTop is in the zoom-scaled space, so scale the section metrics too
+      // scrollTop is in the zoom-scaled space, so scale the section metrics too.
+      // clamps 0..45 now (0 = the Level-0 "Your Land" section at the bottom).
       const z = this.frameScale();
-      const v = Math.max(1, Math.min(this.TOTAL, this.TOTAL - Math.round((el.scrollTop - 100 * z) / (this.SEC * z))));
+      const v = Math.max(0, Math.min(this.TOTAL, this.TOTAL - Math.round((el.scrollTop - 100 * z) / (this.SEC * z))));
       if (v !== this.viewLevel()) this.viewLevel.set(v);
+      this._measure();
     });
+  };
+
+  /** Measure each [data-banner]'s centre-Y relative to the rail top and store it
+   *  (un-scaled past the .el-inner zoom) so the rail marks align to the banners.
+   *  getBoundingClientRect already returns scaled px, so divide by the rail's own
+   *  scale factor k = renderedHeight / authoredHeight. */
+  private _measure = (): void => {
+    const el = this.scroller?.nativeElement, rail = this.railRef?.nativeElement;
+    if (!el || !rail) return;
+    const r0 = rail.getBoundingClientRect();
+    const authored = parseFloat(rail.style.height) || rail.offsetHeight;
+    const k = (authored ? r0.height / authored : 1) || 1;
+    const tops: Record<number, number> = {};
+    el.querySelectorAll<HTMLElement>('[data-banner]').forEach(b => {
+      const rb = b.getBoundingClientRect();
+      const lvl = Number(b.dataset['banner']);
+      tops[lvl] = (rb.top + rb.height / 2 - r0.top) / k;
+    });
+    if (Object.keys(tops).length) this.bannerTops.set(tops);
   };
 
   private scrollToLevel(lv: number, smooth: boolean): void {
@@ -461,7 +615,7 @@ export class EstateLevelsComponent implements AfterViewInit {
 
   trackLevel(_i: number, lv: LevelVM): number { return lv.level; }
   trackMark(i: number, _m: RailMark): number { return i; }
-  trackFund(_i: number, f: FundVM): string { return f.name; }
+  trackFund(_i: number, f: FundVM | StartFundVM): string { return f.name; }
   trackCell(i: number, _c: CellVM): number { return i; }
   trackVilla(i: number, _v: VillaVM): number { return i; }
   trackBurst(i: number, _b: BurstVM): number { return i; }

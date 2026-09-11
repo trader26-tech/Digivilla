@@ -251,6 +251,15 @@
   position: absolute; width: 142px;
   animation: bob 6s ease-in-out infinite;
 }
+/* current-level art blending: prev stage (A) + grey ghost of target (B) stacked
+   absolutely; the target clip layer (C) is in flow and rises via clip-path. */
+.el-art-layer,
+.el-art-ghost { position: absolute; inset: 0; }
+.el-art-ghost { filter: grayscale(1) brightness(.6); }
+.el-art-clip { position: relative; transition: clip-path .9s cubic-bezier(.3, .7, .3, 1); }
+.el-art-layer svg,
+.el-art-ghost svg,
+.el-art-clip svg { width: 100%; height: auto; display: block; }
 .el-next-plus { animation: nudge 1.8s ease-in-out infinite; }
 .el-map-label {
   position: absolute; left: 0; right: 0; top: 6px; text-align: center;
@@ -389,8 +398,67 @@
 .el-tree-sway2 { transform-origin: 40px 58px; animation: sway 4.4s ease-in-out infinite .6s; }
 .el-sprout { transform-origin: 40px 59px; animation: sprout 3.2s ease-in-out infinite; }
 
+/* rail per-level tick (10px dot) + tiny ₹ label (m2) */
+.el-rail-tick {
+  position: absolute; left: 50%; transform: translate(-50%, -50%);
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.el-rail-ticklabel {
+  position: absolute; left: 14px; transform: translateY(-50%);
+  font-size: 9px; letter-spacing: .04em; white-space: nowrap;
+}
+
+/* ---- current-level progress strip (m2) ---- */
+.el-progress { margin: 8px auto 0; width: 300px; position: relative; z-index: 2; }
+.el-progress-labels {
+  display: flex; justify-content: space-between;
+  font-size: 10px; letter-spacing: .06em; margin-bottom: 5px;
+}
+.el-progress-in { color: #e9e9ed; font-weight: 500; }
+.el-progress-togo { color: #9a9aa5; }
+.el-progress-track { height: 4px; border-radius: 2px; background: #2b2e3a; overflow: hidden; }
+.el-progress-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, #796cbf, #b5abfc);
+  box-shadow: 0 0 10px rgba(145, 132, 217, .6);
+  transition: width .6s ease;
+}
+
+/* ---- fund tile "of ₹target" line (m2, current level) ---- */
+.el-fund-of { font-size: 9px; color: #6b6e79; white-space: nowrap; margin-top: -1px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Level 0 "Your Land" (m2) — bare dashed plot at ₹0, rendered last.
+   ══════════════════════════════════════════════════════════════════════ */
+.el-section0 { justify-content: flex-start; }
+.el-above0 { animation: none; }
+.el-board0 { position: relative; height: 300px; margin: 0 -20px; flex: none; }
+.el-board0-svg { position: absolute; left: 0; top: 0; width: 402px; height: 100%; overflow: visible; pointer-events: none; }
+.el-ground-bob { animation: bob 6s ease-in-out infinite; }
+.el-status0 {
+  background: rgba(88, 184, 88, .14); color: #8fd48f;
+  box-shadow: 0 0 0 1px rgba(88, 184, 88, .45), 0 0 14px rgba(88, 184, 88, .25);
+}
+.el-startring {
+  position: absolute; left: 50%; transform: translate(-50%, -50%);
+  z-index: 5; width: 76px; height: 76px; place-items: center;
+}
+.el-startring-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.el-startring-arc { filter: drop-shadow(0 0 6px rgba(145, 132, 217, .8)); transition: stroke-dasharray .8s ease; }
+.el-startring-val { position: relative; font-size: 14px; font-weight: 500; color: #e9e9ed; letter-spacing: -.01em; }
+.el-title0 { color: #e9e9ed; text-shadow: 0 2px 0 rgba(0, 0, 0, .55), 0 0 22px rgba(145, 132, 217, .55); }
+.el-banner0 {
+  background: linear-gradient(180deg, #4a3f8a, #2f2760); border: none;
+  box-shadow: 0 4px 0 #1b1740, 0 8px 18px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.el-banner-coin0 {
+  background: #1e2130; box-shadow: inset 0 0 0 1.5px #5d5294; color: #d2cefd;
+}
+.el-banner-amt0 { color: #ffe9a3; }
+
 /* ---- reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
-  .el-rail-fill, .el-rail-dot, .el-rail-pill, .el-credit-bar-fill { transition: none !important; }
+  .el-rail-fill, .el-rail-dot, .el-rail-pill, .el-credit-bar-fill,
+  .el-progress-fill, .el-art-clip, .el-startring-arc { transition: none !important; }
 }
