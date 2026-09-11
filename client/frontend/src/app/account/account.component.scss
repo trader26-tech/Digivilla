@@ -159,6 +159,24 @@
 /* buttons */
 .ap-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; margin-top: 8px; border-radius: 14px; border: 0; background: var(--color-accent-100); color: #2b2741; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
 .ap-btn:disabled { opacity: .35; cursor: default; }
+/* Secondary / utility action (Download statement): a quiet outlined pill on the
+   surface, not the loud solid fill — reads as secondary next to a primary. */
+.ap-btn.ghost {
+  margin-top: 14px;
+  background: var(--color-surface);
+  color: var(--color-neutral-200);
+  box-shadow: inset 0 0 0 1px var(--color-neutral-800);
+  transition: background .18s, box-shadow .18s, color .18s, transform .12s;
+}
+.ap-btn.ghost svg { color: var(--color-accent-300); transition: transform .18s; }
+.ap-btn.ghost:hover {
+  background: var(--color-neutral-900);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-accent-700);
+}
+.ap-btn.ghost:hover svg { transform: translateY(1px); }
+.ap-btn.ghost:active { transform: scale(.99); }
+.ap-btn.ghost.done { color: var(--color-accent-200); box-shadow: inset 0 0 0 1px var(--color-accent-700); }
 
 /* personal details */
 .okp { font-size: 11px; color: #8fd48f; padding: 3px 9px; border-radius: 999px; background: rgba(88,184,88,.12); font-style: normal; }
