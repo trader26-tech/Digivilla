@@ -1,14 +1,14 @@
-<div class="el-overlay">
+<div class="el-overlay" [class.el-tab]="tab">
   <!-- HUD -->
   <header class="el-hud">
     <div class="el-hud-left">
-      <button type="button" class="el-back" aria-label="Back" (click)="onBack()">
+      <button *ngIf="!tab" type="button" class="el-back" aria-label="Back" (click)="onBack()">
         <svg width="12" height="12" viewBox="0 0 12 12">
           <path d="M7 2 L3 6 L7 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
       </button>
       <div>
-        <div class="el-kicker">Your estate</div>
+        <div class="el-kicker">Your progress</div>
         <div class="el-title">Level {{ current() }}</div>
       </div>
     </div>

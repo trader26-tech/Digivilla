@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  Input,
   Output,
   ViewChild,
   computed,
@@ -90,6 +91,9 @@ interface RailMark {
 })
 export class EstateLevelsComponent implements AfterViewInit {
   @Output() back = new EventEmitter<void>();
+  /** True when shown as a bottom-nav TAB (no back button, reserves nav space)
+   *  rather than a full-screen overlay opened from Home. */
+  @Input() tab = false;
   @ViewChild('scroller') scroller!: ElementRef<HTMLDivElement>;
 
   private est = inject(EstateService);
