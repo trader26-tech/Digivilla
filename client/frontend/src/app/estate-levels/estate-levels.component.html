@@ -108,13 +108,6 @@
 
       <section *ngFor="let lv of levels(); trackBy: trackLevel" class="el-section"
                [attr.data-level]="lv.level" [attr.data-current]="lv.isCurrent">
-        <!-- caption -->
-        <div *ngIf="lv.hasAbove" class="el-above">
-          <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 7 L5 3 L9 7" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>
-          <span>Level {{ lv.above }} · {{ lv.aboveName }}</span>
-        </div>
-        <div *ngIf="lv.isTop" class="el-final">Final level</div>
-
         <!-- board -->
         <div class="el-board" [style.height]="lv.tileH" [style.filter]="lv.boardFilter">
           <div class="el-board-glow"></div>
