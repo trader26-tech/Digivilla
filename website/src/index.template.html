@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Digivilla — own property, without the property</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Digivilla: a villa-shaped mutual fund portfolio. Units in your name, valued daily at NAV. Not real estate. Mutual Fund investments are subject to market risks.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="Digivilla">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,3 29,11 16,19 3,11" fill="#8B7BF0"/><polygon points="16,19 29,11 29,15 16,23" fill="#6f5ce6"/><polygon points="16,19 3,11 3,15 16,23" fill="#5d5294"/><polygon points="16,9 23,13 16,17 9,13" fill="#E9C15C"/></svg>
+      Digivilla
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#flat">The flat</a><a href="#build">The build</a><a href="#stages">Stages</a><a href="#estate">Estate</a><a href="#disclosures">Disclosures</a>
+    </nav>
+    <a class="pill-cta" href="#compare">Compare</a>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============================================================ HERO -->
+<section class="hero" id="hero">
+  <div class="hero-scene" aria-hidden="true">
+    <div class="layer glow-wrap" data-depth="0.12"><span class="glow"></span></div>
+    <div class="layer sun-wrap" data-depth="0.18"><span class="sun"></span></div>
+    <div class="layer hills" data-depth="0.3"><span class="hill h1"></span><span class="hill h2"></span><span class="hill h3"></span></div>
+    <span class="layer grain"></span>
+  </div>
+  <div class="hero-copy" id="heroCopy">
+    <h1><span class="w">Own property.</span><span class="w em">Without the property.</span></h1>
+    <p class="hero-sub"><span class="w">A villa-shaped mutual fund portfolio.</span></p>
+    <div class="hero-cta"><a class="link-cta" href="#compare">Compare your flat <span>›</span></a></div>
+  </div>
+  <div class="hero-art" id="heroArt">
+    <div class="villa-stage" id="villaStage">
+      <svg class="villa-art" viewBox="90 -70 640 594" preserveAspectRatio="xMidYMid meet" role="img" aria-label="An isometric villa with a rupee coin above it">
+        <!--VILLA_ART-->
+        <g transform="translate(415,-14) scale(2.1)" aria-hidden="true">
+          <ellipse class="cf-shadow" cx="0" cy="30" rx="13" ry="4.5"></ellipse>
+          <g class="coin-float"><circle class="cf-face" r="15"></circle><circle class="cf-ring" r="10"></circle><circle class="cf-shine" cx="-3.8" cy="-4.5" r="3"></circle><text class="cf-glyph" x="0" y="5.5" text-anchor="middle">₹</text></g>
+        </g>
+      </svg>
+      <div class="villa-shadow"></div>
+    </div>
+  </div>
+  <p class="hero-fine">Not real estate. Mutual Fund investments are subject to market risks.</p>
+</section>
+
+<!-- ============================================================ CHAPTER · THE FLAT -->
+<section class="chapter" id="flat" style="--n:5">
+  <div class="chapter-pin">
+    <div class="beats">
+      <div class="beat" data-i="0"><h2>₹1 crore for a flat.</h2><p>What does it buy?</p></div>
+      <div class="beat" data-i="1"><h2>₹14 lakh, gone.</h2><p>Stamp duty. Registration. Brokerage.</p></div>
+      <div class="beat" data-i="2"><h2>Rent keeps 1.93%.</h2><p>After a vacant month and tax.</p></div>
+      <div class="beat" data-i="3"><h2>No slice.</h2><p>A house sells whole, or not at all.</p></div>
+      <div class="beat" data-i="4"><h2>Six months to sell.</h2><p>Then 3% comes off the top.</p></div>
+    </div>
+    <div class="visuals">
+      <div class="vis" data-i="0">
+        <div class="price-tag"><span class="figure" id="priceFig">₹1,00,00,000</span></div>
+      </div>
+      <div class="vis" data-i="1">
+        <svg viewBox="0 0 320 320" class="ring">
+          <circle cx="160" cy="160" r="120" fill="none" stroke="#1c1c1e" stroke-width="26"/>
+          <circle id="ringKeep" cx="160" cy="160" r="120" fill="none" stroke="#6cba36" stroke-width="26" stroke-dasharray="754" stroke-dashoffset="754" transform="rotate(-90 160 160)"/>
+          <circle id="ringLost" cx="160" cy="160" r="120" fill="none" stroke="#E5735E" stroke-width="26" stroke-dasharray="754" stroke-dashoffset="754" transform="rotate(219.6 160 160)"/>
+          <text x="160" y="150" text-anchor="middle" class="ring-big">₹86 L</text>
+          <text x="160" y="182" text-anchor="middle" class="ring-small">what you own</text>
+        </svg>
+      </div>
+      <div class="vis" data-i="2">
+        <div class="funnel">
+          <div class="fbar" style="--c:#64C37D"><span>Gross rent</span><b>₹3,00,000</b></div>
+          <div class="fbar" style="--c:#8B95A3"><span>Vacancy</span><b>₹2,75,000</b></div>
+          <div class="fbar" style="--c:#E5735E"><span>Tax 30%</span><b>₹1,92,500</b></div>
+          <div class="fbar keep" style="--c:#64C37D"><span>Kept · 1.93%</span><b>₹1,92,500</b></div>
+        </div>
+      </div>
+      <div class="vis" data-i="3">
+        <div class="divis">
+          <div class="divis-box"><span class="lbl">Fund units</span><div class="units" id="units" aria-hidden="true"><!--UNITS--></div></div>
+          <div class="divis-box"><span class="lbl">One house</span><div class="house-grid" aria-hidden="true"><span>Bed</span><span>Living</span><span>Kitchen</span><span>Bath</span><div class="stamp" id="stamp">NOT DIVISIBLE</div></div></div>
+        </div>
+      </div>
+      <div class="vis" data-i="4">
+        <div class="race">
+          <div class="race-row fast"><span>Fund units</span><div class="track"><i id="raceFast"></i></div><b class="pos-text">2–3 days</b></div>
+          <div class="race-row slow"><span>This house</span><div class="track"><i id="raceSlow"></i></div><b class="neg-text">6 months</b></div>
+          <div class="costs"><div class="cost">Brokerage<b>−₹2,00,000</b></div><div class="cost">TDS<b>−₹1,00,000</b></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dots" id="flatDots"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+</section>
+
+<!-- ============================================================ CHAPTER · TWO THINGS → FIVE FUNDS -->
+<section class="chapter" id="build" style="--n:3">
+  <div class="chapter-pin">
+    <div class="beats">
+      <div class="beat" data-i="0"><h2>Any property is two things.</h2><p>A vault that pays. Trees that grow.</p></div>
+      <div class="beat" data-i="1"><h2>A Digivilla.</h2><p>Both, in one purchase. In your name.</p></div>
+      <div class="beat" data-i="2"><h2>Five funds.</h2><p>One SWP from the vault*. The trees are never touched.</p></div>
+    </div>
+    <div class="visuals">
+      <div class="vis" data-i="0">
+        <div class="pair">
+          <div class="pair-item" id="pairVault">
+            <svg viewBox="0 0 80 72" aria-hidden="true"><rect x="16" y="10" width="52" height="54" rx="4" fill="#5f7a70"/><rect x="12" y="8" width="52" height="54" rx="4" fill="#8aa89b"/><rect x="17" y="13" width="42" height="44" rx="3" fill="#a9c2b6"/><rect x="52" y="22" width="4" height="10" rx="1" fill="#3f5a50"/><rect x="52" y="38" width="4" height="10" rx="1" fill="#3f5a50"/><g class="el-vault-dial"><circle cx="34" cy="35" r="9" fill="#e9eee9" stroke="#3f5a50" stroke-width="2"/><circle cx="34" cy="35" r="2.5" fill="#3f5a50"/><rect x="33" y="27" width="2" height="6" rx="1" fill="#3f5a50"/></g><g class="el-vault-note"><rect x="4" y="30" width="16" height="8" rx="1.5" fill="#7fb07a" transform="rotate(-12 12 34)"/><text x="12" y="36.5" font-size="6" text-anchor="middle" fill="#2c4a2a" font-family="Inter,sans-serif">₹</text></g></svg>
+            <span>The vault</span>
+          </div>
+          <span class="pair-op">+</span>
+          <div class="pair-item" id="pairTree">
+            <svg viewBox="0 0 80 72" aria-hidden="true"><ellipse cx="40" cy="66" rx="22" ry="3" fill="rgba(0,0,0,.35)"/><ellipse cx="40" cy="62" rx="20" ry="6" fill="#a97f5c"/><ellipse cx="40" cy="58" rx="20" ry="6" fill="#c9a27c"/><g class="el-tree-sway"><rect x="38" y="30" width="4" height="28" rx="1" fill="#8b5a3c"/><circle cx="40" cy="22" r="17" fill="#3e8a3e"/><circle cx="28" cy="30" r="12" fill="#4a9d47"/><circle cx="52" cy="30" r="12" fill="#357a36"/><circle cx="40" cy="16" r="11" fill="#5cb85c"/><circle cx="34" cy="14" r="4" fill="#8fd48a" opacity=".8"/></g></svg>
+            <span>The trees</span>
+          </div>
+        </div>
+      </div>
+      <div class="vis" data-i="1">
+        <svg class="villa-mid" viewBox="88 12 644 512" aria-hidden="true"><!--VILLA_MINI--></svg>
+      </div>
+      <div class="vis" data-i="2">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 360 360" class="donut" id="donut">
+            <circle cx="180" cy="180" r="130" fill="none" stroke="#1c1c1e" stroke-width="30"/>
+            <circle class="seg" data-pct="36" cx="180" cy="180" r="130" fill="none" stroke="#8aa89b" stroke-width="30" stroke-dasharray="816.8" stroke-dashoffset="816.8" transform="rotate(-90 180 180)"/>
+            <circle class="seg" data-pct="16" cx="180" cy="180" r="130" fill="none" stroke="#f6c445" stroke-width="30" stroke-dasharray="816.8" stroke-dashoffset="816.8" transform="rotate(39.6 180 180)"/>
+            <circle class="seg" data-pct="16" cx="180" cy="180" r="130" fill="none" stroke="#4a9d47" stroke-width="30" stroke-dasharray="816.8" stroke-dashoffset="816.8" transform="rotate(97.2 180 180)"/>
+            <circle class="seg" data-pct="16" cx="180" cy="180" r="130" fill="none" stroke="#5cb85c" stroke-width="30" stroke-dasharray="816.8" stroke-dashoffset="816.8" transform="rotate(154.8 180 180)"/>
+            <circle class="seg" data-pct="16" cx="180" cy="180" r="130" fill="none" stroke="#8fd48a" stroke-width="30" stroke-dasharray="816.8" stroke-dashoffset="816.8" transform="rotate(212.4 180 180)"/>
+            <text x="180" y="172" text-anchor="middle" class="donut-big">₹1 Cr</text>
+            <text x="180" y="200" text-anchor="middle" class="donut-small">one purchase</text>
+          </svg>
+          <div class="legend-mini">
+            <span style="--c:#8aa89b">Arbitrage 36%</span><span style="--c:#f6c445">Gold 16%</span><span style="--c:#4a9d47">Large 16%</span><span style="--c:#5cb85c">Mid 16%</span><span style="--c:#8fd48a">Small 16%</span>
+          </div>
+          <div class="swp-chip"><span class="coin-sm">₹</span><b>₹30,000 / mo*</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="dots" id="buildDots"><i></i><i></i><i></i></div>
+    <p class="fine-note">*SWP is a withdrawal of your own units. Targeted, not assured.</p>
+  </div>
+</section>
+
+<!-- ============================================================ CHAPTER · STAGES -->
+<section class="chapter" id="stages" style="--n:5">
+  <div class="chapter-pin">
+    <div class="beats">
+      <div class="beat" data-i="0"><h2>The plot.</h2><p>₹1,00,000</p></div>
+      <div class="beat" data-i="1"><h2>Levelled ground.</h2><p>₹2,00,000</p></div>
+      <div class="beat" data-i="2"><h2>Foundation.</h2><p>₹3,00,000</p></div>
+      <div class="beat" data-i="3"><h2>Steel frame.</h2><p>₹4,00,000</p></div>
+      <div class="beat" data-i="4"><h2>The villa.</h2><p>₹5,00,000 · targeted SWP ₹1,500 / mo*</p></div>
+    </div>
+    <div class="visuals stage-visuals">
+      <div class="stage-svg" data-i="0"><!--STAGE_PLOT--></div>
+      <div class="stage-svg" data-i="1"><!--STAGE_GRADING--></div>
+      <div class="stage-svg" data-i="2"><!--STAGE_FOUNDATION--></div>
+      <div class="stage-svg" data-i="3"><!--STAGE_STEEL--></div>
+      <div class="stage-svg" data-i="4"><!--STAGE_VILLA--></div>
+    </div>
+    <div class="stage-track"><i id="stageFill"></i></div>
+  </div>
+</section>
+
+<!-- ============================================================ CHAPTER · ESTATE -->
+<section class="chapter" id="estate" style="--n:3">
+  <div class="chapter-pin">
+    <div class="beats">
+      <div class="beat" data-i="0"><h2>Every ₹5 lakh, a villa.</h2><p>Centre first, then outward.</p></div>
+      <div class="beat" data-i="1"><h2>Your estate.</h2><p>A picture of your portfolio.</p></div>
+      <div class="beat" data-i="2"><h2>Nine villas.</h2><p>Forty-five levels.</p></div>
+    </div>
+    <div class="visuals board-visual">
+      <div class="level-banner"><span class="coin">₹</span><span>Level <span id="lvlNum">1</span></span><span class="gold" id="lvlWorth">₹0</span></div>
+      <svg class="board" viewBox="0 0 640 460" id="board" role="img" aria-label="An isometric 3 by 3 estate board filling with villas">
+        <!--TILE_DEFS-->
+        <g id="boardCells"></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ ILLUSTRATION -->
+<section class="flow" id="after">
+  <div class="flow-head reveal">
+    <h2>₹1 crore. Fifteen years.</h2>
+    <p>At an assumed <b id="rateLbl">12%</b> a year. An illustration, not a forecast.</p>
+  </div>
+  <div class="illus reveal-scale">
+    <div class="illus-left">
+      <div class="figure hero-figure gradient-gold" id="illusTotal">₹0.00 Cr</div>
+      <div class="sub-figs"><span class="pill gold"><b id="illusPaid">₹0 L</b> via SWP*</span><span class="pill"><b id="illusVault">₹0 L</b> left in vault</span></div>
+      <label class="slider"><input type="range" id="rate" min="6" max="14" step="1" value="12" aria-label="Assumed annual growth"><div class="ticks"><i>6%</i><i>8%</i><i>10%</i><i>12%</i><i>14%</i></div></label>
+    </div>
+    <div class="growth-chart" aria-hidden="true">
+      <svg viewBox="0 0 600 240" id="chart">
+        <defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#64C37D" stop-opacity=".35"/><stop offset="1" stop-color="#64C37D" stop-opacity="0"/></linearGradient></defs>
+        <path class="area" id="chartArea" d=""/><path class="line" id="chartLine" d=""/><path class="vline" id="chartVault" d=""/><circle class="dot" id="chartDot" r="6"/>
+      </svg>
+    </div>
+  </div>
+  <p class="fine-note reveal">*Assumed constant rates, before tax. Not assured; value can fall. Past performance may or may not be sustained in future.</p>
+</section>
+
+<!-- ============================================================ TILES -->
+<section class="flow tiles-sec" id="why">
+  <div class="flow-head reveal"><h2>No friction.</h2></div>
+  <div class="tiles">
+    <div class="tile reveal-scale" style="--i:0"><span class="big">₹0</span><span>registration</span></div>
+    <div class="tile reveal-scale" style="--i:1"><span class="big">₹0</span><span>upkeep</span></div>
+    <div class="tile reveal-scale" style="--i:2"><span class="big">NAV</span><span>daily value</span></div>
+    <div class="tile reveal-scale" style="--i:3"><span class="big">2–3 d</span><span>to redeem</span></div>
+    <div class="tile reveal-scale" style="--i:4"><span class="big">Any</span><span>amount</span></div>
+    <div class="tile reveal-scale" style="--i:5"><span class="big">SIP</span><span>friendly</span></div>
+  </div>
+</section>
+
+<!-- ============================================================ CTA -->
+<section class="flow" id="compare">
+  <div class="flow-head reveal"><h2>Compare your flat.</h2></div>
+  <form class="calc reveal-scale" id="calc" novalidate>
+    <div class="field"><label for="price">Price</label><div class="in"><span>₹</span><input id="price" inputmode="numeric" value="1,00,00,000" autocomplete="off"></div></div>
+    <div class="field"><label for="rent">Rent / month</label><div class="in"><span>₹</span><input id="rent" inputmode="numeric" value="25,000" autocomplete="off"></div></div>
+    <div class="field"><label for="loan">Loan</label><div class="in"><span>₹</span><input id="loan" inputmode="numeric" value="0" autocomplete="off"></div></div>
+    <button class="btn btn-gold" type="submit">Run</button>
+    <div class="result" id="result" hidden>
+      <div class="r flat"><small>Flat keeps / yr</small><b id="rFlat">—</b><span class="result-note" id="rFlatNote"></span></div>
+      <div class="r villa"><small>Targeted SWP* / mo</small><b id="rVilla">—</b><span class="result-note" id="rVillaNote"></span></div>
+    </div>
+    <span class="result-note">Illustrative. Flat: one vacant month, 30% tax, 14% entry cost. SWP: 0.83%/month from a 36% arbitrage sleeve — your own units, not assured.</span>
+  </form>
+</section>
+
+<!-- ============================================================ DISCLOSURES -->
+<section class="flow disclosures" id="disclosures">
+  <div class="flow-head reveal"><h2>A mutual fund portfolio. Not property.</h2></div>
+  <div class="points reveal">
+    <div class="point"><span class="k">Units, not a house</span><p>Villas and build stages are illustrations of mutual fund units held in your name with the AMC.</p></div>
+    <div class="point"><span class="k">SWP, not rent</span><p>Any monthly amount is a Systematic Withdrawal Plan — a redemption of your own units that draws down capital.</p></div>
+    <div class="point"><span class="k">Value can fall</span><p>No return, payout or growth rate is assured.</p></div>
+    <div class="point"><span class="k">No possession</span><p>You cannot live in it, let it or transfer it as property.</p></div>
+  </div>
+  <p class="fine reveal"><b>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</b> Past performance may or may not be sustained in future. Illustrations use assumed rates and are not forecasts.</p>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p><b>Distributed by Your Entity Pvt. Ltd. · AMFI Registration No. ARN-XXXXXX · Mutual Fund Distributor.</b> Execution-only; no investment advice. We receive commission / trail from AMCs. Scheme names, factsheets and risk-o-meters are shown at the point of investment.</p>
+  <p>Assets shown are visualisations of mutual fund units held in your name at NAV, not real property. Any monthly "payout" is a Systematic Withdrawal Plan — a redemption of your own units that can deplete capital. No returns are assured.</p>
+  <p><b>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</b> © 2026 Digivilla.</p>
+</footer>
+
+<div class="risk-bar" id="riskBar" role="note">Mutual Fund investments are subject to market risks, read all scheme related documents carefully. <button type="button" id="riskClose" aria-label="Dismiss">×</button></div>
+
+<script src="main.js"></script>
+</body>
+</html>
