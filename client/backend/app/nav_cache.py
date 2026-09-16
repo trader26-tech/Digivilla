@@ -116,6 +116,18 @@ def get_nav(scheme_code: Optional[int]) -> Optional[float]:
     return nav
 
 
+def prewarm(scheme_codes: list[int]) -> None:
+    """Populate the per-worker memo for several schemes CONCURRENTLY, so the
+    subsequent per-holding get_nav() calls are all in-memory. On a cold worker
+    this turns N sequential refresh-on-read fetches into ~one round-trip."""
+    codes = [c for c in {int(x) for x in scheme_codes if x} if c not in _memo]
+    if not codes:
+        return
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(8, len(codes))) as ex:
+        list(ex.map(get_nav, codes))
+
+
 def refresh_all(scheme_codes: list[int]) -> dict:
     """Force-refresh every given scheme from mfapi into the DB cache. Used by the
     daily cron. Returns a small summary. Skips schemes already stamped today so a

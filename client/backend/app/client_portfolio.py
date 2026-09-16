@@ -166,8 +166,13 @@ def _valued_holdings(client_code: str) -> list[dict]:
     down) we fall back to ``invested`` so an unresolved fund never zeroes the
     client's money.
     """
+    from app import nav_cache
+    hs = _holdings(client_code)
+    # Warm every scheme's latest NAV in parallel first, so the per-holding
+    # _live_nav() calls below are all in-memory (cold worker: ~1 round-trip).
+    nav_cache.prewarm([h.get("scheme_code") for h in hs])
     out = []
-    for h in _holdings(client_code):
+    for h in hs:
         units = _num(h.get("units"))
         invested = _num(h.get("invested"))
         nav = _live_nav(h.get("scheme_code"))
@@ -468,14 +473,35 @@ def _tile_meta(client_code: str, tile_id: str) -> dict:
     return {"name": "Villa", "status": "building"}
 
 
-def _fund_category(scheme_code: int) -> Optional[str]:
-    """Category from the villa_bucket_funds definition, if present."""
+# Fund categories are static config — load the whole villa_bucket_funds map ONCE
+# per worker (a short TTL) instead of a DB round-trip per scheme (the report loop
+# used to hit this twice per fund).
+_CAT_TTL = 600
+_cat_memo: dict = {}
+
+
+def _all_fund_categories() -> dict:
+    import time as _t
+    now = _t.time()
+    hit = _cat_memo.get("m")
+    if hit and now - hit[0] < _CAT_TTL:
+        return hit[1]
+    m: dict = {}
     try:
-        rows = _sb().table("villa_bucket_funds").select("category").eq(
-            "scheme_code", scheme_code).limit(1).execute().data or []
-        return rows[0].get("category") if rows else None
+        rows = _sb().table("villa_bucket_funds").select("scheme_code,category").execute().data or []
+        for r in rows:
+            c = r.get("scheme_code")
+            if c and c not in m and r.get("category"):
+                m[c] = r["category"]
     except Exception:
-        return None
+        pass
+    _cat_memo["m"] = (now, m)
+    return m
+
+
+def _fund_category(scheme_code: int) -> Optional[str]:
+    """Category from the villa_bucket_funds definition, if present (memoized)."""
+    return _all_fund_categories().get(scheme_code)
 
 
 def _blended_growth(funds: list[dict], navfull: Optional[dict] = None) -> list[dict]:
@@ -526,21 +552,46 @@ def _blended_growth(funds: list[dict], navfull: Optional[dict] = None) -> list[d
     return out
 
 
-def _nav_full_map(holdings: list[dict]) -> dict:
-    """ONE live NAV-history fetch per scheme → {scheme_code: [NavPoint…] ascending}.
-    Shared by the growth series and the drained-value backtest so the report
-    page never fetches the same fund twice."""
+# In-process NAV-history memo (per worker). NAV history only grows by one point
+# a day, so a 6h TTL is safe and makes repeat taps on the report instant.
+_HIST_TTL = 6 * 3600
+_hist_memo: dict = {}
+
+
+def _fetch_full_nav_memo(code: int) -> list:
+    """Full daily NAV history for one scheme, memoized per worker."""
+    import time as _t
     from app import dashboard
-    out: dict = {}
+    now = _t.time()
+    hit = _hist_memo.get(code)
+    if hit and now - hit[0] < _HIST_TTL:
+        return hit[1]
+    try:
+        pts = dashboard._fetch_full_nav(code) or []
+    except Exception:
+        pts = []
+    # Only cache a non-empty result, so a transient mfapi failure retries next time.
+    if pts:
+        _hist_memo[code] = (now, pts)
+    return pts
+
+
+def _nav_full_map(holdings: list[dict]) -> dict:
+    """{scheme_code: [NavPoint…] ascending} for every scheme in `holdings`,
+    fetched CONCURRENTLY (one thread per fund) and memoized. Shared by the growth
+    series and the drained-value backtest so the report page fetches each fund at
+    most once, and all funds in roughly one round-trip instead of N sequential."""
+    from concurrent.futures import ThreadPoolExecutor
+    codes = []
     for h in holdings:
-        code = h.get("scheme_code")
-        if not code or code in out:
-            continue
-        try:
-            out[code] = dashboard._fetch_full_nav(code) or []
-        except Exception:
-            out[code] = []
-    return out
+        c = h.get("scheme_code")
+        if c and c not in codes:
+            codes.append(c)
+    if not codes:
+        return {}
+    with ThreadPoolExecutor(max_workers=min(8, len(codes))) as ex:
+        results = list(ex.map(_fetch_full_nav_memo, codes))
+    return dict(zip(codes, results))
 
 
 def _month_map(points: list) -> dict:
@@ -623,6 +674,34 @@ def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
     return out
 
 
+def _returns_from_points(points: list) -> dict:
+    """Annualized 1Y/3Y/5Y return (% p.a.) from an ALREADY-FETCHED ascending NAV
+    series — same math as villa_sip._live_returns / dashboard windows, but with no
+    extra network call (we reuse the history the report already pulled)."""
+    from datetime import date, timedelta
+    out = {"ret_1y": None, "ret_3y": None, "ret_5y": None}
+    pts = [p for p in (points or []) if getattr(p, "nav", None)]
+    if len(pts) < 2:
+        return out
+    latest = pts[-1]
+    try:
+        latest_d = date.fromisoformat(latest.date)
+    except (ValueError, AttributeError):
+        return out
+    for key, years in (("ret_1y", 1), ("ret_3y", 3), ("ret_5y", 5)):
+        cutoff = (latest_d - timedelta(days=365 * years)).isoformat()
+        prior = [p for p in pts if p.date <= cutoff]
+        start = prior[-1] if prior else (pts[0] if pts[0].date < latest.date else None)
+        if not start or not start.nav:
+            continue
+        growth = latest.nav / start.nav
+        if years == 1:
+            out[key] = round((growth - 1) * 100, 2)
+        else:
+            out[key] = round((growth ** (1.0 / years) - 1) * 100, 2)  # CAGR
+    return out
+
+
 def _since_date(client_code: str, tile_id: str) -> str:
     """The real 'you invested on' date — the earliest order behind this tile
     (that villa's mapped orders for cvilla_…, else the client's first order)."""
@@ -676,7 +755,8 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
         nav = _live_nav(scheme)
         cur = round(h["units"] * nav, 2) if (nav and h["units"]) else round(h["invested"], 2)
         cur_total += cur
-        rets = villa_sip._live_returns(scheme)
+        # Returns from the history we ALREADY fetched (no second network round-trip).
+        rets = _returns_from_points(navfull.get(scheme) or [])
         alloc = round(h["invested"] / total_inv * 100, 1) if total_inv else 0.0
         funds.append({
             "scheme_name": h.get("scheme_name"),
