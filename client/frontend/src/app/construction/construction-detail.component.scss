@@ -170,12 +170,72 @@
 .vr-empty { padding: 26px 0 18px; text-align: center; font-size: 12px; color: var(--color-neutral-500); }
 
 /* loading skeleton — dark, quiet shimmer in the reference surface tones */
-.vr-sk { border-radius: 14px; background: linear-gradient(100deg, var(--color-surface) 30%, var(--color-neutral-900) 50%, var(--color-surface) 70%); background-size: 200% 100%; animation: vrShimmer 1.4s linear infinite; }
-.vr-sk.head { height: 150px; margin-top: 10px; }
+.vr-sk { border-radius: 14px; background: linear-gradient(100deg, var(--color-surface) 30%, var(--color-neutral-900) 50%, var(--color-surface) 70%); background-size: 200% 100%; animation: vrShimmer 1.4s linear infinite; margin-top: 10px; }
+.vr-sk.head { height: 150px; }
 .vr-sk.row { height: 64px; }
 .vr-sk.chart { height: 210px; }
 .vr-sk.card { height: 122px; }
 @keyframes vrShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ── branded loader: the property being "valued" ── */
+.vr-load { display: flex; flex-direction: column; align-items: center; padding: 30px 0 14px; }
+.vr-load-stage { position: relative; width: 190px; height: 150px; display: grid; place-items: center; }
+.vr-load-glow {
+  position: absolute; left: 50%; top: 46%; width: 200px; height: 150px;
+  margin-left: -100px; margin-top: -75px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(108,186,54,.20), transparent 66%);
+  animation: vrGlow 2.6s ease-in-out infinite;
+}
+.vr-load-art {
+  position: relative; z-index: 2; width: 150px; height: 132px; display: block;
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,.55));
+  animation: vrFloat 3s ease-in-out infinite;
+}
+/* a soft light sweep that rises up the art, like a surveyor's scan */
+.vr-load-scan {
+  position: absolute; z-index: 3; left: 50%; top: 50%; width: 150px; height: 30px;
+  margin-left: -75px; pointer-events: none; border-radius: 50%;
+  background: linear-gradient(180deg, transparent, rgba(181,171,252,.55), transparent);
+  filter: blur(3px); mix-blend-mode: screen;
+  animation: vrScan 2.1s ease-in-out infinite;
+}
+/* concentric ground rings pulsing out from the plinth */
+.vr-load-ring {
+  position: absolute; z-index: 1; left: 50%; top: 74%; width: 96px; height: 48px;
+  margin-left: -48px; margin-top: -24px; border-radius: 50%;
+  border: 1.5px solid rgba(145,132,217,.5); pointer-events: none;
+  animation: vrRing 1.8s ease-out infinite; animation-delay: var(--d);
+}
+.vr-load-cap {
+  margin-top: 14px; font-size: 13px; letter-spacing: .01em;
+  color: var(--color-neutral-300); display: flex; align-items: baseline;
+}
+.vr-load-cap i { width: 3px; height: 3px; margin-left: 3px; border-radius: 50%;
+  background: var(--color-accent-300); display: inline-block;
+  animation: vrDot 1.4s ease-in-out infinite; }
+.vr-load-cap i:nth-child(2) { animation-delay: .2s; }
+.vr-load-cap i:nth-child(3) { animation-delay: .4s; }
+@keyframes vrFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes vrGlow { 0%,100% { opacity: .55; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes vrScan { 0% { top: 74%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { top: 30%; opacity: 0; } }
+@keyframes vrRing { 0% { transform: scale(.5); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes vrDot { 0%,100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+/* inline chart loader (phase 2 streaming) */
+.vr-chart-load { height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.vr-chart-line {
+  width: 82%; height: 42px; border-radius: 8px;
+  background:
+    linear-gradient(100deg, transparent 30%, rgba(181,171,252,.18) 50%, transparent 70%),
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(145,132,217,.10) 22px 23px);
+  background-size: 200% 100%, auto;
+  animation: vrShimmer 1.3s linear infinite;
+  -webkit-mask: linear-gradient(75deg, transparent 8%, #000 30%, #000 60%, transparent 92%);
+          mask: linear-gradient(75deg, transparent 8%, #000 30%, #000 60%, transparent 92%);
+}
+.vr-chart-cap { font-size: 12px; color: var(--color-neutral-400); display: flex; align-items: baseline; }
+.vr-chart-cap i { width: 3px; height: 3px; margin-left: 3px; border-radius: 50%; background: var(--color-accent-300); display: inline-block; animation: vrDot 1.4s ease-in-out infinite; }
+.vr-chart-cap i:nth-child(2) { animation-delay: .2s; } .vr-chart-cap i:nth-child(3) { animation-delay: .4s; }
 
 /* error state */
 .vr-err { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 48px 20px; text-align: center; color: var(--color-neutral-400); }
@@ -191,4 +251,7 @@
   .ap, .vr-sk { animation: none; }
   .vr-more i { transition: none; }
   .vr-defs *, .vr-head svg * { animation: none !important; }
+  .vr-load-glow, .vr-load-art, .vr-load-scan, .vr-load-ring, .vr-load-cap i { animation: none !important; }
+  .vr-load-scan { opacity: 0; }
+  .vr-chart-line, .vr-chart-cap i { animation: none !important; }
 }

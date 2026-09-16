@@ -116,6 +116,8 @@ export interface BuildingDetail {
    *  month-end NAVs, real weights, `monthly` ₹ sold out each month (0 while
    *  building). A range key is absent when the funds lack that much history. */
   withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y', DrainPt[]>> };
+  /** False on the fast first paint — the chart/returns are still loading. */
+  has_chart?: boolean;
   invested: number;
   current_value: number;
   gain: number;
@@ -125,6 +127,17 @@ export interface BuildingDetail {
   progress: { unit: number; funded: number; remaining: number; pct: number };  // pct 0..100
   funds: BuildingFund[];        // sorted by allocation desc
   growth: GrowthPt[];           // blended growth over ~5y
+}
+
+/** The history-derived part of the report, fetched after the fast first paint
+ *  (from GET /me/building/{id}/chart) and merged into the shown BuildingDetail. */
+export interface BuildingChart {
+  tile_id: string;
+  overall: { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null };
+  /** Per-fund returns keyed by scheme_code (string). */
+  fund_returns: Record<string, { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null }>;
+  withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y', DrainPt[]>> };
+  growth: GrowthPt[];
 }
 
 /** One fund in the user's portfolio breakdown (from GET /me/funds). */
@@ -320,10 +333,20 @@ export class EstateService {
   }
 
   /** The returns detail for one building/villa tile — invested vs current value,
-   *  overall + per-fund returns, build progress and a ~5y blended growth series. */
-  buildingDetail(tileId: string): import('rxjs').Observable<BuildingDetail> {
+   *  overall + per-fund returns, build progress and a ~5y blended growth series.
+   *  `fast=true` skips the NAV-history chart (loaded separately) so the page paints
+   *  instantly; the chart is filled in by buildingChart(). */
+  buildingDetail(tileId: string, fast = false): import('rxjs').Observable<BuildingDetail> {
+    const q = fast ? '?chart=0' : '';
     return this.http.get<BuildingDetail>(
-      `${environment.apiUrl}/me/building/${tileId}`, { headers: this.authHeaders });
+      `${environment.apiUrl}/me/building/${tileId}${q}`, { headers: this.authHeaders });
+  }
+
+  /** Just the history-derived chart + returns for a tile (loaded after the fast
+   *  first paint). Merged into the already-shown BuildingDetail. */
+  buildingChart(tileId: string): import('rxjs').Observable<BuildingChart> {
+    return this.http.get<BuildingChart>(
+      `${environment.apiUrl}/me/building/${tileId}/chart`, { headers: this.authHeaders });
   }
 
   /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */

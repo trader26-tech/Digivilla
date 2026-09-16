@@ -724,11 +724,15 @@ def _next_credit_date() -> str:
     return date(y, m, 1).isoformat()
 
 
-def building_detail(owner: str, tile_id: str) -> Optional[dict]:
+def building_detail(owner: str, tile_id: str, chart: bool = True) -> Optional[dict]:
     """Full returns breakdown for one building/villa tile: headline gain, build
     progress, per-fund allocation + live 1/3/5-Yr returns, a blended growth
-    series, and the drained-value chart (what this mix did while paying out)."""
-    from app import villa_sip
+    series, and the drained-value chart (what this mix did while paying out).
+
+    `chart=False` = the FAST first paint: headline + funds from the cached latest
+    NAVs only, NO mfapi history fetch (the slow part) — the growth/withdraw series
+    come back empty and the client loads them via building_chart() straight after.
+    """
     code = client_code_for_owner(owner)
     if not code:
         return None
@@ -744,7 +748,8 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
         else total_inv >= VILLA_UNIT - 1
     status = "constructed" if constructed else "building"
     stage = 5 if constructed else min(4, int(total_inv // 100_000))
-    navfull = _nav_full_map(holdings)
+    # Only the chart needs full NAV history; skip that fetch on the fast first paint.
+    navfull = _nav_full_map(holdings) if chart else {}
 
     funds = []
     cur_total = 0.0
@@ -755,8 +760,10 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
         nav = _live_nav(scheme)
         cur = round(h["units"] * nav, 2) if (nav and h["units"]) else round(h["invested"], 2)
         cur_total += cur
-        # Returns from the history we ALREADY fetched (no second network round-trip).
-        rets = _returns_from_points(navfull.get(scheme) or [])
+        # Returns from the history we ALREADY fetched (no second round-trip); on the
+        # fast paint there's no history yet, so returns come back None ("—").
+        rets = _returns_from_points(navfull.get(scheme) or []) if chart else \
+            {"ret_1y": None, "ret_3y": None, "ret_5y": None}
         alloc = round(h["invested"] / total_inv * 100, 1) if total_inv else 0.0
         funds.append({
             "scheme_name": h.get("scheme_name"),
@@ -800,7 +807,7 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
         },
         "withdraw": {
             "monthly": round(monthly),
-            "ranges": _drained_ranges(holdings, navfull, total_inv, monthly),
+            "ranges": _drained_ranges(holdings, navfull, total_inv, monthly) if chart else {},
         },
         "progress": {
             "unit": VILLA_UNIT,
@@ -809,6 +816,48 @@ def building_detail(owner: str, tile_id: str) -> Optional[dict]:
             "pct": round(min(1.0, total_inv / VILLA_UNIT) * 100, 1) if VILLA_UNIT else 0.0,
         },
         "funds": funds,
+        "growth": _blended_growth(holdings, navfull) if chart else [],
+        # False on the fast paint → the client knows to fetch building_chart() next.
+        "has_chart": bool(chart),
+    }
+
+
+def building_chart(owner: str, tile_id: str) -> Optional[dict]:
+    """Just the history-derived pieces of the report — the drained-value chart
+    (withdraw.ranges), the blended growth series, and the per-fund + overall
+    1/3/5-Yr returns. Loaded straight after the fast building_detail(chart=False)
+    so the page paints instantly and the chart fills in a moment later."""
+    code = client_code_for_owner(owner)
+    if not code:
+        return None
+    holdings = _building_scheme_holdings(code, tile_id)
+    if holdings is None:
+        return None
+    total_inv = sum(h["invested"] for h in holdings)
+    constructed = total_inv >= VILLA_UNIT - 1
+    if tile_id.startswith("cvilla_"):
+        constructed = _tile_meta(code, tile_id)["status"] == "constructed"
+    monthly = VILLA_INCOME if constructed else 0.0
+    navfull = _nav_full_map(holdings)
+
+    per_fund = {}
+    wsum = {"1y": 0.0, "3y": 0.0, "5y": 0.0}
+    wt = {"1y": 0.0, "3y": 0.0, "5y": 0.0}
+    for h in holdings:
+        rets = _returns_from_points(navfull.get(h["scheme_code"]) or [])
+        per_fund[h["scheme_code"]] = rets
+        for k, rk in (("1y", "ret_1y"), ("3y", "ret_3y"), ("5y", "ret_5y")):
+            if rets[rk] is not None and h["invested"] > 0:
+                wsum[k] += rets[rk] * h["invested"]
+                wt[k] += h["invested"]
+    overall = {f"ret_{k}": (round(wsum[k] / wt[k], 2) if wt[k] else None) for k in ("1y", "3y", "5y")}
+
+    return {
+        "tile_id": tile_id,
+        "overall": overall,
+        "fund_returns": {str(c): r for c, r in per_fund.items()},
+        "withdraw": {"monthly": round(monthly),
+                     "ranges": _drained_ranges(holdings, navfull, total_inv, monthly)},
         "growth": _blended_growth(holdings, navfull),
     }
 

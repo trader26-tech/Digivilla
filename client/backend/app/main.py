@@ -400,16 +400,32 @@ def get_my_allocation(authorization: Optional[str] = Header(default=None)) -> di
 
 
 @app.get("/me/building/{tile_id}")
-def get_my_building(tile_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
-    """Full returns breakdown for one building/villa tile (tapped on the home map):
-    headline value/gain, build progress to ₹5L, per-fund allocation + live 1/3/5-Yr
-    returns, and a blended growth series (with a rent/SWP overlay). 404 if unknown."""
+def get_my_building(tile_id: str, chart: int = 1,
+                    authorization: Optional[str] = Header(default=None)) -> dict:
+    """Returns breakdown for one building/villa tile (tapped on the home map):
+    headline value/gain, build progress to ₹5L, per-fund allocation.
+
+    ``chart=0`` = the FAST first paint (no NAV-history fetch) — the page shows
+    instantly and pulls the chart from /me/building/{id}/chart right after.
+    ``chart=1`` (default) = everything, incl. the drained-value chart. 404 if unknown."""
     owner = _owner_or_401(authorization)
     from app import client_portfolio
-    detail = client_portfolio.building_detail(owner, tile_id)
+    detail = client_portfolio.building_detail(owner, tile_id, chart=bool(chart))
     if detail is None:
         raise HTTPException(status_code=404, detail="Building not found")
     return detail
+
+
+@app.get("/me/building/{tile_id}/chart")
+def get_my_building_chart(tile_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """The history-derived part of the report — the drained-value chart, the
+    blended growth series and the 1/3/5-Yr returns — loaded after the fast paint."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    data = client_portfolio.building_chart(owner, tile_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    return data
 
 
 @app.get("/me/transactions")

@@ -229,11 +229,26 @@
   </div>
 
   <div class="ap-b vr">
-    <!-- ── loading skeleton ── -->
+    <!-- ── loading: a branded "valuing your property" animation over a skeleton
+         that mirrors the real layout, so nothing jumps when data lands ── -->
     <ng-container *ngIf="loading()">
-      <div class="vr-sk head"></div>
-      <div class="vr-sk row"></div>
+      <div class="vr-load" aria-live="polite" aria-busy="true">
+        <div class="vr-load-stage">
+          <span class="vr-load-glow"></span>
+          <!-- the estate art, gently surveyed by a rising light sweep -->
+          <svg class="vr-load-art" viewBox="14 2 212 184" aria-hidden="true">
+            <use [attr.href]="loadArtHref"></use>
+          </svg>
+          <span class="vr-load-scan"></span>
+          <!-- three surveyor rings pulsing out from the base -->
+          <span class="vr-load-ring" style="--d:0s"></span>
+          <span class="vr-load-ring" style="--d:.6s"></span>
+          <span class="vr-load-ring" style="--d:1.2s"></span>
+        </div>
+        <div class="vr-load-cap">Valuing your property<i></i><i></i><i></i></div>
+      </div>
       <div class="vr-sk chart"></div>
+      <div class="vr-sk card"></div>
       <div class="vr-sk card"></div>
     </ng-container>
 
@@ -312,7 +327,14 @@
               <span *ngIf="d.status !== 'constructed'">{{ compact(d.invested) }} in this mix</span>
             </div>
           </div>
-          <div class="vr-empty">Not enough fund history yet.</div>
+          <!-- chart still streaming in after the fast paint -->
+          <div class="vr-chart-load" *ngIf="chartLoading(); else noHistoryMsg">
+            <div class="vr-chart-line"></div>
+            <span class="vr-chart-cap">Charting your growth<i></i><i></i><i></i></span>
+          </div>
+          <ng-template #noHistoryMsg>
+            <div class="vr-empty">Not enough fund history yet.</div>
+          </ng-template>
         </ng-template>
       </div>
 

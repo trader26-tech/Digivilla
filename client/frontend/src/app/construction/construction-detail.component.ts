@@ -73,15 +73,46 @@ export class ConstructionDetailComponent implements OnInit {
   detail = signal<BuildingDetail | null>(null);
   loading = signal(true);
   error = signal(false);
+  /** The chart/returns are still streaming in after the fast first paint. */
+  chartLoading = signal(false);
 
   inr = inr;
   compact = compact;
 
   ngOnInit(): void {
     if (!this.tileId) { this.loading.set(false); this.error.set(true); return; }
-    this.estate.buildingDetail(this.tileId).subscribe({
-      next: (d) => { this.detail.set(d); this.loading.set(false); },
-      error: () => { this.error.set(true); this.loading.set(false); },
+    // Phase 1 — FAST paint: headline + funds from cached NAVs, no history fetch.
+    this.estate.buildingDetail(this.tileId, true).subscribe({
+      next: (d) => {
+        this.detail.set(d);
+        this.loading.set(false);
+        if (d.has_chart === false) this.loadChart();   // phase 2
+      },
+      // fall back to the one-shot full fetch if the fast path fails
+      error: () => this.estate.buildingDetail(this.tileId).subscribe({
+        next: (d) => { this.detail.set(d); this.loading.set(false); },
+        error: () => { this.error.set(true); this.loading.set(false); },
+      }),
+    });
+  }
+
+  /** Phase 2 — merge the history-derived chart + returns into the shown detail. */
+  private loadChart(): void {
+    this.chartLoading.set(true);
+    this.estate.buildingChart(this.tileId).subscribe({
+      next: (c) => {
+        const d = this.detail();
+        if (d) {
+          const funds = d.funds.map((f) => {
+            const r = c.fund_returns[String(f.scheme_code)];
+            return r ? { ...f, ret_1y: r.ret_1y, ret_3y: r.ret_3y, ret_5y: r.ret_5y } : f;
+          });
+          this.detail.set({ ...d, funds, overall: c.overall,
+            withdraw: c.withdraw, growth: c.growth, has_chart: true });
+        }
+        this.chartLoading.set(false);
+      },
+      error: () => this.chartLoading.set(false),
     });
   }
 
@@ -98,6 +129,12 @@ export class ConstructionDetailComponent implements OnInit {
     const map = ['#tGround', '#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
     const s = Math.max(0, Math.min(5, Math.floor(Number(d.stage) || 0)));
     return map[s];
+  }
+
+  /** The art to show WHILE loading — inferred from the tapped label so the loader
+   *  already matches the property (a "Villa" shows the villa, a "Plot" the land). */
+  get loadArtHref(): string {
+    return /villa/i.test(this.title) ? '#tVilla' : /plot|tile/i.test(this.title) ? '#tLand' : '#tVilla';
   }
 
   isUp(v: number): boolean { return v >= 0; }
