@@ -93,6 +93,8 @@ const PLOT_TICKET = 10_00_000;
 export class EstateHomeComponent implements OnInit {
   /** Hidden file picker behind the corner avatar. */
   @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
+  /** The live-values sheet, opened by tapping the portfolio figure. */
+  @ViewChild(DataFreshnessComponent) fresh!: DataFreshnessComponent;
 
   /** Play the "verified" tick once, right after OTP (passed by the shell). */
   @Input() justVerified = false;

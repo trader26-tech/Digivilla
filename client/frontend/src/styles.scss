@@ -149,3 +149,11 @@ html, body {
 @keyframes fd_drip { 0% { opacity: 0; transform: translate(0, 0); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(0, 14px); } }
 @keyframes st_swing { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, -6px); } }
 @keyframes st_spark { 0%, 100% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: .2; } 60% { opacity: .9; } }
+
+/* While the live-values sheet is up, the shell's floating tab bar must not sit
+   over it (the sheet is a bottom sheet; the bar is fixed above the same edge). */
+body.lv-sheet-open .tabbar {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}

@@ -1509,11 +1509,25 @@
   padding: 0 16px; margin-top: 6px;
 }
 .port-k { font-size: 10px; letter-spacing: .16em; color: var(--color-neutral-400); }
+/* the figure is a button (tap → live NAVs) but must read as plain type */
 .port-v {
+  position: relative;
+  border: 0; background: none; padding: 0 2px; cursor: pointer;
   font-family: var(--ref-font); font-weight: var(--ref-heading);
   font-size: 48px; line-height: 1.05; letter-spacing: -.02em;
   font-variant-numeric: tabular-nums; color: var(--color-text);
+  transition: transform .32s cubic-bezier(.22,1,.36,1), opacity .2s;
 }
+.port-v:active { transform: scale(.985); opacity: .85; }
+/* the only always-visible hint: a 5px live dot riding the last digit */
+.port-live {
+  position: absolute; top: 10px; right: -7px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #7fd398; opacity: .85;
+  animation: port-live 3.2s ease-in-out infinite;
+}
+@keyframes port-live { 0%, 100% { opacity: .85; transform: scale(1); } 50% { opacity: .35; transform: scale(.82); } }
+@media (prefers-reduced-motion: reduce) { .port-live { animation: none; } }
 .port-m {
   display: flex; align-items: center; gap: 8px;
   font-size: 12px; color: var(--color-neutral-300);
@@ -1522,7 +1536,6 @@
 .port-m b { font-weight: 400; }
 .port-m b.pos { color: #8fd65a; }
 .port-m b.neg { color: #d98a8a; }
-.port-fresh { margin-top: 6px; max-width: 100%; }
 
 .port-bar {
   width: 100%; display: flex; gap: 2px; height: 5px;

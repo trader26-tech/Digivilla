@@ -505,6 +505,15 @@ def villas_sip_list() -> dict:
     return {"villas": _vsip.list_villas()}
 
 
+@app.get("/me/navs")
+def get_my_navs(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Per-fund LIVE NAVs behind the user's portfolio value (tap-the-value sheet):
+    each held scheme's units, its latest published NAV and that NAV's date."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    return client_portfolio.live_navs(owner)
+
+
 @app.get("/me/funds")
 def get_my_funds(authorization: Optional[str] = Header(default=None)) -> dict:
     """The user's portfolio broken down fund-by-fund: each fund's allocation, the

@@ -338,14 +338,18 @@
          columns. Hidden on the empty estate. ===== -->
     <div class="port" *ngIf="!isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
-      <div class="port-v">{{ inr(est.estateValue) }}</div>
+      <!-- tap the figure for the live NAVs behind it -->
+      <button type="button" class="port-v" (click)="fresh.show()"
+              aria-label="See the live NAVs behind this value">
+        {{ inr(est.estateValue) }}<i class="port-live" aria-hidden="true"></i>
+      </button>
       <div class="port-m">
         <b [class.pos]="gainPct >= 0" [class.neg]="gainPct < 0">
           {{ gainPct >= 0 ? '+' : '' }}{{ gainPct | number:'1.0-2' }}% returns
         </b>
       </div>
-      <!-- when these values were loaded · NAV date · next update (tap to expand) -->
-      <app-data-freshness class="port-fresh"></app-data-freshness>
+      <!-- the live-values sheet (renders nothing until the figure is tapped) -->
+      <app-data-freshness></app-data-freshness>
 
       <!-- the allocation bar + fund columns only once the fund breakdown loads -->
       <ng-container *ngIf="fundRows.length">

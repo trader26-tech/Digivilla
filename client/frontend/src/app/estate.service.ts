@@ -169,6 +169,18 @@ export interface FundsBreakdown {
   next_refresh?: string | null;
 }
 
+/** One held fund with its live published NAV (from GET /me/navs). */
+export interface LiveNav {
+  name: string;
+  scheme_code: number | null;
+  units: number;
+  nav: number | null;
+  nav_date: string | null;
+  value: number;
+  invested: number;
+  gain: number;
+}
+
 /** A NAV point and one window's history (from GET /dashboard/funds/{code}/nav). */
 export interface NavPoint { date: string; nav: number; }
 export interface NavWindow {
@@ -366,6 +378,12 @@ export class EstateService {
   buildingChart(tileId: string): import('rxjs').Observable<BuildingChart> {
     return this.http.get<BuildingChart>(
       `${environment.apiUrl}/me/building/${tileId}/chart`, { headers: this.authHeaders });
+  }
+
+  /** Per-fund LIVE NAVs behind the portfolio value (the tap-the-value sheet). */
+  liveNavs(): import('rxjs').Observable<{ funds: LiveNav[]; nav_date: string | null; next_refresh: string | null }> {
+    return this.http.get<{ funds: LiveNav[]; nav_date: string | null; next_refresh: string | null }>(
+      `${environment.apiUrl}/me/navs`, { headers: this.authHeaders });
   }
 
   /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */

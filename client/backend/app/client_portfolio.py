@@ -188,6 +188,40 @@ def _valued_holdings(client_code: str) -> list[dict]:
     return out
 
 
+def live_navs(owner: str) -> dict:
+    """Every fund the user holds with its LIVE published NAV and that NAV's own
+    date — what the "portfolio value" figure is actually built from. Powers the
+    tap-the-value sheet, so the user can check any number against their
+    statement or any other platform.
+    """
+    from app import nav_cache
+    code = client_code_for_owner(owner)
+    if not code:
+        return {"funds": [], **nav_cache.freshness([])}
+    hs = _holdings(code)
+    nav_cache.prewarm([h.get("scheme_code") for h in hs])
+    funds = []
+    for h in hs:
+        sc = h.get("scheme_code")
+        meta = nav_cache.get_nav_meta(sc) or {}
+        units = _num(h.get("units"))
+        nav = meta.get("nav")
+        invested = round(_num(h.get("invested")), 2)
+        value = round(units * nav, 2) if (nav and units) else invested
+        funds.append({
+            "name": h.get("scheme_name") or "Fund",
+            "scheme_code": sc,
+            "units": round(units, 3),
+            "nav": nav,
+            "nav_date": meta.get("nav_date"),
+            "value": value,
+            "invested": invested,
+            "gain": round(value - invested, 2),
+        })
+    funds.sort(key=lambda f: f["value"], reverse=True)
+    return {"funds": funds, **nav_cache.freshness([h.get("scheme_code") for h in hs])}
+
+
 def portfolio_summary(owner: str) -> dict:
     """Real net-worth summary for the logged-in user (empty when unmatched)."""
     from app import estate as estate_svc

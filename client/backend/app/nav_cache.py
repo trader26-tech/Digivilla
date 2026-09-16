@@ -1,5 +1,8 @@
 """Daily NAV cache — the app's source of current mutual-fund NAVs.
 
+Source order: AMFI's own NAVAll.txt (authoritative, and typically hours ahead of
+the mirrors), then api.mfapi.in as a per-scheme fallback.
+
 Indian MF NAVs are published ONCE PER DAY by the AMCs (finalized ~11pm–1am IST)
 and do not change intraday, so there is nothing to "stream": a persistent socket
 per user would sit idle 24/7 for a single daily update. Instead we keep the
@@ -36,6 +39,66 @@ IST = timezone(timedelta(hours=5, minutes=30))
 REFRESH_HOUR_IST = 1
 
 _MFAPI = "https://api.mfapi.in/mf/{code}/latest"
+
+# AMFI's own published NAV file — the PRIMARY source. It is the industry's
+# source of truth (the same file every platform reads), and it carries the day's
+# NAVs HOURS before the mfapi mirror does: on 16 Sep 2026 AMFI already served
+# 16-Sep for every held scheme while mfapi was still serving 15-Sep. Reading it
+# directly is what keeps our values in step with platforms like AssetPlus.
+# One 1.5 MB fetch covers ~14,000 schemes and parses in ~10 ms, so a single
+# snapshot serves every holding at once. mfapi stays as the per-scheme fallback.
+_AMFI = "https://www.amfiindia.com/spages/NAVAll.txt"
+_AMFI_TTL = 900  # seconds — a per-worker snapshot of the whole file
+_amfi_snap: tuple[float, dict[int, tuple[float, str]]] = (0.0, {})
+
+
+def _amfi_snapshot() -> dict[int, tuple[float, str]]:
+    """{scheme_code: (nav, nav_date_iso)} for every scheme AMFI publishes.
+
+    Cached per worker for _AMFI_TTL. On any failure returns the last good
+    snapshot (or {}), so a network blip just falls through to mfapi.
+    """
+    global _amfi_snap
+    now = time.time()
+    if _amfi_snap[1] and now - _amfi_snap[0] < _AMFI_TTL:
+        return _amfi_snap[1]
+    try:
+        r = httpx.get(_AMFI, timeout=30, follow_redirects=True,
+                      headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        out: dict[int, tuple[float, str]] = {}
+        for line in r.text.splitlines():
+            # Scheme Code;ISIN;ISIN;Scheme Name;…;Net Asset Value;Date
+            parts = line.split(";")
+            if len(parts) < 8:
+                continue
+            code = parts[0].strip()
+            if not code.isdigit():
+                continue
+            nav_s, date_s = parts[-2].strip(), parts[-1].strip()
+            try:
+                nav = float(nav_s)
+                nav_date = datetime.strptime(date_s, "%d-%b-%Y").date().isoformat()
+            except ValueError:
+                continue
+            out[int(code)] = (nav, nav_date)
+        if out:
+            _amfi_snap = (now, out)
+    except Exception:
+        pass
+    return _amfi_snap[1]
+
+
+def _fetch_latest(scheme_code: int) -> Optional[tuple[float, str, str]]:
+    """(nav, nav_date_iso, scheme_name) from AMFI first, then mfapi.
+
+    AMFI is authoritative and fresher; mfapi covers the rare scheme AMFI's file
+    omits and acts as the safety net when amfiindia.com is unreachable.
+    """
+    hit = _amfi_snapshot().get(int(scheme_code))
+    if hit:
+        return hit[0], hit[1], ""
+    return _fetch_latest_from_mfapi(scheme_code)
 
 
 def _sb():
@@ -116,7 +179,7 @@ def get_nav_meta(scheme_code: Optional[int]) -> Optional[dict]:
     nav_date: Optional[str] = (row or {}).get("nav_date")
     fetched_at: Optional[str] = (row or {}).get("fetched_at")
     if not fresh:
-        latest = _fetch_latest_from_mfapi(scheme_code)
+        latest = _fetch_latest(scheme_code)
         if latest:
             nav, nav_date, name = latest
             fetched_at = datetime.utcnow().isoformat()
@@ -195,10 +258,10 @@ def refresh_all(scheme_codes: list[int]) -> dict:
         if row and row.get("nav_date") == today and row.get("nav") is not None:
             skipped += 1
             continue
-        latest = _fetch_latest_from_mfapi(code)
+        latest = _fetch_latest(code)
         if latest:
             nav, nav_date, name = latest
-            _upsert(code, nav, nav_date, name)
+            _upsert(code, nav, nav_date, name or (row or {}).get("scheme_name") or "")
             updated += 1
         else:
             failed += 1

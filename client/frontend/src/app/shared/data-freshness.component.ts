@@ -1,144 +1,173 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 
-import { EstateService } from '../estate.service';
+import { EstateService, LiveNav } from '../estate.service';
 
 /**
- * DATA FRESHNESS — the one place the app says, plainly, how current the money
- * figures are:
+ * LIVE VALUES SHEET — opened by tapping the portfolio value itself.
  *
- *   • the collapsed pill:  "Values as of 15 Sep · loaded 2 min ago"
- *     — turns into a spinner + "Reloading values…" while a reload is in flight,
- *       then flashes green "Values reloaded just now" for a few seconds.
- *   • tap to expand: WHEN the latest value was loaded (clock time + ago), the
- *     NAV date the value is built on, WHEN the next NAV update lands (with a
- *     live countdown), how/when the app reloads, and a "Refresh now" button.
+ * Nothing of this sits on the home screen. The only always-visible affordance is
+ * a 5px dot the host screen draws beside its own label; everything else lives in
+ * a bottom sheet the user pulls up deliberately:
  *
- * Drop `<app-data-freshness>` under any ₹ figure. It reads everything from
- * EstateService (portfolio(), lastLoadedAt(), refreshing()) so every screen
- * shows the same truth.
+ *   • the value, and the exact NAV date it is built from
+ *   • every held fund: units × live NAV = value
+ *   • when the app last reloaded, when the next NAV lands, and WHY that time
+ *   • Refresh now
+ *
+ * The NAVs come from AMFI's own published file (see backend nav_cache), so the
+ * numbers match any other platform reading the same source.
  */
 @Component({
   selector: 'app-data-freshness',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fr" [class.open]="open()" [class.busy]="est.refreshing()" [class.fresh]="justLoaded()" [class.err]="!est.lastLoadOk()">
-      <button type="button" class="fr-pill" (click)="toggle()" [attr.aria-expanded]="open()" aria-controls="fr-panel">
-        <span class="fr-dot" aria-hidden="true"><i></i></span>
-        <span class="fr-txt" aria-live="polite">{{ pillText() }}</span>
-        <svg class="fr-chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+    <!-- no chrome on the page: the host screen makes its own ₹ figure the trigger.
+         The sheet itself is moved to <body> on open (see show()), so no ancestor
+         stacking context on the host screen can paint over it. -->
+    <ng-container *ngIf="open()">
+      <div class="lv-backdrop" (click)="close()" aria-hidden="true"></div>
+      <div class="lv" role="dialog" aria-label="Live values">
+        <button type="button" class="lv-grab" (click)="close()" aria-label="Close"></button>
 
-      <div class="fr-backdrop" *ngIf="open()" (click)="open.set(false)" aria-hidden="true"></div>
-      <div class="fr-panel" id="fr-panel" role="dialog" aria-label="How fresh are these values" *ngIf="open()">
-        <div class="fr-head">
-          <b>About these values</b>
-          <button type="button" class="fr-x" (click)="open.set(false)" aria-label="Close">×</button>
+        <header class="lv-head">
+          <div>
+            <span class="lv-k">Portfolio value</span>
+            <div class="lv-v">{{ inr(worth()) }}</div>
+          </div>
+          <span class="lv-date" [class.stale]="stale()">
+            <i></i>{{ navDate() ? (navDate() | date:'d MMM') : '—' }} NAV
+          </span>
+        </header>
+
+        <p class="lv-sub">Units you hold × each fund’s latest published NAV. Taken from AMFI, the same file every platform reads.</p>
+
+        <div class="lv-list">
+          <div class="lv-sk" *ngIf="navsLoading()"><i></i><i></i><i></i></div>
+          <div class="lv-row" *ngFor="let f of navs(); let i = index" [style.--i]="i">
+            <div class="lv-name">
+              <b>{{ shortName(f.name) }}</b>
+              <span>{{ f.units | number:'1.0-3' }} × ₹{{ f.nav | number:'1.2-4' }}</span>
+            </div>
+            <div class="lv-amt">
+              <b>{{ inr(f.value) }}</b>
+              <span [class.pos]="f.gain >= 0" [class.neg]="f.gain < 0">{{ f.gain >= 0 ? '+' : '' }}{{ inr(f.gain) }}</span>
+            </div>
+          </div>
+          <p class="lv-empty" *ngIf="!navsLoading() && !navs().length">No funds mapped yet.</p>
         </div>
-        <div class="fr-row">
-          <span class="fr-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <div class="fr-body">
-            <span class="fr-k">Latest value loaded</span>
-            <b class="fr-v" *ngIf="est.lastLoadedAt() as t; else never">{{ t | date:'h:mm a' }} <small>· {{ ago(t) }}</small></b>
-            <ng-template #never><b class="fr-v muted">Not yet</b></ng-template>
+
+        <div class="lv-meta">
+          <div class="lv-m">
+            <span class="lv-mk">Loaded</span>
+            <b>{{ est.lastLoadedAt() ? (est.lastLoadedAt() | date:'h:mm a') : '—' }}<small *ngIf="est.lastLoadedAt() as t"> · {{ ago(t) }}</small></b>
+          </div>
+          <div class="lv-m">
+            <span class="lv-mk">Next NAV</span>
+            <b *ngIf="nextRefresh() as n; else nonext">{{ nextLabel(n) }}<small> · {{ countdown(n) }}</small></b>
+            <ng-template #nonext><b>—</b></ng-template>
           </div>
         </div>
 
-        <div class="fr-row">
-          <span class="fr-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <div class="fr-body">
-            <span class="fr-k">Built on NAVs dated</span>
-            <b class="fr-v" *ngIf="navDate() as d; else nonav">{{ d | date:'EEE, d MMM y' }}</b>
-            <ng-template #nonav><b class="fr-v muted">—</b></ng-template>
-            <span class="fr-note">NAVs are published once a day by the fund houses, after 11 PM.</span>
-          </div>
-        </div>
+        <button type="button" class="lv-why" (click)="why.set(!why())" [attr.aria-expanded]="why()">
+          Why 1:00 AM?
+          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="lv-note" *ngIf="why()">
+          Funds aren’t priced through the day. Each house strikes one NAV after the market closes and files it with AMFI between <b>9 PM and midnight</b>. We read the published file at <b>1:00 AM</b>, once every fund has filed, so your value updates completely rather than fund by fund. Tapping Refresh checks AMFI again right away.
+        </p>
 
-        <div class="fr-row">
-          <span class="fr-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 2.3 5.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 17.5V13h4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <div class="fr-body">
-            <span class="fr-k">Next NAV update</span>
-            <b class="fr-v" *ngIf="nextRefresh() as n; else nonext">{{ nextLabel(n) }} <small>· {{ countdown(n) }}</small></b>
-            <ng-template #nonext><b class="fr-v muted">—</b></ng-template>
-            <span class="fr-note">Your values reload automatically when you open the app, when you come back to it, and whenever you tap Refresh.</span>
-          </div>
-        </div>
-
-        <button type="button" class="fr-btn" (click)="refresh()" [disabled]="est.refreshing()">
-          <span class="fr-spin" *ngIf="est.refreshing(); else refIcon"></span>
-          <ng-template #refIcon><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 6.5V11h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></ng-template>
-          {{ est.refreshing() ? 'Reloading…' : 'Refresh now' }}
+        <button type="button" class="lv-btn" (click)="refresh()" [disabled]="est.refreshing()">
+          <span class="lv-spin" *ngIf="est.refreshing(); else refIcon"></span>
+          <ng-template #refIcon><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 6.5V11h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></ng-template>
+          {{ est.refreshing() ? 'Checking AMFI…' : 'Refresh now' }}
         </button>
       </div>
-    </div>
+    </ng-container>
   `,
   styles: [`
-    :host { display: block; }
-    .fr { --fr-c: var(--muted, #8B95A3); display: flex; flex-direction: column; align-items: center; }
+    :host { display: contents; }
+    /* once moved to <body> the host is a positioned layer above all screen chrome */
+    :host(.lv-hosted) { display: block; position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+    :host(.lv-hosted.lv-shut) { display: none; }
+    :host(.lv-hosted) .lv-backdrop, :host(.lv-hosted) .lv { pointer-events: auto; }
 
-    /* ---- the pill ---- */
-    .fr-pill {
-      display: inline-flex; align-items: center; gap: 7px; max-width: 100%;
-      padding: 5px 10px 5px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04); color: var(--fr-c); font: 500 11.5px/1 var(--font-body, Inter, system-ui, sans-serif);
-      letter-spacing: 0.01em; cursor: pointer; transition: background .3s, border-color .3s, color .3s, transform .3s cubic-bezier(.22,1,.36,1);
+    .lv-backdrop {
+      position: fixed; inset: 0; z-index: 60; background: rgba(6, 8, 12, 0.62);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      animation: lv-fade .26s ease both;
     }
-    .fr-pill:hover { background: rgba(255,255,255,0.07); }
-    .fr-pill:active { transform: scale(0.98); }
-    .fr-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fr-chev { flex: none; transition: transform .35s cubic-bezier(.22,1,.36,1); opacity: .7; }
-    .open .fr-chev { transform: rotate(180deg); }
+    @keyframes lv-fade { from { opacity: 0; } to { opacity: 1; } }
 
-    /* the status dot: idle grey · busy spinning ring · fresh green pulse · error amber */
-    .fr-dot { position: relative; width: 12px; height: 12px; flex: none; display: grid; place-items: center; }
-    .fr-dot i { width: 7px; height: 7px; border-radius: 50%; background: var(--fr-c); transition: background .3s, transform .3s; }
-    .busy .fr-dot i { width: 10px; height: 10px; background: transparent; border: 2px solid rgba(139,123,240,.25); border-top-color: var(--brass, #8B7BF0); animation: fr-spin .8s linear infinite; }
-    .busy .fr-pill { color: var(--ink, #EEF1F5); border-color: rgba(139,123,240,.35); }
-    .fresh .fr-dot i { background: var(--positive, #64C37D); animation: fr-pulse 1.6s ease-out 2; }
-    .fresh .fr-pill { color: var(--positive, #64C37D); border-color: rgba(100,195,125,.35); background: rgba(100,195,125,.08); }
-    .err .fr-dot i { background: #E9C15C; }
-    @keyframes fr-spin { to { transform: rotate(360deg); } }
-    @keyframes fr-pulse { 0% { box-shadow: 0 0 0 0 rgba(100,195,125,.55); } 100% { box-shadow: 0 0 0 9px rgba(100,195,125,0); } }
-
-    /* ---- the expanded panel ---- */
-    /* the app's popup pattern (estate-home .pop-backdrop / .pop): blurred scrim + centred card,
-       above the tab bar, so nothing on the screen moves when it opens */
-    .fr-backdrop { position: fixed; inset: 0; z-index: 45; background: rgba(22, 48, 43, 0.42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fr-fade .22s ease both; }
-    .fr-panel {
-      position: fixed; z-index: 46; left: 50%; top: 50%; transform: translate(-50%, -50%);
-      width: min(92vw, 380px); display: grid; gap: 12px; padding: 14px 14px 12px; text-align: left;
-      border-radius: 22px; background: var(--paper, #0E1116); border: 1px solid var(--survey, #2A323E);
-      box-shadow: 0 30px 70px -24px rgba(22, 48, 43, 0.6);
-      animation: fr-in .28s cubic-bezier(.22,1,.36,1) both;
+    .lv {
+      position: fixed; z-index: 61; left: 0; right: 0; bottom: 0;
+      width: min(100%, 480px); margin-inline: auto;
+      max-height: min(86vh, 720px); overflow-y: auto; -webkit-overflow-scrolling: touch;
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 8px 18px calc(22px + env(safe-area-inset-bottom));
+      background: #0B0E13; border: 1px solid var(--survey, #2A323E); border-bottom: 0;
+      border-radius: 26px 26px 0 0; box-shadow: 0 -24px 60px -20px rgba(0,0,0,.85);
+      animation: lv-up .42s cubic-bezier(.22,1,.36,1) both;
     }
-    @keyframes fr-fade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes fr-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-    .fr-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 2px; }
-    .fr-head b { font-size: 15px; font-weight: 800; letter-spacing: -.01em; color: var(--ink, #EEF1F5); }
-    .fr-x { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--survey, #2A323E); background: transparent; color: var(--muted, #8B95A3); font-size: 18px; line-height: 1; cursor: pointer; }
-    .fr-row { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
-    .fr-ico { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: var(--card, #171C25); color: var(--brass, #8B7BF0); }
-    .fr-ico svg { width: 15px; height: 15px; }
-    .fr-body { display: grid; gap: 2px; min-width: 0; }
-    .fr-k { font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, #8B95A3); }
-    .fr-v { font-size: 14px; font-weight: 700; color: var(--ink, #EEF1F5); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
-    .fr-v small { font-size: 11.5px; font-weight: 500; color: var(--muted, #8B95A3); }
-    .fr-v.muted { color: var(--muted, #8B95A3); font-weight: 500; }
-    .fr-note { font-size: 11px; line-height: 1.4; color: var(--muted, #8B95A3); }
-    .fr-btn {
+    @keyframes lv-up { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    .lv-grab { align-self: center; width: 40px; height: 4px; border: 0; padding: 0; margin: 4px 0 6px; border-radius: 99px; background: var(--survey, #2A323E); cursor: pointer; }
+
+    .lv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .lv-k { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted, #8B95A3); }
+    .lv-v { font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--ink, #EEF1F5); font-variant-numeric: tabular-nums; }
+    .lv-date { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 99px; background: rgba(100,195,125,.12); color: #7fd398; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .lv-date i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: lv-pulse 2.4s ease-in-out infinite; }
+    .lv-date.stale { background: rgba(233,193,92,.12); color: #E9C15C; }
+    @keyframes lv-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+    .lv-sub { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--muted, #8B95A3); }
+
+    .lv-list { display: grid; gap: 1px; border-radius: 14px; overflow: hidden; background: #242a36; }
+    .lv-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 11px 12px; background: #151922;
+      animation: lv-in .4s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i) * 45ms);
+    }
+    @keyframes lv-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .lv-name { display: grid; gap: 2px; min-width: 0; }
+    .lv-name b { font-size: 12.5px; font-weight: 650; color: var(--ink, #EEF1F5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lv-name span { font-size: 11px; color: var(--muted, #8B95A3); font-variant-numeric: tabular-nums; }
+    .lv-amt { text-align: right; display: grid; gap: 2px; flex: none; }
+    .lv-amt b { font-size: 13px; font-weight: 700; color: var(--ink, #EEF1F5); font-variant-numeric: tabular-nums; }
+    .lv-amt span { font-size: 11px; font-variant-numeric: tabular-nums; }
+    .lv-amt .pos { color: #8fd65a; } .lv-amt .neg { color: #d98a8a; }
+    .lv-empty { margin: 0; padding: 14px; background: #151922; font-size: 12px; color: var(--muted, #8B95A3); text-align: center; }
+    .lv-sk { display: grid; gap: 1px; }
+    .lv-sk i { display: block; height: 44px; background: linear-gradient(100deg, #151922 30%, #202632 50%, #151922 70%); background-size: 200% 100%; animation: lv-shim 1.3s linear infinite; }
+    @keyframes lv-shim { to { background-position: -200% 0; } }
+
+    .lv-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .lv-m { padding: 9px 11px; border-radius: 12px; background: #151922; display: grid; gap: 2px; }
+    .lv-mk { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted, #8B95A3); }
+    .lv-m b { font-size: 13px; font-weight: 700; color: var(--ink, #EEF1F5); }
+    .lv-m small { font-weight: 500; color: var(--muted, #8B95A3); }
+
+    .lv-why { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--brass, #8B7BF0); font-size: 11.5px; font-weight: 650; cursor: pointer; }
+    .lv-why svg { transition: transform .3s cubic-bezier(.22,1,.36,1); }
+    .lv-why[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .lv-note { margin: 0; font-size: 11.5px; line-height: 1.55; color: var(--muted, #8B95A3); animation: lv-in .32s cubic-bezier(.22,1,.36,1) both; }
+    .lv-note b { color: var(--ink-2, #c9cbd1); font-weight: 650; }
+
+    .lv-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 7px; margin-top: 2px;
-      padding: 9px 12px; border-radius: 11px; border: 0; cursor: pointer;
-      background: linear-gradient(120deg, #8b7bf0, #6f5ce6); color: #fff; font: 700 12.5px/1 var(--font-body, Inter, system-ui, sans-serif);
+      padding: 12px; border-radius: 13px; border: 0; cursor: pointer;
+      background: linear-gradient(120deg, #8b7bf0, #6f5ce6); color: #fff; font-size: 13px; font-weight: 700;
       transition: transform .3s cubic-bezier(.22,1,.36,1), filter .2s;
     }
-    .fr-btn:hover { filter: brightness(1.06); }
-    .fr-btn:active { transform: scale(.98); }
-    .fr-btn:disabled { opacity: .7; cursor: default; }
-    .fr-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: fr-spin .8s linear infinite; }
+    .lv-btn:active { transform: scale(.985); }
+    .lv-btn:disabled { opacity: .72; cursor: default; }
+    .lv-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: lv-spin .8s linear infinite; }
+    @keyframes lv-spin { to { transform: rotate(360deg); } }
 
     @media (prefers-reduced-motion: reduce) {
-      .fr-panel, .fr-dot i, .fr-chev, .fr-pill, .fr-btn { animation: none !important; transition: none !important; }
+      .lv, .lv-backdrop, .lv-row, .lv-note, .lv-date i, .lv-sk i { animation: none !important; }
     }
   `],
 })
@@ -146,72 +175,98 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
   est = inject(EstateService);
 
   open = signal(false);
-  /** A ticking clock so "2 min ago" and the countdown stay live. */
+  why = signal(false);
+  navs = signal<LiveNav[]>([]);
+  navsLoading = signal(false);
+
   private now = signal(Date.now());
   private timer: ReturnType<typeof setInterval> | null = null;
 
   navDate = computed(() => this.est.portfolio()?.nav_date ?? null);
   nextRefresh = computed(() => this.est.portfolio()?.next_refresh ?? null);
-  /** True for a few seconds after a reload completes — drives the green flash. */
-  justLoaded = computed(() => {
-    const t = this.est.lastLoadedAt();
-    return !!t && !this.est.refreshing() && this.now() - t < 4000;
-  });
-
-  pillText = computed(() => {
-    if (this.est.refreshing()) return 'Reloading values…';
-    if (!this.est.lastLoadOk()) return 'Couldn’t reload · showing last values';
-    const t = this.est.lastLoadedAt();
-    if (!t) return 'Loading values…';
-    if (this.now() - t < 4000) return 'Values reloaded just now';
+  worth = computed(() => this.est.estateValue);
+  /** Amber when the NAV we hold is older than a long weekend — something is off. */
+  stale = computed(() => {
     const d = this.navDate();
-    const nav = d ? `Values as of ${this.shortDate(d)}` : 'Values';
-    return `${nav} · loaded ${this.ago(t)}`;
+    if (!d) return false;
+    return Math.floor((this.now() - new Date(d + 'T00:00:00').getTime()) / 86400000) > 4;
   });
 
-  ngOnInit(): void {
-    // tick fast right after a load (so the green flash ends on time), then slowly
-    this.timer = setInterval(() => this.now.set(Date.now()), 1000);
+  ngOnInit(): void { this.timer = setInterval(() => this.now.set(Date.now()), 1000); }
+  ngOnDestroy(): void {
+    if (this.timer) clearInterval(this.timer);
+    document.body.classList.remove('lv-sheet-open');
   }
-  ngOnDestroy(): void { if (this.timer) clearInterval(this.timer); }
 
-  toggle(): void { this.open.update((v) => !v); if (navigator.vibrate) navigator.vibrate(3); }
-  @HostListener('document:keydown.escape')
-  onEsc(): void { this.open.set(false); }
-  refresh(): void { if (navigator.vibrate) navigator.vibrate(4); this.est.refreshNow(); }
+  /** Called by the host screen when the user taps the ₹ figure. */
+  private host = inject(ElementRef<HTMLElement>);
 
-  /** "just now" · "3 min ago" · "2 h 10 min ago" · "yesterday". */
+  show(): void {
+    this.open.set(true);
+    document.body.classList.add('lv-sheet-open');   // hides the shell's tab bar
+    // Render at the document root so nothing on the host screen can overlap it.
+    queueMicrotask(() => {
+      const el = this.host.nativeElement as HTMLElement;
+      el.classList.remove('lv-shut');
+      if (el.parentElement !== document.body) { el.classList.add('lv-hosted'); document.body.appendChild(el); }
+    });
+    if (navigator.vibrate) navigator.vibrate(4);
+    this.loadNavs();
+  }
+  close(): void {
+    this.open.set(false); this.why.set(false);
+    document.body.classList.remove('lv-sheet-open');
+    // the teleported host must stop covering the screen while shut
+    (this.host.nativeElement as HTMLElement).classList.add('lv-shut');
+  }
+
+  @HostListener('document:keydown.escape') onEsc(): void { this.close(); }
+
+  private loadNavs(): void {
+    this.navsLoading.set(true);
+    this.est.liveNavs().subscribe({
+      next: (r) => { this.navs.set(r.funds || []); this.navsLoading.set(false); },
+      error: () => { this.navsLoading.set(false); },
+    });
+  }
+
+  refresh(): void {
+    if (navigator.vibrate) navigator.vibrate(4);
+    this.est.refreshNow();
+    this.loadNavs();
+  }
+
+  inr(n: number): string { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); }
+  /** "Kotak Arbitrage Fund Growth" → "Kotak Arbitrage Fund". */
+  shortName(n: string): string {
+    return (n || '')
+      .replace(/\s*[-–]\s*(Regular|Direct)\s*Plan\s*/i, ' ')
+      .replace(/\s*[-–]?\s*(Growth|Gr)\.?$/i, '')
+      .trim();
+  }
+
   ago(t: number): string {
     const s = Math.max(0, Math.round((this.now() - t) / 1000));
     if (s < 45) return 'just now';
     const m = Math.round(s / 60);
     if (m < 60) return `${m} min ago`;
-    const h = Math.floor(m / 60), rm = m % 60;
-    if (h < 24) return rm ? `${h} h ${rm} min ago` : `${h} h ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} h ago`;
     return h < 48 ? 'yesterday' : `${Math.floor(h / 24)} days ago`;
   }
-
-  /** "Tonight, 1:00 AM" / "Tomorrow, 1:00 AM" / "Thu, 1:00 AM". */
   nextLabel(iso: string): string {
     const n = new Date(iso), now = new Date(this.now());
     const time = n.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toUpperCase();
-    const dayDiff = Math.round((this.startOfDay(n) - this.startOfDay(now)) / 86400000);
-    if (dayDiff === 0) return `Today, ${time}`;
-    if (dayDiff === 1) return (now.getHours() >= 18 ? 'Tonight' : 'Tomorrow') + `, ${time}`;
+    const diff = Math.round((this.startOfDay(n) - this.startOfDay(now)) / 86400000);
+    if (diff === 0) return `Today, ${time}`;
+    if (diff === 1) return (now.getHours() >= 18 ? 'Tonight' : 'Tomorrow') + `, ${time}`;
     return `${n.toLocaleDateString('en-IN', { weekday: 'short' })}, ${time}`;
   }
-  /** "in 6 h 12 min" — or "any moment now" once due. */
   countdown(iso: string): string {
     const ms = new Date(iso).getTime() - this.now();
-    if (ms <= 0) return 'any moment now';
+    if (ms <= 0) return 'due now';
     const m = Math.ceil(ms / 60000), h = Math.floor(m / 60), rm = m % 60;
-    if (h === 0) return `in ${rm} min`;
-    return rm ? `in ${h} h ${rm} min` : `in ${h} h`;
-  }
-
-  private shortDate(iso: string): string {
-    const d = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return h === 0 ? `in ${rm} min` : rm ? `in ${h} h ${rm} min` : `in ${h} h`;
   }
   private startOfDay(d: Date): number { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
 }
