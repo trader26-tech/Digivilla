@@ -20,14 +20,20 @@ same scheme within a single request burst.
 from __future__ import annotations
 
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 import httpx
 
 
 _MEMO_TTL = 300  # seconds — a per-worker read memo, NOT the source of truth
-_memo: dict[int, tuple[float, Optional[float], Optional[str]]] = {}
+# { scheme_code: (memo_time, {"nav", "nav_date", "fetched_at"}) }
+_memo: dict[int, tuple[float, dict]] = {}
+
+IST = timezone(timedelta(hours=5, minutes=30))
+# The daily cron (scripts/refresh_navs.py) runs at 01:00 IST, after the AMCs'
+# ~11 PM–1 AM publish. Surfaced to the app as "next NAV update".
+REFRESH_HOUR_IST = 1
 
 _MFAPI = "https://api.mfapi.in/mf/{code}/latest"
 
@@ -68,7 +74,7 @@ def _fetch_latest_from_mfapi(scheme_code: int) -> Optional[tuple[float, str, str
 def _read_row(scheme_code: int) -> Optional[dict]:
     try:
         rows = _sb().table("scheme_nav_cache").select(
-            "scheme_code,nav,nav_date,scheme_name").eq(
+            "scheme_code,nav,nav_date,scheme_name,fetched_at").eq(
             "scheme_code", scheme_code).limit(1).execute().data or []
         return rows[0] if rows else None
     except Exception:
@@ -86,8 +92,10 @@ def _upsert(scheme_code: int, nav: float, nav_date: str, name: str) -> None:
         pass
 
 
-def get_nav(scheme_code: Optional[int]) -> Optional[float]:
-    """The latest published NAV for a scheme, from the DB cache.
+def get_nav_meta(scheme_code: Optional[int]) -> Optional[dict]:
+    """The latest published NAV for a scheme WITH its freshness:
+    ``{"nav", "nav_date" (ISO, the AMC's publish date), "fetched_at" (ISO UTC,
+    when we last pulled it from mfapi)}``.
 
     Refresh-on-read: if the cached row is missing or its nav_date isn't today,
     fetch the latest from mfapi once and upsert it. NAVs don't change intraday,
@@ -105,15 +113,63 @@ def get_nav(scheme_code: Optional[int]) -> Optional[float]:
     fresh = bool(row and row.get("nav_date") == _today_iso() and row.get("nav") is not None)
 
     nav: Optional[float] = float(row["nav"]) if (row and row.get("nav") is not None) else None
+    nav_date: Optional[str] = (row or {}).get("nav_date")
+    fetched_at: Optional[str] = (row or {}).get("fetched_at")
     if not fresh:
         latest = _fetch_latest_from_mfapi(scheme_code)
         if latest:
             nav, nav_date, name = latest
+            fetched_at = datetime.utcnow().isoformat()
             _upsert(scheme_code, nav, nav_date, name or (row or {}).get("scheme_name") or "")
         # if mfapi failed, keep the last-known DB nav (better stale than blank)
 
-    _memo[scheme_code] = (now, nav, None)
-    return nav
+    meta = {"nav": nav, "nav_date": nav_date, "fetched_at": fetched_at}
+    _memo[scheme_code] = (now, meta)
+    return meta
+
+
+def get_nav(scheme_code: Optional[int]) -> Optional[float]:
+    """The latest published NAV for a scheme (float only) — see get_nav_meta."""
+    m = get_nav_meta(scheme_code)
+    return m.get("nav") if m else None
+
+
+def next_refresh_iso(now: Optional[datetime] = None) -> str:
+    """When the NEXT daily NAV refresh lands: the next 01:00 IST (the cron time,
+    just after the AMCs publish). ISO with the +05:30 offset so the app can show
+    it in the user's clock."""
+    now = (now or datetime.now(timezone.utc)).astimezone(IST)
+    nxt = now.replace(hour=REFRESH_HOUR_IST, minute=0, second=0, microsecond=0)
+    if nxt <= now:
+        nxt += timedelta(days=1)
+    return nxt.isoformat()
+
+
+def freshness(scheme_codes: list) -> dict:
+    """Portfolio-level freshness for the app's status line, aggregated across
+    the held schemes (all memoised by the prewarm/get_nav calls that precede it):
+
+      nav_date     — the OLDEST publish date among the held NAVs (the value is
+                     only as fresh as its stalest input)
+      fetched_at   — the most recent time any of them was pulled from mfapi (UTC)
+      refreshed_at — right now (UTC): when this response was computed
+      next_refresh — the next 01:00 IST cron
+    """
+    dates, fetched = [], []
+    for c in {int(x) for x in scheme_codes if x}:
+        m = get_nav_meta(c)
+        if not m:
+            continue
+        if m.get("nav_date"):
+            dates.append(m["nav_date"])
+        if m.get("fetched_at"):
+            fetched.append(m["fetched_at"])
+    return {
+        "nav_date": min(dates) if dates else None,
+        "fetched_at": max(fetched) if fetched else None,
+        "refreshed_at": datetime.now(timezone.utc).isoformat(),
+        "next_refresh": next_refresh_iso(),
+    }
 
 
 def prewarm(scheme_codes: list[int]) -> None:

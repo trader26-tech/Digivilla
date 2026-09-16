@@ -542,6 +542,9 @@ def get_my_funds(authorization: Optional[str] = Header(default=None)) -> dict:
         "has_holdings": summary.get("has_holdings", False),
         "overall": (detail or {}).get("overall", {"ret_1y": None, "ret_3y": None, "ret_5y": None}),
         "funds": funds,
+        # freshness (see client_portfolio.portfolio_summary)
+        "nav_date": summary.get("nav_date"), "fetched_at": summary.get("fetched_at"),
+        "refreshed_at": summary.get("refreshed_at"), "next_refresh": summary.get("next_refresh"),
     }
 
 

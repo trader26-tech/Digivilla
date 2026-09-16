@@ -163,6 +163,10 @@ export interface FundsBreakdown {
   has_holdings: boolean;
   overall: { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null };
   funds: FundRow[];
+  nav_date?: string | null;
+  fetched_at?: string | null;
+  refreshed_at?: string | null;
+  next_refresh?: string | null;
 }
 
 /** A NAV point and one window's history (from GET /dashboard/funds/{code}/nav). */
@@ -248,6 +252,13 @@ export interface PortfolioSummary {
   estate_name: string;
   /** The user's custom city / nickname for their estate. May be "". */
   estate_city: string;
+  /** Freshness: the oldest NAV publish date behind this value (ISO date), when
+   *  that NAV was last pulled from the source (ISO UTC), when this response was
+   *  computed (ISO UTC) and when the next daily NAV refresh lands (ISO +05:30). */
+  nav_date?: string | null;
+  fetched_at?: string | null;
+  refreshed_at?: string | null;
+  next_refresh?: string | null;
 }
 
 // v2: reset the board once to the lean starter (the v1 store had accumulated
@@ -275,6 +286,14 @@ export class EstateService {
    *  Lets the home hold off the "empty estate" decision until we actually know,
    *  so a user with holdings never sees a flash of "Book your setup call". */
   readonly portfolioLoaded = signal(false);
+  /** Data-freshness state, shown by <app-data-freshness> on every ₹ screen:
+   *  when the latest value finished loading (epoch ms), whether a reload is in
+   *  flight right now, whether the last reload succeeded, and a counter that
+   *  bumps on every successful reload so per-screen data (Funds) re-fetches. */
+  readonly lastLoadedAt = signal<number | null>(null);
+  readonly refreshing = signal(false);
+  readonly lastLoadOk = signal(true);
+  readonly reloads = signal(0);
   /** Whose town this is, and where. Used for the home greeting. */
   readonly profile = signal<Profile>(this.loadProfile());
 
@@ -384,11 +403,25 @@ export class EstateService {
   /** Authoritative real net worth (client_holdings × live NAV). */
   loadPortfolio(): void {
     if (!this.auth.token()) return;
+    this.refreshing.set(true);
     this.http.get<PortfolioSummary>(`${environment.apiUrl}/me/portfolio`, { headers: this.authHeaders })
       .subscribe({
-        next: (p) => { this.portfolio.set(p); this.portfolioLoaded.set(true); },
-        error: () => { this.portfolioLoaded.set(true); /* keep the tile-derived fallback */ },
+        next: (p) => {
+          this.portfolio.set(p); this.portfolioLoaded.set(true);
+          this.lastLoadedAt.set(Date.now()); this.lastLoadOk.set(true);
+          this.refreshing.set(false); this.reloads.update((n) => n + 1);
+        },
+        error: () => {
+          this.portfolioLoaded.set(true); /* keep the tile-derived fallback */
+          this.lastLoadOk.set(false); this.refreshing.set(false);
+        },
       });
+  }
+
+  /** A user-initiated reload (the "Refresh now" button): estate + portfolio. */
+  refreshNow(): void {
+    if (this.refreshing()) return;
+    this.syncFromServer();
   }
 
   /** The greeting name from the server (real record or the user's override). */

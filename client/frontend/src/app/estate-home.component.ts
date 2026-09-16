@@ -16,6 +16,7 @@ import {
 import { AuthService } from './auth/auth.service';
 import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
+import { DataFreshnessComponent } from './shared/data-freshness.component';
 import { CallsService } from './shared/calls.service';
 import { EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
@@ -85,7 +86,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })

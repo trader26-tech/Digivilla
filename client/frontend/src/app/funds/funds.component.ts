@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, computed, effect, inject, signal } from '@angular/core';
 
 import { EstateService, FundsBreakdown, FundRow, FundNav, NavWindow } from '../estate.service';
 import { compact } from '../shared/format.util';
+import { DataFreshnessComponent } from '../shared/data-freshness.component';
 
 /**
  * The Funds tab — a celebration of what the user has built, then the estate
@@ -19,7 +20,7 @@ import { compact } from '../shared/format.util';
 @Component({
   selector: 'app-funds',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DataFreshnessComponent],
   templateUrl: './funds.component.html',
   styleUrl: './funds.component.scss',
 })
@@ -38,7 +39,22 @@ export class FundsComponent implements OnInit {
   @Output() progress = new EventEmitter<void>();
   viewProgress(): void { if (navigator.vibrate) navigator.vibrate(4); this.progress.emit(); }
 
-  ngOnInit(): void {
+  /** The reload counter we last fetched for — so a portfolio reload (app
+   *  foregrounded, or "Refresh now") silently re-fetches the fund breakdown. */
+  private seenReloads = -1;
+
+  constructor() {
+    effect(() => {
+      const n = this.est.reloads();
+      if (this.seenReloads >= 0 && n !== this.seenReloads) this.fetch(false);
+      this.seenReloads = n;
+    });
+  }
+
+  ngOnInit(): void { this.fetch(true); }
+
+  private fetch(showSpinner: boolean): void {
+    if (showSpinner) this.loading.set(true);
     this.est.myFunds().subscribe({
       next: (d) => { this.data.set(d); this.loading.set(false); },
       error: () => { this.loading.set(false); },

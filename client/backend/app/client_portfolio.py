@@ -195,10 +195,12 @@ def portfolio_summary(owner: str) -> dict:
     name = estate_name_for_owner(owner)
     city = _estate_city_for_owner(owner)
     code = client_code_for_owner(owner)
+    from app import nav_cache
     if not code:
         return {"worth": 0, "invested": 0, "gain": 0, "gain_pct": 0,
                 "total_swp": swp, "estate_name": name, "estate_city": city,
-                "holdings_count": 0, "has_holdings": False, "client_code": None}
+                "holdings_count": 0, "has_holdings": False, "client_code": None,
+                **nav_cache.freshness([])}
     hs = _valued_holdings(code)
     worth = round(sum(h["current_value"] for h in hs), 2)
     invested = round(sum(h["invested"] for h in hs), 2)
@@ -214,6 +216,9 @@ def portfolio_summary(owner: str) -> dict:
         "holdings_count": len(hs),
         "has_holdings": bool(hs),
         "client_code": code,
+        # freshness: when the NAVs behind this number were published / pulled,
+        # when this response was computed, and when the next daily refresh lands
+        **nav_cache.freshness([h.get("scheme_code") for h in hs]),
     }
 
 

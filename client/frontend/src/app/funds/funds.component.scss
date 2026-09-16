@@ -9,6 +9,7 @@
 @keyframes fx-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 .fx-top { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding: 0 0.2rem; }
+.fx-fresh { margin-top: -0.5rem; }
 .fx-title { margin: 0; font-family: var(--font-display); font-size: 1.7rem; font-weight: 850; letter-spacing: -0.7px; color: var(--ink); }
 
 /* ===== centered rank banner — personal, warm, no jargon ===== */

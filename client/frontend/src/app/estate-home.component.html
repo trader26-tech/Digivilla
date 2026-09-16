@@ -344,6 +344,8 @@
           {{ gainPct >= 0 ? '+' : '' }}{{ gainPct | number:'1.0-2' }}% returns
         </b>
       </div>
+      <!-- when these values were loaded · NAV date · next update (tap to expand) -->
+      <app-data-freshness class="port-fresh"></app-data-freshness>
 
       <!-- the allocation bar + fund columns only once the fund breakdown loads -->
       <ng-container *ngIf="fundRows.length">
