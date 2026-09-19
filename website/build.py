@@ -47,5 +47,8 @@ out = (tpl
        .replace('<!--STAGE_STEEL-->', stage('steel'))
        .replace('<!--STAGE_VILLA-->', villa_full))
 
+import hashlib
+v = hashlib.sha1((ROOT / 'styles.css').read_bytes() + (ROOT / 'main.js').read_bytes()).hexdigest()[:10]
+out = out.replace('__V__', v)
 (ROOT / 'index.html').write_text(out)
 print(f'index.html written · {len(out)/1024:.0f} KB')

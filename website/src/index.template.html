@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
   <meta charset="utf-8">
   <title>Digivilla — own property, without the property</title>
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
 
@@ -30,6 +30,9 @@
       <a href="#disclosures" data-sec="disclosures">Disclosures</a>
     </nav>
     <div class="nav-right">
+      <button type="button" class="nav-reset" id="hotReset" title="Reload the latest version" aria-label="Reload the latest version">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 6.5V11h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <a class="nav-cta" href="#compare">Compare your flat</a>
       <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false" aria-controls="navSheet"><i></i><i></i></button>
     </div>
@@ -38,6 +41,7 @@
 <div class="nav-sheet" id="navSheet" hidden>
   <a href="#flat">The flat</a><a href="#build">The build</a><a href="#stages">Stages</a><a href="#estate">Estate</a><a href="#after">Illustration</a><a href="#disclosures">Disclosures</a>
   <a class="nav-sheet-cta" href="#compare">Compare your flat</a>
+  <button type="button" class="nav-sheet-reset" data-hot-reset>Reload latest version</button>
   <p>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</p>
 </div>
 
@@ -278,6 +282,6 @@
 
 <div class="risk-bar" role="note">Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</div>
 
-<script src="main.js"></script>
+<script src="main.js?v=__V__"></script>
 </body>
 </html>

@@ -5,6 +5,28 @@
 (function () {
   'use strict';
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- start the hero entrance only once Inter is actually loaded ---------- */
+  document.documentElement.classList.remove('no-js');
+  let ready = false;
+  (function gateOnFonts() {
+    const go = () => { ready = true; document.documentElement.classList.add('ready'); };
+    const fallback = setTimeout(go, 1500);
+    if (document.fonts && document.fonts.load) {
+      Promise.all([document.fonts.load('700 1em Inter'), document.fonts.load('500 1em Inter')])
+        .then(() => document.fonts.ready).then(() => { clearTimeout(fallback); go(); }, () => {});
+    }
+  })();
+
+  /* ---------- hot reset: drop every cache and reload the latest build ---------- */
+  async function hotReset(btn) {
+    if (btn) btn.classList.add('spin');
+    try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
+    try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) {}
+    const u = new URL(location.href); u.searchParams.set('v', String(Date.now())); u.hash = '';
+    location.replace(u.toString());
+  }
+  document.querySelectorAll('#hotReset, [data-hot-reset]').forEach((b) => b.addEventListener('click', () => hotReset(b)));
   const fine = window.matchMedia('(pointer: fine)').matches;
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -170,6 +192,7 @@
   const heroLayers = $$('.hero-scene .layer[data-depth]');
   let mouseX = 0, mouseY = 0, tiltX = 0, tiltY = 0;
   function heroScrub(y) {
+    if (!ready) return;   // the CSS entrance owns the hero until the font is in
     const h = hero.offsetHeight; if (y > h * 1.2) return;
     const t = clamp(y / (h * 0.8), 0, 1);
     heroCopy.style.opacity = (1 - smooth(t * 1.6)).toFixed(3);
