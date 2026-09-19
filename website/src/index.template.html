@@ -53,20 +53,47 @@
     <span class="layer hero-halo"></span>
     <span class="layer grain"></span>
   </div>
+
   <div class="hero-copy" id="heroCopy">
-    <h1><span class="w">Own property.</span><span class="w em">Without the property.</span></h1>
-    <p class="hero-sub"><span class="w">A villa-shaped mutual fund portfolio. Not real estate.</span></p>
+    <h1>
+      <span class="w" style="--d:0s">A monthly payout. Long‑term growth.</span>
+      <span class="w em" style="--d:.12s">None of the property hassles.</span>
+    </h1>
+    <p class="hero-sub w" style="--d:.26s">Like property, it aims to pay you every month* and grow over the years. Unlike property, there are no tenants, brokers, registration or upkeep. It’s a mutual fund portfolio in your name, valued daily at NAV — not real estate.</p>
+    <p class="hero-foot w" style="--d:.38s">*A targeted monthly SWP: a withdrawal of your own units, not assured. Mutual Fund investments are subject to market risks.</p>
   </div>
+
   <div class="hero-art" id="heroArt">
     <div class="villa-stage" id="villaStage">
-      <svg class="villa-art" viewBox="90 -70 640 594" preserveAspectRatio="xMidYMid meet" role="img" aria-label="An isometric villa with a rupee coin above it">
-        <!--VILLA_ART-->
-        <g transform="translate(415,-14) scale(2.1)" aria-hidden="true">
-          <ellipse class="cf-shadow" cx="0" cy="30" rx="13" ry="4.5"></ellipse>
-          <g class="coin-float"><circle class="cf-face" r="15"></circle><circle class="cf-ring" r="10"></circle><circle class="cf-shine" cx="-3.8" cy="-4.5" r="3"></circle><text class="cf-glyph" x="0" y="5.5" text-anchor="middle">₹</text></g>
-        </g>
-      </svg>
-      <div class="villa-shadow"></div>
+      <!-- the plot is BUILT into a villa on load: five real build stages, crossfaded -->
+      <div class="stage-stack" aria-hidden="true">
+        <div class="hstage" style="--d:.2s"><!--STAGE_PLOT--></div>
+        <div class="hstage" style="--d:.9s"><!--STAGE_GRADING--></div>
+        <div class="hstage" style="--d:1.55s"><!--STAGE_FOUNDATION--></div>
+        <div class="hstage" style="--d:2.2s"><!--STAGE_STEEL--></div>
+        <div class="hstage final" style="--d:2.9s"><!--STAGE_VILLA--></div>
+      </div>
+      <!-- the coin lands once the villa is finished; drawn in the villa's own
+           coordinate space so it always sits over the roof at any screen size -->
+      <div class="hstage coin-layer" aria-hidden="true">
+        <svg viewBox="0 -60 820 700">
+          <g class="hero-coin" transform="translate(415,-14)">
+            <g class="coin-drop">
+              <ellipse class="cf-shadow" cx="0" cy="52" rx="40" ry="12"/>
+              <g transform="scale(3.1)"><g class="coin-float"><circle class="cf-face" r="15"/><circle class="cf-ring" r="10"/><circle class="cf-shine" cx="-3.8" cy="-4.5" r="3"/><text class="cf-glyph" x="0" y="5.5" text-anchor="middle">₹</text></g></g>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <!-- the two things a property does, as chips -->
+      <div class="hero-tag left" aria-hidden="true">
+        <span class="coin-sm">₹</span>
+        <div><small>Monthly payout*</small><b>₹30,000 / mo</b></div>
+      </div>
+      <div class="hero-tag right" aria-hidden="true">
+        <svg class="spark" viewBox="0 0 64 32"><path d="M2 28 C14 26, 22 20, 30 17 S48 9, 62 3" fill="none" stroke="#8fd65a" stroke-width="2.5" stroke-linecap="round"/><circle class="spark-dot" cx="62" cy="3" r="3" fill="#8fd65a"/></svg>
+        <div><small>Growth potential</small><b>Equity &amp; gold</b></div>
+      </div>
     </div>
   </div>
   <span class="hero-spacer" aria-hidden="true"></span>
