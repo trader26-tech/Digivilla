@@ -188,6 +188,25 @@
     hero.addEventListener('mouseleave', () => { mouseX = 0; mouseY = 0; });
   }
 
+  /* ---------- nav: burger sheet + active section ---------- */
+  const burger = $('#navBurger'), sheet = $('#navSheet');
+  function setMenu(openIt) {
+    burger.setAttribute('aria-expanded', String(openIt));
+    sheet.hidden = !openIt;
+    document.body.style.overflow = openIt ? 'hidden' : '';
+  }
+  burger.addEventListener('click', () => setMenu(sheet.hidden));
+  $$('a', sheet).forEach((a) => a.addEventListener('click', () => setMenu(false)));
+  window.addEventListener('resize', () => { if (window.innerWidth > 900 && !sheet.hidden) setMenu(false); });
+  const navLinks = $$('#navLinks a');
+  const secIds = navLinks.map((a) => a.dataset.sec);
+  function activeSection() {
+    const mid = y + window.innerHeight * 0.45;
+    let cur = null;
+    secIds.forEach((id) => { const el = $('#' + id); if (el && el.offsetTop <= mid) cur = id; });
+    navLinks.forEach((a) => a.classList.toggle('active', a.dataset.sec === cur));
+  }
+
   /* ---------- the loop: lerped scroll → chapters ---------- */
   const nav = $('#nav');
   let targetY = window.scrollY, y = targetY, running = false;
@@ -199,6 +218,7 @@
     y = Math.abs(targetY - y) < 0.3 ? targetY : lerp(y, targetY, k);
     if (fine && !reduce) { tiltX = lerp(tiltX, mouseX, 0.06); tiltY = lerp(tiltY, mouseY, 0.06); }
     nav.classList.toggle('scrolled', y > 8);
+    activeSection();
     heroScrub(y);
     const vh = window.innerHeight;
     chapters.forEach((c) => {
@@ -244,11 +264,6 @@
   }
   if (rate) { illustrate(false); rate.addEventListener('input', () => illustrate(true)); }
 
-  /* ---------- risk bar ---------- */
-  const riskBar = $('#riskBar');
-  try { if (localStorage.getItem('dv-risk-ack') === '1') riskBar.classList.add('hide'); } catch (e) {}
-  $('#riskClose').addEventListener('click', () => { riskBar.classList.add('hide'); try { localStorage.setItem('dv-risk-ack', '1'); } catch (e) {} });
-
   /* ---------- calculator ---------- */
   const parseNum = (s) => parseFloat(String(s).replace(/[^\d.]/g, '')) || 0;
   ['#price', '#rent', '#loan'].forEach((id) => { const i = $(id); i.addEventListener('blur', () => { const v = parseNum(i.value); i.value = v ? fmtINR(v) : ''; }); });
@@ -267,6 +282,6 @@
   /* ---------- anchors ---------- */
   $$('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
     const id = a.getAttribute('href'); const t = id.length > 1 && $(id); if (!t) return;
-    e.preventDefault(); window.scrollTo({ top: t.offsetTop - (t.classList.contains('chapter') ? 0 : 48), behavior: reduce ? 'auto' : 'smooth' });
+    e.preventDefault(); window.scrollTo({ top: t.offsetTop - (t.classList.contains('chapter') ? 0 : 56), behavior: reduce ? 'auto' : 'smooth' });
   }));
 })();

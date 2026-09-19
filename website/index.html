@@ -17,16 +17,29 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a class="brand" href="#top" aria-label="Digivilla">
+    <a class="brand" href="#top" aria-label="Digivilla home">
       <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,3 29,11 16,19 3,11" fill="#8B7BF0"/><polygon points="16,19 29,11 29,15 16,23" fill="#6f5ce6"/><polygon points="16,19 3,11 3,15 16,23" fill="#5d5294"/><polygon points="16,9 23,13 16,17 9,13" fill="#E9C15C"/></svg>
-      Digivilla
+      <span>Digivilla</span>
     </a>
-    <nav class="nav-links" aria-label="Sections">
-      <a href="#flat">The flat</a><a href="#build">The build</a><a href="#stages">Stages</a><a href="#estate">Estate</a><a href="#disclosures">Disclosures</a>
+    <nav class="nav-links" id="navLinks" aria-label="Sections">
+      <a href="#flat" data-sec="flat">The flat</a>
+      <a href="#build" data-sec="build">The build</a>
+      <a href="#stages" data-sec="stages">Stages</a>
+      <a href="#estate" data-sec="estate">Estate</a>
+      <a href="#after" data-sec="after">Illustration</a>
+      <a href="#disclosures" data-sec="disclosures">Disclosures</a>
     </nav>
-    <a class="pill-cta" href="#compare">Compare</a>
+    <div class="nav-right">
+      <a class="nav-cta" href="#compare">Compare your flat</a>
+      <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false" aria-controls="navSheet"><i></i><i></i></button>
+    </div>
   </div>
 </header>
+<div class="nav-sheet" id="navSheet" hidden>
+  <a href="#flat">The flat</a><a href="#build">The build</a><a href="#stages">Stages</a><a href="#estate">Estate</a><a href="#after">Illustration</a><a href="#disclosures">Disclosures</a>
+  <a class="nav-sheet-cta" href="#compare">Compare your flat</a>
+  <p>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</p>
+</div>
 
 <main id="top">
 
@@ -40,7 +53,7 @@
   </div>
   <div class="hero-copy" id="heroCopy">
     <h1><span class="w">Own property.</span><span class="w em">Without the property.</span></h1>
-    <p class="hero-sub"><span class="w">A villa-shaped mutual fund portfolio.</span></p>
+    <p class="hero-sub"><span class="w">A villa-shaped mutual fund portfolio. Not real estate.</span></p>
     <div class="hero-cta"><a class="link-cta" href="#compare">Compare your flat <span>›</span></a></div>
   </div>
   <div class="hero-art" id="heroArt">
@@ -55,7 +68,7 @@
       <div class="villa-shadow"></div>
     </div>
   </div>
-  <p class="hero-fine">Not real estate. Mutual Fund investments are subject to market risks.</p>
+  <span class="hero-spacer" aria-hidden="true"></span>
 </section>
 
 <!-- ============================================================ CHAPTER · THE FLAT -->
@@ -469,18 +482,18 @@
     <div class="point"><span class="k">Value can fall</span><p>No return, payout or growth rate is assured.</p></div>
     <div class="point"><span class="k">No possession</span><p>You cannot live in it, let it or transfer it as property.</p></div>
   </div>
-  <p class="fine reveal"><b>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</b> Past performance may or may not be sustained in future. Illustrations use assumed rates and are not forecasts.</p>
+  <p class="fine reveal"><b>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</b> Past performance may or may not be sustained in future and is not a guarantee of future returns. Illustrations on this page use assumed rates and are not forecasts; no return, payout or growth rate is assured. Scheme names, scheme information documents, factsheets and risk-o-meters are shown at the point of investment. Digivilla is a Mutual Fund Distributor and does not provide investment advice.</p>
 </section>
 
 </main>
 
 <footer class="footer">
-  <p><b>Distributed by Your Entity Pvt. Ltd. · AMFI Registration No. ARN-XXXXXX · Mutual Fund Distributor.</b> Execution-only; no investment advice. We receive commission / trail from AMCs. Scheme names, factsheets and risk-o-meters are shown at the point of investment.</p>
+  <p><b>Distributed by Your Entity Pvt. Ltd. · AMFI Registration No. ARN-XXXXXX · EUIN: EXXXXXX · Mutual Fund Distributor.</b> Execution-only; no investment advice or recommendation for your profile. We receive commission / trail from Asset Management Companies; this does not add to your cost. Investor grievances: grievance@digivilla.in. For scheme-level information see each AMC’s SID/KIM; risk-o-meters are shown at the point of investment.</p>
   <p>Assets shown are visualisations of mutual fund units held in your name at NAV, not real property. Any monthly "payout" is a Systematic Withdrawal Plan — a redemption of your own units that can deplete capital. No returns are assured.</p>
   <p><b>Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</b> © 2026 Digivilla.</p>
 </footer>
 
-<div class="risk-bar" id="riskBar" role="note">Mutual Fund investments are subject to market risks, read all scheme related documents carefully. <button type="button" id="riskClose" aria-label="Dismiss">×</button></div>
+<div class="risk-bar" role="note">Mutual Fund investments are subject to market risks, read all scheme related documents carefully.</div>
 
 <script src="main.js"></script>
 </body>
