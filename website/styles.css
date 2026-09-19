@@ -87,26 +87,17 @@ button, input { font: inherit; color: inherit; }
   position: relative; height: 100svh; min-height: 640px;
   display: grid; grid-template-rows: auto minmax(0, 1fr) 34px; justify-items: center;
   overflow: hidden; padding-top: calc(56px + 6vh);
-  background: radial-gradient(120% 70% at 50% 100%, #4a3d18 0%, #2a281a 28%, #141513 56%, #000 100%);
+  background: #000;
 }
 .hero-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .hero-scene .layer { position: absolute; will-change: transform; }
-.sun-wrap { left: 50%; bottom: 18%; width: min(60vw, 52vh, 560px); aspect-ratio: 1; }
-.glow-wrap { left: 50%; bottom: 18%; width: 150vw; aspect-ratio: 1; }
-.sun { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F6DE97 0%, #E9C15C 55%, #C79A34 100%); transform: translate(-50%, 75%) scale(0.6); opacity: 0; animation: sunRise 2.6s var(--ease-out) 0.2s forwards; box-shadow: 0 0 140px rgba(233, 193, 92, 0.35); }
-@keyframes sunRise { 0% { transform: translate(-50%, 75%) scale(0.6); opacity: 0; } 40% { opacity: 1; } 100% { transform: translate(-50%, 34%) scale(1); opacity: 1; } }
-.glow { position: absolute; inset: 0; transform: translate(-50%, 50%); background: radial-gradient(circle, rgba(233, 193, 92, 0.16) 0%, rgba(233, 193, 92, 0) 46%); opacity: 0; animation: fadeIn 2s ease 0.4s forwards; }
-.hills { inset: auto 0 0 0; height: 34%; }
-.hill { position: absolute; bottom: 0; left: -10%; right: -10%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; transform: translateY(100%); animation: hillUp 1.4s var(--ease-out) forwards; }
-.h1 { height: 70%; background: linear-gradient(#2f5f1e, #16360f); animation-delay: 0.7s; }
-.h2 { height: 52%; left: -20%; right: 30%; background: linear-gradient(#3f7a20, #244d13); animation-delay: 0.9s; }
-.h3 { height: 44%; left: 35%; right: -20%; background: linear-gradient(#59a52e, #3a7a1e); animation-delay: 1.05s; }
-@keyframes hillUp { to { transform: translateY(30%); } }
+.hero-halo { left: 50%; bottom: 4%; width: min(120vw, 1100px); aspect-ratio: 1.6; transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(139, 123, 240, 0.16), rgba(139, 123, 240, 0.05) 45%, transparent 72%);
+  opacity: 0; animation: fadeIn 2.2s ease 0.8s forwards; }
 .grain { inset: 0; opacity: 0.045; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
 @keyframes fadeIn { to { opacity: 1; } }
 
 .hero-copy { position: relative; z-index: 2; text-align: center; padding-inline: 22px; will-change: transform, opacity; }
-.hero-copy::before { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 140%; height: 190%; z-index: -1; pointer-events: none; background: radial-gradient(60% 55% at 50% 50%, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.42) 45%, transparent 72%); }
 .hero h1 { margin: 0; font-weight: 700; letter-spacing: -0.045em; line-height: 1.04; font-size: clamp(2.6rem, 7vw, 5.6rem); }
 .hero h1 .w, .hero-sub .w { display: block; opacity: 0; transform: translateY(0.4em); filter: blur(8px); animation: wordIn 1s var(--ease-out) forwards; }
 .hero h1 .w:nth-child(1) { animation-delay: 0.5s; }
@@ -114,10 +105,6 @@ button, input { font: inherit; color: inherit; }
 .hero-sub { margin: 1rem 0 0; font-size: clamp(1.05rem, 1.8vw, 1.5rem); color: var(--ink-2); font-weight: 500; }
 .hero-sub .w { animation-delay: 1.05s; }
 @keyframes wordIn { to { opacity: 1; transform: none; filter: blur(0); } }
-.hero-cta { margin-top: 1.1rem; opacity: 0; animation: fadeIn 0.8s ease 1.4s forwards; }
-.link-cta { color: #9d8ff5; font-size: 1.05rem; font-weight: 500; }
-.link-cta span { display: inline-block; transition: transform 0.3s var(--ease-out); }
-.link-cta:hover span { transform: translateX(3px); }
 .hero-art {
   position: relative; z-index: 1; width: min(92vw, 780px); height: 100%; min-height: 0;
   margin-top: 1vh; perspective: 1400px;
@@ -128,7 +115,7 @@ button, input { font: inherit; color: inherit; }
 .villa-stage { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-end; transform-style: preserve-3d; will-change: transform; }
 .villa-art { width: auto; height: 100%; max-width: 100%; filter: drop-shadow(0 50px 50px rgba(0, 0, 0, 0.6)); animation: villaFloat 6s ease-in-out infinite; }
 @keyframes villaFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-.villa-shadow { position: absolute; left: 50%; bottom: 0; width: 60%; height: 10%; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), transparent 70%); }
+.villa-shadow { position: absolute; left: 50%; bottom: -1%; width: 70%; height: 9%; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(0, 0, 0, 0.7), transparent 70%); }
 .coin-float { animation: coinBob 2.4s ease-in-out infinite; }
 @keyframes coinBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .cf-shadow { fill: #16302B; opacity: 0.22; } .cf-face { fill: #E9C15C; stroke: #B8902F; stroke-width: 2; } .cf-ring { fill: none; stroke: #B8902F; stroke-width: 1.2; } .cf-shine { fill: #fff3c4; opacity: 0.85; } .cf-glyph { fill: #6B5111; font-size: 15px; font-weight: 700; font-family: var(--font); }
@@ -315,7 +302,6 @@ button, input { font: inherit; color: inherit; }
 /* reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01s !important; animation-delay: 0s !important; transition-duration: 0.01s !important; }
-  .sun { transform: translate(-50%, 34%) !important; opacity: 1 !important; } .hill { transform: translateY(30%) !important; }
-  .hero h1 .w, .hero-sub .w, .hero-cta, .hero-art, .hero-fine, .glow { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .hero h1 .w, .hero-sub .w, .hero-art, .hero-halo { opacity: 1 !important; transform: none !important; filter: none !important; }
   .reveal, .reveal-scale { opacity: 1 !important; transform: none !important; }
 }
