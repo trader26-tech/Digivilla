@@ -97,7 +97,19 @@
 .vr-note-h { font-size: 12.5px; line-height: 1.4; color: var(--color-neutral-300); }
 .vr-note.up .vr-note-h { color: #86c98a; } .vr-note.dn .vr-note-h { color: #d99a9a; }
 /* three facts, each a number with one plain line under it */
-.vr-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.vr-facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+/* the note's placeholder: same footprint, quiet shimmer */
+/* the placeholder reuses the note's own blocks, so its height matches the real
+   note to the pixel and nothing below it moves when the facts land */
+.vr-note-sk i { display: block; border-radius: 6px; background: linear-gradient(100deg, var(--color-neutral-900) 30%, var(--color-neutral-800) 50%, var(--color-neutral-900) 70%); background-size: 200% 100%; animation: vrShimmer 1.4s linear infinite; }
+.vr-note-sk .vr-note-h i.l { height: 12px; width: 78%; margin: 3px 0; }         /* one 17.5px heading line */
+.vr-note-sk .vr-fact i.b { height: 16px; width: 46%; margin: 2px 0 5px; }         /* the 20px number */
+.vr-note-sk .vr-fact i.s { height: 10px; width: 92%; margin: 2px 0; }             /* two 14px caption lines */
+.vr-note-sk .vr-fact i.s + i.s { width: 64%; }
+.vr-note-sk small { display: block; line-height: 14.7px; }
+.vr-note-sk small i.l { height: 10px; width: 88%; margin: 2.3px 0; }               /* two 14.7px fine-print lines */
+.vr-note-sk small i.l + i.l { width: 22%; }
+.vr-skt { display: inline-block; width: 42px; height: 12px; border-radius: 6px; vertical-align: middle; background: linear-gradient(100deg, var(--color-neutral-800) 30%, var(--color-neutral-700) 50%, var(--color-neutral-800) 70%); background-size: 200% 100%; animation: vrShimmer 1.4s linear infinite; }
 .vr-fact { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 9px 10px; border-radius: 12px; background: rgba(255,255,255,.03); }
 .vr-fact b { font-family: var(--font-heading); font-size: 17px; font-weight: 500; letter-spacing: -.02em; color: var(--color-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vr-fact span { font-size: 10.5px; line-height: 1.35; color: var(--color-neutral-400); }

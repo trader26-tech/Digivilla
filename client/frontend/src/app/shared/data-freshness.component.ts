@@ -303,6 +303,10 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
     // populated the moment it opens — the network fetch below only refreshes it.
     const cached = this.est.housesCache();
     if (cached) this.houses.set(cached);
+    // The cache is refreshed with every portfolio reload (open, foreground,
+    // Refresh now). Showing it and then quietly swapping in a re-fetch could
+    // change a number under the user's eyes — so a warm cache is final here.
+    if (cached && cached.length && !this.force) { this.loading.set(false); return; }
     // Only show the skeleton when we have genuinely nothing to show yet.
     this.loading.set(!cached || cached.length === 0);
     this.est.liveHouses().subscribe({
@@ -323,10 +327,13 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** True only for an explicit Refresh — the one time a re-fetch is wanted. */
+  private force = false;
   refresh(): void {
     if (navigator.vibrate) navigator.vibrate(4);
     this.est.refreshNow();
-    this.load();
+    this.force = true;
+    try { this.load(); } finally { this.force = false; }
   }
 
   /** Board fill order — the same one estate-home paints: centre, then outward. */

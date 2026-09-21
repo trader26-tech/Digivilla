@@ -296,13 +296,12 @@
 
 /* quiet, centred cue that the parcels open a report on tap */
 .board-hint {
-  margin: 0.1rem 0 0.7rem;
-  display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--muted) 82%, transparent);
-  animation: boardHintIn 0.5s ease both;
+  margin: -0.1rem 0 0.6rem; text-align: center;
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0.04em;
+  color: var(--color-neutral-600);
+  animation: boardHintIn 0.5s ease 0.9s both;
 }
-.board-hint svg { color: var(--color-accent, #9184d9); opacity: 0.85; animation: boardHintTap 3.4s ease-in-out 1.2s 2; }
+.no-enter .board-hint { animation: none; }
 @keyframes boardHintIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @keyframes boardHintTap {
   0%, 100% { transform: translateY(0); }

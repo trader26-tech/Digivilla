@@ -311,6 +311,16 @@
 
       <!-- the confidence note: three short facts from real prices, one line each ──
            so it scans in a glance instead of reading like a paragraph -->
+      <!-- while the price history is still loading, hold the note's space so
+           nothing below it jumps when it lands -->
+      <div class="vr-note vr-note-sk vr-in" style="--i:2" *ngIf="!evidence() && chartLoading()" aria-hidden="true">
+        <div class="vr-note-h"><i class="l"></i></div>
+        <div class="vr-facts">
+          <div class="vr-fact"><i class="b"></i><i class="s"></i><i class="s"></i></div>
+          <div class="vr-fact"><i class="b"></i><i class="s"></i><i class="s"></i></div>
+        </div>
+        <small><i class="l"></i><i class="l"></i></small>
+      </div>
       <div class="vr-note vr-in" style="--i:2" [class.up]="noteTone() === 'up'" [class.dn]="noteTone() === 'down'" *ngIf="evidence() as e">
         <div class="vr-note-h">
           <span *ngIf="noteTone() === 'down'">Down {{ signedPct(-d.gain_pct, 1) }}% after {{ heldFor(d.since) }} — here is what this mix has done before</span>
@@ -321,10 +331,6 @@
           <div class="vr-fact">
             <b>{{ compact(e.total) }}</b>
             <span>what {{ compact(d.invested) }} became over {{ e.years }} years<ng-container *ngIf="e.paid > 0">, incl. {{ compact(e.paid) }} paid out</ng-container></span>
-          </div>
-          <div class="vr-fact">
-            <b>{{ e.abovePct }}%</b>
-            <span>of months the value stayed above what went in</span>
           </div>
           <div class="vr-fact">
             <b>−{{ e.worstPct }}%</b>
@@ -405,9 +411,9 @@
             <b [ngClass]="dir(f.gain)">{{ signedInr(f.gain) }}</b>
           </div>
           <div class="rets">
-            <div><span>1Y return</span><b>{{ ret(f.ret_1y) }}</b></div>
-            <div><span>3Y p.a.</span><b>{{ ret(f.ret_3y) }}</b></div>
-            <div><span>5Y p.a.</span><b>{{ ret(f.ret_5y) }}</b></div>
+            <div><span>1Y return</span><b><i class="vr-skt" *ngIf="chartLoading() && f.ret_1y == null; else r1"></i><ng-template #r1>{{ ret(f.ret_1y) }}</ng-template></b></div>
+            <div><span>3Y p.a.</span><b><i class="vr-skt" *ngIf="chartLoading() && f.ret_3y == null; else r3"></i><ng-template #r3>{{ ret(f.ret_3y) }}</ng-template></b></div>
+            <div><span>5Y p.a.</span><b><i class="vr-skt" *ngIf="chartLoading() && f.ret_5y == null; else r5"></i><ng-template #r5>{{ ret(f.ret_5y) }}</ng-template></b></div>
           </div>
         </div></div>
       </button>
