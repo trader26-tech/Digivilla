@@ -11,6 +11,7 @@ import { ConstructionDetailComponent } from './construction/construction-detail.
 import { EstateDetailComponent } from './estate-detail.component';
 import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
+import { NextVillaComponent } from './build/next-villa.component';
 import { CallsComponent } from './calls.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
@@ -46,6 +47,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     ConstructionDetailComponent,
     BuildPickerComponent,
     VillaBuyComponent,
+    NextVillaComponent,
     LandBuyComponent,
     AccountComponent,
     EstateLevelsComponent,
@@ -191,7 +193,7 @@ export class AppComponent {
   building: Tile | null = null;
 
   /** Build flow: 'pick' shows the chooser, 'villa'/'land' the buy pages. */
-  buildFlow: 'pick' | 'villa' | 'land' | null = null;
+  buildFlow: 'pick' | 'villa' | 'land' | 'next' | null = null;
 
   /** The account page is open. */
   accountOpen = false;
@@ -229,6 +231,11 @@ export class AppComponent {
     this.view = 'explore';
     window.scrollTo({ top: 0 });
   }
+  /** The "+" on the home board -> the what-if page for the client's own estate. */
+  openNext(): void {
+    this.buildFlow = 'next';
+    window.scrollTo({ top: 0 });
+  }
   /** Ticket size chosen on the Explore villa feed. */
   buildAmount = 25_00_000;
   /** A villa tier tapped on the Explore feed -> the villa buy/SIP page,
@@ -252,6 +259,17 @@ export class AppComponent {
     }
     // villa OR building → the returns detail page (fed by /me/building/{id})
     this.building = t;
+    window.scrollTo({ top: 0 });
+  }
+
+  /** "View full details" from the Progress ladder → open the same villa report
+   *  page the home board parcels open (fed by GET /me/building/villa_<idx>). */
+  viewVilla(e: { idx: number; label: string }): void {
+    this.building = {
+      id: `villa_${e.idx}`, type: 'villa', variant: 'balanced',
+      cost: 0, sipMonthly: 0, sipAccrued: 0, rentMonthly: 0,
+      boughtAt: Date.now(), label: e.label,
+    };
     window.scrollTo({ top: 0 });
   }
 

@@ -329,23 +329,14 @@
              [class.building]="c.st === 'build'"
              [class.ground]="c.href === '#tGround'"
              [class.open]="c.st === 'locked'"
-             [class.next]="c.next"
              [style.--i]="i"
              (click)="tapBoardCell(c)"
-             [attr.role]="c.st !== 'locked' || c.next ? 'button' : null"
-             [attr.tabindex]="c.st !== 'locked' || c.next ? 0 : null"
-             [attr.aria-label]="c.next ? 'Next plot — start building' : c.name">
+             (keydown.enter)="tapBoardCell(c)"
+             role="button" tabindex="0"
+             [attr.aria-label]="c.st === 'locked' ? c.name + ' — locked, see when it unlocks' : c.name">
             <!-- each parcel rises into place, back-to-front, when the home lands -->
             <g class="cell-in">
               <use [attr.href]="c.href" [attr.x]="c.x" [attr.y]="c.y"></use>
-              <!-- the NEXT plot carries a soft brass "+" pin: tap to start building -->
-              <g *ngIf="c.next" class="next-pin" [attr.transform]="'translate(' + (c.x + 120) + ',' + (c.y + 62) + ')'" aria-hidden="true">
-                <ellipse class="np-shadow" cx="0" cy="22" rx="10" ry="3.5"></ellipse>
-                <g class="np-bob">
-                  <circle class="np-ring" r="11"></circle>
-                  <path class="np-plus" d="M-4.5 0h9M0 -4.5v9"></path>
-                </g>
-              </g>
             </g>
           </g>
         </ng-container>
@@ -364,6 +355,12 @@
         </g>
       </svg>
     </div>
+
+    <!-- quiet cue that the parcels are tappable → each opens its villa report -->
+    <p class="board-hint" *ngIf="dataReady && !isEmptyEstate" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M9 11V6.5a1.6 1.6 0 0 1 3.2 0V11m0-1.2a1.4 1.4 0 0 1 2.8 0V12m0-1a1.4 1.4 0 0 1 2.8 0v3.8a4.4 4.4 0 0 1-4.4 4.4h-2a4 4 0 0 1-3-1.4l-2.7-3.1a1.5 1.5 0 0 1 2.2-2l1.3 1.4V8.2a1.4 1.4 0 0 1 2.8 0V11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Tap a villa to see its details
+    </p>
 
     <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
     <ng-container *ngIf="isEmptyEstate">
@@ -547,6 +544,16 @@
       <button class="pop-cta build" *ngIf="!c.tile" (click)="startBuild(c)">Build here</button>
     </div>
   </div>
+
+  <!-- ============ EMPTY PLOT → at which level it unlocks ============ -->
+  <app-plot-unlock
+    *ngIf="unlockCell() as u"
+    [house]="u.idx + 1"
+    [worth]="boardWorth"
+    (close)="unlockCell.set(null)"
+    (grow)="unlockCell.set(null); build.emit()"
+    (levels)="unlockCell.set(null); progress.emit()"
+  ></app-plot-unlock>
 
   <!-- ============ GENERATED-PARCEL DETAIL ============
        A tapped villa/build parcel with no real backing tile opens this

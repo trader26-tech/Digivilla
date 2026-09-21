@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 
 import { EstateService, LiveHouse } from '../estate.service';
+import { loadTileSprite } from './tile-sprite';
 
 /**
  * LIVE VALUES SHEET — opened by tapping the portfolio value.
@@ -238,23 +239,9 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.timer = setInterval(() => this.now.set(Date.now()), 30000);
-    DataFreshnessComponent.loadTiles();
+    loadTileSprite();
   }
 
-  /** The board tile symbols live in a static sprite; inject it once per page so
-   *  every <use href="#lvVilla"> in this (body-hosted) sheet resolves. */
-  private static tilesLoaded = false;
-  private static loadTiles(): void {
-    if (DataFreshnessComponent.tilesLoaded || typeof document === 'undefined') return;
-    DataFreshnessComponent.tilesLoaded = true;
-    fetch('assets/house-tiles.svg').then((r) => r.text()).then((svg) => {
-      const host = document.createElement('div');
-      host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
-      host.setAttribute('aria-hidden', 'true');
-      host.innerHTML = svg;
-      document.body.appendChild(host);
-    }).catch(() => {});
-  }
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
     document.body.classList.remove('lv-sheet-open');

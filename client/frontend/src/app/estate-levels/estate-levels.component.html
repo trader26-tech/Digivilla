@@ -212,6 +212,13 @@
             </span>
             <span class="el-credit-right">{{ lv.payRight }}</span>
           </div>
+          <!-- straight to this villa's full report page -->
+          <button *ngIf="lv.canViewReport" type="button" class="el-view-details"
+                  (click)="openVillaReport(lv)"
+                  [attr.aria-label]="'View full details of ' + lv.villaLabel">
+            <span>View full details</span>
+            <svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 2.5 7 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
         </div>
 
         <!-- fund unlocks -->

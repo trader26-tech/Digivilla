@@ -18,6 +18,7 @@ import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { DataFreshnessComponent } from './shared/data-freshness.component';
 import { CountUpDirective } from './shared/count-up.directive';
+import { PlotUnlockComponent } from './build/plot-unlock.component';
 import { CallsService } from './shared/calls.service';
 import { AllocRow, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
@@ -93,7 +94,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, CountUpDirective],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, CountUpDirective, PlotUnlockComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -350,11 +351,9 @@ export class EstateHomeComponent implements OnInit {
    *  self-contained detail popup (which needs no server tile). Locked parcels
    *  are inert, as before. */
   tapBoardCell(c: BoardCell): void {
-    if (c.st === 'locked') {
-      if (c.next) { if (navigator.vibrate) navigator.vibrate(4); this.build.emit(); }
-      return;
-    }
     if (navigator.vibrate) navigator.vibrate(4);
+    // an EMPTY parcel → the sheet that says at which level it unlocks
+    if (c.st === 'locked') { this.unlockCell.set(c); return; }
     // EVERY parcel — finished villa or any build stage — opens the real report for
     // ITS ₹5L pillar (villa_<idx>): the same invested-driven slice the board was
     // generated from, so the page's numbers match what the board shows.
@@ -370,6 +369,9 @@ export class EstateHomeComponent implements OnInit {
       label: c.name,
     });
   }
+
+  /** The empty parcel whose "unlocks at level N" sheet is open. */
+  unlockCell = signal<BoardCell | null>(null);
 
   /** The generated parcel whose local detail popup is open (no real tile). */
   selectedBoard = signal<BoardCell | null>(null);

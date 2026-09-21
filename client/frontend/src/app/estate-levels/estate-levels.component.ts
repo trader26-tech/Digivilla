@@ -129,6 +129,10 @@ interface LevelVM {
   hasAbove: boolean;
   above: number;
   aboveName: string;
+  // "View full details" → the villa report (only for a completed villa)
+  villaIdx: number;
+  villaLabel: string;
+  canViewReport: boolean;
 }
 
 /** One marker on the vertical rail (villa-completion checkpoint, per-level tick, or ₹0 base). */
@@ -186,6 +190,9 @@ interface StartFundVM {
 })
 export class EstateLevelsComponent implements AfterViewInit {
   @Output() back = new EventEmitter<void>();
+  /** "View full details" on a completed villa → open its report page.
+   *  Emits { idx, label } matching the home board's `villa_<idx>` tile. */
+  @Output() viewVilla = new EventEmitter<{ idx: number; label: string }>();
   /** True when shown as the bottom-nav "Progress" TAB — hides the back button
    *  and leaves room for the floating nav pill (vs the full-screen overlay). */
   @Input() tab = false;
@@ -391,6 +398,10 @@ export class EstateLevelsComponent implements AfterViewInit {
         tileFilter: isLocked ? 'grayscale(1) brightness(.7)' : 'none', tileOpacity: isLocked ? 0.75 : 1,
         isTop: k === TOTAL, hasAbove: k < TOTAL,
         above: k + 1, aboveName: k < TOTAL ? this.STAGES[k % 5].name : '',
+        // house h maps to the home board's villa_<idx> (idx = h-1); the report
+        // is offered only for a fully-built villa the user actually owns.
+        villaIdx: h - 1, villaLabel: 'Villa ' + ('0' + h).slice(-2),
+        canViewReport: isVilla && houseDone,
       });
     }
     levels.reverse();
@@ -611,25 +622,19 @@ export class EstateLevelsComponent implements AfterViewInit {
     el.scrollTo({ top: this.sectionTop(sec, el), behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  /** Target scrollTop that puts the live "you are here" dot (`.el-rail-dot`, the
-   *  white circle carrying the worth pill) at the VERTICAL CENTRE of the viewport.
-   *  Measured off the rendered rect so the `.el-inner` zoom is already baked in.
-   *  Falls back to centring the current-level section, then to the ladder bottom. */
+  /** Target scrollTop that puts the live "you are here" dot (the white progress
+   *  circle carrying the ₹ worth pill — the point BETWEEN the level just achieved
+   *  and the next one) at the VERTICAL CENTRE of the viewport.
+   *
+   *  Computed from the model (`yFor(worth)` in authored rail px × the `.el-inner`
+   *  zoom), NOT from the rendered dot — the dot has a `top .5s` CSS transition, so
+   *  its measured rect lags the data as worth loads and would give a wrong target. */
   private currentTop(el: HTMLElement): number {
     const clamp = (t: number) => Math.max(0, Math.min(t, el.scrollHeight - el.clientHeight));
-    const dot = el.querySelector<HTMLElement>('.el-rail-dot');
-    if (dot) {
-      const r = dot.getBoundingClientRect(), er = el.getBoundingClientRect();
-      const dotCentre = r.top + r.height / 2 - er.top + el.scrollTop;
-      return clamp(dotCentre - el.clientHeight / 2);
-    }
-    const sec = el.querySelector<HTMLElement>('section[data-current="true"]');
-    if (sec) {
-      const r = sec.getBoundingClientRect(), er = el.getBoundingClientRect();
-      const secCentre = r.top + r.height / 2 - er.top + el.scrollTop;
-      return clamp(secCentre - el.clientHeight / 2);
-    }
-    return el.scrollHeight;
+    // yFor() is in the 402px authored space; scrollTop lives in the zoom-scaled
+    // space, so scale it by the same frameScale the `.el-inner` `zoom` applies.
+    const dotY = this.yFor(this.worth()) * this.frameScale();
+    return clamp(dotY - el.clientHeight / 2);
   }
 
   private revealRaf = 0;
@@ -715,6 +720,12 @@ export class EstateLevelsComponent implements AfterViewInit {
   }
 
   onBack(): void { this.back.emit(); }
+
+  /** Open the villa's full report (same page the home board parcels open). */
+  openVillaReport(lv: LevelVM): void {
+    if (!lv.canViewReport) return;
+    this.viewVilla.emit({ idx: lv.villaIdx, label: lv.villaLabel });
+  }
 
   trackLevel(_i: number, lv: LevelVM): number { return lv.level; }
   trackMark(i: number, _m: RailMark): number { return i; }

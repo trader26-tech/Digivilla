@@ -7,8 +7,8 @@ import { CountUpDirective } from '../shared/count-up.directive';
 import { compact, inr } from '../shared/format.util';
 
 /** The three drained-value windows the backend can return, in tab order. */
-type RangeKey = '1y' | '3y' | '5y' | '10y' | '15y';
-const RANGE_ORDER: RangeKey[] = ['1y', '3y', '5y', '10y', '15y'];
+type RangeKey = '1y' | '3y' | '5y' | 'max';
+const RANGE_ORDER: RangeKey[] = ['1y', '3y', '5y', 'max'];
 
 /** Sleeve tag → colour + label. Same colours as the Home allocation bar
  *  (estate-home SLEEVE_STYLE), so a sleeve looks the same on every screen. */
@@ -220,7 +220,7 @@ export class ConstructionDetailComponent implements OnInit {
     if (why) { this.rangeNote.set(why); return; }
     this.rangeNote.set(null); this.chosenRange.set(k); this.scrubIdx.set(null);
   }
-  rangeLabel(k: RangeKey): string { return k.toUpperCase(); }
+  rangeLabel(k: RangeKey): string { return k === 'max' ? 'Max' : k.toUpperCase(); }
 
   /** The points behind the selected range. */
   private pts = computed<DrainPt[]>(() => {
@@ -301,11 +301,11 @@ export class ConstructionDetailComponent implements OnInit {
   evidence = computed(() => {
     const d = this.detail(); if (!d) return null;
     const ranges = d.withdraw?.ranges ?? {};
-    const key = (['15y', '10y', '5y', '3y', '1y'] as RangeKey[]).find(k => (ranges[k]?.length ?? 0) > 12);
+    const key = (['max', '5y', '3y', '1y'] as RangeKey[]).find(k => (ranges[k]?.length ?? 0) > 12);
     if (!key) return null;
     const pts = ranges[key] as DrainPt[];
     const inv = d.invested; if (!(inv > 0)) return null;
-    const years = { '1y': 1, '3y': 3, '5y': 5, '10y': 10, '15y': 15 }[key];
+    const years = key === 'max' ? Math.max(1, Math.round((pts.length - 1) / 12)) : ({ '1y': 1, '3y': 3, '5y': 5 } as Record<string, number>)[key];
     const last = pts[pts.length - 1];
     // months the value ITSELF (ignoring what was already paid out) stood above what went in
     let above = 0;
@@ -345,7 +345,12 @@ export class ConstructionDetailComponent implements OnInit {
   drawKeys = computed<string[]>(() => { const r = this.range(); return r ? [r] : []; });
 
   /** "a year ago" / "3 years ago" — the selected window in words. */
-  rangeWords = computed(() => ({ '1y': 'a year ago', '3y': '3 years ago', '5y': '5 years ago', '10y': '10 years ago', '15y': '15 years ago' }[this.range() ?? '1y']));
+  rangeWords = computed(() => {
+    const r = this.range() ?? '1y';
+    if (r !== 'max') return ({ '1y': 'a year ago', '3y': '3 years ago', '5y': '5 years ago' } as Record<string, string>)[r];
+    const n = this.pts().length - 1; const y = Math.round(n / 12);
+    return y >= 2 ? `${y} years ago` : `${n} months ago`;
+  });
 
   private yearOf(ym: string): number { return Number((ym || '').slice(0, 4)) || 0; }
   private monthIdx(ym: string): number { const m = Number((ym || '').slice(5, 7)); return m >= 1 && m <= 12 ? m - 1 : 0; }

@@ -1,0 +1,139 @@
+<!-- Next villa: the what-if page the "+" on the home board opens. -->
+<div class="nv" role="dialog" aria-modal="true" aria-label="Grow your estate">
+  <div class="nv-h">
+    <button type="button" class="nv-x" (click)="onBack()" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <b>Grow your estate</b>
+    <span class="nv-count">{{ villas }} of {{ HOUSES }} villas</span>
+  </div>
+
+  <div class="nv-b">
+    <!-- 1 · the board as it WILL stand — parcels pop in as the amount moves -->
+    <section class="nv-board nv-in" style="--i:0">
+      <span class="nv-halo"></span>
+      <svg viewBox="-175 15 590 375" role="img" [attr.aria-label]="'Your estate with ' + villasAfter() + ' villas'">
+        <defs>
+          <!-- an open lot: a bare dusk lawn on soil (same as the home board) -->
+          <g id="nvOpen">
+            <polygon points="213.6,84 120,138 120,159.6 213.6,105.6" fill="#3a2b1c"></polygon>
+            <polygon points="120,138 26.4,84 26.4,105.6 120,159.6" fill="#2d2116"></polygon>
+            <polygon points="213.6,80 120,134 120,138 213.6,84" fill="#3a5a33"></polygon>
+            <polygon points="120,134 26.4,80 26.4,84 120,138" fill="#2b4527"></polygon>
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="#33512f"></polygon>
+            <g fill="#3b5c36" opacity="0.85">
+              <polygon points="120,26 136,35.2 42.4,89.2 26.4,80"></polygon>
+              <polygon points="152,44.5 168,53.7 74.4,107.7 58.4,98.5"></polygon>
+              <polygon points="184,63 200,72.2 106.4,126.2 90.4,117"></polygon>
+            </g>
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#243a22" stroke-width="2"></polygon>
+          </g>
+        </defs>
+        <g *ngFor="let c of cells(); trackBy: trackCell" class="cell" [class.new]="c.isNew">
+          <use [attr.href]="c.href || '#nvOpen'" [attr.x]="c.x" [attr.y]="c.y"></use>
+        </g>
+      </svg>
+    </section>
+
+    <!-- 2 · the amount -->
+    <section class="nv-amt nv-in" style="--i:1">
+      <span class="k">If you add</span>
+      <b class="v" [appCountUp]="add()" [countDuration]="350"></b>
+      <p class="say">{{ headline() }}</p>
+
+      <div class="nv-slide" [style.--fill.%]="fill()">
+        <input type="range" [min]="STEP" [max]="max" [step]="STEP" [value]="add()"
+               (input)="onSlide($event)" aria-label="Amount to add" />
+      </div>
+      <div class="nv-ends"><span>{{ compact(STEP) }}</span><span>{{ compact(max) }}</span></div>
+
+      <div class="nv-chips" *ngIf="presets.length">
+        <button type="button" *ngFor="let p of presets" [class.on]="add() === p.amt" (click)="pick(p.amt)">
+          <b>{{ compact(p.amt) }}</b>
+          <span>{{ p.villas }} {{ p.villas === 1 ? 'villa' : 'villas' }}</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 3 · what it changes: the monthly payout, before → after -->
+    <section class="nv-pay nv-in" style="--i:2" [class.lit]="newVillas() > 0">
+      <span class="sheen"></span>
+      <div class="row">
+        <div class="c">
+          <span>Pays you today</span>
+          <b class="was">{{ inr(incomeNow) }}<em>/mo</em></b>
+        </div>
+        <svg class="arr" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="c r">
+          <span>Would pay you</span>
+          <b class="now"><i [appCountUp]="incomeAfter()" [countDuration]="450"></i><em>/mo</em></b>
+        </div>
+      </div>
+      <div class="sub" *ngIf="newVillas() > 0">
+        <span class="coin">₹</span>
+        That is {{ inr(newVillas() * INCOME) }} more every month — {{ inr(newVillas() * INCOME * 12) }} more a year*
+      </div>
+      <div class="sub quiet" *ngIf="newVillas() === 0">
+        A villa starts paying {{ inr(INCOME) }} a month once its {{ compact(HOUSE) }} is complete — add {{ inr(toNext) }} to finish this one.
+      </div>
+    </section>
+
+    <!-- 4 · the road to a full estate -->
+    <div class="nv-sec nv-in" style="--i:3"><span>Your road to a full estate</span><i>tap a villa</i></div>
+    <section class="nv-road nv-in" style="--i:3">
+      <button type="button" class="rung" *ngFor="let r of rungs(); trackBy: trackRung"
+              [class.owned]="r.owned" [class.reached]="r.reached"
+              [disabled]="r.owned" (click)="pick(r.need)">
+        <span class="n">{{ r.n }}</span>
+        <span class="t">
+          <b>{{ r.n }} {{ r.n === 1 ? 'villa' : 'villas' }}</b>
+          <em *ngIf="r.owned">Yours — paying you now</em>
+          <em *ngIf="!r.owned">{{ compact(r.need) }} from today</em>
+        </span>
+        <span class="p">{{ inr(r.income) }}<em>/mo</em></span>
+      </button>
+    </section>
+
+    <!-- 5 · how a villa works -->
+    <div class="nv-sec nv-in" style="--i:4"><span>How a villa works</span></div>
+    <section class="nv-how nv-in" style="--i:4">
+      <div>
+        <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 20V10l8-6 8 6v10M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <p><b>{{ compact(HOUSE) }} completes a villa.</b> Put it in at once or in parts — every ₹1 L moves the plot a stage: plot, levelled, foundation, steel, villa.</p>
+      </div>
+      <div>
+        <span class="ic gold"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.5h6M9 11.5h6M9.5 8.5c4 0 4 6 0 6l4.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <p><b>A finished villa pays {{ inr(INCOME) }} a month.</b> The payout is drawn from the villa's arbitrage fund, while the rest of its mix stays invested.</p>
+      </div>
+      <div>
+        <span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 5h14v10H9l-4 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <p><b>Your advisor places it.</b> Send the request and they call you to confirm the amount and complete the investment.</p>
+      </div>
+    </section>
+
+    <p class="nv-fine">*Payouts come from selling units and are not fixed or assured. The value of a villa moves with the market.</p>
+    <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
+  </div>
+
+  <!-- sticky request bar -->
+  <div class="nv-cta">
+    <div class="t">
+      <span>Adding</span>
+      <b>{{ inr(add()) }}</b>
+    </div>
+    <button type="button" (click)="request()">
+      Request this
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <app-booking-sheet
+    *ngIf="booking()"
+    kind="buy"
+    property="villa"
+    variant="balanced"
+    [variantName]="'Add to my estate'"
+    [amount]="add()"
+    (close)="booking.set(false)"
+  ></app-booking-sheet>
+</div>
