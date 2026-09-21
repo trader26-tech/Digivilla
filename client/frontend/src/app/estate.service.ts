@@ -411,9 +411,25 @@ export class EstateService {
   }
 
   /** The portfolio value broken down BY HOUSE, each with its funds. */
+  /** Cached live houses for the tap-the-value sheet, so it opens INSTANTLY with
+   *  the last-known values while a fresh copy loads in the background. Null until
+   *  the first successful load (distinct from [] = loaded-but-empty). */
+  private readonly _houses = signal<LiveHouse[] | null>(null);
+  readonly housesCache = this._houses.asReadonly();
+
   liveHouses(): import('rxjs').Observable<{ houses: LiveHouse[]; nav_date: string | null; next_refresh: string | null }> {
     return this.http.get<{ houses: LiveHouse[]; nav_date: string | null; next_refresh: string | null }>(
       `${environment.apiUrl}/me/houses`, { headers: this.authHeaders });
+  }
+
+  /** Warm the houses cache (called during the splash and on each reload) so the
+   *  live-values sheet has data before it's ever opened. Fails silently. */
+  loadHouses(): void {
+    if (!this.auth.token()) return;
+    this.liveHouses().subscribe({
+      next: (r) => this._houses.set(r.houses || []),
+      error: () => { /* keep whatever we had */ },
+    });
   }
 
   /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */
@@ -467,6 +483,9 @@ export class EstateService {
     // Warm the home allocation bar's data alongside the portfolio, so both are
     // ready before the home screen paints (this runs during the splash).
     this.loadAllocation();
+    // Warm the live-values sheet's houses too, so tapping the portfolio value
+    // opens instantly with real numbers instead of a spinner.
+    this.loadHouses();
   }
 
   /** Authoritative real net worth (client_holdings × live NAV). */

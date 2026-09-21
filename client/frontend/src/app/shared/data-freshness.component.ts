@@ -46,15 +46,17 @@ import { EstateService, LiveHouse } from '../estate.service';
             </span>
             <span class="lv-body">
               <span class="lv-top">
-                <b class="lv-hn">{{ houseName(h) }}</b>
+                <span class="lv-title">
+                  <b class="lv-hn">{{ houseName(h) }}</b>
+                  <small class="lv-badge" [class.build]="h.building">{{ statusWord(h) }}</small>
+                </span>
                 <b class="lv-hv">{{ inr(h.value) }}</b>
               </span>
               <span class="lv-bot">
-                <!-- where this house sits on the 3x3 board -->
+                <!-- where this house sits on the 3x3 board (the diagram is enough) -->
                 <span class="lv-map" aria-hidden="true">
                   <i *ngFor="let c of GRID" [class.on]="c === cellOf(h)"></i>
                 </span>
-                <small class="lv-pos">{{ posLabel(h) }}</small>
                 <small class="lv-gain" [class.pos]="h.gain >= 0" [class.neg]="h.gain < 0">{{ h.gain >= 0 ? '+' : '' }}{{ inr(h.gain) }}</small>
               </span>
               <span class="lv-prog" *ngIf="h.building">
@@ -103,93 +105,113 @@ import { EstateService, LiveHouse } from '../estate.service';
     @keyframes lv-fade { from { opacity: 0; } to { opacity: 1; } }
 
     .lv {
+      /* one cohesive palette, defined once and reused everywhere below */
+      --lv-bg: #0d1117;          /* sheet ground */
+      --lv-surface: #161c26;     /* cards / rows */
+      --lv-surface-2: #1c2431;   /* pressed / tracks */
+      --lv-line: #262f3d;        /* hairline borders */
+      --lv-ink: #f2f5f9;         /* primary text */
+      --lv-ink-2: #9aa6b6;       /* secondary text */
+      --lv-chev: #4d5666;        /* chevrons */
+      --lv-accent: #7c8cff;      /* villa / primary accent */
+      --lv-accent-soft: rgba(124,140,255,.16);
+      --lv-build: #f0b843;       /* under-construction accent (warm amber) */
+      --lv-build-soft: rgba(240,184,67,.15);
+      --lv-pos: #56d17f;         /* gains */
+      --lv-neg: #ff8a8a;         /* losses */
+
       position: fixed; z-index: 61; left: 0; right: 0; bottom: 0;
       width: min(100%, 480px); margin-inline: auto;
       max-height: min(86vh, 720px); overflow-y: auto; -webkit-overflow-scrolling: touch;
       display: flex; flex-direction: column; gap: 14px;
       padding: 8px 18px calc(22px + env(safe-area-inset-bottom));
-      background: #0B0E13; border: 1px solid #23283340; border-bottom: 0;
-      border-radius: 26px 26px 0 0; box-shadow: 0 -24px 60px -20px rgba(0,0,0,.85);
+      background: var(--lv-bg); border: 1px solid var(--lv-line); border-bottom: 0;
+      border-radius: 26px 26px 0 0; box-shadow: 0 -24px 70px -20px rgba(0,0,0,.9);
       animation: lv-up .42s cubic-bezier(.22,1,.36,1) both;
     }
     @keyframes lv-up { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
-    .lv-grab { align-self: center; width: 40px; height: 4px; border: 0; padding: 0; margin: 4px 0 2px; border-radius: 99px; background: #2A323E; cursor: pointer; }
+    .lv-grab { align-self: center; width: 40px; height: 4px; border: 0; padding: 0; margin: 4px 0 2px; border-radius: 99px; background: var(--lv-line); cursor: pointer; }
 
     /* header */
     .lv-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .lv-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .lv-back { width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid #2A323E; background: transparent; color: var(--ink, #EEF1F5); display: grid; place-items: center; cursor: pointer; transition: background .2s; }
-    .lv-back:active { background: #171C25; }
-    .lv-k { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted, #8B95A3); }
-    .lv-v { font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; color: var(--ink, #EEF1F5); font-variant-numeric: tabular-nums; }
-    .lv-date { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: rgba(100,195,125,.12); color: #7fd398; font-size: 11px; font-weight: 700; white-space: nowrap; flex: none; }
+    .lv-back { width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--lv-line); background: transparent; color: var(--lv-ink); display: grid; place-items: center; cursor: pointer; transition: background .2s; }
+    .lv-back:active { background: var(--lv-surface-2); }
+    .lv-k { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--lv-ink-2); }
+    .lv-v { font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; color: var(--lv-ink); font-variant-numeric: tabular-nums; }
+    .lv-date { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; background: rgba(86,209,127,.12); color: var(--lv-pos); font-size: 11px; font-weight: 700; white-space: nowrap; flex: none; }
     .lv-date i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: lv-pulse 2.4s ease-in-out infinite; }
     @keyframes lv-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-    /* rows */
-    .lv-list { display: grid; gap: 1px; border-radius: 16px; overflow: hidden; background: #242a36; }
+    /* rows (funds inside a house) */
+    .lv-list { display: grid; gap: 1px; border-radius: 16px; overflow: hidden; border: 1px solid var(--lv-line); background: var(--lv-line); }
     .lv-row {
       display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-      padding: 13px 14px; background: #151922; border: 0; font: inherit; color: inherit;
+      padding: 13px 14px; background: var(--lv-surface); border: 0; font: inherit; color: inherit;
       animation: lv-in .4s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i) * 45ms);
     }
-    .lv-row.tap { cursor: pointer; transition: background .2s; }
-    .lv-row.tap:active { background: #1b2130; }
     @keyframes lv-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-    .lv-ico { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; background: rgba(139,123,240,.14); color: var(--brass, #8B7BF0); }
-    .lv-ico svg { width: 19px; height: 19px; }
-    .lv-ico.build { background: rgba(233,193,92,.14); color: #E9C15C; }
     .lv-name { display: grid; gap: 2px; min-width: 0; flex: 1; }
     .lv-name.wide { flex: 1; }
-    .lv-name b { font-size: 13.5px; font-weight: 650; color: var(--ink, #EEF1F5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lv-name small { font-size: 11px; color: var(--muted, #8B95A3); font-variant-numeric: tabular-nums; }
+    .lv-name b { font-size: 13.5px; font-weight: 650; color: var(--lv-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lv-name small { font-size: 11px; color: var(--lv-ink-2); font-variant-numeric: tabular-nums; }
     .lv-amt { text-align: right; display: grid; gap: 2px; flex: none; }
-    .lv-amt b { font-size: 14px; font-weight: 700; color: var(--ink, #EEF1F5); font-variant-numeric: tabular-nums; }
+    .lv-amt b { font-size: 14px; font-weight: 700; color: var(--lv-ink); font-variant-numeric: tabular-nums; }
     .lv-amt small { font-size: 11px; font-variant-numeric: tabular-nums; }
-    .lv-amt .pos { color: #8fd65a; } .lv-amt .neg { color: #d98a8a; }
-    .lv-chev { flex: none; color: #4b5261; }
+    .lv-amt .pos { color: var(--lv-pos); } .lv-amt .neg { color: var(--lv-neg); }
+    .lv-chev { flex: none; color: var(--lv-chev); }
+
     /* ── house cards ── */
     .lv-cards { display: grid; gap: 10px; }
     .lv-card {
-      display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 14px;
-      width: 100%; text-align: left; padding: 12px 14px 12px 10px;
-      background: #151922; border: 1px solid #232a36; border-radius: 18px;
+      display: grid; grid-template-columns: 88px 1fr auto; align-items: center; gap: 12px;
+      width: 100%; text-align: left; padding: 12px 14px 12px 8px;
+      background: var(--lv-surface); border: 1px solid var(--lv-line); border-radius: 18px;
       font: inherit; color: inherit; cursor: pointer;
       transition: background .2s, border-color .2s, transform .3s cubic-bezier(.22,1,.36,1);
       animation: lv-in .45s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i) * 60ms);
     }
-    .lv-card:active { transform: scale(.99); background: #1b2130; }
-    .lv-tile { display: block; width: 92px; }
-    .lv-tile svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
-    .lv-body { display: grid; gap: 6px; min-width: 0; }
+    .lv-card:hover { border-color: color-mix(in srgb, var(--lv-accent) 45%, var(--lv-line)); }
+    .lv-card:active { transform: scale(.99); background: var(--lv-surface-2); }
+    .lv-tile { display: block; width: 88px; }
+    .lv-tile svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 14px rgba(0,0,0,.55)); }
+    .lv-body { display: grid; gap: 7px; min-width: 0; }
     .lv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-    .lv-hn { font-size: 14.5px; font-weight: 700; color: var(--ink, #EEF1F5); }
-    .lv-hv { font-size: 16px; font-weight: 800; letter-spacing: -.02em; color: var(--ink, #EEF1F5); font-variant-numeric: tabular-nums; }
-    .lv-bot { display: flex; align-items: center; gap: 8px; }
+    .lv-title { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+    .lv-hn { font-size: 14.5px; font-weight: 700; color: var(--lv-ink); white-space: nowrap; }
+    /* status chip: villa = accent, building = amber */
+    .lv-badge {
+      font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 99px; flex: none;
+      color: var(--lv-accent); background: var(--lv-accent-soft);
+    }
+    .lv-badge.build { color: var(--lv-build); background: var(--lv-build-soft); }
+    .lv-hv { font-size: 16px; font-weight: 800; letter-spacing: -.02em; color: var(--lv-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .lv-bot { display: flex; align-items: center; gap: 10px; }
     .lv-map { display: grid; grid-template-columns: repeat(3, 6px); gap: 3px; flex: none; padding: 1px; }
-    .lv-map i { width: 6px; height: 6px; border-radius: 2px; background: #333c4c; }
-    .lv-map i.on { background: #a99bff; box-shadow: 0 0 0 2.5px rgba(139,123,240,.28); }
-    .lv-pos { font-size: 11px; color: var(--muted, #8B95A3); white-space: nowrap; }
-    .lv-gain { margin-left: auto; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .lv-gain.pos { color: #8fd65a; } .lv-gain.neg { color: #d98a8a; }
+    .lv-map i { width: 6px; height: 6px; border-radius: 2px; background: var(--lv-surface-2); }
+    .lv-map i.on { background: var(--lv-accent); box-shadow: 0 0 0 2.5px var(--lv-accent-soft); }
+    .lv-gain { margin-left: auto; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .lv-gain.pos { color: var(--lv-pos); } .lv-gain.neg { color: var(--lv-neg); }
     .lv-prog { display: flex; align-items: center; gap: 8px; }
-    .lv-track { flex: 1; height: 4px; border-radius: 99px; background: #2a3140; overflow: hidden; min-width: 0; }
-    .lv-track i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #E9C15C, #f6d98a); }
-    .lv-prog small { font-size: 10.5px; font-weight: 600; color: #E9C15C; white-space: nowrap; flex: none; }
-    .lv-card .lv-chev { color: #4b5261; }
+    .lv-track { flex: 1; height: 4px; border-radius: 99px; background: var(--lv-surface-2); overflow: hidden; min-width: 0; }
+    .lv-track i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lv-build), #f7d488); }
+    .lv-prog small { font-size: 10.5px; font-weight: 700; color: var(--lv-build); white-space: nowrap; flex: none; }
+    .lv-card .lv-chev { color: var(--lv-chev); }
 
-    .lv-empty { margin: 0; padding: 16px; background: #151922; font-size: 12px; color: var(--muted, #8B95A3); text-align: center; }
-    .lv-sk { display: grid; gap: 1px; }
-    .lv-sk { gap: 10px; }
-    .lv-sk i { display: block; height: 92px; border-radius: 18px; background: linear-gradient(100deg, #151922 30%, #202632 50%, #151922 70%); background-size: 200% 100%; animation: lv-shim 1.3s linear infinite; }
+    .lv-empty { margin: 0; padding: 16px; border-radius: 16px; background: var(--lv-surface); border: 1px solid var(--lv-line); font-size: 12px; color: var(--lv-ink-2); text-align: center; }
+    .lv-sk { display: grid; gap: 10px; }
+    .lv-sk i { display: block; height: 90px; border-radius: 18px; background: linear-gradient(100deg, var(--lv-surface) 30%, var(--lv-surface-2) 50%, var(--lv-surface) 70%); background-size: 200% 100%; animation: lv-shim 1.3s linear infinite; }
     @keyframes lv-shim { to { background-position: -200% 0; } }
 
     .lv-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-      padding: 13px; border-radius: 14px; border: 0; cursor: pointer;
-      background: linear-gradient(120deg, #8b7bf0, #6f5ce6); color: #fff; font-size: 13.5px; font-weight: 700;
+      padding: 14px; border-radius: 14px; border: 0; cursor: pointer;
+      background: linear-gradient(120deg, #8091ff, #6a78f0); color: #fff; font-size: 13.5px; font-weight: 700;
+      box-shadow: 0 12px 26px -14px rgba(124,140,255,.8);
       transition: transform .3s cubic-bezier(.22,1,.36,1), filter .2s;
     }
+    .lv-btn:hover:not(:disabled) { filter: brightness(1.06); }
     .lv-btn:active { transform: scale(.985); }
     .lv-btn:disabled { opacity: .72; cursor: default; }
     .lv-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: lv-spin .8s linear infinite; }
@@ -265,7 +287,12 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
   }
 
   private load(): void {
-    this.loading.set(true);
+    // Show cached houses INSTANTLY (warmed during the splash), so the sheet is
+    // populated the moment it opens — the network fetch below only refreshes it.
+    const cached = this.est.housesCache();
+    if (cached) this.houses.set(cached);
+    // Only show the skeleton when we have genuinely nothing to show yet.
+    this.loading.set(!cached || cached.length === 0);
     this.est.liveHouses().subscribe({
       next: (r) => {
         this.houses.set(r.houses || []);
@@ -292,11 +319,19 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
   readonly GRID = [0, 1, 2, 3, 4, 5, 6, 7, 8];
   readonly Math = Math;
 
+  /** The 0-based build stage of a house-in-progress (0 plot … 3 steel), from its
+   *  funded %. A finished villa is stage 5; -1 means "not building". */
+  private stageOf(h: LiveHouse): number {
+    if (!h.building) return 5;
+    // 5 stages of a build map onto 0..100%: Plot / Levelled / Foundation / Steel.
+    return Math.min(3, Math.floor((h.pct / 100) * 4));
+  }
+
   /** Which board symbol paints this house (finished villa, or its build stage). */
   tileHref(h: LiveHouse): string {
     if (!h.building) return '#lvVilla';
-    const stage = Math.min(4, Math.floor((h.pct / 100) * 5));
-    return ['#lvGround', '#lvLand', '#lvGrade', '#lvFound', '#lvSteel'][stage];
+    // 0 Plot → land, 1 Levelled → grade, 2 Foundation → found, 3 Steel → steel.
+    return ['#lvLand', '#lvGrade', '#lvFound', '#lvSteel'][this.stageOf(h)] || '#lvLand';
   }
 
   /** The 0..8 reading-order cell this house occupies on the board. */
@@ -305,16 +340,18 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
     return rc ? rc[0] * 3 + rc[1] : -1;
   }
 
-  /** "Row 2 · centre" — where this house sits on the 3×3 board. */
-  posLabel(h: LiveHouse): string {
-    const rc = DataFreshnessComponent.ORDER[h.index];
-    if (!rc) return '';
-    const [r, c] = rc;
-    const col = ['left', 'centre', 'right'][c];
-    return `Row ${r + 1} · ${col}`;
+  /** Stage names for a build in progress, matching the estate board reference. */
+  private static readonly STAGE = ['Plot', 'Levelled Ground', 'Foundation', 'Steel Frame'];
+
+  /** The card title: a finished home is "Villa N"; one under construction reads
+   *  as its real stage ("Plot", "Foundation", …) — never a bare "House N". */
+  houseName(h: LiveHouse): string {
+    if (!h.building) return 'Villa ' + (h.index + 1);
+    return DataFreshnessComponent.STAGE[this.stageOf(h)] || 'Plot';
   }
 
-  houseName(h: LiveHouse): string { return 'House ' + (h.index + 1); }
+  /** A short one-word status chip: FINISHED for a villa, BUILDING otherwise. */
+  statusWord(h: LiveHouse): string { return h.building ? 'Building' : 'Villa'; }
   inr(n: number): string {
     const v = Math.round(n || 0);
     return (v < 0 ? '−₹' : '₹') + Math.abs(v).toLocaleString('en-IN');
