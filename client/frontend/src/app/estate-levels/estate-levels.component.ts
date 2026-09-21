@@ -611,16 +611,66 @@ export class EstateLevelsComponent implements AfterViewInit {
     el.scrollTo({ top: this.sectionTop(sec, el), behavior: smooth ? 'smooth' : 'auto' });
   }
 
+  /** Target scrollTop of the current-level section (bottom of ladder as fallback). */
+  private currentTop(el: HTMLElement): number {
+    const sec = el.querySelector<HTMLElement>('section[data-current="true"]');
+    return sec ? this.sectionTop(sec, el) : el.scrollHeight;
+  }
+
+  private revealRaf = 0;
+  private revealDone = false;
+
+  /** Land on the user's current level. The first time (once the level is known),
+   *  do it cinematically: park at the very bottom — the ₹0 "your land" — then rise
+   *  up through the ladder and settle on the current rung. Later calls (late data)
+   *  snap without replaying the reveal. */
   private toCurrent(): void {
     const el = this.scroller?.nativeElement;
     if (!el) return;
-    const go = () => {
-      const sec = el.querySelector<HTMLElement>('section[data-current="true"]');
-      el.scrollTop = sec ? this.sectionTop(sec, el) : el.scrollHeight;
-    };
-    go();
-    requestAnimationFrame(go);
-    setTimeout(go, 150);
+
+    // Already revealed, or the user took over → just snap/hold at current, but
+    // never cut across an in-flight reveal tween.
+    if (this.revealDone || this.userScrolled) {
+      if (!this.userScrolled && !this.revealRaf) {
+        const snap = () => { el.scrollTop = this.currentTop(el); };
+        snap();
+        requestAnimationFrame(snap);
+        setTimeout(snap, 150);
+      }
+      return;
+    }
+
+    // Don't launch the reveal until the real level is in (worth loaded). While
+    // it's still ₹0/level-1 we hold at the bottom so the rise has somewhere to go.
+    el.scrollTop = el.scrollHeight; // park at the ground
+    if (this.currentLevel() <= 1 && this.worth() < this.L) return;
+
+    this.revealDone = true;
+    if (typeof requestAnimationFrame === 'undefined' || typeof performance === 'undefined') {
+      el.scrollTop = this.currentTop(el);
+      return;
+    }
+
+    // Let layout settle one frame so currentTop() measures correctly, then tween.
+    requestAnimationFrame(() => {
+      const from = el.scrollHeight; // bottom (₹0)
+      const to = this.currentTop(el);
+      const dist = from - to;
+      if (dist < 2) { el.scrollTop = to; return; }
+      // Pace with the distance climbed: quick for a couple levels, grand for many.
+      const dur = Math.max(900, Math.min(2200, 700 + dist * 0.28));
+      const t0 = performance.now();
+      const easeOutExpo = (p: number) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+      cancelAnimationFrame(this.revealRaf);
+      const step = (t: number) => {
+        if (this.userScrolled) return; // yield the instant they grab it
+        const p = Math.min(1, (t - t0) / dur);
+        el.scrollTop = from - dist * easeOutExpo(p);
+        if (p < 1) { this.revealRaf = requestAnimationFrame(step); }
+        else { this.revealRaf = 0; }
+      };
+      this.revealRaf = requestAnimationFrame(step);
+    });
   }
 
   private countUp(): void {

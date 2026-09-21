@@ -51,6 +51,10 @@ interface BoardCell {
   tile: Tile | null;
 }
 
+/** One merged segment of the home allocation bar — a sleeve and its total
+ *  allocation (all funds of that sleeve summed). */
+interface SleeveRow { sleeve: string; allocation: number; }
+
 // ---- the estate model (ported verbatim from design/home-m1/estate-model.js) --
 /** ₹1 lakh. */
 const L = 100_000;
@@ -776,27 +780,40 @@ export class EstateHomeComponent implements OnInit {
     return 'other';
   }
 
-  /** The fund allocation rows for the bar. Values are derived from the portfolio
-   *  value via fundValue() so the bar is instant. */
-  get fundRows(): AllocRow[] {
-    return this.alloc();
+  /** The allocation bar rows — one per SLEEVE, not per fund. Funds that share a
+   *  sleeve (e.g. two small-cap funds) are merged into a single segment/label,
+   *  their allocations summed, in first-seen order so the bar stays stable
+   *  left → right. Values are derived from the portfolio value so it's instant. */
+  get fundRows(): SleeveRow[] {
+    const order: string[] = [];
+    const by = new Map<string, SleeveRow>();
+    for (const f of this.alloc()) {
+      const sleeve = this.sleeveOf(f);
+      const existing = by.get(sleeve);
+      if (existing) {
+        existing.allocation += f.allocation || 0;
+      } else {
+        order.push(sleeve);
+        by.set(sleeve, { sleeve, allocation: f.allocation || 0 });
+      }
+    }
+    return order.map((s) => by.get(s)!);
   }
-  /** This fund's ₹ value = its allocation × the live portfolio value. */
+  /** This sleeve's ₹ value = its (summed) allocation × the live portfolio value. */
   fundValue(f: { allocation: number }): number {
     return Math.round(this.est.estateValue * (f.allocation || 0) / 100);
   }
-  /** This fund's share of the portfolio as a whole-number percent (e.g. "36%"). */
+  /** This sleeve's share of the portfolio as a whole-number percent (e.g. "36%"). */
   fundPct(f: { allocation: number }): string {
     return Math.round(f.allocation || 0) + '%';
   }
-  /** Colour for a fund — from its real sleeve, so it matches the label. */
-  fundColor(_i: number, f?: AllocRow): string {
-    return f ? this.SLEEVE_STYLE[this.sleeveOf(f)].color : this.SLEEVE_STYLE['other'].color;
+  /** Colour for a sleeve — matches its label. */
+  fundColor(_i: number, f?: SleeveRow): string {
+    return this.SLEEVE_STYLE[f?.sleeve ?? 'other']?.color ?? this.SLEEVE_STYLE['other'].color;
   }
-  /** Short display label for a fund — from its real sleeve (ARBITRAGE / GOLD /
-   *  LARGE CAP / …), set by the admin. */
-  fundLabel(_i: number, f: AllocRow): string {
-    return this.SLEEVE_STYLE[this.sleeveOf(f)].label;
+  /** Short display label for a sleeve (ARBITRAGE / GOLD / LARGE CAP / …). */
+  fundLabel(_i: number, f: SleeveRow): string {
+    return this.SLEEVE_STYLE[f.sleeve]?.label ?? this.SLEEVE_STYLE['other'].label;
   }
   /** Signed returns % for the meta row (server gain_pct, tile fallback). */
   get gainPct(): number { return this.est.gainPct; }

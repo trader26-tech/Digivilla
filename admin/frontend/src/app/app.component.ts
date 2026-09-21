@@ -4,13 +4,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import {
   AdminService,
-  AvailabilityDay,
-  Booking,
   ClientDoc,
-  ClientFolder,
-  ClientProfile,
-  ClientRow,
-  VillaCatalogItem,
   ReportUpload,
   TodayStatus,
   NetWorthRow,
@@ -24,54 +18,9 @@ import {
 } from './admin.service';
 
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
-type Tab = 'calendar' | 'documents' | 'networth';
 
-interface DayGroup {
-  iso: string;
-  label: string;
-  isToday: boolean;
-  slots: SlotCell[];
-}
-interface SlotCell {
-  time: string;
-  label: string;
-  booking: Booking | null;
-}
-
-/** One request placed on the agenda for a given day. */
-interface AgendaItem {
-  booking: Booking;
-  time: string;        // "10:00" for consultations, else the created time
-  timeLabel: string;   // "10 am"
-  hasSlot: boolean;    // true for scheduled consultations
-}
-/** A cell in the month grid. */
-interface MonthCell {
-  iso: string;
-  day: number;
-  inMonth: boolean;
-  isToday: boolean;
-  isPast: boolean;
-  total: number;
-  pending: number;
-  amount: number;        // total ₹ of that day's requests (for the cell value)
-  /** distinct request kinds present that day, for the colored dots */
-  kinds: string[];
-  topKind: string;       // the dominant kind that day (drives the cell tint)
-}
-/** The order kinds are shown in dots/legend and their accent tokens. */
-const KIND_ORDER = ['consultation', 'sip', 'buy', 'withdraw'] as const;
-/** Human labels + accents per request kind. */
-const KIND_META: Record<string, { label: string; verb: string; icon: string }> = {
-  consultation: { label: 'Consultation', verb: 'wants a call about', icon: '📞' },
-  sip:          { label: 'SIP',          verb: 'wants to start an SIP in', icon: '🔁' },
-  buy:          { label: 'Buy',          verb: 'wants to own', icon: '🏠' },
-  withdraw:     { label: 'Withdraw',     verb: 'wants to withdraw from', icon: '💸' },
-};
-
-const WK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // 0..6 = Mon..Sun
+/** The one workspace has a small set of views, all about clients & money. */
+type View = 'clients' | 'villas' | 'buckets' | 'uploads';
 
 @Component({
   selector: 'app-root',
@@ -88,7 +37,7 @@ export class AppComponent implements OnInit {
   busy = signal(false);
   authError = signal('');
   notice = signal('');
-  signinEmail = signal('');        // masked address codes go to
+  signinEmail = signal('');
   maskedEmail = signal('');
   hasPin = signal(false);
   lockMinutes = signal(30);
@@ -104,57 +53,18 @@ export class AppComponent implements OnInit {
   private lastRefresh = 0;
   private activityBound = false;
 
-  // ── dashboard ──────────────────────────────────────────────────────────────
-  tab = signal<Tab>('calendar');
+  // ── workspace ───────────────────────────────────────────────────────────────
+  view = signal<View>('clients');
+  setView(v: View): void {
+    this.view.set(v);
+    if (v === 'villas') this.loadVillasLive();
+    if (v === 'buckets' && !this.nwBuckets().length) {
+      this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
+    }
+    if (v === 'uploads') this.loadCalendar();
+  }
 
-  // bookings
-  bookings = signal<Booking[]>([]);
-  loading = signal(false);
-  loadError = signal('');
-  busyId = signal('');
-
-  // calendar (day agenda + month overview)
-  selectedDate = signal<string>(this.isoOf(new Date()));   // day shown in the agenda
-  viewMonth = signal<{ y: number; m: number }>({ y: new Date().getFullYear(), m: new Date().getMonth() });
-  kindFilter = signal<'all' | 'consultation' | 'sip' | 'buy' | 'withdraw'>('all');
-  readonly kindMeta = KIND_META;
-
-  // availability
-  avDays = signal<AvailabilityDay[]>([]);
-  avStart = signal('10:00');
-  avEnd = signal('18:00');
-  avWeekdays = signal<number[]>([0, 1, 2, 3, 4, 5]);
-  avSavingCfg = signal(false);
-  avBusySlot = signal('');
-  showAvailability = signal(false);
-  readonly weekdayLabels = WEEKDAY_LABELS;
-
-  // documents
-  clients = signal<ClientFolder[]>([]);
-  docsLoading = signal(false);
-  activeClient = signal<string>('');
-  clientDocs = signal<ClientDoc[]>([]);
-  newClientName = signal('');
-  uploading = signal(false);
-  docError = signal('');
-
-  // CRM — full client profiles (the Clients tab)
-  crmClients = signal<ClientRow[]>([]);
-  crmLoading = signal(false);
-  crmSearch = signal('');
-  crmActive = signal<ClientProfile | null>(null);
-  crmDetailLoading = signal(false);
-
-  /** clients filtered by the search box (name or phone). */
-  filteredClients = computed<ClientRow[]>(() => {
-    const q = this.crmSearch().trim().toLowerCase();
-    const list = this.crmClients();
-    if (!q) return list;
-    return list.filter((c) =>
-      c.name.toLowerCase().includes(q) || (c.phone || '').includes(q));
-  });
-
-  // ── NET WORTH tab (daily reports) ────────────────────────────────────────
+  // ── clients / net worth (the daily reports) ─────────────────────────────────
   nwToday = signal<TodayStatus | null>(null);
   nwUploads = signal<ReportUpload[]>([]);
   nwClients = signal<NetWorthRow[]>([]);
@@ -163,20 +73,31 @@ export class AppComponent implements OnInit {
   nwUploadingTxn = signal(false);
   nwError = signal('');
   nwSearch = signal('');
+  nwSort = signal<'net_worth' | 'invested' | 'gain_pct' | 'name'>('net_worth');
+
+  // client detail drawer
   nwDetail = signal<ClientNetWorth | null>(null);
   nwDetailLoading = signal(false);
-  /** drawer sub-tab + villas & mapping state */
-  drawerTab = signal<'overview' | 'mapping'>('overview');
+  drawerTab = signal<'overview' | 'transactions' | 'mapping' | 'documents'>('overview');
+
+  // villas & mapping (inside the drawer)
   mapCode = signal<string>('');
   mapTxns = signal<ClientTxn[]>([]);
   mapVillas = signal<ClientVilla[]>([]);
   mapSelected = signal<Set<string>>(new Set());
   mapLoading = signal(false);
   newVillaName = signal('');
-  /** villa live pricing + bucket builder */
+
+  // documents (inside the drawer) — keyed by client name
+  drawerDocs = signal<ClientDoc[]>([]);
+  docsLoading = signal(false);
+  uploading = signal(false);
+  docError = signal('');
+
+  // villa live pricing + bucket builder
   nwVillas = signal<VillaLive[]>([]);
   nwBuckets = signal<VillaBucket[]>([]);
-  nwSub = signal<'clients' | 'villas' | 'buckets' | 'calendar'>('clients');
+
   // bucket builder draft
   newBucketName = signal('');
   newBucketTier = signal('');
@@ -185,25 +106,39 @@ export class AppComponent implements OnInit {
   newBucketFunds = signal<BucketFund[]>([]);
   newFundName = signal('');
   bucketSaving = signal(false);
-  /** live sum of draft-fund allocation weights. */
+  showBuilder = signal(false);
   draftAllocTotal = computed(() =>
     this.newBucketFunds().reduce((s, f) => s + (Number(f.target_weight) || 0), 0));
+
   // upload-tracking calendar
   nwCalMonth = signal<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   nwCalDays = signal<CalDay[]>([]);
   nwCalLoading = signal(false);
   nwCalSelected = signal<CalDay | null>(null);
 
+  /** filtered + sorted client list. */
   nwFiltered = computed<NetWorthRow[]>(() => {
     const q = this.nwSearch().trim().toLowerCase();
-    const list = this.nwClients();
-    if (!q) return list;
-    return list.filter((c) => c.name.toLowerCase().includes(q) ||
-      (c.phone || '').includes(q) || c.client_code.includes(q));
+    const sort = this.nwSort();
+    let list = this.nwClients();
+    if (q) {
+      list = list.filter((c) => c.name.toLowerCase().includes(q) ||
+        (c.phone || '').includes(q) || c.client_code.toLowerCase().includes(q));
+    }
+    return [...list].sort((a, b) => {
+      if (sort === 'name') return a.name.localeCompare(b.name);
+      return (b[sort] || 0) - (a[sort] || 0);
+    });
   });
-  /** total net worth across all clients — the headline KPI. */
   nwTotal = computed(() => this.nwClients().reduce((s, c) => s + (c.net_worth || 0), 0));
   nwTotalInvested = computed(() => this.nwClients().reduce((s, c) => s + (c.invested || 0), 0));
+  nwTotalGain = computed(() => this.nwTotal() - this.nwTotalInvested());
+  nwGainPct = computed(() => {
+    const inv = this.nwTotalInvested();
+    return inv ? (this.nwTotalGain() / inv) * 100 : 0;
+  });
+  /** true when both of today's reports are in — powers the freshness pill. */
+  reportsFresh = computed(() => !!(this.nwToday()?.user && this.nwToday()?.transaction));
 
   ngOnInit(): void {
     this.initAuth();
@@ -230,7 +165,6 @@ export class AppComponent implements OnInit {
         this.phase.set(s.device_known && s.has_pin ? 'pin' : 'email');
       },
       error: () => {
-        // Offline / server down → let them try email sign-in.
         this.phase.set('email');
       },
     });
@@ -343,10 +277,7 @@ export class AppComponent implements OnInit {
     this.bindActivity();
     this.tick = setInterval(() => this.heartbeat(), 1000);
     this.heartbeat();
-    this.refresh();
-    this.loadAvailability();
-    this.loadClients();
-    this.loadCrmClients();
+    this.loadNetWorth();
   }
 
   private bindActivity(): void {
@@ -394,15 +325,7 @@ export class AppComponent implements OnInit {
     this.api.clearToken();
     this.hasPin.set(false);
     if (this.tick) { clearInterval(this.tick); this.tick = null; }
-    this.bookings.set([]);
     this.phase.set('email');
-  }
-
-  changeLock(mins: number): void {
-    this.api.setLockMinutes(mins).subscribe({
-      next: (r) => { this.lockMinutes.set(r.lock_minutes); this.slideToken(); },
-      error: () => {},
-    });
   }
 
   /** "Good morning / afternoon / evening" by the local clock. */
@@ -412,11 +335,7 @@ export class AppComponent implements OnInit {
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
   });
-
-  /** The admin's name shown in the greeting. */
   adminName = computed<string>(() => 'Ranjeev');
-
-  /** Today, spelled out — e.g. "Saturday, 5 September". */
   todayLong = computed<string>(() => {
     const d = new Date();
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -432,429 +351,7 @@ export class AppComponent implements OnInit {
     return `${m}:${String(sec).padStart(2, '0')}`;
   });
 
-  // ═══════════════════════════ BOOKINGS ═══════════════════════════
-  refresh(): void {
-    this.loading.set(true);
-    this.loadError.set('');
-    this.api.listBookings().subscribe({
-      next: (b) => { this.bookings.set(b); this.loading.set(false); },
-      error: (e) => {
-        this.loading.set(false);
-        if (e?.status === 401) this.lock();
-        else this.loadError.set('Could not load bookings.');
-      },
-    });
-  }
-
-  confirm(b: Booking): void { this.update(b, 'confirmed'); }
-  decline(b: Booking): void { this.update(b, 'declined'); }
-  reopen(b: Booking): void { this.update(b, 'requested'); }
-  private update(b: Booking, status: 'confirmed' | 'declined' | 'requested'): void {
-    this.busyId.set(b.id);
-    this.api.setStatus(b.id, status).subscribe({
-      next: (u) => {
-        this.bookings.update((list) => list.map((x) => (x.id === b.id ? u : x)));
-        this.busyId.set('');
-      },
-      error: () => this.busyId.set(''),
-    });
-  }
-
-  get requestedCount(): number { return this.bookings().filter((b) => b.status === 'requested').length; }
-  get confirmedCount(): number { return this.bookings().filter((b) => b.status === 'confirmed').length; }
-
-  // ── Google Meet link on a session ──
-  meetEditId = signal('');     // booking id whose link editor is open
-  meetDraft = signal('');      // the link being typed
-
-  openMeetEditor(b: Booking): void {
-    this.meetDraft.set(b.meet_link || '');
-    this.meetEditId.set(b.id);
-  }
-  cancelMeet(): void { this.meetEditId.set(''); this.meetDraft.set(''); }
-
-  saveMeet(b: Booking): void {
-    const link = this.meetDraft().trim();
-    this.busyId.set(b.id);
-    this.api.setMeetLink(b.id, link).subscribe({
-      next: (u) => {
-        this.bookings.update((list) => list.map((x) => (x.id === b.id ? u : x)));
-        this.busyId.set('');
-        this.cancelMeet();
-      },
-      error: () => this.busyId.set(''),
-    });
-  }
-
-  // ═══════════════════════════ CALENDAR ═══════════════════════════
-
-  /** The ISO day a booking belongs on: its slot day for consultations,
-   *  otherwise the day it was submitted (created_at). */
-  private dayOf(b: Booking): string {
-    const s = this.splitSlot(b.slot);
-    if (s.day) return s.day;
-    const d = new Date(b.created_at);
-    return isNaN(d.getTime()) ? '' : this.isoOf(d);
-  }
-  private timeOf(b: Booking): string {
-    const s = this.splitSlot(b.slot);
-    if (s.time) return s.time;
-    const d = new Date(b.created_at);
-    return isNaN(d.getTime()) ? '00:00' : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  }
-
-  /** bookings grouped by ISO day, honouring the kind filter. */
-  private byDayMap = computed<Map<string, Booking[]>>(() => {
-    const filter = this.kindFilter();
-    const m = new Map<string, Booking[]>();
-    for (const b of this.bookings()) {
-      if (filter !== 'all' && b.kind !== filter) continue;
-      const iso = this.dayOf(b);
-      if (!iso) continue;
-      if (!m.has(iso)) m.set(iso, []);
-      m.get(iso)!.push(b);
-    }
-    return m;
-  });
-
-  /** The month grid (6 weeks) for the currently-viewed month. */
-  monthGrid = computed<MonthCell[]>(() => {
-    const { y, m } = this.viewMonth();
-    const todayIso = this.isoOf(new Date());
-    const first = new Date(y, m, 1);
-    // Grid starts on the Monday on/before the 1st.
-    const offset = (first.getDay() + 6) % 7; // 0=Mon
-    const start = new Date(y, m, 1 - offset);
-    const byDay = this.byDayMap();
-    const cells: MonthCell[] = [];
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-      const iso = this.isoOf(d);
-      const items = byDay.get(iso) || [];
-      // distinct kinds present that day, in a stable display order
-      const present = new Set(items.map((b) => b.kind));
-      const kinds = KIND_ORDER.filter((k) => present.has(k));
-      // dominant kind (most frequent) for the cell tint
-      const counts: Record<string, number> = {};
-      for (const b of items) counts[b.kind] = (counts[b.kind] || 0) + 1;
-      const topKind = kinds.slice().sort((a, b) => (counts[b] || 0) - (counts[a] || 0))[0] || '';
-      cells.push({
-        iso,
-        day: d.getDate(),
-        inMonth: d.getMonth() === m,
-        isToday: iso === todayIso,
-        isPast: iso < todayIso,
-        total: items.length,
-        pending: items.filter((b) => b.status === 'requested').length,
-        amount: items.reduce((s, b) => s + (b.amount || 0), 0),
-        kinds,
-        topKind,
-      });
-    }
-    return cells;
-  });
-
-  monthLabel = computed<string>(() => {
-    const { y, m } = this.viewMonth();
-    return `${['January','February','March','April','May','June','July','August','September','October','November','December'][m]} ${y}`;
-  });
-
-  /** Compact ₹ for tight calendar cells: ₹5k, ₹1.2L, ₹3Cr. */
-  moneyShort(v: number): string {
-    if (!v) return '';
-    if (v >= 1e7) return `₹${(v / 1e7).toFixed(v % 1e7 ? 1 : 0)}Cr`;
-    if (v >= 1e5) return `₹${(v / 1e5).toFixed(v % 1e5 ? 1 : 0)}L`;
-    if (v >= 1e3) return `₹${(v / 1e3).toFixed(v % 1e3 ? 1 : 0)}k`;
-    return `₹${Math.round(v)}`;
-  }
-
-  /** This month's totals for the summary header (by request kind + value). */
-  monthSummary = computed(() => {
-    const { y, m } = this.viewMonth();
-    let total = 0, pending = 0, value = 0;
-    const byKind: Record<string, number> = { consultation: 0, sip: 0, buy: 0, withdraw: 0 };
-    for (const b of this.bookings()) {
-      const iso = this.dayOf(b);
-      const d = this.parseIso(iso);
-      if (!d || d.getFullYear() !== y || d.getMonth() !== m) continue;
-      total++;
-      if (b.status === 'requested') pending++;
-      value += b.amount || 0;
-      if (b.kind in byKind) byKind[b.kind]++;
-    }
-    return { total, pending, value, byKind };
-  });
-
-  /** The agenda for the selected day, sorted by time, newest-status first. */
-  agenda = computed<AgendaItem[]>(() => {
-    const iso = this.selectedDate();
-    const items = (this.byDayMap().get(iso) || []).map((b) => {
-      const t = this.timeOf(b);
-      return { booking: b, time: t, timeLabel: this.timeLabel(t), hasSlot: !!this.splitSlot(b.slot).time };
-    });
-    return items.sort((a, z) => a.time.localeCompare(z.time));
-  });
-
-  selectedDayLabel = computed<string>(() => {
-    const d = this.parseIso(this.selectedDate());
-    if (!d) return this.selectedDate();
-    const today = this.isoOf(new Date());
-    const prefix = this.selectedDate() === today ? 'Today · ' : '';
-    return `${prefix}${WK[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`;
-  });
-
-  /** Full working-hours timeline for the selected day, split into 30-min slots.
-   *  Each slot carries its busy/free state (from availability) and any requests
-   *  that fall in that half-hour window. This is the "glance my whole day" view. */
-  daySlots = computed(() => {
-    const iso = this.selectedDate();
-    const start = this.avStart() || '10:00';
-    const end = this.avEnd() || '18:00';
-    const blocked = new Set(this.blockedSet());
-    const recurring = new Set(this.busyTimes());
-    const filter = this.kindFilter();
-
-    // bucket the day's requests by their half-hour slot start ("HH:MM")
-    const reqBy = new Map<string, Booking[]>();
-    for (const b of (this.byDayMap().get(iso) || [])) {
-      if (filter !== 'all' && b.kind !== filter) continue;
-      const t = this.timeOf(b);
-      const half = this.floorHalfHour(t);
-      if (!reqBy.has(half)) reqBy.set(half, []);
-      reqBy.get(half)!.push(b);
-    }
-
-    const toMin = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
-    const rows: {
-      time: string; label: string; iso: string;
-      blocked: boolean; recurring: boolean; requests: Booking[];
-    }[] = [];
-    for (let t = toMin(start); t < toMin(end); t += 30) {
-      const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
-      const slotIso = `${iso}T${hm}:00+05:30`;
-      const isRecurring = recurring.has(hm);
-      rows.push({
-        time: hm,
-        label: this.timeLabel(hm),
-        iso: slotIso,
-        recurring: isRecurring,
-        blocked: isRecurring || blocked.has(slotIso),
-        requests: reqBy.get(hm) || [],
-      });
-    }
-    return rows;
-  });
-
-  /** the set of blocked slot ISO strings (one-off, per day), for reactivity */
-  blockedSet = signal<string[]>([]);
-  /** recurring busy "HH:MM" times — busy EVERY day (lunch, gym) */
-  busyTimes = signal<string[]>([]);
-  savingBusy = signal(false);
-
-  private floorHalfHour(hm: string): string {
-    const [h, m] = hm.split(':').map(Number);
-    const mm = m >= 30 ? 30 : 0;
-    return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-  }
-
-  /** Toggle a 30-min slot busy/free for JUST the selected day (one-off). */
-  toggleDaySlot(slotIso: string, currentlyBlocked: boolean): void {
-    const next = !currentlyBlocked;
-    this.avBusySlot.set(slotIso);
-    this.api.blockSlot(slotIso, next).subscribe({
-      next: (r) => { this.blockedSet.set(r.blocked || []); this.avBusySlot.set(''); },
-      error: () => this.avBusySlot.set(''),
-    });
-  }
-
-  /** Toggle a recurring busy time (busy EVERY working day at this HH:MM). */
-  toggleRecurringBusy(hm: string): void {
-    const cur = this.busyTimes();
-    const next = cur.includes(hm) ? cur.filter((t) => t !== hm) : [...cur, hm].sort();
-    this.busyTimes.set(next);
-    this.savingBusy.set(true);
-    this.api.saveAvailabilityConfig({ busy_times: next }).subscribe({
-      next: () => this.savingBusy.set(false),
-      error: () => this.savingBusy.set(false),
-    });
-  }
-
-  /** All half-hour times across the working window — for the recurring picker. */
-  windowTimes = computed<{ time: string; label: string }[]>(() => {
-    const toMin = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
-    const out: { time: string; label: string }[] = [];
-    for (let t = toMin(this.avStart() || '10:00'); t < toMin(this.avEnd() || '18:00'); t += 30) {
-      const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
-      out.push({ time: hm, label: this.timeLabel(hm) });
-    }
-    return out;
-  });
-  isBusyTime(hm: string): boolean { return this.busyTimes().includes(hm); }
-  showBusyEditor = signal(false);
-
-  /** counts for the selected day, for the little header summary. */
-  daySummary = computed<{ total: number; pending: number }>(() => {
-    const items = this.byDayMap().get(this.selectedDate()) || [];
-    return { total: items.length, pending: items.filter((b) => b.status === 'requested').length };
-  });
-
-  selectDay(iso: string): void { this.selectedDate.set(iso); }
-  isSelected(iso: string): boolean { return this.selectedDate() === iso; }
-
-  /** "Needs your attention" feed — every still-requested item, newest first,
-   *  honouring the kind filter. This is what the admin should act on now. */
-  notifications = computed<AgendaItem[]>(() => {
-    const filter = this.kindFilter();
-    return this.bookings()
-      .filter((b) => b.status === 'requested' && (filter === 'all' || b.kind === filter))
-      .map((b) => {
-        const t = this.timeOf(b);
-        return { booking: b, time: t, timeLabel: this.timeLabel(t), hasSlot: !!this.splitSlot(b.slot).time };
-      })
-      .sort((a, z) => (z.booking.created_at || '').localeCompare(a.booking.created_at || ''));
-  });
-
-  /** Count of new requests per kind, for the quick-action / filter badges. */
-  newByKind = computed<Record<string, number>>(() => {
-    const counts: Record<string, number> = { all: 0, consultation: 0, sip: 0, buy: 0, withdraw: 0 };
-    for (const b of this.bookings()) {
-      if (b.status !== 'requested') continue;
-      counts['all']++;
-      if (counts[b.kind] != null) counts[b.kind]++;
-    }
-    return counts;
-  });
-
-  /** Total documents across all client folders — for the Clients quick-action. */
-  get totalDocs(): number { return this.clients().reduce((n, c) => n + (c.count || 0), 0); }
-
-  /** True if the notification is dated today — used to surface "new today". */
-  isTodayItem(a: AgendaItem): boolean { return this.dayOf(a.booking) === this.isoOf(new Date()); }
-
-  /** Jump the calendar to a notification's day and select it. */
-  jumpTo(a: AgendaItem): void {
-    const iso = this.dayOf(a.booking);
-    if (!iso) return;
-    const d = this.parseIso(iso);
-    if (d) this.viewMonth.set({ y: d.getFullYear(), m: d.getMonth() });
-    this.selectedDate.set(iso);
-  }
-
-  /** A short "how long ago" label for a request. */
-  ago(created: string): string {
-    const then = new Date(created).getTime();
-    if (isNaN(then)) return '';
-    const mins = Math.floor((Date.now() - then) / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return days === 1 ? 'yesterday' : `${days}d ago`;
-  }
-
-  prevMonth(): void {
-    this.viewMonth.update(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }));
-  }
-  nextMonth(): void {
-    this.viewMonth.update(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }));
-  }
-  goToday(): void {
-    const now = new Date();
-    this.viewMonth.set({ y: now.getFullYear(), m: now.getMonth() });
-    this.selectedDate.set(this.isoOf(now));
-  }
-  setKindFilter(k: 'all' | 'consultation' | 'sip' | 'buy' | 'withdraw'): void { this.kindFilter.set(k); }
-
-  kindLabel(b: Booking): string { return (KIND_META[b.kind] || KIND_META['consultation']).label; }
-  kindIcon(b: Booking): string { return (KIND_META[b.kind] || KIND_META['consultation']).icon; }
-  requirementLine(b: Booking): string {
-    const meta = KIND_META[b.kind] || KIND_META['consultation'];
-    const what = this.propLabel(b) || (b.property || 'a Digivilla');
-    const amt = b.amount ? ` · ${this.money(b.amount)}${b.kind === 'sip' ? '/mo' : ''}` : '';
-    return `${meta.verb} ${what}${amt}`;
-  }
-
-  // ═══════════════════════════ AVAILABILITY ═══════════════════════════
-  loadAvailability(): void {
-    this.api.availability(62).subscribe({
-      next: (r) => {
-        this.avDays.set(r.days);
-        this.avStart.set(r.config.start);
-        this.avEnd.set(r.config.end);
-        this.avWeekdays.set(r.config.weekdays);
-        this.busyTimes.set(r.config.busy_times || []);
-        // one-off blocks only (recurring busy is tracked separately via busyTimes)
-        const blocked: string[] = [];
-        for (const d of r.days) for (const s of d.slots) if (s.blocked && !s.recurring) blocked.push(s.slot);
-        this.blockedSet.set(blocked);
-      },
-      error: (e) => { if (e?.status === 401) this.lock(); },
-    });
-  }
-
-  toggleWeekday(wd: number): void {
-    this.avWeekdays.update((list) =>
-      list.includes(wd) ? list.filter((x) => x !== wd) : [...list, wd].sort((a, b) => a - b));
-  }
-  isWeekdayOn(wd: number): boolean { return this.avWeekdays().includes(wd); }
-
-  saveWindow(): void {
-    if (this.avSavingCfg()) return;
-    this.avSavingCfg.set(true);
-    this.api.saveAvailabilityConfig({
-      start: this.avStart(), end: this.avEnd(), weekdays: this.avWeekdays(),
-    }).subscribe({
-      next: () => { this.avSavingCfg.set(false); this.loadAvailability(); },
-      error: () => this.avSavingCfg.set(false),
-    });
-  }
-
-  toggleSlot(day: AvailabilityDay, slot: { slot: string; blocked: boolean }): void {
-    const next = !slot.blocked;
-    this.avBusySlot.set(slot.slot);
-    this.api.blockSlot(slot.slot, next).subscribe({
-      next: () => {
-        this.avDays.update((days) =>
-          days.map((d) => d.date !== day.date ? d : {
-            ...d,
-            slots: d.slots.map((s) => s.slot === slot.slot ? { ...s, blocked: next } : s),
-          }));
-        this.avBusySlot.set('');
-      },
-      error: () => this.avBusySlot.set(''),
-    });
-  }
-
-  dayLabel(iso: string): string {
-    const d = this.parseIso(iso);
-    return d ? `${WK[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]}` : iso;
-  }
-  freeCount(day: AvailabilityDay): number { return day.slots.filter((s) => !s.blocked).length; }
-
-  // ═══════════════════════════ CRM (Clients tab) ═══════════════════════════
-  loadCrmClients(): void {
-    this.crmLoading.set(true);
-    this.api.listCrmClients().subscribe({
-      next: (c) => { this.crmClients.set(c); this.crmLoading.set(false); },
-      error: (e) => { this.crmLoading.set(false); if (e?.status === 401) this.lock(); },
-    });
-  }
-
-  openCrmClient(id: string): void {
-    this.crmDetailLoading.set(true);
-    this.crmActive.set(null);
-    this.showAddVilla.set(false); this.editingUv.set(''); this.villaError.set('');
-    this.ensureVillaCatalog();
-    this.api.getCrmClient(id).subscribe({
-      next: (p) => { this.crmActive.set(p); this.crmDetailLoading.set(false); },
-      error: (e) => { this.crmDetailLoading.set(false); if (e?.status === 401) this.lock(); },
-    });
-  }
-
-  closeCrmClient(): void { this.crmActive.set(null); }
-
-  // ═══════════════════════════ NET WORTH (daily reports) ═══════════════════════════
+  // ═══════════════════════════ CLIENTS / NET WORTH ═══════════════════════════
   loadNetWorth(): void {
     this.nwLoading.set(true);
     this.api.reportToday().subscribe({ next: (t) => this.nwToday.set(t), error: () => {} });
@@ -876,7 +373,7 @@ export class AppComponent implements OnInit {
       next: () => {
         (type === 'user' ? this.nwUploadingUser : this.nwUploadingTxn).set(false);
         input.value = '';
-        this.loadNetWorth();           // refresh status + recomputed net worth
+        this.loadNetWorth();
       },
       error: (e) => {
         (type === 'user' ? this.nwUploadingUser : this.nwUploadingTxn).set(false);
@@ -886,13 +383,22 @@ export class AppComponent implements OnInit {
     });
   }
 
+  setSort(s: 'net_worth' | 'invested' | 'gain_pct' | 'name'): void { this.nwSort.set(s); }
+
+  // ── client detail drawer ────────────────────────────────────────────────────
   openNwClient(code: string): void {
     this.nwDetailLoading.set(true);
     this.nwDetail.set(null);
     this.drawerTab.set('overview');
     this.mapCode.set(code);
+    this.drawerDocs.set([]);
+    this.docError.set('');
     this.api.reportClientDetail(code).subscribe({
-      next: (d) => { this.nwDetail.set(d); this.nwDetailLoading.set(false); },
+      next: (d) => {
+        this.nwDetail.set(d);
+        this.nwDetailLoading.set(false);
+        this.loadDrawerDocs(d.client?.name || '');
+      },
       error: (e) => { this.nwDetailLoading.set(false); if (e?.status === 401) this.lock(); },
     });
     this.loadMapping(code);
@@ -904,7 +410,11 @@ export class AppComponent implements OnInit {
     this.mapTxns.set([]);
     this.mapVillas.set([]);
     this.mapSelected.set(new Set());
+    this.drawerDocs.set([]);
   }
+
+  /** clientName used for documents (docs are keyed by name). */
+  private drawerClientName(): string { return this.nwDetail()?.client?.name || ''; }
 
   // ── villas & mapping ─────────────────────────────────────────────────────
   loadMapping(code: string): void {
@@ -980,42 +490,95 @@ export class AppComponent implements OnInit {
     return v ? v.name : null;
   }
 
+  // ── documents (in the drawer) ───────────────────────────────────────────────
+  loadDrawerDocs(name: string): void {
+    if (!name) return;
+    this.docsLoading.set(true);
+    this.api.listDocuments(name).subscribe({
+      next: (d) => { this.drawerDocs.set(d); this.docsLoading.set(false); },
+      error: (e) => { this.docsLoading.set(false); if (e?.status === 401) this.lock(); },
+    });
+  }
+  onDrawerFilePicked(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    const name = this.drawerClientName();
+    if (!file || !name) return;
+    this.uploading.set(true);
+    this.docError.set('');
+    this.api.uploadDocument(name, file).subscribe({
+      next: (doc) => {
+        this.drawerDocs.update((list) => [doc, ...list]);
+        this.uploading.set(false);
+        input.value = '';
+      },
+      error: (e) => {
+        this.docError.set(e?.error?.detail || 'Upload failed. Try again.');
+        this.uploading.set(false);
+        input.value = '';
+      },
+    });
+  }
+  openDoc(doc: ClientDoc): void {
+    this.api.downloadDocument(doc.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.docError.set('Could not open that document.'),
+    });
+  }
+  removeDoc(doc: ClientDoc): void {
+    this.api.deleteDocument(doc.id).subscribe({
+      next: () => this.drawerDocs.update((list) => list.filter((d) => d.id !== doc.id)),
+      error: () => this.docError.set('Could not delete that document.'),
+    });
+  }
+
+  // ── villa live pricing ──────────────────────────────────────────────────────
   loadVillasLive(): void {
     this.api.villasLive().subscribe({ next: (v) => this.nwVillas.set(v), error: () => {} });
   }
-  setNwSub(sub: 'clients' | 'villas' | 'buckets' | 'calendar'): void {
-    this.nwSub.set(sub);
-    if (sub === 'villas') this.loadVillasLive();
-    if (sub === 'buckets' && !this.nwBuckets().length) {
-      this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
-    }
-    if (sub === 'calendar') this.loadCalendar();
+  villaLiveTotal(v: VillaLive): number {
+    return v.funds.reduce((s, f) => s + (f.nav || 0), 0);
   }
 
-  // bucket builder
+  // ── bucket builder ──────────────────────────────────────────────────────────
   addFundToBucket(): void {
     const name = this.newFundName().trim();
     if (!name) return;
     this.newBucketFunds.update((f) => [...f, {
-      scheme_name: name, category: 'Equity', target_weight: 0,
+      scheme_name: name, category: 'Equity', sleeve: this.guessSleeve(name), target_weight: 0,
       ret_1y: null, ret_3y: null, ret_5y: null,
     }]);
     this.newFundName.set('');
   }
-  /** immutably patch one field of a draft fund by index. */
   editDraftFund(i: number, field: keyof BucketFund, value: any): void {
     this.newBucketFunds.update((funds) =>
       funds.map((f, idx) => {
         if (idx !== i) return f;
         const num = value === '' || value === null ? null : Number(value);
-        if (field === 'scheme_name' || field === 'category') return { ...f, [field]: value };
+        if (field === 'scheme_name' || field === 'category' || field === 'sleeve') return { ...f, [field]: value };
         return { ...f, [field]: num };
       }));
+  }
+  sleeveLabel(s?: string): string {
+    return ({ arbitrage: 'Arbitrage', gold: 'Gold', large: 'Large Cap',
+              mid: 'Mid Cap', small: 'Small Cap', other: 'Other' } as Record<string, string>)[s || ''] || '';
+  }
+  guessSleeve(name: string): string {
+    const n = (name || '').toLowerCase();
+    if (n.includes('arbitrage')) return 'arbitrage';
+    if (n.includes('gold')) return 'gold';
+    if (n.includes('small')) return 'small';
+    if (n.includes('mid')) return 'mid';
+    if (n.includes('large') || n.includes('momentum') || n.includes('flexi') || n.includes('index')) return 'large';
+    return 'other';
   }
   removeFundFromBucket(i: number): void {
     this.newBucketFunds.update((f) => f.filter((_, idx) => idx !== i));
   }
-  /** weighted-average return for a bucket's funds over available weights (null returns excluded). */
   weightedReturn(funds: BucketFund[], key: 'ret_1y' | 'ret_3y' | 'ret_5y'): number | null {
     let wsum = 0, acc = 0;
     for (const f of funds) {
@@ -1044,6 +607,7 @@ export class AppComponent implements OnInit {
         this.newBucketName.set(''); this.newBucketTier.set('');
         this.newBucketKind.set('sip'); this.newBucketSubtitle.set('');
         this.newBucketFunds.set([]);
+        this.showBuilder.set(false);
         this.api.reportBuckets().subscribe({ next: (b) => this.nwBuckets.set(b) });
       },
       error: () => this.bucketSaving.set(false),
@@ -1054,9 +618,6 @@ export class AppComponent implements OnInit {
       next: () => this.nwBuckets.update((b) => b.filter((x) => x.id !== id)),
     });
   }
-  villaLiveTotal(v: VillaLive): number {
-    return v.funds.reduce((s, f) => s + (f.nav || 0), 0);
-  }
 
   // ── upload-tracking calendar ─────────────────────────────────────────────
   private fmtDate(d: Date): string {
@@ -1065,7 +626,6 @@ export class AppComponent implements OnInit {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
-  /** load the visible month's calendar from the backend. */
   loadCalendar(): void {
     const month = this.nwCalMonth();
     const start = new Date(month.getFullYear(), month.getMonth(), 1);
@@ -1087,297 +647,43 @@ export class AppComponent implements OnInit {
     this.nwCalMonth.set(new Date(m.getFullYear(), m.getMonth() + 1, 1));
     this.loadCalendar();
   }
-  /** "September 2026" label for the visible month. */
   calMonthLabel = computed(() =>
     this.nwCalMonth().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
-  /** number of empty leading cells so day 1 lands on its weekday (Sun..Sat grid). */
   calLeadPad = computed(() => {
     const m = this.nwCalMonth();
     return new Array(new Date(m.getFullYear(), m.getMonth(), 1).getDay()).fill(0);
   });
-  /** day-of-month number for a CalDay (avoids timezone drift by parsing the string). */
   calDayNum(d: CalDay): number { return Number(d.date.slice(8, 10)); }
-  /** true when the date is strictly after today (future — render faint, no alarm). */
   calIsFuture(d: CalDay): boolean { return d.date > this.fmtDate(new Date()); }
   calIsToday(d: CalDay): boolean { return d.date === this.fmtDate(new Date()); }
   selectCalDay(d: CalDay): void {
     this.nwCalSelected.set(this.nwCalSelected()?.date === d.date ? null : d);
   }
-  /** days with both reports, out of past+today days in the visible month. */
   calComplete = computed(() => {
     const today = this.fmtDate(new Date());
     const elapsed = this.nwCalDays().filter((d) => d.date <= today);
     return { done: elapsed.filter((d) => d.status === 'both').length, total: elapsed.length };
   });
 
-  seeding = signal(false);
-  /** One-time: load the sample clients into Supabase, then refresh the list. */
-  seedClients(): void {
-    if (this.seeding()) return;
-    this.seeding.set(true);
-    this.api.seedSampleClients().subscribe({
-      next: () => { this.seeding.set(false); this.loadCrmClients(); },
-      error: () => this.seeding.set(false),
-    });
-  }
-
-  // ═══════════════════════════ VILLA MANAGEMENT ═══════════════════════════
-  villaCatalog = signal<VillaCatalogItem[]>([]);
-  villaBusy = signal(false);
-  villaError = signal('');
-  // "add villa" form
-  showAddVilla = signal(false);
-  newVillaId = signal('');
-  newVillaSip = signal<number>(0);
-  newVillaInvested = signal<number>(0);
-  // "edit holding" form (per holding id)
-  editingUv = signal<string>('');
-  editSip = signal<number>(0);
-  editValue = signal<number>(0);
-  editStatus = signal<string>('accumulating');
-
-  private ensureVillaCatalog(): void {
-    if (this.villaCatalog().length) return;
-    this.api.listVillas().subscribe({ next: (v) => this.villaCatalog.set(v), error: () => {} });
-  }
-
-  openAddVilla(): void {
-    this.ensureVillaCatalog();
-    this.villaError.set('');
-    this.newVillaId.set(''); this.newVillaSip.set(0); this.newVillaInvested.set(0);
-    this.showAddVilla.set(true);
-  }
-  cancelAddVilla(): void { this.showAddVilla.set(false); }
-
-  addVilla(): void {
-    const uid = this.crmActive()?.id;
-    if (!uid || !this.newVillaId() || this.villaBusy()) return;
-    this.villaBusy.set(true); this.villaError.set('');
-    this.api.addHolding(uid, {
-      villa_id: this.newVillaId(),
-      sip_monthly: Number(this.newVillaSip()) || 0,
-      invested: Number(this.newVillaInvested()) || 0,
-    }).subscribe({
-      next: (r) => {
-        this.villaBusy.set(false); this.showAddVilla.set(false);
-        if (r.profile) this.crmActive.set(r.profile);
-        this.loadCrmClients();
-      },
-      error: (e) => { this.villaBusy.set(false); this.villaError.set(e?.error?.detail || 'Could not add villa.'); },
-    });
-  }
-
-  startEditHolding(h: any): void {
-    this.editingUv.set(h.id);
-    this.editSip.set(h.sip_monthly || 0);
-    this.editValue.set(h.current_value || 0);
-    this.editStatus.set(h.status || 'accumulating');
-    this.villaError.set('');
-  }
-  cancelEditHolding(): void { this.editingUv.set(''); }
-
-  saveHolding(): void {
-    const uid = this.crmActive()?.id;
-    const uvId = this.editingUv();
-    if (!uid || !uvId || this.villaBusy()) return;
-    this.villaBusy.set(true); this.villaError.set('');
-    this.api.updateHolding(uid, uvId, {
-      sip_monthly: Number(this.editSip()) || 0,
-      current_value: Number(this.editValue()) || 0,
-      status: this.editStatus(),
-    }).subscribe({
-      next: (r) => {
-        this.villaBusy.set(false); this.editingUv.set('');
-        if (r.profile) this.crmActive.set(r.profile);
-        this.loadCrmClients();
-      },
-      error: (e) => { this.villaBusy.set(false); this.villaError.set(e?.error?.detail || 'Could not update.'); },
-    });
-  }
-
-  deleteHolding(h: any): void {
-    const uid = this.crmActive()?.id;
-    if (!uid || this.villaBusy()) return;
-    if (typeof confirm === 'function' && !confirm(`Remove ${h.villa_name} from this client?`)) return;
-    this.villaBusy.set(true); this.villaError.set('');
-    this.api.deleteHolding(uid, h.id).subscribe({
-      next: (r) => {
-        this.villaBusy.set(false);
-        if (r.profile) this.crmActive.set(r.profile);
-        this.loadCrmClients();
-      },
-      error: (e) => { this.villaBusy.set(false); this.villaError.set(e?.error?.detail || 'Could not remove.'); },
-    });
-  }
-
-
-  /** Upload a document to the currently-open CRM client (by their name). */
-  onCrmFilePicked(ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files && input.files[0];
-    const client = this.crmActive();
-    if (!file || !client) return;
-    this.uploading.set(true);
-    this.docError.set('');
-    this.api.uploadDocument(client.name, file).subscribe({
-      next: (doc) => {
-        this.crmActive.update((p) => p ? { ...p, documents: [doc, ...p.documents] } : p);
-        this.uploading.set(false);
-        input.value = '';
-      },
-      error: (e) => {
-        this.docError.set(e?.error?.detail || 'Upload failed. Try again.');
-        this.uploading.set(false);
-        input.value = '';
-      },
-    });
-  }
-
-  removeCrmDoc(doc: ClientDoc): void {
-    this.api.deleteDocument(doc.id).subscribe({
-      next: () => this.crmActive.update((p) =>
-        p ? { ...p, documents: p.documents.filter((d) => d.id !== doc.id) } : p),
-      error: () => this.docError.set('Could not delete that document.'),
-    });
-  }
-
-  kindMetaFor(kind: string) { return KIND_META[kind] || KIND_META['consultation']; }
-  pct(v: number | null): string { return v == null ? '—' : `${Math.round(v * 100)}%`; }
-
-  /** A villa the client hasn't fully paid for yet is "under construction" —
-   *  they're still accumulating (SIP / lump-sums) toward the full price. Once
-   *  fully funded it's "built" (active); exited stays exited. */
-  holdingStatus(h: any): 'construction' | 'built' | 'exited' {
-    if (h?.status === 'exited') return 'exited';
-    const fullyPaid = h?.progress != null && h.progress >= 1;
-    if (h?.status === 'active' || fullyPaid) return 'built';
-    return 'construction';
-  }
-  holdingStatusLabel(h: any): string {
-    return { construction: 'Under construction', built: 'Built', exited: 'Exited' }[this.holdingStatus(h)];
-  }
-  holdingIcon(h: any): string {
-    return this.holdingStatus(h) === 'construction' ? '🏗️' : '🏠';
-  }
-
-  // ═══════════════════════════ DOCUMENTS ═══════════════════════════
-  loadClients(): void {
-    this.docsLoading.set(true);
-    this.api.listClients().subscribe({
-      next: (c) => {
-        this.clients.set(c);
-        this.docsLoading.set(false);
-        if (!this.activeClient() && c.length) this.openClient(c[0].client);
-      },
-      error: (e) => { this.docsLoading.set(false); if (e?.status === 401) this.lock(); },
-    });
-  }
-
-  addClient(): void {
-    const name = this.newClientName().trim();
-    if (!name) return;
-    this.api.createClient(name).subscribe({
-      next: () => {
-        this.newClientName.set('');
-        this.loadClients();
-        this.openClient(name);
-      },
-      error: (e) => this.docError.set(e?.error?.detail || 'Could not add client.'),
-    });
-  }
-
-  openClient(name: string): void {
-    this.activeClient.set(name);
-    this.clientDocs.set([]);
-    this.docError.set('');
-    this.api.listDocuments(name).subscribe({
-      next: (d) => this.clientDocs.set(d),
-      error: (e) => { if (e?.status === 401) this.lock(); },
-    });
-  }
-
-  onFilePicked(ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files && input.files[0];
-    if (!file || !this.activeClient()) return;
-    this.uploading.set(true);
-    this.docError.set('');
-    this.api.uploadDocument(this.activeClient(), file).subscribe({
-      next: (doc) => {
-        this.clientDocs.update((list) => [doc, ...list]);
-        this.uploading.set(false);
-        input.value = '';
-        this.refreshClientCounts();
-      },
-      error: (e) => {
-        this.docError.set(e?.error?.detail || 'Upload failed. Try again.');
-        this.uploading.set(false);
-        input.value = '';
-      },
-    });
-  }
-
-  openDoc(doc: ClientDoc): void {
-    this.api.downloadDocument(doc.id).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      },
-      error: () => this.docError.set('Could not open that document.'),
-    });
-  }
-
-  removeDoc(doc: ClientDoc): void {
-    this.api.deleteDocument(doc.id).subscribe({
-      next: () => {
-        this.clientDocs.update((list) => list.filter((d) => d.id !== doc.id));
-        this.refreshClientCounts();
-      },
-      error: () => this.docError.set('Could not delete that document.'),
-    });
-  }
-
-  private refreshClientCounts(): void {
-    this.api.listClients().subscribe({ next: (c) => this.clients.set(c), error: () => {} });
-  }
-
   // ═══════════════════════════ helpers ═══════════════════════════
-  private isoOf(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-  private parseIso(iso: string): Date | null {
-    const p = iso.split('-').map(Number);
-    return p.length === 3 ? new Date(p[0], p[1] - 1, p[2]) : null;
-  }
-  private splitSlot(slot: string): { day: string; time: string } {
-    const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(slot || '');
-    return m ? { day: m[1], time: m[2] } : { day: '', time: '' };
-  }
-  timeLabel(t: string): string {
-    const [hh, mm] = t.split(':');
-    const h = parseInt(hh, 10);
-    const ampm = h >= 12 ? 'pm' : 'am';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return mm === '00' ? `${h12} ${ampm}` : `${h12}:${mm} ${ampm}`;
-  }
   fileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   }
   money(v: number): string {
-    if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(2).replace(/\.?0+$/, '')} Cr`;
-    if (v >= 1_00_000) return `₹${(v / 1_00_000).toFixed(1).replace(/\.0$/, '')} L`;
-    return `₹${Math.round(v).toLocaleString('en-IN')}`;
+    if (v == null) return '₹0';
+    const neg = v < 0;
+    const a = Math.abs(v);
+    let out: string;
+    if (a >= 1_00_00_000) out = `₹${(a / 1_00_00_000).toFixed(2).replace(/\.?0+$/, '')} Cr`;
+    else if (a >= 1_00_000) out = `₹${(a / 1_00_000).toFixed(1).replace(/\.0$/, '')} L`;
+    else out = `₹${Math.round(a).toLocaleString('en-IN')}`;
+    return neg ? `−${out}` : out;
   }
-  propLabel(b: Booking): string {
-    const v = b.variant ? b.variant[0].toUpperCase() + b.variant.slice(1) : '';
-    const prop = b.property || 'Digivilla';
-    // Consultations reserve N plots; SIP/buy/withdraw are about the Digivilla itself.
-    if (b.kind === 'consultation') {
-      return `${b.plots} × ${v} ${prop}`.replace(/\s+/g, ' ').trim();
-    }
-    return `${v} ${prop}`.replace(/\s+/g, ' ').trim();
+  pct(v: number | null): string { return v == null ? '—' : `${Math.round(v * 100)}%`; }
+  initials(name: string): string {
+    const parts = (name || '?').trim().split(/\s+/);
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
   }
 }

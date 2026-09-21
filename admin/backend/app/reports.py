@@ -732,10 +732,18 @@ def _fund_row(bid: str, f: dict, order: int) -> dict:
             return round(float(v), 4) if v not in (None, "") else None
         except (TypeError, ValueError):
             return None
+    # `sleeve` is the concentration bucket the client home allocation bar paints
+    # (arbitrage/gold/large/mid/small/other). Normalised to the canonical token;
+    # blank/unknown → None so the client infers it from category/name.
+    _SLEEVES = {"arbitrage", "gold", "large", "mid", "small", "other"}
+    sleeve = str(f.get("sleeve") or "").strip().lower() or None
+    if sleeve not in _SLEEVES:
+        sleeve = None
     return {
         "id": str(uuid.uuid4()), "bucket_id": bid,
         "scheme_name": f.get("scheme_name"), "scheme_code": f.get("scheme_code"),
         "category": (f.get("category") or None),
+        "sleeve": sleeve,
         "target_weight": num(f.get("target_weight")) or 0,
         "ret_1y": num(f.get("ret_1y")), "ret_3y": num(f.get("ret_3y")),
         "ret_5y": num(f.get("ret_5y")), "sort_order": order,
@@ -759,7 +767,14 @@ def create_bucket(name: str, tier: str | None, funds: list[dict],
         try:
             _sb().table("villa_buckets").insert(meta).execute()
             for r in rows:
-                _sb().table("villa_bucket_funds").insert(r).execute()
+                try:
+                    _sb().table("villa_bucket_funds").insert(r).execute()
+                except Exception:
+                    # Migration 008 (the `sleeve` column) may not be applied yet —
+                    # retry without it so bucket creation still works. The client
+                    # then infers the sleeve from category/name until it's added.
+                    _sb().table("villa_bucket_funds").insert(
+                        {k: v for k, v in r.items() if k != "sleeve"}).execute()
             return {**meta, "funds": rows}
         except Exception:
             pass

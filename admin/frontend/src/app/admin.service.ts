@@ -401,7 +401,11 @@ export interface ClientVilla {
 }
 export interface BucketFund {
   scheme_name: string; scheme_code?: number; target_weight?: number;
-  category?: string; ret_1y?: number | null; ret_3y?: number | null; ret_5y?: number | null;
+  category?: string;
+  /** Concentration sleeve for the client home allocation bar:
+   *  'arbitrage' | 'gold' | 'large' | 'mid' | 'small' | 'other'. */
+  sleeve?: string;
+  ret_1y?: number | null; ret_3y?: number | null; ret_5y?: number | null;
 }
 export interface CalDay {
   date: string; status: 'both' | 'partial' | 'none'; user: any | null; transaction: any | null;
