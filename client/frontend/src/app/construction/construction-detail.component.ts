@@ -293,54 +293,6 @@ export class ConstructionDetailComponent implements OnInit {
   }
   endScrub(): void { this.scrubIdx.set(null); }
 
-  // ── the confidence note: one true sentence for up, flat or down, from the data ──
-
-  /** Facts pulled from the LONGEST drained-value window the backend returned:
-   *  how often the value was above what went in, the worst peak-to-trough dip
-   *  and how many months it took to recover, and the total paid out. */
-  evidence = computed(() => {
-    const d = this.detail(); if (!d) return null;
-    const ranges = d.withdraw?.ranges ?? {};
-    const key = (['max', '5y', '3y', '1y'] as RangeKey[]).find(k => (ranges[k]?.length ?? 0) > 12);
-    if (!key) return null;
-    const pts = ranges[key] as DrainPt[];
-    const inv = d.invested; if (!(inv > 0)) return null;
-    const years = key === 'max' ? Math.max(1, Math.round((pts.length - 1) / 12)) : ({ '1y': 1, '3y': 3, '5y': 5 } as Record<string, number>)[key];
-    const last = pts[pts.length - 1];
-    // months the value ITSELF (ignoring what was already paid out) stood above what went in
-    let above = 0;
-    for (const p of pts) if (p.value >= inv) above++;
-    // worst dip from a running peak, and months to climb back to that peak
-    let peak = pts[0].value, peakI = 0, worst = 0, worstI = 0, worstPeakI = 0;
-    for (let i = 0; i < pts.length; i++) {
-      const v = pts[i].value;
-      if (v > peak) { peak = v; peakI = i; }
-      const dd = peak > 0 ? (peak - v) / peak : 0;
-      if (dd > worst) { worst = dd; worstI = i; worstPeakI = peakI; }
-    }
-    let recovered: number | null = null;
-    if (worst > 0) {
-      const target = pts[worstPeakI].value;
-      for (let i = worstI + 1; i < pts.length; i++) if (pts[i].value >= target) { recovered = i - worstI; break; }
-    }
-    const total = last.value + last.withdrawn;
-    return {
-      key, years, months: pts.length - 1,
-      abovePct: Math.round(above / pts.length * 100),
-      worstPct: Math.round(worst * 100), recovered,
-      endValue: last.value, paid: last.withdrawn, total,
-      growthPct: Math.round((total / inv - 1) * 100),
-      multiple: total / inv,
-    };
-  });
-
-  /** The note's tone follows TODAY's position vs what went in. */
-  noteTone = computed<'up' | 'flat' | 'down'>(() => {
-    const d = this.detail(); if (!d || !(d.invested > 0)) return 'flat';
-    const pct = d.gain / d.invested * 100;
-    return pct <= -1 ? 'down' : pct >= 1 ? 'up' : 'flat';
-  });
-
   /** Re-keys the drawn line so it re-draws itself whenever the range changes. */
   drawKeys = computed<string[]>(() => { const r = this.range(); return r ? [r] : []; });
 

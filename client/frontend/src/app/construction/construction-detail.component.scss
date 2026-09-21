@@ -84,36 +84,26 @@
 .vr-pill.vr-dn { background: rgba(200,90,90,.12); box-shadow: inset 0 0 0 1px rgba(200,90,90,.3); }
 
 /* invested · held for · pays you */
-.vr-strip { display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 16px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); margin-top: 6px; }
-.vr-strip div { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 12px 6px; text-align: center; }
-.vr-strip div + div { border-left: 1px solid var(--color-divider); }
-.vr-strip span { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-neutral-500); }
-.vr-strip b { font-family: var(--font-heading); font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.vr-strip b.gold { color: #e6cf8f; } .vr-strip b em { font-style: normal; font-size: 11px; font-weight: 400; color: var(--color-neutral-400); }
 
-.vr-note { display: flex; flex-direction: column; gap: 10px; padding: 13px 14px 12px; border-radius: 16px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); border-left: 3px solid #8a9aa6; }
-.vr-note.up { border-left-color: #86c98a; }
-.vr-note.dn { border-left-color: #d99a9a; }
-.vr-note-h { font-size: 12.5px; line-height: 1.4; color: var(--color-neutral-300); }
-.vr-note.up .vr-note-h { color: #86c98a; } .vr-note.dn .vr-note-h { color: #d99a9a; }
 /* three facts, each a number with one plain line under it */
-.vr-facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 /* the note's placeholder: same footprint, quiet shimmer */
 /* the placeholder reuses the note's own blocks, so its height matches the real
    note to the pixel and nothing below it moves when the facts land */
-.vr-note-sk i { display: block; border-radius: 6px; background: linear-gradient(100deg, var(--color-neutral-900) 30%, var(--color-neutral-800) 50%, var(--color-neutral-900) 70%); background-size: 200% 100%; animation: vrShimmer 1.4s linear infinite; }
-.vr-note-sk .vr-note-h i.l { height: 12px; width: 78%; margin: 3px 0; }         /* one 17.5px heading line */
-.vr-note-sk .vr-fact i.b { height: 16px; width: 46%; margin: 2px 0 5px; }         /* the 20px number */
-.vr-note-sk .vr-fact i.s { height: 10px; width: 92%; margin: 2px 0; }             /* two 14px caption lines */
-.vr-note-sk .vr-fact i.s + i.s { width: 64%; }
-.vr-note-sk small { display: block; line-height: 14.7px; }
-.vr-note-sk small i.l { height: 10px; width: 88%; margin: 2.3px 0; }               /* two 14.7px fine-print lines */
-.vr-note-sk small i.l + i.l { width: 22%; }
 .vr-skt { display: inline-block; width: 42px; height: 12px; border-radius: 6px; vertical-align: middle; background: linear-gradient(100deg, var(--color-neutral-800) 30%, var(--color-neutral-700) 50%, var(--color-neutral-800) 70%); background-size: 200% 100%; animation: vrShimmer 1.4s linear infinite; }
-.vr-fact { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 9px 10px; border-radius: 12px; background: rgba(255,255,255,.03); }
-.vr-fact b { font-family: var(--font-heading); font-size: 17px; font-weight: 500; letter-spacing: -.02em; color: var(--color-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.vr-fact span { font-size: 10.5px; line-height: 1.35; color: var(--color-neutral-400); }
-.vr-note > small { font-size: 10.5px; color: var(--color-neutral-500); }
+
+/* invested · held for · pays you / built — the headline facts, so they read LOUD:
+   big bright figures, an icon per fact, a lit top edge on the card */
+.vr-strip { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 8px; border-radius: 20px; overflow: hidden;
+  background: linear-gradient(180deg, #2a2d44, #20233a); box-shadow: 0 0 0 1px #3a3e58, 0 14px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); }
+.vr-strip > div { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 16px 6px 15px; text-align: center; }
+.vr-strip > div + div { box-shadow: inset 1px 0 0 rgba(255,255,255,.07); }
+.vr-strip .ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; margin-bottom: 2px; color: var(--color-accent-200); background: rgba(145,132,217,.18); }
+.vr-strip span { font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-300); }
+.vr-strip b { font-family: var(--font-heading); font-size: clamp(17px, 5.2vw, 21px); font-weight: 600; letter-spacing: -.02em; line-height: 1.15; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vr-strip b em { font-style: normal; font-size: 12px; font-weight: 500; letter-spacing: 0; color: #c9b77f; }
+.vr-strip .gold .ic { color: #ffe9a3; background: rgba(246,196,69,.16); } .vr-strip .gold b { color: #ffe9a3; }
+.vr-strip .mini { display: block; width: 62%; height: 4px; margin-top: 4px; border-radius: 2px; background: rgba(11,13,22,.6); overflow: hidden; text-decoration: none; }
+.vr-strip .mini i { display: block; height: 100%; min-width: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--color-accent-600), var(--color-accent-300)); transform-origin: left; animation: vrGrow 1.1s cubic-bezier(.2,.8,.2,1) .5s both; }
 
 /* ---- 2a · pays you ---- */
 .vr-pay { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 18px; background: var(--color-surface); box-shadow: 0 0 0 1px rgba(217,180,90,.35); }
@@ -290,7 +280,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ap, .vr-sk, .vr-in { animation: none !important; }
-  .vr-defs *, .vr-art *, .vr-art, .vr-halo, .vr-shadow, .ap-live i, .vr-pay .coin, .vr-pay .sheen, .vr-build .track i { animation: none !important; }
+  .vr-defs *, .vr-art *, .vr-art, .vr-halo, .vr-shadow, .ap-live i, .vr-pay .coin, .vr-pay .sheen, .vr-build .track i, .vr-strip .mini i { animation: none !important; }
   .vr-coin { display: none; }
   .vr-card svg.ch .line { animation: none; stroke-dashoffset: 0; } .vr-card svg.ch .area { animation: none; opacity: 1; }
   .vr-card svg.ch .mark.live .ring { animation: none; }

@@ -289,55 +289,29 @@
         </span>
       </section>
 
-      <!-- invested · held for · pays you -->
+      <!-- invested · held for · pays you / built — the three figures that matter most -->
       <div class="vr-strip vr-in" style="--i:1">
         <div>
+          <i class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M7 5h10M7 9h10M8 5c5.5 0 5.5 8 0 8l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>
           <span>Invested</span>
-          <b>{{ inr(d.invested) }}</b>
+          <b [appCountUp]="d.invested"></b>
         </div>
         <div>
+          <i class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>
           <span>Held for</span>
           <b>{{ heldFor(d.since) }}</b>
         </div>
-        <div *ngIf="d.status === 'constructed'">
+        <div class="gold" *ngIf="d.status === 'constructed'">
+          <i class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M9 13l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>
           <span>Pays you</span>
-          <b class="gold">{{ inr(d.payout.monthly) }}<em>/mo</em></b>
+          <b>{{ inr(d.payout.monthly) }}<em>/mo</em></b>
         </div>
         <div *ngIf="d.status !== 'constructed'">
+          <i class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 20V10l8-6 8 6v10M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></i>
           <span>Built</span>
           <b>{{ d.progress.pct | number:'1.0-0' }}%</b>
+          <u class="mini"><i [style.width.%]="d.progress.pct"></i></u>
         </div>
-      </div>
-
-      <!-- the confidence note: three short facts from real prices, one line each ──
-           so it scans in a glance instead of reading like a paragraph -->
-      <!-- while the price history is still loading, hold the note's space so
-           nothing below it jumps when it lands -->
-      <div class="vr-note vr-note-sk vr-in" style="--i:2" *ngIf="!evidence() && chartLoading()" aria-hidden="true">
-        <div class="vr-note-h"><i class="l"></i></div>
-        <div class="vr-facts">
-          <div class="vr-fact"><i class="b"></i><i class="s"></i><i class="s"></i></div>
-          <div class="vr-fact"><i class="b"></i><i class="s"></i><i class="s"></i></div>
-        </div>
-        <small><i class="l"></i><i class="l"></i></small>
-      </div>
-      <div class="vr-note vr-in" style="--i:2" [class.up]="noteTone() === 'up'" [class.dn]="noteTone() === 'down'" *ngIf="evidence() as e">
-        <div class="vr-note-h">
-          <span *ngIf="noteTone() === 'down'">Down {{ signedPct(-d.gain_pct, 1) }}% after {{ heldFor(d.since) }} — here is what this mix has done before</span>
-          <span *ngIf="noteTone() === 'flat'">{{ heldFor(d.since) }} in — here is what this mix has done before</span>
-          <span *ngIf="noteTone() === 'up'">Up {{ signedPct(d.gain_pct, 1) }}% after {{ heldFor(d.since) }} — here is what this mix has done before</span>
-        </div>
-        <div class="vr-facts">
-          <div class="vr-fact">
-            <b>{{ compact(e.total) }}</b>
-            <span>what {{ compact(d.invested) }} became over {{ e.years }} years<ng-container *ngIf="e.paid > 0">, incl. {{ compact(e.paid) }} paid out</ng-container></span>
-          </div>
-          <div class="vr-fact">
-            <b>−{{ e.worstPct }}%</b>
-            <span>worst dip along the way<ng-container *ngIf="e.recovered !== null">, recovered in {{ e.recovered }} months</ng-container></span>
-          </div>
-        </div>
-        <small>Real fund prices, {{ e.months }} months to today. Past returns are not a forecast.</small>
       </div>
 
       <!-- 2a · pays you — finished villas only -->
