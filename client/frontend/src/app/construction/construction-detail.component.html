@@ -309,36 +309,29 @@
         </div>
       </div>
 
-      <!-- the confidence note: what this exact mix actually did, in one line ──
-           tone follows today's position (up / flat / down); the facts come from
-           the longest real-price window the chart has -->
+      <!-- the confidence note: three short facts from real prices, one line each ──
+           so it scans in a glance instead of reading like a paragraph -->
       <div class="vr-note vr-in" style="--i:2" [class.up]="noteTone() === 'up'" [class.dn]="noteTone() === 'down'" *ngIf="evidence() as e">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path *ngIf="noteTone() !== 'down'" d="M3 17l6-6 4 4 8-8"></path><path *ngIf="noteTone() !== 'down'" d="M14 7h7v7"></path>
-          <path *ngIf="noteTone() === 'down'" d="M3 15c3-6 6-6 9 0s6 6 9 0"></path><path *ngIf="noteTone() === 'down'" d="M3 9c3-6 6-6 9 0s6 6 9 0" opacity=".45"></path>
-        </svg>
-        <div class="vr-note-t">
-          <!-- DOWN: it's early / a dip, and here's what the same mix did before -->
-          <span *ngIf="noteTone() === 'down'">
-            <b>Down {{ signedPct(-d.gain_pct, 1) }}% after {{ heldFor(d.since) }}.</b>
-            Over the last {{ e.years }} years this exact mix held above what went in <b>{{ e.abovePct }}% of months</b>, even while paying out every month.
-            Its worst dip was <b>{{ e.worstPct }}%</b><ng-container *ngIf="e.recovered !== null"> and it recovered in <b>{{ e.recovered }} months</b></ng-container>.
-            <ng-container *ngIf="d.status === 'constructed'">Your {{ inr(d.payout.monthly) }} a month is paid from the arbitrage fund, which did not follow those moves.</ng-container>
-          </span>
-          <!-- FLAT: nothing has happened yet, so anchor to the long run -->
-          <span *ngIf="noteTone() === 'flat'">
-            <b>Early days — {{ heldFor(d.since) }} in.</b>
-            Over {{ e.years }} years, {{ compact(d.invested) }} in this exact mix became <b>{{ compact(e.total) }}</b><ng-container *ngIf="e.paid > 0"> including {{ compact(e.paid) }} paid out</ng-container>,
-            and held above what went in <b>{{ e.abovePct }}% of months</b> while paying out. Dips of up to {{ e.worstPct }}% happened along the way.
-          </span>
-          <!-- UP: name the gain, then keep expectations honest -->
-          <span *ngIf="noteTone() === 'up'">
-            <b>Up {{ signedPct(d.gain_pct, 1) }}% after {{ heldFor(d.since) }}.</b>
-            Over {{ e.years }} years this exact mix turned {{ compact(d.invested) }} into <b>{{ compact(e.total) }}</b><ng-container *ngIf="e.paid > 0"> including {{ compact(e.paid) }} paid out</ng-container>.
-            It dipped as much as <b>{{ e.worstPct }}%</b> on the way<ng-container *ngIf="e.recovered !== null"> and took {{ e.recovered }} months to recover</ng-container> — that is normal for this mix.
-          </span>
-          <small>Real fund prices, {{ e.months }} months to today. Past returns are not a forecast.</small>
+        <div class="vr-note-h">
+          <span *ngIf="noteTone() === 'down'">Down {{ signedPct(-d.gain_pct, 1) }}% after {{ heldFor(d.since) }} — here is what this mix has done before</span>
+          <span *ngIf="noteTone() === 'flat'">{{ heldFor(d.since) }} in — here is what this mix has done before</span>
+          <span *ngIf="noteTone() === 'up'">Up {{ signedPct(d.gain_pct, 1) }}% after {{ heldFor(d.since) }} — here is what this mix has done before</span>
         </div>
+        <div class="vr-facts">
+          <div class="vr-fact">
+            <b>{{ compact(e.total) }}</b>
+            <span>what {{ compact(d.invested) }} became over {{ e.years }} years<ng-container *ngIf="e.paid > 0">, incl. {{ compact(e.paid) }} paid out</ng-container></span>
+          </div>
+          <div class="vr-fact">
+            <b>{{ e.abovePct }}%</b>
+            <span>of months the value stayed above what went in</span>
+          </div>
+          <div class="vr-fact">
+            <b>−{{ e.worstPct }}%</b>
+            <span>worst dip along the way<ng-container *ngIf="e.recovered !== null">, recovered in {{ e.recovered }} months</ng-container></span>
+          </div>
+        </div>
+        <small>Real fund prices, {{ e.months }} months to today. Past returns are not a forecast.</small>
       </div>
 
       <!-- 2a · pays you — finished villas only -->

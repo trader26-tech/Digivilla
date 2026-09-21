@@ -75,7 +75,7 @@ const FALLBACK_BG = ['#3b4a7a', '#5a3f7a', '#2f6b62', '#7a5a2f', '#6b3347', '#35
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span class="amc" [style.background]="img ? '#ffffff' : 'var(--amc-bg, #262a38)'" [style.color]="img ? fg : markColour"
+    <span class="amc" [style.background]="img ? '#ffffff' : 'var(--amc-bg, #262a38)'" [style.color]="img ? fg : 'var(--amc-fg, #c9c6da)'"
           [attr.data-len]="mark.length" aria-hidden="true">
       <img *ngIf="img" [src]="img" alt="" (error)="img = ''" />
       <b *ngIf="!img">{{ mark }}</b>

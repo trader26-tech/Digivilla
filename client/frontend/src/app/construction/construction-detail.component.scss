@@ -91,14 +91,17 @@
 .vr-strip b { font-family: var(--font-heading); font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vr-strip b.gold { color: #e6cf8f; } .vr-strip b em { font-style: normal; font-size: 11px; font-weight: 400; color: var(--color-neutral-400); }
 
-.vr-note { display: flex; gap: 12px; align-items: flex-start; padding: 13px 14px 12px; border-radius: 16px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); color: var(--color-neutral-300); border-left: 3px solid #8a9aa6; }
-.vr-note.up { border-left-color: #86c98a; color: #86c98a; }
-.vr-note.dn { border-left-color: #d99a9a; color: #d99a9a; }
-.vr-note svg { flex: none; margin-top: 1px; }
-.vr-note-t { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.vr-note-t span { font-size: 12.5px; line-height: 1.55; color: var(--color-neutral-300); }
-.vr-note-t b { color: var(--color-text); font-weight: 600; }
-.vr-note-t small { font-size: 10.5px; color: var(--color-neutral-500); }
+.vr-note { display: flex; flex-direction: column; gap: 10px; padding: 13px 14px 12px; border-radius: 16px; background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-neutral-800); border-left: 3px solid #8a9aa6; }
+.vr-note.up { border-left-color: #86c98a; }
+.vr-note.dn { border-left-color: #d99a9a; }
+.vr-note-h { font-size: 12.5px; line-height: 1.4; color: var(--color-neutral-300); }
+.vr-note.up .vr-note-h { color: #86c98a; } .vr-note.dn .vr-note-h { color: #d99a9a; }
+/* three facts, each a number with one plain line under it */
+.vr-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.vr-fact { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 9px 10px; border-radius: 12px; background: rgba(255,255,255,.03); }
+.vr-fact b { font-family: var(--font-heading); font-size: 17px; font-weight: 500; letter-spacing: -.02em; color: var(--color-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vr-fact span { font-size: 10.5px; line-height: 1.35; color: var(--color-neutral-400); }
+.vr-note > small { font-size: 10.5px; color: var(--color-neutral-500); }
 
 /* ---- 2a · pays you ---- */
 .vr-pay { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 18px; background: var(--color-surface); box-shadow: 0 0 0 1px rgba(217,180,90,.35); }

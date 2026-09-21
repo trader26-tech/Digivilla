@@ -788,7 +788,7 @@ def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
     (the app's payout model), then pro-rata across the rest so the payout never
     silently stops. A range is omitted when the funds don't share enough history.
 
-    Returns {"1y"|"3y"|"5y"|"10y"|"15y": [{month:'YYYY-MM', value:int, withdrawn:int}, …]}.
+    Returns {"1y"|"3y"|"5y"|"max": [{month:'YYYY-MM', value:int, withdrawn:int}, …]}.
 
     A window is offered only when funds covering at least 80% of the money have
     a price at its start — otherwise "what this mix did" would mostly be cash
@@ -815,23 +815,27 @@ def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
     months_all = sorted({m for f in funds for m in f["nav"].keys() if m <= latest})
     out: dict = {}
     why: dict = {}
-    names = {h.get("scheme_code"): (h.get("scheme_name") or "a fund") for h in holdings}
-    for key, n in (("1y", 12), ("3y", 36), ("5y", 60), ("10y", 120), ("15y", 180)):
-        months = months_all[-(n + 1):]
-        # need (almost) the full span, or the label would lie about the period
-        if len(months) < max(3, int(n * 0.92)):
-            oldest = min(min(f["nav"]) for f in funds)
-            why[key] = f"Price history for this mix starts {_month_words(oldest)}."
-            continue
-        # and most of the money must actually be investable at the start
-        start = months[0]
-        unpriced = [f for f in funds if not any(m <= start for m in f["nav"])]
-        priced_w = 1.0 - sum(f["w"] for f in unpriced)
-        if priced_w < 0.80:
-            young = max(unpriced, key=lambda f: min(f["nav"]))
-            why[key] = (f"{_short_scheme(names.get(young['code']))} ({round(young['w'] * 100)}% of this mix) "
-                        f"only has prices from {_month_words(min(young['nav']))}.")
-            continue
+
+    def priced_weight(start: str) -> float:
+        return 1.0 - sum(f["w"] for f in funds if not any(m <= start for m in f["nav"]))
+
+    # "max" = the longest run of months where 80%+ of the money had a price —
+    # the full picture, without drawing years of idle cash as a flat line.
+    first_ok = next((m for m in months_all if priced_weight(m) >= 0.80), None)
+    max_months = [m for m in months_all if first_ok and m >= first_ok]
+
+    specs = [("1y", 12), ("3y", 36), ("5y", 60), ("max", None)]
+    for key, n in specs:
+        if n is None:
+            months = max_months
+            # only worth a tab if it shows more than the 5y window does
+            if len(months) < 3 or ("5y" in out and len(months) <= 61):
+                continue
+        else:
+            months = months_all[-(n + 1):]
+            # need (almost) the full span, or the label would lie about the period
+            if len(months) < max(3, int(n * 0.92)) or priced_weight(months[0]) < 0.80:
+                continue
         # each fund's rupee share sits as cash until it has a price, then buys in
         cash = {f["code"]: invested * f["w"] for f in funds}
         units = {f["code"]: 0.0 for f in funds}
