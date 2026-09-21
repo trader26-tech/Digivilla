@@ -1503,6 +1503,33 @@
 
 /* ===== PORTFOLIO VALUE — headline figure, invested + returns, allocation bar
    and the five fund columns. ===== */
+/* ===== LOADING SKELETON — mirrors the real home layout so the swap-in to real
+   data is seamless (no jump). A soft shimmer conveys "loading" without any fake
+   numbers ever appearing. ===== */
+.home-skel { padding: 4px 20px 0; }
+.home-skel .sk {
+  display: block; border-radius: 8px;
+  background: linear-gradient(100deg,
+    var(--color-neutral-800, #1b1b1e) 30%,
+    color-mix(in srgb, var(--color-neutral-700, #2a2a2e) 60%, transparent) 50%,
+    var(--color-neutral-800, #1b1b1e) 70%);
+  background-size: 220% 100%;
+  animation: skShimmer 1.25s ease-in-out infinite;
+}
+.home-skel .sk-flows { display: flex; gap: 16px; margin-top: 8px; }
+.home-skel .sk-flow { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.home-skel .sk-lbl { width: 62%; height: 9px; }
+.home-skel .sk-fig { width: 84%; height: 22px; }
+.home-skel .sk-sub { width: 70%; height: 8px; }
+.home-skel .sk-title { width: 55%; height: 20px; margin: 22px auto 0; }
+.home-skel .sk-board { width: 100%; height: 210px; margin-top: 14px; border-radius: 16px; }
+.home-skel .sk-port { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; }
+.home-skel .sk-portk { width: 34%; height: 9px; }
+.home-skel .sk-portv { width: 60%; height: 28px; }
+.home-skel .sk-bar { width: 100%; height: 5px; margin-top: 8px; }
+@keyframes skShimmer { from { background-position: 200% 0; } to { background-position: -20% 0; } }
+@media (prefers-reduced-motion: reduce) { .home-skel .sk { animation: none; } }
+
 .port {
   flex: none;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -1541,18 +1568,41 @@
   width: 100%; display: flex; gap: 2px; height: 5px;
   border-radius: 3px; overflow: hidden; margin-top: 12px;
 }
-.port-bar span { height: 100%; flex-grow: 0; flex-shrink: 0; }
+/* Each segment WIPES IN from the left, one after another. `--i` (set inline per
+   segment) staggers the start, so the whole mix reads left → right and settles
+   in ~0.5s. transform-origin:left + scaleX gives the wipe without reflowing the
+   flex row (flex-basis is already the real width). */
+.port-bar .port-seg {
+  height: 100%; flex-grow: 0; flex-shrink: 0;
+  transform: scaleX(0); transform-origin: left center;
+  animation: segWipe .42s cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--i, 0) * .09s);
+}
+@keyframes segWipe { to { transform: scaleX(1); } }
+
 .port-funds {
   width: 100%; display: flex; justify-content: space-between; gap: 4px; margin-top: 10px;
 }
-.port-funds div {
+.port-funds .port-fund {
   flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  /* the label column fades + rises just after its segment lands */
+  opacity: 0; transform: translateY(4px);
+  animation: labelIn .34s cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(.12s + var(--i, 0) * .09s);
 }
+@keyframes labelIn { to { opacity: 1; transform: none; } }
+
 .port-funds .a {
   font-size: 13px; font-weight: var(--ref-heading); letter-spacing: -.01em;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .port-funds .n { font-size: 9px; letter-spacing: .06em; white-space: nowrap; }
+
+/* Respect reduced-motion: everything lands instantly, no wipe/stagger. */
+@media (prefers-reduced-motion: reduce) {
+  .port-bar .port-seg { animation: none; transform: none; }
+  .port-funds .port-fund { animation: none; opacity: 1; transform: none; }
+}
 
 /* ===== "What do Villa and Plot mean?" link ===== */
 .fine {

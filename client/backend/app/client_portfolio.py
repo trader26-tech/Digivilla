@@ -243,10 +243,19 @@ def live_houses(owner: str) -> dict:
     if total_inv <= 0:
         return {"houses": [], **nav_cache.freshness([h.get("scheme_code") for h in hs])}
 
-    n_complete = int(total_inv // VILLA_UNIT)
+    # The board is a fixed 3x3, so the estate tops out at 9 villas. Beyond that
+    # there is no plot left to build on: everything above 9 x VILLA_UNIT rolls
+    # into the ninth house rather than inventing a tenth with no board position.
+    HOUSES_MAX = 9
+    n_complete = min(HOUSES_MAX, int(total_inv // VILLA_UNIT))
     remainder = round(total_inv - n_complete * VILLA_UNIT, 2)
     spans = [(i * VILLA_UNIT, (i + 1) * VILLA_UNIT, False) for i in range(n_complete)]
-    if remainder > 1:
+    if n_complete >= HOUSES_MAX:
+        # full estate: fold any surplus into the last house
+        if remainder > 1 and spans:
+            lo, _, _ = spans[-1]
+            spans[-1] = (lo, total_inv, False)
+    elif remainder > 1:
         spans.append((n_complete * VILLA_UNIT, total_inv, True))
 
     houses = []
@@ -280,7 +289,8 @@ def live_houses(owner: str) -> dict:
             "value": round(value, 2),
             "gain": round(value - invested, 2),
             # how far the in-progress pillar has come (0-100)
-            "pct": round(min(1.0, (hi - lo) / VILLA_UNIT) * 100, 1),
+            "pct": (round(min(99.0, (hi - lo) / VILLA_UNIT * 100), 1)
+                     if building else 100.0),
             "funds": funds,
         })
     return {"houses": houses, **nav_cache.freshness([h.get("scheme_code") for h in hs])}

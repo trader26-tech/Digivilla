@@ -18,7 +18,7 @@ import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { DataFreshnessComponent } from './shared/data-freshness.component';
 import { CallsService } from './shared/calls.service';
-import { EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
+import { AllocRow, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
 import { compact, inr } from './shared/format.util';
 
@@ -167,8 +167,9 @@ export class EstateHomeComponent implements OnInit {
    *  PORTFOLIO VALUE allocation bar at the bottom of the home screen. Null until
    *  it loads (or when signed out / offline), so the bar is gated on it. */
   funds = signal<FundsBreakdown | null>(null);
-  /** Instant fund allocation (name/category/allocation) for the PORTFOLIO bar. */
-  alloc = signal<{ name: string; scheme_code?: number; category: string; allocation: number }[]>([]);
+  /** Instant fund allocation for the PORTFOLIO bar — read straight from the
+   *  service cache warmed during the splash, so it's present on first paint. */
+  alloc = computed<AllocRow[]>(() => this.est.allocRows() ?? []);
 
   // ── settings sheet: edit the estate name + city (server-backed) ──
   /** Whether the estate-settings sheet is open. */
@@ -383,6 +384,14 @@ export class EstateHomeComponent implements OnInit {
     return true;
   }
 
+  /** True once we have REAL data to paint the home figures from — the first
+   *  /me/portfolio response has landed (ok or error; on error we fall back to
+   *  the cached tiles). Until then the home shows a quiet skeleton instead of
+   *  flashing ₹0 / a wrong state and then jumping to the real numbers. */
+  get dataReady(): boolean {
+    return this.est.portfolioLoaded();
+  }
+
   // ------------------------------------------------------------ lifecycle --
 
   ngOnInit(): void {
@@ -393,13 +402,11 @@ export class EstateHomeComponent implements OnInit {
     }
     // Load any upcoming setup call so an empty estate can show it.
     this.loadUpcomingCall();
-    // Load the fund allocation for the PORTFOLIO VALUE bar — the INSTANT endpoint
-    // (name/category/allocation only); ₹ values are derived from the portfolio
-    // value on the fly, so the bar appears immediately, not after a slow fetch.
-    this.est.allocation().subscribe({
-      next: (a) => this.alloc.set(a.funds || []),
-      error: () => { /* signed out / offline — the bar stays hidden */ },
-    });
+    // The allocation is prefetched during the splash into est.allocRows(); the
+    // `alloc` computed below reads that cache, so the bar is ready the instant the
+    // home paints. We still kick a fresh load in case the splash was skipped
+    // (deep-link) or the token arrived late.
+    if (!this.est.allocRows()) this.est.loadAllocation();
   }
 
   // ── setup call (shown when the estate is empty) ─────────────────────────────
@@ -741,14 +748,37 @@ export class EstateHomeComponent implements OnInit {
   }
 
   // ── PORTFOLIO VALUE allocation bar (bottom) ──
-  /** Segment colours, by allocation order, for the 5-fund allocation bar. */
-  private readonly FUND_COLORS = ['#8aa89b', '#f6c445', '#4a9d47', '#5cb85c', '#8fd48a'];
-  /** Short fund labels, by allocation order, matching the reference. */
-  private readonly FUND_LABELS = ['ARBITRAGE', 'GOLD', 'LARGE CAP', 'MID CAP', 'SMALL CAP'];
+  // The bar's label + colour come from each fund's REAL sleeve (set by the admin,
+  // sent as `sleeve` on every allocation row), NOT the row's position. A fund
+  // with no sleeve is inferred from its category/name, and only truly-unknown
+  // funds fall to the neutral "OTHER" style. This is why the mix in admin now
+  // maps 1:1 to what the client shows.
+  private readonly SLEEVE_STYLE: Record<string, { label: string; color: string }> = {
+    arbitrage: { label: 'ARBITRAGE', color: '#8aa89b' },
+    gold:      { label: 'GOLD',      color: '#f6c445' },
+    large:     { label: 'LARGE CAP', color: '#4a9d47' },
+    mid:       { label: 'MID CAP',   color: '#5cb85c' },
+    small:     { label: 'SMALL CAP', color: '#8fd48a' },
+    other:     { label: 'OTHER',     color: '#9fb3ab' },
+  };
 
-  /** The fund allocation rows for the bar (name/category/allocation). Values are
-   *  derived from the portfolio value via fundValue() so the bar is instant. */
-  get fundRows(): { name: string; scheme_code?: number; category: string; allocation: number }[] {
+  /** Resolve a row's sleeve — the admin's explicit value, else inferred from the
+   *  category/name (same order the backend uses), never blank. */
+  private sleeveOf(f: AllocRow): string {
+    const s = (f.sleeve || '').toLowerCase();
+    if (this.SLEEVE_STYLE[s]) return s;
+    const hay = `${(f.category || '').toLowerCase()} ${(f.name || '').toLowerCase()}`;
+    if (hay.includes('arbitrage')) return 'arbitrage';
+    if (hay.includes('gold')) return 'gold';
+    if (hay.includes('small')) return 'small';
+    if (hay.includes('mid')) return 'mid';
+    if (hay.includes('large') || hay.includes('momentum') || hay.includes('flexi') || hay.includes('index')) return 'large';
+    return 'other';
+  }
+
+  /** The fund allocation rows for the bar. Values are derived from the portfolio
+   *  value via fundValue() so the bar is instant. */
+  get fundRows(): AllocRow[] {
     return this.alloc();
   }
   /** This fund's ₹ value = its allocation × the live portfolio value. */
@@ -759,14 +789,14 @@ export class EstateHomeComponent implements OnInit {
   fundPct(f: { allocation: number }): string {
     return Math.round(f.allocation || 0) + '%';
   }
-  /** Colour for the fund at position `i` (wraps if there are more than 5). */
-  fundColor(i: number): string {
-    return this.FUND_COLORS[i % this.FUND_COLORS.length];
+  /** Colour for a fund — from its real sleeve, so it matches the label. */
+  fundColor(_i: number, f?: AllocRow): string {
+    return f ? this.SLEEVE_STYLE[this.sleeveOf(f)].color : this.SLEEVE_STYLE['other'].color;
   }
-  /** Short display label for the fund at position `i` — the reference short
-   *  names by position, falling back to the fund's own category past the 5th. */
-  fundLabel(i: number, f: { category: string; name: string }): string {
-    return this.FUND_LABELS[i] ?? (f.category || f.name).toUpperCase();
+  /** Short display label for a fund — from its real sleeve (ARBITRAGE / GOLD /
+   *  LARGE CAP / …), set by the admin. */
+  fundLabel(_i: number, f: AllocRow): string {
+    return this.SLEEVE_STYLE[this.sleeveOf(f)].label;
   }
   /** Signed returns % for the meta row (server gain_pct, tile fallback). */
   get gainPct(): number { return this.est.gainPct; }

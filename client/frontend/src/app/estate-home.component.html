@@ -3,10 +3,28 @@
   <div class="estate-top">
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
+    <!-- ===== LOADING SKELETON: shown until the FIRST real portfolio response
+         lands, so the home never flashes ₹0 / a wrong state and then jumps to
+         the true numbers. It mirrors the real layout (two flows, a board, the
+         portfolio figure + bar) so the swap-in is seamless. ===== -->
+    <div class="home-skel" *ngIf="!dataReady" aria-hidden="true">
+      <div class="sk-flows">
+        <div class="sk-flow"><span class="sk sk-lbl"></span><span class="sk sk-fig"></span><span class="sk sk-sub"></span></div>
+        <div class="sk-flow"><span class="sk sk-lbl"></span><span class="sk sk-fig"></span><span class="sk sk-sub"></span></div>
+      </div>
+      <div class="sk sk-title"></div>
+      <div class="sk sk-board"></div>
+      <div class="sk-port">
+        <span class="sk sk-portk"></span>
+        <span class="sk sk-portv"></span>
+        <span class="sk sk-bar"></span>
+      </div>
+    </div>
+
     <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder) · INVESTED (real,
          from live NAV), split by a thin vertical divider that fades at its
          ends. Hidden on the empty estate, which keeps its onboarding. ===== -->
-    <div class="flows" *ngIf="!isEmptyEstate">
+    <div class="flows" *ngIf="dataReady && !isEmptyEstate">
       <div class="flow in">
         <div class="flow-head">
           <span class="flow-arrow" aria-hidden="true">↓</span>
@@ -27,8 +45,9 @@
     </div>
 
     <!-- ===== TITLE: kicker YOUR ESTATE over "<name>'s City", with a discreet
-         edit pencil for the estate name. ===== -->
-    <div class="title">
+         edit pencil for the estate name. Held back until data is ready so the
+         skeleton is the only thing on screen during the first load. ===== -->
+    <div class="title" *ngIf="dataReady">
       <div class="kicker">YOUR ESTATE</div>
       <div class="name-row">
         <h1 class="name">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
@@ -46,7 +65,7 @@
          board). A soft accent glow sits under it; owned parcels are painted
          with the reference tile symbols and empty lots recede as dashed
          diamonds. Hidden on the empty estate. ===== -->
-    <div class="board" *ngIf="!isEmptyEstate">
+    <div class="board" *ngIf="dataReady && !isEmptyEstate">
       <svg viewBox="-175 15 590 375" role="img" aria-label="Your estate board">
         <!-- ============================================================
              Reference symbols (the "estate board" template), verbatim.
@@ -336,7 +355,7 @@
     <!-- ===== PORTFOLIO VALUE: the headline figure (full ₹ grouping), the
          invested + returns line, a 5-segment allocation bar and the five fund
          columns. Hidden on the empty estate. ===== -->
-    <div class="port" *ngIf="!isEmptyEstate">
+    <div class="port" *ngIf="dataReady && !isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
       <!-- tap the figure for the live NAVs behind it -->
       <button type="button" class="port-v" (click)="fresh.show()"
@@ -351,17 +370,23 @@
       <!-- the live-values sheet (renders nothing until the figure is tapped) -->
       <app-data-freshness></app-data-freshness>
 
-      <!-- the allocation bar + fund columns only once the fund breakdown loads -->
+      <!-- the allocation bar + fund columns only once the fund breakdown loads.
+           Each segment WIPES IN from the left, one after another (staggered),
+           and each label fades up under its segment as it lands — the mix reads
+           left → right. `--i` carries the position so the CSS can stagger. -->
       <ng-container *ngIf="fundRows.length">
-        <div class="port-bar">
+        <div class="port-bar" [class.revealed]="true">
           <span *ngFor="let f of fundRows; let i = index"
+                class="port-seg"
+                [style.--i]="i"
                 [style.flex-basis.%]="f.allocation"
-                [style.background]="fundColor(i)"></span>
+                [style.background]="fundColor(i, f)"
+                [attr.title]="fundLabel(i, f) + ' · ' + fundPct(f)"></span>
         </div>
         <div class="port-funds">
-          <div *ngFor="let f of fundRows; let i = index">
+          <div *ngFor="let f of fundRows; let i = index" class="port-fund" [style.--i]="i">
             <span class="a">{{ fundPct(f) }}</span>
-            <span class="n" [style.color]="fundColor(i)">{{ fundLabel(i, f) }}</span>
+            <span class="n" [style.color]="fundColor(i, f)">{{ fundLabel(i, f) }}</span>
           </div>
         </div>
       </ng-container>
@@ -369,7 +394,7 @@
 
     <!-- ===== "What do Villa and Plot mean?" — a quiet link that opens a
          disclaimer bottom-sheet. Hidden on the empty estate. ===== -->
-    <div class="fine" *ngIf="!isEmptyEstate">
+    <div class="fine" *ngIf="dataReady && !isEmptyEstate">
       <button class="fine-link" (click)="toggleKey()" aria-label="What do Villa and Plot mean?">
         What do Villa and Plot mean? <span aria-hidden="true">›</span>
       </button>

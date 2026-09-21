@@ -248,6 +248,18 @@ export interface ClientDetails {
   since: string;
 }
 
+/** One row of the INSTANT home allocation (from GET /me/allocation). `sleeve`
+ *  is the concentration bucket set by the admin — 'arbitrage' | 'gold' |
+ *  'large' | 'mid' | 'small' | 'other' — and drives the home bar's label +
+ *  colour. May be absent from an older backend; the client then infers it. */
+export interface AllocRow {
+  name: string;
+  scheme_code?: number;
+  category: string;
+  sleeve?: string;
+  allocation: number;
+}
+
 export interface Tile {
   id: string;
   type: TileType;
@@ -409,11 +421,29 @@ export class EstateService {
     return this.http.get<FundsBreakdown>(`${environment.apiUrl}/me/funds`, { headers: this.authHeaders });
   }
 
-  /** INSTANT fund allocation for the home bar (name/category/allocation only —
-   *  no slow live-returns). The bar's ₹ values are allocation × portfolio value. */
-  allocation(): import('rxjs').Observable<{ funds: { name: string; scheme_code?: number; category: string; allocation: number }[] }> {
-    return this.http.get<{ funds: { name: string; scheme_code?: number; category: string; allocation: number }[] }>(
+  /** One row of the instant home allocation. `sleeve` is the concentration
+   *  bucket (arbitrage/gold/large/mid/small/other) set by the admin — it drives
+   *  the bar's label + colour, so the client never guesses by position. */
+  private readonly _allocRows = signal<AllocRow[] | null>(null);
+  /** The cached instant allocation, populated once during the splash and shared
+   *  with the home screen so the bar appears the instant home paints. */
+  readonly allocRows = this._allocRows.asReadonly();
+
+  /** INSTANT fund allocation for the home bar (name/category/sleeve/allocation
+   *  only — no slow live-returns). ₹ values are allocation × portfolio value. */
+  allocation(): import('rxjs').Observable<{ funds: AllocRow[] }> {
+    return this.http.get<{ funds: AllocRow[] }>(
       `${environment.apiUrl}/me/allocation`, { headers: this.authHeaders });
+  }
+
+  /** Warm the allocation cache (called during the splash and on every reload) so
+   *  the home bar has its data before it ever paints. Fails silently. */
+  loadAllocation(): void {
+    if (!this.auth.token()) return;
+    this.allocation().subscribe({
+      next: (a) => this._allocRows.set(a.funds || []),
+      error: () => { /* signed out / offline — home falls back to an empty bar */ },
+    });
   }
 
   /** NAV history (1Y/3Y/5Y/max windows) for one fund — the fund-detail chart. */
@@ -434,6 +464,9 @@ export class EstateService {
         error: () => { /* offline — keep the local cache */ },
       });
     this.loadPortfolio();
+    // Warm the home allocation bar's data alongside the portfolio, so both are
+    // ready before the home screen paints (this runs during the splash).
+    this.loadAllocation();
   }
 
   /** Authoritative real net worth (client_holdings × live NAV). */

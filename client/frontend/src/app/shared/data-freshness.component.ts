@@ -37,22 +37,32 @@ import { EstateService, LiveHouse } from '../estate.service';
         </header>
 
         <!-- ── level 1: houses ── -->
-        <div class="lv-list" *ngIf="!openHouse()">
+        <div class="lv-cards" *ngIf="!openHouse()">
           <div class="lv-sk" *ngIf="loading()"><i></i><i></i></div>
-          <button type="button" class="lv-row tap" *ngFor="let h of houses(); let i = index" [style.--i]="i" (click)="openHouse.set(h)">
-            <span class="lv-ico" [class.build]="h.building" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <button type="button" class="lv-card" *ngFor="let h of houses(); let i = index" [style.--i]="i" (click)="openHouse.set(h)">
+            <!-- the same tile the estate board paints for this house -->
+            <span class="lv-tile" aria-hidden="true">
+              <svg viewBox="0 0 240 170"><use [attr.href]="tileHref(h)" x="0" y="14"/></svg>
             </span>
-            <span class="lv-name">
-              <b>{{ houseName(h) }}</b>
-              <small *ngIf="h.building; else doneLbl">Under construction · {{ h.pct | number:'1.0-0' }}%</small>
-              <ng-template #doneLbl><small>{{ h.funds.length }} funds</small></ng-template>
+            <span class="lv-body">
+              <span class="lv-top">
+                <b class="lv-hn">{{ houseName(h) }}</b>
+                <b class="lv-hv">{{ inr(h.value) }}</b>
+              </span>
+              <span class="lv-bot">
+                <!-- where this house sits on the 3x3 board -->
+                <span class="lv-map" aria-hidden="true">
+                  <i *ngFor="let c of GRID" [class.on]="c === cellOf(h)"></i>
+                </span>
+                <small class="lv-pos">{{ posLabel(h) }}</small>
+                <small class="lv-gain" [class.pos]="h.gain >= 0" [class.neg]="h.gain < 0">{{ h.gain >= 0 ? '+' : '' }}{{ inr(h.gain) }}</small>
+              </span>
+              <span class="lv-prog" *ngIf="h.building">
+                <span class="lv-track"><i [style.width.%]="Math.max(3, h.pct)"></i></span>
+                <small>{{ h.pct | number:'1.0-0' }}% built</small>
+              </span>
             </span>
-            <span class="lv-amt">
-              <b>{{ inr(h.value) }}</b>
-              <small [class.pos]="h.gain >= 0" [class.neg]="h.gain < 0">{{ h.gain >= 0 ? '+' : '' }}{{ inr(h.gain) }}</small>
-            </span>
-            <svg class="lv-chev" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="lv-chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <p class="lv-empty" *ngIf="!loading() && !houses().length">No houses yet.</p>
         </div>
@@ -138,9 +148,40 @@ import { EstateService, LiveHouse } from '../estate.service';
     .lv-amt small { font-size: 11px; font-variant-numeric: tabular-nums; }
     .lv-amt .pos { color: #8fd65a; } .lv-amt .neg { color: #d98a8a; }
     .lv-chev { flex: none; color: #4b5261; }
+    /* ── house cards ── */
+    .lv-cards { display: grid; gap: 10px; }
+    .lv-card {
+      display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 14px;
+      width: 100%; text-align: left; padding: 12px 14px 12px 10px;
+      background: #151922; border: 1px solid #232a36; border-radius: 18px;
+      font: inherit; color: inherit; cursor: pointer;
+      transition: background .2s, border-color .2s, transform .3s cubic-bezier(.22,1,.36,1);
+      animation: lv-in .45s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i) * 60ms);
+    }
+    .lv-card:active { transform: scale(.99); background: #1b2130; }
+    .lv-tile { display: block; width: 92px; }
+    .lv-tile svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
+    .lv-body { display: grid; gap: 6px; min-width: 0; }
+    .lv-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .lv-hn { font-size: 14.5px; font-weight: 700; color: var(--ink, #EEF1F5); }
+    .lv-hv { font-size: 16px; font-weight: 800; letter-spacing: -.02em; color: var(--ink, #EEF1F5); font-variant-numeric: tabular-nums; }
+    .lv-bot { display: flex; align-items: center; gap: 8px; }
+    .lv-map { display: grid; grid-template-columns: repeat(3, 6px); gap: 3px; flex: none; padding: 1px; }
+    .lv-map i { width: 6px; height: 6px; border-radius: 2px; background: #333c4c; }
+    .lv-map i.on { background: #a99bff; box-shadow: 0 0 0 2.5px rgba(139,123,240,.28); }
+    .lv-pos { font-size: 11px; color: var(--muted, #8B95A3); white-space: nowrap; }
+    .lv-gain { margin-left: auto; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .lv-gain.pos { color: #8fd65a; } .lv-gain.neg { color: #d98a8a; }
+    .lv-prog { display: flex; align-items: center; gap: 8px; }
+    .lv-track { flex: 1; height: 4px; border-radius: 99px; background: #2a3140; overflow: hidden; min-width: 0; }
+    .lv-track i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #E9C15C, #f6d98a); }
+    .lv-prog small { font-size: 10.5px; font-weight: 600; color: #E9C15C; white-space: nowrap; flex: none; }
+    .lv-card .lv-chev { color: #4b5261; }
+
     .lv-empty { margin: 0; padding: 16px; background: #151922; font-size: 12px; color: var(--muted, #8B95A3); text-align: center; }
     .lv-sk { display: grid; gap: 1px; }
-    .lv-sk i { display: block; height: 60px; background: linear-gradient(100deg, #151922 30%, #202632 50%, #151922 70%); background-size: 200% 100%; animation: lv-shim 1.3s linear infinite; }
+    .lv-sk { gap: 10px; }
+    .lv-sk i { display: block; height: 92px; border-radius: 18px; background: linear-gradient(100deg, #151922 30%, #202632 50%, #151922 70%); background-size: 200% 100%; animation: lv-shim 1.3s linear infinite; }
     @keyframes lv-shim { to { background-position: -200% 0; } }
 
     .lv-btn {
@@ -173,7 +214,25 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
   navDate = computed(() => this.est.portfolio()?.nav_date ?? null);
   worth = computed(() => this.est.estateValue);
 
-  ngOnInit(): void { this.timer = setInterval(() => this.now.set(Date.now()), 30000); }
+  ngOnInit(): void {
+    this.timer = setInterval(() => this.now.set(Date.now()), 30000);
+    DataFreshnessComponent.loadTiles();
+  }
+
+  /** The board tile symbols live in a static sprite; inject it once per page so
+   *  every <use href="#lvVilla"> in this (body-hosted) sheet resolves. */
+  private static tilesLoaded = false;
+  private static loadTiles(): void {
+    if (DataFreshnessComponent.tilesLoaded || typeof document === 'undefined') return;
+    DataFreshnessComponent.tilesLoaded = true;
+    fetch('assets/house-tiles.svg').then((r) => r.text()).then((svg) => {
+      const host = document.createElement('div');
+      host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+      host.setAttribute('aria-hidden', 'true');
+      host.innerHTML = svg;
+      document.body.appendChild(host);
+    }).catch(() => {});
+  }
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
     document.body.classList.remove('lv-sheet-open');
@@ -225,9 +284,37 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
     this.load();
   }
 
-  houseName(h: LiveHouse): string {
-    return h.building ? 'House ' + (h.index + 1) + ' · building' : 'House ' + (h.index + 1);
+  /** Board fill order — the same one estate-home paints: centre, then outward. */
+  private static readonly ORDER: [number, number][] = [
+    [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
+  ];
+  /** 0..8 in reading order, so the mini-map renders row by row. */
+  readonly GRID = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  readonly Math = Math;
+
+  /** Which board symbol paints this house (finished villa, or its build stage). */
+  tileHref(h: LiveHouse): string {
+    if (!h.building) return '#lvVilla';
+    const stage = Math.min(4, Math.floor((h.pct / 100) * 5));
+    return ['#lvGround', '#lvLand', '#lvGrade', '#lvFound', '#lvSteel'][stage];
   }
+
+  /** The 0..8 reading-order cell this house occupies on the board. */
+  cellOf(h: LiveHouse): number {
+    const rc = DataFreshnessComponent.ORDER[h.index];
+    return rc ? rc[0] * 3 + rc[1] : -1;
+  }
+
+  /** "Row 2 · centre" — where this house sits on the 3×3 board. */
+  posLabel(h: LiveHouse): string {
+    const rc = DataFreshnessComponent.ORDER[h.index];
+    if (!rc) return '';
+    const [r, c] = rc;
+    const col = ['left', 'centre', 'right'][c];
+    return `Row ${r + 1} · ${col}`;
+  }
+
+  houseName(h: LiveHouse): string { return 'House ' + (h.index + 1); }
   inr(n: number): string {
     const v = Math.round(n || 0);
     return (v < 0 ? '−₹' : '₹') + Math.abs(v).toLocaleString('en-IN');

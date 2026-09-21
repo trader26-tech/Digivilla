@@ -8,6 +8,7 @@ import {
   Output,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -260,6 +261,20 @@ export class EstateLevelsComponent implements AfterViewInit {
   // reference's `viewLevel ?? current`); a real 0 means the Level-0 section.
   private readonly viewLevel = signal<number | null>(null);
   private scRaf = 0;
+
+  /** Set once the user manually scrolls the ladder, so the auto-scroll-to-current
+   *  effect stops yanking them back to their level while they browse. */
+  private userScrolled = false;
+
+  /** The worth/level arrives from an async server fetch, so on first paint it is
+   *  usually still ₹0 → level 1. Re-scroll to the current rung whenever the level
+   *  changes (until the user scrolls themselves) so the app opens on their level. */
+  private readonly _followCurrent = effect(() => {
+    this.currentLevel(); // track
+    if (this.userScrolled) return;
+    if (typeof requestAnimationFrame === 'undefined') return;
+    requestAnimationFrame(() => { if (!this.userScrolled) this.toCurrent(); });
+  });
 
   // --- currency helpers ---
   private inr(n: number): string { return '₹' + n.toLocaleString('en-IN'); }
@@ -523,6 +538,10 @@ export class EstateLevelsComponent implements AfterViewInit {
     const el = this.scroller?.nativeElement;
     if (!el) return;
     el.addEventListener('scroll', this.onScroll, { passive: true });
+    // A real gesture (not our own programmatic scroll) opts out of auto-follow.
+    el.addEventListener('wheel', this._onUserScroll, { passive: true });
+    el.addEventListener('touchstart', this._onUserScroll, { passive: true });
+    el.addEventListener('pointerdown', this._onUserScroll, { passive: true });
     this.toCurrent();
     this.countUp();
     // measure banner positions after layout settles (rAF + a couple of delayed
@@ -538,6 +557,8 @@ export class EstateLevelsComponent implements AfterViewInit {
     requestAnimationFrame(this._measure);
     setTimeout(this._measure, 200);
   };
+
+  private _onUserScroll = (): void => { this.userScrolled = true; };
 
   private onScroll = (): void => {
     if (this.scRaf) return;
