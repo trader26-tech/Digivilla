@@ -40,7 +40,7 @@ import { loadTileSprite } from './tile-sprite';
         <!-- ── level 1: houses ── -->
         <div class="lv-cards" *ngIf="!openHouse()">
           <div class="lv-sk" *ngIf="loading()"><i></i><i></i></div>
-          <button type="button" class="lv-card" *ngFor="let h of houses(); let i = index" [style.--i]="i" (click)="openHouse.set(h)">
+          <button type="button" class="lv-card" *ngFor="let h of houses(); let i = index; trackBy: trackHouse" [style.--i]="i" (click)="openHouse.set(h)">
             <!-- the same tile the estate board paints for this house -->
             <span class="lv-tile" aria-hidden="true">
               <svg viewBox="0 0 240 170"><use [attr.href]="tileHref(h)" x="0" y="14"/></svg>
@@ -188,10 +188,18 @@ import { loadTileSprite } from './tile-sprite';
     }
     .lv-badge.build { color: var(--lv-build); background: var(--lv-build-soft); }
     .lv-hv { font-size: 16px; font-weight: 800; letter-spacing: -.02em; color: var(--lv-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .lv-bot { display: flex; align-items: center; gap: 10px; }
-    .lv-map { display: grid; grid-template-columns: repeat(3, 6px); gap: 3px; flex: none; padding: 1px; }
-    .lv-map i { width: 6px; height: 6px; border-radius: 2px; background: var(--lv-surface-2); }
-    .lv-map i.on { background: var(--lv-accent); box-shadow: 0 0 0 2.5px var(--lv-accent-soft); }
+    .lv-bot { display: flex; align-items: center; gap: 12px; }
+    /* the 3x3 position diagram — every cell clearly visible, the occupied one
+       lit up so "where on the estate" reads at a glance */
+    .lv-map { display: grid; grid-template-columns: repeat(3, 9px); gap: 4px; flex: none; padding: 2px; }
+    .lv-map i {
+      width: 9px; height: 9px; border-radius: 3px;
+      background: #37414f; border: 1px solid #454f5f;   /* empty parcels: dim but clearly there */
+    }
+    .lv-map i.on {
+      background: var(--lv-accent); border-color: var(--lv-accent);
+      box-shadow: 0 0 0 3px var(--lv-accent-soft), 0 0 8px 1px color-mix(in srgb, var(--lv-accent) 55%, transparent);
+    }
     .lv-gain { margin-left: auto; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .lv-gain.pos { color: var(--lv-pos); } .lv-gain.neg { color: var(--lv-neg); }
     .lv-prog { display: flex; align-items: center; gap: 8px; }
@@ -269,6 +277,23 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
   }
   closeHouse(): void { this.openHouse.set(null); if (navigator.vibrate) navigator.vibrate(3); }
 
+  /** Stable identity for *ngFor, so a refresh reuses each card's DOM node
+   *  instead of destroying + recreating it (which replays the entrance anim). */
+  trackHouse = (_: number, h: LiveHouse) => h.id;
+
+  /** True when two house lists are materially identical (same ids, values, gains
+   *  and build %), so a refresh that returns the same numbers doesn't trigger a
+   *  needless re-render/animation. */
+  private sameHouses(a: LiveHouse[], b: LiveHouse[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i], y = b[i];
+      if (x.id !== y.id || x.value !== y.value || x.gain !== y.gain ||
+          x.pct !== y.pct || x.building !== y.building) return false;
+    }
+    return true;
+  }
+
   @HostListener('document:keydown.escape') onEsc(): void {
     if (this.openHouse()) this.closeHouse(); else this.close();
   }
@@ -282,11 +307,17 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
     this.loading.set(!cached || cached.length === 0);
     this.est.liveHouses().subscribe({
       next: (r) => {
-        this.houses.set(r.houses || []);
+        const fresh = r.houses || [];
         this.loading.set(false);
+        // Avoid a second "entrance" flash: if the fresh data is materially the
+        // same as what we already showed from cache, DON'T replace the array —
+        // that would re-run the staggered card animation (the double-blink). We
+        // only re-set when something actually changed. `trackBy` on the id keeps
+        // the DOM stable across a real update too, so values morph in place.
+        if (!this.sameHouses(this.houses(), fresh)) this.houses.set(fresh);
         // keep the opened house in sync after a refresh
         const cur = this.openHouse();
-        if (cur) this.openHouse.set((r.houses || []).find((h) => h.id === cur.id) ?? null);
+        if (cur) this.openHouse.set(fresh.find((h) => h.id === cur.id) ?? null);
       },
       error: () => { this.loading.set(false); },
     });
