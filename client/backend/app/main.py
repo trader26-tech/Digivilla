@@ -20,6 +20,27 @@ settings = get_settings()
 
 app = FastAPI(title="Goal Planner API", version="0.2.0")
 
+
+@app.on_event("startup")
+def _prewarm_caches() -> None:
+    """Warm the slow, rarely-changing reads in the background as the worker
+    boots (AMFI's NAV file, the villa bucket's scheme codes, the CRM phone
+    table) so the FIRST /me/portfolio after a deploy is as fast as the rest."""
+    import threading
+
+    def warm():
+        try:
+            from app import nav_cache, client_portfolio as cp
+            nav_cache._amfi_snapshot()
+            cp._villa_scheme_codes()
+            cp._memo("client_master", 300, lambda: cp._sb().table("client_master")
+                     .select("client_code,phone").execute().data or [])
+            nav_cache.prewarm(nav_cache.held_scheme_codes())
+        except Exception:
+            pass
+
+    threading.Thread(target=warm, daemon=True).start()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

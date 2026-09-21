@@ -298,6 +298,36 @@
 .cell { cursor: default; }
 .cell.owned { cursor: pointer; }
 .cell.owned:hover { filter: brightness(1.08); }
+/* open plots: quiet by default, a touch brighter on hover */
+.cell.open { transition: filter .25s; }
+.cell.open:hover { filter: brightness(1.12); }
+/* the NEXT plot: a soft brass glow so the eye knows where the estate grows */
+.cell.next { cursor: pointer; filter: drop-shadow(0 0 10px rgba(246, 196, 69, .28)); animation: nextGlow 3.2s ease-in-out infinite; }
+@keyframes nextGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(246, 196, 69, .22)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(246, 196, 69, .5)); }
+}
+.np-shadow { fill: #0e1116; opacity: .45; }
+.np-bob { animation: npBob 2.6s ease-in-out infinite; }
+@keyframes npBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.np-ring { fill: #171a26; stroke: #f6c445; stroke-width: 1.8; }
+.np-plus { fill: none; stroke: #f6c445; stroke-width: 2.4; stroke-linecap: round; }
+
+/* ===== HOME ENTRANCE — everything settles into place in sequence once the real
+   numbers land: parcels rise back-to-front, then the figures count up. Each
+   parcel's --i is its paint index. ===== */
+.cell-in {
+  transform-box: fill-box; transform-origin: 50% 85%;
+  animation: cellIn .55s cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(.18s + var(--i, 0) * 55ms);
+}
+@keyframes cellIn {
+  from { opacity: 0; transform: translateY(14px) scale(.9); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell-in, .cell.next, .np-bob { animation: none !important; }
+}
 .cell.building { filter: drop-shadow(0 0 10px rgba(108,186,54,.55)); }
 /* The Level-0 meadow (#tGround) is a detailed asset that needs no glow —
    kill the drop-shadow halo on the ground tile (user asked for it removed). */
@@ -1469,6 +1499,27 @@
   padding: 0 22px;
 }
 .flow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* entrance: the two flows rise first (left, then right), the title after them */
+.flow, .title, .port-k, .port-v, .port-m, .fine {
+  animation: riseIn .6s cubic-bezier(.22, 1, .36, 1) both;
+}
+.flow.in  { animation-delay: .05s; }
+.flow.out { animation-delay: .13s; }
+.title    { animation-delay: .22s; }
+.port-k   { animation-delay: .55s; }
+.port-v   { animation-delay: .62s; }
+.port-m   { animation-delay: .78s; }
+.fine     { animation-delay: 1.05s; }
+/* the allocation bar + fund labels already wipe in; push them after the value */
+.port-bar .port-seg { animation-delay: calc(.85s + var(--i, 0) * .09s); }
+.port-funds .port-fund { animation-delay: calc(.97s + var(--i, 0) * .09s); }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow, .title, .port-k, .port-v, .port-m, .fine { animation: none; }
+}
 .flow.out { align-items: flex-end; text-align: right; }
 .flow-div {
   width: 1px; margin: 4px 0;

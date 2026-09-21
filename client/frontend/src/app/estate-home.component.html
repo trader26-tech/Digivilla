@@ -30,7 +30,7 @@
           <span class="flow-arrow" aria-hidden="true">↓</span>
           <span class="flow-lbl">WITHDRAWALS</span>
         </div>
-        <div class="flow-fig gold">{{ inr(withdrawAmt) }}<span>/mo</span></div>
+        <div class="flow-fig gold"><span [appCountUp]="withdrawAmt"></span><span>/mo</span></div>
         <div class="flow-sub">{{ withdrawSub }}</div>
       </div>
       <div class="flow-div" aria-hidden="true"></div>
@@ -39,7 +39,7 @@
           <span class="flow-lbl">INVESTED</span>
           <span class="flow-arrow" aria-hidden="true">↑</span>
         </div>
-        <div class="flow-fig violet">{{ inr(investedAmt) }}</div>
+        <div class="flow-fig violet"><span [appCountUp]="investedAmt"></span></div>
         <div class="flow-sub">{{ investedSub }}</div>
       </div>
     </div>
@@ -275,6 +275,39 @@
             <polygon points="213.6,80 120,134 26.4,80 120,26" fill="#242739"></polygon>
             <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3f424d" stroke-width="1.5" stroke-dasharray="6 5"></polygon>
           </g>
+          <!-- OPEN PLOT — an unbuilt parcel that still reads as part of the estate:
+               a dusk-toned lawn on real soil, mow-lines, four survey pegs and a
+               faint survey outline. Replaces the flat dark #tLocked diamond so a
+               new estate (one small plot, eight open) looks like land waiting to
+               be built on, not a hole in the board. Same 240-diamond geometry. -->
+          <g id="tOpen">
+            <!-- soil sides -->
+            <polygon points="213.6,84 120,138 120,159.6 213.6,105.6" fill="#3a2b1c"></polygon>
+            <polygon points="120,138 26.4,84 26.4,105.6 120,159.6" fill="#2d2116"></polygon>
+            <polygon points="213.6,84 120,138 120,143 213.6,89" fill="#1d150d" opacity="0.5"></polygon>
+            <!-- grass lip -->
+            <polygon points="213.6,80 120,134 120,138 213.6,84" fill="#3a5a33"></polygon>
+            <polygon points="120,134 26.4,80 26.4,84 120,138" fill="#2b4527"></polygon>
+            <!-- lawn top: dusk green -->
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="#33512f"></polygon>
+            <!-- mow-lines along the iso axis -->
+            <g fill="#3b5c36" opacity="0.85">
+              <polygon points="120,26 136,35.2 42.4,89.2 26.4,80"></polygon>
+              <polygon points="152,44.5 168,53.7 74.4,107.7 58.4,98.5"></polygon>
+              <polygon points="184,63 200,72.2 106.4,126.2 90.4,117"></polygon>
+            </g>
+            <!-- faint survey outline, inset -->
+            <polygon points="120,40 189.4,80 120,120 50.6,80" fill="none" stroke="#9fb39a" stroke-width="1.1" stroke-dasharray="4 4" opacity="0.4"></polygon>
+            <!-- four survey pegs at the diamond points (with a tiny shadow each) -->
+            <g>
+              <ellipse cx="120" cy="43.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="118.6" y="34" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
+              <ellipse cx="184.6" cy="80.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="183.2" y="71" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
+              <ellipse cx="120" cy="117.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="118.6" y="108" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
+              <ellipse cx="55.4" cy="80.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="54" y="71" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
+            </g>
+            <!-- crisp edge -->
+            <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#243a22" stroke-width="2"></polygon>
+          </g>
           <!-- one construction shell, re-anchored per building cell -->
           <g id="tBuild">
             <polygon points="484.8,389.1 520.6,409.8 496.7,423.6 460.9,402.9" fill="#a97140"></polygon><polygon points="520.6,409.8 496.7,423.6 496.7,427.7 520.6,413.9" fill="#8a5a2f"></polygon><polygon points="484.8,384.9 520.6,405.6 496.7,419.4 460.9,398.7" fill="#b98553"></polygon><polygon points="520.6,405.6 496.7,419.4 496.7,423.6 520.6,409.8" fill="#8a5a2f"></polygon><polygon points="484.8,380.8 520.6,401.5 496.7,415.3 460.9,394.6" fill="#a97140"></polygon><polygon points="520.6,401.5 496.7,415.3 496.7,419.4 520.6,405.6" fill="#8a5a2f"></polygon><polygon points="484.8,376.6 520.6,397.3 496.7,411.1 460.9,390.4" fill="#b98553"></polygon><polygon points="520.6,397.3 496.7,411.1 496.7,415.3 520.6,401.5" fill="#8a5a2f"></polygon><polygon points="735.5,451.2 759.4,465.0 731.5,481.1 707.7,467.3" fill="#b0b6bd"></polygon><polygon points="759.4,465.0 731.5,481.1 731.5,496.7 759.4,480.6" fill="#7c8189"></polygon><polygon points="735.5,367.9 640.0,423.1 640.0,476.0 735.5,420.8" fill="#efe6d7"></polygon><polygon points="640.0,423.1 536.5,363.3 536.5,416.2 640.0,476.0" fill="#d3c5ab"></polygon><polygon points="632.0,308.1 735.5,367.9 640.0,423.1 536.5,363.3" fill="#b9ab90"></polygon><polygon points="608.2,404.7 570.4,382.9 570.4,435.8 608.2,457.6" fill="#8b7f68"></polygon><rect x="605.7" y="404.7" width="5" height="52.9" fill="#9a6636"></rect><rect x="591.7" y="396.7" width="5" height="52.9" fill="#9a6636"></rect><rect x="579.8" y="389.8" width="5" height="52.9" fill="#9a6636"></rect><rect x="567.9" y="382.9" width="5" height="52.9" fill="#9a6636"></rect><polygon points="717.6,392.0 685.8,410.5 685.8,435.8 717.6,417.3" fill="#3a5f7a"></polygon><rect x="629.0" y="287.4" width="6" height="25.3" fill="#a97140"></rect><rect x="664.9" y="308.1" width="6" height="25.3" fill="#a97140"></rect><rect x="700.7" y="328.8" width="6" height="25.3" fill="#a97140"></rect><rect x="702.7" y="357.6" width="6" height="25.3" fill="#a97140"></rect><rect x="666.9" y="378.3" width="6" height="25.3" fill="#a97140"></rect><rect x="541.5" y="338.0" width="6" height="25.3" fill="#a97140"></rect><rect x="577.3" y="358.7" width="6" height="25.3" fill="#a97140"></rect><rect x="628.5" y="248.3" width="7" height="96.6" fill="#7d5027"></rect><rect x="759.9" y="324.2" width="7" height="96.6" fill="#8a5a2f"></rect><rect x="636.5" y="395.5" width="7" height="96.6" fill="#8a5a2f"></rect><rect x="505.2" y="319.6" width="7" height="96.6" fill="#7d5027"></rect><polyline points="632.0,301.2 763.4,377.1 640.0,448.4 508.7,372.5 632.0,301.2" fill="none" stroke="#a97140" stroke-width="5" stroke-linejoin="round"></polyline><polyline points="632.0,259.8 763.4,335.7 640.0,407.0 508.7,331.1 632.0,259.8" fill="none" stroke="#a97140" stroke-width="5" stroke-linejoin="round"></polyline><polygon points="508.7,331.1 640.0,407.0 640,413.0 508.66,337.1" fill="#b98553"></polygon>
@@ -299,16 +332,30 @@
              #tVilla (finished), a stage symbol #tGround/#tLand/#tGrade/#tFound/
              #tSteel (building) or #tLocked (open). The stage symbols carry
              their own diamond-scaling wrapper, so no per-cell transform. -->
-        <ng-container *ngFor="let c of boardCells()">
+        <ng-container *ngFor="let c of boardCells(); let i = index">
           <g class="cell"
              [class.owned]="c.st !== 'locked'"
              [class.building]="c.st === 'build'"
              [class.ground]="c.href === '#tGround'"
+             [class.open]="c.st === 'locked'"
+             [class.next]="c.next"
+             [style.--i]="i"
              (click)="tapBoardCell(c)"
-             [attr.role]="c.st !== 'locked' ? 'button' : null"
-             [attr.tabindex]="c.st !== 'locked' ? 0 : null"
-             [attr.aria-label]="c.name">
-            <use [attr.href]="c.href" [attr.x]="c.x" [attr.y]="c.y"></use>
+             [attr.role]="c.st !== 'locked' || c.next ? 'button' : null"
+             [attr.tabindex]="c.st !== 'locked' || c.next ? 0 : null"
+             [attr.aria-label]="c.next ? 'Next plot — start building' : c.name">
+            <!-- each parcel rises into place, back-to-front, when the home lands -->
+            <g class="cell-in">
+              <use [attr.href]="c.href" [attr.x]="c.x" [attr.y]="c.y"></use>
+              <!-- the NEXT plot carries a soft brass "+" pin: tap to start building -->
+              <g *ngIf="c.next" class="next-pin" [attr.transform]="'translate(' + (c.x + 120) + ',' + (c.y + 62) + ')'" aria-hidden="true">
+                <ellipse class="np-shadow" cx="0" cy="22" rx="10" ry="3.5"></ellipse>
+                <g class="np-bob">
+                  <circle class="np-ring" r="11"></circle>
+                  <path class="np-plus" d="M-4.5 0h9M0 -4.5v9"></path>
+                </g>
+              </g>
+            </g>
           </g>
         </ng-container>
 
@@ -360,7 +407,7 @@
       <!-- tap the figure for the live NAVs behind it -->
       <button type="button" class="port-v" (click)="fresh.show()"
               aria-label="See the live NAVs behind this value">
-        {{ inr(est.estateValue) }}<i class="port-live" aria-hidden="true"></i>
+        <span [appCountUp]="est.estateValue" [countDuration]="1100"></span><i class="port-live" aria-hidden="true"></i>
       </button>
       <div class="port-m">
         <b [class.pos]="gainPct >= 0" [class.neg]="gainPct < 0">

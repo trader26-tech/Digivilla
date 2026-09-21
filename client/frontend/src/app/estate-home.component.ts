@@ -17,6 +17,7 @@ import { AuthService } from './auth/auth.service';
 import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { DataFreshnessComponent } from './shared/data-freshness.component';
+import { CountUpDirective } from './shared/count-up.directive';
 import { CallsService } from './shared/calls.service';
 import { AllocRow, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
@@ -28,6 +29,8 @@ import { compact, inr } from './shared/format.util';
 interface BoardCell {
   col: number;
   row: number;
+  /** True for the one open plot that will be built next (tap → start a SIP). */
+  next?: boolean;
   /** Painting depth = col + row (ascending emits back-to-front). */
   d: number;
   /** 0-based house index (position in ORDER) — the ₹5L pillar this parcel is. */
@@ -90,7 +93,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, CountUpDirective],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -324,7 +327,11 @@ export class EstateHomeComponent implements OnInit {
           tile: realBuild,
         };
       }
-      return { ...base, st: 'locked', href: '#tLocked', name: `Tile ${n}`, note: 'open', paid: null, tile: null };
+      const nextIdx = villas + (building ? 1 : 0);
+      return {
+        ...base, st: 'locked', href: '#tOpen', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
+        next: i === nextIdx && nextIdx < HOUSES,
+      };
     });
     // Paint back-to-front: (col+row) ascending, ties by col ascending.
     return cells.sort((a, b) => a.d - b.d || a.col - b.col);
@@ -343,7 +350,10 @@ export class EstateHomeComponent implements OnInit {
    *  self-contained detail popup (which needs no server tile). Locked parcels
    *  are inert, as before. */
   tapBoardCell(c: BoardCell): void {
-    if (c.st === 'locked') return;
+    if (c.st === 'locked') {
+      if (c.next) { if (navigator.vibrate) navigator.vibrate(4); this.build.emit(); }
+      return;
+    }
     if (navigator.vibrate) navigator.vibrate(4);
     // EVERY parcel — finished villa or any build stage — opens the real report for
     // ITS ₹5L pillar (villa_<idx>): the same invested-driven slice the board was

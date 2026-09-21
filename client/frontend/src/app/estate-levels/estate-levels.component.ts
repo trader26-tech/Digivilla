@@ -611,10 +611,25 @@ export class EstateLevelsComponent implements AfterViewInit {
     el.scrollTo({ top: this.sectionTop(sec, el), behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  /** Target scrollTop of the current-level section (bottom of ladder as fallback). */
+  /** Target scrollTop that puts the live "you are here" dot (`.el-rail-dot`, the
+   *  white circle carrying the worth pill) at the VERTICAL CENTRE of the viewport.
+   *  Measured off the rendered rect so the `.el-inner` zoom is already baked in.
+   *  Falls back to centring the current-level section, then to the ladder bottom. */
   private currentTop(el: HTMLElement): number {
+    const clamp = (t: number) => Math.max(0, Math.min(t, el.scrollHeight - el.clientHeight));
+    const dot = el.querySelector<HTMLElement>('.el-rail-dot');
+    if (dot) {
+      const r = dot.getBoundingClientRect(), er = el.getBoundingClientRect();
+      const dotCentre = r.top + r.height / 2 - er.top + el.scrollTop;
+      return clamp(dotCentre - el.clientHeight / 2);
+    }
     const sec = el.querySelector<HTMLElement>('section[data-current="true"]');
-    return sec ? this.sectionTop(sec, el) : el.scrollHeight;
+    if (sec) {
+      const r = sec.getBoundingClientRect(), er = el.getBoundingClientRect();
+      const secCentre = r.top + r.height / 2 - er.top + el.scrollTop;
+      return clamp(secCentre - el.clientHeight / 2);
+    }
+    return el.scrollHeight;
   }
 
   private revealRaf = 0;
@@ -653,10 +668,10 @@ export class EstateLevelsComponent implements AfterViewInit {
 
     // Let layout settle one frame so currentTop() measures correctly, then tween.
     requestAnimationFrame(() => {
-      const from = el.scrollHeight; // bottom (₹0)
-      const to = this.currentTop(el);
-      const dist = from - to;
-      if (dist < 2) { el.scrollTop = to; return; }
+      const from = el.scrollHeight;      // bottom (₹0)
+      const to0 = this.currentTop(el);   // for pacing only — recomputed live below
+      const dist = from - to0;
+      if (dist < 2) { el.scrollTop = to0; return; }
       // Pace with the distance climbed: quick for a couple levels, grand for many.
       const dur = Math.max(900, Math.min(2200, 700 + dist * 0.28));
       const t0 = performance.now();
@@ -665,9 +680,12 @@ export class EstateLevelsComponent implements AfterViewInit {
       const step = (t: number) => {
         if (this.userScrolled) return; // yield the instant they grab it
         const p = Math.min(1, (t - t0) / dur);
-        el.scrollTop = from - dist * easeOutExpo(p);
+        // Recompute the target each frame so late layout (banner measurement,
+        // zoom settle) still lands the dot dead-centre.
+        const to = this.currentTop(el);
+        el.scrollTop = from + (to - from) * easeOutExpo(p);
         if (p < 1) { this.revealRaf = requestAnimationFrame(step); }
-        else { this.revealRaf = 0; }
+        else { el.scrollTop = this.currentTop(el); this.revealRaf = 0; }
       };
       this.revealRaf = requestAnimationFrame(step);
     });
@@ -686,8 +704,15 @@ export class EstateLevelsComponent implements AfterViewInit {
 
   /** HUD "Earn" tap → smooth-scroll to that villa card. */
   jumpToVilla(): void { if (this.earnTarget) this.scrollToLevel(this.earnTarget, true); }
-  /** Bottom-right arrow → smooth-scroll back to the current level. */
-  backToCurrent(): void { this.scrollToLevel(this.currentLevel(), true); }
+  /** Bottom-right arrow → smooth-scroll so the current-level "you are here" dot
+   *  returns to the centre of the screen. */
+  backToCurrent(): void {
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    // Re-arm auto-follow: tapping the arrow is an explicit "take me to my level".
+    this.userScrolled = false;
+    el.scrollTo({ top: this.currentTop(el), behavior: 'smooth' });
+  }
 
   onBack(): void { this.back.emit(); }
 

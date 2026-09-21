@@ -24,6 +24,43 @@ import time
 from typing import Optional
 
 
+# ── small in-process TTL memo ────────────────────────────────────────────────
+# The home screen's numbers come from ~8 Supabase reads; several of them (the
+# user's row, their CRM client_code, the villa bucket's scheme codes) change
+# rarely but cost a network round-trip each. Memoising them per worker for a
+# short TTL — and running the rest concurrently in portfolio_summary — takes
+# /me/portfolio from ~2–4 s to well under a second.
+_MEMO: dict[str, tuple[float, object]] = {}
+
+
+def _memo(key: str, ttl: float, fn):
+    now = time.time()
+    hit = _MEMO.get(key)
+    if hit and now - hit[0] < ttl:
+        return hit[1]
+    val = fn()
+    _MEMO[key] = (now, val)
+    return val
+
+
+def _memo_clear(prefix: str) -> None:
+    for k in [k for k in _MEMO if k.startswith(prefix)]:
+        _MEMO.pop(k, None)
+
+
+def _user_row(owner: str) -> dict:
+    """One read of the user's row (phone, estate_name, estate_city) instead of
+    three separate ones. Short TTL; cleared when the profile is saved."""
+    def load():
+        try:
+            rows = _sb().table("users").select("phone,estate_name,estate_city").eq(
+                "owner", owner).limit(1).execute().data or []
+            return rows[0] if rows else {}
+        except Exception:
+            return {}
+    return _memo(f"user:{owner}", 30, load)
+
+
 # ── live-NAV cache (mirrors villa_sip._ret_cache) ────────────────────────────
 # One mfapi round-trip per scheme, cached a few hours, so a portfolio with many
 # funds is fast and we never hammer mfapi. { scheme_code: (fetched_at, nav|None) }
@@ -91,22 +128,22 @@ def client_code_for_owner(owner: str) -> Optional[str]:
     Returns None when the user has no phone, or no client_master row shares their
     phone's last 10 digits (i.e. the admin hasn't provisioned this client yet).
     """
-    try:
-        urows = _sb().table("users").select("phone").eq("owner", owner).limit(1).execute().data or []
-        if not urows:
-            return None
-        key = _last10(urows[0].get("phone"))
+    def resolve():
+        key = _last10(_user_row(owner).get("phone"))
         if len(key) < 10:
             return None
         # Small CRM table → a full scan matched on last-10 is fine. If it grows,
         # add a generated `phone_last10` column + index.
-        masters = _sb().table("client_master").select("client_code,phone").execute().data or []
-    except Exception:
+        try:
+            masters = _memo("client_master", 300, lambda: _sb().table("client_master")
+                            .select("client_code,phone").execute().data or [])
+        except Exception:
+            return None
+        for m in masters:
+            if _last10(m.get("phone")) == key:
+                return m.get("client_code")
         return None
-    for m in masters:
-        if _last10(m.get("phone")) == key:
-            return m.get("client_code")
-    return None
+    return _memo(f"code:{owner}", 600, resolve)
 
 
 def _first_name(full: Optional[str]) -> str:
@@ -124,23 +161,20 @@ def estate_name_for_owner(owner: str) -> str:
          e.g. 'RAMPRASAD RANJEEV' → 'Ramprasad'.
       3. Nothing → "" (the UI shows a neutral 'Your City').
     """
-    try:
-        urows = _sb().table("users").select("estate_name").eq(
-            "owner", owner).limit(1).execute().data or []
-        custom = (urows[0].get("estate_name") if urows else "") or ""
-    except Exception:
-        custom = ""
-    if custom.strip():
-        return custom.strip()
+    custom = (_user_row(owner).get("estate_name") or "").strip()
+    if custom:
+        return custom
 
     code = client_code_for_owner(owner)
     if code:
-        try:
-            cm = _sb().table("client_master").select("name").eq(
-                "client_code", code).limit(1).execute().data or []
-            return _first_name(cm[0].get("name")) if cm else ""
-        except Exception:
-            return ""
+        def load():
+            try:
+                cm = _sb().table("client_master").select("name").eq(
+                    "client_code", code).limit(1).execute().data or []
+                return _first_name(cm[0].get("name")) if cm else ""
+            except Exception:
+                return ""
+        return _memo(f"cmname:{code}", 600, load)
     return ""
 
 
@@ -299,11 +333,15 @@ def live_houses(owner: str) -> dict:
 def portfolio_summary(owner: str) -> dict:
     """Real net-worth summary for the logged-in user (empty when unmatched)."""
     from app import estate as estate_svc
-    swp = estate_svc.total_swp(owner)   # total SWP/income paid out so far
-    name = estate_name_for_owner(owner)
-    city = _estate_city_for_owner(owner)
-    code = client_code_for_owner(owner)
     from app import nav_cache
+    from concurrent.futures import ThreadPoolExecutor
+    # These four don't depend on each other — fetch them at the same time.
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        f_swp = ex.submit(lambda: _memo(f"swp:{owner}", 60, lambda: estate_svc.total_swp(owner)))
+        f_name = ex.submit(estate_name_for_owner, owner)
+        f_city = ex.submit(_estate_city_for_owner, owner)
+        f_code = ex.submit(client_code_for_owner, owner)
+        swp, name, city, code = f_swp.result(), f_name.result(), f_city.result(), f_code.result()
     if not code:
         return {"worth": 0, "invested": 0, "gain": 0, "gain_pct": 0,
                 "total_swp": swp, "estate_name": name, "estate_city": city,
@@ -332,11 +370,7 @@ def portfolio_summary(owner: str) -> dict:
 
 def _estate_city_for_owner(owner: str) -> str:
     """The user's custom city/nickname (users.estate_city), or "" if unset."""
-    try:
-        u = _sb().table("users").select("estate_city").eq("owner", owner).limit(1).execute().data or []
-        return (u[0].get("estate_city") if u else "") or ""
-    except Exception:
-        return ""
+    return (_user_row(owner).get("estate_city") or "")
 
 
 def set_estate_profile(owner: str, name: Optional[str], city: Optional[str]) -> dict:
@@ -352,6 +386,7 @@ def set_estate_profile(owner: str, name: Optional[str], city: Optional[str]) -> 
             _sb().table("users").update(patch).eq("owner", owner).execute()
         except Exception:
             pass
+    _memo_clear(f"user:{owner}")   # the row just changed — drop the cached copy
     return {"estate_name": estate_name_for_owner(owner),
             "estate_city": _estate_city_for_owner(owner)}
 
@@ -558,6 +593,10 @@ def _building_scheme_holdings(client_code: str, tile_id: str) -> Optional[list[d
 
 def _villa_scheme_codes() -> set:
     """scheme_codes belonging to SIP (villa-forming) buckets — mirrors portfolio_tiles."""
+    return _memo("villa_codes", 300, _villa_scheme_codes_load)
+
+
+def _villa_scheme_codes_load() -> set:
     codes: set = set()
     try:
         buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
