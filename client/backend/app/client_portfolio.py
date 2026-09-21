@@ -788,7 +788,12 @@ def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
     (the app's payout model), then pro-rata across the rest so the payout never
     silently stops. A range is omitted when the funds don't share enough history.
 
-    Returns {"1y"|"3y"|"5y": [{month:'YYYY-MM', value:int, withdrawn:int}, …]}.
+    Returns {"1y"|"3y"|"5y"|"10y"|"15y": [{month:'YYYY-MM', value:int, withdrawn:int}, …]}.
+
+    A window is offered only when funds covering at least 80% of the money have
+    a price at its start — otherwise "what this mix did" would mostly be cash
+    sitting idle, and the chart would show a false flat line. A small young
+    sleeve (<20%) is bought in at its first price and held as cash before that.
     """
     if invested <= 0 or not holdings:
         return {}
@@ -804,46 +809,105 @@ def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
                       "arb": _sleeve_tag("", h.get("scheme_name") or "") == "ARB"})
     if not funds:
         return {}
-    common = None
-    for f in funds:
-        keys = set(f["nav"].keys())
-        common = keys if common is None else (common & keys)
-    months_all = sorted(common or [])
+    # the timeline is the UNION of months; the latest month must be shared by
+    # every fund (so "today" is comparable), the start can predate some funds.
+    latest = min(max(f["nav"].keys()) for f in funds)
+    months_all = sorted({m for f in funds for m in f["nav"].keys() if m <= latest})
     out: dict = {}
-    for key, n in (("1y", 12), ("3y", 36), ("5y", 60)):
+    why: dict = {}
+    names = {h.get("scheme_code"): (h.get("scheme_name") or "a fund") for h in holdings}
+    for key, n in (("1y", 12), ("3y", 36), ("5y", 60), ("10y", 120), ("15y", 180)):
         months = months_all[-(n + 1):]
-        if len(months) < 3:
+        # need (almost) the full span, or the label would lie about the period
+        if len(months) < max(3, int(n * 0.92)):
+            oldest = min(min(f["nav"]) for f in funds)
+            why[key] = f"Price history for this mix starts {_month_words(oldest)}."
             continue
-        units = {f["code"]: (invested * f["w"]) / f["nav"][months[0]] for f in funds}
+        # and most of the money must actually be investable at the start
+        start = months[0]
+        unpriced = [f for f in funds if not any(m <= start for m in f["nav"])]
+        priced_w = 1.0 - sum(f["w"] for f in unpriced)
+        if priced_w < 0.80:
+            young = max(unpriced, key=lambda f: min(f["nav"]))
+            why[key] = (f"{_short_scheme(names.get(young['code']))} ({round(young['w'] * 100)}% of this mix) "
+                        f"only has prices from {_month_words(min(young['nav']))}.")
+            continue
+        # each fund's rupee share sits as cash until it has a price, then buys in
+        cash = {f["code"]: invested * f["w"] for f in funds}
+        units = {f["code"]: 0.0 for f in funds}
         arb = [f for f in funds if f["arb"]]
+
+        def px(f, mk):
+            """last known price at or before mk (None if the fund didn't exist yet)."""
+            p = f["nav"].get(mk)
+            if p is not None:
+                return p
+            prior = [m for m in f["nav"] if m < mk]
+            return f["nav"][max(prior)] if prior else None
+
         pts = []
         withdrawn = 0.0
         for i, mk in enumerate(months):
+            # buy in any fund that has just got its first price
+            for f in funds:
+                if cash[f["code"]] > 0:
+                    p = px(f, mk)
+                    if p:
+                        units[f["code"]] += cash[f["code"]] / p
+                        cash[f["code"]] = 0.0
             if i and monthly > 0:
                 need = monthly
                 # 1) sell from the arbitrage sleeve first
                 for f in arb:
                     if need <= 0:
                         break
-                    px = f["nav"][mk]
-                    sold = min(need / px, units[f["code"]])
+                    p = px(f, mk)
+                    if not p or units[f["code"]] <= 0:
+                        continue
+                    sold = min(need / p, units[f["code"]])
                     units[f["code"]] -= sold
-                    need -= sold * px
+                    need -= sold * p
                 # 2) whatever is left, pro-rata across every fund still holding units
                 if need > 0:
-                    live = [f for f in funds if units[f["code"]] > 0]
-                    tot = sum(units[f["code"]] * f["nav"][mk] for f in live)
+                    live = [f for f in funds if units[f["code"]] > 0 and px(f, mk)]
+                    tot = sum(units[f["code"]] * px(f, mk) for f in live)
                     if tot > 0:
                         for f in live:
-                            px = f["nav"][mk]
-                            take = min(need * (units[f["code"]] * px / tot) / px, units[f["code"]])
+                            p = px(f, mk)
+                            take = min(need * (units[f["code"]] * p / tot) / p, units[f["code"]])
                             units[f["code"]] -= take
-                            need -= take * px
+                            need -= take * p
                 withdrawn += monthly - max(0.0, need)
-            value = sum(units[f["code"]] * f["nav"][mk] for f in funds)
+            value = sum(units[f["code"]] * (px(f, mk) or 0) for f in funds) + sum(cash.values())
             pts.append({"month": mk, "value": round(value), "withdrawn": round(withdrawn)})
         out[key] = pts
+    out["_unavailable"] = why
     return out
+
+
+def _pack_ranges(r: dict) -> dict:
+    """{"ranges": {...}, "unavailable": {...}} from the builder's combined dict."""
+    why = r.pop("_unavailable", {}) if isinstance(r, dict) else {}
+    return {"ranges": r, "unavailable": why}
+
+
+def _month_words(ym: str) -> str:
+    """'2020-02' → 'Feb 2020'."""
+    try:
+        from datetime import date
+        y, m = int(ym[:4]), int(ym[5:7])
+        return date(y, m, 1).strftime("%b %Y")
+    except Exception:
+        return ym
+
+
+def _short_scheme(name: Optional[str]) -> str:
+    """'BANDHAN SMALL CAP FUND - GROWTH' → 'Bandhan Small Cap Fund'."""
+    import re as _re
+    n = _re.sub(r"\s*[-–]\s*(Regular|Direct)\s*Plan.*$", "", name or "", flags=_re.I)
+    n = _re.sub(r"\s*[-–]?\s*(Growth|Gr)\.?$", "", n, flags=_re.I).strip()
+    keep = {"ICICI", "SBI", "HDFC", "DSP", "UTI", "PPFAS", "ETF", "FOF", "IDFC", "LIC", "HSBC", "JM", "ITI", "NJ", "PGIM"}
+    return " ".join(w if w.upper() in keep else w.capitalize() for w in n.split()) or "A fund"
 
 
 def _returns_from_points(points: list) -> dict:
@@ -979,7 +1043,7 @@ def building_detail(owner: str, tile_id: str, chart: bool = True) -> Optional[di
         },
         "withdraw": {
             "monthly": round(monthly),
-            "ranges": _drained_ranges(holdings, navfull, total_inv, monthly) if chart else {},
+            **_pack_ranges(_drained_ranges(holdings, navfull, total_inv, monthly) if chart else {}),
         },
         "progress": {
             "unit": VILLA_UNIT,
@@ -1029,7 +1093,7 @@ def building_chart(owner: str, tile_id: str) -> Optional[dict]:
         "overall": overall,
         "fund_returns": {str(c): r for c, r in per_fund.items()},
         "withdraw": {"monthly": round(monthly),
-                     "ranges": _drained_ranges(holdings, navfull, total_inv, monthly)},
+                     **_pack_ranges(_drained_ranges(holdings, navfull, total_inv, monthly))},
         "growth": _blended_growth(holdings, navfull),
     }
 

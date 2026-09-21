@@ -115,7 +115,7 @@ export interface BuildingDetail {
   /** Drained-value backtest of THIS mix over the trailing 1/3/5 years — real
    *  month-end NAVs, real weights, `monthly` ₹ sold out each month (0 while
    *  building). A range key is absent when the funds lack that much history. */
-  withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y', DrainPt[]>> };
+  withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y' | '10y' | '15y', DrainPt[]>>; unavailable?: Partial<Record<'1y' | '3y' | '5y' | '10y' | '15y', string>> };
   /** False on the fast first paint — the chart/returns are still loading. */
   has_chart?: boolean;
   invested: number;
@@ -136,7 +136,7 @@ export interface BuildingChart {
   overall: { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null };
   /** Per-fund returns keyed by scheme_code (string). */
   fund_returns: Record<string, { ret_1y: number | null; ret_3y: number | null; ret_5y: number | null }>;
-  withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y', DrainPt[]>> };
+  withdraw: { monthly: number; ranges: Partial<Record<'1y' | '3y' | '5y' | '10y' | '15y', DrainPt[]>>; unavailable?: Partial<Record<'1y' | '3y' | '5y' | '10y' | '15y', string>> };
   growth: GrowthPt[];
 }
 

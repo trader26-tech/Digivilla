@@ -221,10 +221,13 @@
 
   <!-- ── header row: round back · title · since ── -->
   <div class="ap-h">
-    <button type="button" class="ap-x" (click)="onBack()" aria-label="Back">‹</button>
+    <button type="button" class="ap-x" (click)="onBack()" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <b>{{ title || detail()?.name || 'Villa' }}</b>
     <ng-container *ngIf="detail() as d">
-      <span *ngIf="d.since">since {{ d.since | date:'d MMM' }}</span>
+      <span class="ap-live" *ngIf="d.status === 'constructed'"><i></i>Earning</span>
+      <span class="ap-live build" *ngIf="d.status !== 'constructed'"><i></i>Building</span>
     </ng-container>
   </div>
 
@@ -247,7 +250,7 @@
         </div>
         <div class="vr-load-cap">Valuing your property<i></i><i></i><i></i></div>
       </div>
-      <div class="vr-sk chart"></div>
+      <div class="vr-sk row"></div>
       <div class="vr-sk card"></div>
       <div class="vr-sk card"></div>
     </ng-container>
@@ -265,68 +268,207 @@
     <!-- ═══════════ the report ═══════════ -->
     <ng-container *ngIf="detail() as d">
 
-      <!-- 1 · header: stage art + invested → worth today -->
-      <div class="vr-head">
-        <div class="vr-glow"></div>
-        <svg viewBox="14 2 212 184" aria-hidden="true"><use [attr.href]="artHref(d)"></use></svg>
-        <div class="vr-iv">
-          <div class="c">
-            <span>You invested</span>
-            <b>{{ inr(d.invested) }}</b>
-            <em>{{ d.since ? (d.since | date:'d MMM y') : '' }}</em>
-          </div>
-          <div class="mid">
-            <i class="ln"></i>
-            <span class="pill" [ngClass]="dir(d.gain)">{{ arrow(d.gain) }} {{ signedPct(d.gain_pct, 1) }}%</span>
-            <i class="ln"></i>
-          </div>
-          <div class="c r">
-            <span>Worth today</span>
-            <b [ngClass]="dir(d.gain)">{{ inr(d.current_value) }}</b>
-            <em>{{ signedInr(d.gain) }} {{ isUp(d.gain) ? 'gained' : 'down' }}</em>
-          </div>
+      <!-- 1 · hero: the floating property + what it is worth today -->
+      <section class="vr-hero vr-in" style="--i:0" [class.dn]="d.gain < 0">
+        <div class="vr-stage">
+          <span class="vr-halo"></span>
+          <span class="vr-shadow"></span>
+          <svg class="vr-art" viewBox="14 2 212 184" aria-hidden="true"><use [attr.href]="artHref(d)"></use></svg>
+          <!-- a finished villa earns: coins drift up out of it -->
+          <ng-container *ngIf="d.status === 'constructed'">
+            <span class="vr-coin" style="--x:-34px;--d:0s">₹</span>
+            <span class="vr-coin" style="--x:30px;--d:1.3s">₹</span>
+            <span class="vr-coin" style="--x:-4px;--d:2.6s">₹</span>
+          </ng-container>
         </div>
-        <div class="vr-note" *ngIf="d.gain < 0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15c3-6 6-6 9 0s6 6 9 0"></path><path d="M3 9c3-6 6-6 9 0s6 6 9 0" opacity=".45"></path></svg>
-          <span *ngIf="d.status === 'constructed'"><b>A dip is normal.</b> Markets move; your {{ inr(d.payout.monthly) }} a month keeps coming — it is paid from the arbitrage fund, which does not follow the market.</span>
-          <span *ngIf="d.status !== 'constructed'"><b>A dip is normal.</b> Markets move; your house keeps building at today's prices.</span>
+        <span class="vr-k">Worth today</span>
+        <b class="vr-worth" [appCountUp]="d.current_value"></b>
+        <span class="vr-pill" [ngClass]="dir(d.gain)">
+          {{ arrow(d.gain) }} {{ signedPct(d.gain_pct, 1) }}%
+          <i>{{ signedInr(d.gain) }}</i>
+        </span>
+      </section>
+
+      <!-- invested · held for · pays you -->
+      <div class="vr-strip vr-in" style="--i:1">
+        <div>
+          <span>Invested</span>
+          <b>{{ inr(d.invested) }}</b>
+        </div>
+        <div>
+          <span>Held for</span>
+          <b>{{ heldFor(d.since) }}</b>
+        </div>
+        <div *ngIf="d.status === 'constructed'">
+          <span>Pays you</span>
+          <b class="gold">{{ inr(d.payout.monthly) }}<em>/mo</em></b>
+        </div>
+        <div *ngIf="d.status !== 'constructed'">
+          <span>Built</span>
+          <b>{{ d.progress.pct | number:'1.0-0' }}%</b>
         </div>
       </div>
 
-      <!-- 2 · chart: what this mix became while the payout was drained out of it -->
-      <div class="vr-card">
+      <!-- the confidence note: what this exact mix actually did, in one line ──
+           tone follows today's position (up / flat / down); the facts come from
+           the longest real-price window the chart has -->
+      <div class="vr-note vr-in" style="--i:2" [class.up]="noteTone() === 'up'" [class.dn]="noteTone() === 'down'" *ngIf="evidence() as e">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path *ngIf="noteTone() !== 'down'" d="M3 17l6-6 4 4 8-8"></path><path *ngIf="noteTone() !== 'down'" d="M14 7h7v7"></path>
+          <path *ngIf="noteTone() === 'down'" d="M3 15c3-6 6-6 9 0s6 6 9 0"></path><path *ngIf="noteTone() === 'down'" d="M3 9c3-6 6-6 9 0s6 6 9 0" opacity=".45"></path>
+        </svg>
+        <div class="vr-note-t">
+          <!-- DOWN: it's early / a dip, and here's what the same mix did before -->
+          <span *ngIf="noteTone() === 'down'">
+            <b>Down {{ signedPct(-d.gain_pct, 1) }}% after {{ heldFor(d.since) }}.</b>
+            Over the last {{ e.years }} years this exact mix held above what went in <b>{{ e.abovePct }}% of months</b>, even while paying out every month.
+            Its worst dip was <b>{{ e.worstPct }}%</b><ng-container *ngIf="e.recovered !== null"> and it recovered in <b>{{ e.recovered }} months</b></ng-container>.
+            <ng-container *ngIf="d.status === 'constructed'">Your {{ inr(d.payout.monthly) }} a month is paid from the arbitrage fund, which did not follow those moves.</ng-container>
+          </span>
+          <!-- FLAT: nothing has happened yet, so anchor to the long run -->
+          <span *ngIf="noteTone() === 'flat'">
+            <b>Early days — {{ heldFor(d.since) }} in.</b>
+            Over {{ e.years }} years, {{ compact(d.invested) }} in this exact mix became <b>{{ compact(e.total) }}</b><ng-container *ngIf="e.paid > 0"> including {{ compact(e.paid) }} paid out</ng-container>,
+            and held above what went in <b>{{ e.abovePct }}% of months</b> while paying out. Dips of up to {{ e.worstPct }}% happened along the way.
+          </span>
+          <!-- UP: name the gain, then keep expectations honest -->
+          <span *ngIf="noteTone() === 'up'">
+            <b>Up {{ signedPct(d.gain_pct, 1) }}% after {{ heldFor(d.since) }}.</b>
+            Over {{ e.years }} years this exact mix turned {{ compact(d.invested) }} into <b>{{ compact(e.total) }}</b><ng-container *ngIf="e.paid > 0"> including {{ compact(e.paid) }} paid out</ng-container>.
+            It dipped as much as <b>{{ e.worstPct }}%</b> on the way<ng-container *ngIf="e.recovered !== null"> and took {{ e.recovered }} months to recover</ng-container> — that is normal for this mix.
+          </span>
+          <small>Real fund prices, {{ e.months }} months to today. Past returns are not a forecast.</small>
+        </div>
+      </div>
+
+      <!-- 2a · pays you — finished villas only -->
+      <div class="vr-pay vr-in" style="--i:3" *ngIf="d.status === 'constructed'">
+        <span class="sheen"></span>
+        <div class="coin"><span>₹</span></div>
+        <div class="t">
+          <span>This villa pays you</span>
+          <b><span [appCountUp]="d.payout.monthly"></span> <em>every month</em></b>
+          <span class="s">
+            <ng-container *ngIf="d.payout.next_credit">Next credit {{ d.payout.next_credit | date:'d MMM' }} · </ng-container>from your {{ shortName(d.payout.from_fund) || 'arbitrage' }} fund
+          </span>
+        </div>
+      </div>
+
+      <!-- 2b · build progress — plots still under construction -->
+      <div class="vr-build vr-in" style="--i:3" *ngIf="d.status !== 'constructed'">
+        <div class="top">
+          <span>Building towards a villa</span>
+          <b>{{ d.progress.pct | number:'1.0-0' }}%</b>
+        </div>
+        <div class="track"><i [style.width.%]="d.progress.pct"></i></div>
+        <div class="bot">
+          <span>{{ compact(d.progress.funded) }} of {{ compact(d.progress.unit) }}</span>
+          <span *ngIf="d.progress.remaining > 0">{{ compact(d.progress.remaining) }} to go — then it starts paying you</span>
+        </div>
+      </div>
+
+      <!-- 3 · inside this villa / plot: the mix bar + one card per fund -->
+      <div class="vr-sec vr-in" style="--i:4">
+        <span>{{ d.status === 'constructed' ? 'Inside this villa' : 'Inside this plot' }}</span>
+        <i>{{ d.funds.length }} {{ d.funds.length === 1 ? 'fund' : 'funds' }} · tap one</i>
+      </div>
+
+      <div class="vr-mixbar vr-in" style="--i:4" role="img" aria-label="How this property is split across its funds">
+        <i *ngFor="let f of d.funds; trackBy: trackFund" [style.flex-grow]="f.allocation || 0.01" [style.background]="tagColour(f.tag)"></i>
+      </div>
+
+      <button type="button" class="vr-f vr-in" *ngFor="let f of d.funds; let i = index; trackBy: trackFund"
+              [style.--i]="5 + i" [style.--c]="tagColour(f.tag)"
+              [class.arb]="f.tag === 'ARB' && d.status === 'constructed'"
+              [class.open]="openFund() === trackFund(i, f)"
+              [attr.aria-expanded]="openFund() === trackFund(i, f)"
+              (click)="toggleFund(f, i)">
+        <div class="vr-fh">
+          <app-amc-logo [name]="f.scheme_name"></app-amc-logo>
+          <div class="nm">
+            <b>{{ shortName(f.scheme_name) }}</b>
+            <span><i class="dot"></i>{{ tagLabel(f.tag) }} · {{ f.allocation | number:'1.0-0' }}% of this {{ d.status === 'constructed' ? 'villa' : 'plot' }}</span>
+          </div>
+          <div class="val">
+            <b>{{ inr(f.current_value) }}</b>
+            <span [ngClass]="dir(f.gain)">{{ arrow(f.gain) }} {{ signedPct(fundPct(f), 1) }}%</span>
+          </div>
+          <svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <!-- opened: where the money went, and how the fund itself has done -->
+        <div class="vr-fx"><div class="in">
+          <div class="role">{{ role(f.tag, d) }}</div>
+          <div class="iv">
+            <div><span>Invested</span><b>{{ inr(f.invested) }}</b></div>
+            <i class="arr">→</i>
+            <div class="r"><span>Now</span><b>{{ inr(f.current_value) }}</b></div>
+          </div>
+          <div class="mv">
+            <div class="bar">
+              <i [style.width.%]="invWidth(f)"></i>
+              <i class="g" [ngClass]="dir(f.gain)" [style.width.%]="gainWidth(f)"></i>
+            </div>
+            <b [ngClass]="dir(f.gain)">{{ signedInr(f.gain) }}</b>
+          </div>
+          <div class="rets">
+            <div><span>1Y return</span><b>{{ ret(f.ret_1y) }}</b></div>
+            <div><span>3Y p.a.</span><b>{{ ret(f.ret_3y) }}</b></div>
+            <div><span>5Y p.a.</span><b>{{ ret(f.ret_5y) }}</b></div>
+          </div>
+        </div></div>
+      </button>
+
+      <!-- 4 · chart: what this mix became while the payout was drained out of it -->
+      <div class="vr-sec vr-in" [style.--i]="5 + d.funds.length">
+        <span>If you'd held this mix</span>
+        <i>real fund prices</i>
+      </div>
+      <div class="vr-card vr-in" [style.--i]="5 + d.funds.length">
         <ng-container *ngIf="chart() as c; else noHistory">
-          <div class="vr-chh">
+          <div class="vr-chh" *ngIf="readout() as r">
             <div>
-              <span *ngIf="d.status === 'constructed'">{{ compact(d.invested) }} in this mix, paying you {{ inr(d.payout.monthly) }} every month</span>
-              <span *ngIf="d.status !== 'constructed'">{{ compact(d.invested) }} in this mix</span>
-              <b [ngClass]="c.up ? 'vr-up' : 'vr-dn'">{{ inr(c.endValue) }}<em> today · {{ c.endPct }}%</em></b>
+              <span *ngIf="!r.scrubbing">{{ compact(d.invested) }} put in {{ rangeWords() }} would now be</span>
+              <span *ngIf="r.scrubbing">{{ r.label }}</span>
+              <b>{{ inr(r.value) }}</b>
+              <em [ngClass]="r.up ? 'vr-up' : 'vr-dn'">{{ r.up ? '▲' : '▼' }} {{ r.pct }}%<ng-container *ngIf="d.withdraw.monthly > 0"> · after {{ inr(r.withdrawn) }} paid out to you</ng-container></em>
+            </div>
+            <div class="vr-rng" *ngIf="allRangeKeys().length > 1" role="tablist" aria-label="Time range">
+              <button *ngFor="let k of allRangeKeys(); trackBy: trackKey" type="button" role="tab"
+                      [class.on]="range() === k" [class.na]="!!rangeWhy(k)"
+                      [attr.aria-selected]="range() === k" [attr.aria-disabled]="!!rangeWhy(k)"
+                      [attr.title]="rangeWhy(k)"
+                      (click)="setRange(k)">{{ rangeLabel(k) }}</button>
             </div>
           </div>
-          <svg class="ch" [attr.viewBox]="'0 0 ' + c.W + ' ' + c.H" role="img" aria-label="Value of this mix over time">
-            <line [attr.x1]="c.pad" [attr.x2]="c.W - c.pad" [attr.y1]="c.invY" [attr.y2]="c.invY" stroke="#3f424d" stroke-dasharray="3 4"></line>
-            <path [attr.d]="c.area" [attr.fill]="c.col" opacity=".10"></path>
-            <path [attr.d]="c.d" fill="none" [attr.stroke]="c.col" stroke-width="2.2" stroke-linejoin="round"></path>
-            <circle *ngFor="let p of c.dots" [attr.cx]="p.cx" [attr.cy]="p.cy" [attr.r]="c.dotR" fill="#f6c445" stroke="#161826" stroke-width="1.2"></circle>
-            <text *ngFor="let l of c.labels" [attr.x]="l.x" [attr.y]="c.H - 3" [attr.text-anchor]="l.anchor" font-family="Inter, system-ui, sans-serif" font-size="8.5" fill="#6b6e79">{{ l.text }}</text>
+          <svg #chartSvg class="ch" [attr.viewBox]="'0 0 ' + c.W + ' ' + c.H" role="img" aria-label="Value of this mix over time"
+               (pointerdown)="onScrub($event, chartSvg)" (pointermove)="onScrub($event, chartSvg)"
+               (pointerleave)="endScrub()" (pointerup)="endScrub()" (pointercancel)="endScrub()">
+            <defs>
+              <linearGradient id="vrFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" [attr.stop-color]="c.col" stop-opacity=".28"></stop>
+                <stop offset="1" [attr.stop-color]="c.col" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+            <line [attr.x1]="c.pad" [attr.x2]="c.W - c.pad" [attr.y1]="c.invY" [attr.y2]="c.invY" stroke="#4a4e5c" stroke-dasharray="2 4"></line>
+            <text [attr.x]="c.W - c.pad" [attr.y]="c.up ? c.invY + 11 : c.invY - 5" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="8" fill="#75798c">{{ compact(d.invested) }} put in</text>
+            <g *ngFor="let k of drawKeys(); trackBy: trackKey">
+              <path class="area" [attr.d]="c.area" fill="url(#vrFill)"></path>
+              <path class="line" pathLength="1" [attr.d]="c.d" fill="none" [attr.stroke]="c.col" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+            </g>
+            <ng-container *ngIf="readout() as r">
+              <line *ngIf="r.scrubbing" [attr.x1]="r.x" [attr.x2]="r.x" y1="6" [attr.y2]="c.base" stroke="#75798c" stroke-width="1"></line>
+              <g class="mark" [class.live]="!r.scrubbing" [attr.transform]="'translate(' + r.x.toFixed(1) + ',' + r.y.toFixed(1) + ')'">
+                <circle class="ring" r="9" [attr.fill]="c.col"></circle>
+                <circle r="4.5" [attr.fill]="c.col" stroke="#1e2130" stroke-width="2"></circle>
+              </g>
+            </ng-container>
+            <text *ngFor="let l of c.labels" [attr.x]="l.x" [attr.y]="c.H - 4" [attr.text-anchor]="l.anchor" font-family="Inter, system-ui, sans-serif" font-size="8.5" fill="#6b6e79">{{ l.text }}</text>
           </svg>
-          <div class="vr-leg">
-            <span><i [style.background]="c.col"></i>Value</span>
-            <span *ngIf="d.withdraw.monthly > 0"><i style="background:#f6c445;width:8px;height:8px;border-radius:50%"></i>{{ inr(d.withdraw.monthly) }} withdrawn · {{ c.n }} times, {{ inr(c.withdrawn) }}</span>
-          </div>
-          <div class="vr-rng" *ngIf="rangeKeys().length > 1" role="tablist" aria-label="Time range">
-            <button *ngFor="let k of rangeKeys(); trackBy: trackKey" type="button" role="tab"
-                    [class.on]="range() === k" [attr.aria-selected]="range() === k"
-                    (click)="setRange(k)">{{ rangeLabel(k) }}</button>
-          </div>
+          <div class="vr-hint" *ngIf="!rangeNote()">Drag across the chart to see any month</div>
+          <div class="vr-hint vr-why" *ngIf="rangeNote() as w">{{ w }} Longer windows will unlock as the funds age.</div>
         </ng-container>
         <ng-template #noHistory>
-          <div class="vr-chh">
-            <div>
-              <span *ngIf="d.status === 'constructed'">{{ compact(d.invested) }} in this mix, paying you {{ inr(d.payout.monthly) }} every month</span>
-              <span *ngIf="d.status !== 'constructed'">{{ compact(d.invested) }} in this mix</span>
-            </div>
-          </div>
           <!-- chart still streaming in after the fast paint -->
           <div class="vr-chart-load" *ngIf="chartLoading(); else noHistoryMsg">
             <div class="vr-chart-line"></div>
@@ -336,49 +478,6 @@
             <div class="vr-empty">Not enough fund history yet.</div>
           </ng-template>
         </ng-template>
-      </div>
-
-      <!-- 3 · pays you — finished villas only -->
-      <ng-container *ngIf="d.status === 'constructed'">
-        <div class="vr-sec"><span>Pays you</span></div>
-        <div class="vr-pay">
-          <div class="coin"><span>₹</span></div>
-          <div class="t">
-            <b>{{ inr(d.payout.monthly) }} <em>a month</em></b>
-            <span>
-              <ng-container *ngIf="d.payout.next_credit">Next credit {{ d.payout.next_credit | date:'d MMM' }} · </ng-container>from your {{ shortName(d.payout.from_fund) || 'arbitrage' }} fund
-            </span>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- 4 · inside this villa / plot: one card per fund -->
-      <div class="vr-sec">
-        <span>{{ d.status === 'constructed' ? 'Inside this villa' : 'Inside this plot' }}</span>
-        <i>{{ d.funds.length }} {{ d.funds.length === 1 ? 'fund' : 'funds' }}</i>
-      </div>
-      <div class="vr-f" *ngFor="let f of d.funds; let i = index; trackBy: trackFund"
-           [class.arb]="f.tag === 'ARB'" [style.--c]="tagColour(f.tag)">
-        <div class="vr-fh">
-          <span class="tag">{{ f.tag }}</span>
-          <div class="nm">
-            <b>{{ shortName(f.scheme_name) }}</b>
-            <span>{{ role(f.tag, d) }}</span>
-          </div>
-          <span class="pill" [ngClass]="dir(f.gain)">{{ arrow(f.gain) }} {{ signedPct(fundPct(f), 1) }}%</span>
-        </div>
-        <div class="iv">
-          <div><span>Invested</span><b>{{ inr(f.invested) }}</b></div>
-          <i class="arr">→</i>
-          <div class="r"><span>Now</span><b [ngClass]="dir(f.gain)">{{ inr(f.current_value) }}</b></div>
-        </div>
-        <div class="mv">
-          <div class="bar">
-            <i [style.width.%]="invWidth(f)"></i>
-            <i class="g" [ngClass]="dir(f.gain)" [style.width.%]="gainWidth(f)"></i>
-          </div>
-          <b [ngClass]="dir(f.gain)">{{ signedInr(f.gain) }}</b>
-        </div>
       </div>
 
       <!-- 5 · fine print -->
