@@ -62,13 +62,13 @@ interface SleeveRow { sleeve: string; allocation: number; }
 /** ₹1 lakh. */
 const L = 100_000;
 /** One finished villa costs ₹5,00,000. */
-const HOUSE = 5 * L;
+export const HOUSE = 5 * L;
 /** Nine parcels on the board. */
-const HOUSES = 9;
+export const HOUSES = 9;
 /** A finished villa pays this each month (the gold withdrawal). */
-const INCOME = 1500;
+export const INCOME = 1500;
 /** House h (1-based) occupies ORDER[h-1] (col,row): centre, front corner, … */
-const ORDER: [number, number][] = [
+export const ORDER: [number, number][] = [
   [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
 ];
 /** Build-stage symbol per stage index (0 ground · 1 The Plot · 2 Levelled ·
@@ -408,7 +408,12 @@ export class EstateHomeComponent implements OnInit {
 
   // ------------------------------------------------------------ lifecycle --
 
+  /** Entrance animations play only the FIRST time Home mounts per app open. */
+  readonly entered = this.est.homeEntered();
+
   ngOnInit(): void {
+    // Mark the entrance as played (for the next mount, not this one).
+    this.est.homeEntered.set(true);
     // Play the verified tick once, right after OTP.
     if (this.justVerified) {
       this.showTick.set(true);
@@ -794,7 +799,15 @@ export class EstateHomeComponent implements OnInit {
    *  sleeve (e.g. two small-cap funds) are merged into a single segment/label,
    *  their allocations summed, in first-seen order so the bar stays stable
    *  left → right. Values are derived from the portfolio value so it's instant. */
-  get fundRows(): SleeveRow[] {
+  /** Grouped sleeve rows for the bar. A computed (not a getter) so the SAME
+   *  array/objects are returned until the allocation actually changes — with a
+   *  getter, every change-detection pass built fresh objects and *ngFor
+   *  re-created the segments, replaying the wipe animation. */
+  readonly fundRowsMemo = computed<SleeveRow[]>(() => this.buildFundRows());
+  get fundRows(): SleeveRow[] { return this.fundRowsMemo(); }
+  trackSleeve = (_: number, r: SleeveRow) => r.sleeve;
+
+  private buildFundRows(): SleeveRow[] {
     const order: string[] = [];
     const by = new Map<string, SleeveRow>();
     for (const f of this.alloc()) {

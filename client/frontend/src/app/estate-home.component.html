@@ -1,4 +1,4 @@
-<section class="estate">
+<section class="estate" [class.no-enter]="entered">
   <!-- ============ HOME CONTENT (above the app's own bottom nav) ============ -->
   <div class="estate-top">
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
@@ -30,7 +30,7 @@
           <span class="flow-arrow" aria-hidden="true">↓</span>
           <span class="flow-lbl">WITHDRAWALS</span>
         </div>
-        <div class="flow-fig gold"><span [appCountUp]="withdrawAmt"></span><span>/mo</span></div>
+        <div class="flow-fig gold"><span [appCountUp]="withdrawAmt" [countInstant]="entered"></span><span class="unit">/mo</span></div>
         <div class="flow-sub">{{ withdrawSub }}</div>
       </div>
       <div class="flow-div" aria-hidden="true"></div>
@@ -39,7 +39,7 @@
           <span class="flow-lbl">INVESTED</span>
           <span class="flow-arrow" aria-hidden="true">↑</span>
         </div>
-        <div class="flow-fig violet"><span [appCountUp]="investedAmt"></span></div>
+        <div class="flow-fig violet"><span [appCountUp]="investedAmt" [countInstant]="entered"></span></div>
         <div class="flow-sub">{{ investedSub }}</div>
       </div>
     </div>
@@ -276,8 +276,8 @@
             <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#3f424d" stroke-width="1.5" stroke-dasharray="6 5"></polygon>
           </g>
           <!-- OPEN PLOT — an unbuilt parcel that still reads as part of the estate:
-               a dusk-toned lawn on real soil, mow-lines, four survey pegs and a
-               faint survey outline. Replaces the flat dark #tLocked diamond so a
+               a dusk-toned lawn on real soil with mow-lines — deliberately bare (no
+               pegs, no outline) so the built parcels carry the board. Replaces the flat dark #tLocked diamond so a
                new estate (one small plot, eight open) looks like land waiting to
                be built on, not a hole in the board. Same 240-diamond geometry. -->
           <g id="tOpen">
@@ -295,15 +295,6 @@
               <polygon points="120,26 136,35.2 42.4,89.2 26.4,80"></polygon>
               <polygon points="152,44.5 168,53.7 74.4,107.7 58.4,98.5"></polygon>
               <polygon points="184,63 200,72.2 106.4,126.2 90.4,117"></polygon>
-            </g>
-            <!-- faint survey outline, inset -->
-            <polygon points="120,40 189.4,80 120,120 50.6,80" fill="none" stroke="#9fb39a" stroke-width="1.1" stroke-dasharray="4 4" opacity="0.4"></polygon>
-            <!-- four survey pegs at the diamond points (with a tiny shadow each) -->
-            <g>
-              <ellipse cx="120" cy="43.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="118.6" y="34" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
-              <ellipse cx="184.6" cy="80.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="183.2" y="71" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
-              <ellipse cx="120" cy="117.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="118.6" y="108" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
-              <ellipse cx="55.4" cy="80.5" rx="3.2" ry="1.4" fill="#0e1116" opacity="0.5"></ellipse><rect x="54" y="71" width="2.8" height="9" rx="0.8" fill="#e6dfcc"></rect>
             </g>
             <!-- crisp edge -->
             <polygon points="120,26 213.6,80 120,134 26.4,80" fill="none" stroke="#243a22" stroke-width="2"></polygon>
@@ -407,7 +398,7 @@
       <!-- tap the figure for the live NAVs behind it -->
       <button type="button" class="port-v" (click)="fresh.show()"
               aria-label="See the live NAVs behind this value">
-        <span [appCountUp]="est.estateValue" [countDuration]="1100"></span><i class="port-live" aria-hidden="true"></i>
+        <span [appCountUp]="est.estateValue" [countDuration]="1100" [countInstant]="entered"></span><i class="port-live" aria-hidden="true"></i>
       </button>
       <div class="port-m">
         <b [class.pos]="gainPct >= 0" [class.neg]="gainPct < 0">
@@ -423,7 +414,7 @@
            left → right. `--i` carries the position so the CSS can stagger. -->
       <ng-container *ngIf="fundRows.length">
         <div class="port-bar" [class.revealed]="true">
-          <span *ngFor="let f of fundRows; let i = index"
+          <span *ngFor="let f of fundRows; let i = index; trackBy: trackSleeve"
                 class="port-seg"
                 [style.--i]="i"
                 [style.flex-basis.%]="f.allocation"
@@ -431,7 +422,7 @@
                 [attr.title]="fundLabel(i, f) + ' · ' + fundPct(f)"></span>
         </div>
         <div class="port-funds">
-          <div *ngFor="let f of fundRows; let i = index" class="port-fund" [style.--i]="i">
+          <div *ngFor="let f of fundRows; let i = index; trackBy: trackSleeve" class="port-fund" [style.--i]="i">
             <span class="a">{{ fundPct(f) }}</span>
             <span class="n" [style.color]="fundColor(i, f)">{{ fundLabel(i, f) }}</span>
           </div>

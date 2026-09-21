@@ -330,6 +330,10 @@ export class EstateService {
   readonly refreshing = signal(false);
   readonly lastLoadOk = signal(true);
   readonly reloads = signal(0);
+  /** True once the Home has played its entrance for this app open. Home is
+   *  re-mounted on every tab switch (it's *ngIf'd), so without this the rise /
+   *  pop / count-up would replay each time you came back to it. */
+  readonly homeEntered = signal(false);
   /** Whose town this is, and where. Used for the home greeting. */
   readonly profile = signal<Profile>(this.loadProfile());
 
@@ -457,7 +461,12 @@ export class EstateService {
   loadAllocation(): void {
     if (!this.auth.token()) return;
     this.allocation().subscribe({
-      next: (a) => this._allocRows.set(a.funds || []),
+      next: (a) => {
+        const rows = a.funds || [];
+        // Same mix as before → keep the SAME array, so nothing re-renders (and the
+        // bar's wipe never replays) when a reload returns identical data.
+        if (JSON.stringify(rows) !== JSON.stringify(this._allocRows())) this._allocRows.set(rows);
+      },
       error: () => { /* signed out / offline — home falls back to an empty bar */ },
     });
   }

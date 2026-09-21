@@ -19,6 +19,9 @@ export class CountUpDirective implements OnChanges, OnDestroy {
   @Input() countDuration = 900;
   /** Optional formatter (defaults to inr). */
   @Input() countFormat: (n: number) => string = inr;
+  /** When true the FIRST paint is instant (no roll from 0) — used when the
+   *  screen is being re-shown, not opened. Later changes still roll. */
+  @Input() countInstant = false;
 
   private el = inject(ElementRef<HTMLElement>);
   private shown = 0;
@@ -30,8 +33,9 @@ export class CountUpDirective implements OnChanges, OnDestroy {
     const to = Number(this.value ?? 0) || 0;
     const from = this.first ? 0 : this.shown;
     const dur = this.first ? this.countDuration + 300 : this.countDuration;
+    const instant = this.first && this.countInstant;
     this.first = false;
-    if (this.reduce || Math.abs(to - from) < 0.5) { this.paint(to); return; }
+    if (instant || this.reduce || Math.abs(to - from) < 0.5) { this.paint(to); return; }
     cancelAnimationFrame(this.raf);
     const t0 = performance.now();
     const tick = (now: number) => {

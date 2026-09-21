@@ -1520,6 +1520,11 @@
 @media (prefers-reduced-motion: reduce) {
   .flow, .title, .port-k, .port-v, .port-m, .fine { animation: none; }
 }
+/* Home re-shown after a tab switch: everything is simply there. */
+.no-enter .flow, .no-enter .title, .no-enter .port-k, .no-enter .port-v, .no-enter .port-m, .no-enter .fine,
+.no-enter .cell-in, .no-enter .port-bar .port-seg, .no-enter .port-funds .port-fund {
+  animation: none !important; opacity: 1; transform: none;
+}
 .flow.out { align-items: flex-end; text-align: right; }
 .flow-div {
   width: 1px; margin: 4px 0;
@@ -1547,7 +1552,7 @@
   font-size: 24px; letter-spacing: -.015em; line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
-.flow-fig span:last-child { font-size: 11px; letter-spacing: 0; color: var(--color-neutral-500); margin-left: 2px; }
+.flow-fig .unit { font-size: 11px; letter-spacing: 0; color: var(--color-neutral-500); margin-left: 2px; }
 .flow-fig.gold { color: #f3dfa8; }
 .flow-fig.violet { color: var(--color-accent-200); }
 .flow-sub { font-size: 10px; color: var(--color-neutral-500); white-space: nowrap; }
