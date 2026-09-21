@@ -514,6 +514,15 @@ def get_my_navs(authorization: Optional[str] = Header(default=None)) -> dict:
     return client_portfolio.live_navs(owner)
 
 
+@app.get("/me/houses")
+def get_my_houses(authorization: Optional[str] = Header(default=None)) -> dict:
+    """The portfolio value broken down by HOUSE, each with the funds behind it.
+    Powers the tap-the-value sheet on Home."""
+    owner = _owner_or_401(authorization)
+    from app import client_portfolio
+    return client_portfolio.live_houses(owner)
+
+
 @app.get("/me/funds")
 def get_my_funds(authorization: Optional[str] = Header(default=None)) -> dict:
     """The user's portfolio broken down fund-by-fund: each fund's allocation, the

@@ -222,6 +222,70 @@ def live_navs(owner: str) -> dict:
     return {"funds": funds, **nav_cache.freshness([h.get("scheme_code") for h in hs])}
 
 
+def live_houses(owner: str) -> dict:
+    """The portfolio value broken down BY HOUSE — what the tap-the-value sheet
+    shows. Each completed ₹5L villa (and the one under construction) carries its
+    own live value, gain, and the funds behind it, so a user can open one house
+    and see exactly which units make it up.
+
+    A house's slice is the same apportioning ``portfolio_tiles`` uses: each
+    scheme is divided across the stacked ₹5L pillars in proportion to invested.
+    """
+    from app import nav_cache
+    code = client_code_for_owner(owner)
+    if not code:
+        return {"houses": [], **nav_cache.freshness([])}
+
+    hs = _valued_holdings(code)
+    codes_in_villa = _villa_scheme_codes()
+    villa_hs = [h for h in hs if h.get("scheme_code") in codes_in_villa] or hs
+    total_inv = sum(h["invested"] for h in villa_hs)
+    if total_inv <= 0:
+        return {"houses": [], **nav_cache.freshness([h.get("scheme_code") for h in hs])}
+
+    n_complete = int(total_inv // VILLA_UNIT)
+    remainder = round(total_inv - n_complete * VILLA_UNIT, 2)
+    spans = [(i * VILLA_UNIT, (i + 1) * VILLA_UNIT, False) for i in range(n_complete)]
+    if remainder > 1:
+        spans.append((n_complete * VILLA_UNIT, total_inv, True))
+
+    houses = []
+    for idx, (lo, hi, building) in enumerate(spans):
+        share = max(0.0, hi - lo) / total_inv
+        funds, value, invested = [], 0.0, 0.0
+        for h in villa_hs:
+            meta = nav_cache.get_nav_meta(h.get("scheme_code")) or {}
+            f_units = h["units"] * share
+            f_inv = h["invested"] * share
+            nav = meta.get("nav")
+            f_val = f_units * nav if (nav and f_units) else f_inv
+            value += f_val
+            invested += f_inv
+            funds.append({
+                "name": h.get("scheme_name") or "Fund",
+                "scheme_code": h.get("scheme_code"),
+                "units": round(f_units, 3),
+                "nav": nav,
+                "nav_date": meta.get("nav_date"),
+                "value": round(f_val, 2),
+                "invested": round(f_inv, 2),
+                "gain": round(f_val - f_inv, 2),
+            })
+        funds.sort(key=lambda f: f["value"], reverse=True)
+        houses.append({
+            "id": f"villa_{idx}",
+            "index": idx,
+            "building": building,
+            "invested": round(invested, 2),
+            "value": round(value, 2),
+            "gain": round(value - invested, 2),
+            # how far the in-progress pillar has come (0-100)
+            "pct": round(min(1.0, (hi - lo) / VILLA_UNIT) * 100, 1),
+            "funds": funds,
+        })
+    return {"houses": houses, **nav_cache.freshness([h.get("scheme_code") for h in hs])}
+
+
 def portfolio_summary(owner: str) -> dict:
     """Real net-worth summary for the logged-in user (empty when unmatched)."""
     from app import estate as estate_svc
@@ -907,20 +971,38 @@ def allocation_summary(owner: str) -> dict:
     live-return computation (that's the slow part in /me/funds/portfolio). The
     frontend multiplies each allocation by its already-loaded portfolio value."""
     from app import villa_sip
+    rows = []
     try:
         buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
         sip = next((b for b in buckets if (b.get("kind") or "sip") == "sip"), buckets[0] if buckets else None)
-        rows = (_sb().table("villa_bucket_funds").select("scheme_name,scheme_code,category,target_weight,sort_order")
-                .eq("bucket_id", sip["id"]).order("sort_order").execute().data or []) if sip else []
+        if sip:
+            # Try to read the explicit `sleeve` column; if the migration hasn't
+            # been applied yet, fall back to the older column set so the bar keeps
+            # working (sleeve is then inferred from category/name).
+            try:
+                rows = (_sb().table("villa_bucket_funds")
+                        .select("scheme_name,scheme_code,category,sleeve,target_weight,sort_order")
+                        .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
+            except Exception:
+                rows = (_sb().table("villa_bucket_funds")
+                        .select("scheme_name,scheme_code,category,target_weight,sort_order")
+                        .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
     except Exception:
         rows = []
     funds = []
     for r in rows:
         alloc = villa_sip._to_pct_weight(r.get("target_weight"))
+        name = r.get("scheme_name") or "Fund"
+        category = r.get("category") or ""
+        # The concentration sleeve is authoritative for the home bar's label +
+        # colour — from the admin's explicit setting, else inferred. Sending it
+        # up means the client never has to guess by position again.
+        sleeve = _fund_sleeve(r.get("sleeve") or "", category, name)
         funds.append({
-            "name": r.get("scheme_name") or "Fund",
+            "name": name,
             "scheme_code": r.get("scheme_code"),
-            "category": r.get("category") or "",
+            "category": category,
+            "sleeve": sleeve,
             "allocation": round(alloc, 1),
         })
     return {"funds": funds}
@@ -930,23 +1012,46 @@ def allocation_summary(owner: str) -> dict:
 # Settings tab — real orders + personal details (from the CRM report tables)
 # ---------------------------------------------------------------------------
 
-def _sleeve_tag(category: str, name: str) -> str:
-    """The short coloured sleeve tag for a fund, matching the Home allocation
-    bar. Derived from the fund's category (arbitrage / gold / large / mid /
-    small), falling back to a scan of the scheme name."""
-    c = (category or "").lower()
-    n = (name or "").lower()
-    if "arbitrage" in c or "arbitrage" in n:
-        return "ARB"
-    if "gold" in c or "gold" in n:
-        return "GOLD"
-    if "small" in c or "small" in n:
-        return "SMALL"
-    if "mid" in c or "mid" in n:
-        return "MID"
-    if "large" in c or "large" in n or "momentum" in n or "flexi" in c or "index" in c:
-        return "LARGE"
-    return ""
+# Sleeve → short tag used across the client app (home bar chip + reports).
+_SLEEVE_TO_TAG = {
+    "arbitrage": "ARB", "gold": "GOLD",
+    "large": "LARGE", "mid": "MID", "small": "SMALL", "other": "",
+}
+
+
+def _fund_sleeve(sleeve: str, category: str, name: str) -> str:
+    """The canonical concentration sleeve for a fund — the single source of the
+    home allocation bar's label + colour.
+
+    Priority:
+      1. an EXPLICIT ``sleeve`` set by the admin on the fund (arbitrage / gold /
+         large / mid / small / other) — authoritative;
+      2. else a scan of the fund's category, then its scheme name.
+
+    Returns one of: 'arbitrage' | 'gold' | 'large' | 'mid' | 'small' | 'other'.
+    'other' is never blank so the bar always has a stable label/colour to use."""
+    s = (sleeve or "").strip().lower()
+    if s in _SLEEVE_TO_TAG:
+        return s
+    hay = f"{(category or '').lower()} {(name or '').lower()}"
+    if "arbitrage" in hay:
+        return "arbitrage"
+    if "gold" in hay:
+        return "gold"
+    if "small" in hay:
+        return "small"
+    if "mid" in hay:
+        return "mid"
+    if "large" in hay or "momentum" in hay or "flexi" in hay or "index" in hay:
+        return "large"
+    return "other"
+
+
+def _sleeve_tag(category: str, name: str, sleeve: str = "") -> str:
+    """The short coloured sleeve tag for a fund (ARB/GOLD/LARGE/MID/SMALL, or ""
+    for 'other'), matching the Home allocation bar. Prefers an explicit admin
+    ``sleeve``, then a category/name scan."""
+    return _SLEEVE_TO_TAG.get(_fund_sleeve(sleeve, category, name), "")
 
 
 def orders_for_owner(owner: str) -> list[dict]:

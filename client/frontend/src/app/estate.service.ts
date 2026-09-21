@@ -181,6 +181,18 @@ export interface LiveNav {
   gain: number;
 }
 
+/** One house with its live value and the funds behind it (from GET /me/houses). */
+export interface LiveHouse {
+  id: string;
+  index: number;
+  building: boolean;
+  invested: number;
+  value: number;
+  gain: number;
+  pct: number;
+  funds: LiveNav[];
+}
+
 /** A NAV point and one window's history (from GET /dashboard/funds/{code}/nav). */
 export interface NavPoint { date: string; nav: number; }
 export interface NavWindow {
@@ -384,6 +396,12 @@ export class EstateService {
   liveNavs(): import('rxjs').Observable<{ funds: LiveNav[]; nav_date: string | null; next_refresh: string | null }> {
     return this.http.get<{ funds: LiveNav[]; nav_date: string | null; next_refresh: string | null }>(
       `${environment.apiUrl}/me/navs`, { headers: this.authHeaders });
+  }
+
+  /** The portfolio value broken down BY HOUSE, each with its funds. */
+  liveHouses(): import('rxjs').Observable<{ houses: LiveHouse[]; nav_date: string | null; next_refresh: string | null }> {
+    return this.http.get<{ houses: LiveHouse[]; nav_date: string | null; next_refresh: string | null }>(
+      `${environment.apiUrl}/me/houses`, { headers: this.authHeaders });
   }
 
   /** The user's portfolio broken down fund-by-fund (allocation, value, returns). */
