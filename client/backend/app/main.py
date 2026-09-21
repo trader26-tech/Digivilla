@@ -33,6 +33,7 @@ def _prewarm_caches() -> None:
             from app import nav_cache, client_portfolio as cp
             nav_cache._amfi_snapshot()
             cp._villa_scheme_codes()
+            cp._buckets(); cp._bucket_funds()
             cp._memo("client_master", 300, lambda: cp._sb().table("client_master")
                      .select("client_code,phone").execute().data or [])
             nav_cache.prewarm(nav_cache.held_scheme_codes())

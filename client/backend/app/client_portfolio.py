@@ -48,6 +48,18 @@ def _memo_clear(prefix: str) -> None:
         _MEMO.pop(k, None)
 
 
+def _buckets() -> list[dict]:
+    """villa_buckets rows (id, name, kind) — admin config, memoised 5 min."""
+    return _memo("buckets", 300, lambda: _sb().table("villa_buckets")
+                 .select("id,name,kind").execute().data or [])
+
+
+def _bucket_funds() -> list[dict]:
+    """villa_bucket_funds (bucket_id, scheme_code) — memoised 5 min."""
+    return _memo("bucket_funds", 300, lambda: _sb().table("villa_bucket_funds")
+                 .select("bucket_id,scheme_code").execute().data or [])
+
+
 def _user_row(owner: str) -> dict:
     """One read of the user's row (phone, estate_name, estate_city) instead of
     three separate ones. Short TTL; cleared when the profile is saved."""
@@ -401,13 +413,16 @@ def _manual_villa_tiles(client_code: str) -> Optional[list[dict]]:
     admin left unmapped roll up into a single "Other Funds" net-worth tile.
     """
     try:
-        villas = _sb().table("client_villas").select("*").eq(
-            "client_code", client_code).order("sort_order").execute().data or []
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=2) as ex:
+            f_v = ex.submit(lambda: _sb().table("client_villas").select("*").eq(
+                "client_code", client_code).order("sort_order").execute().data or [])
+            f_t = ex.submit(lambda: _sb().table("client_transactions").select(
+                "order_id,scheme_code,units,amount,villa_id").eq(
+                "client_code", client_code).execute().data or [])
+            villas, txns = f_v.result(), f_t.result()
         if not villas:
             return None
-        txns = _sb().table("client_transactions").select(
-            "order_id,scheme_code,units,amount,villa_id").eq(
-            "client_code", client_code).execute().data or []
     except Exception:
         return None
 
@@ -469,13 +484,18 @@ def portfolio_tiles(owner: str) -> list[dict]:
     code = client_code_for_owner(owner)
     if not code:
         return []
-    hs = _valued_holdings(code)
+    # The holdings and the admin's manual villa mapping are independent reads —
+    # fetch them at the same time.
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        f_hs = ex.submit(_valued_holdings, code)
+        f_manual = ex.submit(_manual_villa_tiles, code)
+        hs, manual = f_hs.result(), f_manual.result()
     if not hs:
         return []
 
     # ── MANUAL OVERRIDE: if the admin has hand-mapped this client's transactions
     #    into villas, those win over the automatic ₹5L logic below. ────────────
-    manual = _manual_villa_tiles(code)
     if manual is not None:
         return manual
 
@@ -484,13 +504,13 @@ def portfolio_tiles(owner: str) -> list[dict]:
     # only its funds build villas; everything else is net-worth "Other Funds".
     codes_in_villa: set[int] = set()
     try:
-        buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
+        buckets = _buckets()
         villa_bucket_ids = {
             b["id"] for b in buckets
             if _is_villa_bucket(b)
         }
         if villa_bucket_ids:
-            bfunds = _sb().table("villa_bucket_funds").select("bucket_id,scheme_code").execute().data or []
+            bfunds = _bucket_funds()
             for f in bfunds:
                 if f.get("scheme_code") and f.get("bucket_id") in villa_bucket_ids:
                     codes_in_villa.add(f["scheme_code"])
@@ -599,10 +619,10 @@ def _villa_scheme_codes() -> set:
 def _villa_scheme_codes_load() -> set:
     codes: set = set()
     try:
-        buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
+        buckets = _buckets()
         vids = {b["id"] for b in buckets if _is_villa_bucket(b)}
         if vids:
-            bf = _sb().table("villa_bucket_funds").select("bucket_id,scheme_code").execute().data or []
+            bf = _bucket_funds()
             for f in bf:
                 if f.get("scheme_code") and f.get("bucket_id") in vids:
                     codes.add(f["scheme_code"])
@@ -1020,22 +1040,24 @@ def allocation_summary(owner: str) -> dict:
     live-return computation (that's the slow part in /me/funds/portfolio). The
     frontend multiplies each allocation by its already-loaded portfolio value."""
     from app import villa_sip
-    rows = []
-    try:
-        buckets = _sb().table("villa_buckets").select("id,name,kind").execute().data or []
+    def load_rows():
+        buckets = _buckets()
         sip = next((b for b in buckets if (b.get("kind") or "sip") == "sip"), buckets[0] if buckets else None)
-        if sip:
-            # Try to read the explicit `sleeve` column; if the migration hasn't
-            # been applied yet, fall back to the older column set so the bar keeps
-            # working (sleeve is then inferred from category/name).
-            try:
-                rows = (_sb().table("villa_bucket_funds")
-                        .select("scheme_name,scheme_code,category,sleeve,target_weight,sort_order")
-                        .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
-            except Exception:
-                rows = (_sb().table("villa_bucket_funds")
-                        .select("scheme_name,scheme_code,category,target_weight,sort_order")
-                        .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
+        if not sip:
+            return []
+        # Try to read the explicit `sleeve` column; if the migration hasn't
+        # been applied yet, fall back to the older column set so the bar keeps
+        # working (sleeve is then inferred from category/name).
+        try:
+            return (_sb().table("villa_bucket_funds")
+                    .select("scheme_name,scheme_code,category,sleeve,target_weight,sort_order")
+                    .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
+        except Exception:
+            return (_sb().table("villa_bucket_funds")
+                    .select("scheme_name,scheme_code,category,target_weight,sort_order")
+                    .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
+    try:
+        rows = _memo("alloc_rows", 300, load_rows)
     except Exception:
         rows = []
     funds = []
