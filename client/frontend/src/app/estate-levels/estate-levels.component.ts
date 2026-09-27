@@ -100,7 +100,9 @@ interface LevelVM {
   bannerBottom: string;
   pillBorder: string;
   // credit panel (villa only)
-  incomeLabel: string;
+  /** Monthly income for this rung (₹); `incomeAnim` = counts up on open. */
+  incomeAmt: number;
+  incomeAnim: boolean;
   payLocked: boolean;
   housePct: string;
   paidLabel: string;
@@ -236,12 +238,17 @@ export class EstateLevelsComponent implements AfterViewInit {
   /** The ladder is authored on a 402px frame; on a wider phone we scale the whole
    *  column up to fill the width (capped so it stays phone-shaped on desktop). */
   readonly FRAME = 402;
-  readonly frameScale = signal(1);
-  private _measureFrame = () => {
-    const w = typeof window !== 'undefined' ? window.innerWidth : this.FRAME;
+  // Computed up-front (not after first render) so the ladder's very first
+  // layout already has the right zoom — a later zoom change re-lays out all 45.
+  readonly frameScale = signal(this.scaleFor());
+  private scaleFor(): number {
+    const w = typeof window !== 'undefined' ? window.innerWidth : 402;
     // fill the viewport up to a comfortable phone cap (~460px), never below 1x
-    const target = Math.min(w, 460);
-    this.frameScale.set(Math.max(1, target / this.FRAME));
+    return Math.max(1, Math.min(w, 460) / 402);
+  }
+  private _measureFrame = () => {
+    const s = this.scaleFor();
+    if (s !== this.frameScale()) this.frameScale.set(s);
   };
 
   // board geometry — Home's proportions, shifted right of the rail
@@ -261,6 +268,12 @@ export class EstateLevelsComponent implements AfterViewInit {
 
   // --- villa count-up (0→1 over 1400ms, cubic ease-out) feeding income figures ---
   private readonly count = signal(1);
+  /** Income text for a rung. Reads the count-up signal HERE (not inside
+   *  `levels`), so the 1.4s count-up re-renders these few labels instead of
+   *  rebuilding all 45 levels every frame. */
+  incomeLabel(lv: LevelVM): string {
+    return '+' + this.inr(Math.round(lv.incomeAmt * (lv.incomeAnim ? this.count() : 1)));
+  }
   private cuRaf = 0;
 
   // --- viewLevel from scroll (drives HUD earn button + back arrow) ---
@@ -284,7 +297,8 @@ export class EstateLevelsComponent implements AfterViewInit {
   });
 
   // --- currency helpers ---
-  private inr(n: number): string { return '₹' + n.toLocaleString('en-IN'); }
+  private static readonly INR_FMT = new Intl.NumberFormat('en-IN');
+  private inr(n: number): string { return '₹' + EstateLevelsComponent.INR_FMT.format(n); }
   private lakh(n: number): string {
     return n >= 100000
       ? '₹' + (n % 100000 ? (n / 100000).toFixed(2).replace(/0+$/, '').replace(/\.$/, '') : String(n / 100000)) + 'L'
@@ -302,7 +316,6 @@ export class EstateLevelsComponent implements AfterViewInit {
   readonly levels = computed<LevelVM[]>(() => {
     const worth = this.worth();
     const current = this.currentLevel();
-    const count = this.count();
     const { BW, BH, OX, ART_DX, ART_DY, VS, L, HOUSES, TOTAL, INCOME } = this;
     const lakh = (n: number) => this.lakh(n);
     const inr = (n: number) => this.inr(n);
@@ -363,7 +376,7 @@ export class EstateLevelsComponent implements AfterViewInit {
         sheenAnim: houseDone ? 'sheen 3.2s ease-in-out infinite' : 'none',
         ringAnim: houseDone ? 'ringOut 2.4s ease-out infinite' : 'none',
         ringAnim2: houseDone ? 'ringOut 2.4s ease-out 1.2s infinite' : 'none',
-        incomeLabel: '+' + inr(Math.round(INCOME * h * (houseDone ? count : 1))),
+        incomeAmt: INCOME * h, incomeAnim: houseDone,
         payLocked: !houseDone, housePct: Math.round(Math.max(0, Math.min(1, worth / (5 * h * L))) * 100) + '%',
         paidLabel: lakh(Math.min(worth, 5 * h * L)) + ' in', goalLabel: lakh(5 * h * L),
         payBg: houseDone ? 'linear-gradient(120deg,#4a3b12 0%,#2e2308 55%,#1d1605 100%)' : 'linear-gradient(120deg,#26221a 0%,#1e1b16 60%,#1b1e2c 100%)',
@@ -554,6 +567,9 @@ export class EstateLevelsComponent implements AfterViewInit {
     el.addEventListener('touchstart', this._onUserScroll, { passive: true });
     el.addEventListener('pointerdown', this._onUserScroll, { passive: true });
     this.toCurrent();
+    // toCurrent() just laid the page out, so measuring now is cheap and the rail
+    // paints aligned in the very first frame (no extra forced layout later).
+    this._measure();
     this.countUp();
     // measure banner positions after layout settles (rAF + a couple of delayed
     // passes, matching the reference) so the rail marks align to each banner.
@@ -582,7 +598,6 @@ export class EstateLevelsComponent implements AfterViewInit {
       const z = this.frameScale();
       const v = Math.max(0, Math.min(this.TOTAL, this.TOTAL - Math.round((el.scrollTop - 100 * z) / (this.SEC * z))));
       if (v !== this.viewLevel()) this.viewLevel.set(v);
-      this._measure();
     });
   };
 
@@ -674,7 +689,11 @@ export class EstateLevelsComponent implements AfterViewInit {
     // Let layout settle one frame so currentTop() measures correctly, then tween.
     requestAnimationFrame(() => {
       const from = el.scrollHeight;      // bottom (₹0)
-      const to0 = this.currentTop(el);   // for pacing only — recomputed live below
+      const maxTop = el.scrollHeight - el.clientHeight, halfH = el.clientHeight / 2;
+      // Target from the model only (no DOM reads) — reading scrollHeight/clientHeight
+      // every frame forced a full re-layout of all 45 sections per frame.
+      const target = () => Math.max(0, Math.min(this.yFor(this.worth()) * this.frameScale() - halfH, maxTop));
+      const to0 = target();              // for pacing only — recomputed live below
       const dist = from - to0;
       if (dist < 2) { el.scrollTop = to0; return; }
       // Pace with the distance climbed: quick for a couple levels, grand for many.
@@ -687,7 +706,7 @@ export class EstateLevelsComponent implements AfterViewInit {
         const p = Math.min(1, (t - t0) / dur);
         // Recompute the target each frame so late layout (banner measurement,
         // zoom settle) still lands the dot dead-centre.
-        const to = this.currentTop(el);
+        const to = target();
         el.scrollTop = from + (to - from) * easeOutExpo(p);
         if (p < 1) { this.revealRaf = requestAnimationFrame(step); }
         else { el.scrollTop = this.currentTop(el); this.revealRaf = 0; }

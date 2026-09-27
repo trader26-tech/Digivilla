@@ -28,7 +28,7 @@
     },
     {
       "name": "deck",
-      "installMode": "prefetch",
+      "installMode": "lazy",
       "updateMode": "prefetch",
       "resources": {
         "files": [

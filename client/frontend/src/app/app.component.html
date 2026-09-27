@@ -1,5 +1,5 @@
 <!-- Opening animation, plays first — before login. -->
-<app-intro *ngIf="intro" (done)="onIntroDone()"></app-intro>
+<app-intro *ngIf="intro" [full]="introFull" [ready]="introReady" (done)="onIntroDone()"></app-intro>
 
 <!-- GATE: after the intro, nothing renders until the phone is verified. Profile
      details are no longer collected here — the advisor sets that up on the
@@ -23,24 +23,29 @@
 ></app-estate-home>
 
 <!-- EXPLORE (reachable from Home's build flow, not the nav). -->
+@defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'explore'; prefetch on idle) {
 <app-explore
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'explore'"
   class="has-nav"
   (own)="ownVilla($event)"
   (back)="goHome()"
 ></app-explore>
+}
 
 <!-- PROGRESS tab: the Estate Levels build-progress ladder, shown as a tab
      (no back button, sits under the floating nav). -->
+@defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'funds'; prefetch on idle) {
 <app-estate-levels
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'funds'"
   [tab]="true"
   (viewVilla)="viewVilla($event)"
 ></app-estate-levels>
+}
 
 <!-- SETTINGS tab: the account hub (identity, presentation, Account card,
      Update card + Transactions / Personal-details panels). Shown on the
      Settings tab AND from the home avatar. -->
+@defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls' && !callsOpen; prefetch on idle) {
 <app-account
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls' && !callsOpen"
   class="has-nav"
@@ -48,9 +53,11 @@
   (book)="openBooking()"
   (signOut)="onSignOut()"
 ></app-account>
+}
 
 <!-- CALLS / booking flow: the user's scheduled fund-manager calls. Reached
      from the Settings → "Book a call" row (do NOT delete — booking stays). -->
+@defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls' && callsOpen; prefetch on idle) {
 <app-calls
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'calls' && callsOpen"
   class="has-nav"
@@ -58,6 +65,7 @@
   (opened)="clearBookOnOpen()"
   (signOut)="onSignOut()"
 ></app-calls>
+}
 
 <!-- BOTTOM NAV: a floating pill with three tabs — Settings, Home, Explore. -->
 <nav class="tabbar" *ngIf="onTab">
@@ -91,54 +99,69 @@
 </nav>
 
 <!-- ACCOUNT: the same Settings page, opened from the home avatar. -->
+@defer (when !intro && accountOpen; prefetch on idle) {
 <app-account
   *ngIf="!intro && accountOpen"
   (back)="closeAccount()"
   (book)="openBooking(); closeAccount()"
   (signOut)="onSignOut()"
 ></app-account>
+}
 
 <!-- ESTATE LEVELS: the build-progress ladder, from the home "View progress" button. -->
+@defer (when !intro && levelsOpen; prefetch on idle) {
 <app-estate-levels
   *ngIf="!intro && levelsOpen"
   (back)="closeLevels()"
   (viewVilla)="viewVilla($event)"
 ></app-estate-levels>
+}
 
 <!-- BUILD A NEW ASSET: pick villa or land. -->
+@defer (when !intro && buildFlow === 'pick'; prefetch on idle) {
 <app-build-picker
   *ngIf="!intro && buildFlow === 'pick'"
   (pick)="pickBuild($event)"
   (back)="closeBuild()"
 ></app-build-picker>
+}
 
 <!-- Villa buy page (from the pick screen). -->
+@defer (when !intro && buildFlow === 'villa'; prefetch on idle) {
 <app-villa-buy
   *ngIf="!intro && buildFlow === 'villa'"
   [startAmount]="buildAmount"
   (back)="closeBuild()"
 ></app-villa-buy>
+}
 
 <!-- The "+" plot on the home board: grow-your-estate what-if. -->
+@defer (when !intro && buildFlow === 'next'; prefetch on idle) {
 <app-next-villa
   *ngIf="!intro && buildFlow === 'next'"
   (back)="closeBuild()"
 ></app-next-villa>
+}
 
 <!-- Land buy page (from the pick screen). -->
+@defer (when !intro && buildFlow === 'land'; prefetch on idle) {
 <app-land-buy
   *ngIf="!intro && buildFlow === 'land'"
   (back)="closeBuild()"
 ></app-land-buy>
+}
 
 <!-- The storefront (Explore): the four property tiers to browse/buy. -->
+@defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && view === 'storefront'; prefetch on idle) {
 <app-storefront
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && view === 'storefront'"
   (openProperty)="openProperty($event)"
   (back)="backToHome()"
 ></app-storefront>
+}
 
 <!-- A land plot tapped on the estate -> its dedicated detail page (mirrors villa). -->
+@defer (when !intro && land; prefetch on idle) {
 <app-land-page
   *ngIf="!intro && land"
   [tileId]="land.id"
@@ -148,29 +171,36 @@
   (converted)="closeLand()"
   (back)="closeLand()"
 ></app-land-page>
+}
 
 <!-- A villa OR building tile tapped on the estate -> the returns detail page,
      fed by GET /me/building/{tileId}. -->
+@defer (when !intro && building; prefetch on idle) {
 <app-construction-detail
   *ngIf="!intro && building"
   [tileId]="building.id"
   [title]="building.label"
   (back)="closeBuilding()"
 ></app-construction-detail>
+}
 
 <!-- Land bought from the storefront keeps the buy/projection page. -->
+@defer (when !intro && !land && detail && detail.property === 'land'; prefetch on idle) {
 <app-land-detail
   *ngIf="!intro && !land && detail && detail.property === 'land'"
   [initialVariant]="detail.variant"
   (back)="closeDetail()"
 ></app-land-detail>
+}
 
 <!-- Flat / Apartment / Duplex — income-tier detail page (Land template +
      monthly-income bucket mechanics + tax note; no Monte Carlo). -->
+@defer (when !intro && detail && detail.property !== 'land'; prefetch on idle) {
 <app-estate-detail
   *ngIf="!intro && detail && detail.property !== 'land'"
   [property]="detail.property"
   [initialVariant]="detail.variant"
   (back)="closeDetail()"
 ></app-estate-detail>
+}
 </ng-container>

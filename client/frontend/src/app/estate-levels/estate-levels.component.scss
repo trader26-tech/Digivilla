@@ -263,6 +263,9 @@
 .el-art-layer svg,
 .el-art-ghost svg,
 .el-art-clip svg { width: 100%; height: auto; display: block; }
+/* the five stage drawings are static, cached image files (one decode each,
+   off the main thread) instead of ~18k inline SVG nodes across 45 levels */
+.el-stage-img { width: 100%; height: auto; display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; }
 .el-next-plus { animation: nudge 1.8s ease-in-out infinite; }
 .el-map-label {
   position: absolute; left: 0; right: 0; top: 6px; text-align: center;
@@ -401,6 +404,17 @@
 .el-funds { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 2; align-items: center; }
 .el-funds-kicker { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #9a9aa5; }
 .el-funds-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 300px; }
+/* Off-screen fund grids (every level but the current one) skip style, layout,
+   paint and their icon animations until scrolled near — ~3.5k nodes of work the
+   browser no longer does on open or while scrolling. These rows are always a
+   fixed 300×233 (only the current level shows the extra "of ₹…" line), so the
+   placeholder size is exact: nothing shifts and the rail stays aligned. The
+   24px padding / −24px margin widens the paint box so tile shadows aren't clipped
+   by the containment, without moving anything. */
+.el-funds-row.el-cv {
+  width: 348px; padding: 24px; margin: -24px;
+  content-visibility: auto; contain-intrinsic-size: auto 300px auto 233px;
+}
 .el-fund {
   width: 92px; display: flex; flex-direction: column; align-items: center; gap: 1px;
   padding: 6px 5px; border-radius: 10px;

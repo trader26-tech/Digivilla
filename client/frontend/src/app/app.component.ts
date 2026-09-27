@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
 import { AccountComponent } from './account/account.component';
@@ -17,12 +17,10 @@ import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
 import { ExploreComponent } from './explore/explore.component';
-import { FundsComponent } from './funds/funds.component';
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
 import { EstateService, Tile } from './estate.service';
-import { VillaDetailComponent } from './villa/villa-detail.component';
 
 type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
 
@@ -43,7 +41,6 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     LandStorefrontComponent,
     LandDetailComponent,
     EstateDetailComponent,
-    VillaDetailComponent,
     ConstructionDetailComponent,
     BuildPickerComponent,
     VillaBuyComponent,
@@ -51,7 +48,6 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     LandBuyComponent,
     AccountComponent,
     EstateLevelsComponent,
-    FundsComponent,
     CallsComponent,
     LoginComponent,
   ],
@@ -64,6 +60,11 @@ export class AppComponent {
 
   /** The opening animation plays first; flips false when it finishes. */
   intro = true;
+  /** Full cinematic intro only on the very first launch on this device. */
+  readonly introFull = (() => { try { return !localStorage.getItem('intro_seen_v1'); } catch { return true; } })();
+  /** Returning users: the quick intro ends as soon as the home can paint with
+   *  real data (or immediately if signed out → login). */
+  get introReady(): boolean { return !this.auth.signedIn() || this.est.portfolioLoaded(); }
 
   /** True only on the login→app transition we just made, so the onboarding
    *  screen plays its "verified" tick once (not on every returning visit). */
@@ -83,15 +84,42 @@ export class AppComponent {
     // worker fetches a newer version, activate it and reload so the latest app
     // (and the presentation deck) is what they see.
     this.watchForUpdates();
+    // Once the home has its data, quietly warm what the other tabs need
+    // (Settings data + the Progress stage art) while the user looks at it,
+    // so every tab opens instantly. Runs once per signed-in session.
+    effect(() => {
+      if (this.warmed || !this.auth.signedIn() || !this.est.portfolioLoaded()) return;
+      this.warmed = true;
+      const idle = (cb: () => void) =>
+        ('requestIdleCallback' in window ? (window as any).requestIdleCallback(cb, { timeout: 2500 }) : setTimeout(cb, 1200));
+      idle(() => {
+        this.est.prefetchSettings();
+        for (const s of ['plot', 'grading', 'foundation', 'steel', 'villa']) {
+          const img = new Image(); img.decoding = 'async'; img.src = `assets/levels/${s}.svg`;
+        }
+      });
+    });
   }
+  private warmed = false;
 
   private watchForUpdates(): void {
     const sw = this.swUpdate;
     if (!sw || !sw.isEnabled) return;
     sw.versionUpdates.subscribe((e) => {
-      if (e.type === 'VERSION_READY') {
+      if (e.type !== 'VERSION_READY') return;
+      // Still on the splash → swap to the new build now (the user sees nothing).
+      // Mid-use → never yank the screen; apply it the next time the app goes to
+      // the background, so the next open is already the latest version.
+      if (this.intro) {
         sw.activateUpdate().then(() => document.location.reload()).catch(() => {});
+        return;
       }
+      const onHide = () => {
+        if (document.visibilityState !== 'hidden') return;
+        document.removeEventListener('visibilitychange', onHide);
+        sw.activateUpdate().then(() => document.location.reload()).catch(() => {});
+      };
+      document.addEventListener('visibilitychange', onHide);
     });
     // Proactively poll for a new version shortly after load and every 5 min.
     setTimeout(() => sw.checkForUpdate().catch(() => {}), 8000);
@@ -219,11 +247,14 @@ export class AppComponent {
   /** Log off from the account page — clears the session and returns home. */
   onSignOut(): void {
     this.auth.signOut();
+    this.est.clearSessionCache();
+    this.warmed = false;
     this.accountOpen = false;
   }
 
   onIntroDone(): void {
     this.intro = false;
+    try { localStorage.setItem('intro_seen_v1', '1'); } catch {}
   }
 
   /** "Build a new asset" -> go to the Explore tab, where villa/land are chosen. */

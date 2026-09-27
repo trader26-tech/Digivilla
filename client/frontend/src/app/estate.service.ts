@@ -3,6 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 
 import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
+import { Observable, catchError, shareReplay, throwError } from 'rxjs';
 
 /** The three tile kinds, each with a distinct money mechanic:
  *  - land:     bought outright. NO rent — capital sits in an equity growth
@@ -379,16 +380,37 @@ export class EstateService {
 
   /** REAL fund orders from the CRM report (client_transactions), newest first —
    *  for the Settings → Transactions panel. */
-  orders(): import('rxjs').Observable<{ orders: AccountOrder[] }> {
-    return this.http.get<{ orders: AccountOrder[] }>(
-      `${environment.apiUrl}/me/orders`, { headers: this.authHeaders });
+  orders(): Observable<{ orders: AccountOrder[] }> {
+    return this.ordersCache ??= this.cached(this.http.get<{ orders: AccountOrder[] }>(
+      `${environment.apiUrl}/me/orders`, { headers: this.authHeaders }), () => (this.ordersCache = undefined));
   }
 
   /** This user's KYC / personal details from their CRM record — for the
    *  Settings → Personal details panel. */
-  details(): import('rxjs').Observable<ClientDetails> {
-    return this.http.get<ClientDetails>(
-      `${environment.apiUrl}/me/details`, { headers: this.authHeaders });
+  details(): Observable<ClientDetails> {
+    return this.detailsCache ??= this.cached(this.http.get<ClientDetails>(
+      `${environment.apiUrl}/me/details`, { headers: this.authHeaders }), () => (this.detailsCache = undefined));
+  }
+
+  // Settings data is cached for the session (one shared request, replayed to
+  // every subscriber) and warmed in the background after the home paints, so
+  // the Settings tab opens with its data already there. A failed request is
+  // dropped from the cache so the next open retries.
+  private ordersCache?: Observable<{ orders: AccountOrder[] }>;
+  private detailsCache?: Observable<ClientDetails>;
+  private cached<T>(src: Observable<T>, drop: () => void): Observable<T> {
+    return src.pipe(
+      catchError((e) => { drop(); return throwError(() => e); }),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+  }
+  /** Forget cached Settings data (on re-sync / sign-out). */
+  clearSessionCache(): void { this.ordersCache = undefined; this.detailsCache = undefined; }
+  /** Fire-and-forget warm-up of the Settings data. */
+  prefetchSettings(): void {
+    if (!this.auth.token()) return;
+    this.orders().subscribe({ error: () => {} });
+    this.details().subscribe({ error: () => {} });
   }
 
   /** The returns detail for one building/villa tile — invested vs current value,
@@ -480,6 +502,7 @@ export class EstateService {
   syncFromServer(): void {
     const t = this.auth.token();
     if (!t) return;
+    this.clearSessionCache();
     this.http.get<{ tiles: Tile[] }>(`${environment.apiUrl}/me/estate`, { headers: this.authHeaders })
       .subscribe({
         next: (r) => {

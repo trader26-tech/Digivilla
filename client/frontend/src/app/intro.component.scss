@@ -196,3 +196,6 @@
   .hill { transform: translateY(30%) !important; }
   .rule { width: min(220px, 60vw) !important; }
 }
+
+/* quick (returning-user) flash: a snappier exit */
+.intro.quick { transition-duration: 0.26s, 0.26s; }
