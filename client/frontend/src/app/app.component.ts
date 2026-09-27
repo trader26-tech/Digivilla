@@ -13,6 +13,7 @@ import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
 import { NextVillaComponent } from './build/next-villa.component';
 import { CallsComponent } from './calls.component';
+import { CalculatorsComponent } from './calc/calculators.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
 import { EstateHomeComponent } from './estate-home.component';
@@ -49,6 +50,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     AccountComponent,
     EstateLevelsComponent,
     CallsComponent,
+    CalculatorsComponent,
     LoginComponent,
   ],
   templateUrl: './app.component.html',
@@ -78,7 +80,7 @@ export class AppComponent {
     // Deep-link support: ?view=explore opens the Explore tab on load.
     try {
       const v = new URLSearchParams(location.search).get('view');
-      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds') { this.view = v; this.intro = false; }
+      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc') { this.view = v; this.intro = false; }
     } catch {}
     // Never leave a user stuck on a stale cached build: as soon as the service
     // worker fetches a newer version, activate it and reload so the latest app
@@ -156,7 +158,7 @@ export class AppComponent {
   }
 
   /** Which bottom-nav tab is active. */
-  view: 'home' | 'explore' | 'funds' | 'calls' | 'storefront' = 'home';
+  view: 'home' | 'explore' | 'funds' | 'calls' | 'calc' | 'storefront' = 'home';
 
   /** True when a top-level tab (home/funds/calls) is showing — the bottom nav
    *  is only visible then, not on detail / buy / account pages. */
@@ -166,7 +168,7 @@ export class AppComponent {
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.building === null && this.buildFlow === null && !this.accountOpen &&
       !this.levelsOpen &&
-      (this.view === 'home' || this.view === 'funds' || this.view === 'calls')
+      (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc')
     );
   }
 
@@ -186,6 +188,12 @@ export class AppComponent {
   }
   goFunds(): void {
     this.view = 'funds';
+    this.callsOpen = false;
+    window.scrollTo({ top: 0 });
+  }
+  /** The Calculators tab. */
+  goCalc(): void {
+    this.view = 'calc';
     this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }

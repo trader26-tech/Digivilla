@@ -1,0 +1,135 @@
+<div class="lc">
+  <header class="lc-head">
+    <button class="lc-back" (click)="back.emit()" aria-label="Back to calculators">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div>
+      <div class="lc-kicker">Land calculator</div>
+      <h1 class="lc-title">How has your land really grown?</h1>
+    </div>
+  </header>
+
+  <!-- ── inputs ── -->
+  <section class="lc-card lc-form">
+    <label class="lc-field">
+      <span class="lc-lbl">What you paid</span>
+      <span class="lc-money"><i>₹</i>
+        <input inputmode="numeric" autocomplete="off" [value]="money(price())" (input)="onMoney($event, 'price')" aria-label="Purchase price in rupees" placeholder="10,00,000"/>
+      </span>
+      <span class="lc-hint">{{ price() ? compact(price()) : 'Enter the purchase price' }}</span>
+    </label>
+
+    <div class="lc-field">
+      <span class="lc-lbl">When you bought it</span>
+      <div class="lc-when">
+        <select [value]="buyMonth()" (change)="buyMonth.set(num($event))" aria-label="Purchase month">
+          <option *ngFor="let m of MONTHS; let i = index" [value]="i + 1" [selected]="i + 1 === buyMonth()">{{ m }}</option>
+        </select>
+        <select [value]="buyYear()" (change)="buyYear.set(num($event))" aria-label="Purchase year">
+          <option *ngFor="let y of years" [value]="y" [selected]="y === buyYear()">{{ y }}</option>
+        </select>
+      </div>
+      <span class="lc-hint" [class.warn]="future()">{{ future() ? 'That date is in the future' : 'Held for ' + yearsText(heldYears()) }}</span>
+    </div>
+
+    <label class="lc-field">
+      <span class="lc-lbl">What it's worth today</span>
+      <span class="lc-money"><i>₹</i>
+        <input inputmode="numeric" autocomplete="off" [value]="money(current())" (input)="onMoney($event, 'current')" aria-label="Current value in rupees" placeholder="25,00,000"/>
+      </span>
+      <span class="lc-hint">{{ current() ? compact(current()) + ' · your estimate or a recent quote' : 'Your best estimate' }}</span>
+    </label>
+
+    <button class="lc-toggle" (click)="withCosts.set(!withCosts())" [attr.aria-pressed]="withCosts()">
+      <span class="lc-switch" [class.on]="withCosts()"><span></span></span>
+      <span>Include buying &amp; selling costs</span>
+    </button>
+    <div class="lc-costs" *ngIf="withCosts()">
+      <label>Stamp duty, registration, legal <span><input type="number" min="0" max="50" step="0.5" [value]="entryPct()" (input)="onPct($event, 'entry')"/>%</span></label>
+      <label>Brokerage when you sell <span><input type="number" min="0" max="50" step="0.5" [value]="exitPct()" (input)="onPct($event, 'exit')"/>%</span></label>
+    </div>
+  </section>
+
+  <ng-container *ngIf="valid(); else invalid">
+    <!-- ── the land's CAGR ── -->
+    <section class="lc-card lc-hero">
+      <div class="lc-hero-k">Your land grew at</div>
+      <div class="lc-hero-v" [class.neg]="(landCagr() ?? 0) < 0">{{ pctText(landCagr()) }}<small> a year</small></div>
+      <div class="lc-hero-sub">
+        {{ compact(outlay()) }} → {{ compact(landNet()) }} over {{ yearsText(heldYears()) }}
+        · {{ multiple().toFixed(2) }}×
+      </div>
+      <div class="lc-hero-note" *ngIf="withCosts()">
+        Price alone: {{ pctText(priceCagr()) }} a year — costs take it to {{ pctText(netCagr()) }}.
+      </div>
+      <div class="lc-hero-note" *ngIf="!withCosts()">
+        After ~{{ entryPct() }}% buying and ~{{ exitPct() }}% selling costs, it's closer to {{ pctText(netCagr()) }} a year.
+      </div>
+    </section>
+
+    <!-- ── versus the basket ── -->
+    <section class="lc-card lc-vs">
+      <div class="lc-vs-k">If the same {{ compact(outlay()) }} had gone into your basket</div>
+
+      <div class="lc-vs-load" *ngIf="loading() && !basket()">
+        <div class="lc-shimmer"></div>
+        <span>Replaying real fund prices since {{ ym(startYm()) }}…</span>
+      </div>
+      <div class="lc-vs-fail" *ngIf="failed() && !loading()">
+        Couldn't load fund history. <button (click)="load()">Try again</button>
+      </div>
+
+      <ng-container *ngIf="basket() as b">
+        <div class="lc-tiles">
+          <div class="lc-tile land">
+            <span>Land today</span>
+            <b>{{ compact(landNet()) }}</b>
+            <em>{{ pctText(landCagr()) }} / yr</em>
+          </div>
+          <div class="lc-tile basket">
+            <span>Basket today</span>
+            <b>{{ compact(b.final_value) }}</b>
+            <em>{{ pctText(b.cagr_pct) }} / yr</em>
+          </div>
+        </div>
+
+        <div class="lc-verdict" [class.up]="diff() > 0" [class.down]="diff() <= 0">
+          <ng-container *ngIf="diff() > 0">{{ b.start_clamped ? 'Even starting later, the' : 'The' }} basket would be worth <b>{{ compact(diff()) }} more</b> (+{{ diffPct().toFixed(0) }}%).</ng-container>
+          <ng-container *ngIf="diff() <= 0">Your land did better by <b>{{ compact(-diff()) }}</b> ({{ (-diffPct()).toFixed(0) }}%){{ b.start_clamped ? ' — though the basket only had ' + yearsText(basketYears()) + ' of those ' + yearsText(heldYears()) : '' }}.</ng-container>
+        </div>
+
+        <app-growth-chart [series]="chart()" [height]="210"></app-growth-chart>
+
+        <p class="lc-clamp" *ngIf="b.start_clamped">
+          Fund history starts {{ ym(b.earliest_available) }}, so the basket line begins there (invested then) — the land line runs from {{ ym(startYm()) }}.
+        </p>
+
+        <button class="lc-more" (click)="showBasket.set(!showBasket())" [attr.aria-expanded]="showBasket()">
+          {{ b.basket === 'yours' ? 'Your basket' : 'The standard DigiVilla basket' }} · {{ b.funds.length }} funds
+          <svg [class.on]="showBasket()" viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <ul class="lc-funds" *ngIf="showBasket()">
+          <li *ngFor="let f of b.funds">
+            <span class="w">{{ f.weight | number: '1.0-0' }}%</span>
+            <span class="n">{{ f.name }}
+              <small *ngFor="let p of f.proxy">before {{ ym(p.until) }}: {{ p.name }}'s returns</small>
+            </span>
+          </li>
+        </ul>
+      </ng-container>
+    </section>
+  </ng-container>
+
+  <ng-template #invalid>
+    <section class="lc-card lc-empty">
+      Enter what you paid, when, and what it's worth today to see its growth.
+    </section>
+  </ng-template>
+
+  <p class="lc-fine">
+    Hypothetical: a one-time investment in the month you bought, held with no withdrawals,
+    using the funds' real past prices. The land's value is your estimate; its line shows its
+    average yearly growth, not its actual path. Past performance doesn't guarantee future returns.
+  </p>
+  <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
+</div>

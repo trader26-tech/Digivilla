@@ -39,6 +39,11 @@ def _prewarm_caches() -> None:
             nav_cache.prewarm(nav_cache.held_scheme_codes())
         except Exception:
             pass
+        try:
+            from app import calculators
+            calculators.prewarm()   # NAV histories for the Calculators tab
+        except Exception:
+            pass
 
     threading.Thread(target=warm, daemon=True).start()
 
@@ -502,6 +507,34 @@ def get_my_holding(uv_id: str, authorization: Optional[str] = Header(default=Non
 
 # --- Villa fund backtest (growth-of-money chart on the villa detail page) ------
 from app import villa_backtest as villa_bt  # noqa: E402
+
+
+@app.get("/me/calc/basket-growth")
+def calc_basket_growth(amount: float, start: str,
+                       authorization: Optional[str] = Header(default=None)) -> dict:
+    """Calculators: a lump sum of `amount` put into the user's OWN fund basket at
+    `start` (YYYY-MM or YYYY-MM-DD), marked to real month-end NAVs to today. Funds
+    younger than `start` are backfilled with a same-sleeve long-history fund (listed
+    per fund). Earliest modelled start is ~2007; an earlier start is clamped+flagged."""
+    owner = _owner_or_401(authorization)
+    from datetime import date as _date
+    from app import calculators
+    try:
+        parts = [int(x) for x in start.split("-")[:3]]
+        d = _date(parts[0], parts[1], parts[2] if len(parts) > 2 else 1)
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=422, detail="start must be YYYY-MM or YYYY-MM-DD")
+    if d > _date.today():
+        raise HTTPException(status_code=422, detail="start is in the future")
+    if not (0 < amount <= 1e11):
+        raise HTTPException(status_code=422, detail="amount must be positive")
+    return calculators.basket_growth(owner, float(amount), d)
+
+
+# --- Flat calculator: per-sleeve growth paths of the standard villa mix ----------
+from app import flat_calc  # noqa: E402
+
+app.include_router(flat_calc.router)
 
 
 @app.get("/villa/backtest")
