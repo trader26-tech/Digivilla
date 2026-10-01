@@ -296,34 +296,97 @@ def _search_regular_code(raw_name: str) -> tuple[int | None, str | None]:
     return int(best["schemeCode"]), best.get("schemeName")
 
 
+# Process-lifetime memo so a scheme resolved once (this run) is never looked up
+# again — keyed by the normalised name. Cleared implicitly on restart.
+_CODE_MEMO: dict[str, int | None] = {}
+
+
 def resolve_scheme_code(raw_name: str) -> int | None:
-    """Cached resolve: raw scheme name → regular-plan code."""
+    """Cached resolve: raw scheme name → regular-plan code.
+
+    Fast path is the in-memory memo, then the persistent cache (DB or local),
+    then a live mfapi search as a last resort. For bulk work prefer
+    resolve_scheme_codes(), which resolves the misses in parallel."""
     key = _norm_scheme(raw_name)
-    if _use_supabase():
-        try:
-            r = _sb().table("scheme_code_map").select("scheme_code").eq("raw_name", key).limit(1).execute()
-            if r.data:
-                return r.data[0].get("scheme_code")
-        except Exception:
-            pass
-        code, resolved = _search_regular_code(raw_name)
-        try:
-            _sb().table("scheme_code_map").upsert({
-                "raw_name": key, "scheme_code": code, "resolved_name": resolved,
-                "updated_at": _now_iso(),
-            }).execute()
-        except Exception:
-            pass
-        return code
-    # local
-    store = _load_local()
-    cm = store.setdefault("code_map", {})
-    if key in cm:
-        return cm[key].get("scheme_code")
-    code, resolved = _search_regular_code(raw_name)
-    cm[key] = {"scheme_code": code, "resolved_name": resolved}
-    _save_local(store)
-    return code
+    if key in _CODE_MEMO:
+        return _CODE_MEMO[key]
+    return resolve_scheme_codes([raw_name]).get(raw_name)
+
+
+def resolve_scheme_codes(raw_names: list[str]) -> dict[str, int | None]:
+    """Resolve many raw scheme names → regular-plan codes at once.
+
+    Distinct names are resolved once; hits come from the in-memory memo and the
+    persistent cache, and only the remaining misses hit mfapi — in parallel,
+    with one bulk write back to the cache. Returns {raw_name: code} for every
+    input (including duplicates)."""
+    # distinct (raw_name, key) pairs, preserving one representative raw per key
+    key_of: dict[str, str] = {}          # raw_name -> normalised key
+    rep_raw: dict[str, str] = {}         # key -> a raw name to search with
+    for raw in raw_names:
+        k = _norm_scheme(raw)
+        key_of[raw] = k
+        rep_raw.setdefault(k, raw)
+
+    resolved: dict[str, int | None] = {}  # key -> code
+
+    # 1) in-memory memo
+    for k in list(rep_raw):
+        if k in _CODE_MEMO:
+            resolved[k] = _CODE_MEMO[k]
+
+    # 2) persistent cache (one bulk read)
+    misses = [k for k in rep_raw if k not in resolved]
+    use_sb = _use_supabase()
+    store = None if use_sb else _load_local()
+    if misses:
+        if use_sb:
+            try:
+                got = _sb().table("scheme_code_map").select(
+                    "raw_name,scheme_code").in_("raw_name", misses).execute().data or []
+                for row in got:
+                    resolved[row["raw_name"]] = row.get("scheme_code")
+            except Exception:
+                pass
+        else:
+            cm = store.setdefault("code_map", {})
+            for k in misses:
+                if k in cm:
+                    resolved[k] = cm[k].get("scheme_code")
+
+    # 3) live mfapi search for whatever's still missing — in parallel
+    still = [k for k in rep_raw if k not in resolved]
+    if still:
+        import concurrent.futures as _fut
+        fresh: dict[str, tuple[int | None, str | None]] = {}
+        with _fut.ThreadPoolExecutor(max_workers=min(8, len(still))) as ex:
+            futs = {ex.submit(_search_regular_code, rep_raw[k]): k for k in still}
+            for fu in _fut.as_completed(futs):
+                k = futs[fu]
+                try:
+                    fresh[k] = fu.result()
+                except Exception:
+                    fresh[k] = (None, None)
+        for k, (code, _name) in fresh.items():
+            resolved[k] = code
+        # write the freshly-resolved ones back to the persistent cache (bulk)
+        if use_sb:
+            try:
+                _sb().table("scheme_code_map").upsert([{
+                    "raw_name": k, "scheme_code": c, "resolved_name": n,
+                    "updated_at": _now_iso(),
+                } for k, (c, n) in fresh.items()]).execute()
+            except Exception:
+                pass
+        else:
+            cm = store.setdefault("code_map", {})
+            for k, (c, n) in fresh.items():
+                cm[k] = {"scheme_code": c, "resolved_name": n}
+            _save_local(store)
+
+    # memo everything and map back to every input raw name
+    _CODE_MEMO.update(resolved)
+    return {raw: resolved.get(key_of[raw]) for raw in raw_names}
 
 
 def live_nav(scheme_code: int, max_age_hours: int = 6) -> tuple[float | None, str | None]:
@@ -431,10 +494,20 @@ def upload_report(report_type: str, filename: str, content: bytes,
     if report_type == "user":
         _save_clients(rows, report_date)
     else:
-        _save_holdings(rows, report_date)
+        raw_txns = parse_transactions_raw(content)
+        # resolve every distinct scheme ONCE (parallel + cached), then reuse the
+        # result for both the holdings roll-up and the raw transaction rows.
+        codes = resolve_scheme_codes(
+            [r["scheme_name"] for r in rows] + [r["scheme_name"] for r in raw_txns])
+        _save_holdings(rows, report_date, codes)
         # also persist the RAW per-transaction rows (for manual villa mapping),
         # preserving any villa assignments already made (upsert by order_id).
-        _save_transactions(parse_transactions_raw(content), report_date)
+        # A hand-added purchase that now appears in the report is absorbed:
+        # the report's line takes over and keeps the villa it was pinned to.
+        _save_transactions(raw_txns, report_date, codes)
+        # holdings were rebuilt from the CSV — add back hand-added purchases the
+        # report doesn't contain yet, so the client's total stays whole
+        _reapply_manual_holdings()
 
     meta = {
         "report_date": report_date, "report_type": report_type,
@@ -480,14 +553,19 @@ def _save_clients(rows: list[dict], report_date: str) -> None:
     _save_local(store)
 
 
-def _save_holdings(rows: list[dict], report_date: str) -> None:
-    """Replace ALL holdings with the latest transaction report (one per day)."""
+def _save_holdings(rows: list[dict], report_date: str, codes: dict[str, int | None] | None = None) -> None:
+    """Replace ALL holdings with the latest transaction report (one per day).
+
+    Scheme codes are resolved in one batch up front (pass `codes` to reuse a
+    resolution already done by the caller), and the rows are written in one bulk
+    upsert instead of one round-trip per row."""
+    if codes is None:
+        codes = resolve_scheme_codes([r["scheme_name"] for r in rows])
     enriched = []
     for r in rows:
-        code = resolve_scheme_code(r["scheme_name"])
         enriched.append({
             "client_code": r["client_code"], "scheme_name": r["scheme_name"],
-            "scheme_code": code, "folio_no": r.get("folio_no", ""),
+            "scheme_code": codes.get(r["scheme_name"]), "folio_no": r.get("folio_no", ""),
             "units": round(r["units"], 4), "invested": round(r["invested"], 2),
             "last_nav": r.get("last_nav"), "report_date": report_date,
             "updated_at": _now_iso(),
@@ -495,9 +573,9 @@ def _save_holdings(rows: list[dict], report_date: str) -> None:
     if _use_supabase():
         try:
             _sb().table("client_holdings").delete().neq("client_code", "__none__").execute()
-            for r in enriched:
+            if enriched:
                 _sb().table("client_holdings").upsert(
-                    r, on_conflict="client_code,scheme_name,folio_no").execute()
+                    enriched, on_conflict="client_code,scheme_name,folio_no").execute()
             return
         except Exception:
             pass
@@ -506,37 +584,59 @@ def _save_holdings(rows: list[dict], report_date: str) -> None:
     _save_local(store)
 
 
-def _save_transactions(rows: list[dict], report_date: str) -> None:
+def _save_transactions(rows: list[dict], report_date: str, codes: dict[str, int | None] | None = None) -> None:
     """Upsert raw transactions by order_id — NEVER delete-all, and NEVER clobber
     an existing manual `villa_id`. New txns are added; re-uploaded ones update
-    their facts (units/nav) but keep whatever villa the admin assigned."""
+    their facts (units/nav) but keep whatever villa the admin assigned.
+
+    Scheme codes are resolved once in a batch; existing rows are read in a single
+    query and everything is written in one bulk upsert that carries each row's
+    preserved villa_id, instead of a round-trip per transaction."""
     if not rows:
         return
+    if codes is None:
+        codes = resolve_scheme_codes([r["scheme_name"] for r in rows])
     if _use_supabase():
         try:
-            # which order_ids already exist (so we don't touch their villa_id)?
-            existing = set()
-            codes = {r["client_code"] for r in rows}
-            for code in codes:
-                got = _sb().table("client_transactions").select("order_id").eq(
+            # preserved villa_id per existing order_id (one query per client code)
+            preserved: dict[str, str | None] = {}
+            for code in {r["client_code"] for r in rows}:
+                got = _sb().table("client_transactions").select("order_id,villa_id").eq(
                     "client_code", code).execute().data or []
-                existing.update(t["order_id"] for t in got)
+                for t in got:
+                    preserved[t["order_id"]] = t.get("villa_id")
+            # hand-added purchases waiting for the report to confirm them
+            manual: list[dict] = []
+            for code in {r["client_code"] for r in rows}:
+                manual += _sb().table("client_transactions").select("*").eq(
+                    "client_code", code).like("order_id", "MAN-%").execute().data or []
+            absorbed: set[str] = set()
+            recs = []
             for r in rows:
-                code = resolve_scheme_code(r["scheme_name"])
                 rec = {
                     "order_id": r["order_id"], "client_code": r["client_code"],
                     "txn_date": r.get("txn_date"), "scheme_name": r["scheme_name"],
-                    "scheme_code": code, "folio_no": r.get("folio_no", ""),
+                    "scheme_code": codes.get(r["scheme_name"]), "folio_no": r.get("folio_no", ""),
                     "kind": r.get("kind"), "amount": round(r.get("amount", 0), 2),
                     "nav": r.get("nav"), "units": round(r.get("units", 0), 4),
                     "report_date": report_date, "updated_at": _now_iso(),
                 }
-                # update() on an existing row leaves villa_id untouched; insert for new.
-                if r["order_id"] in existing:
-                    _sb().table("client_transactions").update(rec).eq(
-                        "order_id", r["order_id"]).execute()
-                else:
-                    _sb().table("client_transactions").insert(rec).execute()
+                # carry forward a manual villa assignment if this order already had one
+                if r["order_id"] in preserved:
+                    rec["villa_id"] = preserved[r["order_id"]]
+                # the report now carries a purchase the admin added by hand →
+                # the report's line wins, the hand-added one goes, the villa stays
+                m = _match_manual(rec, manual, absorbed)
+                if m:
+                    absorbed.add(m["order_id"])
+                    if not rec.get("villa_id"):
+                        rec["villa_id"] = m.get("villa_id")
+                recs.append(rec)
+            if recs:
+                _sb().table("client_transactions").upsert(
+                    recs, on_conflict="order_id").execute()
+            if absorbed:
+                _sb().table("client_transactions").delete().in_("order_id", list(absorbed)).execute()
             return
         except Exception:
             pass
@@ -545,7 +645,7 @@ def _save_transactions(rows: list[dict], report_date: str) -> None:
     for r in rows:
         prev = txns.get(r["order_id"], {})
         txns[r["order_id"]] = {**r, "report_date": report_date,
-                               "scheme_code": resolve_scheme_code(r["scheme_name"]),
+                               "scheme_code": codes.get(r["scheme_name"]),
                                "villa_id": prev.get("villa_id")}
     store["transactions"] = list(txns.values())
     _save_local(store)
@@ -892,21 +992,42 @@ def list_client_villas(client_code: str) -> list[dict]:
     for t in txns:
         if t.get("villa_id"):
             by_villa.setdefault(t["villa_id"], []).append(t)
+    # today's NAV for every scheme pinned to any villa (cached, in parallel)
+    codes = {t.get("scheme_code") for ts in by_villa.values() for t in ts if t.get("scheme_code")}
+    navs: dict = {}
+    if codes:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(8, len(codes))) as ex:
+            navs = dict(zip(codes, ex.map(lambda c: live_nav(c)[0], codes)))
     out = []
     for v in villas:
         items = by_villa.get(v["id"], [])
-        mapped = round(sum(float(t.get("amount") or 0) for t in items), 2)
+        mapped = round(sum(_signed(t, "amount") for t in items), 2)
+        value = round(sum(_signed(t, "units") * navs[t["scheme_code"]] if navs.get(t.get("scheme_code"))
+                          else _signed(t, "amount") for t in items), 2)
+        dates = sorted(str(t["txn_date"])[:10] for t in items if t.get("txn_date"))
+        finished = v.get("status") == "constructed" or mapped >= VILLA_UNIT * 0.99
         out.append({
             **v,
             "mapped_total": mapped,
             "txn_count": len(items),
+            # what the client app shows for this villa: its own transactions at today's NAV
+            "value": value,
+            "gain": round(value - mapped, 2),
+            "since": dates[0] if dates else "",
+            "finished": finished,
             "hint": {
                 "unit": VILLA_UNIT,
                 "progress": round(min(mapped / VILLA_UNIT, 1.0) * 100, 1) if VILLA_UNIT else 0,
-                "suggest_constructed": mapped >= VILLA_UNIT,
+                "suggest_constructed": mapped >= VILLA_UNIT * 0.99,
             },
         })
-    return out
+    # the client app's order: finished villas first, each group oldest first
+    # (empty villas last) → "Villa 1" here is "Villa 1" on the client's phone
+    order = sorted(out, key=lambda v: (v["txn_count"] == 0, not v["finished"], v["since"] or "9999"))
+    for i, v in enumerate(order):
+        v["position"] = i if v["txn_count"] else None
+    return order
 
 
 def create_client_villa(client_code: str, name: str) -> dict:
@@ -971,10 +1092,16 @@ def assign_transactions(villa_id: str | None, order_ids: list[str]) -> int:
         return 0
     if _use_supabase():
         try:
-            for oid in order_ids:
-                _sb().table("client_transactions").update(
-                    {"villa_id": villa_id, "updated_at": _now_iso()}).eq("order_id", oid).execute()
-            return len(order_ids)
+            q = _sb().table("client_transactions").update(
+                {"villa_id": villa_id, "updated_at": _now_iso()}).in_("order_id", order_ids)
+            if villa_id:
+                # never pin one client's transactions to another client's villa
+                v = _sb().table("client_villas").select("client_code").eq("id", villa_id).limit(1).execute().data
+                if not v:
+                    return 0
+                q = q.eq("client_code", v[0]["client_code"])
+            r = q.execute()
+            return len(r.data or [])
         except Exception:
             pass
     store = _load_local()
@@ -986,3 +1113,274 @@ def assign_transactions(villa_id: str | None, order_ids: list[str]) -> int:
             n += 1
     _save_local(store)
     return n
+
+
+# ============================================================================
+# MAPPING OVERVIEW (admin home) — what is NOT mapped to a villa yet
+# ============================================================================
+def _all_rows(table: str, columns: str) -> list[dict]:
+    """Every row of a table. Supabase caps a select at 1000 rows, so page
+    through it; a partial read here would silently hide unmapped transactions."""
+    out: list[dict] = []
+    page = 1000
+    start = 0
+    while True:
+        got = (_sb().table(table).select(columns)
+               .range(start, start + page - 1).execute().data or [])
+        out += got
+        if len(got) < page:
+            return out
+        start += page
+
+
+def mapping_overview() -> dict:
+    """Portfolio-wide mapping health for the admin home screen.
+
+    A transaction is MAPPED when its villa_id points at a villa that still
+    exists; anything else (no villa_id, or a dangling one) is UNMAPPED. Returns
+    the totals, plus every client that has unmapped transactions with those
+    transactions listed (newest first), worst client first."""
+    cols = "order_id,client_code,txn_date,scheme_name,kind,amount,villa_id"
+    txns: list[dict] | None = None
+    villas: list[dict] = []
+    if _use_supabase():
+        try:
+            txns = _all_rows("client_transactions", cols)
+            villas = _all_rows("client_villas", "id,client_code,name")
+        except Exception:
+            txns = None
+    if txns is None:
+        store = _load_local()
+        txns = list(store.get("transactions", []))
+        villas = list(store.get("client_villas", []))
+
+    villa_name = {v["id"]: v.get("name") or "Villa" for v in villas}
+    villas_per_client: dict[str, int] = {}
+    for v in villas:
+        villas_per_client[v.get("client_code")] = villas_per_client.get(v.get("client_code"), 0) + 1
+    names = {c["client_code"]: (c.get("name") or "").strip() for c in _all_clients()}
+
+    per: dict[str, dict] = {}
+    for t in txns:
+        code = t.get("client_code")
+        if not code:
+            continue
+        c = per.setdefault(code, {
+            "client_code": code, "name": names.get(code) or code,
+            "villa_count": villas_per_client.get(code, 0),
+            "total": 0, "mapped": 0, "unmapped": 0, "unmapped_amount": 0.0, "txns": [],
+        })
+        c["total"] += 1
+        if t.get("villa_id") and t["villa_id"] in villa_name:
+            c["mapped"] += 1
+            continue
+        c["unmapped"] += 1
+        amt = float(t.get("amount") or 0)
+        c["unmapped_amount"] += amt
+        c["txns"].append({
+            "order_id": t.get("order_id"), "txn_date": t.get("txn_date"),
+            "scheme_name": t.get("scheme_name"), "kind": t.get("kind"), "amount": round(amt, 2),
+        })
+
+    affected = []
+    for c in per.values():
+        c["unmapped_amount"] = round(c["unmapped_amount"], 2)
+        c["txns"].sort(key=lambda t: t.get("txn_date") or "", reverse=True)
+        if c["unmapped"]:
+            affected.append(c)
+    affected.sort(key=lambda c: (-c["unmapped"], c["name"]))
+
+    total = sum(c["total"] for c in per.values())
+    unmapped = sum(c["unmapped"] for c in per.values())
+    return {
+        "as_of": _now_iso(),
+        "total": total, "mapped": total - unmapped, "unmapped": unmapped,
+        "unmapped_amount": round(sum(c["unmapped_amount"] for c in affected), 2),
+        "clients_affected": len(affected),
+        "clients": affected,
+        # per-client counts for every client with transactions (row badges)
+        "by_client": {code: {"total": c["total"], "mapped": c["mapped"], "unmapped": c["unmapped"]}
+                      for code, c in per.items()},
+    }
+
+
+# ============================================================================
+# ADD A PURCHASE BY HAND — split across the DigiVilla mix (or one fund), units
+# from that day's real NAV, pinned to a villa in the same step
+# ============================================================================
+_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
+
+
+def _signed(t: dict, field: str) -> float:
+    """units / amount with money-out transactions counted as negative."""
+    v = abs(_to_float(t.get(field)))
+    k = (t.get("kind") or "").lower()
+    return -v if any(w in k for w in _REDEEM_WORDS) else v
+
+
+def _match_manual(rec: dict, manual: list[dict], taken: set) -> dict | None:
+    """The hand-added purchase a report line confirms: same fund, same money
+    (±0.5%), within 4 days."""
+    try:
+        d = datetime.strptime(str(rec.get("txn_date"))[:10], "%Y-%m-%d")
+    except Exception:
+        return None
+    amt = abs(_to_float(rec.get("amount")))
+    for m in manual:
+        if m["order_id"] in taken or m.get("scheme_code") != rec.get("scheme_code"):
+            continue
+        try:
+            md = datetime.strptime(str(m.get("txn_date"))[:10], "%Y-%m-%d")
+        except Exception:
+            continue
+        if abs((md - d).days) <= 4 and abs(abs(_to_float(m.get("amount"))) - amt) <= max(2.0, amt * 0.005):
+            return m
+    return None
+
+
+def _villa_mix() -> list[dict]:
+    """Today's DigiVilla mix — the first SIP bucket's funds and weights (the same
+    funds the client app values villas against)."""
+    try:
+        bs = [b for b in list_buckets() if (b.get("kind") or "sip") == "sip"]
+    except Exception:
+        bs = []
+    for b in bs:
+        funds = [f for f in b.get("funds") or [] if f.get("scheme_code") and float(f.get("target_weight") or 0) > 0]
+        if funds:
+            tot = sum(float(f["target_weight"]) for f in funds)
+            return [{"scheme_code": int(f["scheme_code"]), "scheme_name": f.get("scheme_name") or "Fund",
+                     "weight": float(f["target_weight"]) / tot} for f in funds]
+    return []
+
+
+_nav_hist: dict = {}
+
+
+def nav_on(scheme_code: int, day: str) -> tuple[float | None, str | None]:
+    """The NAV a purchase on `day` (YYYY-MM-DD) gets: that day's NAV, or the
+    nearest published one before it (weekends / holidays). Full history from
+    mfapi, kept for 6 hours."""
+    import time as _t
+    hit = _nav_hist.get(scheme_code)
+    if not hit or _t.time() - hit[0] > 6 * 3600:
+        try:
+            r = httpx.get(f"{MFAPI}/mf/{scheme_code}", timeout=20)
+            rows = []
+            for p in r.json().get("data") or []:
+                dd, mm, yy = p["date"].split("-")
+                rows.append((f"{yy}-{mm}-{dd}", _to_float(p["nav"])))
+            rows.sort()
+            hit = (_t.time(), rows)
+            _nav_hist[scheme_code] = hit
+        except Exception:
+            return None, None
+    best = None
+    for d, nav in hit[1]:
+        if d <= day:
+            best = (nav, d)
+        else:
+            break
+    return best if best else (None, None)
+
+
+def purchase_lines(day: str, amount: float, scheme_code: int | None = None) -> list[dict]:
+    """How a purchase of ₹amount on `day` splits: each fund's ₹, NAV and units.
+    `scheme_code` = one fund only; otherwise today's DigiVilla mix."""
+    if scheme_code:
+        mix = [f for f in _villa_mix() if f["scheme_code"] == scheme_code] or \
+              [{"scheme_code": scheme_code, "scheme_name": _scheme_name(scheme_code), "weight": 1.0}]
+        mix = [{**mix[0], "weight": 1.0}]
+    else:
+        mix = _villa_mix()
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=max(1, min(8, len(mix)))) as ex:
+        navs = list(ex.map(lambda f: nav_on(f["scheme_code"], day), mix))
+    out = []
+    for f, (nav, nav_date) in zip(mix, navs):
+        amt = round(amount * f["weight"], 2)
+        out.append({**f, "amount": amt, "nav": nav, "nav_date": nav_date,
+                    "units": round(amt / nav, 4) if nav else None})
+    return out
+
+
+def _scheme_name(code: int) -> str:
+    try:
+        r = httpx.get(f"{MFAPI}/mf/{code}/latest", timeout=12)
+        return (r.json().get("meta") or {}).get("scheme_name") or f"Scheme {code}"
+    except Exception:
+        return f"Scheme {code}"
+
+
+def add_purchase(client_code: str, day: str, amount: float, kind: str,
+                 scheme_code: int | None, villa_id: str | None, new_villa: bool) -> dict:
+    """Record a purchase by hand: one transaction per fund (order id MAN-…),
+    units from that day's NAV, pinned to `villa_id` — or to a new villa when
+    `new_villa`. Holdings are updated at once so the client's total is right.
+    When the AMC's report later contains the same purchase, the upload absorbs
+    the hand-added lines and keeps their villa."""
+    lines = purchase_lines(day, amount, scheme_code)
+    if not lines or any(not l["nav"] for l in lines):
+        raise ValueError("Couldn't find a NAV for that date — check the date or try again.")
+    if new_villa:
+        existing = list_client_villas(client_code)
+        villa = create_client_villa(client_code, f"Villa {len(existing) + 1}")
+        villa_id = villa["id"]
+    now = _now_iso()
+    recs = [{
+        "order_id": f"MAN-{uuid.uuid4().hex[:12].upper()}", "client_code": client_code,
+        "txn_date": day, "scheme_name": l["scheme_name"], "scheme_code": l["scheme_code"],
+        "folio_no": "", "kind": kind or "Lumpsum", "amount": l["amount"], "nav": l["nav"],
+        "units": l["units"], "villa_id": villa_id, "report_date": day, "updated_at": now,
+    } for l in lines]
+    _sb().table("client_transactions").insert(recs).execute()
+    _apply_holdings(client_code, recs, +1)
+    return {"villa_id": villa_id, "transactions": recs}
+
+
+def delete_manual_transaction(order_id: str) -> bool:
+    """Undo a hand-added line (MAN-… only — report lines can't be deleted)."""
+    if not order_id.startswith("MAN-"):
+        return False
+    got = _sb().table("client_transactions").select("*").eq("order_id", order_id).limit(1).execute().data
+    if not got:
+        return False
+    _sb().table("client_transactions").delete().eq("order_id", order_id).execute()
+    _apply_holdings(got[0]["client_code"], got, -1)
+    return True
+
+
+def _apply_holdings(client_code: str, txns: list[dict], sign: int) -> None:
+    """Add (+1) or remove (-1) hand-added lines from client_holdings, by fund."""
+    rows = _sb().table("client_holdings").select("*").eq("client_code", client_code).execute().data or []
+    for t in txns:
+        units, amt = sign * _to_float(t.get("units")), sign * _to_float(t.get("amount"))
+        row = next((h for h in rows if h.get("scheme_code") == t.get("scheme_code")), None)
+        if row:
+            row["units"] = round(_to_float(row.get("units")) + units, 4)
+            row["invested"] = round(_to_float(row.get("invested")) + amt, 2)
+            _sb().table("client_holdings").update(
+                {"units": row["units"], "invested": row["invested"], "updated_at": _now_iso()}).eq("id", row["id"]).execute()
+        elif sign > 0:
+            new = {"client_code": client_code, "scheme_name": t["scheme_name"], "scheme_code": t.get("scheme_code"),
+                   "folio_no": "MANUAL", "units": round(units, 4), "invested": round(amt, 2),
+                   "last_nav": t.get("nav"), "report_date": t.get("txn_date"), "updated_at": _now_iso()}
+            ins = _sb().table("client_holdings").insert(new).execute().data or [new]
+            rows.append(ins[0])
+
+
+def _reapply_manual_holdings() -> None:
+    """After an upload rebuilt every client's holdings from the CSV, put back the
+    hand-added purchases the report doesn't contain yet."""
+    if not _use_supabase():
+        return
+    try:
+        manual = _all_rows("client_transactions", "*")
+        manual = [t for t in manual if str(t.get("order_id", "")).startswith("MAN-")]
+        by_client: dict[str, list] = {}
+        for t in manual:
+            by_client.setdefault(t["client_code"], []).append(t)
+        for code, ts in by_client.items():
+            _apply_holdings(code, ts, +1)
+    except Exception:
+        pass

@@ -192,7 +192,15 @@ export interface LiveHouse {
   gain: number;
   pct: number;
   funds: LiveNav[];
+  /** first purchase date of the transactions pinned to this villa (ISO), when pinned */
+  since?: string;
+  villa_id?: string;
+  /** DigiVilla money the admin hasn't pinned to a villa yet (not on the board) */
+  loose?: boolean;
 }
+
+/** One house on the home board, from the admin's transaction → villa pins. */
+export interface HouseLayout { building: boolean; invested: number; pct: number; }
 
 /** A NAV point and one window's history (from GET /dashboard/funds/{code}/nav). */
 export interface NavPoint { date: string; nav: number; }
@@ -289,6 +297,9 @@ export interface PortfolioSummary {
   estate_name: string;
   /** The user's custom city / nickname for their estate. May be "". */
   estate_city: string;
+  /** The home board straight from the admin's transaction → villa pins, in board
+   *  order (finished villas first, oldest first). null = nothing pinned yet. */
+  houses_layout?: HouseLayout[] | null;
   /** Freshness: the oldest NAV publish date behind this value (ISO date), when
    *  that NAV was last pulled from the source (ISO UTC), when this response was
    *  computed (ISO UTC) and when the next daily NAV refresh lands (ISO +05:30). */

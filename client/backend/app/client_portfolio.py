@@ -268,6 +268,132 @@ def live_navs(owner: str) -> dict:
     return {"funds": funds, **nav_cache.freshness([h.get("scheme_code") for h in hs])}
 
 
+# ============================================================================
+# HOUSES FROM THE ADMIN'S PINS — each villa is the transactions pinned to it
+# ============================================================================
+HOUSES_MAX = 9
+_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
+
+
+def _txn_sign(kind) -> float:
+    """+1 for money in (SIP / Lumpsum / switch-in), -1 for money out."""
+    k = (kind or "").lower()
+    return -1.0 if any(w in k for w in _REDEEM_WORDS) else 1.0
+
+
+def _is_finished(invested: float, status) -> bool:
+    """A house is finished once its pinned money reaches ₹5L (1% slack for the
+    rupee rounding a lumpsum gets at purchase), or the admin marked it so."""
+    return status == "constructed" or invested >= VILLA_UNIT * 0.99
+
+
+def _mapped_houses_load(client_code: str):
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=2) as ex:
+            f_v = ex.submit(lambda: _sb().table("client_villas").select("id,name,status,sort_order,created_at").eq(
+                "client_code", client_code).execute().data or [])
+            f_t = ex.submit(lambda: _sb().table("client_transactions").select(
+                "scheme_code,scheme_name,units,amount,villa_id,txn_date,kind").eq(
+                "client_code", client_code).execute().data or [])
+            villas, txns = f_v.result(), f_t.result()
+    except Exception:
+        return None
+    vmap = {v["id"]: v for v in villas}
+    if not any(t.get("villa_id") in vmap for t in txns):
+        return None                                   # nothing pinned yet → old behaviour
+
+    per: dict[str, dict] = {}
+    loose: dict = {}
+    codes_in_villa = _villa_scheme_codes()
+    for t in txns:
+        code = t.get("scheme_code")
+        if not code:
+            continue
+        sign = _txn_sign(t.get("kind"))
+        units = abs(_num(t.get("units"))) * sign
+        amount = abs(_num(t.get("amount"))) * sign
+        vid = t.get("villa_id")
+        if vid in vmap:
+            g = per.setdefault(vid, {"schemes": {}, "dates": []})
+            agg = g["schemes"]
+            if t.get("txn_date"):
+                g["dates"].append(str(t["txn_date"])[:10])
+        elif code in codes_in_villa:
+            agg = loose                                # DigiVilla money not pinned to a villa yet
+        else:
+            continue                                   # other funds: net worth, not a house
+        e = agg.setdefault(code, {"scheme_code": code, "scheme_name": t.get("scheme_name"),
+                                  "units": 0.0, "invested": 0.0})
+        e["units"] += units
+        e["invested"] += amount
+
+    houses = []
+    for vid, g in per.items():
+        hold = [h for h in g["schemes"].values() if h["units"] > 1e-6]
+        inv = sum(h["invested"] for h in hold)
+        if inv <= 0:
+            continue
+        v = vmap[vid]
+        houses.append({
+            "villa_id": vid, "name": v.get("name") or "Villa",
+            "building": not _is_finished(inv, v.get("status")),
+            "since": min(g["dates"]) if g["dates"] else "",
+            "invested": round(inv, 2), "holdings": hold,
+        })
+    # finished villas first, each group oldest first — Villa 1 is the one bought first
+    houses.sort(key=lambda h: (h["building"], h["since"] or "9999"))
+    loose_h = [h for h in loose.values() if h["units"] > 1e-6]
+    return {"houses": houses[:HOUSES_MAX], "loose": loose_h}
+
+
+def _mapped_houses(client_code: str):
+    """{houses: [...], loose: [...]} from the admin's pins, or None when the admin
+    hasn't pinned any of this client's transactions to a villa yet.
+
+    Each house = the transactions pinned to that villa, aggregated per scheme
+    (units, ₹ invested) with its first purchase date — so two villas bought at
+    different times carry their OWN units and value. `loose` = DigiVilla-fund
+    transactions not pinned to any villa yet. Memoised briefly (the admin can
+    re-pin at any time)."""
+    return _memo(f"mhouses:{client_code}", 20, lambda: _mapped_houses_load(client_code))
+
+
+def houses_layout(client_code: str):
+    """What the home board draws, straight from the pins: one entry per house in
+    board order — finished or building, and how far along. None = no pins."""
+    m = _mapped_houses(client_code)
+    if not m or not m["houses"]:
+        return None
+    return [{"building": h["building"], "invested": h["invested"],
+             "pct": 100.0 if not h["building"] else round(min(99.0, h["invested"] / VILLA_UNIT * 100), 1)}
+            for h in m["houses"]]
+
+
+def _house_card(idx: int, holdings: list[dict], building: bool, extra: dict) -> dict:
+    """A live-values card: each fund = units × the published NAV."""
+    from app import nav_cache
+    funds, value, invested = [], 0.0, 0.0
+    for h in holdings:
+        meta = nav_cache.get_nav_meta(h.get("scheme_code")) or {}
+        nav = meta.get("nav")
+        f_val = h["units"] * nav if (nav and h["units"]) else h["invested"]
+        value += f_val
+        invested += h["invested"]
+        funds.append({
+            "name": h.get("scheme_name") or "Fund", "scheme_code": h.get("scheme_code"),
+            "units": round(h["units"], 3), "nav": nav, "nav_date": meta.get("nav_date"),
+            "value": round(f_val, 2), "invested": round(h["invested"], 2), "gain": round(f_val - h["invested"], 2),
+        })
+    funds.sort(key=lambda f: f["value"], reverse=True)
+    return {
+        "id": f"villa_{idx}", "index": idx, "building": building,
+        "invested": round(invested, 2), "value": round(value, 2), "gain": round(value - invested, 2),
+        "pct": 100.0 if not building else round(min(99.0, invested / VILLA_UNIT * 100), 1),
+        "funds": funds, **extra,
+    }
+
+
 def live_houses(owner: str) -> dict:
     """The portfolio value broken down BY HOUSE — what the tap-the-value sheet
     shows. Each completed ₹5L villa (and the one under construction) carries its
@@ -283,6 +409,20 @@ def live_houses(owner: str) -> dict:
         return {"houses": [], **nav_cache.freshness([])}
 
     hs = _valued_holdings(code)
+
+    # The admin's pins win: each villa is ITS transactions, at today's NAV.
+    m = _mapped_houses(code)
+    if m:
+        nav_cache.prewarm([h["scheme_code"] for x in m["houses"] for h in x["holdings"]]
+                          + [h["scheme_code"] for h in m["loose"]])
+        houses = [_house_card(i, h["holdings"], h["building"],
+                              {"since": h["since"], "villa_id": h["villa_id"]})
+                  for i, h in enumerate(m["houses"])]
+        if m["loose"]:
+            # DigiVilla money not pinned to a villa yet: shown, never hidden
+            houses.append(_house_card(len(houses), m["loose"], True, {"id": "loose", "index": -1, "loose": True}))
+        return {"houses": houses, **nav_cache.freshness([h.get("scheme_code") for h in hs])}
+
     codes_in_villa = _villa_scheme_codes()
     villa_hs = [h for h in hs if h.get("scheme_code") in codes_in_villa] or hs
     total_inv = sum(h["invested"] for h in villa_hs)
@@ -292,7 +432,6 @@ def live_houses(owner: str) -> dict:
     # The board is a fixed 3x3, so the estate tops out at 9 villas. Beyond that
     # there is no plot left to build on: everything above 9 x VILLA_UNIT rolls
     # into the ninth house rather than inventing a tenth with no board position.
-    HOUSES_MAX = 9
     n_complete = min(HOUSES_MAX, int(total_inv // VILLA_UNIT))
     remainder = round(total_inv - n_complete * VILLA_UNIT, 2)
     spans = [(i * VILLA_UNIT, (i + 1) * VILLA_UNIT, False) for i in range(n_complete)]
@@ -374,6 +513,8 @@ def portfolio_summary(owner: str) -> dict:
         "holdings_count": len(hs),
         "has_holdings": bool(hs),
         "client_code": code,
+        # the home board, from the admin's transaction → villa pins (None = not pinned yet)
+        "houses_layout": houses_layout(code),
         # freshness: when the NAVs behind this number were published / pulled,
         # when this response was computed, and when the next daily refresh lands
         **nav_cache.freshness([h.get("scheme_code") for h in hs]),
@@ -585,12 +726,16 @@ def _building_scheme_holdings(client_code: str, tile_id: str) -> Optional[list[d
         return list(agg.values()) if agg else []
 
     if tile_id.startswith("villa_"):
-        # auto path: villa N holds a ₹5L slice of the villa-forming holdings. We
-        # apportion each scheme's units/invested by this villa's share of the total.
         try:
             idx = int(tile_id[len("villa_"):])
         except ValueError:
             return None
+        # the admin's pins: house N is exactly its pinned transactions
+        m = _mapped_houses(client_code)
+        if m:
+            return [dict(h) for h in m["houses"][idx]["holdings"]] if 0 <= idx < len(m["houses"]) else []
+        # auto path: villa N holds a ₹5L slice of the villa-forming holdings. We
+        # apportion each scheme's units/invested by this villa's share of the total.
         hs = _valued_holdings(client_code)
         codes_in_villa = _villa_scheme_codes()
         villa_hs = [h for h in hs if h.get("scheme_code") in codes_in_villa]
@@ -944,7 +1089,16 @@ def _returns_from_points(points: list) -> dict:
 
 def _since_date(client_code: str, tile_id: str) -> str:
     """The real 'you invested on' date — the earliest order behind this tile
-    (that villa's mapped orders for cvilla_…, else the client's first order)."""
+    (that villa's mapped orders for cvilla_… / a pinned villa_N, else the
+    client's first order)."""
+    if tile_id.startswith("villa_"):
+        m = _mapped_houses(client_code)
+        try:
+            idx = int(tile_id[len("villa_"):])
+        except ValueError:
+            idx = -1
+        if m and 0 <= idx < len(m["houses"]):
+            return m["houses"][idx]["since"]
     try:
         q = _sb().table("client_transactions").select("txn_date").eq("client_code", client_code)
         if tile_id.startswith("cvilla_"):
@@ -984,8 +1138,16 @@ def building_detail(owner: str, tile_id: str, chart: bool = True) -> Optional[di
     total_inv = sum(h["invested"] for h in holdings)
     # A generated villa_N pillar is 'constructed' once its ₹5L slice is full;
     # a manual cvilla_ keeps the admin's status. stage 0..4 = build stage, 5 = villa.
-    constructed = (meta["status"] == "constructed") if tile_id.startswith("cvilla_") \
-        else total_inv >= VILLA_UNIT - 1
+    if tile_id.startswith("cvilla_"):
+        constructed = meta["status"] == "constructed"
+    else:
+        m = _mapped_houses(code)
+        try:
+            idx = int(tile_id[len("villa_"):])
+        except ValueError:
+            idx = -1
+        constructed = (not m["houses"][idx]["building"]) if (m and 0 <= idx < len(m["houses"])) \
+            else _is_finished(total_inv, None)
     status = "constructed" if constructed else "building"
     stage = 5 if constructed else min(4, int(total_inv // 100_000))
     # Only the chart needs full NAV history; skip that fetch on the fast first paint.

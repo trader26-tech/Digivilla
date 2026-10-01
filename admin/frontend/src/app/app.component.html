@@ -101,7 +101,55 @@
         <span *ngIf="!reportsFresh()">Reports pending for today</span>
         <button class="fresh-cta" (click)="setView('uploads')">Manage</button>
       </div>
+      <button class="refresh-btn" [class.spinning]="refreshing()" [disabled]="refreshing()" (click)="refreshAll()"
+              title="Pull the latest clients, net worth and mapping">
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 5v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>{{ refreshing() ? 'Refreshing…' : 'Refresh' }}</span>
+        <small *ngIf="!refreshing() && refreshedLabel()">{{ refreshedLabel() }}</small>
+      </button>
     </div>
+
+    <!-- ═══ MAPPING ALERT — transactions with no villa. First thing on the home screen. ═══ -->
+    <ng-container *ngIf="mapOverview() as mo">
+      <section class="map-alert" *ngIf="mo.unmapped > 0" role="alert">
+        <div class="ma-head">
+          <span class="ma-ic" aria-hidden="true">!</span>
+          <div class="ma-title">
+            <b>{{ mo.unmapped }} transaction{{ mo.unmapped === 1 ? '' : 's' }} not mapped to a villa</b>
+            <span>{{ money(mo.unmapped_amount) }} across {{ mo.clients_affected }} client{{ mo.clients_affected === 1 ? '' : 's' }} · the client app can’t place this money until it is mapped</span>
+          </div>
+          <div class="ma-meter" [attr.title]="mo.mapped + ' of ' + mo.total + ' mapped'">
+            <div class="ma-bar"><i [style.width.%]="mo.total ? mo.mapped / mo.total * 100 : 0"></i></div>
+            <small>{{ mo.mapped }} / {{ mo.total }} mapped</small>
+          </div>
+        </div>
+        <ul class="ma-list">
+          <li *ngFor="let c of mo.clients" [class.open]="alertOpen() === c.client_code">
+            <div class="ma-row">
+              <button class="ma-toggle" (click)="toggleAlertClient(c.client_code)" [attr.aria-expanded]="alertOpen() === c.client_code">
+                <span class="cr-avatar sm">{{ initials(c.name) }}</span>
+                <span class="ma-name"><b>{{ c.name }}</b><small>{{ c.mapped }} of {{ c.total }} mapped<ng-container *ngIf="!c.villa_count"> · no villa created yet</ng-container></small></span>
+                <span class="ma-count">{{ c.unmapped }} unmapped</span>
+                <b class="ma-amt">{{ money(c.unmapped_amount) }}</b>
+                <span class="ma-chev"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </button>
+              <button class="ma-fix" (click)="openNwClient(c.client_code, 'mapping')">Map now →</button>
+            </div>
+            <div class="ma-txns" *ngIf="alertOpen() === c.client_code">
+              <div class="ma-txn" *ngFor="let t of c.txns">
+                <span class="ma-t-name">{{ t.scheme_name }}</span>
+                <span class="ma-t-meta">{{ t.txn_date || '—' }} · {{ t.kind || '—' }}</span>
+                <b>{{ money(t.amount) }}</b>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+      <section class="map-ok" *ngIf="mo.unmapped === 0 && mo.total > 0">
+        <span class="ok-ic" aria-hidden="true">✓</span>
+        <b>All {{ mo.total }} transactions are mapped to a villa</b>
+      </section>
+    </ng-container>
 
     <!-- portfolio KPIs -->
     <section class="kpis">
@@ -156,7 +204,7 @@
         <li class="client-row" *ngFor="let c of nwFiltered()" (click)="openNwClient(c.client_code)" tabindex="0" (keydown.enter)="openNwClient(c.client_code)">
           <span class="cr-avatar">{{ initials(c.name) }}</span>
           <span class="cr-id">
-            <b class="cr-name">{{ c.name }}</b>
+            <span class="cr-name-row"><b class="cr-name">{{ c.name }}</b><span class="cr-unmapped" *ngIf="unmappedOf(c.client_code) as n" title="Transactions not mapped to a villa">{{ n }} unmapped</span></span>
             <small class="cr-sub">{{ c.city || '—' }} · {{ c.client_code }}<span *ngIf="c.phone"> · {{ c.phone }}</span></small>
           </span>
           <span class="cr-stat">
@@ -322,27 +370,32 @@
         <h3>Today’s reports</h3>
         <span class="date-chip">{{ nwToday()?.report_date || '—' }}</span>
       </div>
+      <p class="upload-hint">Drag a file onto a slot, or click to browse.</p>
       <div class="upload-slots">
-        <label class="slot" [class.done]="nwToday()?.user">
-          <input type="file" accept=".xlsx,.csv" hidden (change)="onReportFile('user', $event)" />
+        <label class="slot" [class.done]="nwToday()?.user" [class.uploading]="nwUploadingUser()" [class.dragover]="dragOver() === 'user'"
+          (dragover)="onDragOver('user', $event)" (dragleave)="onDragLeave('user', $event)" (drop)="onDrop('user', $event)">
+          <input type="file" accept=".xlsx,.csv" hidden (change)="onReportFile('user', $event)" [disabled]="nwUploadingUser()" />
           <span class="slot-ic">👤</span>
           <div class="slot-body">
             <b>User Report</b>
-            <span *ngIf="nwToday()?.user as u" class="slot-ok">✓ {{ u.filename }} · {{ u.row_count }} clients</span>
-            <span *ngIf="!nwToday()?.user" class="slot-empty">.xlsx — client master (PAN, contact…)</span>
+            <span *ngIf="nwUploadingUser()" class="slot-up">Uploading…</span>
+            <span *ngIf="!nwUploadingUser() && nwToday()?.user as u" class="slot-ok">✓ {{ u.filename }} · {{ u.row_count }} clients</span>
+            <span *ngIf="!nwUploadingUser() && !nwToday()?.user" class="slot-empty">.xlsx — client master (PAN, contact…)</span>
           </div>
-          <span class="slot-cta" *ngIf="!nwUploadingUser()">{{ nwToday()?.user ? 'Replace' : 'Upload' }}</span>
+          <span class="slot-cta" *ngIf="!nwUploadingUser()">{{ dragOver() === 'user' ? 'Drop to upload' : (nwToday()?.user ? 'Replace' : 'Upload') }}</span>
           <span class="spin" *ngIf="nwUploadingUser()"></span>
         </label>
-        <label class="slot" [class.done]="nwToday()?.transaction">
-          <input type="file" accept=".csv" hidden (change)="onReportFile('transaction', $event)" />
+        <label class="slot" [class.done]="nwToday()?.transaction" [class.uploading]="nwUploadingTxn()" [class.dragover]="dragOver() === 'transaction'"
+          (dragover)="onDragOver('transaction', $event)" (dragleave)="onDragLeave('transaction', $event)" (drop)="onDrop('transaction', $event)">
+          <input type="file" accept=".csv" hidden (change)="onReportFile('transaction', $event)" [disabled]="nwUploadingTxn()" />
           <span class="slot-ic">📈</span>
           <div class="slot-body">
             <b>Transaction Report</b>
-            <span *ngIf="nwToday()?.transaction as t" class="slot-ok">✓ {{ t.filename }} · {{ t.row_count }} holdings</span>
-            <span *ngIf="!nwToday()?.transaction" class="slot-empty">.csv — units, NAV, amount per scheme</span>
+            <span *ngIf="nwUploadingTxn()" class="slot-up">Uploading…</span>
+            <span *ngIf="!nwUploadingTxn() && nwToday()?.transaction as t" class="slot-ok">✓ {{ t.filename }} · {{ t.row_count }} holdings</span>
+            <span *ngIf="!nwUploadingTxn() && !nwToday()?.transaction" class="slot-empty">.csv — units, NAV, amount per scheme</span>
           </div>
-          <span class="slot-cta" *ngIf="!nwUploadingTxn()">{{ nwToday()?.transaction ? 'Replace' : 'Upload' }}</span>
+          <span class="slot-cta" *ngIf="!nwUploadingTxn()">{{ dragOver() === 'transaction' ? 'Drop to upload' : (nwToday()?.transaction ? 'Replace' : 'Upload') }}</span>
           <span class="spin" *ngIf="nwUploadingTxn()"></span>
         </label>
       </div>
@@ -434,14 +487,46 @@
       <nav class="dr-tabs">
         <button [class.active]="drawerTab()==='overview'" (click)="drawerTab.set('overview')">Holdings</button>
         <button [class.active]="drawerTab()==='transactions'" (click)="drawerTab.set('transactions')">Transactions <em *ngIf="mapTxns().length">{{ mapTxns().length }}</em></button>
-        <button [class.active]="drawerTab()==='mapping'" (click)="drawerTab.set('mapping')">Villas</button>
+        <button [class.active]="drawerTab()==='mapping'" (click)="drawerTab.set('mapping')">Villas &amp; purchases <em class="warn" *ngIf="unpinnedPurchases().length" title="Purchases not in a villa">{{ unpinnedPurchases().length }}</em></button>
+        <button [class.active]="drawerTab()==='profile'" (click)="drawerTab.set('profile')">Profile</button>
         <button [class.active]="drawerTab()==='documents'" (click)="drawerTab.set('documents')">Docs <em *ngIf="drawerDocs().length">{{ drawerDocs().length }}</em></button>
       </nav>
 
+      <div class="dr-alert" *ngIf="unpinnedPurchases().length && drawerTab() !== 'mapping'" role="alert">
+        <span class="ma-ic sm" aria-hidden="true">!</span>
+        <span><b>{{ unpinnedPurchases().length }} purchase{{ unpinnedPurchases().length === 1 ? '' : 's' }} not in a villa</b> · {{ money(unpinnedAmount()) }}</span>
+        <button (click)="drawerTab.set('mapping')">Pin now →</button>
+      </div>
+
       <!-- ═══ HOLDINGS / OVERVIEW ═══ -->
       <ng-container *ngIf="drawerTab()==='overview'">
+        <!-- where each fund's money goes: one bar per fund, one segment per villa -->
+        <section class="dr-block" *ngIf="fundFlow().length">
+          <h3 class="dr-h">Which villa each fund goes to <small>(by mapped transactions)</small></h3>
+          <div class="flow-legend">
+            <span *ngFor="let v of mapVillas()"><i [style.background]="villaColour(v.id)"></i>{{ v.name }}</span>
+            <span *ngIf="mapUnmapped().length"><i class="hatch"></i>Not mapped</span>
+          </div>
+          <div class="flow" *ngFor="let f of fundFlow()">
+            <div class="flow-top">
+              <span class="flow-name">{{ f.scheme }}</span>
+              <b>{{ money(f.total) }}</b>
+            </div>
+            <div class="flow-bar">
+              <i *ngFor="let s of f.segs" [class.hatch]="s.villaId === null" [style.flex-grow]="s.pct || 0.01"
+                 [style.background]="s.villaId === null ? null : s.colour"
+                 [attr.title]="s.name + ' · ' + money(s.amount) + ' · ' + s.count + ' txn' + (s.count === 1 ? '' : 's')"></i>
+            </div>
+            <div class="flow-segs">
+              <span *ngFor="let s of f.segs" [class.un]="s.villaId === null">
+                <i [class.hatch]="s.villaId === null" [style.background]="s.villaId === null ? null : s.colour"></i>
+                {{ s.name }} <b>{{ money(s.amount) }}</b>
+              </span>
+            </div>
+          </div>
+        </section>
         <section class="dr-block" *ngIf="d.villas.length">
-          <h3 class="dr-h">Villas · {{ d.villa_count }}</h3>
+          <h3 class="dr-h">Matching villa buckets · {{ d.villa_count }} <small>(by fund name — not the transaction mapping)</small></h3>
           <div class="dr-villa" *ngFor="let v of d.villas">
             <div class="dr-villa-top">
               <b>{{ v.name }}</b>
@@ -489,77 +574,176 @@
         <section class="dr-block">
           <h3 class="dr-h">Transaction report <small>({{ mapTxns().length }} lines)</small></h3>
           <div class="dr-empty" *ngIf="!mapTxns().length">No transactions yet — upload a Transaction Report.</div>
-          <div class="txn-table" *ngIf="mapTxns().length">
+          <div class="txn-filters" *ngIf="mapTxns().length">
+            <button [class.on]="txnFilter()==='all'" (click)="txnFilter.set('all')">All <em>{{ mapTxns().length }}</em></button>
+            <button class="un" [class.on]="txnFilter()==='unmapped'" (click)="txnFilter.set('unmapped')">Not mapped <em>{{ mapUnmapped().length }}</em></button>
+            <button *ngFor="let v of mapVillas()" [class.on]="txnFilter()===v.id" (click)="txnFilter.set(v.id)">
+              <i [style.background]="villaColour(v.id)"></i>{{ v.name }} <em>{{ v.txn_count }}</em>
+            </button>
+          </div>
+          <div class="dr-empty" *ngIf="mapTxns().length && !txnsShown().length">{{ txnFilter()==='unmapped' ? 'Nothing unmapped — every transaction has a villa.' : 'No transactions here.' }}</div>
+          <div class="txn-table" *ngIf="txnsShown().length">
             <div class="txn-tr txn-head"><span>Scheme</span><span>Date</span><span>Type</span><span class="num">Amount</span><span class="num">NAV</span><span>Villa</span></div>
-            <div class="txn-tr" *ngFor="let t of mapTxns()">
+            <div class="txn-tr" *ngFor="let t of txnsShown()" [class.is-unmapped]="!villaFor(t)">
               <span class="txn-name">{{ t.scheme_name }}</span>
               <span class="txn-date">{{ t.txn_date }}</span>
               <span><span class="txn-kind">{{ t.kind }}</span></span>
               <span class="num strong">{{ money(t.amount) }}</span>
               <span class="num">₹{{ t.nav | number:'1.2-2' }}</span>
-              <span class="txn-villa" *ngIf="villaOf(t.order_id) as vn; else unmapped">{{ vn }}</span>
-              <ng-template #unmapped><span class="txn-villa muted">—</span></ng-template>
+              <span class="txn-villa" *ngIf="villaFor(t) as v; else unmapped"><i [style.background]="villaColour(v.id)"></i>{{ v.name }}</span>
+              <ng-template #unmapped><span class="txn-villa un">Not mapped</span></ng-template>
             </div>
           </div>
         </section>
       </ng-container>
 
-      <!-- ═══ VILLAS & MAPPING ═══ -->
-      <div class="dr-map" *ngIf="drawerTab()==='mapping'">
-        <section class="map-col">
-          <h3 class="dr-h">Transactions <small>({{ mapTxns().length }})</small></h3>
-          <div class="dr-empty" *ngIf="!mapTxns().length">No transactions yet — upload a Transaction Report.</div>
-          <div class="txn-list" *ngIf="mapTxns().length">
-            <label class="txn-row" *ngFor="let t of mapTxns()" [class.sel]="mapSelected().has(t.order_id)">
-              <input type="checkbox" [checked]="mapSelected().has(t.order_id)" (change)="toggleTxn(t.order_id)">
-              <div class="txn-main">
-                <span class="txn-scheme">{{ t.scheme_name }}</span>
-                <span class="txn-sub">{{ t.txn_date }} · {{ t.kind }}</span>
-              </div>
-              <b class="txn-amt">{{ money(t.amount) }}</b>
-              <span class="txn-chip" *ngIf="villaOf(t.order_id) as vn; else unassignedChip">{{ vn }}</span>
-              <ng-template #unassignedChip><span class="txn-chip muted">Unassigned</span></ng-template>
-            </label>
+      <!-- ═══ VILLAS & PURCHASES — pin a whole purchase to a villa in one tap ═══ -->
+      <div class="vp" *ngIf="drawerTab()==='mapping'">
+        <!-- the villas, as the client sees them -->
+        <section>
+          <div class="vp-h">
+            <h3>Villas <small>as the client sees them · live value</small></h3>
           </div>
-
-          <div class="map-actionbar" *ngIf="mapSelected().size">
-            <div class="assign-wrap">
-              <span class="assign-label">Assign {{ mapSelected().size }} selected to</span>
-              <div class="assign-list">
-                <button class="assign-villa" *ngFor="let v of mapVillas()" (click)="assignSelectedTo(v.id)">{{ v.name }}</button>
-                <span class="muted" *ngIf="!mapVillas().length">No villas yet</span>
+          <div class="vp-empty" *ngIf="!mapVillas().length">No villas yet — pin a purchase below and a villa is made for it.</div>
+          <div class="vp-villas" *ngIf="mapVillas().length">
+            <article class="vv" *ngFor="let v of mapVillas()" [style.--vc]="villaColour(v.id)" [class.empty]="!v.txn_count">
+              <header>
+                <i class="vv-dot" aria-hidden="true"></i>
+                <b>{{ villaLabel(v) }}</b>
+                <span class="vv-chip" [class.build]="!v.finished">{{ v.finished ? 'Villa' : (v.hint.progress | number:'1.0-0') + '% built' }}</span>
+                <button class="vv-x" (click)="removeVilla(v)" title="Delete villa" aria-label="Delete villa">×</button>
+              </header>
+              <div class="vv-val">{{ money(v.value) }}</div>
+              <div class="vv-gain" [class.pos]="v.gain >= 0" [class.neg]="v.gain < 0" *ngIf="v.txn_count">{{ v.gain >= 0 ? '+' : '' }}{{ money(v.gain) }}</div>
+              <div class="vv-meta">
+                <ng-container *ngIf="v.txn_count; else nothing">{{ money(v.mapped_total) }} in · bought {{ v.since | date:'d MMM yyyy' }}</ng-container>
+                <ng-template #nothing>Nothing pinned yet</ng-template>
               </div>
-            </div>
-            <button class="unassign-btn" (click)="unassignSelected()">Unassign</button>
+              <div class="progress" *ngIf="!v.finished && v.txn_count"><span [style.width.%]="v.hint.progress"></span></div>
+              <footer>
+                <button class="vv-btn" [class.on]="v.coin" (click)="toggleCoin(v)" [attr.aria-pressed]="v.coin">🪙 {{ v.coin ? 'Pays out' : 'No payout' }}</button>
+                <button class="vv-btn" [class.on]="v.status === 'constructed'" (click)="setVillaStatus(v, v.status === 'constructed' ? 'building' : 'constructed')">{{ v.status === 'constructed' ? '✓ Finished' : 'Mark finished' }}</button>
+              </footer>
+            </article>
           </div>
         </section>
 
-        <section class="map-col">
-          <h3 class="dr-h">Villas <small>({{ mapVillas().length }})</small></h3>
-          <div class="newvilla">
-            <input type="text" placeholder="New villa name" [ngModel]="newVillaName()" (ngModelChange)="newVillaName.set($event)" (keyup.enter)="addClientVilla()">
-            <button (click)="addClientVilla()">+ New villa</button>
+        <!-- purchases: each one pinned to a villa as a whole -->
+        <section>
+          <div class="vp-h">
+            <h3>Purchases <small>{{ purchases().length }}</small></h3>
+            <button class="vp-add" *ngIf="!addOpen()" (click)="openAdd()">+ Add purchase</button>
           </div>
-          <div class="dr-empty" *ngIf="!mapVillas().length">No villas yet — create one to start mapping.</div>
-          <div class="map-villa" *ngFor="let v of mapVillas()">
-            <div class="map-villa-top">
-              <input class="villa-name" type="text" [ngModel]="v.name" (change)="renameVilla(v, $any($event.target).value)">
-              <button class="coin-toggle" [class.on]="v.coin" (click)="toggleCoin(v)" [attr.aria-pressed]="v.coin" title="Gold coin">🪙</button>
-              <button class="villa-del" (click)="removeVilla(v)" aria-label="Delete villa">×</button>
+
+          <!-- add one by hand -->
+          <div class="ap" *ngIf="addOpen()">
+            <div class="ap-row">
+              <label class="ap-f"><span>Date</span>
+                <input type="date" [ngModel]="addDate()" (ngModelChange)="addDate.set($event); previewSoon()">
+              </label>
+              <div class="ap-f"><span>Type</span>
+                <div class="seg">
+                  <button [class.active]="addKind()==='Lumpsum'" (click)="addKind.set('Lumpsum')">Lumpsum</button>
+                  <button [class.active]="addKind()==='SIP'" (click)="addKind.set('SIP')">SIP</button>
+                </div>
+              </div>
             </div>
-            <div class="progress" role="progressbar" [attr.aria-valuenow]="v.hint.progress"><span [style.width.%]="v.hint.progress"></span></div>
-            <div class="map-villa-meta">
-              <span>{{ money(v.mapped_total) }} <span class="muted">/ {{ money(v.hint.unit) }}</span></span>
-              <span class="muted">{{ v.txn_count }} txns</span>
+            <label class="ap-f"><span>Amount</span>
+              <div class="ap-amt"><i>₹</i><input inputmode="numeric" [value]="addAmountText()" (input)="onAddAmount($event)" aria-label="Amount"></div>
+            </label>
+            <div class="ap-quick">
+              <button *ngFor="let q of [500000, 100000, 50000, 25000]" [class.on]="addAmount() === q" (click)="setAddAmount(q)">{{ money(q) }}</button>
             </div>
-            <div class="seg">
-              <button [class.active]="v.status==='building'" (click)="setVillaStatus(v, 'building')">Under construction</button>
-              <button [class.active]="v.status==='constructed'" (click)="setVillaStatus(v, 'constructed')">Constructed</button>
+            <label class="ap-f"><span>Funds</span>
+              <select [ngModel]="addFund()" (ngModelChange)="addFund.set($event); previewSoon()">
+                <option value="mix">DigiVilla mix — split by weight</option>
+                <option *ngFor="let f of addMix()" [value]="'' + f.scheme_code">{{ f.scheme_name }} only</option>
+              </select>
+            </label>
+            <div class="ap-f"><span>Pin to</span>
+              <div class="pp-opts">
+                <button *ngFor="let v of mapVillas()" [class.on]="addTarget() === v.id" [style.--vc]="villaColour(v.id)" (click)="addTarget.set(v.id)"><i></i>{{ villaLabel(v) }}</button>
+                <button class="new" [class.on]="addTarget() === 'new'" (click)="addTarget.set('new')">+ New villa</button>
+              </div>
             </div>
-            <div class="villa-hint" *ngIf="v.hint.suggest_constructed && v.status==='building'">≥ ₹5L — mark constructed?</div>
+
+            <div class="ap-prev">
+              <div class="ap-prev-h"><span>Fund</span><span class="num">₹</span><span class="num">NAV</span><span class="num">Units</span></div>
+              <div class="ap-sk" *ngIf="addLoading() && !addLines().length"><i></i><i></i><i></i></div>
+              <div class="ap-prev-r" *ngFor="let l of addLines()" [class.dim]="addLoading()">
+                <span class="ap-fund">{{ l.scheme_name }}<small *ngIf="addFund()==='mix'">{{ l.weight * 100 | number:'1.0-0' }}%</small></span>
+                <span class="num">{{ money(l.amount) }}</span>
+                <span class="num">{{ l.nav ? '₹' + (l.nav | number:'1.2-4') : '—' }}<small *ngIf="l.nav_date && l.nav_date !== addDate()">{{ l.nav_date | date:'d MMM' }}</small></span>
+                <span class="num">{{ l.units ? (l.units | number:'1.0-3') : '—' }}</span>
+              </div>
+              <p class="ap-note">Units are worked out at each fund's NAV for that date (the last one before it, on a holiday). When the AMC's report includes this purchase, it replaces these lines and keeps the villa.</p>
+            </div>
+            <p class="err" *ngIf="addErr()">{{ addErr() }}</p>
+
+            <div class="ap-actions">
+              <button class="ghost" (click)="addOpen.set(false)">Cancel</button>
+              <button class="go" [disabled]="!canSaveAdd()" (click)="saveAdd()">
+                {{ addSaving() ? 'Saving…' : 'Add ' + money(addAmount()) + ' → ' + addTargetLabel() }}
+              </button>
+            </div>
+          </div>
+
+          <div class="vp-empty" *ngIf="!purchases().length && !addOpen()">No purchases yet — upload a Transaction Report, or add one by hand.</div>
+          <div class="vp-banner" *ngIf="unpinnedPurchases().length">
+            <span class="ma-ic sm" aria-hidden="true">!</span>
+            <span><b>{{ unpinnedPurchases().length }} purchase{{ unpinnedPurchases().length === 1 ? '' : 's' }} not in a villa</b> · {{ money(unpinnedAmount()) }}</span>
+            <button (click)="pinAllSuggested()" [disabled]="!!pinning()">Pin all as suggested</button>
+          </div>
+          <div class="vp-banner ok" *ngIf="purchases().length && !unpinnedPurchases().length">
+            <span class="ok-ic sm" aria-hidden="true">✓</span><span><b>Every purchase is in a villa</b></span>
+          </div>
+
+          <div class="vp-list">
+            <article class="pp" *ngFor="let p of purchases()" [class.unpinned]="!p.villa" [class.busy]="pinning() === p.key"
+                     [style.--vc]="p.villa ? villaColour(p.villa.id) : null">
+              <button class="pp-top" (click)="togglePurchase(p.key)" [attr.aria-expanded]="openPurchase() === p.key">
+                <span class="pp-when">
+                  <b>{{ p.date | date:'d MMM yyyy' }}</b>
+                  <small>{{ p.kind }} · {{ p.txns.length }} fund{{ p.txns.length === 1 ? '' : 's' }}<ng-container *ngIf="p.manual"> · added by hand</ng-container></small>
+                </span>
+                <b class="pp-amt">{{ money(p.total) }}</b>
+                <svg class="pp-car" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+              <div class="pp-pin">
+                <span class="pp-k">{{ p.villa ? 'In' : p.mixed ? 'Split — pick one' : 'Pin to' }}</span>
+                <div class="pp-opts">
+                  <button *ngFor="let v of mapVillas()" [class.on]="p.villa?.id === v.id" [class.sug]="!p.villa && p.suggest === v.id"
+                          [style.--vc]="villaColour(v.id)" (click)="pinPurchase(p, v.id)" [disabled]="!!pinning()"><i></i>{{ villaLabel(v) }}</button>
+                  <button class="new" [class.sug]="!p.villa && p.suggest === 'new'" (click)="pinPurchase(p, 'new')" [disabled]="!!pinning()">+ New villa</button>
+                  <button class="unpin" *ngIf="p.villa || p.mixed" (click)="unpinPurchase(p)" [disabled]="!!pinning()">Unpin</button>
+                </div>
+                <small class="pp-sug" *ngIf="!p.villa">Suggested: <b>{{ suggestionLabel(p) }}</b></small>
+              </div>
+              <div class="pp-lines" *ngIf="openPurchase() === p.key">
+                <div class="pl" *ngFor="let t of p.txns">
+                  <span class="pl-name">{{ t.scheme_name }}<small>{{ t.units | number:'1.0-3' }} units &#64; ₹{{ t.nav | number:'1.2-4' }}</small></span>
+                  <b>{{ money(t.amount) }}</b>
+                  <button class="pl-del" *ngIf="isManual(t)" (click)="deleteManual(t)" title="Remove this hand-added line">Remove</button>
+                </div>
+              </div>
+            </article>
           </div>
         </section>
       </div>
+      <div class="flash" *ngIf="flashMsg()" role="status">{{ flashMsg() }}</div>
+
+      <!-- ═══ PROFILE — everything the User Report holds about this client ═══ -->
+      <ng-container *ngIf="drawerTab()==='profile'">
+        <section class="dr-block">
+          <h3 class="dr-h">Client details <small>(from the User Report you upload)</small></h3>
+          <dl class="profile">
+            <div *ngFor="let r of profileRows()" [class.blank]="!r.value">
+              <dt>{{ r.label }}</dt>
+              <dd>{{ r.value || '—' }}</dd>
+            </div>
+          </dl>
+        </section>
+      </ng-container>
 
       <!-- ═══ DOCUMENTS ═══ -->
       <ng-container *ngIf="drawerTab()==='documents'">
@@ -587,4 +771,14 @@
       </ng-container>
     </ng-container>
   </aside>
+
+  <!-- ═══════════ UPLOAD CONFIRMATION TOAST ═══════════ -->
+  <div class="toast" *ngIf="nwToast() as t" (click)="dismissToast()">
+    <span class="toast-check">✓</span>
+    <div class="toast-body">
+      <b>{{ t.type === 'user' ? 'User Report' : 'Transaction Report' }} uploaded</b>
+      <span>{{ t.rows }} {{ t.type === 'user' ? 'clients' : 'holdings' }} processed · net worth refreshed</span>
+    </div>
+    <button class="toast-x" (click)="dismissToast()" aria-label="Dismiss">✕</button>
+  </div>
 </div>

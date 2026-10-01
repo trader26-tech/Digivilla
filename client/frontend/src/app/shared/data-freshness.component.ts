@@ -53,14 +53,17 @@ import { loadTileSprite } from './tile-sprite';
                 </span>
                 <b class="lv-hv">{{ inr(h.value) }}</b>
               </span>
+              <!-- each villa is its own purchase: when it was bought -->
+              <small class="lv-since" *ngIf="h.since && !h.loose">Bought {{ h.since | date:'d MMM yyyy' }}</small>
+              <small class="lv-since" *ngIf="h.loose">Not pinned to a villa yet</small>
               <span class="lv-bot">
                 <!-- where this house sits on the 3x3 board (the diagram is enough) -->
-                <span class="lv-map" aria-hidden="true">
+                <span class="lv-map" aria-hidden="true" *ngIf="!h.loose">
                   <i *ngFor="let c of GRID" [class.on]="c === cellOf(h)"></i>
                 </span>
                 <small class="lv-gain" [class.pos]="h.gain >= 0" [class.neg]="h.gain < 0">{{ h.gain >= 0 ? '+' : '' }}{{ inr(h.gain) }}</small>
               </span>
-              <span class="lv-prog" *ngIf="h.building">
+              <span class="lv-prog" *ngIf="h.building && !h.loose">
                 <span class="lv-track"><i [style.width.%]="Math.max(3, h.pct)"></i></span>
                 <small>{{ h.pct | number:'1.0-0' }}% built</small>
               </span>
@@ -200,7 +203,8 @@ import { loadTileSprite } from './tile-sprite';
       background: var(--lv-accent); border-color: var(--lv-accent);
       box-shadow: 0 0 0 3px var(--lv-accent-soft), 0 0 8px 1px color-mix(in srgb, var(--lv-accent) 55%, transparent);
     }
-    .lv-gain { margin-left: auto; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .lv-since { margin-top: -3px; font-size: 11px; color: var(--lv-ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .lv-gain { margin-left: auto; white-space: nowrap; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
     .lv-gain.pos { color: var(--lv-pos); } .lv-gain.neg { color: var(--lv-neg); }
     .lv-prog { display: flex; align-items: center; gap: 8px; }
     .lv-track { flex: 1; height: 4px; border-radius: 99px; background: var(--lv-surface-2); overflow: hidden; min-width: 0; }
@@ -354,6 +358,7 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
 
   /** Which board symbol paints this house (finished villa, or its build stage). */
   tileHref(h: LiveHouse): string {
+    if (h.loose) return '#lvLand';
     if (!h.building) return '#lvVilla';
     // 0 Plot → land, 1 Levelled → grade, 2 Foundation → found, 3 Steel → steel.
     return ['#lvLand', '#lvGrade', '#lvFound', '#lvSteel'][this.stageOf(h)] || '#lvLand';
@@ -371,12 +376,13 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
   /** The card title: a finished home is "Villa N"; one under construction reads
    *  as its real stage ("Plot", "Foundation", …) — never a bare "House N". */
   houseName(h: LiveHouse): string {
+    if (h.loose) return 'Unpinned';
     if (!h.building) return 'Villa ' + (h.index + 1);
     return DataFreshnessComponent.STAGE[this.stageOf(h)] || 'Plot';
   }
 
   /** A short one-word status chip: FINISHED for a villa, BUILDING otherwise. */
-  statusWord(h: LiveHouse): string { return h.building ? 'Building' : 'Villa'; }
+  statusWord(h: LiveHouse): string { return h.loose ? 'DigiVilla' : h.building ? 'Building' : 'Villa'; }
   inr(n: number): string {
     const v = Math.round(n || 0);
     return (v < 0 ? '−₹' : '₹') + Math.abs(v).toLocaleString('en-IN');

@@ -468,7 +468,11 @@ async def admin_upload_report(
     _require_admin(authorization)
     content = await file.read()
     try:
-        return reports_svc.upload_report(
+        # upload_report is synchronous and does blocking network/DB I/O; run it
+        # off the event loop so it doesn't stall other requests.
+        from starlette.concurrency import run_in_threadpool
+        return await run_in_threadpool(
+            reports_svc.upload_report,
             report_type, file.filename or "report", content, report_date or None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -557,6 +561,13 @@ def admin_report_delete_bucket(
 
 
 # --- Manual transaction → villa mapping (admin) ---------------------------
+@app.get("/admin/reports/mapping")
+def admin_mapping_overview(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Portfolio-wide mapping health: every transaction not mapped to a villa."""
+    _require_admin(authorization)
+    return reports_svc.mapping_overview()
+
+
 @app.get("/admin/reports/clients/{code}/transactions")
 def admin_client_transactions(
     code: str, authorization: Optional[str] = Header(default=None),
@@ -615,6 +626,47 @@ def admin_assign_transactions(
     _require_admin(authorization)
     n = reports_svc.assign_transactions(villa_id, payload.get("order_ids") or [])
     return {"assigned": n}
+
+
+# --- Add a purchase by hand (split across the DigiVilla mix, NAV of that day) ---
+@app.get("/admin/reports/purchase/preview")
+def admin_purchase_preview(date: str, amount: float, scheme_code: Optional[int] = None,
+                           authorization: Optional[str] = Header(default=None)) -> dict:
+    """How ₹amount on `date` splits across the DigiVilla mix (or one fund):
+    each fund's ₹, the NAV it buys at, and the units."""
+    _require_admin(authorization)
+    if amount <= 0:
+        raise HTTPException(status_code=422, detail="Amount must be positive")
+    lines = reports_svc.purchase_lines(date[:10], amount, scheme_code)
+    return {"lines": lines, "mix": reports_svc._villa_mix()}
+
+
+@app.post("/admin/reports/clients/{code}/purchases")
+def admin_add_purchase(code: str, body: dict, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Record a purchase and pin it to a villa (or a new one) in one step."""
+    _require_admin(authorization)
+    try:
+        amount = float(body.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    day = str(body.get("date") or "")[:10]
+    if amount <= 0 or len(day) != 10:
+        raise HTTPException(status_code=422, detail="A date and a positive amount are needed")
+    try:
+        return reports_svc.add_purchase(code, day, amount, body.get("kind") or "Lumpsum",
+                                        body.get("scheme_code"), body.get("villa_id"),
+                                        bool(body.get("new_villa")))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.delete("/admin/reports/transactions/{order_id}")
+def admin_delete_manual_txn(order_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Undo a hand-added line (report lines can't be deleted here)."""
+    _require_admin(authorization)
+    if not reports_svc.delete_manual_transaction(order_id):
+        raise HTTPException(status_code=404, detail="Only hand-added lines can be removed")
+    return {"status": "deleted"}
 
 
 @app.post("/admin/reports/villas/unassign")

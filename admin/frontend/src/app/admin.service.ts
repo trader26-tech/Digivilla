@@ -325,6 +325,10 @@ export class AdminService {
   clientTransactions(code: string): Observable<ClientTxn[]> {
     return this.http.get<ClientTxn[]>(`${this.base}/admin/reports/clients/${code}/transactions`, this.opts);
   }
+  /** Portfolio-wide mapping health: every transaction not mapped to a villa. */
+  mappingOverview(): Observable<MappingOverview> {
+    return this.http.get<MappingOverview>(`${this.base}/admin/reports/mapping`, this.opts);
+  }
   clientVillas(code: string): Observable<ClientVilla[]> {
     return this.http.get<ClientVilla[]>(`${this.base}/admin/reports/clients/${code}/villas`, this.opts);
   }
@@ -339,6 +343,20 @@ export class AdminService {
   }
   assignTxns(villaId: string, orderIds: string[]): Observable<{ assigned: number }> {
     return this.http.post<{ assigned: number }>(`${this.base}/admin/reports/villas/${villaId}/assign`, { order_ids: orderIds }, this.opts);
+  }
+  /** How ₹amount on `date` splits across the DigiVilla mix (or one fund), at that day's NAV. */
+  purchasePreview(date: string, amount: number, schemeCode?: number | null): Observable<{ lines: PurchaseLine[]; mix: { scheme_code: number; scheme_name: string; weight: number }[] }> {
+    const params: Record<string, string> = { date, amount: String(amount) };
+    if (schemeCode) params['scheme_code'] = String(schemeCode);
+    return this.http.get<any>(`${this.base}/admin/reports/purchase/preview`, { ...this.opts, params });
+  }
+  /** Record a purchase by hand and pin it to a villa (or a new one) in one step. */
+  addPurchase(code: string, body: { date: string; amount: number; kind: string; scheme_code?: number | null; villa_id?: string | null; new_villa?: boolean }): Observable<{ villa_id: string; transactions: ClientTxn[] }> {
+    return this.http.post<any>(`${this.base}/admin/reports/clients/${code}/purchases`, body, this.opts);
+  }
+  /** Undo a hand-added transaction line. */
+  deleteManualTxn(orderId: string): Observable<{ status: string }> {
+    return this.http.delete<{ status: string }>(`${this.base}/admin/reports/transactions/${encodeURIComponent(orderId)}`, this.opts);
   }
   unassignTxns(orderIds: string[]): Observable<{ unassigned: number }> {
     return this.http.post<{ unassigned: number }>(`${this.base}/admin/reports/villas/unassign`, { order_ids: orderIds }, this.opts);
@@ -393,11 +411,41 @@ export interface ClientTxn {
   kind: string; amount: number; nav: number; units: number;
   villa_id: string | null; report_date: string;
 }
+/** One unmapped transaction, as listed in the home-screen alert. */
+export interface UnmappedTxn {
+  order_id: string; txn_date: string | null; scheme_name: string; kind: string | null; amount: number;
+}
+/** One client that still has transactions with no villa. */
+export interface UnmappedClient {
+  client_code: string; name: string; villa_count: number;
+  total: number; mapped: number; unmapped: number; unmapped_amount: number;
+  txns: UnmappedTxn[];
+}
+export interface MappingOverview {
+  as_of: string;
+  total: number; mapped: number; unmapped: number; unmapped_amount: number;
+  clients_affected: number;
+  clients: UnmappedClient[];
+  by_client: Record<string, { total: number; mapped: number; unmapped: number }>;
+}
 export interface ClientVilla {
   id: string; client_code: string; name: string;
   status: 'building' | 'constructed'; coin: boolean; sort_order: number;
   mapped_total: number; txn_count: number;
   hint: { unit: number; progress: number; suggest_constructed: boolean };
+  /** what the client's app shows: its pinned transactions at today's NAV */
+  value: number; gain: number;
+  /** first purchase date pinned to it (ISO) */
+  since: string;
+  /** ≥ ₹5L pinned (or marked constructed) */
+  finished: boolean;
+  /** its place on the client's estate (0 = Villa 1); null when nothing is pinned */
+  position: number | null;
+}
+/** One fund line of a purchase being added by hand. */
+export interface PurchaseLine {
+  scheme_code: number; scheme_name: string; weight: number;
+  amount: number; nav: number | null; nav_date: string | null; units: number | null;
 }
 export interface BucketFund {
   scheme_name: string; scheme_code?: number; target_weight?: number;

@@ -275,15 +275,29 @@ export class EstateHomeComponent implements OnInit {
   /** Still used by the empty-state centre + the metaphor-key previews. */
   cells = computed<Cell[]>(() => buildCells(this.est.tiles()));
 
+  /** The board from the admin's transaction → villa pins (each house = ITS
+   *  transactions), or null when nothing is pinned yet — then the board falls
+   *  back to the invested-₹ model below. Comes with the portfolio, so the board
+   *  paints right the first time. */
+  private get layout() { const l = this.est.portfolio()?.houses_layout; return l && l.length ? l : null; }
+
   /** The ₹ that drives the board — the user's live INVESTED amount, clamped to
    *  0..₹45,00,000 (nine finished villas). NOT the portfolio value. */
   get boardWorth(): number {
     return Math.min(HOUSES * HOUSE, Math.max(0, this.est.invested));
   }
-  /** Finished villas = floor(worth / ₹5,00,000), max 9. */
-  get villaCount(): number { return Math.min(HOUSES, Math.floor(this.boardWorth / HOUSE)); }
+  /** Finished villas — the pinned ones, else floor(worth / ₹5,00,000), max 9. */
+  get villaCount(): number {
+    const l = this.layout;
+    if (l) return Math.min(HOUSES, l.filter((h) => !h.building).length);
+    return Math.min(HOUSES, Math.floor(this.boardWorth / HOUSE));
+  }
   /** ₹ in the house currently being built (0 once all nine are finished). */
-  get buildRem(): number { return this.boardWorth - this.villaCount * HOUSE; }
+  get buildRem(): number {
+    const l = this.layout;
+    if (l) return l.find((h) => h.building)?.invested ?? 0;
+    return this.boardWorth - this.villaCount * HOUSE;
+  }
   /** Build stage of the plot in progress (0 ground · 1 Plot · … · 4 Steel). */
   get buildStage(): number { return this.villaCount >= HOUSES ? 0 : Math.floor(this.buildRem / L); }
   /** True while a plot is under construction (some remainder, not yet full). */
@@ -293,6 +307,8 @@ export class EstateHomeComponent implements OnInit {
    *  verbatim from applyEstate(): villas fill ORDER[0..villas-1], the build (if
    *  any) sits at ORDER[villas], the rest are locked. */
   boardCells = computed<BoardCell[]>(() => {
+    const layout = this.layout;
+    if (layout) return this.pinnedCells(layout);
     const worth = this.boardWorth;
     const villas = Math.min(HOUSES, Math.floor(worth / HOUSE));
     const rem = worth - villas * HOUSE;
@@ -337,6 +353,32 @@ export class EstateHomeComponent implements OnInit {
     // Paint back-to-front: (col+row) ascending, ties by col ascending.
     return cells.sort((a, b) => a.d - b.d || a.col - b.col);
   });
+
+  /** The board when the admin has pinned transactions to villas: house i sits on
+   *  ORDER[i] — a finished villa, or a build at ITS own stage — so every parcel
+   *  is a real villa with its own money, and tapping it opens villa_<i>. */
+  private pinnedCells(layout: { building: boolean; invested: number }[]): BoardCell[] {
+    const houses = layout.slice(0, HOUSES);
+    const nextIdx = houses.length < HOUSES ? houses.length : -1;
+    const cells: BoardCell[] = ORDER.map(([col, row], i) => {
+      const n = ('0' + (i + 1)).slice(-2);
+      const base = { col, row, d: col + row, idx: i, x: (col - row) * 93.6, y: (col + row) * 54 };
+      const h = houses[i];
+      if (h && !h.building) {
+        return { ...base, st: 'villa', href: '#tVilla', name: `Villa ${n}`,
+                 note: `Complete · ${inr(h.invested)} · pays ₹1,500 a month`, paid: 20, tile: null } as BoardCell;
+      }
+      if (h) {
+        const stage = Math.min(4, Math.floor(h.invested / L));
+        return { ...base, st: 'build', href: stage === 0 ? '#tGround' : FALLBACK_TILE[stage], name: `Plot ${n}`,
+                 note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(h.invested)} of ₹5,00,000`,
+                 paid: Math.round(h.invested / 25000), tile: null } as BoardCell;
+      }
+      return { ...base, st: 'locked', href: '#tOpen', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
+               next: i === nextIdx } as BoardCell;
+    });
+    return cells.sort((a, b) => a.d - b.d || a.col - b.col);
+  }
 
   /** The rent coin bobs over the centre parcel (ORDER[0] = (1,1)), shown only
    *  once at least one villa exists — exactly as the reference markup fixes it
