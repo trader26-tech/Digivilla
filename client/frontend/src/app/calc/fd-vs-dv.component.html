@@ -41,7 +41,6 @@
   @if (r(); as res) {
     <div class="chart-wrap">
       <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
-      <button class="vs-link on-chart" (click)="go('vs')" aria-label="See FD and DigiVilla side by side">Side by side</button>
     </div>
     <div class="legend">
       <span>Fixed deposit · {{ fdRate() }}%</span>
@@ -69,10 +68,14 @@
 
   <p class="fine">
     Payouts after tax. Today's DigiVilla mix at real past prices — the past isn't a promise.
-    <button class="how" (click)="go('notes')">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
-      How this is worked out
-    </button>
+    <span class="links">
+      <button class="how" (click)="go('vs')" aria-label="See FD and DigiVilla side by side">Side by side</button>
+      <i aria-hidden="true">·</i>
+      <button class="how" (click)="go('notes')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
+        How this is worked out
+      </button>
+    </span>
   </p>
 </div>
 }

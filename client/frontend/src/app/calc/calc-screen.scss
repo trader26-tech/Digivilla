@@ -54,13 +54,6 @@ button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
   &:hover { color: var(--text); }
   &:active { opacity: .7; }
   &:disabled { opacity: .4; cursor: default; }
-  /* in the chart's empty top-left corner — costs no height */
-  &.on-chart {
-    position: absolute; z-index: 5; top: 14px; left: 26px; height: 30px; padding: 0 2px;
-    font-size: 13px; color: var(--n-300);
-    text-decoration: underline; text-decoration-color: var(--n-700); text-underline-offset: 4px;
-  }
-  &.on-chart:hover { color: var(--text); text-decoration-color: var(--n-500); }
 }
 
 /* back button and the sentence on one row (SIP, Flat) */
@@ -138,6 +131,12 @@ button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
 .fine {
   flex: none; margin: 0; padding: 14px 30px 18px; text-align: center;
   font-size: 10px; line-height: 1.5; color: var(--n-600); text-wrap: pretty;
+}
+/* the quiet links under the fine print: "Side by side · How this is worked out" */
+.fine .links {
+  display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 6px;
+  i { font-style: normal; color: var(--n-700); }
+  .how { margin: 0; padding: 4px 0; font-size: 11px; }
 }
 .how {
   display: inline-flex; align-items: center; gap: 4px; margin-left: 2px; padding: 0; border: 0; background: none; cursor: pointer;
