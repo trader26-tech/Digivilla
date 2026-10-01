@@ -69,6 +69,7 @@
 
 <!-- ═══════════════════════ WORKSPACE ═══════════════════════ -->
 <div class="dash" *ngIf="phase() === 'unlocked'">
+  <div class="upd" *ngIf="updateReady()" role="status">A newer version of the admin is ready.<button (click)="reloadNow()">Reload now</button></div>
   <header class="top">
     <div class="brand">
       <span class="logo">◆</span>

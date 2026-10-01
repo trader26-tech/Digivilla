@@ -158,6 +158,7 @@ export class AuditComponent implements OnInit {
   navOk = computed(() => (this.navs()?.funds ?? []).filter((f: any) => f.match).length);
 
   // ── calculators ──
+  pickKind(k: Kind): void { if (this.kind() === k && this.check()) return; this.kind.set(k); this.run(); }
   run(): void {
     this.calcLoading.set(true);
     this.calcErr.set('');
@@ -311,6 +312,35 @@ export class AuditComponent implements OnInit {
     return { H, T, B, n, months, bands, ticks, rb, xl, tot, order, bottom: H - B };
   });
 
+  /** One line per fund (₹ value), same x scale — the clearest view of each fund
+   *  shrinking (payouts) or stepping (1 January). */
+  readonly chartMode = signal<'lines' | 'stack'>('lines');
+  lines = computed(() => {
+    const st = this.story();
+    if (!st) return null;
+    const months: string[] = st.series.months;
+    const n = months.length - 1;
+    const H = 300, T = 14, B = 30;
+    const order = this.SLEEVE_ORDER.filter((s) => st.series.values[s]);
+    const max = this.niceMax(Math.max(...order.flatMap((s) => st.series.values[s])));
+    const y = (v: number) => T + (1 - v / max) * (H - T - B);
+    const rbIdx = (st.series.rebalance_months as string[]).map((m) => months.indexOf(m));
+    const ls = order.map((s) => {
+      const v: number[] = st.series.values[s];
+      return {
+        sleeve: s, color: this.COLORS[s],
+        d: 'M' + v.map((x, i) => `${this.xAt(i, n).toFixed(1)},${y(x).toFixed(1)}`).join('L'),
+        dots: rbIdx.map((i) => ({ x: this.xAt(i, n), y: y(v[i]) })),
+        end: { x: this.xAt(n, n), y: y(v[n]), label: this.short(v[n]) },
+      };
+    });
+    // keep the end labels from overlapping
+    const ends = ls.map((l) => l.end).sort((a, b) => a.y - b.y);
+    for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 14) ends[k].y = ends[k - 1].y + 14;
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ y: y(max * f), label: this.short(max * f) }));
+    return { H, B, ls, ticks, bottom: H - B };
+  });
+
   /** Arbitrage units, month by month — only payouts take them down. */
   arb = computed(() => {
     const st = this.story();
@@ -359,8 +389,8 @@ export class AuditComponent implements OnInit {
       }).filter(Boolean);
       return { gi, label: this.growthYear(y, true), cx: this.PL + gi * gw + gw / 2, x: this.PL + gi * gw, w: gw, bars };
     });
-    const rt = [rMax, rMax / 2, 0, rMin / 2, rMin].map((v) => ({ y: ry(v), label: `${v > 0 ? '+' : ''}${Math.round(v)}%` }));
-    const mt = [mAbs, mAbs / 2, 0, -mAbs / 2, -mAbs].map((v) => ({ y: my(v), label: (v > 0 ? '+' : v < 0 ? '−' : '') + this.short(Math.abs(v)) }));
+    const rt = this.spaced([0, rMax, rMin, rMax / 2, rMin / 2].map((v) => ({ y: ry(v), label: `${v > 0 ? '+' : ''}${Math.round(v)}%` })));
+    const mt = [0, mAbs, -mAbs, mAbs / 2, -mAbs / 2].map((v) => ({ y: my(v), label: (v > 0 ? '+' : v < 0 ? '−' : '') + this.short(Math.abs(v)) }));
     return { H, B, groups, rt, mt, r0: ry(0), m0: my(0) };
   });
   hoverYear = computed(() => { const i = this.hoverY(); return i === null ? null : this.story()?.years?.[i] ?? null; });
@@ -393,8 +423,121 @@ export class AuditComponent implements OnInit {
     return y && this.growthYear(y).endsWith('*') ? `* ${y.month.slice(0, 4)} from ${this.monthName(y.since)} only` : '';
   });
   monthName(m: string): string { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleString('en-IN', { month: 'short' }); }
+  // ── month by month, per fund ──
+  monthlyRows = computed<any[]>(() => {
+    const m = this.story()?.monthly ?? [];
+    if (this.showAll() || m.length <= 16) return m;
+    return [...m.slice(0, 8), null, ...m.slice(-6)];
+  });
+  monthlyCount = computed(() => this.story()?.monthly?.length ?? 0);
+  /** One plain sentence for what happened that month. */
+  happened(r: any, first: boolean): string {
+    const f = r.f, names = this.SLEEVE_ORDER.filter((s) => f[s]);
+    const parts: string[] = [];
+    const inv = names.reduce((a, s) => a + f[s].inv, 0);
+    if (inv > 0.5) parts.push(first && this.kind() !== 'sip' ? `Invested ${this.short(inv)} in today’s split` : `${this.kind() === 'sip' ? 'SIP' : 'Put in'} ${this.short(inv)}`);
+    const paid = names.filter((s) => f[s].paid > 0.5);
+    if (paid.length) parts.push(`Paid you ${this.short(paid.reduce((a, s) => a + f[s].paid, 0))} — sold from ${paid.map((s) => this.sleeveLabel(s).toLowerCase()).join(' + ')}`);
+    if (r.rebalanced) {
+      const sold = names.filter((s) => f[s].rb < -0.5).map((s) => `${this.sleeveLabel(s).toLowerCase()} −${this.short(-f[s].rb)}`);
+      const bought = names.filter((s) => f[s].rb > 0.5).map((s) => `${this.sleeveLabel(s).toLowerCase()} +${this.short(f[s].rb)}`);
+      parts.push(`↻ 1 Jan ${this.nextYear(r.month)} rebalance: sold ${sold.join(', ') || '—'} → bought ${bought.join(', ') || '—'}; arbitrage untouched`);
+    }
+    if (r.tax_paid > 0.5) parts.push(`Tax for the year paid: ${this.inr(r.tax_paid)}`);
+    return parts.join(' · ') || 'Market move only';
+  }
+  downloadMonthly(): void {
+    const m = this.story()?.monthly ?? [];
+    if (!m.length) return;
+    const names = this.SLEEVE_ORDER.filter((s) => m[0].f[s]);
+    const head = ['month', ...names.flatMap((s) => [`${s}_value`, `${s}_put_in`, `${s}_sold_to_pay_you`, `${s}_rebalance_bought(+)/sold(-)`, `${s}_market_move`]),
+                  'total_value', 'payout', 'tax_paid', 'rebalanced', 'what_happened'];
+    const rows = m.map((r: any, i: number) => [r.month, ...names.flatMap((s) => [r.f[s].v, r.f[s].inv, r.f[s].paid, r.f[s].rb, r.f[s].mkt]),
+                  r.total, r.payout, r.tax_paid, r.rebalanced ? 'yes' : '', `"${this.happened(r, i === 0).replace(/"/g, "'")}"`].join(','));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([[head.join(','), ...rows].join('\n')], { type: 'text/csv' }));
+    a.download = `digivilla-${this.kind()}-${this.years()}y-month-by-month.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ── data used: charts ──
+  /** Growth of ₹100 put into each index at the start, month by month. */
+  dataGrowth = computed(() => {
+    const d = this.data();
+    if (!d?.rows?.length) return null;
+    const rows: any[] = d.rows, n = rows.length - 1;
+    const order = this.SLEEVE_ORDER.filter((s) => rows[0][s] !== undefined);
+    const vals = Object.fromEntries(order.map((s) => [s, rows.map((r) => (r[s] / rows[0][s]) * 100)]));
+    const H = 320, T = 14, B = 30;
+    const max = this.niceMax(Math.max(...order.flatMap((s) => vals[s])));
+    const y = (v: number) => T + (1 - v / max) * (H - T - B);
+    const ls = order.map((s) => ({
+      sleeve: s, color: this.COLORS[s],
+      d: 'M' + vals[s].map((v: number, i: number) => `${this.xAt(i, n).toFixed(1)},${y(v).toFixed(1)}`).join('L'),
+      end: { x: this.xAt(n, n), y: y(vals[s][n]), label: '₹' + Math.round(vals[s][n]) },
+    }));
+    const ends = ls.map((l) => l.end).sort((a, b) => a.y - b.y);
+    for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 14) ends[k].y = ends[k - 1].y + 14;
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ y: y(max * f), label: '₹' + Math.round(max * f) }));
+    const xl = rows.map((r, i) => ({ m: r.month, i })).filter(({ m, i }) => m.endsWith('-01') && (+m.slice(0, 4)) % 2 === 0 && i > 2 && i < n - 2)
+      .map(({ m, i }) => ({ x: this.xAt(i, n), label: m.slice(0, 4) }));
+    const decs = rows.map((r, i) => ({ m: r.month, i })).filter(({ m, i }) => m.endsWith('-12') && i > 0).map(({ i }) => this.xAt(i, n));
+    return { H, B, n, ls, ticks, xl, decs, vals, order, bottom: H - B };
+  });
+  readonly dataHover = signal<number | null>(null);
+  onDataMove(ev: MouseEvent, svg: Element): void {
+    const c = this.dataGrowth();
+    if (!c) return;
+    const r = svg.getBoundingClientRect();
+    const x = ((ev.clientX - r.left) / r.width) * this.CW;
+    const i = Math.round(((x - this.PL) / (this.CW - this.PL - this.PR)) * c.n);
+    this.dataHover.set(i < 0 || i > c.n ? null : i);
+  }
+  dataHoverX = computed(() => { const c = this.dataGrowth(), i = this.dataHover(); return c && i !== null ? this.xAt(i, c.n) : 0; });
+  dataHoverRow = computed(() => {
+    const c = this.dataGrowth(), i = this.dataHover(), d = this.data();
+    if (!c || i === null || !d) return null;
+    return { m: d.rows[i].month, vals: c.order.map((s: string) => ({ s, g: c.vals[s][i], idx: d.rows[i][s] })) };
+  });
+  /** Each calendar year's return per index (Dec → Dec; the first year is partial). */
+  dataYearsChart = computed(() => {
+    const d = this.data();
+    if (!d?.rows?.length) return null;
+    const rows: any[] = d.rows;
+    const order = this.SLEEVE_ORDER.filter((s) => rows[0][s] !== undefined);
+    const yearsList: { y: string; part: boolean; from: any; to: any }[] = [];
+    let from = rows[0];
+    rows.forEach((r, i) => {
+      if (r.month.endsWith('-12') || i === rows.length - 1) {
+        if (r !== from) yearsList.push({ y: r.month.slice(0, 4), part: !from.month.endsWith('-12') || !r.month.endsWith('-12'), from, to: r });
+        from = r;
+      }
+    });
+    const ys = yearsList.map((y) => ({ ...y, ret: Object.fromEntries(order.map((s) => [s, (y.to[s] / y.from[s] - 1) * 100])) }));
+    const H = 260, T = 18, B = 26;
+    const all = ys.flatMap((y) => order.map((s) => y.ret[s]));
+    const rMax = this.niceMax(Math.max(5, ...all)), rMin = -this.niceMax(Math.max(5, ...all.map((v) => -v)));
+    const ry = (v: number) => T + (rMax - v) / (rMax - rMin) * (H - T - B);
+    const plotW = this.CW - this.PL - this.PR, gw = plotW / ys.length, bw = Math.min(14, (gw - 8) / order.length);
+    const groups = ys.map((y, gi) => {
+      const x0 = this.PL + gi * gw + (gw - (bw + 2) * order.length) / 2;
+      return { gi, y, label: '’' + y.y.slice(2) + (y.part ? '*' : ''), cx: this.PL + gi * gw + gw / 2, x: this.PL + gi * gw, w: gw,
+        bars: order.map((s, k) => ({ s, x: x0 + k * (bw + 2), w: bw, y: Math.min(ry(y.ret[s]), ry(0)), h: Math.max(1, Math.abs(ry(y.ret[s]) - ry(0))), color: this.COLORS[s] })) };
+    });
+    const rt = this.spaced([0, rMax, rMin, rMax / 2, rMin / 2].map((v) => ({ y: ry(v), label: `${v > 0 ? '+' : ''}${Math.round(v)}%` })));
+    return { H, B, groups, rt, r0: ry(0), order, ys };
+  });
+  readonly dataYearHover = signal<number | null>(null);
+
   yearFund(y: any, s: string): any { return y?.funds?.find((f: any) => f.sleeve === s); }
 
+  /** keep axis ticks at least 16 units apart (no "−3%" on top of "0%") */
+  private spaced<T extends { y: number }>(ticks: T[]): T[] {
+    const out: T[] = [];
+    for (const t of ticks) if (out.every((o) => Math.abs(o.y - t.y) >= 16)) out.push(t);
+    return out;
+  }
   private niceMax(v: number): number {
     if (!(v > 0)) return 1;
     const p = Math.pow(10, Math.floor(Math.log10(v)));

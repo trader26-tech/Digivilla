@@ -149,6 +149,49 @@
         </article>
       </div>
 
+      <!-- the index history, as charts -->
+      <figure class="chart" *ngIf="dataGrowth() as c">
+        <figcaption><b>₹100 put into each index in {{ d.start | date:'MMM yyyy' }}</b><span>month-end values, before any fund costs · dashed = 31 Dec closes (where the calculators rebalance) · hover for any month</span></figcaption>
+        <div class="cv">
+          <svg #dsv [attr.viewBox]="'0 0 1000 ' + c.H" (mousemove)="onDataMove($event, dsv)" (mouseleave)="dataHover.set(null)" role="img" aria-label="Growth of 100 rupees in each index">
+            <g class="grid"><ng-container *ngFor="let t of c.ticks"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+            <g class="rbl"><line *ngFor="let x of c.decs" [attr.x1]="x" [attr.x2]="x" y1="6" [attr.y2]="c.bottom"/></g>
+            <path *ngFor="let l of c.ls" [attr.d]="l.d" [attr.stroke]="l.color" class="fl"/>
+            <g class="xl"><text *ngFor="let x of c.xl" [attr.x]="x.x" [attr.y]="c.H - 8" text-anchor="middle">{{ x.label }}</text></g>
+            <line *ngIf="dataHover() !== null" class="hl" [attr.x1]="dataHoverX()" [attr.x2]="dataHoverX()" y1="6" [attr.y2]="c.bottom"/>
+          </svg>
+          <div class="tip" *ngIf="dataHoverRow() as h" [style.left.%]="dataHoverX() / 10" [class.flip]="dataHoverX() > 620">
+            <b>{{ h.m + '-01' | date:'MMM yyyy' }}</b>
+            <div *ngFor="let v of h.vals" [attr.data-s]="v.s"><i class="sw"></i>{{ sleeveLabel(v.s) }}<span>₹{{ v.g | number:'1.0-0' }} <small class="dim">({{ num(v.idx, 2) }})</small></span></div>
+          </div>
+        </div>
+        <div class="lg"><span *ngFor="let l of c.ls" [attr.data-s]="l.sleeve"><i class="sw"></i>{{ sleeveLabel(l.sleeve) }}<b>&nbsp;₹100 → {{ l.end.label }}</b></span><span class="dash">31 Dec close</span></div>
+      </figure>
+
+      <figure class="chart" *ngIf="dataYearsChart() as c">
+        <figcaption><b>Each calendar year’s return, per index</b><span>31 Dec → 31 Dec · this is the drift the 1 January rebalance then corrects · hover a year</span></figcaption>
+        <div class="cv">
+          <svg [attr.viewBox]="'0 0 1000 ' + c.H" role="img" aria-label="Calendar year returns">
+            <g class="grid"><ng-container *ngFor="let t of c.rt"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+            <line x1="70" x2="986" [attr.y1]="c.r0" [attr.y2]="c.r0" class="zero"/>
+            <g *ngFor="let g of c.groups" (mouseenter)="dataYearHover.set(g.gi)" [class.on]="dataYearHover() === g.gi" class="yg">
+              <rect [attr.x]="g.x" y="0" [attr.width]="g.w" [attr.height]="c.H - c.B" class="hit"/>
+              <rect *ngFor="let b of g.bars" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" [attr.fill]="b.color" rx="1.5"/>
+              <text [attr.x]="g.cx" [attr.y]="c.H - 8" text-anchor="middle" class="xl1">{{ g.label }}</text>
+            </g>
+          </svg>
+        </div>
+        <div class="lg"><span *ngFor="let s of c.order" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }}</span><span>* part year</span></div>
+        <div class="yd" *ngIf="c.groups[dataYearHover() ?? c.groups.length - 1] as g">
+          <b>{{ g.y.y }}{{ g.y.part ? ' (part year)' : '' }}</b><small>{{ g.y.from.month + '-01' | date:'MMM yyyy' }} close → {{ g.y.to.month + '-01' | date:'MMM yyyy' }} close</small>
+          <div class="yd-r">
+            <div *ngFor="let s of c.order" [attr.data-s]="s"><b>{{ sleeveLabel(s) }}</b>
+              <span [class.pos]="g.y.ret[s] > 0" [class.neg]="g.y.ret[s] < 0">{{ g.y.ret[s] > 0 ? '+' : '' }}{{ g.y.ret[s] | number:'1.1-1' }}%</span>
+              <span class="dim">{{ num(g.y.from[s], 2) }} → {{ num(g.y.to[s], 2) }}</span></div>
+          </div>
+        </div>
+      </figure>
+
       <h2>The rules every calculator follows</h2>
       <ol class="rules"><li *ngFor="let r of d.rules">{{ r }}</li></ol>
 
@@ -178,14 +221,14 @@
   <ng-container *ngIf="tab() === 'calc'">
     <div class="calc-form">
       <div class="kinds">
-        <button [class.on]="kind() === 'fd'" (click)="kind.set('fd')">FD vs DigiVilla</button>
-        <button [class.on]="kind() === 'lump'" (click)="kind.set('lump')">Lumpsum</button>
-        <button [class.on]="kind() === 'sip'" (click)="kind.set('sip')">SIP</button>
-        <button [class.on]="kind() === 'flat'" (click)="kind.set('flat')">Flat vs DigiVilla</button>
+        <button [class.on]="kind() === 'fd'" (click)="pickKind('fd')">FD vs DigiVilla</button>
+        <button [class.on]="kind() === 'lump'" (click)="pickKind('lump')">Lumpsum</button>
+        <button [class.on]="kind() === 'sip'" (click)="pickKind('sip')">SIP</button>
+        <button [class.on]="kind() === 'flat'" (click)="pickKind('flat')">Flat vs DigiVilla</button>
       </div>
       <div class="fields">
         <label>Years ago
-          <select [ngModel]="years()" (ngModelChange)="years.set(+$event)"><option *ngFor="let y of YEARS" [value]="y">{{ y }}</option></select>
+          <select [ngModel]="years()" (ngModelChange)="years.set(+$event); run()"><option *ngFor="let y of YEARS" [value]="y">{{ y }}</option></select>
         </label>
         <label *ngIf="kind() === 'fd' || kind() === 'lump'">Amount ₹<input type="number" [ngModel]="amount()" (ngModelChange)="amount.set(+$event)"></label>
         <label *ngIf="kind() === 'fd'">FD rate %<input type="number" step="0.25" [ngModel]="fdRate()" (ngModelChange)="fdRate.set(+$event)"></label>
@@ -210,15 +253,6 @@
         <div><b>{{ calcOk() ? 'The app’s formula and the independent check agree' : 'The two calculations differ — see the rows marked ✗' }}</b>
           <small>{{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }} · {{ k.months }} months · today’s DigiVilla split on benchmark indices · rebalanced every 1 January</small></div>
       </div>
-      <div class="tbl">
-        <div class="tr th cmp"><span>Figure</span><span class="n">App’s formula</span><span class="n">Independent check</span><span class="n">Difference</span><span></span></div>
-        <div class="tr cmp" *ngFor="let r of rows()" [class.badr]="!same(r)">
-          <span>{{ r.label }}</span><span class="n b">{{ fig(r, r.app) }}</span><span class="n">{{ fig(r, r.check) }}</span>
-          <span class="n dim">{{ diff(r) === null ? '—' : r.count ? diff(r) : (r.pct ? pct(diff(r), 4) : inr(diff(r), 2)) }}</span>
-          <span class="n"><i [class.okc]="same(r)" [class.badc]="!same(r)">{{ same(r) ? '✓' : '✗' }}</i></span>
-        </div>
-      </div>
-
       <!-- ══ what the money did ══ -->
       <ng-container *ngIf="story() as st">
         <h2>What the money did <small>independent check · {{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }}</small></h2>
@@ -268,11 +302,21 @@
 
         <!-- chart 1 · where the money sat -->
         <figure class="chart" *ngIf="stack() as c">
-          <figcaption><b>Where the money sat, month by month</b><span>each part’s ₹ value, stacked · dashed lines = 1 January rebalances · hover for any month</span></figcaption>
+          <figcaption class="cap-row"><div><b>₹ in each fund, month by month</b><span>{{ chartMode() === 'lines' ? 'one line per fund · ● = a 1 January rebalance (arbitrage’s line never steps there)' : 'stacked = the whole portfolio' }} · dashed lines = 1 January · hover for any month</span></div>
+            <div class="seg"><button [class.on]="chartMode() === 'lines'" (click)="chartMode.set('lines')">Each fund</button><button [class.on]="chartMode() === 'stack'" (click)="chartMode.set('stack')">Stacked</button></div></figcaption>
           <div class="cv">
-            <svg #sv [attr.viewBox]="'0 0 1000 ' + c.H" (mousemove)="onStackMove($event, sv)" (mouseleave)="hoverI.set(null)" role="img" aria-label="Value of each part, month by month">
-              <g class="grid"><ng-container *ngFor="let t of c.ticks"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
-              <path *ngFor="let b of c.bands" [attr.d]="b.d" [attr.fill]="b.color" class="band"/>
+            <svg #sv [attr.viewBox]="'0 0 1000 ' + c.H" (mousemove)="onStackMove($event, sv)" (mouseleave)="hoverI.set(null)" role="img" aria-label="Value of each fund, month by month">
+              <ng-container *ngIf="chartMode() === 'stack'">
+                <g class="grid"><ng-container *ngFor="let t of c.ticks"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+                <path *ngFor="let b of c.bands" [attr.d]="b.d" [attr.fill]="b.color" class="band"/>
+              </ng-container>
+              <ng-container *ngIf="chartMode() === 'lines' && lines() as L">
+                <g class="grid"><ng-container *ngFor="let t of L.ticks"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+                <g *ngFor="let l of L.ls">
+                  <path [attr.d]="l.d" [attr.stroke]="l.color" class="fl"/>
+                  <circle *ngFor="let p of l.dots" [attr.cx]="p.x" [attr.cy]="p.y" r="3.2" [attr.stroke]="l.color" class="fdot"/>
+                </g>
+              </ng-container>
               <g class="rbl"><ng-container *ngFor="let r of c.rb"><line [attr.x1]="r.x" [attr.x2]="r.x" y1="6" [attr.y2]="c.bottom"/></ng-container></g>
               <g class="xl"><text *ngFor="let x of c.xl" [attr.x]="x.x" [attr.y]="c.H - 8" text-anchor="middle">{{ x.label }}</text></g>
               <line *ngIf="hoverI() !== null" class="hl" [attr.x1]="hoverX()" [attr.x2]="hoverX()" y1="6" [attr.y2]="c.bottom"/>
@@ -283,7 +327,7 @@
               <div class="t">Total<span>{{ short(h.total) }}</span></div>
             </div>
           </div>
-          <div class="lg"><span *ngFor="let s of c.order" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }}</span><span class="dash">1 January rebalance</span></div>
+          <div class="lg"><span *ngFor="let s of c.order" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }}<b *ngIf="chartMode() === 'lines'">&nbsp;{{ short(c.tot.length ? story()!.series.values[s][c.n] : 0) }} now</b></span><span class="dash">1 January rebalance</span></div>
         </figure>
 
         <!-- chart 2 · arbitrage units -->
@@ -365,6 +409,16 @@
         </div>
       </ng-container>
 
+      <h2>Figure by figure <small>the app’s own formula vs the independent check</small></h2>
+      <div class="tbl">
+        <div class="tr th cmp"><span>Figure</span><span class="n">App’s formula</span><span class="n">Independent check</span><span class="n">Difference</span><span></span></div>
+        <div class="tr cmp" *ngFor="let r of rows()" [class.badr]="!same(r)">
+          <span>{{ r.label }}</span><span class="n b">{{ fig(r, r.app) }}</span><span class="n">{{ fig(r, r.check) }}</span>
+          <span class="n dim">{{ diff(r) === null ? '—' : r.count ? diff(r) : (r.pct ? pct(diff(r), 4) : inr(diff(r), 2)) }}</span>
+          <span class="n"><i [class.okc]="same(r)" [class.badc]="!same(r)">{{ same(r) ? '✓' : '✗' }}</i></span>
+        </div>
+      </div>
+
       <div *ngIf="k.flat_years?.length">
         <h2>The flat, year by year</h2>
         <div class="tbl sm">
@@ -373,22 +427,38 @@
         </div>
       </div>
 
-      <div class="ledger-h">
-        <h2>Month by month <small>(independent check)</small></h2>
-        <div><button class="ghost" *ngIf="k.ledger.length > 14" (click)="showAll.set(!showAll())">{{ showAll() ? 'Show fewer' : 'Show all ' + k.ledger.length + ' months' }}</button>
-          <button class="ghost" (click)="downloadCsv()">Download CSV</button></div>
-      </div>
-      <div class="tbl sm ledger">
-        <div class="tr th" [style.grid-template-columns]="'repeat(' + ledgerCols().length + ', minmax(0, 1fr))'">
-          <span *ngFor="let c of ledgerCols()" [class.n]="c !== 'month' && c !== 'sold_from'">{{ colLabel(c) }}</span>
+      <!-- month by month, per fund -->
+      <ng-container *ngIf="story() as st">
+        <div class="ledger-h">
+          <h2>Month by month <small>₹ in each fund after that month · under it: what moved it</small></h2>
+          <div><button class="ghost" *ngIf="monthlyCount() > 16" (click)="showAll.set(!showAll())">{{ showAll() ? 'Show fewer' : 'Show all ' + monthlyCount() + ' months' }}</button>
+            <button class="ghost" (click)="downloadMonthly()">Download CSV</button></div>
         </div>
-        <ng-container *ngFor="let r of ledgerRows()">
-          <div class="tr gap" *ngIf="!r"><span>⋯</span></div>
-          <div class="tr" *ngIf="r" [style.grid-template-columns]="'repeat(' + ledgerCols().length + ', minmax(0, 1fr))'">
-            <span *ngFor="let c of ledgerCols()" [class.n]="c !== 'month' && c !== 'sold_from'">{{ cell(c, r[c]) }}</span>
-          </div>
-        </ng-container>
-      </div>
+        <div class="mlk">
+          <span><i class="k-inv"></i>put in</span><span><i class="k-paid"></i>sold to pay you</span><span><i class="k-rb"></i>1 January rebalance</span><span><i class="k-mkt"></i>market move</span>
+        </div>
+        <div class="tbl sm mtab">
+          <div class="tr th"><span>Month</span><span class="n" *ngFor="let s of SLEEVE_ORDER"><i class="sw" [attr.data-s]="s"></i>{{ sleeveLabel(s) }}</span><span class="n">Total</span><span>What happened</span></div>
+          <ng-container *ngFor="let r of monthlyRows(); let ri = index">
+            <div class="tr gap" *ngIf="!r"><span>⋯ {{ monthlyCount() - 14 }} more months — “Show all” or the CSV</span></div>
+            <div class="tr" *ngIf="r" [class.rbrow]="r.rebalanced" [class.taxrow]="r.tax_paid > 0.5">
+              <span><b>{{ r.month + '-01' | date:'MMM yyyy' }}</b></span>
+              <span class="n mc" *ngFor="let s of SLEEVE_ORDER" [attr.data-s]="s">
+                <ng-container *ngIf="r.f[s] as f">
+                  <b>{{ short(f.v) }}</b>
+                  <small class="inv" *ngIf="f.inv > 0.5">+{{ short(f.inv) }} in</small>
+                  <small class="paid" *ngIf="f.paid > 0.5">−{{ short(f.paid) }} paid</small>
+                  <small class="rb" *ngIf="f.rb > 0.5 || f.rb < -0.5">↻ {{ f.rb > 0 ? '+' : '−' }}{{ short(f.rb < 0 ? -f.rb : f.rb) }}</small>
+                  <small class="rb0" *ngIf="r.rebalanced && s === 'arbitrage'">↻ untouched</small>
+                  <small class="mkt" *ngIf="ri > 0 && (f.mkt > 0.5 || f.mkt < -0.5)">{{ f.mkt > 0 ? '+' : '−' }}{{ short(f.mkt < 0 ? -f.mkt : f.mkt) }} mkt</small>
+                </ng-container>
+              </span>
+              <span class="n b">{{ short(r.total) }}</span>
+              <span class="what">{{ happened(r, ri === 0) }}</span>
+            </div>
+          </ng-container>
+        </div>
+      </ng-container>
     </ng-container>
   </ng-container>
 </section>

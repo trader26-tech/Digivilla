@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { SwUpdate } from '@angular/service-worker';
 
 import {
   AdminService,
@@ -67,6 +68,34 @@ const PROFILE_FIELDS: [string, string][] = [
 })
 export class AppComponent implements OnInit {
   private api = inject(AdminService);
+  private swUpdate = inject(SwUpdate, { optional: true });
+  /** A newer admin build is downloaded and waiting — show the reload bar. */
+  updateReady = signal(false);
+
+  /** Never leave the admin on a stale cached build: check on load and every
+   *  5 minutes; when a new one is ready, offer a one-tap reload (and apply it
+   *  by itself the next time the tab is hidden). */
+  private watchForUpdates(): void {
+    const sw = this.swUpdate;
+    if (!sw || !sw.isEnabled) return;
+    sw.versionUpdates.subscribe((e) => {
+      if (e.type !== 'VERSION_READY') return;
+      this.updateReady.set(true);
+      const onHide = () => {
+        if (document.visibilityState !== 'hidden') return;
+        document.removeEventListener('visibilitychange', onHide);
+        this.reloadNow();
+      };
+      document.addEventListener('visibilitychange', onHide);
+    });
+    sw.checkForUpdate().catch(() => {});
+    setInterval(() => sw.checkForUpdate().catch(() => {}), 5 * 60_000);
+  }
+  reloadNow(): void {
+    const sw = this.swUpdate;
+    if (sw?.isEnabled) sw.activateUpdate().then(() => document.location.reload()).catch(() => document.location.reload());
+    else document.location.reload();
+  }
 
   // ── auth state machine ─────────────────────────────────────────────────────
   phase = signal<Phase>('loading');
@@ -196,6 +225,7 @@ export class AppComponent implements OnInit {
   reportsFresh = computed(() => !!(this.nwToday()?.user && this.nwToday()?.transaction));
 
   ngOnInit(): void {
+    this.watchForUpdates();
     this.initAuth();
   }
 

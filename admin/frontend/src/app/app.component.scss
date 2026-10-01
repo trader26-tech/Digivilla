@@ -1215,3 +1215,8 @@ li.open .ma-chev { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .ap, .flash { animation: none; } .pp, .pp-car, .pp-opts button { transition: none; } }
 
 .cr-demo { margin-left: 0.4rem; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #4a3aa7; background: color-mix(in srgb, #4a3aa7 12%, transparent); vertical-align: middle; }
+
+/* a newer build is waiting */
+.upd { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; justify-content: center; gap: 0.8rem; padding: 0.5rem 1rem;
+  font-size: 0.86rem; font-weight: 700; color: #fff; background: #1f3b33;
+  button { border: 0; border-radius: 8px; padding: 0.3rem 0.8rem; font: inherit; font-size: 0.8rem; cursor: pointer; color: #1f3b33; background: #e9c15c; } }

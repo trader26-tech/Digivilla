@@ -443,10 +443,32 @@ def _snap(book, a):
     n = len(book.f)
     return {"v": [book.val(k, book._i) for k in range(n)], "u": [book.units(k) for k in range(n)],
             "arb_paid": book.flows[a]["payout"] if a >= 0 else 0.0,
-            "arb_inv": book.flows[a]["invest"] if a >= 0 else 0.0}
+            "arb_inv": book.flows[a]["invest"] if a >= 0 else 0.0,
+            "fl": [dict(f) for f in book.flows]}
 
 
-def _story(funds, months, book, a, snaps, rb_raw, sip=False) -> dict:
+def _monthly(funds, months, snaps, ledger) -> list:
+    """Every month, per fund: ₹ value after that month, and what moved it —
+    new money in, sold to pay you, bought/sold at the 1 January rebalance, and
+    the market (whatever is left of the change)."""
+    out = []
+    for i, sn in enumerate(snaps):
+        row = {"month": months[i], "total": round(sum(sn["v"]), 2),
+               "payout": ledger[i].get("payout", 0), "tax_paid": ledger[i].get("tax_paid", 0),
+               "rebalanced": bool(ledger[i].get("rebalanced")), "f": {}}
+        for k, f in enumerate(funds):
+            cur, prev = sn["fl"][k], (snaps[i - 1]["fl"][k] if i else {"invest": 0, "payout": 0, "rebal_in": 0, "rebal_out": 0})
+            inv = cur["invest"] - prev["invest"]
+            paid = cur["payout"] - prev["payout"]
+            rb = (cur["rebal_in"] - prev["rebal_in"]) - (cur["rebal_out"] - prev["rebal_out"])
+            v_prev = snaps[i - 1]["v"][k] if i else 0.0
+            row["f"][f["sleeve"]] = {"v": round(sn["v"][k], 2), "inv": round(inv, 2), "paid": round(paid, 2),
+                                     "rb": round(rb, 2), "mkt": round(sn["v"][k] - v_prev - inv + paid - rb, 2)}
+        out.append(row)
+    return out
+
+
+def _story(funds, months, book, a, snaps, rb_raw, sip=False, ledger=None) -> dict:
     """What the money did, in a form the admin can chart and check: each sleeve's
     index CAGR and flows, every month's value per sleeve, and every 1 January —
     how much each index moved since the last one, the drift it caused, what was
@@ -516,6 +538,7 @@ def _story(funds, months, book, a, snaps, rb_raw, sip=False) -> dict:
     ]
     return {
         "sleeves": sleeves, "years": years, "checks": checks,
+        "monthly": _monthly(funds, months, snaps, ledger) if ledger else [],
         "series": {"months": months, "values": {f["sleeve"]: [round(sn["v"][k]) for sn in snaps] for k, f in enumerate(funds)},
                    "arb_units": [round(x, 4) for x in u],
                    "rebalance_months": [months[i] for i, _ in rb_raw]},
@@ -581,7 +604,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
     arb_now = book.val(a, n)
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
-        "story": _story(funds, months, book, a, snaps, rb_raw),
+        "story": _story(funds, months, book, a, snaps, rb_raw, ledger=ledger),
         "headline": {
             "dvPaidGross": round(paid, 2), "dvPayoutTax": round(payout_tax, 2), "dvPaid": round(paid - payout_tax, 2),
             "dvValue": round(value, 2), "dvExitTax": round(exit_tax, 2), "dvTotal": round(paid - payout_tax + value, 2),
@@ -639,7 +662,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     flows[n] += v - exit_tax - last_tax
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
-        "story": _story(funds, months, book, a, snaps, rb_raw, sip=True),
+        "story": _story(funds, months, book, a, snaps, rb_raw, sip=True, ledger=ledger),
         "headline": {"invested": round(invested, 2), "value": round(v, 2), "exitTax": round(exit_tax, 2),
                      "valueAfterTax": round(v - exit_tax, 2), "incomeGross": round(income, 2),
                      "incomeTax": round(income_tax, 2), "income": round(income - income_tax, 2), "xirr": _irr(flows),
