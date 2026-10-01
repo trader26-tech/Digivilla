@@ -1,5 +1,8 @@
 :host {
-  display: flex; flex-direction: column; flex: 1; min-height: 0;
+  /* takes the height that's left, but never less than the chart's own minimum:
+     on a short phone the screen scrolls a little instead of the columns
+     spilling over the year tabs and the dial below */
+  display: flex; flex-direction: column; flex: 1 0 auto;
   --n-200: #e4e7f5; --n-500: #9397ab; --n-700: #595d6c; --n-800: #3f424d; --green: #8fd65a;
 }
 button { font: inherit; -webkit-tap-highlight-color: transparent; }
@@ -73,6 +76,7 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 }
 
 @media (max-height: 760px) { .ychart { min-height: 200px; } .key { padding-top: 6px; } }
+@media (max-height: 600px) { .ychart { min-height: 180px; } }
 @media (prefers-reduced-motion: reduce) {
   .ycol { animation: none; transition: none; }
   .link { transition: none; }

@@ -17,7 +17,7 @@ button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
    the chart takes whatever height is left */
 .scr {
   position: relative; max-width: 460px; margin: 0 auto; display: flex; flex-direction: column;
-  height: 100dvh; padding-bottom: env(safe-area-inset-bottom);
+  height: 100vh; height: 100dvh; padding-bottom: env(safe-area-inset-bottom);   /* vh: phones without dvh */
   /* fits the screen; only if a small phone runs out of room does it scroll —
      vertically, inside itself, never bouncing the page behind */
   overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
