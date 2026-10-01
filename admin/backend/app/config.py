@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # around the scheduled time. Override via env MEET_LINK.
     meet_link: str = "https://meet.google.com/eua-iwxb-eez"
 
+    # The client service's base URL — the "Check the maths" page reads the same
+    # month-end NAVs the client app's calculators use (public /calc/villa-funds).
+    client_api_url: str = "https://client-digivilla-production.up.railway.app"
+
     # --- Admin OTP → PIN sign-in ---
     # Secret used to sign admin session tokens (change in production).
     admin_token_secret: str = "dev-admin-insecure-change-me"

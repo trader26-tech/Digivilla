@@ -628,6 +628,51 @@ def admin_assign_transactions(
     return {"assigned": n}
 
 
+# --- Check the maths: every number the client app shows, worked out ---------
+from app import audit as audit_svc  # noqa: E402
+
+
+@app.get("/admin/audit/client/{code}")
+def admin_audit_client(code: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return audit_svc.client_audit(code)
+
+
+@app.get("/admin/audit/navs")
+def admin_audit_navs(authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return audit_svc.nav_audit()
+
+
+@app.get("/admin/audit/villa-funds")
+def admin_audit_villa_funds(authorization: Optional[str] = Header(default=None)) -> dict:
+    """The exact month-end NAVs the client app's calculators use."""
+    _require_admin(authorization)
+    try:
+        return audit_svc.villa_funds()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Couldn't load fund history: {e}")
+
+
+@app.get("/admin/audit/calc")
+def admin_audit_calc(kind: str, years: int = 5, amount: float = 1e7, fd_rate: float = 6.5, slab: float = 30,
+                     monthly: float = 25000, step: float = 10, price: float = 6e6, value: float = 9e6,
+                     rent: float = 20000, stamp: float = 7,
+                     authorization: Optional[str] = Header(default=None)) -> dict:
+    """A calculator recomputed independently, with a month-by-month ledger."""
+    _require_admin(authorization)
+    try:
+        if kind in ("fd", "lump"):
+            return audit_svc.payout_check(years, amount, fd_rate if kind == "fd" else 0, slab)
+        if kind == "sip":
+            return audit_svc.sip_check(years, monthly, step, slab)
+        if kind == "flat":
+            return audit_svc.flat_check(years, price, value, rent, stamp, slab)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    raise HTTPException(status_code=422, detail="kind must be fd, lump, sip or flat")
+
+
 # --- Add a purchase by hand (split across the DigiVilla mix, NAV of that day) ---
 @app.get("/admin/reports/purchase/preview")
 def admin_purchase_preview(date: str, amount: float, scheme_code: Optional[int] = None,

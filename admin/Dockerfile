@@ -4,12 +4,15 @@
 
 # ---------- Stage 1: build the admin Angular SPA ----------
 FROM node:22-alpine AS frontend
-WORKDIR /fe
+# Same relative layout as the repo, so the admin's "Check the maths" page can
+# import the client app's own calculator model (client/.../backtest.model.ts).
+WORKDIR /repo/admin/frontend
 
 COPY admin/frontend/package.json admin/frontend/package-lock.json ./
 RUN npm ci || npm install
 
 COPY admin/frontend/ ./
+COPY client/frontend/src/app/calc/backtest.model.ts /repo/client/frontend/src/app/calc/backtest.model.ts
 # Combined deploy: the API is same-origin, so apiUrl = ''.
 RUN printf 'window.__env = { apiUrl: "" };\n' > public/assets/env.js
 RUN npm run build -- --configuration production
@@ -29,7 +32,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY admin/backend/ ./
 
 # Copy the built Angular app to where static_spa.py expects it: backend/static
-COPY --from=frontend /fe/dist/admin/browser ./static
+COPY --from=frontend /repo/admin/frontend/dist/admin/browser ./static
 
 # Railway provides $PORT at runtime.
 ENV PORT=8000

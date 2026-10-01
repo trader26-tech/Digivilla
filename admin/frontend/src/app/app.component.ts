@@ -18,6 +18,7 @@ import {
   MappingOverview,
   PurchaseLine,
 } from './admin.service';
+import { AuditComponent } from './audit/audit.component';
 
 /** One purchase = the transactions of one day and type (a ₹5L villa buy is
  *  4–5 fund lines on one day). It is pinned to a villa as a whole. */
@@ -38,7 +39,7 @@ const VILLA_FULL = 500_000;
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
 
 /** The one workspace has a small set of views, all about clients & money. */
-type View = 'clients' | 'villas' | 'buckets' | 'uploads';
+type View = 'clients' | 'villas' | 'buckets' | 'uploads' | 'audit';
 type DrawerTab = 'overview' | 'transactions' | 'mapping' | 'profile' | 'documents';
 
 /** Villa colours, in fixed order by the villa's position (never by rank): the
@@ -60,7 +61,7 @@ const PROFILE_FIELDS: [string, string][] = [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AuditComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })

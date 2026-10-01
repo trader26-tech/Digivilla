@@ -1,0 +1,197 @@
+<section class="au">
+  <header class="au-head">
+    <div>
+      <h1>Check the maths</h1>
+      <p>Every number the client app shows, worked out step by step — so you can verify it.</p>
+    </div>
+    <nav class="au-tabs" role="tablist">
+      <button role="tab" [class.on]="tab() === 'client'" (click)="setTab('client')">Client</button>
+      <button role="tab" [class.on]="tab() === 'navs'" (click)="setTab('navs')">NAVs</button>
+      <button role="tab" [class.on]="tab() === 'calc'" (click)="setTab('calc')">Calculators</button>
+    </nav>
+  </header>
+
+  <!-- ═════════ CLIENT ═════════ -->
+  <ng-container *ngIf="tab() === 'client'">
+    <div class="au-pick">
+      <label>Client
+        <select [ngModel]="code()" (ngModelChange)="pickClient($event)">
+          <option *ngFor="let c of clientList" [value]="c.client_code">{{ c.name }} · {{ c.client_code }}{{ c.demo ? ' (demo)' : '' }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="au-sk" *ngIf="clientLoading()"><i></i><i></i><i></i></div>
+    <p class="err" *ngIf="clientErr()">{{ clientErr() }}</p>
+
+    <ng-container *ngIf="client() as c">
+      <!-- verdict -->
+      <div class="verdict" [class.bad]="!allOk()">
+        <span class="v-ic">{{ allOk() ? '✓' : '!' }}</span>
+        <div>
+          <b>{{ allOk() ? 'Every number adds up' : 'Something doesn’t add up — see below' }}</b>
+          <small>{{ c.checks.length }} checks · NAVs from the same table the app reads</small>
+        </div>
+      </div>
+      <ul class="checks">
+        <li *ngFor="let k of c.checks" [class.bad]="!k.ok"><i>{{ k.ok ? '✓' : '✗' }}</i><span><b>{{ k.label }}</b><small>{{ k.detail }}</small></span></li>
+      </ul>
+
+      <!-- what the app shows -->
+      <h2>What {{ c.client.name }}’s app shows</h2>
+      <div class="kpis">
+        <div><small>Portfolio value</small><b>{{ inr(c.app.portfolio_value) }}</b></div>
+        <div><small>Invested</small><b>{{ inr(c.app.invested) }}</b></div>
+        <div><small>Gain</small><b [class.pos]="c.app.gain >= 0" [class.neg]="c.app.gain < 0">{{ inr(c.app.gain) }} · {{ pct(c.app.gain_pct) }}</b></div>
+        <div><small>Withdrawals</small><b>{{ inr(c.app.withdrawals_month) }}/mo</b><em>{{ c.app.villas_finished }} villa{{ c.app.villas_finished === 1 ? '' : 's' }} × ₹1,500</em></div>
+        <div *ngIf="c.app.building"><small>Being built</small><b>{{ c.app.building.label }}</b><em>{{ c.app.building.built_pct }}% of ₹5,00,000</em></div>
+      </div>
+
+      <!-- step 1 · funds -->
+      <h2><span class="step">1</span>Each fund = units × today’s NAV</h2>
+      <div class="tbl">
+        <div class="tr th f"><span>Fund</span><span class="n">Units</span><span class="n">× NAV</span><span class="n">= Value</span><span class="n">Invested</span><span class="n">Txn units</span></div>
+        <div class="tr f" *ngFor="let f of c.funds">
+          <span>{{ f.name }}<em class="tag" *ngIf="f.digivilla">DigiVilla</em></span>
+          <span class="n">{{ num(f.units) }}</span>
+          <span class="n">{{ f.nav ? '₹' + num(f.nav) : '—' }}<small>{{ f.nav_date | date:'d MMM' }}</small></span>
+          <span class="n b">{{ inr(f.value, 2) }}</span>
+          <span class="n">{{ inr(f.invested, 2) }}</span>
+          <span class="n" [class.badc]="f.units_match === false">{{ num(f.txn_units) }} <i>{{ f.units_match === false ? '✗' : f.units_match ? '✓' : '' }}</i></span>
+        </div>
+        <div class="tr f sum"><span>Total</span><span></span><span></span><span class="n b">{{ inr(c.tie.total, 2) }}</span><span class="n">{{ inr(c.app.invested, 2) }}</span><span></span></div>
+      </div>
+
+      <!-- step 2 · villas -->
+      <h2><span class="step">2</span>Each villa = its pinned purchases × today’s NAV</h2>
+      <p class="dim" *ngIf="!c.uses_pins">Nothing is pinned yet — the app shows this client’s money in equal ₹5,00,000 slices until purchases are pinned to villas.</p>
+      <div class="villas">
+        <article class="vc" *ngFor="let h of c.houses">
+          <button class="vc-top" (click)="toggleVilla(h.villa_id)">
+            <span class="vc-name"><b>{{ h.label }}</b><small>bought {{ h.since | date:'d MMM yyyy' }} · {{ h.lines.length }} lines</small></span>
+            <span class="vc-fig"><small>Invested</small>{{ inr(h.invested, 2) }}</span>
+            <span class="vc-fig"><small>Value</small><b>{{ inr(h.value, 2) }}</b></span>
+            <span class="vc-fig" [class.pos]="h.gain >= 0" [class.neg]="h.gain < 0"><small>Gain</small>{{ inr(h.gain, 2) }}</span>
+          </button>
+          <div class="vc-rule"><b>{{ h.finished ? 'Finished villa' : h.built_pct + '% built' }}</b> — {{ h.finished_why }}<ng-container *ngIf="h.finished"> → pays ₹1,500 a month</ng-container></div>
+          <div class="tbl sm" *ngIf="openVilla() === h.villa_id">
+            <div class="tr th l"><span>Date</span><span>Fund</span><span class="n">₹ in</span><span class="n">Units</span><span class="n">× NAV today</span><span class="n">= Value</span></div>
+            <div class="tr l" *ngFor="let x of h.lines">
+              <span>{{ x.date | date:'d MMM yy' }}</span><span>{{ x.fund }}<small>{{ x.kind }} &#64; ₹{{ num(x.buy_nav) }}</small></span>
+              <span class="n">{{ inr(x.amount, 2) }}</span><span class="n">{{ num(x.units) }}</span>
+              <span class="n">₹{{ num(x.nav) }}</span><span class="n b">{{ inr(x.value, 2) }}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+      <div class="vc unp" *ngIf="c.unpinned.length">
+        <div class="vc-rule"><b>{{ c.unpinned.length }} DigiVilla line{{ c.unpinned.length === 1 ? '' : 's' }} not pinned to a villa</b> — {{ inr(c.tie.unpinned, 2) }} · shown as “Unpinned” in the app</div>
+      </div>
+
+      <!-- step 3 · tie-out -->
+      <h2><span class="step">3</span>The parts add up to the total</h2>
+      <div class="tie">
+        <div><small>Villas</small><b>{{ inr(c.tie.villas, 2) }}</b></div><i>+</i>
+        <div><small>Not pinned</small><b>{{ inr(c.tie.unpinned, 2) }}</b></div><i>+</i>
+        <div><small>Other funds</small><b>{{ inr(c.tie.other, 2) }}</b></div><i>=</i>
+        <div class="tot"><small>Portfolio value</small><b>{{ inr(c.tie.total, 2) }}</b></div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ═════════ NAVS ═════════ -->
+  <ng-container *ngIf="tab() === 'navs'">
+    <div class="au-pick">
+      <p class="dim">The NAV the app shows for every fund in use, against AMFI’s own published file and mfapi.</p>
+      <button class="go" (click)="loadNavs()" [disabled]="navLoading()">{{ navLoading() ? 'Checking…' : 'Check again' }}</button>
+    </div>
+    <div class="au-sk" *ngIf="navLoading() && !navs()"><i></i><i></i><i></i></div>
+    <ng-container *ngIf="navs() as n">
+      <div class="verdict" [class.bad]="navOk() < n.funds.length">
+        <span class="v-ic">{{ navOk() === n.funds.length ? '✓' : '!' }}</span>
+        <div><b>{{ navOk() }} of {{ n.funds.length }} NAVs match AMFI</b><small>checked {{ n.checked_at | date:'d MMM, h:mm a' }}{{ n.amfi_ok ? '' : ' · AMFI unreachable, compared with mfapi only' }}</small></div>
+      </div>
+      <div class="tbl">
+        <div class="tr th nv"><span>Fund</span><span class="n">App shows</span><span class="n">AMFI</span><span class="n">mfapi</span><span>Status</span></div>
+        <div class="tr nv" *ngFor="let f of n.funds">
+          <span>{{ f.name }}<small>{{ f.scheme_code }}</small></span>
+          <span class="n b">{{ f.app_nav ? '₹' + num(f.app_nav) : '—' }}<small>{{ f.app_date | date:'d MMM' }}</small></span>
+          <span class="n">{{ f.amfi_nav ? '₹' + num(f.amfi_nav) : '—' }}<small>{{ f.amfi_date | date:'d MMM' }}</small></span>
+          <span class="n">{{ f.mfapi_nav ? '₹' + num(f.mfapi_nav) : '—' }}<small>{{ f.mfapi_date | date:'d MMM' }}</small></span>
+          <span><em class="pill" [class.ok]="f.match" [class.warn]="!f.match">{{ f.match ? 'Matches' : f.behind ? 'Behind AMFI' : 'Differs' }}</em></span>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ═════════ CALCULATORS ═════════ -->
+  <ng-container *ngIf="tab() === 'calc'">
+    <div class="calc-form">
+      <div class="kinds">
+        <button [class.on]="kind() === 'fd'" (click)="kind.set('fd')">FD vs DigiVilla</button>
+        <button [class.on]="kind() === 'lump'" (click)="kind.set('lump')">Lumpsum</button>
+        <button [class.on]="kind() === 'sip'" (click)="kind.set('sip')">SIP</button>
+        <button [class.on]="kind() === 'flat'" (click)="kind.set('flat')">Flat vs DigiVilla</button>
+      </div>
+      <div class="fields">
+        <label>Years ago
+          <select [ngModel]="years()" (ngModelChange)="years.set(+$event)"><option *ngFor="let y of YEARS" [value]="y">{{ y }}</option></select>
+        </label>
+        <label *ngIf="kind() === 'fd' || kind() === 'lump'">Amount ₹<input type="number" [ngModel]="amount()" (ngModelChange)="amount.set(+$event)"></label>
+        <label *ngIf="kind() === 'fd'">FD rate %<input type="number" step="0.25" [ngModel]="fdRate()" (ngModelChange)="fdRate.set(+$event)"></label>
+        <label *ngIf="kind() === 'sip'">Monthly ₹<input type="number" [ngModel]="monthly()" (ngModelChange)="monthly.set(+$event)"></label>
+        <label *ngIf="kind() === 'sip'">Step-up %<input type="number" [ngModel]="step()" (ngModelChange)="step.set(+$event)"></label>
+        <label *ngIf="kind() === 'flat'">Bought for ₹<input type="number" [ngModel]="price()" (ngModelChange)="price.set(+$event)"></label>
+        <label *ngIf="kind() === 'flat'">Worth today ₹<input type="number" [ngModel]="value()" (ngModelChange)="value.set(+$event)"></label>
+        <label *ngIf="kind() === 'flat'">Rent / month ₹<input type="number" [ngModel]="rent()" (ngModelChange)="rent.set(+$event)"></label>
+        <label>Tax slab %
+          <select [ngModel]="slab()" (ngModelChange)="slab.set(+$event)"><option *ngFor="let s of SLABS" [value]="s">{{ s }}</option></select>
+        </label>
+        <button class="go" (click)="run()" [disabled]="calcLoading()">{{ calcLoading() ? 'Working it out…' : 'Check' }}</button>
+      </div>
+      <p class="dim">Runs the app’s own calculator code and a separate, independently written version on the same month-end NAVs the app downloads, then compares every figure.</p>
+    </div>
+    <p class="err" *ngIf="calcErr()">{{ calcErr() }}</p>
+    <div class="au-sk" *ngIf="calcLoading()"><i></i><i></i></div>
+
+    <ng-container *ngIf="check() as k">
+      <div class="verdict" [class.bad]="!calcOk()">
+        <span class="v-ic">{{ calcOk() ? '✓' : '!' }}</span>
+        <div><b>{{ calcOk() ? 'The app’s formula and the independent check agree' : 'The two calculations differ — see the rows marked ✗' }}</b>
+          <small>{{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }} · {{ k.months }} months · today’s DigiVilla mix at real month-end NAVs</small></div>
+      </div>
+      <div class="tbl">
+        <div class="tr th cmp"><span>Figure</span><span class="n">App’s formula</span><span class="n">Independent check</span><span class="n">Difference</span><span></span></div>
+        <div class="tr cmp" *ngFor="let r of rows()" [class.badr]="!same(r)">
+          <span>{{ r.label }}</span><span class="n b">{{ fig(r, r.app) }}</span><span class="n">{{ fig(r, r.check) }}</span>
+          <span class="n dim">{{ diff(r) === null ? '—' : (r.pct ? pct(diff(r), 4) : inr(diff(r), 2)) }}</span>
+          <span class="n"><i [class.okc]="same(r)" [class.badc]="!same(r)">{{ same(r) ? '✓' : '✗' }}</i></span>
+        </div>
+      </div>
+
+      <div *ngIf="k.flat_years?.length">
+        <h2>The flat, year by year</h2>
+        <div class="tbl sm">
+          <div class="tr th fy"><span>Year</span><span class="n">Rent collected (11 months)</span><span class="n">Upkeep</span></div>
+          <div class="tr fy" *ngFor="let y of k.flat_years"><span>{{ y.year }}</span><span class="n">{{ inr(y.rent_collected) }}</span><span class="n">{{ inr(y.upkeep) }}</span></div>
+        </div>
+      </div>
+
+      <div class="ledger-h">
+        <h2>Month by month <small>(independent check)</small></h2>
+        <div><button class="ghost" *ngIf="k.ledger.length > 14" (click)="showAll.set(!showAll())">{{ showAll() ? 'Show fewer' : 'Show all ' + k.ledger.length + ' months' }}</button>
+          <button class="ghost" (click)="downloadCsv()">Download CSV</button></div>
+      </div>
+      <div class="tbl sm ledger">
+        <div class="tr th" [style.grid-template-columns]="'repeat(' + ledgerCols().length + ', minmax(0, 1fr))'">
+          <span *ngFor="let c of ledgerCols()" [class.n]="c !== 'month' && c !== 'sold_from'">{{ colLabel(c) }}</span>
+        </div>
+        <ng-container *ngFor="let r of ledgerRows()">
+          <div class="tr gap" *ngIf="!r"><span>⋯</span></div>
+          <div class="tr" *ngIf="r" [style.grid-template-columns]="'repeat(' + ledgerCols().length + ', minmax(0, 1fr))'">
+            <span *ngFor="let c of ledgerCols()" [class.n]="c !== 'month' && c !== 'sold_from'">{{ cell(c, r[c]) }}</span>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+  </ng-container>
+</section>

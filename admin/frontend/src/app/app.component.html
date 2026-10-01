@@ -80,6 +80,7 @@
       <button [class.on]="view() === 'villas'" (click)="setView('villas')">Live NAVs</button>
       <button [class.on]="view() === 'buckets'" (click)="setView('buckets')">Villa buckets</button>
       <button [class.on]="view() === 'uploads'" (click)="setView('uploads')">Uploads</button>
+      <button [class.on]="view() === 'audit'" (click)="setView('audit')">Check the maths</button>
     </nav>
     <div class="top-right">
       <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">🔒 {{ lockCountdown() }}</span>
@@ -358,6 +359,8 @@
   </div>
 
   <!-- ─────────── UPLOADS VIEW ─────────── -->
+  <app-audit *ngIf="view() === 'audit'" [clients]="nwClients()"></app-audit>
+
   <div class="wrap" *ngIf="view() === 'uploads'">
     <div class="section-head">
       <h1>Daily reports</h1>

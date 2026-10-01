@@ -361,6 +361,23 @@ export class AdminService {
   unassignTxns(orderIds: string[]): Observable<{ unassigned: number }> {
     return this.http.post<{ unassigned: number }>(`${this.base}/admin/reports/villas/unassign`, { order_ids: orderIds }, this.opts);
   }
+  // ── check the maths ──────────────────────────────────────────────────────
+  auditClient(code: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/admin/audit/client/${encodeURIComponent(code)}`, this.opts);
+  }
+  auditNavs(): Observable<any> {
+    return this.http.get<any>(`${this.base}/admin/audit/navs`, this.opts);
+  }
+  /** The exact month-end NAVs the client app's calculators use. */
+  auditVillaFunds(): Observable<any> {
+    return this.http.get<any>(`${this.base}/admin/audit/villa-funds`, this.opts);
+  }
+  /** A calculator recomputed independently (Python), with its ledger. */
+  auditCalc(params: Record<string, string | number>): Observable<any> {
+    const p: Record<string, string> = {};
+    for (const k of Object.keys(params)) p[k] = String(params[k]);
+    return this.http.get<any>(`${this.base}/admin/audit/calc`, { ...this.opts, params: p });
+  }
   villasLive(): Observable<VillaLive[]> {
     return this.http.get<VillaLive[]>(`${this.base}/admin/reports/villas`, this.opts);
   }
