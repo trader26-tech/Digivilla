@@ -5,21 +5,18 @@
 
   <!-- ── top: back, the question, side by side ── -->
   <div class="top">
-    <div class="bar">
+    <div class="lead">
       <button class="round" (click)="back.emit()" aria-label="Back to calculators">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
-      <button class="vs-link" (click)="go('vs')" [disabled]="!r()" aria-label="See FD and DigiVilla side by side">Side by side</button>
+      <p class="q">
+        <span>Your FD pays</span>
+        <button class="pick" [class.on]="picker() === 'rate'" (click)="togglePicker('rate')" aria-label="Change FD rate" [attr.aria-expanded]="picker() === 'rate'">{{ fdRate() }}%<i></i></button>
+        <span>{{ nri() ? 'with' : 'taxed at' }}</span>
+        <button class="pick" [class.on]="picker() === 'tax'" (click)="togglePicker('tax')" aria-label="Change tax on FD interest" [attr.aria-expanded]="picker() === 'tax'">{{ tax() }}%<i></i></button>
+        <span>{{ nri() ? 'TDS.' : 'as income.' }}</span>
+      </p>
     </div>
-
-    <p class="q">
-      <span>Your FD pays</span>
-      <button class="pick" [class.on]="picker() === 'rate'" (click)="togglePicker('rate')" aria-label="Change FD rate" [attr.aria-expanded]="picker() === 'rate'">{{ fdRate() }}%<i></i></button>
-      <span class="br" aria-hidden="true"></span>
-      <span>{{ nri() ? 'with' : 'taxed at' }}</span>
-      <button class="pick" [class.on]="picker() === 'tax'" (click)="togglePicker('tax')" aria-label="Change tax on FD interest" [attr.aria-expanded]="picker() === 'tax'">{{ tax() }}%<i></i></button>
-      <span>{{ nri() ? 'TDS.' : 'as income.' }}</span>
-    </p>
 
     @if (picker()) {
       <div class="scrim" (click)="picker.set(null)" aria-hidden="true"></div>
@@ -42,7 +39,10 @@
 
   <!-- ── the chart ── -->
   @if (r(); as res) {
-    <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
+    <div class="chart-wrap">
+      <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
+      <button class="vs-link on-chart" (click)="go('vs')" aria-label="See FD and DigiVilla side by side">Side by side</button>
+    </div>
     <div class="legend">
       <span>Fixed deposit · {{ fdRate() }}%</span>
       <span class="g">DigiVilla · {{ rate(res.dvIrr) }} a yr</span>

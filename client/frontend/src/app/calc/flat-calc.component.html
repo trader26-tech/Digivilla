@@ -5,18 +5,20 @@
 
   <!-- ── back, the question, side by side ── -->
   <div class="top">
-    <div class="bar">
+    <div class="lead">
       <button class="round" (click)="back.emit()" aria-label="Back to calculators">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
-      <button class="vs-link" (click)="go('vs')" [disabled]="!r()" aria-label="See flat and DigiVilla side by side">Side by side</button>
+      <p class="q plain wide">Had the same money gone into DigiVilla in <b>{{ boughtYear() }}</b>, <span class="dim">{{ held() }} {{ held() === 1 ? 'year' : 'years' }} ago</span></p>
     </div>
-    <p class="q plain wide">Had the same money gone into DigiVilla in <b>{{ boughtYear() }}</b>, <span class="dim">{{ held() }} {{ held() === 1 ? 'year' : 'years' }} ago</span></p>
   </div>
 
   <!-- ── the chart ── -->
   @if (r(); as res) {
-    <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()"></app-bars-3d>
+    <div class="chart-wrap">
+      <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()"></app-bars-3d>
+      <button class="vs-link on-chart" (click)="go('vs')" aria-label="See flat and DigiVilla side by side">Side by side</button>
+    </div>
     <div class="legend">
       <span>Flat · {{ res.appPct | number: '1.1-1' }}% a year</span>
       <span class="g">DigiVilla · {{ rate(res.dv.dvIrr) }} a yr</span>

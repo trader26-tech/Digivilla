@@ -43,6 +43,9 @@ button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
   &:active { transform: scale(.96); }
 }
 
+/* the chart and what sits on it */
+.chart-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
 /* "Side by side": just the words */
 .vs-link {
   height: 34px; padding: 0 4px; border: 0; background: none; cursor: pointer;
@@ -51,13 +54,20 @@ button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
   &:hover { color: var(--text); }
   &:active { opacity: .7; }
   &:disabled { opacity: .4; cursor: default; }
+  /* in the chart's empty top-left corner — costs no height */
+  &.on-chart {
+    position: absolute; z-index: 5; top: 14px; left: 26px; height: 30px; padding: 0 2px;
+    font-size: 13px; color: var(--n-300);
+    text-decoration: underline; text-decoration-color: var(--n-700); text-underline-offset: 4px;
+  }
+  &.on-chart:hover { color: var(--text); text-decoration-color: var(--n-500); }
 }
 
 /* back button and the sentence on one row (SIP, Flat) */
 .lead {
   display: flex; align-items: flex-start; gap: 14px;
   .round { margin-top: -2px; }
-  .q { flex: 1; min-width: 0; }
+  .q { flex: 1; min-width: 0; padding-top: 3px; }
 }
 .q {
   margin: 0; padding: 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
