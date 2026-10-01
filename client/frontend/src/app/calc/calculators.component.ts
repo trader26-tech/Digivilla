@@ -20,15 +20,15 @@ interface CalcCard {
 
 const GROUPS: { title: string; items: CalcCard[] }[] = [
   { title: 'Compare', items: [
-    { title: 'FD vs DigiVilla', sub: 'Same money in a bank deposit or a villa', art: 'bank', glow: 'rgba(143,183,176,.14)', key: 'fd' },
-    { title: 'Flat vs DigiVilla', sub: 'Buying a flat to rent out, or a villa', art: 'flat-building', glow: 'rgba(201,198,218,.12)', key: 'flat' },
+    { title: 'FD vs DigiVilla', sub: 'Same money: bank FD or DigiVilla', art: 'bank', glow: 'rgba(143,183,176,.28)', key: 'fd' },
+    { title: 'Flat vs DigiVilla', sub: 'Rent out a flat, or own DigiVilla', art: 'flat-building', glow: 'rgba(201,198,218,.24)', key: 'flat' },
   ] },
   { title: 'Grow', items: [
-    { title: 'SIP', sub: 'What a monthly amount becomes', art: 'sip', glow: 'rgba(145,132,217,.16)', key: 'sip' },
-    { title: 'Lumpsum', sub: 'What a one-time amount becomes', art: 'coin', glow: 'rgba(233,193,92,.16)', key: 'lump' },
+    { title: 'SIP into DigiVilla', sub: 'What a monthly SIP builds', art: 'sip', glow: 'rgba(145,132,217,.3)', key: 'sip' },
+    { title: 'Lumpsum into DigiVilla', sub: 'Invest once, earn monthly', art: 'coin', glow: 'rgba(233,193,92,.3)', key: 'lump' },
   ] },
   { title: 'Test', items: [
-    { title: 'My portfolio vs DigiVilla', sub: 'Upload your CAS · same cash flows, same dates', art: 'cas', glow: 'rgba(233,193,92,.14)', key: null },
+    { title: 'My portfolio vs DigiVilla', sub: 'Upload your CAS, see what DigiVilla would have done', art: 'cas', glow: 'rgba(233,193,92,.26)', key: null },
   ] },
 ];
 
@@ -37,7 +37,7 @@ let seenHub = false;
 
 /**
  * Compare — the 4th bottom-nav tab: "What would DigiVilla do for you?"
- * A list of calculators grouped Compare / Grow / Test. FD vs DigiVilla, Flat vs
+ * Tiles grouped Compare / Grow / Test (two-up, the last one wide). FD vs DigiVilla, Flat vs
  * DigiVilla, SIP and Lumpsum are built (all replay today's DigiVilla mix on real past NAVs); the rest are
  * marked "Soon". Tapping one opens it in place (its back arrow returns here).
  * The fund history is fetched as the hub opens, so a calculator paints once.
@@ -75,7 +75,7 @@ export class CalculatorsComponent implements OnDestroy {
       return;
     }
     clearTimeout(this.toastTimer);
-    this.toast.set(`${c.title} · coming soon`);
+    this.toast.set(`${c.title} · coming up`);
     this.toastTimer = setTimeout(() => this.toast.set(''), 1800);
   }
 

@@ -9,35 +9,46 @@
 } @else {
   <div class="hub" [class.enter]="enter">
     <span class="hub-glow" aria-hidden="true"></span>
+    <span class="hub-grid" aria-hidden="true"></span>
 
     <header class="hub-head">
-      <span class="kicker">Calculators</span>
-      <h1>What would DigiVilla do for you?</h1>
-      <p>Pick what you're comparing against.</p>
+      <div class="hub-txt">
+        <span class="kicker">Calculators</span>
+        <h1>What would DigiVilla do for you?</h1>
+        <p>Pick what you're comparing against.</p>
+      </div>
+      <div class="hub-art" aria-hidden="true">
+        <img src="assets/calc/villa.svg" alt="" />
+        <img class="coin" src="assets/calc/coin.svg" alt="" />
+      </div>
     </header>
 
     <section class="hub-groups">
       @for (g of groups; track g.title; let gi = $index) {
-        <div class="hub-group">
-          <span class="kicker dim">{{ g.title }}</span>
-          @for (c of g.items; track c.title; let ci = $index) {
-            <button class="card" [class.soon]="!c.key" [style.--d]="(gi * 3 + ci) * 45 + 'ms'" (click)="pick(c)">
-              <span class="art" [style.background]="c.glow">
-                <img [src]="'assets/calc/' + c.art + '.svg'" alt="" loading="lazy" />
-              </span>
-              <span class="txt">
+        <div class="group">
+          <div class="group-h"><span>{{ g.title }}</span><i></i></div>
+          <div class="tiles" [class.one]="g.items.length === 1">
+            @for (c of g.items; track c.title; let ci = $index) {
+              <button class="tile" [class.wide]="g.items.length === 1" [class.soon]="!c.key"
+                      [style.--d]="(gi * 2 + ci) * 50 + 'ms'" [style.--glow]="c.glow"
+                      (click)="pick(c)" [attr.aria-label]="c.title + (c.key ? '' : ' — coming up')">
+                <span class="tile-glow" aria-hidden="true"></span>
+                @if (c.key) {
+                  <span class="go" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+                  </span>
+                } @else {
+                  <span class="badge">Coming up</span>
+                }
+                <img class="tile-art" [src]="'assets/calc/' + c.art + '.svg'" alt="" />
                 <b>{{ c.title }}</b>
-                <span>{{ c.sub }}</span>
-              </span>
-              @if (c.key) {
-                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-              } @else {
-                <span class="soon-tag">Soon</span>
-              }
-            </button>
-          }
+                <span class="sub">{{ c.sub }}</span>
+              </button>
+            }
+          </div>
         </div>
       }
+      <p class="foot">Real past prices of today's DigiVilla mix — illustrations, not forecasts. DigiVilla is a mutual fund portfolio.</p>
     </section>
   </div>
 
