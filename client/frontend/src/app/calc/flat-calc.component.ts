@@ -1,201 +1,172 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, EventEmitter, OnDestroy, Output, computed, effect, inject, signal, untracked } from '@angular/core';
-import { Observable, Subscription, catchError, map, of, shareReplay } from 'rxjs';
+import { Component, EventEmitter, HostListener, Output, computed, inject, signal } from '@angular/core';
 
-import { environment } from '../../environments/environment';
-import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
-import { compact, inr } from '../shared/format.util';
-import { ChartSeries, ENTRY_COST_PCT, yearsSince } from './calc.service';
-import { FlatInputs, STANDARD_SWP_MONTHLY, STANDARD_VAULT_PCT, VillaFunds, computeFlat } from './flat-calc.model';
-import { GrowthChartComponent } from './growth-chart.component';
+import { AmountDialComponent } from './amount-dial.component';
+import {
+  CESS, FLAT_REG_PCT, INCOME_RATE, INFLATION, RENT_RISE, STD_DEDUCTION, UPKEEP, VACANT_MONTHS,
+  fmtInr, simulateFlat, windowFor, worstYearPct, ymLabel,
+} from './backtest.model';
+import { Bars3dComponent, Col3d } from './bars-3d.component';
+import { CalcDataService } from './calc-data.service';
+import { bySleeve } from './sleeves';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-/** Selling brokerage. The 1% TDS on a sale is advance tax, credited back — not a cost. */
-const SELL_COST_PCT = 2;
-/** Earliest month the full villa mix has history for (proxies included). */
-const EARLIEST_YEAR = 2007;
+const STAMP_PCT = 7;          // stamp duty on the flat
+const SLAB = 30;              // rent and the DigiVilla payout's small gold gains
 
-const SLEEVES: { key: string; label: string; color: string }[] = [
-  { key: 'arbitrage', label: 'Arbitrage · pays you', color: '#8aa89b' },
-  { key: 'large', label: 'Large cap', color: '#4a9d47' },
-  { key: 'mid', label: 'Mid cap', color: '#5cb85c' },
-  { key: 'small', label: 'Small cap', color: '#8fd48a' },
-  { key: 'gold', label: 'Gold', color: '#f6c445' },
-];
-
-/** Fund paths per start month — shared across opens, one request per month. */
-const pathsCache = new Map<string, Observable<VillaFunds | null>>();
+type Key = 'price' | 'value' | 'bought' | 'rent';
+interface Field { key: Key; label: string; min: number; max: number; step: number; big: number; major: number; mid: number; f: (n: number) => string; }
 
 /**
- * Flat calculator — what the flat REALLY returned (price, rent, vacancy, tax,
- * upkeep, entry and selling costs → one all-in yearly rate), then the same money
- * in the DigiVilla bucket paying the SAME in-hand rent every month. The flat's
- * rent sets the arbitrage vault: a smaller rent needs a smaller vault, so more
- * of the money compounds in the growth sleeves. Maths in flat-calc.model.ts.
+ * Flat vs DigiVilla — "had the same money gone into DigiVilla when you bought
+ * the flat". Four question cards (bought it for · worth today · bought in · rent
+ * a month) share one ruler: tap a card, slide to change it. The flat side uses
+ * your numbers; the DigiVilla side is today's mix at real NAVs from the purchase
+ * month, paying 3.6% a year as monthly rent out of its arbitrage fund.
+ * Maths in backtest.model.ts → simulateFlat.
  */
 @Component({
   selector: 'app-flat-calc',
   standalone: true,
-  imports: [CommonModule, GrowthChartComponent, MfDisclaimerComponent],
+  imports: [CommonModule, Bars3dComponent, AmountDialComponent],
   templateUrl: './flat-calc.component.html',
-  // shares the land calculator's cards/fields/tiles so the two read as one family
-  styleUrls: ['./land-calc.component.scss', './flat-calc.component.scss'],
+  styleUrls: ['./calc-screen.scss', './flat-calc.component.scss'],
 })
-export class FlatCalcComponent implements OnDestroy {
+export class FlatCalcComponent {
   @Output() back = new EventEmitter<void>();
-  private http = inject(HttpClient);
-  compact = compact;
-  inr = inr;
-  readonly MONTHS = MONTHS;
-  readonly SLEEVES = SLEEVES;
-  readonly STANDARD_VAULT = STANDARD_VAULT_PCT;
-  readonly SLABS = [0, 5, 20, 30];
+  @Output() talk = new EventEmitter<void>();
+  private store = inject(CalcDataService);
 
-  private readonly now = new Date();
-  readonly years: number[] = Array.from({ length: this.now.getFullYear() - EARLIEST_YEAR }, (_, i) => this.now.getFullYear() - 1 - i);
+  readonly fmt = fmtInr;
+  readonly ym = ymLabel;
+  readonly inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
+  readonly STAMP = STAMP_PCT;
+  readonly REG = FLAT_REG_PCT;
+  readonly SLAB = SLAB;
+  readonly RENT_RISE = RENT_RISE;
+  readonly VACANT = VACANT_MONTHS;
+  readonly UPKEEP_PCT = UPKEEP * 100;
+  readonly STD_DED = STD_DEDUCTION * 100;
+  readonly INCOME_PCT = Math.round(INCOME_RATE * 1000) / 10;   // 3.6, not 3.5999…
+  readonly INFLATION = INFLATION;
+  readonly cessPct = Math.round((CESS - 1) * 100);
 
-  // ── inputs (a worked example so the result shows immediately; all editable) ──
-  readonly price = signal(80_00_000);
-  readonly valueNow = signal(1_40_00_000);
-  readonly rentNow = signal(30_000);
-  readonly buyYear = signal(2015);
-  readonly buyMonth = signal(6);
-  readonly taxSlab = signal(30);
-  readonly entryPct = signal(ENTRY_COST_PCT);
-  readonly sellPct = signal(SELL_COST_PCT);
-  readonly rentGrowth = signal(5);
-  readonly vacancy = signal(1);
-  readonly upkeep = signal(3_000);
-  readonly moreOpen = signal(false);
-  /** null = the rent-matched vault; a number = the user dragged the slider. */
-  readonly vaultOverride = signal<number | null>(null);
+  // ── answers ──
+  readonly price = signal(60_00_000);
+  readonly value = signal(90_00_000);
+  readonly rent = signal(20_000);
+  readonly bought = signal<number | null>(null);         // set once the data says which years exist
+  readonly active = signal<Key>('price');
+  readonly page = signal<'calc' | 'vs' | 'notes'>('calc');
 
-  readonly startYm = computed(() => `${this.buyYear()}-${String(this.buyMonth()).padStart(2, '0')}`);
-  readonly heldYears = computed(() => yearsSince(this.startYm(), this.now));
-  readonly valid = computed(() => this.price() > 0 && this.valueNow() > 0 && this.heldYears() >= 1);
+  readonly failed = this.store.failed;
+  /** the last month with prices, and the years real history covers */
+  readonly endYm = computed(() => this.store.data()?.months.at(-1) ?? null);
+  readonly endYear = computed(() => Number((this.endYm() ?? `${new Date().getFullYear()}`).slice(0, 4)));
+  readonly yearRange = computed(() => {
+    const d = this.store.data();
+    const maxYears = d ? Math.floor((d.months.length - 1) / 12) : 15;
+    return { min: this.endYear() - maxYears, max: this.endYear() - 1 };
+  });
+  readonly boughtYear = computed(() => {
+    const b = this.bought() ?? this.endYear() - 8;
+    const { min, max } = this.yearRange();
+    return Math.min(max, Math.max(min, b));
+  });
+  readonly held = computed(() => this.endYear() - this.boughtYear());
 
-  // ── the villa mix's fund paths for the purchase month ──
-  readonly funds = signal<VillaFunds | null>(null);
-  readonly loading = signal(true);
-  readonly failed = signal(false);
-  private sub?: Subscription;
-  private timer?: ReturnType<typeof setTimeout>;
+  readonly win = computed(() => { const d = this.store.data(); return d ? windowFor(d, this.held()) : null; });
+  readonly r = computed(() => {
+    const w = this.win();
+    if (!w || !(this.price() > 0) || !(this.value() > 0)) return null;
+    return simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: STAMP_PCT, slabPct: SLAB });
+  });
+  readonly dvWins = computed(() => { const r = this.r(); return !!r && r.dvTotal > r.flTotal; });
 
-  readonly inputs = computed<FlatInputs>(() => ({
-    start: this.startYm(), price: this.price(), entryPct: this.entryPct(), valueNow: this.valueNow(),
-    rentNow: this.rentNow(), rentGrowthPct: this.rentGrowth(), vacancyMonths: this.vacancy(),
-    taxSlabPct: this.taxSlab(), upkeepNow: this.upkeep(), exitPct: this.sellPct(),
-  }));
-
-  readonly result = computed(() => {
-    const f = this.funds();
-    return f && this.valid() ? computeFlat(this.inputs(), f, this.vaultOverride()) : null;
+  readonly flCol = computed<Col3d | null>(() => {
+    const r = this.r();
+    if (!r) return null;
+    return { art: 'flat-building', segs: [
+      { label: 'Rent kept', val: r.rentKept, bg: 'linear-gradient(180deg,#6d7184,#585c6e)', side: '#454858', top: '#8b8fa3', k: '#d9dbe6', c: '#f2f2f6' },
+      { label: 'Worth today', val: this.value(), bg: 'linear-gradient(180deg,#3a3d4a,#2b2e3a)', side: '#20222d', top: '#4a4e5c', k: '#b2b6ca', c: '#e4e7f5' },
+    ] };
+  });
+  readonly dvCol = computed<Col3d | null>(() => {
+    const r = this.r();
+    if (!r) return null;
+    return { art: 'villa', coin: true, green: true, segs: [
+      { label: 'Rent paid', val: r.dv.dvPaid, bg: 'linear-gradient(180deg,#b9e69a,#9ad471)', side: '#7fb85a', top: '#d3f0bd', k: '#2b4d18', c: '#10240a' },
+      { label: 'Value', val: r.dv.dvValue, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#d8f2c4', c: '#f2fbe9' },
+    ] };
   });
 
-  readonly vaultPct = computed(() => this.result()?.matched.vaultPct ?? 0);
-  readonly overridden = computed(() => this.vaultOverride() !== null);
-  readonly standardSwp = computed(() => (this.result()?.outlay ?? 0) * STANDARD_SWP_MONTHLY);
-  readonly gain = computed(() => {
-    const r = this.result();
-    return r ? r.matched.final - r.flatFinal : 0;
-  });
-  readonly vaultShift = computed(() => {
-    const r = this.result();
-    return r ? (r.outlay * (STANDARD_VAULT_PCT - r.matched.vaultPct)) / 100 : 0;
-  });
-  readonly proxies = computed(() => (this.funds()?.funds ?? []).flatMap((f) => f.proxy.map((p) => ({ fund: f.name, ...p }))));
-
-  /** Stacked allocation bars: standard 36% vault vs the vault this flat's rent needs. */
-  readonly bars = computed(() => {
-    const mix = (vault: number) => {
-      const rest = (100 - vault) / 4;
-      return SLEEVES.map((s) => ({ ...s, pct: s.key === 'arbitrage' ? vault : rest }));
-    };
-    return { standard: mix(STANDARD_VAULT_PCT), yours: mix(this.vaultPct()) };
-  });
-
-  readonly chart = computed<ChartSeries[]>(() => {
-    const r = this.result();
-    if (!r) return [];
-    const pts = (vals: number[]) => r.months.map((m, i) => ({ date: m, value: Math.round(vals[i]) }));
-    const out: ChartSeries[] = [
-      { label: this.overridden() ? `DigiVilla · ${this.fmtPct(r.matched.vaultPct, 0)} vault` : 'DigiVilla · vault sized to your rent',
-        color: 'var(--brass, #8B7BF0)', points: pts(r.matched.values), area: true },
+  // ── the four questions, one shared ruler ──
+  readonly fields = computed<Field[]>(() => {
+    const yr = this.yearRange();
+    return [
+      { key: 'price', label: 'Bought it for', min: 20_00_000, max: 5_00_00_000, step: 2_50_000, big: 10_00_000, major: 1_00_00_000, mid: 25_00_000, f: fmtInr },
+      { key: 'value', label: 'Worth today', min: 20_00_000, max: 10_00_00_000, step: 2_50_000, big: 10_00_000, major: 1_00_00_000, mid: 25_00_000, f: fmtInr },
+      { key: 'bought', label: 'Bought in', min: yr.min, max: yr.max, step: 1, big: 1, major: 10, mid: 5, f: (n) => String(n) },
+      { key: 'rent', label: 'Rent a month', min: 0, max: 3_00_000, step: 1000, big: 5000, major: 50_000, mid: 10_000, f: (n) => '₹' + n.toLocaleString('en-IN') },
     ];
-    if (Math.abs(r.matched.vaultPct - STANDARD_VAULT_PCT) >= 0.5) {
-      out.push({ label: 'DigiVilla · standard 36% vault', color: 'var(--muted, #8B95A3)', points: pts(r.standard.values), dashed: true });
-    }
-    out.push({ label: 'Your flat (if sold)', color: 'var(--gold, #E9C15C)', points: pts(r.flatValues), dashed: true });
-    return out;
+  });
+  readonly act = computed(() => this.fields().find((f) => f.key === this.active())!);
+  val(k: Key): number {
+    return k === 'price' ? this.price() : k === 'value' ? this.value() : k === 'rent' ? this.rent() : this.boughtYear();
+  }
+  setVal(n: number): void {
+    const k = this.active();
+    if (k === 'price') this.price.set(n);
+    else if (k === 'value') this.value.set(n);
+    else if (k === 'rent') this.rent.set(n);
+    else this.bought.set(n);
+  }
+
+  // ── side by side ──
+  readonly worstEver = computed(() => { const d = this.store.data(); return d ? worstYearPct(windowFor(d, 100)) : null; });
+  readonly vs = computed(() => {
+    const r = this.r();
+    if (!r) return [];
+    const G = '#8fd65a', N = '#e4e7f5', A = '#c9c6da', R = '#e0796b', Y = '#e9c15c';
+    const flWins = r.flTotal > r.dvTotal;
+    const worst = this.worstEver();
+    const row = (k: string, icon: string, a: string, as: string, ac: string, b: string, bs: string, bc: string, win: 'fl' | 'dv', extra: object = {}) =>
+      ({ k, icon, a, as, ac, b, bs, bc, win, gauge: false, aDeg: 0, bDeg: 0, ...extra });
+    return [
+      row('Real value', 'M3 12h4l3-8 4 16 3-8h4', fmtInr(r.flReal), 'in today’s money', flWins ? A : N, fmtInr(r.dvReal), 'in today’s money', G, flWins ? 'fl' : 'dv'),
+      row('Rent', 'M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 9.5 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
+        r.yieldPct.toFixed(1) + '%', `${this.inr(this.rent())} a month · ${VACANT_MONTHS} month empty`, N,
+        this.INCOME_PCT + '%', `${this.inr(r.dv.dvMonthly)} a month · every month`, G, r.yieldPct > this.INCOME_PCT ? 'fl' : 'dv'),
+      row('Risk', 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
+        'Medium', 'one building, one city', Y, 'High',
+        worst === null ? 'can fall' : `worst 12 months since ${(this.store.data()?.months[0] ?? '').slice(0, 4)}: ${worst < 0 ? '−' : '+'}${Math.abs(worst).toFixed(0)}%`, R, 'fl',
+        { gauge: true, aDeg: 0, bDeg: 72 }),
+      row('Liquidity', 'M12 2v6M12 22a7 7 0 0 0 7-7c0-4-7-9-7-9s-7 5-7 9a7 7 0 0 0 7 7z', 'Months', 'find a buyer, register', R, '3 days', 'redeem any business day', G, 'dv'),
+      row('Entry & exit cost', 'M20 7H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 3H8M2 12h20',
+        fmtInr(r.flFriction), `${STAMP_PCT}% stamp duty, ${FLAT_REG_PCT}% + 1.5% brokerage`, R, fmtInr(r.dvFriction), '0.005% stamp duty on units', G, 'dv'),
+      row('Effort', 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z', 'Yours', 'tenants, repairs, society', N, 'None', 'we look after it', G, 'dv'),
+      row('You can live in it', 'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', 'Yes', 'a home if you need one', A, 'No', 'it only pays you', N, 'fl'),
+    ];
   });
 
-  constructor() {
-    // Re-fetch only when the purchase month changes (debounced while picking);
-    // every other input recomputes locally and instantly.
-    effect(() => {
-      const ym = this.startYm();
-      clearTimeout(this.timer);
-      this.timer = setTimeout(() => this.load(ym), untracked(this.funds) ? 300 : 0);
-    }, { allowSignalWrites: true });
-  }
+  readonly explain = computed(() => {
+    const r = this.r();
+    if (!r) return null;
+    return {
+      mix: bySleeve(r.dv.funds.map((f) => ({ sleeve: f.sleeve, weight: f.weight, start: f.valueStart, now: f.valueNow }))),
+      rentNow: this.rent(),
+      rentThen: this.rent() / Math.pow(1 + RENT_RISE / 100, Math.max(0, r.years - 1)),
+      gap: r.dvTotal - r.flTotal,
+    };
+  });
+  readonly proxies = computed(() => (this.win()?.funds ?? []).flatMap((f) => f.proxy.map((p) => ({ fund: f.name, ...p }))));
 
-  load(ym = this.startYm()): void {
-    this.sub?.unsubscribe();
-    this.loading.set(true);
-    this.failed.set(false);
-    this.sub = this.paths(ym).subscribe((r) => {
-      if (ym !== this.startYm()) return;           // a newer month was picked
-      if (r) this.funds.set(r);
-      this.failed.set(!r);
-      this.loading.set(false);
-    });
-  }
+  constructor() { this.store.load(); }
+  retry(): void { this.store.load(); }
+  go(p: 'calc' | 'vs' | 'notes'): void { this.page.set(p); window.scrollTo({ top: 0 }); }
+  units(v: number): string { return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+  nav(v: number): string { return '₹' + v.toFixed(2); }
+  rate(v: number | null): string { return v === null || !isFinite(v) ? '—' : `${v.toFixed(1)}%`; }
 
-  private paths(ym: string): Observable<VillaFunds | null> {
-    const hit = pathsCache.get(ym);
-    if (hit) return hit;
-    const req = this.http.get<VillaFunds>(`${environment.apiUrl}/calc/villa-funds`, { params: { start: ym } }).pipe(
-      map((r) => (r && r.ok ? r : null)),
-      catchError(() => { pathsCache.delete(ym); return of(null); }),
-      shareReplay({ bufferSize: 1, refCount: false }),
-    );
-    pathsCache.set(ym, req);
-    return req;
-  }
-
-  ngOnDestroy(): void { this.sub?.unsubscribe(); clearTimeout(this.timer); }
-
-  // ── input helpers ──
-  money(v: number): string { return v ? v.toLocaleString('en-IN') : ''; }
-  onMoney(e: Event, target: 'price' | 'valueNow' | 'rentNow' | 'upkeep'): void {
-    const el = e.target as HTMLInputElement;
-    const n = Number(el.value.replace(/[^\d]/g, '').slice(0, 12)) || 0;
-    this[target].set(n);
-    el.value = this.money(n);
-  }
-  onNum(e: Event, target: 'entryPct' | 'sellPct' | 'rentGrowth' | 'vacancy', max: number): void {
-    const n = Math.max(0, Math.min(max, Number((e.target as HTMLInputElement).value) || 0));
-    this[target].set(n);
-  }
-  onVault(e: Event): void {
-    const r = this.result();
-    const n = Number((e.target as HTMLInputElement).value);
-    // snap back onto the rent-matched point when released near it
-    this.vaultOverride.set(r && Math.abs(n - r.matchedVaultPct) < 1 ? null : n);
-  }
-  num(e: Event): number { return Number((e.target as HTMLSelectElement).value); }
-
-  fmtPct(v: number | null | undefined, d = 1): string {
-    if (v == null || !isFinite(v)) return '—';
-    return `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(d)}%`;
-  }
-  ym(m: string | null | undefined): string {
-    if (!m) return '';
-    const [y, mo] = m.split('-').map(Number);
-    return `${MONTHS[mo - 1]} ${y}`;
-  }
-  /** compact() with a proper minus, for figures that can go below zero. */
-  signed(v: number): string { return v < 0 ? `−${compact(-v)}` : compact(v); }
-  yearsText(y: number): string { return `${y.toFixed(y < 10 ? 1 : 0)} years`; }
+  @HostListener('document:keydown.escape')
+  onEsc(): void { if (this.page() !== 'calc') this.go('calc'); }
 }

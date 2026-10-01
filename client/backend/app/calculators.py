@@ -32,14 +32,71 @@ SLEEVE_PROXIES: dict[str, list[tuple[int, str]]] = {
     "other":     [(102885, "SBI Aggressive Hybrid Fund")],          # from Apr 2006
 }
 
-# Used when the user has no basket yet (standard villa concentration).
-STANDARD_MIX = [
+# Last-resort copy of the mix, used only if DigiVilla's own fund buckets can't be read.
+_FALLBACK_MIX = [
     {"name": "SBI Arbitrage Fund", "scheme_code": 104457, "sleeve": "arbitrage", "allocation": 36},
     {"name": "SBI Large Cap Fund", "scheme_code": 103504, "sleeve": "large", "allocation": 16},
     {"name": "HDFC Mid Cap Fund", "scheme_code": 105758, "sleeve": "mid", "allocation": 16},
     {"name": "Nippon India Small Cap Fund", "scheme_code": 113177, "sleeve": "small", "allocation": 16},
     {"name": "Nippon India Gold Savings Fund", "scheme_code": 114616, "sleeve": "gold", "allocation": 16},
 ]
+STANDARD_MIX = _FALLBACK_MIX          # (kept so older imports still work)
+
+
+def villa_mix() -> list[dict]:
+    """The funds DigiVilla actually holds, straight from the admin's villa bucket
+    (name, scheme_code, sleeve, allocation %) — so every calculator uses the real
+    mix and its Regular-plan scheme codes. Memoised 5 min; falls back to a copy."""
+    hit = _mix_memo.get("mix")
+    if hit and time.time() - hit[0] < 300:
+        return hit[1]
+    mix: list[dict] = []
+    try:
+        from app.client_portfolio import _fund_sleeve, _sb
+        sb = _sb()
+        buckets = sb.table("villa_buckets").select("id,kind,sort_order").execute().data or []
+        sip = sorted((b for b in buckets if (b.get("kind") or "sip") == "sip"), key=lambda b: b.get("sort_order") or 0)
+        if sip:
+            rows = (sb.table("villa_bucket_funds").select("*").eq("bucket_id", sip[0]["id"]).execute().data or [])
+            for r in sorted(rows, key=lambda r: r.get("sort_order") or 0):
+                w = float(r.get("target_weight") or 0)
+                if r.get("scheme_code") and w > 0:
+                    mix.append({"name": r.get("scheme_name") or "Fund", "scheme_code": int(r["scheme_code"]), "allocation": w,
+                                "sleeve": _fund_sleeve(r.get("sleeve"), r.get("category"), r.get("scheme_name"))})
+    except Exception:
+        mix = []
+    if not any(f["sleeve"] == "arbitrage" for f in mix):     # need the income sleeve to run payouts
+        mix = [dict(f) for f in _FALLBACK_MIX]
+    _mix_memo["mix"] = (time.time(), mix)
+    return mix
+
+
+_mix_memo: dict = {}
+
+
+def plan_type(code: int) -> str:
+    """'Regular' / 'Direct' from the scheme's registered name (mfapi), memoised."""
+    hit = _plan_memo.get(code)
+    if hit:
+        return hit
+    plan = "Regular"
+    try:
+        import json, urllib.request
+        with urllib.request.urlopen(f"https://api.mfapi.in/mf/{int(code)}/latest", timeout=6) as r:
+            name = (json.load(r).get("meta", {}).get("scheme_name") or "").lower()
+        if "direct" in name:
+            plan = "Direct"
+        elif "regular" in name:
+            plan = "Regular"
+        elif "exchange traded" in name or "bees" in name:
+            plan = "ETF"                      # an ETF has no direct/regular split
+        _plan_memo[code] = plan
+    except Exception:
+        pass
+    return plan
+
+
+_plan_memo: dict[int, str] = {}
 
 
 def _monthly(code: int) -> dict[str, float]:
@@ -85,7 +142,7 @@ def _basket_funds(owner: Optional[str]) -> tuple[list[dict], bool]:
                      if f.get("scheme_code") and (f.get("allocation") or 0) > 0]
         except Exception:
             funds = []
-    return (funds, True) if funds else ([dict(f) for f in STANDARD_MIX], False)
+    return (funds, True) if funds else ([dict(f) for f in villa_mix()], False)
 
 
 _memo: dict = {}
@@ -165,7 +222,7 @@ def prewarm() -> None:
     """Fetch (and memoise) the full NAV history of every stand-in fund and the
     standard mix at boot, so the first calculator open doesn't wait on mfapi."""
     codes = {c for chain in SLEEVE_PROXIES.values() for c, _ in chain}
-    codes |= {f["scheme_code"] for f in STANDARD_MIX}
+    codes |= {f["scheme_code"] for f in villa_mix()}
     try:
         from app.client_portfolio import _villa_scheme_codes
         codes |= {int(c) for c in (_villa_scheme_codes() or []) if c}

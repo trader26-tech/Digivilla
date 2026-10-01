@@ -1,0 +1,79 @@
+:host {
+  display: flex; flex-direction: column; flex: 1; min-height: 0;
+  --n-200: #e4e7f5; --n-500: #9397ab; --n-700: #595d6c; --n-800: #3f424d; --green: #8fd65a;
+}
+button { font: inherit; -webkit-tap-highlight-color: transparent; }
+
+/* ── the year columns ── */
+.ychart {
+  flex: 1; min-height: 240px; position: relative; margin: 10px 26px 0; overflow: hidden;
+  background-image:
+    linear-gradient(rgba(233, 233, 237, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(233, 233, 237, .045) 1px, transparent 1px);
+  background-size: 22px 22px; background-position: 0 100%;
+}
+.floor {
+  position: absolute; left: 0; right: 0; bottom: 22px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--n-700) 20%, var(--n-700) 80%, transparent);
+}
+
+/* the docked reading: the picked year (the last, until you tap one) */
+.strip {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 4; pointer-events: none;
+  display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 10px;
+  background: rgba(18, 20, 29, .88); box-shadow: inset 0 0 0 1px var(--n-800), 0 10px 24px -10px rgba(0, 0, 0, .8);
+  .yr {
+    flex: none; padding: 3px 7px; border-radius: 6px; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+    color: #0b0c12; background: #e9f7dc; font-variant-numeric: tabular-nums;
+  }
+  .vals { flex: 1; display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+  .vals > div { display: flex; flex-direction: column; gap: 2px; }
+  span { font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--n-500); }
+  b { font-size: 12.5px; font-weight: 500; white-space: nowrap; color: var(--n-200); }
+  small { font-size: 9px; font-weight: 400; color: var(--n-500); }
+  .g span, .g b { color: var(--green); }
+  .gold span, .gold b { color: #f3dfa8; }
+}
+.link {
+  position: absolute; z-index: 3; top: 52px; width: 0; pointer-events: none;
+  border-left: 1px dashed rgba(233, 247, 220, .35);
+  transition: left .35s cubic-bezier(.2, .8, .2, 1), bottom .5s cubic-bezier(.4, 0, .2, 1);
+}
+
+.cols { position: absolute; left: 18px; right: 34px; bottom: 22px; display: flex; align-items: flex-end; justify-content: space-between; }
+.ycol {
+  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0; border: 0;
+  background: transparent; cursor: pointer; transform-origin: bottom;
+  animation: grow-up .7s cubic-bezier(.2, .8, .2, 1) both;
+  transition: height .5s cubic-bezier(.4, 0, .2, 1), opacity .25s;
+  &.dim { opacity: .55; }
+  &:focus-visible { outline: 2px solid #9184d9; outline-offset: 3px; }
+  > i { display: block; }
+  .cap, .grew { flex: none; transition: height .5s cubic-bezier(.4, 0, .2, 1), background .2s; }
+  .put { flex: 1; transition: background .2s; }
+  .yside { position: absolute; left: 100%; top: 0; bottom: 0; transform-origin: 0 0; transform: skewY(-45deg); }
+  .ytop { position: absolute; left: 0; width: 100%; transform-origin: 0 100%; transform: skewX(-45deg); }
+  .halo { position: absolute; inset: 0; pointer-events: none; box-shadow: 0 0 0 1px rgba(233, 247, 220, .9), 0 0 0 4px rgba(143, 214, 90, .18), 0 0 28px rgba(143, 214, 90, .75); }
+}
+.ylbl {
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 7px; white-space: nowrap;
+  font-size: 9px; font-variant-numeric: tabular-nums; color: var(--n-500);
+}
+.ycol.on .ylbl { color: var(--green); font-weight: 600; }
+@keyframes grow-up { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+
+/* what the three colours mean */
+.key {
+  flex: none; display: flex; justify-content: center; gap: 16px; padding: 10px 26px 0;
+  font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--n-500);
+  span { display: flex; align-items: center; gap: 6px; }
+  i { width: 9px; height: 9px; border-radius: 2px; }
+  .k-put { background: #2f6a1a; } .k-grew { background: #9ad471; } .k-cap { background: #e0b84a; }
+}
+
+@media (max-height: 760px) { .ychart { min-height: 200px; } .key { padding-top: 6px; } }
+@media (prefers-reduced-motion: reduce) {
+  .ycol { animation: none; transition: none; }
+  .link { transition: none; }
+}

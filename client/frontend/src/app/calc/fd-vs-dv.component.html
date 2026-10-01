@@ -1,0 +1,292 @@
+@switch (page()) {
+@case ('calc') {
+<div class="scr">
+  <span class="glow" aria-hidden="true"></span>
+
+  <!-- ── top: back, the question, side by side ── -->
+  <div class="top">
+    <div class="bar">
+      <button class="round" (click)="back.emit()" aria-label="Back to calculators">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button class="vs-link" (click)="go('vs')" [disabled]="!r()" aria-label="See FD and DigiVilla side by side">Side by side</button>
+    </div>
+
+    <p class="q">
+      <span>Your FD pays</span>
+      <button class="pick" [class.on]="picker() === 'rate'" (click)="togglePicker('rate')" aria-label="Change FD rate" [attr.aria-expanded]="picker() === 'rate'">{{ fdRate() }}%<i></i></button>
+      <span class="br" aria-hidden="true"></span>
+      <span>{{ nri() ? 'with' : 'taxed at' }}</span>
+      <button class="pick" [class.on]="picker() === 'tax'" (click)="togglePicker('tax')" aria-label="Change tax on FD interest" [attr.aria-expanded]="picker() === 'tax'">{{ tax() }}%<i></i></button>
+      <span>{{ nri() ? 'TDS.' : 'as income.' }}</span>
+    </p>
+
+    @if (picker()) {
+      <div class="scrim" (click)="picker.set(null)" aria-hidden="true"></div>
+      <div class="pop" role="dialog" [attr.aria-label]="picker() === 'rate' ? 'FD interest rate' : 'Tax on FD interest'">
+        @if (picker() === 'rate') {
+          <span class="pop-k">FD interest rate, a year</span>
+          <div class="chips six">
+            @for (x of FD_RATES; track x) { <button [class.on]="x === fdRate()" (click)="pickRate(x)">{{ x }}%</button> }
+          </div>
+        } @else {
+          <span class="pop-k">Your income-tax slab</span>
+          <div class="chips seven">
+            @for (s of TAX_SLABS; track s) { <button [class.on]="!nri() && s === slab()" (click)="pickSlab(s)">{{ s }}%</button> }
+          </div>
+          <button class="nri" [class.on]="nri()" (click)="pickNri()"><span><b>NRI</b> · NRO deposit</span><em>30% TDS</em></button>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── the chart ── -->
+  @if (r(); as res) {
+    <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
+    <div class="legend">
+      <span>Fixed deposit · {{ fdRate() }}%</span>
+      <span class="g">DigiVilla · {{ rate(res.dvIrr) }} a yr</span>
+    </div>
+  } @else if (failed()) {
+    <div class="fail">Couldn't load fund prices.<button (click)="retry()">Try again</button></div>
+  } @else {
+    <div class="skel" aria-busy="true" aria-label="Loading fund prices"><i></i><i></i></div>
+    <div class="legend"><span>&nbsp;</span><span>&nbsp;</span></div>
+  }
+
+  <!-- ── years ── -->
+  <div class="years" role="tablist" aria-label="Invested this many years ago">
+    @for (y of yearOpts(); track y) {
+      <button role="tab" [class.on]="y === years()" [attr.aria-selected]="y === years()" (click)="years.set(y)">
+        <b>{{ y }}</b><span>yrs ago</span><i></i>
+      </button>
+    }
+  </div>
+
+  <!-- ── amount ── -->
+  <app-amount-dial label="You invest" [value]="amount()" (valueChange)="amount.set($event)"
+                   [min]="1000000" [max]="20000000" [step]="100000" [nudgeBy]="500000" [major]="1000000" [mid]="500000"></app-amount-dial>
+
+  <p class="fine">
+    Payouts after tax. Today's DigiVilla mix at real past prices — the past isn't a promise.
+    <button class="how" (click)="go('notes')">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
+      How this is worked out
+    </button>
+  </p>
+</div>
+}
+
+<!-- ── side by side ── -->
+@case ('vs') {
+@if (r(); as res) {
+<div class="page">
+  <span class="page-glow" aria-hidden="true"></span>
+  <div class="page-head">
+    <button class="round" (click)="go('calc')" aria-label="Back to calculator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div><b>Bank FD vs DigiVilla</b><span>{{ fmt(amount()) }} put in {{ ym(res.months[0]) }} · side by side</span></div>
+  </div>
+
+  <div class="vs-head">
+    <div class="who"><img src="assets/calc/bank.svg" alt="" /><b>Bank FD</b><span>{{ fdRate() }}% a yr</span></div>
+    <div class="vs-badge"><b>VS</b></div>
+    <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>DigiVilla</b><span>{{ rate(res.dvIrr) }} a yr</span></div>
+  </div>
+
+  <div class="vs-rows">
+    @for (m of vs(); track m.k; let i = $index) {
+      <div class="vs-row" [style.--d]="i * 60 + 'ms'">
+        <div class="cell">
+          @if (m.gauge) { <ng-container *ngTemplateOutlet="gauge; context: { deg: m.aDeg }"></ng-container> }
+          <b [style.color]="m.ac">{{ m.a }}</b><span>{{ m.as }}</span>
+        </div>
+        <div class="mid" [class.dv]="m.win === 'dv'">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="m.icon"/></svg></span>
+          <span class="k">{{ m.k }}</span>
+        </div>
+        <div class="cell">
+          @if (m.gauge) { <ng-container *ngTemplateOutlet="gauge; context: { deg: m.bDeg }"></ng-container> }
+          <b [style.color]="m.bc">{{ m.b }}</b><span>{{ m.bs }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <p class="page-note">
+    {{ ym(res.months[0]) }} → {{ ym(res.months[res.months.length - 1]) }} at real fund prices · inflation {{ INFLATION }}% · FD interest taxed at {{ tax() }}%.
+    <button class="how" (click)="go('notes')">How this is worked out</button>
+  </p>
+  <div class="page-actions">
+    <button class="ghost" (click)="go('calc')">Back to calculator</button>
+    <button class="accent" (click)="talk.emit()">Talk to us</button>
+  </div>
+  <p class="page-fine">Information, not advice. DigiVilla is a mutual fund portfolio; returns are not guaranteed. Past performance does not guarantee future results.</p>
+</div>
+}
+}
+
+<!-- ── how this is worked out: the same numbers, as a story anyone can follow ── -->
+@case ('notes') {
+@if (r(); as res) { @if (explain(); as x) {
+<div class="page">
+  <div class="page-head">
+    <button class="round" (click)="go('calc')" aria-label="Back to calculator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div><b>How this is worked out</b><span>{{ fmt(amount()) }} · {{ ym(res.months[0]) }} → today, step by step</span></div>
+  </div>
+
+  <ol class="steps">
+    <!-- 1 · put in -->
+    <li class="step">
+      <span class="dot">1</span>
+      <div class="step-card">
+        <span class="step-k">In {{ ym(res.months[0]) }}</span>
+        <h3>You put in <em>{{ fmt(amount()) }}</em></h3>
+        <p>It's split across {{ x.mix.length }} kinds of fund — today's DigiVilla mix.</p>
+        <div class="mixbar" aria-hidden="true">
+          @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
+        </div>
+        <ul class="mixkey">
+          @for (m of x.mix; track m.key) {
+            <li><i [style.background]="m.color"></i><b>{{ m.label }}</b><span>{{ m.pct | number: '1.0-0' }}% · {{ fmt(m.start) }}</span></li>
+          }
+        </ul>
+      </div>
+    </li>
+
+    <!-- 2 · paid every month, from arbitrage -->
+    <li class="step">
+      <span class="dot">2</span>
+      <div class="step-card">
+        <span class="step-k">Every month</span>
+        <h3>You got <em>{{ inr(payout()) }}</em></h3>
+        <p>{{ x.payments }} payments — <b>{{ fmt(res.dvPaidGross) }}</b> in all. To pay you, a little of the <b>Arbitrage</b> fund (the steady part) is sold each month, so it gets smaller:</p>
+        <div class="shrink" aria-label="Arbitrage share of the villa">
+          <div><span>{{ ym(res.months[0]) }}</span><div class="track"><i [style.width.%]="res.arbStartPct"></i></div><b>{{ res.arbStartPct | number: '1.0-0' }}%</b></div>
+          <div><span>Today</span><div class="track"><i [style.width.%]="res.arbNowPct"></i></div><b>{{ res.arbNowPct | number: '1.0-0' }}%</b></div>
+        </div>
+        @if (res.arbEmptyMonth) {
+          <p class="soft">It ran out in {{ ym(res.arbEmptyMonth) }}. Since then, a little of the other funds pays you.</p>
+        }
+      </div>
+    </li>
+
+    <!-- 3 · the rest grew -->
+    <li class="step">
+      <span class="dot">3</span>
+      <div class="step-card">
+        <span class="step-k">Meanwhile</span>
+        <h3>The rest kept growing</h3>
+        <p>The other funds were never touched. Here's what each part is worth today:</p>
+        <ul class="grow">
+          @for (m of x.mix; track m.key) {
+            <li>
+              <i [style.background]="m.color"></i>
+              <span>{{ m.label }}</span>
+              <span class="from">{{ fmt(m.start) }}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              <b>{{ fmt(m.now) }}</b>
+            </li>
+          }
+          <li class="sum"><span>Still invested today</span><b>{{ fmt(res.dvValue) }}</b></li>
+        </ul>
+        <p class="soft">Arbitrage is lower because it paid you.</p>
+      </div>
+    </li>
+
+    <!-- 4 · tax -->
+    <li class="step">
+      <span class="dot">4</span>
+      <div class="step-card">
+        <span class="step-k">Tax</span>
+        <h3>{{ x.taxTiny ? 'Tax on payouts was tiny:' : 'Tax on payouts:' }} <em>{{ inr(res.dvPayoutTax) }}</em></h3>
+        <p>Most of each payout is <b>your own money coming back</b>, which isn't taxed. Only the small profit inside it is — and the first {{ inr(EXEMPT) }} of profit each year is tax-free.</p>
+        <p class="soft">If you sold everything today, the tax would be about <b>{{ fmt(res.dvExitTax) }}</b>.</p>
+      </div>
+    </li>
+
+    <!-- 5 · the FD -->
+    <li class="step">
+      <span class="dot">5</span>
+      <div class="step-card">
+        <span class="step-k">The bank FD</span>
+        <h3>The FD paid <em class="n">{{ inr(res.fdMonthly) }}</em> a month</h3>
+        <p>{{ fmt(amount()) }} at {{ fdRate() }}% = {{ inr(x.fdGross) }} a month. After {{ res.fdTaxRate | number: '1.0-1' }}% tax you keep {{ inr(res.fdMonthly) }}. Your {{ fmt(amount()) }} stays {{ fmt(amount()) }} — it never grows.</p>
+      </div>
+    </li>
+
+    <!-- 6 · the result -->
+    <li class="step last">
+      <span class="dot ok">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </span>
+      <div class="step-card">
+        <span class="step-k">So, after {{ years() }} years</span>
+        <div class="result">
+          <div><span>Bank FD</span><b>{{ fmt(res.fdTotal) }}</b><small>{{ fmt(res.fdPaid) }} paid + {{ fmt(res.fdValue) }}</small></div>
+          <div class="dv"><span>DigiVilla</span><b>{{ fmt(res.dvTotal) }}</b><small>{{ fmt(res.dvPaid) }} paid + {{ fmt(res.dvValue) }}</small></div>
+        </div>
+        @if (x.gap > 0) { <p class="verdict"><b>{{ fmt(x.gap) }} more</b> with DigiVilla</p> }
+        @else { <p class="verdict down">The FD did better by <b>{{ fmt(-x.gap) }}</b></p> }
+      </div>
+    </li>
+  </ol>
+
+  <!-- the small print, in plain words -->
+  <section class="know">
+    <h4>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>
+      Good to know
+    </h4>
+    <ul>
+      <li><b>This is the past, not a promise.</b> Real fund prices from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>Today's tax rules</b> are used for every year, though the rules were different earlier. Surcharge isn't included.</li>
+      <li><b>The FD rate stays {{ fdRate() }}%</b> the whole time. Real FD rates went up and down.</li>
+      @for (p of proxies(); track p.fund + p.until) {
+        <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
+      }
+      <li><b>"Today's money"</b> assumes prices rise {{ INFLATION }}% a year.</li>
+      <li><b>Left out:</b> exit loads, the 0.005% stamp duty, and which day of the month money moves.</li>
+    </ul>
+  </section>
+
+  <details class="raw">
+    <summary>See every unit and price</summary>
+    <div class="nums" role="table" aria-label="Units and NAVs">
+      <div class="nums-h" role="row"><span>Fund · price then → now</span><span>Units</span><span>Worth now</span></div>
+      @for (f of res.funds; track f.name) {
+        <div class="nums-r" role="row">
+          <span><b>{{ f.name }}</b><small>{{ f.weight * 100 | number: '1.0-0' }}% · {{ nav(f.navStart) }} → {{ nav(f.navNow) }}</small></span>
+          <span><b>{{ units(f.unitsNow) }}</b><small>from {{ units(f.unitsStart) }}</small></span>
+          <span><b>{{ fmt(f.valueNow) }}</b><small>from {{ fmt(f.valueStart) }}</small></span>
+        </div>
+      }
+    </div>
+  </details>
+
+  <div class="page-actions"><button class="ghost" (click)="go('calc')">Back to calculator</button><button class="accent" (click)="talk.emit()">Talk to us</button></div>
+  <p class="page-fine">Information, not advice. Mutual fund investments are subject to market risks; read all scheme-related documents carefully.</p>
+</div>
+} }
+}
+}
+
+<ng-template #gauge let-deg="deg">
+  <svg class="gauge" width="82" height="46" viewBox="0 0 104 58" aria-hidden="true">
+    <path d="M6 52 A46 46 0 0 1 17.4 22.4 L52 52 Z" fill="#3f7a20"/>
+    <path d="M17.4 22.4 A46 46 0 0 1 43.2 6.9 L52 52 Z" fill="#8fb35a"/>
+    <path d="M43.2 6.9 A46 46 0 0 1 60.8 6.9 L52 52 Z" fill="#e9c15c"/>
+    <path d="M60.8 6.9 A46 46 0 0 1 86.6 22.4 L52 52 Z" fill="#e08a3c"/>
+    <path d="M86.6 22.4 A46 46 0 0 1 98 52 L52 52 Z" fill="#c4463a"/>
+    <path d="M6 52 A46 46 0 0 1 98 52" fill="none" stroke="#0b0c12" stroke-width="1.5"/>
+    <path d="M17.4 22.4 L52 52 M43.2 6.9 L52 52 M60.8 6.9 L52 52 M86.6 22.4 L52 52" stroke="#0b0c12" stroke-width="1"/>
+    <g class="needle-g" [style.transform]="'rotate(' + deg + 'deg)'">
+      <path d="M52 52 L52 14" stroke="#f3f5fe" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M48 20 L52 12 L56 20 Z" fill="#f3f5fe"/>
+    </g>
+    <circle cx="52" cy="52" r="6" fill="#12141d" stroke="#cfd3e5" stroke-width="1.5"/>
+  </svg>
+</ng-template>

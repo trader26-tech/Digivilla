@@ -1,0 +1,33 @@
+@if (view(); as v) {
+  <div class="ychart" #chart>
+    <span class="floor" aria-hidden="true"></span>
+    <div class="strip" aria-live="polite">
+      <span class="yr">{{ v.strip.badge }}</span>
+      <div class="vals">
+        @for (f of v.strip.fields; track f.label) {
+          <div [class]="f.tone ?? ''"><span>{{ f.label }}</span><b>{{ fmt(f.value) }}@if (f.suffix) {<small>{{ f.suffix }}</small>}</b></div>
+        }
+      </div>
+    </div>
+    <i class="link" [style.left.px]="v.lineX" [style.bottom.px]="v.lineBottom" aria-hidden="true"></i>
+    <div class="cols" [style.gap.px]="v.gap">
+      @for (col of v.cols; track col.i) {
+        <button class="ycol" [class.on]="col.on" [class.dim]="col.dim" [style.height.px]="col.h" [style.animation-delay]="col.delay"
+                (click)="pick(col.i)" [attr.aria-label]="data()[col.i].badge" [attr.aria-pressed]="col.on">
+          @if (col.cap) { <i class="cap" [style.height.px]="col.cap" [style.background]="col.capBg"></i> }
+          <i class="grew" [style.height.px]="col.grew" [style.background]="col.grewBg"></i>
+          <i class="put" [style.background]="col.putBg"></i>
+          <i class="yside" [style.width.px]="v.depth" [style.background]="col.side"></i>
+          <i class="ytop" [style.top.px]="-v.depth" [style.height.px]="v.depth" [style.background]="col.top"></i>
+          @if (col.showTick) { <span class="ylbl">{{ col.tick }}</span> }
+          @if (col.on) { <i class="halo"></i> }
+        </button>
+      }
+    </div>
+  </div>
+  <div class="key" aria-hidden="true">
+    <span><i class="k-put"></i>Put in</span>
+    <span><i class="k-grew"></i>Grew</span>
+    <span><i class="k-cap"></i>Paid out</span>
+  </div>
+}

@@ -1,0 +1,194 @@
+@switch (page()) {
+@case ('calc') {
+<div class="scr sip">
+  <span class="glow sip-glow" aria-hidden="true"></span>
+
+  <!-- ── back + the sentence ── -->
+  <div class="top">
+    <div class="lead">
+      <button class="round" (click)="back.emit()" aria-label="Back to calculators">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <p class="q">
+        <span>Every month</span>
+        <button class="pick" [class.on]="picker() === 'amt'" (click)="togglePicker('amt')" aria-label="Change monthly amount" [attr.aria-expanded]="picker() === 'amt'">{{ fmt(monthly()) }}<i></i></button>
+        <span>stepping up</span>
+        <button class="pick" [class.on]="picker() === 'step'" (click)="togglePicker('step')" aria-label="Change yearly step-up" [attr.aria-expanded]="picker() === 'step'">{{ step() }}%<i></i></button>
+        <span>a year.</span>
+      </p>
+    </div>
+
+    @if (picker()) {
+      <div class="scrim" (click)="picker.set(null)" aria-hidden="true"></div>
+      <div class="pop" role="dialog" [attr.aria-label]="picker() === 'amt' ? 'Monthly amount' : 'Yearly step-up'">
+        @if (picker() === 'amt') {
+          <span class="pop-k">Every month</span>
+          <div class="chips five">
+            @for (a of AMOUNTS; track a) { <button [class.on]="a === monthly()" (click)="pickAmount(a)">{{ fmt(a) }}</button> }
+          </div>
+          <span class="pop-hint">Or slide the ruler below for any amount.</span>
+        } @else {
+          <span class="pop-k">Raise it each year by</span>
+          <div class="chips four">
+            @for (s of STEPS; track s) { <button [class.on]="s === step()" (click)="pickStep(s)">{{ s === 0 ? 'None' : s + '%' }}</button> }
+          </div>
+          <span class="pop-hint">Most salaries rise each year — a step-up keeps your SIP in step.</span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── the hero: what it became ── -->
+  @if (r(); as res) {
+    <div class="hero">
+      <div class="hero-txt">
+        <div class="hero-main">
+          <span class="k">Worth today, after tax</span>
+          <b class="big">{{ fmt(res.valueAfterTax) }}</b>
+        </div>
+        <div class="hero-sub">
+          <div><span>You put in</span><b>{{ fmt(res.invested) }}</b></div>
+          <div class="gold"><span>Income you got</span><b>{{ fmt(res.income) }}</b></div>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="assets/calc/villa.svg" alt="" />
+        <img class="coin" src="assets/calc/coin.svg" alt="" />
+      </div>
+    </div>
+  } @else {
+    <div class="hero"><div class="hero-txt"><div class="hero-main"><span class="k">&nbsp;</span><i class="shim big-shim"></i></div></div></div>
+  }
+
+  <!-- ── one column per year ── -->
+  @if (r()) {
+    <app-year-cols [cols]="yearCols()"></app-year-cols>
+  } @else if (failed()) {
+    <div class="fail">Couldn't load fund prices.<button (click)="retry()">Try again</button></div>
+  } @else {
+    <div class="skel" aria-busy="true" aria-label="Loading fund prices"><i></i><i></i></div>
+  }
+
+  <!-- ── years ── -->
+  <div class="years" role="tablist" aria-label="Started this many years ago">
+    @for (y of yearOpts(); track y) {
+      <button role="tab" [class.on]="y === years()" [attr.aria-selected]="y === years()" (click)="pickYears(y)">
+        <b>{{ y }}</b><span>yrs ago</span><i></i>
+      </button>
+    }
+  </div>
+
+  <app-amount-dial label="Monthly SIP" [value]="monthly()" (valueChange)="monthly.set($event)"
+                   [min]="5000" [max]="500000" [step]="1000" [nudgeBy]="10000" [major]="50000" [mid]="10000"></app-amount-dial>
+
+  <p class="fine">
+    Today's DigiVilla mix at real past prices, after tax. Each gold cap is that year's {{ INCOME_PCT }}% income.
+    <button class="how" (click)="go('notes')">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
+      How this is worked out
+    </button>
+  </p>
+</div>
+}
+
+<!-- ── how this is worked out ── -->
+@case ('notes') {
+@if (r(); as res) { @if (explain(); as x) {
+<div class="page">
+  <div class="page-head">
+    <button class="round" (click)="go('calc')" aria-label="Back to calculator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div><b>How this is worked out</b><span>{{ inr(monthly()) }} a month · {{ ym(res.months[0]) }} → today, step by step</span></div>
+  </div>
+
+  <ol class="steps">
+    <li class="step">
+      <span class="dot">1</span>
+      <div class="step-card">
+        <span class="step-k">Every month, from {{ ym(res.months[0]) }}</span>
+        <h3>You put in <em>{{ inr(monthly()) }}</em></h3>
+        <p>
+          @if (step() > 0) { Raised {{ step() }}% every year — <b>{{ inr(res.lastMonthly) }}</b> a month by the last year. }
+          {{ res.years * 12 }} months — <b>{{ fmt(res.invested) }}</b> in all. Each month's money is split the same way:
+        </p>
+        <div class="mixbar" aria-hidden="true">
+          @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
+        </div>
+        <ul class="mixkey">
+          @for (m of x.perInstalment; track m.key) {
+            <li><i [style.background]="m.color"></i><b>{{ m.label }}</b><span>{{ m.pct | number: '1.0-0' }}% · {{ inr(m.amt) }}</span></li>
+          }
+        </ul>
+      </div>
+    </li>
+
+    <li class="step">
+      <span class="dot">2</span>
+      <div class="step-card">
+        <span class="step-k">Each month</span>
+        <h3>It buys at that month's price</h3>
+        <p>When prices were <b>low</b>, the same money bought <b>more</b> units; when high, fewer. That's how a SIP smooths out the ups and downs — you never have to pick the right day.</p>
+      </div>
+    </li>
+
+    <li class="step">
+      <span class="dot">3</span>
+      <div class="step-card">
+        <span class="step-k">Every year end</span>
+        <h3>You got <em class="gold">{{ INCOME_PCT }}%</em> as income</h3>
+        <p>{{ INCOME_PCT }}% of what it was worth is paid to you, mostly from the <b>Arbitrage</b> fund (the steady part). It grew from {{ fmt(x.firstIncome) }} in year 1 to {{ fmt(x.lastIncome) }} in year {{ res.years }} — <b>{{ fmt(res.income) }}</b> in all, after {{ inr(res.incomeTax) }} tax.</p>
+      </div>
+    </li>
+
+    <li class="step last">
+      <span class="dot ok">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </span>
+      <div class="step-card">
+        <span class="step-k">Today</span>
+        <h3>It's worth <em>{{ fmt(res.value) }}</em></h3>
+        <p>Selling it all today would cost about <b>{{ fmt(res.exitTax) }}</b> in tax, so you'd keep <b>{{ fmt(res.valueAfterTax) }}</b> — on top of the {{ fmt(res.income) }} income. That's about <b>{{ rate(res.xirr) }} a year</b> on your money.</p>
+        <div class="result">
+          <div><span>You put in</span><b>{{ fmt(res.invested) }}</b><small>{{ res.years * 12 }} months</small></div>
+          <div class="dv"><span>You have</span><b>{{ fmt(res.valueAfterTax + res.income) }}</b><small>{{ fmt(res.valueAfterTax) }} + {{ fmt(res.income) }} income</small></div>
+        </div>
+      </div>
+    </li>
+  </ol>
+
+  <section class="know">
+    <h4>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>
+      Good to know
+    </h4>
+    <ul>
+      <li><b>This is the past, not a promise.</b> Real fund prices from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>Today's tax rules</b> for every year: 20% on profit held under a year, 12.5% after (first {{ inr(EXEMPT) }} a year free), gold 12.5% after 2 years, plus {{ cessPct }}% cess. We assume a {{ SLAB }}% slab and no surcharge.</li>
+      @for (p of proxies(); track p.fund + p.until) {
+        <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
+      }
+      <li><b>Left out:</b> exit loads, the 0.005% stamp duty, and which day of the month your SIP runs.</li>
+    </ul>
+  </section>
+
+  <details class="raw">
+    <summary>See what each fund got</summary>
+    <div class="nums" role="table" aria-label="What each fund got and is worth">
+      <div class="nums-h" role="row"><span>Fund</span><span>Put in</span><span>Worth now</span></div>
+      @for (f of res.funds; track f.name) {
+        <div class="nums-r" role="row">
+          <span><b>{{ f.name }}</b><small>{{ f.weight * 100 | number: '1.0-0' }}% of each month</small></span>
+          <span><b>{{ fmt(f.invested) }}</b></span>
+          <span><b>{{ fmt(f.valueNow) }}</b></span>
+        </div>
+      }
+    </div>
+  </details>
+
+  <div class="page-actions"><button class="ghost" (click)="go('calc')">Back to calculator</button><button class="accent" (click)="talk.emit()">Start a SIP</button></div>
+  <p class="page-fine">Information, not advice. Mutual fund investments are subject to market risks; read all scheme-related documents carefully.</p>
+</div>
+} }
+}
+}

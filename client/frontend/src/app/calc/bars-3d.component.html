@@ -1,0 +1,38 @@
+<div class="chart" #chart>
+  <span class="floor" aria-hidden="true"></span>
+  <svg class="arc" [attr.viewBox]="'0 0 ' + arrow().W + ' ' + arrow().H" [attr.width]="arrow().W" [attr.height]="arrow().H" aria-hidden="true">
+    <defs>
+      <linearGradient id="b3dArrowG" gradientUnits="userSpaceOnUse" [attr.x1]="arrow().x0" y1="0" [attr.x2]="arrow().x1" y2="0">
+        <stop offset="0" stop-color="#c9c6da"/><stop offset="1" stop-color="#8fd65a"/>
+      </linearGradient>
+      <marker id="b3dArrowHead" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="4" markerHeight="4" orient="auto">
+        <path d="M1 1 L10 6 L1 11" fill="none" stroke="#b9e69a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+    <path class="arc-line" [class.off]="!showArrow" [attr.d]="arrow().d" fill="none" stroke="url(#b3dArrowG)" stroke-width="2.5" stroke-linecap="round" marker-end="url(#b3dArrowHead)"/>
+  </svg>
+
+  @for (c of [cols().l, cols().r]; track $index; let i = $index) {
+    @if (c) {
+      <div class="col" [class.green]="c.green">
+        <div class="art">
+          <img [src]="'assets/calc/' + c.art + '.svg'" alt="" />
+          @if (c.coin) { <img class="coin" src="assets/calc/coin.svg" alt="" /> }
+        </div>
+        <b class="total">{{ fmt(i === 0 ? lShown() : rShown()) }}</b>
+        <div class="block" [style.height.px]="c.h">
+          <div class="front">
+            @for (s of c.segs; track s.label) {
+              <div class="seg" [style.height.px]="s.h" [style.background]="s.bg">
+                <span [style.color]="s.k">{{ s.label }}</span>
+                <b [style.color]="s.c">{{ s.value }}</b>
+              </div>
+            }
+          </div>
+          <i class="side" [style.background]="c.side"></i>
+          <i class="face" [style.background]="c.top"></i>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,216 +1,241 @@
-<div class="lc">
-  <header class="lc-head">
-    <button class="lc-back" (click)="back.emit()" aria-label="Back to calculators">
-      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+@switch (page()) {
+@case ('calc') {
+<div class="scr">
+  <span class="glow" aria-hidden="true"></span>
+
+  <!-- ── back, the question, side by side ── -->
+  <div class="top">
+    <div class="bar">
+      <button class="round" (click)="back.emit()" aria-label="Back to calculators">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button class="vs-link" (click)="go('vs')" [disabled]="!r()" aria-label="See flat and DigiVilla side by side">Side by side</button>
+    </div>
+    <p class="q plain wide">Had the same money gone into DigiVilla in <b>{{ boughtYear() }}</b>, <span class="dim">{{ held() }} {{ held() === 1 ? 'year' : 'years' }} ago</span></p>
+  </div>
+
+  <!-- ── the chart ── -->
+  @if (r(); as res) {
+    <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()"></app-bars-3d>
+    <div class="legend">
+      <span>Flat · {{ res.appPct | number: '1.1-1' }}% a year</span>
+      <span class="g">DigiVilla · {{ rate(res.dv.dvIrr) }} a yr</span>
+    </div>
+  } @else if (failed()) {
+    <div class="fail">Couldn't load fund prices.<button (click)="retry()">Try again</button></div>
+  } @else {
+    <div class="skel" aria-busy="true" aria-label="Loading fund prices"><i></i><i></i></div>
+    <div class="legend"><span>&nbsp;</span><span>&nbsp;</span></div>
+  }
+
+  <!-- ── four questions, one ruler ── -->
+  <div class="qcards" role="radiogroup" aria-label="Your flat">
+    @for (f of fields(); track f.key) {
+      <button class="qcard" role="radio" [class.on]="active() === f.key" [attr.aria-checked]="active() === f.key" (click)="active.set(f.key)">
+        <span>{{ f.label }}</span>
+        <b>{{ f.f(val(f.key)) }}</b>
+      </button>
+    }
+  </div>
+  <app-amount-dial [compact]="true" [label]="act().label" [format]="act().f"
+                   [value]="val(active())" (valueChange)="setVal($event)"
+                   [min]="act().min" [max]="act().max" [step]="act().step" [nudgeBy]="act().big" [major]="act().major" [mid]="act().mid"></app-amount-dial>
+
+  <p class="fine">
+    Tap a card, slide to change it. Same cash as the flat cost all-in; DigiVilla at real past prices, after tax.
+    <button class="how" (click)="go('notes')">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
+      How this is worked out
     </button>
-    <div>
-      <div class="lc-kicker">Flat calculator</div>
-      <h1 class="lc-title">What has your flat really earned?</h1>
-    </div>
-  </header>
+  </p>
+</div>
+}
 
-  <!-- ── inputs ── -->
-  <section class="lc-card lc-form">
-    <div class="lc-field">
-      <span class="lc-lbl">When you bought it</span>
-      <div class="lc-when">
-        <select [value]="buyMonth()" (change)="buyMonth.set(num($event))" aria-label="Purchase month">
-          <option *ngFor="let m of MONTHS; let i = index" [value]="i + 1" [selected]="i + 1 === buyMonth()">{{ m }}</option>
-        </select>
-        <select [value]="buyYear()" (change)="buyYear.set(num($event))" aria-label="Purchase year">
-          <option *ngFor="let y of years" [value]="y" [selected]="y === buyYear()">{{ y }}</option>
-        </select>
-      </div>
-      <span class="lc-hint" [class.warn]="heldYears() < 1">{{ heldYears() < 1 ? 'Pick a date at least a year ago' : 'Held for ' + yearsText(heldYears()) }}</span>
-    </div>
-
-    <label class="lc-field">
-      <span class="lc-lbl">Price you paid</span>
-      <span class="lc-money"><i>₹</i>
-        <input inputmode="numeric" autocomplete="off" [value]="money(price())" (input)="onMoney($event, 'price')" aria-label="Purchase price in rupees" placeholder="80,00,000"/>
-      </span>
-      <span class="lc-hint">{{ price() ? compact(price()) + ' + ' + compact(price() * entryPct() / 100) + ' stamp duty, registration & brokerage' : 'The agreement value' }}</span>
-    </label>
-
-    <label class="lc-field">
-      <span class="lc-lbl">What it would sell for today</span>
-      <span class="lc-money"><i>₹</i>
-        <input inputmode="numeric" autocomplete="off" [value]="money(valueNow())" (input)="onMoney($event, 'valueNow')" aria-label="Current value in rupees" placeholder="1,40,00,000"/>
-      </span>
-      <span class="lc-hint">{{ valueNow() ? compact(valueNow()) + ' · your estimate or a recent quote' : 'Your best estimate' }}</span>
-    </label>
-
-    <label class="lc-field">
-      <span class="lc-lbl">Rent it gets today</span>
-      <span class="lc-money"><i>₹</i>
-        <input inputmode="numeric" autocomplete="off" [value]="money(rentNow())" (input)="onMoney($event, 'rentNow')" aria-label="Monthly rent in rupees" placeholder="30,000"/>
-        <em class="fc-per">/ month</em>
-      </span>
-      <span class="lc-hint" *ngIf="rentNow() && valueNow()">{{ fmtPct(rentNow() * 12 / valueNow() * 100) }} gross yield on today's value</span>
-    </label>
-
-    <div class="lc-field">
-      <span class="lc-lbl">Your income-tax slab</span>
-      <div class="fc-chips" role="radiogroup" aria-label="Income-tax slab">
-        <button *ngFor="let s of SLABS" role="radio" [attr.aria-checked]="taxSlab() === s" [class.on]="taxSlab() === s" (click)="taxSlab.set(s)">{{ s }}%</button>
-      </div>
-    </div>
-
-    <button class="lc-toggle" (click)="moreOpen.set(!moreOpen())" [attr.aria-expanded]="moreOpen()">
-      <span class="lc-switch" [class.on]="moreOpen()"><span></span></span>
-      <span>Costs &amp; assumptions</span>
+<!-- ── side by side ── -->
+@case ('vs') {
+@if (r(); as res) {
+<div class="page">
+  <span class="page-glow" aria-hidden="true"></span>
+  <div class="page-head">
+    <button class="round" (click)="go('calc')" aria-label="Back to calculator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
     </button>
-    <div class="lc-costs" *ngIf="moreOpen()">
-      <label>Stamp duty, registration, legal <span><input type="number" min="0" max="30" step="0.5" [value]="entryPct()" (input)="onNum($event, 'entryPct', 30)"/>%</span></label>
-      <label>Brokerage when you sell <span><input type="number" min="0" max="10" step="0.5" [value]="sellPct()" (input)="onNum($event, 'sellPct', 10)"/>%</span></label>
-      <label>Rent rise each year <span><input type="number" min="0" max="20" step="0.5" [value]="rentGrowth()" (input)="onNum($event, 'rentGrowth', 20)"/>%</span></label>
-      <label>Empty months a year <span><input type="number" min="0" max="12" step="0.5" [value]="vacancy()" (input)="onNum($event, 'vacancy', 12)"/>mo</span></label>
-      <label>Maintenance, repairs, property tax
-        <span>₹<input class="fc-wide" inputmode="numeric" [value]="money(upkeep())" (input)="onMoney($event, 'upkeep')" aria-label="Monthly upkeep in rupees"/>/mo</span>
-      </label>
-    </div>
+    <div><b>Flat vs DigiVilla</b><span>Side by side, the parts that matter</span></div>
+  </div>
+
+  <div class="vs-head">
+    <div class="who"><img src="assets/calc/flat-building.svg" alt="" /><b>Flat</b><span>{{ res.yieldPct | number: '1.1-1' }}% rent · {{ res.appPct | number: '1.1-1' }}%/yr</span></div>
+    <div class="vs-badge"><b>VS</b></div>
+    <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>DigiVilla</b><span>{{ rate(res.dv.dvIrr) }} · {{ INCOME_PCT }}% rent</span></div>
+  </div>
+
+  <div class="vs-rows">
+    @for (m of vs(); track m.k; let i = $index) {
+      <div class="vs-row" [style.--d]="i * 50 + 'ms'">
+        <div class="cell">
+          @if (m.gauge) { <ng-container *ngTemplateOutlet="gauge; context: { deg: m.aDeg }"></ng-container> }
+          <b [style.color]="m.ac">{{ m.a }}</b><span>{{ m.as }}</span>
+        </div>
+        <div class="mid" [class.dv]="m.win === 'dv'">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="m.icon"/></svg></span>
+          <span class="k">{{ m.k }}</span>
+        </div>
+        <div class="cell">
+          @if (m.gauge) { <ng-container *ngTemplateOutlet="gauge; context: { deg: m.bDeg }"></ng-container> }
+          <b [style.color]="m.bc">{{ m.b }}</b><span>{{ m.bs }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <p class="page-note">
+    {{ fmt(price()) }} flat bought {{ ym(res.months[0]) }}, worth {{ fmt(value()) }} today.
+    <button class="how" (click)="go('notes')">How this is worked out</button>
+  </p>
+  <div class="page-actions">
+    <button class="ghost" (click)="go('calc')">Back to calculator</button>
+    <button class="accent" (click)="talk.emit()">Talk to us</button>
+  </div>
+  <p class="page-fine">Information, not advice. DigiVilla is a mutual fund portfolio; past returns aren't a promise. Flat values are your estimates.</p>
+</div>
+}
+}
+
+<!-- ── how this is worked out ── -->
+@case ('notes') {
+@if (r(); as res) { @if (explain(); as x) {
+<div class="page">
+  <div class="page-head">
+    <button class="round" (click)="go('calc')" aria-label="Back to calculator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div><b>How this is worked out</b><span>{{ fmt(price()) }} flat · {{ ym(res.months[0]) }} → today, step by step</span></div>
+  </div>
+
+  <ol class="steps">
+    <li class="step">
+      <span class="dot">1</span>
+      <div class="step-card">
+        <span class="step-k">In {{ ym(res.months[0]) }}</span>
+        <h3>You bought the flat: <em class="n">{{ fmt(res.outlay) }}</em> all-in</h3>
+        <p>{{ fmt(price()) }} for the flat + <b>{{ fmt(res.stamp) }}</b> stamp duty ({{ STAMP }}%) and registration ({{ REG }}%). That {{ fmt(res.outlay) }} is the money we compare.</p>
+      </div>
+    </li>
+
+    <li class="step">
+      <span class="dot">2</span>
+      <div class="step-card">
+        <span class="step-k">Every year</span>
+        <h3>It earned rent: you kept <em class="n">{{ fmt(res.rentKept) }}</em></h3>
+        <p>Rent is {{ inr(x.rentNow) }} a month today; we assume it rose {{ RENT_RISE }}% a year to get there (about {{ inr(x.rentThen) }} in year 1), with {{ VACANT }} empty month a year.</p>
+        <ul class="grow">
+          <li class="flat"><span>Rent collected</span><b>{{ fmt(res.rentGross) }}</b></li>
+          <li class="flat"><span>Tax ({{ SLAB }}% slab on {{ 100 - STD_DED }}% of it)</span><b class="neg">−{{ fmt(res.rentTax) }}</b></li>
+          <li class="flat"><span>Upkeep ({{ UPKEEP_PCT }}% of value a year)</span><b class="neg">−{{ fmt(res.upkeep) }}</b></li>
+          <li class="sum"><span>Rent you kept</span><b>{{ fmt(res.rentKept) }}</b></li>
+        </ul>
+      </div>
+    </li>
+
+    <li class="step">
+      <span class="dot">3</span>
+      <div class="step-card">
+        <span class="step-k">Today</span>
+        <h3>The flat is worth <em class="n">{{ fmt(value()) }}</em></h3>
+        <p>From {{ fmt(price()) }} — that's <b>{{ res.appPct | number: '1.1-1' }}% a year</b>. Selling it would also cost about 1.5% in brokerage (not taken off here).</p>
+      </div>
+    </li>
+
+    <li class="step">
+      <span class="dot">4</span>
+      <div class="step-card">
+        <span class="step-k">The other path</span>
+        <h3>The same {{ fmt(res.outlay) }} in DigiVilla</h3>
+        <p>Put into today's DigiVilla mix in {{ ym(res.months[0]) }}, at real prices. It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ INCOME_PCT }}% a year) by selling a little of the <b>Arbitrage</b> fund — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:</p>
+        <div class="mixbar" aria-hidden="true">
+          @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
+        </div>
+        <ul class="grow">
+          @for (m of x.mix; track m.key) {
+            <li>
+              <i [style.background]="m.color"></i><span>{{ m.label }}</span><span class="from">{{ fmt(m.start) }}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              <b>{{ fmt(m.now) }}</b>
+            </li>
+          }
+          <li class="sum"><span>Still invested today</span><b>{{ fmt(res.dv.dvValue) }}</b></li>
+        </ul>
+        @if (res.dv.arbEmptyMonth) { <p class="soft">The arbitrage part ran out in {{ ym(res.dv.arbEmptyMonth) }}; since then a little of the other funds pays the rent.</p> }
+      </div>
+    </li>
+
+    <li class="step last">
+      <span class="dot ok">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </span>
+      <div class="step-card">
+        <span class="step-k">So, after {{ res.years }} {{ res.years === 1 ? 'year' : 'years' }}</span>
+        <div class="result">
+          <div><span>Flat</span><b>{{ fmt(res.flTotal) }}</b><small>{{ fmt(res.rentKept) }} rent + {{ fmt(value()) }}</small></div>
+          <div class="dv"><span>DigiVilla</span><b>{{ fmt(res.dvTotal) }}</b><small>{{ fmt(res.dv.dvPaid) }} rent + {{ fmt(res.dv.dvValue) }}</small></div>
+        </div>
+        @if (x.gap > 0) { <p class="verdict"><b>{{ fmt(x.gap) }} more</b> with DigiVilla</p> }
+        @else { <p class="verdict down">The flat did better by <b>{{ fmt(-x.gap) }}</b></p> }
+      </div>
+    </li>
+  </ol>
+
+  <section class="know">
+    <h4>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>
+      Good to know
+    </h4>
+    <ul>
+      <li><b>DigiVilla is the past, not a promise.</b> Real fund prices from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. Funds can fall; the next {{ res.years }} years won't repeat.</li>
+      <li><b>The flat uses your numbers.</b> What it's worth today is your estimate; past rent is worked back from today's at {{ RENT_RISE }}% a year.</li>
+      <li><b>Tax:</b> rent at a {{ SLAB }}% slab after the {{ STD_DED }}% standard deduction; DigiVilla's payouts on today's fund-tax rules; {{ cessPct }}% cess on both, no surcharge.</li>
+      <li><b>Not counted:</b> home-loan interest, society fees, property tax, and the cost of selling the flat.</li>
+      @for (p of proxies(); track p.fund + p.until) {
+        <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
+      }
+      <li><b>"Today's money"</b> assumes prices rise {{ INFLATION }}% a year.</li>
+    </ul>
   </section>
 
-  <ng-container *ngIf="valid(); else invalid">
-    <!-- first paint waits for the fund history, so no figure shows and then changes -->
-    <section class="lc-card fc-skel" *ngIf="!result() && !failed()" aria-busy="true">
-      <div class="lc-shimmer fc-sk-hero"></div>
-      <div class="lc-shimmer"></div>
-      <span class="lc-hint">Replaying real fund prices since {{ ym(startYm()) }}…</span>
-    </section>
-    <section class="lc-card lc-vs-fail" *ngIf="failed() && !result()">
-      Couldn't load fund history. <button (click)="load()">Try again</button>
-    </section>
-
-    <ng-container *ngIf="result() as r">
-      <!-- ── the flat's real return ── -->
-      <section class="lc-card lc-hero" [class.fc-stale]="loading()">
-        <div class="lc-hero-k">Your flat returned</div>
-        <div class="lc-hero-v" [class.neg]="r.flatIrrPct < 0">{{ fmtPct(r.flatIrrPct) }}<small> a year</small></div>
-        <div class="lc-hero-sub">all-in: price, rent, vacancy, tax, upkeep and costs</div>
-        <div class="fc-split">
-          <div><span>Price alone</span><b>{{ fmtPct(r.priceCagrPct) }}</b></div>
-          <div><span>Rent in hand</span><b [class.fc-rent]="r.ledger.inHand > 0">{{ signed(r.ledger.inHand) }}</b></div>
-          <div><span>Over</span><b>{{ yearsText(r.years) }}</b></div>
+  <details class="raw">
+    <summary>See every unit and price</summary>
+    <div class="nums" role="table" aria-label="Units and NAVs">
+      <div class="nums-h" role="row"><span>Fund · price then → now</span><span>Units</span><span>Worth now</span></div>
+      @for (f of res.dv.funds; track f.name) {
+        <div class="nums-r" role="row">
+          <span><b>{{ f.name }}</b><small>{{ f.weight * 100 | number: '1.0-0' }}% · {{ nav(f.navStart) }} → {{ nav(f.navNow) }}</small></span>
+          <span><b>{{ units(f.unitsNow) }}</b><small>from {{ units(f.unitsStart) }}</small></span>
+          <span><b>{{ fmt(f.valueNow) }}</b><small>from {{ fmt(f.valueStart) }}</small></span>
         </div>
-      </section>
+      }
+    </div>
+  </details>
 
-      <!-- ── versus DigiVilla ── -->
-      <section class="lc-card lc-vs" [class.fc-stale]="loading()">
-        <div class="lc-vs-k">The same {{ compact(r.outlay) }} in DigiVilla, paying you the same rent every month</div>
-
-        <div class="lc-tiles">
-          <div class="lc-tile land">
-            <span>Flat today</span>
-            <b>{{ compact(r.flatFinal) }}</b>
-            <em>{{ fmtPct(r.flatIrrPct) }} / yr</em>
-          </div>
-          <div class="lc-tile basket">
-            <span>DigiVilla today</span>
-            <b>{{ compact(r.matched.final) }}</b>
-            <em>{{ fmtPct(r.matched.irrPct) }} / yr</em>
-          </div>
-        </div>
-
-        <div class="lc-verdict" [class.up]="gain() > 0" [class.down]="gain() <= 0">
-          <ng-container *ngIf="r.ledger.inHand > 0">Both paid you <b class="fc-rent">{{ compact(r.ledger.inHand) }}</b> in rent.</ng-container>
-          <ng-container *ngIf="r.ledger.inHand <= 0">Your flat cost you {{ compact(-r.ledger.inHand) }} to hold, so DigiVilla got the same top-ups.</ng-container>
-          <ng-container *ngIf="gain() > 0"> DigiVilla would be worth <b>{{ compact(gain()) }} more</b> today.</ng-container>
-          <ng-container *ngIf="gain() <= 0"> Your flat did better by <b>{{ compact(-gain()) }}</b>.</ng-container>
-        </div>
-
-        <app-growth-chart [series]="chart()" [height]="220"></app-growth-chart>
-        <p class="lc-clamp">What's left of each after paying you the same rent. The flat line is its average growth between your two prices, less {{ sellPct() }}% brokerage to sell.</p>
-      </section>
-
-      <!-- ── the rent sets the vault ── -->
-      <section class="lc-card fc-vault" [class.fc-stale]="loading()">
-        <div class="lc-vs-k">Your rent sets the arbitrage vault</div>
-        <p class="fc-say" *ngIf="r.firstInHand <= 0">
-          After tax and upkeep your flat costs you about {{ inr(-r.firstInHand) }} a month, so it needs no vault at all.
-          All {{ compact(r.outlay) }} can go into growth funds, and the same monthly top-ups go in too.
-        </p>
-        <p class="fc-say" *ngIf="r.firstInHand > 0">
-          Your flat puts about <b class="fc-rent">{{ inr(r.firstInHand) }}</b> a month in your hand
-          <ng-container *ngIf="r.lastInHand > r.firstInHand * 1.05">(rising to {{ inr(r.lastInHand) }})</ng-container>.
-          The standard villa keeps {{ STANDARD_VAULT }}% in arbitrage to pay {{ inr(standardSwp()) }}.
-          <ng-container *ngIf="!overridden() && vaultShift() > 0">To pay your rent it only needs <b>{{ fmtPct(r.matchedVaultPct, r.matchedVaultPct % 1 ? 1 : 0) }}</b>, so <b>{{ compact(vaultShift()) }}</b> more goes to work in growth funds.</ng-container>
-          <ng-container *ngIf="!overridden() && vaultShift() <= 0">Your rent needs a vault of {{ fmtPct(r.matchedVaultPct, 0) }}, at or above the standard.</ng-container>
-        </p>
-
-        <div class="fc-bars">
-          <div class="fc-bar-row">
-            <span class="fc-bar-k">Standard</span>
-            <div class="fc-bar"><i *ngFor="let s of bars().standard" [style.flex-basis.%]="s.pct" [style.background]="s.color"></i></div>
-            <span class="fc-bar-v">{{ STANDARD_VAULT }}%</span>
-          </div>
-          <div class="fc-bar-row">
-            <span class="fc-bar-k">{{ overridden() ? 'Your pick' : 'Your rent' }}</span>
-            <div class="fc-bar"><i *ngFor="let s of bars().yours" [style.flex-basis.%]="s.pct" [style.background]="s.color"></i></div>
-            <span class="fc-bar-v">{{ fmtPct(r.matched.vaultPct, r.matched.vaultPct % 1 ? 1 : 0) }}</span>
-          </div>
-          <div class="fc-legend">
-            <span *ngFor="let s of SLEEVES"><i [style.background]="s.color"></i>{{ s.label }}</span>
-          </div>
-        </div>
-
-        <div class="fc-slide">
-          <div class="fc-slide-k">
-            <span>Try a different vault</span>
-            <button *ngIf="overridden()" (click)="vaultOverride.set(null)">Back to rent-matched</button>
-          </div>
-          <div class="fc-slide-track">
-            <input type="range" min="0" max="60" step="1" [value]="r.matched.vaultPct" (input)="onVault($event)"
-                   [style.--fill.%]="r.matched.vaultPct / 60 * 100" aria-label="Arbitrage vault share"/>
-            <span class="fc-tick" [style.left.%]="r.matchedVaultPct / 60 * 100" *ngIf="r.matchedVaultPct <= 60" title="Rent-matched"></span>
-          </div>
-          <div class="fc-ends"><span>0%</span><span>Bigger vault = steadier, slower</span><span>60%</span></div>
-        </div>
-
-        <div class="fc-stats">
-          <div><span>Vault {{ fmtPct(r.matched.vaultPct, 0) }}</span><b>{{ compact(r.matched.final) }}</b><em>{{ fmtPct(r.matched.irrPct) }} / yr</em></div>
-          <div><span>Vault {{ STANDARD_VAULT }}%</span><b>{{ compact(r.standard.final) }}</b><em>{{ fmtPct(r.standard.irrPct) }} / yr</em></div>
-        </div>
-        <p class="lc-clamp" *ngIf="r.matched.vaultEmptyMonth">
-          From {{ ym(r.matched.vaultEmptyMonth) }} your rising rent outgrew the vault, and the growth funds topped it up.
-          That's the yearly switch that refills the vault. Your rent was never missed.
-        </p>
-      </section>
-
-      <!-- ── where the flat's money went ── -->
-      <section class="lc-card fc-ledger" [class.fc-stale]="loading()">
-        <div class="lc-vs-k">Where the flat's money went</div>
-        <dl>
-          <div><dt>Paid up front: stamp duty, registration, brokerage</dt><dd class="out">−{{ compact(r.ledger.entryCosts) }}</dd></div>
-          <div><dt>Rent at full occupancy</dt><dd>{{ compact(r.ledger.grossRent) }}</dd></div>
-          <div><dt>Lost to empty months</dt><dd class="out">−{{ compact(r.ledger.vacancy) }}</dd></div>
-          <div><dt>Income tax on rent <small>{{ taxSlab() }}% slab on 70% of rent, + cess</small></dt><dd class="out">−{{ compact(r.ledger.tax) }}</dd></div>
-          <div><dt>Maintenance, repairs, property tax</dt><dd class="out">−{{ compact(r.ledger.upkeep) }}</dd></div>
-          <div class="sum"><dt>Rent in your hand</dt><dd [class.fc-rent]="r.ledger.inHand > 0">{{ signed(r.ledger.inHand) }}</dd></div>
-          <div><dt>Brokerage to sell today</dt><dd class="out">−{{ compact(r.ledger.sellingCost) }}</dd></div>
-        </dl>
-      </section>
-
-      <p class="lc-clamp" *ngIf="funds()?.note">{{ funds()?.note }}</p>
-      <ul class="lc-funds fc-proxy" *ngIf="proxies().length">
-        <li *ngFor="let p of proxies()"><span class="n">{{ p.fund }}<small>before {{ ym(p.until) }}: {{ p.name }}'s returns</small></span></li>
-      </ul>
-    </ng-container>
-  </ng-container>
-
-  <ng-template #invalid>
-    <section class="lc-card lc-empty">
-      Enter when you bought, what you paid and what it's worth today to see what it really earned.
-    </section>
-  </ng-template>
-
-  <p class="lc-fine">
-    Hypothetical. DigiVilla: one investment in the standard villa mix (SBI Arbitrage, SBI Large Cap,
-    HDFC Mid Cap, Nippon Small Cap, Nippon Gold Savings) in the month you bought, at the funds' real
-    past prices. Your flat's in-hand rent is withdrawn from it every month (an SWP of your own units,
-    not rent). The flat's value and rent are your figures; past rent is today's rent stepped back at
-    the yearly rise. Capital-gains tax on selling and home-loan interest are left out on both sides.
-    Past performance doesn't guarantee future returns.
-  </p>
-  <app-mf-disclaimer [compact]="true"></app-mf-disclaimer>
+  <div class="page-actions"><button class="ghost" (click)="go('calc')">Back to calculator</button><button class="accent" (click)="talk.emit()">Talk to us</button></div>
+  <p class="page-fine">Information, not advice. Mutual fund investments are subject to market risks; read all scheme-related documents carefully.</p>
 </div>
+} }
+}
+}
+
+<ng-template #gauge let-deg="deg">
+  <svg class="gauge" width="82" height="46" viewBox="0 0 104 58" aria-hidden="true">
+    <path d="M6 52 A46 46 0 0 1 17.4 22.4 L52 52 Z" fill="#3f7a20"/>
+    <path d="M17.4 22.4 A46 46 0 0 1 43.2 6.9 L52 52 Z" fill="#8fb35a"/>
+    <path d="M43.2 6.9 A46 46 0 0 1 60.8 6.9 L52 52 Z" fill="#e9c15c"/>
+    <path d="M60.8 6.9 A46 46 0 0 1 86.6 22.4 L52 52 Z" fill="#e08a3c"/>
+    <path d="M86.6 22.4 A46 46 0 0 1 98 52 L52 52 Z" fill="#c4463a"/>
+    <path d="M6 52 A46 46 0 0 1 98 52" fill="none" stroke="#0b0c12" stroke-width="1.5"/>
+    <path d="M17.4 22.4 L52 52 M43.2 6.9 L52 52 M60.8 6.9 L52 52 M86.6 22.4 L52 52" stroke="#0b0c12" stroke-width="1"/>
+    <g class="needle-g" [style.transform]="'rotate(' + deg + 'deg)'">
+      <path d="M52 52 L52 14" stroke="#f3f5fe" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M48 20 L52 12 L56 20 Z" fill="#f3f5fe"/>
+    </g>
+    <circle cx="52" cy="52" r="6" fill="#12141d" stroke="#cfd3e5" stroke-width="1.5"/>
+  </svg>
+</ng-template>

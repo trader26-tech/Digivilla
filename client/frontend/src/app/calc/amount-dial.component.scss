@@ -1,0 +1,60 @@
+:host { display: block; flex: none; }
+button { font: inherit; -webkit-tap-highlight-color: transparent; }
+
+.dial {
+  display: flex; flex-direction: column; gap: 12px; margin-top: 12px; padding-top: 14px;
+  background: linear-gradient(180deg, transparent, rgba(30, 33, 48, .9) 40px);
+}
+.dial-row { display: flex; align-items: center; gap: 12px; padding: 0 18px; }
+.tri {
+  flex: none; width: 40px; height: 44px; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center;
+  transition: filter .15s, transform .12s;
+  i { width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+  &.left i { border-right: 11px solid #f6c445; }
+  &.right i { border-left: 11px solid #f6c445; }
+  &:hover { filter: brightness(1.2); }
+  &:active { transform: scale(.85); }
+  &:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; border-radius: 8px; }
+}
+.amount {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 12px 10px;
+  border-radius: 14px; background: #161826; box-shadow: inset 0 0 0 1px #3f424d, 0 8px 24px -12px rgba(0, 0, 0, .7);
+  transition: box-shadow .2s;
+  > span { font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: #b2b6ca; }
+  &.editing { box-shadow: inset 0 0 0 1px #9184d9, 0 8px 24px -12px rgba(0, 0, 0, .7); }
+}
+.amount-val, .amount input {
+  width: 100%; border: 0; padding: 0; background: transparent; color: #e9e9ed; text-align: center; cursor: text;
+  font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.amount input { outline: none; caret-color: #9184d9; }
+
+.ruler {
+  position: relative; height: 42px; overflow: hidden; cursor: ew-resize; touch-action: pan-y; user-select: none;
+  background: linear-gradient(90deg, #1a1c27, #2b2e3a 50%, #1a1c27);
+  &:focus-visible { outline: 2px solid #9184d9; outline-offset: -2px; }
+}
+.ticks {
+  position: absolute; top: 0; bottom: 0; left: 50%; display: flex; align-items: center;
+  transition: transform .12s ease-out; will-change: transform;
+  i { flex: none; width: 1.5px; margin-right: 8.5px; border-radius: 1px; }
+  .major { height: 22px; background: #e9e9ed; }
+  .mid { height: 15px; background: #9a9aa5; }
+  .minor { height: 9px; background: #5a5e6c; }
+}
+.ruler.dragging .ticks { transition: none; }
+.fade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, #12141d, transparent 18%, transparent 82%, #12141d); }
+.needle {
+  position: absolute; left: 50%; top: 8px; bottom: 8px; width: 2.5px; margin-left: -.5px; border-radius: 2px;
+  background: #8fd65a; box-shadow: 0 0 10px rgba(143, 214, 90, .7);
+}
+
+/* compact: ◀ [ruler] ▶ in one row, the ruler a rounded strip */
+.dial.compact { margin-top: 0; padding-top: 0; background: none; .dial-row { gap: 0; } .ruler { flex: 1; border-radius: 10px; } }
+
+@media (max-height: 760px) {
+  .dial { margin-top: 4px; padding-top: 8px; gap: 8px; }
+  .amount { padding: 6px 12px 7px; }
+  .amount-val, .amount input { font-size: 21px; }
+}
+@media (prefers-reduced-motion: reduce) { .ticks { transition: none; } }

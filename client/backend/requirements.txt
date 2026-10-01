@@ -13,3 +13,8 @@ numpy==1.26.4
 # imports it lazily, so the app still runs if it's absent (dev falls back to
 # trusting the client per settings.allow_unverified_phone).
 firebase-admin==6.5.0
+# CAS upload (Compare my funds): depository CAS tables + CAMS/KFintech parsing.
+# pdfplumber 0.9.0 is the last release on the pdfminer.six that casparser pins.
+pdfplumber==0.9.0
+pdfminer.six==20221105
+casparser==0.7.4

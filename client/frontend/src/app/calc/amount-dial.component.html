@@ -1,0 +1,38 @@
+@if (compact) {
+<div class="dial compact">
+  <div class="dial-row">
+    <button class="tri left" (click)="nudge(-nudgeBy)" [attr.aria-label]="'Less: ' + label"><i></i></button>
+    <ng-container *ngTemplateOutlet="ruler"></ng-container>
+    <button class="tri right" (click)="nudge(nudgeBy)" [attr.aria-label]="'More: ' + label"><i></i></button>
+  </div>
+</div>
+} @else {
+<div class="dial">
+  <div class="dial-row">
+    <button class="tri left" (click)="nudge(-nudgeBy)" [attr.aria-label]="'Less by ₹' + nudgeBy.toLocaleString('en-IN')"><i></i></button>
+    <div class="amount" [class.editing]="editing()">
+      <span>{{ label }}</span>
+      @if (editing()) {
+        <input #typed inputmode="numeric" autocomplete="off" [value]="v().toLocaleString('en-IN')"
+               (input)="onType($event)" (keydown.enter)="commit($event)" (blur)="commit($event)" [attr.aria-label]="label" />
+      } @else {
+        <button class="amount-val" (click)="startEdit()" aria-label="Type an amount">{{ full() }}</button>
+      }
+    </div>
+    <button class="tri right" (click)="nudge(nudgeBy)" [attr.aria-label]="'More by ₹' + nudgeBy.toLocaleString('en-IN')"><i></i></button>
+  </div>
+  <ng-container *ngTemplateOutlet="ruler"></ng-container>
+</div>
+}
+
+<ng-template #ruler>
+  <div class="ruler" [class.dragging]="dragging()" tabindex="0" role="slider" [attr.aria-label]="label"
+       [attr.aria-valuemin]="lo()" [attr.aria-valuemax]="hi()" [attr.aria-valuenow]="v()" [attr.aria-valuetext]="full()"
+       (pointerdown)="down($event)" (pointermove)="move($event)" (pointerup)="up()" (pointercancel)="up()" (keydown)="key($event)">
+    <div class="ticks" [style.transform]="'translateX(' + x() + 'px)'">
+      @for (t of ticks(); track $index) { <i [class]="t"></i> }
+    </div>
+    <span class="fade" aria-hidden="true"></span>
+    <span class="needle" aria-hidden="true"></span>
+  </div>
+</ng-template>

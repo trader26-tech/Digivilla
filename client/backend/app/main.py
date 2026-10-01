@@ -537,6 +537,53 @@ from app import flat_calc  # noqa: E402
 app.include_router(flat_calc.router)
 
 
+# --- CAS comparison: the investor's MFs (from an uploaded CAS) vs the basket ------
+from fastapi import File, Form, UploadFile  # noqa: E402
+
+_CAS_MAX_BYTES = 25 * 1024 * 1024
+
+
+@app.get("/me/cas/warm")
+def cas_warm(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Called when the upload screen opens: warms parse workers + NAV history in
+    the background so the real comparison returns in a couple of seconds."""
+    owner = _owner_or_401(authorization)
+    from app import cas_compare as cas_cmp
+    cas_cmp.prewarm(owner)
+    return {"ok": True}
+
+
+@app.post("/me/cas/compare")
+def cas_compare(file: UploadFile = File(...), password: str = Form(""),
+                authorization: Optional[str] = Header(default=None)) -> dict:
+    """Parse an uploaded CAS (CDSL / NSDL / CAMS / KFintech) and replay the
+    investor's current MF mix vs the DigiVilla basket over 1/3/5/10 years.
+    The PDF and password are used in memory only — nothing is stored or logged.
+    Any figure that doesn't reconcile with the statement's own totals → 422."""
+    owner = _owner_or_401(authorization)
+    from app import cas_compare as cas_cmp, cas_parser
+    data = file.file.read(_CAS_MAX_BYTES + 1)
+    if len(data) > _CAS_MAX_BYTES:
+        raise HTTPException(status_code=413, detail={"code": "too_big", "message": "That file is too large for a CAS."})
+    try:
+        parsed = cas_parser.parse(data, password)
+    except cas_parser.CASError as e:
+        # Log only WHICH checks failed (labels) — never amounts, names or the PDF —
+        # so an unfamiliar statement layout can be diagnosed.
+        failed = [c.get("label") for c in (e.checks or []) if not c.get("ok")]
+        if failed:
+            import logging
+            logging.getLogger("cas").warning("CAS %s: failed checks %s", e.code, failed)
+        raise HTTPException(status_code=422, detail={"code": e.code, "message": e.message,
+                                                     "checks": e.checks})
+    finally:
+        del data
+    result = cas_cmp.compare(owner, parsed)
+    if not result.get("ok"):
+        raise HTTPException(status_code=422, detail={"code": "no_compare", "message": result.get("detail")})
+    return result
+
+
 @app.get("/villa/backtest")
 def villa_backtest(amount: float = 10_00_000) -> dict:
     """Per-fund + blended growth-of-₹100 for the villa's fixed 5-fund mix, plus a

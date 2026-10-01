@@ -1,0 +1,38 @@
+/* SIP into DigiVilla — only its own pieces; the rest is calc-screen.scss. */
+
+.sip-glow { background: radial-gradient(260px 240px at 50% 48%, rgba(108, 186, 54, .16), transparent 70%); }
+
+/* ── hero: what it became ── */
+.hero { position: relative; flex: none; margin: 22px 26px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.hero-txt { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.hero-main { display: flex; flex-direction: column; gap: 4px; }
+.hero-main .k { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--n-400); }
+.big {
+  font-size: 40px; font-weight: 500; letter-spacing: -.04em; line-height: 1; white-space: nowrap;
+  font-variant-numeric: tabular-nums; color: var(--green);
+}
+.hero-sub {
+  display: flex; gap: 18px;
+  > div { display: flex; flex-direction: column; gap: 3px; }
+  span { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--n-500); }
+  b { font-size: 15px; font-weight: 500; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--n-200); }
+  .gold span, .gold b { color: #f3dfa8; }
+}
+.hero-art {
+  position: relative; flex: none; height: 118px; margin-bottom: -6px; display: flex; align-items: flex-end;
+  img { height: 104px; filter: drop-shadow(0 16px 18px rgba(0, 0, 0, .65)); }
+  .coin { position: absolute; left: 50%; top: -2px; width: 22px; height: auto; filter: none; animation: bob 4.5s ease-in-out infinite; }
+}
+@keyframes bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -6px); } }
+.shim { display: block; border-radius: 8px; background: linear-gradient(90deg, #171922 0%, #232633 50%, #171922 100%); background-size: 200% 100%; animation: sh 1.2s linear infinite; }
+.big-shim { width: 190px; height: 40px; }
+@keyframes sh { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+@media (max-height: 760px) {
+  .hero { margin-top: 12px; }
+  .big { font-size: 32px; }
+  .hero-art { height: 86px; img { height: 78px; } .coin { width: 18px; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-art .coin, .shim { animation: none; }
+}

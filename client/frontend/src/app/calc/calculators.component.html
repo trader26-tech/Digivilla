@@ -1,0 +1,45 @@
+@if (open() === 'fd') {
+  <app-fd-vs-dv (back)="close()" (talk)="talk.emit()"></app-fd-vs-dv>
+} @else if (open() === 'sip') {
+  <app-sip-calc (back)="close()" (talk)="talk.emit()"></app-sip-calc>
+} @else if (open() === 'flat') {
+  <app-flat-calc (back)="close()" (talk)="talk.emit()"></app-flat-calc>
+} @else if (open() === 'lump') {
+  <app-lumpsum-calc (back)="close()" (talk)="talk.emit()"></app-lumpsum-calc>
+} @else {
+  <div class="hub" [class.enter]="enter">
+    <span class="hub-glow" aria-hidden="true"></span>
+
+    <header class="hub-head">
+      <span class="kicker">Calculators</span>
+      <h1>What would DigiVilla do for you?</h1>
+      <p>Pick what you're comparing against.</p>
+    </header>
+
+    <section class="hub-groups">
+      @for (g of groups; track g.title; let gi = $index) {
+        <div class="hub-group">
+          <span class="kicker dim">{{ g.title }}</span>
+          @for (c of g.items; track c.title; let ci = $index) {
+            <button class="card" [class.soon]="!c.key" [style.--d]="(gi * 3 + ci) * 45 + 'ms'" (click)="pick(c)">
+              <span class="art" [style.background]="c.glow">
+                <img [src]="'assets/calc/' + c.art + '.svg'" alt="" loading="lazy" />
+              </span>
+              <span class="txt">
+                <b>{{ c.title }}</b>
+                <span>{{ c.sub }}</span>
+              </span>
+              @if (c.key) {
+                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+              } @else {
+                <span class="soon-tag">Soon</span>
+              }
+            </button>
+          }
+        </div>
+      }
+    </section>
+  </div>
+
+  <div class="toast" [class.on]="toast()" role="status" aria-live="polite">{{ toast() }}</div>
+}
