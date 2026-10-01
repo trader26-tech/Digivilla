@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 
 import { environment } from '../../environments/environment';
 
@@ -160,6 +160,19 @@ export class AuthService {
     const user = (await res.json()) as AuthUser;
     this.persist(token, user);
     return user;
+  }
+
+  /** True while signed in to the shared demo account (the test phone). */
+  readonly isDemo = computed(() => (this.user()?.phone || '').replace(/\D/g, '').endsWith('9999999999'));
+
+  /** "Explore the demo": sign straight into the shared sample account — no
+   *  phone, no code. It can look at everything but change nothing. */
+  async demoLogin(): Promise<AuthUser> {
+    const res = await fetch(`${environment.apiUrl}/auth/demo`, { method: 'POST' });
+    if (!res.ok) throw new Error('The demo is unavailable right now. Please try again.');
+    const data = (await res.json()) as { token: string; user: AuthUser };
+    this.persist(data.token, data.user);
+    return data.user;
   }
 
   signOut(): void {

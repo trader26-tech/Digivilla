@@ -1213,3 +1213,5 @@ li.open .ma-chev { transform: rotate(180deg); }
   box-shadow: 0 16px 34px -14px rgba(22, 48, 43, .55); animation: slidein .25s cubic-bezier(.22, 1, .36, 1) both;
 }
 @media (prefers-reduced-motion: reduce) { .ap, .flash { animation: none; } .pp, .pp-car, .pp-opts button { transition: none; } }
+
+.cr-demo { margin-left: 0.4rem; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #4a3aa7; background: color-mix(in srgb, #4a3aa7 12%, transparent); vertical-align: middle; }

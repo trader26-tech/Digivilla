@@ -373,6 +373,20 @@ def auth_me(authorization: Optional[str] = Header(default=None)) -> dict:
     return user
 
 
+def _is_demo(owner: str) -> bool:
+    """The public demo account ("Explore the demo" = the test phone 9999999999).
+    It is shared by everyone trying the app, so it can look at everything but
+    change nothing."""
+    from app.client_portfolio import _last10, _user_row
+    return _last10(_user_row(owner).get("phone")) == "9999999999"
+
+
+@app.post("/auth/demo", response_model=AuthResponse)
+def auth_demo() -> dict:
+    """Sign straight into the shared demo account — no phone, no code."""
+    return phone_svc.login_with_phone("", phone_svc.DEV_PHONE, "")
+
+
 @app.post("/auth/profile", response_model=AuthUser)
 def auth_profile(
     req: ProfileRequest, authorization: Optional[str] = Header(default=None)
@@ -382,6 +396,8 @@ def auth_profile(
     owner = auth_svc.owner_from_token(token)
     if not owner:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    if _is_demo(owner):
+        return auth_svc.me(token)            # the shared demo can't be renamed
     try:
         return auth_svc.save_profile(owner, req.name, req.email, req.age, req.city)
     except auth_svc.AuthError as e:
@@ -471,6 +487,9 @@ def patch_my_profile(
     these two fields; empty string clears back to the default. No email needed."""
     owner = _owner_or_401(authorization)
     from app import client_portfolio
+    if _is_demo(owner):                      # look, don't touch: the demo is shared
+        return {"estate_name": client_portfolio.estate_name_for_owner(owner),
+                "estate_city": client_portfolio._estate_city_for_owner(owner)}
     name = body.get("estate_name") if isinstance(body, dict) else None
     city = body.get("estate_city") if isinstance(body, dict) else None
     return client_portfolio.set_estate_profile(owner, name, city)
@@ -686,6 +705,8 @@ def put_my_estate(
 ) -> dict:
     """Replace this user's estate with the given tiles."""
     owner = _owner_or_401(authorization)
+    if _is_demo(owner):
+        return {"tiles": estate_svc.get_tiles(owner) if hasattr(estate_svc, "get_tiles") else []}
     tiles = body.get("tiles", []) if isinstance(body, dict) else []
     return {"tiles": estate_svc.save_tiles(owner, tiles)}
 

@@ -69,6 +69,22 @@ export class LoginComponent {
     }
   }
 
+  /** "Explore the demo" — straight into the sample estate, no sign-up. */
+  demoBusy = signal(false);
+  async tryDemo(): Promise<void> {
+    if (this.demoBusy()) return;
+    this.demoBusy.set(true);
+    this.error.set('');
+    try {
+      await this.auth.demoLogin();
+      this.done.emit();
+    } catch (e: any) {
+      this.error.set(e?.message || 'The demo is unavailable right now.');
+    } finally {
+      this.demoBusy.set(false);
+    }
+  }
+
   editPhone(): void {
     this.step.set('phone');
     this.code.set('');

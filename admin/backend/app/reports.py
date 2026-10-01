@@ -572,7 +572,8 @@ def _save_holdings(rows: list[dict], report_date: str, codes: dict[str, int | No
         })
     if _use_supabase():
         try:
-            _sb().table("client_holdings").delete().neq("client_code", "__none__").execute()
+            # every client's holdings come from the report — except the demo's
+            _sb().table("client_holdings").delete().neq("client_code", DEMO_CODE).execute()
             if enriched:
                 _sb().table("client_holdings").upsert(
                     enriched, on_conflict="client_code,scheme_name,folio_no").execute()
@@ -750,6 +751,7 @@ def list_clients_summary() -> list[dict]:
             "net_worth": val["net_worth"], "invested": val["invested"],
             "gain": val["gain"], "gain_pct": val["gain_pct"],
             "holdings_count": val["count"],
+            "demo": code == DEMO_CODE,
         })
     return sorted(out, key=lambda x: x["net_worth"], reverse=True)
 
@@ -956,6 +958,10 @@ def villas_live() -> list[dict]:
 # MANUAL TRANSACTION → VILLA MAPPING (admin)
 # ============================================================================
 VILLA_UNIT = 500_000.0   # a full villa = ₹5L invested (a UI hint, not enforced)
+# The public demo account (client app → "Explore the demo", phone 9999999999).
+# Its sample portfolio is seeded by client/backend/scripts/seed_demo.py; uploads
+# never touch it and it is left out of the admin's totals and alerts.
+DEMO_CODE = "DEV9999"
 
 
 def list_transactions(client_code: str) -> list[dict]:
@@ -1163,7 +1169,7 @@ def mapping_overview() -> dict:
     per: dict[str, dict] = {}
     for t in txns:
         code = t.get("client_code")
-        if not code:
+        if not code or code == DEMO_CODE:
             continue
         c = per.setdefault(code, {
             "client_code": code, "name": names.get(code) or code,

@@ -390,6 +390,8 @@ export interface TodayStatus {
 export interface NetWorthRow {
   client_code: string; name: string; city?: string; phone?: string;
   net_worth: number; invested: number; gain: number; gain_pct: number; holdings_count: number;
+  /** the public demo account — shown, but kept out of the totals */
+  demo?: boolean;
 }
 export interface Holding {
   scheme_name: string; scheme_code?: number; folio_no?: string;

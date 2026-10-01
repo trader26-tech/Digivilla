@@ -181,8 +181,11 @@ export class AppComponent implements OnInit {
       return (b[sort] || 0) - (a[sort] || 0);
     });
   });
-  nwTotal = computed(() => this.nwClients().reduce((s, c) => s + (c.net_worth || 0), 0));
-  nwTotalInvested = computed(() => this.nwClients().reduce((s, c) => s + (c.invested || 0), 0));
+  /** real clients only — the demo account never counts in the totals */
+  private nwReal = computed(() => this.nwClients().filter((c) => !c.demo));
+  nwTotalCount = computed(() => this.nwReal().length);
+  nwTotal = computed(() => this.nwReal().reduce((s, c) => s + (c.net_worth || 0), 0));
+  nwTotalInvested = computed(() => this.nwReal().reduce((s, c) => s + (c.invested || 0), 0));
   nwTotalGain = computed(() => this.nwTotal() - this.nwTotalInvested());
   nwGainPct = computed(() => {
     const inv = this.nwTotalInvested();

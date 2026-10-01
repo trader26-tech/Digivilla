@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, delay, of } from 'rxjs';
+
+import { AuthService } from './auth/auth.service';
 
 import { environment } from '../environments/environment';
 
@@ -32,8 +34,20 @@ export class BookingService {
   // Bookings are served by the admin backend (shared bookings DB), not the
   // planner/funds API, so use bookingApiUrl.
   private base = environment.bookingApiUrl;
+  private auth = inject(AuthService);
+
+  /** The demo walks through every flow, but never reaches the advisor: the
+   *  request "succeeds" locally and nothing is sent. */
+  private demoBooking(payload: Partial<BookingCreate>): Observable<Booking> {
+    return of({
+      id: 'demo', status: 'confirmed', created_at: new Date().toISOString(),
+      name: payload.name || 'Demo', phone: payload.phone || '', property: payload.property || 'villa',
+      variant: payload.variant || 'balanced', ...payload,
+    } as Booking).pipe(delay(400));
+  }
 
   createBooking(payload: BookingCreate): Observable<Booking> {
+    if (this.auth.isDemo()) return this.demoBooking(payload);
     return this.http.post<Booking>(`${this.base}/bookings`, payload);
   }
 
@@ -42,6 +56,7 @@ export class BookingService {
     name: string; phone: string; kind: RequestKind;
     property: string; variant?: string; amount?: number; note?: string;
   }): Observable<Booking> {
+    if (this.auth.isDemo()) return this.demoBooking(payload);
     return this.http.post<Booking>(`${this.base}/bookings`, { plots: 1, ...payload });
   }
 
@@ -53,6 +68,7 @@ export class BookingService {
   /** This client's own bookings (by phone), newest first — used to show the
    *  setup call they booked on the home screen. */
   mine(phone: string): Observable<Booking[]> {
+    if (this.auth.isDemo()) return of([]);
     return this.http.get<Booking[]>(`${this.base}/bookings/mine?phone=${encodeURIComponent(phone)}`);
   }
 

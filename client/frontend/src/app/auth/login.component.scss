@@ -195,3 +195,24 @@
 #recaptcha-container { position: fixed; bottom: 0; left: 0; }
 
 @media (prefers-reduced-motion: reduce) { .login, .lg-form { animation: none; } }
+
+/* "Explore the demo" — a quiet second door under Continue */
+.lg-demo {
+  display: flex; align-items: center; gap: 0.75rem; width: 100%; min-height: 56px; padding: 0.55rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 35%, var(--survey)); border-radius: 16px; cursor: pointer;
+  background: color-mix(in srgb, var(--brass) 8%, transparent); color: var(--ink); font: inherit; text-align: left;
+  transition: transform 0.12s, background 0.2s, border-color 0.2s;
+  &:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); border-color: color-mix(in srgb, var(--brass) 60%, var(--survey)); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:disabled { opacity: 0.7; cursor: default; }
+}
+.lg-demo-ic {
+  flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  color: #fff; background: linear-gradient(120deg, var(--brass), color-mix(in srgb, var(--brass) 65%, #4a3fb0));
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--brass) 80%, transparent);
+  svg { margin-left: 2px; }
+}
+.lg-demo-t { display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  b { font-size: 0.98rem; font-weight: 750; }
+  small { font-size: 0.76rem; color: var(--muted); }
+}

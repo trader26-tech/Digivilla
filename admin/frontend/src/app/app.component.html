@@ -156,7 +156,7 @@
       <div class="kpi hero-kpi">
         <small>Total net worth · live</small>
         <b class="figure">{{ money(nwTotal()) }}</b>
-        <span class="kpi-foot">{{ nwClients().length }} clients tracked</span>
+        <span class="kpi-foot">{{ nwTotalCount() }} clients tracked</span>
       </div>
       <div class="kpi">
         <small>Total invested</small>
@@ -204,7 +204,7 @@
         <li class="client-row" *ngFor="let c of nwFiltered()" (click)="openNwClient(c.client_code)" tabindex="0" (keydown.enter)="openNwClient(c.client_code)">
           <span class="cr-avatar">{{ initials(c.name) }}</span>
           <span class="cr-id">
-            <span class="cr-name-row"><b class="cr-name">{{ c.name }}</b><span class="cr-unmapped" *ngIf="unmappedOf(c.client_code) as n" title="Transactions not mapped to a villa">{{ n }} unmapped</span></span>
+            <span class="cr-name-row"><b class="cr-name">{{ c.name }}</b><span class="cr-demo" *ngIf="c.demo" title="The public demo account — not counted in the totals">Demo</span><span class="cr-unmapped" *ngIf="unmappedOf(c.client_code) as n" title="Transactions not mapped to a villa">{{ n }} unmapped</span></span>
             <small class="cr-sub">{{ c.city || '—' }} · {{ c.client_code }}<span *ngIf="c.phone"> · {{ c.phone }}</span></small>
           </span>
           <span class="cr-stat">
