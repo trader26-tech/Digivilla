@@ -7,6 +7,7 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 }
 .dial-row { display: flex; align-items: center; gap: 12px; padding: 0 18px; }
 .tri {
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   flex: none; width: 40px; height: 44px; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center;
   transition: filter .15s, transform .12s;
   i { width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
@@ -30,7 +31,7 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 .amount input { outline: none; caret-color: #9184d9; }
 
 .ruler {
-  position: relative; height: 42px; overflow: hidden; cursor: ew-resize; touch-action: pan-y; user-select: none;
+  position: relative; height: 42px; overflow: hidden; cursor: ew-resize; touch-action: pan-y; user-select: none; -webkit-user-select: none;
   background: linear-gradient(90deg, #1a1c27, #2b2e3a 50%, #1a1c27);
   &:focus-visible { outline: 2px solid #9184d9; outline-offset: -2px; }
 }

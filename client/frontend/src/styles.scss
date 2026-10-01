@@ -37,6 +37,13 @@
 
 * { box-sizing: border-box; }
 
+/* An app, not a web page: a fast double tap (e.g. on a stepper) must never zoom,
+   and nothing may drift sideways. `manipulation` keeps scrolling + taps but drops
+   double-tap-to-zoom; elements that need their own gestures (the ruler) set a
+   narrower touch-action of their own. */
+* { touch-action: manipulation; }
+html, body { overflow-x: hidden; overscroll-behavior-x: none; -webkit-text-size-adjust: 100%; }
+
 html, body {
   margin: 0;
   padding: 0;
