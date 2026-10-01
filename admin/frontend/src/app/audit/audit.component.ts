@@ -167,7 +167,7 @@ export class AuditComponent implements OnInit {
     this.check.set(null);
     this.rows.set([]);
     this.showAll.set(false);
-    this.hoverI.set(null); this.hoverY.set(null);
+    this.openYear.set(null);
     const k = this.kind();
     const params: Record<string, string | number> = {
       kind: k, years: this.years(), slab: this.slab(), amount: this.amount(), fd_rate: this.fdRate(),
@@ -275,159 +275,14 @@ export class AuditComponent implements OnInit {
     URL.revokeObjectURL(a.href);
   }
 
-  // ── the story: what the money did (charts) ──
+  // ── charts (Data used) ──
   readonly SLEEVE_ORDER = ['arbitrage', 'mid', 'small', 'gold'];
   readonly COLORS: Record<string, string> = { arbitrage: '#7fb39b', mid: '#3f7d1f', small: '#8fd65a', gold: '#e0b23e' };
-  story = computed<any>(() => this.check()?.story ?? null);
-  storyOk = computed(() => (this.story()?.checks ?? []).every((c: any) => c.ok));
-  growthSleeves = computed<any[]>(() => (this.story()?.sleeves ?? []).filter((s: any) => s.sleeve !== 'arbitrage'));
-  growthWeights = computed(() => this.growthSleeves().map((g: any) => Math.round(g.weight * 100)).join(' : '));
-  arbSleeve = computed<any>(() => (this.story()?.sleeves ?? []).find((s: any) => s.sleeve === 'arbitrage'));
-  readonly hoverI = signal<number | null>(null);
-  readonly hoverY = signal<number | null>(null);
 
   private readonly CW = 1000;          // chart viewBox width
   private readonly PL = 70; private readonly PR = 14;
   private xAt(i: number, n: number): number { return this.PL + (n ? i / n : 0) * (this.CW - this.PL - this.PR); }
 
-  /** Stacked area: each sleeve's ₹ value every month, with the 1 January lines. */
-  stack = computed(() => {
-    const st = this.story();
-    if (!st) return null;
-    const months: string[] = st.series.months;
-    const n = months.length - 1;
-    const H = 300, T = 14, B = 30;
-    const order = this.SLEEVE_ORDER.filter((s) => st.series.values[s]);
-    const tot = months.map((_, i) => order.reduce((a, s) => a + st.series.values[s][i], 0));
-    const max = this.niceMax(Math.max(...tot));
-    const y = (v: number) => T + (1 - v / max) * (H - T - B);
-    const cum = months.map(() => 0);
-    const bands = order.map((s) => {
-      const lo = cum.slice();
-      st.series.values[s].forEach((v: number, i: number) => (cum[i] += v));
-      const top = months.map((_, i) => `${this.xAt(i, n).toFixed(1)},${y(cum[i]).toFixed(1)}`);
-      const bot = months.map((_, i) => `${this.xAt(i, n).toFixed(1)},${y(lo[i]).toFixed(1)}`).reverse();
-      return { sleeve: s, color: this.COLORS[s], d: `M${top.join('L')}L${bot.join('L')}Z` };
-    });
-    const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ y: y(max * f), label: this.short(max * f) }));
-    const rb = (st.series.rebalance_months as string[]).map((m) => ({ x: this.xAt(months.indexOf(m), n), label: '1 Jan ’' + String(+m.slice(2, 4) + 1).padStart(2, '0') }));
-    const step = n > 130 ? 2 : 1;
-    const xl = months.map((m, i) => ({ m, i })).filter(({ m, i }) => m.endsWith('-01') && (+m.slice(0, 4)) % step === 0 && i > 2 && i < n - 2)
-      .map(({ m, i }) => ({ x: this.xAt(i, n), label: m.slice(0, 4) }));
-    return { H, T, B, n, months, bands, ticks, rb, xl, tot, order, bottom: H - B };
-  });
-
-  /** One line per fund (₹ value), same x scale — the clearest view of each fund
-   *  shrinking (payouts) or stepping (1 January). */
-  readonly chartMode = signal<'lines' | 'stack'>('lines');
-  lines = computed(() => {
-    const st = this.story();
-    if (!st) return null;
-    const months: string[] = st.series.months;
-    const n = months.length - 1;
-    const H = 300, T = 14, B = 30;
-    const order = this.SLEEVE_ORDER.filter((s) => st.series.values[s]);
-    const max = this.niceMax(Math.max(...order.flatMap((s) => st.series.values[s])));
-    const y = (v: number) => T + (1 - v / max) * (H - T - B);
-    const rbIdx = (st.series.rebalance_months as string[]).map((m) => months.indexOf(m));
-    const ls = order.map((s) => {
-      const v: number[] = st.series.values[s];
-      return {
-        sleeve: s, color: this.COLORS[s],
-        d: 'M' + v.map((x, i) => `${this.xAt(i, n).toFixed(1)},${y(x).toFixed(1)}`).join('L'),
-        dots: rbIdx.map((i) => ({ x: this.xAt(i, n), y: y(v[i]) })),
-        end: { x: this.xAt(n, n), y: y(v[n]), label: this.short(v[n]) },
-      };
-    });
-    // keep the end labels from overlapping
-    const ends = ls.map((l) => l.end).sort((a, b) => a.y - b.y);
-    for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 14) ends[k].y = ends[k - 1].y + 14;
-    const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ y: y(max * f), label: this.short(max * f) }));
-    return { H, B, ls, ticks, bottom: H - B };
-  });
-
-  /** Arbitrage units, month by month — only payouts take them down. */
-  arb = computed(() => {
-    const st = this.story();
-    if (!st) return null;
-    const months: string[] = st.series.months;
-    const u: number[] = st.series.arb_units;
-    const n = months.length - 1;
-    const H = 170, T = 14, B = 26;
-    const max = Math.max(...u) * 1.08 || 1;
-    const y = (v: number) => T + (1 - v / max) * (H - T - B);
-    const pts = u.map((v, i) => `${this.xAt(i, n).toFixed(1)},${y(v).toFixed(1)}`);
-    const area = `M${this.xAt(0, n)},${H - B}L${pts.join('L')}L${this.xAt(n, n)},${H - B}Z`;
-    const marks = (st.series.rebalance_months as string[]).map((m) => {
-      const i = months.indexOf(m);
-      return { x: this.xAt(i, n), y: y(u[i]), m };
-    });
-    return { H, B, line: `M${pts.join('L')}`, area, marks, first: u[0], last: u[n], yFirst: Math.min(y(u[0]), H - B - 22), yLast: Math.min(y(u[n]), H - B - 22) };
-  });
-
-  /** Per 1 January: each index's return since the last one, and what was moved. */
-  yearsChart = computed(() => {
-    const st = this.story();
-    if (!st?.years?.length) return null;
-    const ys: any[] = st.years;
-    const H = 230, T = 18, B = 26, mid = 0;
-    const plotW = this.CW - this.PL - this.PR;
-    const gw = plotW / ys.length;
-    const bw = Math.min(16, (gw - 10) / 4);
-    // returns
-    const rets = ys.flatMap((y) => y.funds.map((f: any) => f.index_ret));
-    const rMax = this.niceMax(Math.max(5, ...rets)), rMin = -this.niceMax(Math.max(5, ...rets.map((v: number) => -v)));
-    const ry = (v: number) => T + (rMax - v) / (rMax - rMin) * (H - T - B);
-    // moved
-    const mv = ys.flatMap((y) => y.funds.map((f: any) => f.moved));
-    const mAbs = this.niceMax(Math.max(1, ...mv.map((v: number) => Math.abs(v))));
-    const my = (v: number) => T + (mAbs - v) / (2 * mAbs) * (H - T - B);
-    const groups = ys.map((y, gi) => {
-      const x0 = this.PL + gi * gw + (gw - bw * 4 - 6) / 2;
-      const bars = this.SLEEVE_ORDER.map((s, k) => {
-        const f = y.funds.find((ff: any) => ff.sleeve === s);
-        if (!f) return null;
-        const x = x0 + k * (bw + 2);
-        const r = { x, w: bw, y: Math.min(ry(f.index_ret), ry(0)), h: Math.max(1, Math.abs(ry(f.index_ret) - ry(0))), color: this.COLORS[s] };
-        const m = { x, w: bw, y: Math.min(my(f.moved), my(0)), h: Math.abs(my(f.moved) - my(0)), color: this.COLORS[s], zero: s === 'arbitrage' };
-        return { sleeve: s, r, m };
-      }).filter(Boolean);
-      return { gi, label: this.growthYear(y, true), cx: this.PL + gi * gw + gw / 2, x: this.PL + gi * gw, w: gw, bars };
-    });
-    const rt = this.spaced([0, rMax, rMin, rMax / 2, rMin / 2].map((v) => ({ y: ry(v), label: `${v > 0 ? '+' : ''}${Math.round(v)}%` })));
-    const mt = [0, mAbs, -mAbs, mAbs / 2, -mAbs / 2].map((v) => ({ y: my(v), label: (v > 0 ? '+' : v < 0 ? '−' : '') + this.short(Math.abs(v)) }));
-    return { H, B, groups, rt, mt, r0: ry(0), m0: my(0) };
-  });
-  hoverYear = computed(() => { const i = this.hoverY(); return i === null ? null : this.story()?.years?.[i] ?? null; });
-
-  onStackMove(ev: MouseEvent, svg: Element): void {
-    const c = this.stack();
-    if (!c) return;
-    const r = svg.getBoundingClientRect();
-    const x = ((ev.clientX - r.left) / r.width) * this.CW;
-    const i = Math.round(((x - this.PL) / (this.CW - this.PL - this.PR)) * c.n);
-    this.hoverI.set(i < 0 || i > c.n ? null : i);
-  }
-  hoverX = computed(() => { const c = this.stack(), i = this.hoverI(); return c && i !== null ? this.xAt(i, c.n) : 0; });
-  hoverPct = computed(() => (this.hoverX() / this.CW) * 100);
-  hoverRow = computed(() => {
-    const st = this.story(), i = this.hoverI();
-    if (!st || i === null) return null;
-    const m = st.series.months[i];
-    const vals = this.SLEEVE_ORDER.filter((s) => st.series.values[s]).map((s) => ({ s, v: st.series.values[s][i] })).reverse();
-    return { m, vals, total: vals.reduce((a, b) => a + b.v, 0), units: st.series.arb_units[i], rb: (st.series.rebalance_months as string[]).includes(m) };
-  });
-  /** The calendar year whose growth a 1 January rebalance corrects ('2016', or '’16*' when it's a part year). */
-  growthYear(y: any, short = false): string {
-    const yr = y.month.slice(0, 4);
-    const part = !(y.since.endsWith('-12') && +y.since.slice(0, 4) === +yr - 1);
-    return (short ? '’' + yr.slice(2) : yr) + (part ? '*' : '');
-  }
-  partNote = computed(() => {
-    const y = this.story()?.years?.[0];
-    return y && this.growthYear(y).endsWith('*') ? `* ${y.month.slice(0, 4)} from ${this.monthName(y.since)} only` : '';
-  });
-  monthName(m: string): string { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleString('en-IN', { month: 'short' }); }
   // ── year by year: the app's screen vs the independent simulation ──
   /** app value vs check value → one cell */
   private pair(app: number | undefined, check: number | undefined) {
@@ -458,43 +313,38 @@ export class AuditComponent implements OnInit {
   isSip = computed(() => this.kind() === 'sip');
   startAmount = computed(() => this.kind() === 'flat' ? (this.check()?.headline?.outlay ?? 0) : this.amount());
 
-  // ── month by month, per fund ──
-  monthlyRows = computed<any[]>(() => {
-    const m = this.story()?.monthly ?? [];
-    if (this.showAll() || m.length <= 16) return m;
-    return [...m.slice(0, 8), null, ...m.slice(-6)];
+  // ── click a year: every month of it, worked out ──
+  readonly openYear = signal<number | null>(null);
+  toggleYear(y: number): void { this.openYear.set(this.openYear() === y ? null : y); }
+  /** the months of year y (year 1 also shows the start month) */
+  yearMonths = computed<any[]>(() => {
+    const y = this.openYear(), d: any[] = this.check()?.detail ?? [];
+    if (y === null || !d.length) return [];
+    return d.filter((m) => (y === 1 ? m.i >= 0 : m.i > 12 * (y - 1)) && m.i <= 12 * y).map((m) => this.monthSteps(m));
   });
-  monthlyCount = computed(() => this.story()?.monthly?.length ?? 0);
-  /** One plain sentence for what happened that month. */
-  happened(r: any, first: boolean): string {
-    const f = r.f, names = this.SLEEVE_ORDER.filter((s) => f[s]);
-    const parts: string[] = [];
-    const inv = names.reduce((a, s) => a + f[s].inv, 0);
-    if (inv > 0.5) parts.push(first && this.kind() !== 'sip' ? `Invested ${this.short(inv)} in today’s split` : `${this.kind() === 'sip' ? 'SIP' : 'Put in'} ${this.short(inv)}`);
-    const paid = names.filter((s) => f[s].paid > 0.5);
-    if (paid.length) parts.push(`Paid you ${this.short(paid.reduce((a, s) => a + f[s].paid, 0))} — sold from ${paid.map((s) => this.sleeveLabel(s).toLowerCase()).join(' + ')}`);
-    if (r.rebalanced) {
-      const sold = names.filter((s) => f[s].rb < -0.5).map((s) => `${this.sleeveLabel(s).toLowerCase()} −${this.short(-f[s].rb)}`);
-      const bought = names.filter((s) => f[s].rb > 0.5).map((s) => `${this.sleeveLabel(s).toLowerCase()} +${this.short(f[s].rb)}`);
-      parts.push(`↻ 1 Jan ${this.nextYear(r.month)} rebalance: sold ${sold.join(', ') || '—'} → bought ${bought.join(', ') || '—'}; arbitrage untouched`);
-    }
-    if (r.tax_paid > 0.5) parts.push(`Tax for the year paid: ${this.inr(r.tax_paid)}`);
-    return parts.join(' · ') || 'Market move only';
+  /** Turn one month's operations into the steps the page writes out. */
+  private monthSteps(m: any): any {
+    const ev: any[] = m.events ?? [];
+    const by = (s: string) => m.funds.find((f: any) => f.sleeve === s);
+    const invest = ev.filter((e) => e.op === 'buy' && e.tag === 'invest');
+    const payIdx = ev.findIndex((e) => e.op === 'pay');
+    const pay = payIdx >= 0 ? { ...ev[payIdx], sells: ev.filter((e) => e.op === 'sell' && e.tag === 'payout') } : null;
+    const rbIdx = ev.findIndex((e) => e.op === 'rebalance');
+    const rebal = rbIdx >= 0 ? { ...ev[rbIdx],
+      sells: ev.filter((e) => e.op === 'sell' && e.tag === 'rebalance'), buys: ev.filter((e) => e.op === 'buy' && e.tag === 'rebalance') } : null;
+    const gain = (xs: any[]) => xs.reduce((a, e) => a + (e.gain_st ?? 0) + (e.gain_lt ?? 0), 0);
+    return {
+      ...m, label: m.i === 0 ? 'Start' : `Month ${m.i}`,
+      funds: m.funds.map((f: any) => ({ ...f, chg: f.nav_prev ? (f.nav / f.nav_prev - 1) * 100 : null })),
+      invest: invest.length ? { total: invest.reduce((a, e) => a + e.rupees, 0), rows: invest } : null,
+      pay, payGain: pay ? gain(pay.sells) : 0,
+      rebal, rebalGain: rebal ? gain(rebal.sells) : 0,
+      arbNav: by('arbitrage')?.nav,
+    };
   }
-  downloadMonthly(): void {
-    const m = this.story()?.monthly ?? [];
-    if (!m.length) return;
-    const names = this.SLEEVE_ORDER.filter((s) => m[0].f[s]);
-    const head = ['month', ...names.flatMap((s) => [`${s}_value`, `${s}_put_in`, `${s}_sold_to_pay_you`, `${s}_rebalance_bought(+)/sold(-)`, `${s}_market_move`]),
-                  'total_value', 'payout', 'tax_paid', 'rebalanced', 'what_happened'];
-    const rows = m.map((r: any, i: number) => [r.month, ...names.flatMap((s) => [r.f[s].v, r.f[s].inv, r.f[s].paid, r.f[s].rb, r.f[s].mkt]),
-                  r.total, r.payout, r.tax_paid, r.rebalanced ? 'yes' : '', `"${this.happened(r, i === 0).replace(/"/g, "'")}"`].join(','));
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([[head.join(','), ...rows].join('\n')], { type: 'text/csv' }));
-    a.download = `digivilla-${this.kind()}-${this.years()}y-month-by-month.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
+  fyOf(m: string): string { const y = +m.slice(0, 4), mo = +m.slice(5, 7), s = mo >= 4 ? y : y - 1; return `FY ${s}-${String(s + 1).slice(2)}`; }
+  u(v: number): string { return v.toLocaleString('en-IN', { minimumFractionDigits: 4, maximumFractionDigits: 4 }); }
+  ix(v: number): string { return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
 
   // ── data used: charts ──
   /** Growth of ₹100 put into each index at the start, month by month. */
@@ -564,8 +414,6 @@ export class AuditComponent implements OnInit {
     return { H, B, groups, rt, r0: ry(0), order, ys };
   });
   readonly dataYearHover = signal<number | null>(null);
-
-  yearFund(y: any, s: string): any { return y?.funds?.find((f: any) => f.sleeve === s); }
 
   /** keep axis ticks at least 16 units apart (no "−3%" on top of "0%") */
   private spaced<T extends { y: number }>(ticks: T[]): T[] {

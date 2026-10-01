@@ -348,6 +348,26 @@ class _Tax:
         gold = max(0.0, self.g_st) * self.slab / 100 + max(0.0, self.g_lt) * 0.125
         return (eq + gold) * 1.04
 
+    def breakdown(self) -> dict:
+        """The year's tax worked out line by line (same maths as tax())."""
+        st, lt = self.eq_st, self.eq_lt
+        if st < 0 < lt:
+            lt, st = max(0.0, lt + st), 0.0
+        elif lt < 0 < st:
+            st, lt = max(0.0, st + lt), 0.0
+        lines = [
+            {"label": "Equity short-term gains (held ≤ 12 months)", "gain": self.eq_st, "taxable": max(0.0, st), "rate": 20.0},
+            {"label": "Equity long-term gains (held > 12 months), after the ₹1,25,000 exemption", "gain": self.eq_lt,
+             "taxable": max(0.0, lt - 125_000), "rate": 12.5},
+            {"label": "Gold short-term gains (held ≤ 24 months), at your slab", "gain": self.g_st, "taxable": max(0.0, self.g_st), "rate": float(self.slab)},
+            {"label": "Gold long-term gains (held > 24 months)", "gain": self.g_lt, "taxable": max(0.0, self.g_lt), "rate": 12.5},
+        ]
+        for l in lines:
+            l["tax"] = round(l["taxable"] * l["rate"] / 100, 2)
+            l["gain"], l["taxable"] = round(l["gain"], 2), round(l["taxable"], 2)
+        before = sum(l["tax"] for l in lines)
+        return {"lines": lines, "before_cess": round(before, 2), "cess": round(before * 0.04, 2), "total": round(before * 1.04, 2)}
+
     def copy(self):
         t = _Tax(self.slab)
         t.eq_st, t.eq_lt, t.g_st, t.g_lt = self.eq_st, self.eq_lt, self.g_st, self.g_lt
@@ -375,6 +395,7 @@ class _Lots:
         self.flows = [{"invest": 0.0, "payout": 0.0, "rebal_in": 0.0, "rebal_out": 0.0} for _ in funds]
         self.arb_rebal_moves = 0                # buys/sells of arbitrage made BY a rebalance (must stay 0)
         self._i = 0                             # the month the last snapshot was taken at
+        self.ev = []                            # this month's operations, with their arithmetic
 
     def units(self, k): return sum(l[0] for l in self.lots[k])
     def val(self, k, i): return self.units(k) * self.f[k]["nav"][i]
@@ -383,6 +404,8 @@ class _Lots:
     def buy(self, k, rupees, i):
         if rupees > 0:
             self.lots[k].append([rupees / self.f[k]["nav"][i], self.f[k]["nav"][i], i])
+            self.ev.append({"op": "buy", "tag": self.tag, "sleeve": self.f[k]["sleeve"], "rupees": round(rupees, 2),
+                            "nav": self.f[k]["nav"][i], "units": round(rupees / self.f[k]["nav"][i], 6)})
             self.flows[k]["rebal_in" if self.tag == "rebalance" else "invest"] += rupees
             if self.tag == "rebalance" and self.f[k]["sleeve"] == "arbitrage": self.arb_rebal_moves += 1
 
@@ -390,24 +413,37 @@ class _Lots:
         self.flows[k]["rebal_out" if self.tag == "rebalance" else "payout"] += rupees
         if self.tag == "rebalance" and self.f[k]["sleeve"] == "arbitrage": self.arb_rebal_moves += 1
         u = rupees / self.f[k]["nav"][i]
+        e = {"op": "sell", "tag": self.tag, "sleeve": self.f[k]["sleeve"], "rupees": round(rupees, 2),
+             "nav": self.f[k]["nav"][i], "units": round(u, 6), "cost": 0.0, "gain_st": 0.0, "gain_lt": 0.0, "lots": []}
+        lim = 24 if self.f[k]["sleeve"] == "gold" else 12
         while u > 1e-12 and self.lots[k]:
             lot = self.lots[k][0]
             take = min(u, lot[0])
-            self.t.add(self.f[k]["sleeve"], take * (self.f[k]["nav"][i] - lot[1]), i - lot[2])
+            g = take * (self.f[k]["nav"][i] - lot[1])
+            self.t.add(self.f[k]["sleeve"], g, i - lot[2])
+            e["cost"] += take * lot[1]
+            e["gain_lt" if i - lot[2] > lim else "gain_st"] += g
+            if len(e["lots"]) < 4:
+                e["lots"].append({"units": round(take, 6), "bought_nav": lot[1], "held_months": i - lot[2], "gain": round(g, 2)})
             lot[0] -= take; u -= take
             if lot[0] <= 1e-12: self.lots[k].pop(0)
+        for f in ("cost", "gain_st", "gain_lt"): e[f] = round(e[f], 2)
+        self.ev.append(e)
 
     def pay(self, need, i, a) -> str:
         self.tag = "payout"
+        self.ev.append({"op": "pay", "need": round(need, 2), "arb_value": round(self.val(a, i), 2)})
         take = min(need, self.val(a, i))
         if take > 0: self.sell(a, take, i)
         need -= take
         if need <= 1e-6:
+            self.tag = "invest"
             return "arbitrage"
         vals = [0 if k == a else self.val(k, i) for k in range(len(self.f))]
         tot = sum(vals)
         for k in range(len(self.f)):
             if vals[k] > 0: self.sell(k, min(vals[k], need * vals[k] / tot), i)
+        self.tag = "invest"
         return "arbitrage + others" if take > 0 else "other funds"
 
     def rebalance(self, i, a):
@@ -421,6 +457,11 @@ class _Lots:
             moved[k] = G * self.f[k]["weight"] / wsum - before[k]
         t0 = self.t.tax()
         units_before = [self.units(k) for k in range(len(self.f))]
+        self.ev.append({"op": "rebalance", "growth_total": round(G, 2),
+                        "rows": [{"sleeve": self.f[k]["sleeve"], "before": round(before[k], 2),
+                                  "share": round(self.f[k]["weight"] / wsum * 100, 4),
+                                  "target": round(G * self.f[k]["weight"] / wsum, 2), "moved": round(moved[k], 2)} for k in g],
+                        "arbitrage": round(before[a], 2) if a >= 0 else None})
         self.tag = "rebalance"
         for k in g:
             if moved[k] < -0.005: self.sell(k, -moved[k], i)
@@ -445,6 +486,30 @@ def _snap(book, a):
             "arb_paid": book.flows[a]["payout"] if a >= 0 else 0.0,
             "arb_inv": book.flows[a]["invest"] if a >= 0 else 0.0,
             "fl": [dict(f) for f in book.flows]}
+
+
+def _month_detail(book, i, months, units_open, fy_tax=None, fy_label=None, extra=None) -> dict:
+    """One month, written out: index values, units × index before and after,
+    and every operation with its arithmetic."""
+    f = book.f
+    d = {"i": i, "month": months[i],
+         "funds": [{"sleeve": x["sleeve"], "nav": x["nav"][i], "nav_prev": x["nav"][i - 1] if i else None,
+                    "units_open": round(units_open[k], 6), "value_open": round(units_open[k] * x["nav"][i], 2),
+                    "units_close": round(book.units(k), 6), "value_close": round(book.val(k, i), 2)} for k, x in enumerate(f)],
+         "events": book.ev, "total_open": round(sum(units_open[k] * x["nav"][i] for k, x in enumerate(f)), 2),
+         "total_close": round(book.total(i), 2)}
+    if fy_tax is not None:
+        d["fy_tax"] = {"fy": fy_label, **fy_tax}
+    if extra:
+        d.update(extra)
+    book.ev = []
+    return d
+
+
+def _fy_label(m: str) -> str:
+    y, mo = int(m[:4]), int(m[5:7])
+    s = y if mo >= 4 else y - 1
+    return f"FY {s}-{str(s + 1)[2:]}"
 
 
 def _monthly(funds, months, snaps, ledger) -> list:
@@ -571,6 +636,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
         book.buy(k, amount * f["weight"], 0)
     book._i = 0
     snaps, rb_raw = [_snap(book, a)], []
+    detail = [_month_detail(book, 0, months, [0.0] * len(funds))]
     yearly, year_paid = [], 0.0
     pay = amount * 0.003
     fy, paid, tax_paid = _fy(months[0]), 0.0, 0.0
@@ -580,7 +646,10 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
                "rebalanced": "", "value": round(book.total(0), 2), "tax_paid": 0}]
     for i in range(1, n + 1):
         t_now = 0.0
+        units_open = [book.units(k) for k in range(len(funds))]
+        fy_tax = fy_lab = None
         if _fy(months[i]) != fy:
+            fy_tax, fy_lab = tax.breakdown(), _fy_label(months[i - 1])
             t_now = tax.tax(); tax_paid += t_now; flows[-1] -= t_now
             tax.reset(); fy = _fy(months[i])
         sold = book.pay(pay, i, a)
@@ -594,6 +663,8 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
             rb = "yes"
         book._i = i
         snaps.append(_snap(book, a))
+        detail.append(_month_detail(book, i, months, units_open, fy_tax, fy_lab,
+                                    {"paid_so_far": round(paid, 2), "tax_paid_so_far": round(tax_paid, 2)}))
         year_paid += pay
         if i % 12 == 0:                                   # a year since the start: what the app's column shows
             v = book.total(i)
@@ -616,7 +687,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
         "story": _story(funds, months, book, a, snaps, rb_raw, ledger=ledger),
         "start_funds": {f["sleeve"]: round(amount * f["weight"], 2) for f in funds},
-        "yearly": yearly,
+        "yearly": yearly, "detail": detail, "fy_open_tax": tax.breakdown(),
         "headline": {
             "dvPaidGross": round(paid, 2), "dvPayoutTax": round(payout_tax, 2), "dvPaid": round(paid - payout_tax, 2),
             "dvValue": round(value, 2), "dvExitTax": round(exit_tax, 2), "dvTotal": round(paid - payout_tax + value, 2),
@@ -641,9 +712,13 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     flows = [0.0] * (n + 1)
     ledger, rebalances = [], []
     snaps, rb_raw, yearly = [], [], []
+    detail = []
     for i in range(n + 1):
         t_now = 0.0
+        units_open = [book.units(k) for k in range(len(funds))]
+        fy_tax = fy_lab = None
         if _fy(months[i]) != fy:
+            fy_tax, fy_lab = tax.breakdown(), _fy_label(months[i - 1])
             t_now = tax.tax(); income_tax += t_now; flows[i] -= t_now
             tax.reset(); fy = _fy(months[i])
         pay = 0.0
@@ -670,6 +745,8 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
             invested += amt; flows[i] -= amt
         book._i = i
         snaps.append(_snap(book, a))
+        detail.append(_month_detail(book, i, months, units_open, fy_tax, fy_lab,
+                                    {"invested_so_far": round(invested, 2), "instalment": round(amt, 2), "income_paid": round(pay, 2)}))
         ledger.append({"month": months[i], "put_in": round(amt, 2), "payout": round(pay, 2), "rebalanced": rb,
                        "invested_so_far": round(invested, 2), "value": round(book.total(i), 2), "tax_paid": round(t_now, 2)})
     last_tax = tax.tax()
@@ -680,7 +757,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
         "story": _story(funds, months, book, a, snaps, rb_raw, sip=True, ledger=ledger),
-        "yearly": yearly,
+        "yearly": yearly, "detail": detail,
         "headline": {"invested": round(invested, 2), "value": round(v, 2), "exitTax": round(exit_tax, 2),
                      "valueAfterTax": round(v - exit_tax, 2), "incomeGross": round(income, 2),
                      "incomeTax": round(income_tax, 2), "income": round(income - income_tax, 2), "xirr": _irr(flows),
@@ -706,7 +783,7 @@ def flat_check(years: int, price: float, value: float, rent: float, stamp: float
     dv = payout_check(Y, outlay, 0, slab)
     return {
         "start": dv["start"], "end": dv["end"], "months": dv["months"], "ledger": dv["ledger"], "flat_years": rows,
-        "rebalances": dv["rebalances"], "story": dv["story"], "yearly": dv["yearly"], "start_funds": dv["start_funds"],
+        "rebalances": dv["rebalances"], "story": dv["story"], "yearly": dv["yearly"], "start_funds": dv["start_funds"], "detail": dv["detail"],
         "headline": {"outlay": round(outlay, 2), "appPct": round(app * 100, 4), "rentGross": round(gross, 2),
                      "rentTax": round(rent_tax, 2), "upkeep": round(upkeep, 2), "rentKept": round(kept, 2),
                      "flTotal": round(value + kept, 2), "dvPaid": dv["headline"]["dvPaid"],

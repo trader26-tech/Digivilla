@@ -253,3 +253,43 @@ i { font-style: normal; }
 .ytab .th small { text-transform: none; letter-spacing: 0; font-weight: 600; }
 .ytab .fv { border-right: 3px solid var(--sc); padding-right: 0.45rem; }
 .ytab .y0 { background: var(--surface-2); }
+
+/* ══ year by year · click a year → its months, worked out ══ */
+.how { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.2rem; padding: 0.9rem 1rem; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.how-s { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.82rem; line-height: 1.5;
+  b { font-size: 0.86rem; } .sw { margin: 0 0.25rem 0 0.1rem; } }
+.how-c { margin: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.78rem; line-height: 1.45;
+  div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.6rem; } dt { font-weight: 800; } dd { margin: 0; color: var(--muted); } }
+.tap { grid-column: 1 / -1; margin: 0.2rem 0 0; padding-top: 0.55rem; border-top: 1px dashed var(--border); font-size: 0.82rem; font-weight: 700; color: var(--brass); }
+
+button.tr.yrow { width: 100%; border: 0; border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); background: var(--surface); font: inherit; font-size: 0.78rem; color: inherit; text-align: left; cursor: pointer;
+  &:hover { background: color-mix(in srgb, var(--brass) 6%, var(--surface)); }
+  &.open { background: color-mix(in srgb, var(--brass) 11%, var(--surface)); }
+  .chev { font-style: normal; color: var(--brass); margin-left: 0.2rem; } }
+
+.months { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; background: color-mix(in srgb, var(--brass) 5%, var(--surface-2)); border-top: 1px solid var(--border); }
+.mo { border-radius: 12px; background: var(--surface); border: 1px solid var(--border); padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.6rem; font-variant-numeric: tabular-nums;
+  &.rbm { border-color: color-mix(in srgb, var(--brass) 55%, var(--border)); }
+  &.taxm { box-shadow: inset 4px 0 0 color-mix(in srgb, var(--negative) 55%, transparent); }
+  > header { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+    b { font-size: 0.95rem; } span { font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    em { margin-left: auto; font-style: normal; font-size: 0.78rem; color: var(--muted); } } }
+.st { display: flex; flex-direction: column; gap: 0.35rem;
+  h5 { margin: 0; display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; font-weight: 800;
+    > i { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 0.7rem; color: #fff; background: var(--ink); } }
+  &.rb h5 > i { background: var(--brass); } &.tx h5 > i { background: var(--negative); } &.end h5 > i { background: var(--positive); } }
+.note { margin: 0; font-size: 0.78rem; color: var(--muted); line-height: 1.45; b { color: var(--ink); } &.warn { color: var(--negative); } }
+.mt { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: 0.76rem; }
+.mr { display: grid; grid-template-columns: 1.1fr 0.9fr 0.9fr 0.6fr 0.9fr 2fr; gap: 0.6rem; padding: 0.32rem 0.6rem; border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); align-items: baseline;
+  &:first-child { border-top: 0; } > span:not(:first-child) { text-align: right; }
+  &.mh { background: var(--surface-2); font-size: 0.66rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  &.sum { background: var(--surface-2); } }
+.rb .mr { grid-template-columns: 0.9fr 0.9fr 1.8fr 1fr 2fr; }
+.tx .mr { grid-template-columns: 2.6fr 1fr 1fr 0.5fr 1fr; }
+.calc { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.78rem;
+  li { line-height: 1.45; } small { display: block; margin-left: 1.15rem; color: var(--muted); font-size: 0.72rem; }
+  &.row { flex-direction: row; flex-wrap: wrap; gap: 0.25rem 1.2rem; } .tot { flex-basis: 100%; padding-top: 0.25rem; border-top: 1px dashed var(--border); } }
+.fold { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 0.6rem 0.9rem;
+  summary { cursor: pointer; font-size: 0.86rem; font-weight: 800; } &[open] summary { margin-bottom: 0.6rem; } }
+@media (max-width: 900px) { .how { grid-template-columns: 1fr; } .mr { grid-template-columns: 1fr 1fr 1fr; } .rb .mr, .tx .mr { grid-template-columns: 1fr 1fr 1fr; } }
+.note.yr-pt { padding: 0.4rem 0.6rem; border-radius: 8px; background: color-mix(in srgb, var(--brass) 10%, var(--surface)); color: var(--ink); }
