@@ -42,7 +42,7 @@ export class AuditComponent implements OnInit {
   clientList: NetWorthRow[] = [];
   private api = inject(AdminService);
 
-  readonly tab = signal<Tab>('client');
+  readonly tab = signal<Tab>('calc');
 
   // ── data used ──
   readonly data = signal<any>(null);
@@ -86,7 +86,8 @@ export class AuditComponent implements OnInit {
   readonly YEARS = [5, 8, 10, 15];
   readonly SLABS = [0, 5, 10, 15, 20, 25, 30];
 
-  ngOnInit(): void { /* the client is picked when the list arrives (see `clients`) */ }
+  /** Calculators is the first tab: run the default check straight away. */
+  ngOnInit(): void { this.run(); }
 
   setTab(t: Tab): void {
     this.tab.set(t);
@@ -315,7 +316,68 @@ export class AuditComponent implements OnInit {
 
   // ── click a year: every month of it, worked out ──
   readonly openYear = signal<number | null>(null);
-  toggleYear(y: number): void { this.openYear.set(this.openYear() === y ? null : y); }
+  toggleYear(y: number): void { this.openYear.set(this.openYear() === y ? null : y); this.simHover.set(null); }
+
+  // ── one graph: every month of the simulation ──
+  readonly simHover = signal<number | null>(null);      // index into simChart().bars
+  simChart = computed(() => {
+    const d: any[] = this.check()?.detail ?? [];
+    if (!d.length) return null;
+    const y = this.openYear();
+    const months = y === null ? d : d.filter((m) => (y === 1 ? m.i >= 0 : m.i > 12 * (y - 1)) && m.i <= 12 * y);
+    const H = 300, T = 16, B = 46;
+    const plotW = this.CW - this.PL - this.PR;
+    const slot = plotW / months.length;
+    const bw = Math.max(1.5, Math.min(44, slot * 0.74));
+    const max = this.niceMax(Math.max(...months.map((m) => m.total_close)));
+    const yv = (v: number) => T + (1 - v / max) * (H - T - B);
+    const base = H - B;
+    const order = this.SLEEVE_ORDER;
+    const bars = months.map((m, j) => {
+      let cum = 0;
+      const segs = order.map((s) => {
+        const f = m.funds.find((x: any) => x.sleeve === s);
+        const v = f?.value_close ?? 0;
+        const seg = { s, y: yv(cum + v), h: Math.max(0, yv(cum) - yv(cum + v)), color: this.COLORS[s] };
+        cum += v;
+        return seg;
+      });
+      const ev: any[] = m.events ?? [];
+      return {
+        j, i: m.i, month: m.month, x: this.PL + j * slot + (slot - bw) / 2, cx: this.PL + j * slot + slot / 2, w: bw, segs,
+        top: yv(m.total_close), year: m.i === 0 ? 1 : Math.ceil(m.i / 12),
+        rb: ev.some((e) => e.op === 'rebalance'), tax: !!m.fy_tax, start: m.i === 0,
+      };
+    });
+    // year bands (whole-run view) or month labels (one year)
+    const bands = y !== null ? [] : [...new Set(bars.map((b) => b.year))].map((yr) => {
+      const bs = bars.filter((b) => b.year === yr);
+      const x0 = this.PL + bs[0].j * slot, x1 = this.PL + (bs[bs.length - 1].j + 1) * slot;
+      return { yr, x: x0, w: x1 - x0, cx: (x0 + x1) / 2 };
+    });
+    const labels = y === null ? [] : bars.map((b) => ({ x: b.cx, label: this.monthName(b.month) + (b.month.endsWith('-01') || b.j === 0 ? ' ’' + b.month.slice(2, 4) : '') }));
+    const ticks = this.spaced([0, 0.25, 0.5, 0.75, 1].map((f) => ({ y: yv(max * f), label: this.short(max * f) })));
+    return { H, B, base, bars, bands, labels, ticks, slot, year: y };
+  });
+  yearOf(i: number): number { return i === 0 ? 1 : Math.ceil(i / 12); }
+  simPick(b: any): void { if (this.openYear() === null) this.toggleYear(b.year); }
+  onSimMove(ev: MouseEvent, svg: Element): void {
+    const c = this.simChart();
+    if (!c) return;
+    const r = svg.getBoundingClientRect();
+    const x = ((ev.clientX - r.left) / r.width) * this.CW;
+    const j = Math.floor((x - this.PL) / c.slot);
+    this.simHover.set(j < 0 || j >= c.bars.length ? null : j);
+  }
+  /** Everything about the hovered month, for the tooltip under the graph. */
+  simHoverMonth = computed(() => {
+    const c = this.simChart(), j = this.simHover();
+    if (!c || j === null) return null;
+    const d: any[] = this.check()?.detail ?? [];
+    const m = d.find((x) => x.i === c.bars[j].i);
+    return m ? { ...this.monthSteps(m), x: c.bars[j].cx } : null;
+  });
+  monthName(m: string): string { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleString('en-IN', { month: 'short' }); }
   /** the months of year y (year 1 also shows the start month) */
   yearMonths = computed<any[]>(() => {
     const y = this.openYear(), d: any[] = this.check()?.detail ?? [];

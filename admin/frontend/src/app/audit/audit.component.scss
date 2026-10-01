@@ -293,3 +293,15 @@ button.tr.yrow { width: 100%; border: 0; border-top: 1px solid color-mix(in srgb
   summary { cursor: pointer; font-size: 0.86rem; font-weight: 800; } &[open] summary { margin-bottom: 0.6rem; } }
 @media (max-width: 900px) { .how { grid-template-columns: 1fr; } .mr { grid-template-columns: 1fr 1fr 1fr; } .rb .mr, .tx .mr { grid-template-columns: 1fr 1fr 1fr; } }
 .note.yr-pt { padding: 0.4rem 0.6rem; border-radius: 8px; background: color-mix(in srgb, var(--brass) 10%, var(--surface)); color: var(--ink); }
+
+/* the one graph */
+.sim .band-y { cursor: pointer; rect { fill: transparent; } rect.alt { fill: color-mix(in srgb, var(--ink) 3.5%, transparent); } &:hover rect { fill: color-mix(in srgb, var(--brass) 10%, transparent); } }
+.cv svg text.yl { font-size: 12px; font-weight: 800; fill: var(--ink); }
+.sim .mb { cursor: pointer; rect { transition: opacity .12s; } &.on rect { opacity: .7; } }
+.cv svg text.mk { font-size: 12px; font-weight: 800; }
+.rbk { color: #9a6b12; fill: #9a6b12; } .txk { color: var(--negative); fill: var(--negative); }
+.simtip { margin: 0.6rem 0 0; padding: 0.6rem 0.8rem; border-radius: 10px; background: var(--surface-2); font-size: 0.78rem; font-variant-numeric: tabular-nums; min-height: 4.4rem;
+  > b { font-size: 0.88rem; margin-right: 0.5rem; }
+  .st-r { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin-top: 0.35rem; span { display: inline-flex; align-items: center; } .tot { margin-left: auto; } }
+  .st-e { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin-top: 0.3rem; font-weight: 700; .rbt { color: #9a6b12; } } }
+p.simtip { display: flex; align-items: center; }

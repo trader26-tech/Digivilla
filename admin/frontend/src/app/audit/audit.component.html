@@ -280,6 +280,47 @@
           <p class="tap">Click any year to see each of its months worked out — index values, units, what was sold or bought, and the tax.</p>
         </div>
 
+        <!-- one graph: every month of the run (or of the open year) -->
+        <figure class="chart sim" *ngIf="simChart() as c">
+          <figcaption class="cap-row"><div>
+              <b>{{ c.year === null ? 'Every month of the simulation — ₹ in each fund' : 'Year ' + c.year + ', month by month' }}</b>
+              <span>{{ c.year === null ? 'one bar per month · click a year to zoom in and see its months below the table row' : 'hover a month for its numbers · every month is worked out below' }}</span></div>
+            <button class="ghost" *ngIf="c.year !== null" (click)="toggleYear(c.year)">← All years</button></figcaption>
+          <div class="cv">
+            <svg #simsv [attr.viewBox]="'0 0 1000 ' + c.H" (mousemove)="onSimMove($event, simsv)" (mouseleave)="simHover.set(null)" role="img" aria-label="₹ in each fund, every month">
+              <g *ngFor="let bd of c.bands; let bi = index" class="band-y" (click)="toggleYear(bd.yr)">
+                <rect [attr.x]="bd.x" y="0" [attr.width]="bd.w" [attr.height]="c.base" [class.alt]="bi % 2 === 1"/>
+                <text [attr.x]="bd.cx" [attr.y]="c.base + 34" text-anchor="middle" class="yl">Year {{ bd.yr }}</text>
+              </g>
+              <g class="grid"><ng-container *ngFor="let t of c.ticks"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+              <g *ngFor="let b of c.bars" class="mb" [class.on]="simHover() === b.j" (click)="simPick(b)">
+                <rect *ngFor="let sg of b.segs" [attr.x]="b.x" [attr.y]="sg.y" [attr.width]="b.w" [attr.height]="sg.h" [attr.fill]="sg.color"/>
+                <text *ngIf="b.rb" [attr.x]="b.cx" [attr.y]="c.base + 14" text-anchor="middle" class="mk rbk">↻</text>
+                <text *ngIf="b.tax" [attr.x]="b.cx" [attr.y]="c.base + 14" text-anchor="middle" class="mk txk">₹</text>
+              </g>
+              <g class="xl"><text *ngFor="let l of c.labels" [attr.x]="l.x" [attr.y]="c.base + 32" text-anchor="middle">{{ l.label }}</text></g>
+              <line x1="70" x2="986" [attr.y1]="c.base" [attr.y2]="c.base" class="base"/>
+            </svg>
+          </div>
+          <div class="lg"><span *ngFor="let s of SLEEVE_ORDER" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }}</span><span><b class="rbk">↻</b>&nbsp;1 January rebalance</span><span><b class="txk">₹</b>&nbsp;April: last year’s tax paid</span><span>{{ isSip() ? 'income paid each year end from arbitrage' : inr(startAmount() * 0.003) + ' paid from arbitrage every month' }}</span></div>
+
+          <!-- the hovered month, in numbers -->
+          <div class="simtip" *ngIf="simHoverMonth() as m; else simHint">
+            <b>{{ m.month + '-01' | date:'MMMM yyyy' }}</b><span class="dim">{{ m.label }} · Year {{ yearOf(m.i) }}</span>
+            <div class="st-r">
+              <span *ngFor="let f of m.funds" [attr.data-s]="f.sleeve"><i class="sw"></i>{{ sleeveLabel(f.sleeve) }} {{ u(f.units_close) }} × {{ ix(f.nav) }} =&nbsp;<b>{{ inr(f.value_close) }}</b></span>
+              <span class="tot">Total&nbsp;<b>{{ inr(m.total_close) }}</b></span>
+            </div>
+            <div class="st-e">
+              <span *ngIf="m.invest">+ put in {{ inr(m.invest.total) }}</span>
+              <span *ngIf="m.pay" class="neg">− paid you {{ inr(m.pay.need) }}: <ng-container *ngFor="let e of m.pay.sells; let last = last">{{ u(e.units) }} {{ sleeveLabel(e.sleeve).toLowerCase() }} units × {{ ix(e.nav) }}{{ last ? '' : ' + ' }}</ng-container></span>
+              <span *ngIf="m.rebal" class="rbt">↻ rebalance: <ng-container *ngFor="let r of m.rebal.rows; let last = last">{{ sleeveLabel(r.sleeve).toLowerCase() }} {{ r.moved > 0 ? '+' : '−' }}{{ inr(r.moved < 0 ? -r.moved : r.moved) }}{{ last ? '' : ', ' }}</ng-container> · arbitrage untouched</span>
+              <span *ngIf="m.fy_tax" class="neg">₹ tax for {{ m.fy_tax.fy }} paid: {{ inr(m.fy_tax.total, 2) }}</span>
+            </div>
+          </div>
+          <ng-template #simHint><p class="simtip dim">Hover a bar to read that month: units × index value for each fund, and what was paid, sold, bought or taxed.</p></ng-template>
+        </figure>
+
         <div class="tbl sm ytab" [class.sip]="isSip()">
           <div class="tr th">
             <span>Year end</span>
