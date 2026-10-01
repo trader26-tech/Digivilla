@@ -23,9 +23,9 @@
       <span class="g">DigiVilla · {{ rate(res.dv.dvIrr) }} a yr</span>
     </div>
   } @else if (failed()) {
-    <div class="fail">Couldn't load fund prices.<button (click)="retry()">Try again</button></div>
+    <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
   } @else {
-    <div class="skel" aria-busy="true" aria-label="Loading fund prices"><i></i><i></i></div>
+    <div class="skel" aria-busy="true" aria-label="Loading index data"><i></i><i></i></div>
     <div class="legend"><span>&nbsp;</span><span>&nbsp;</span></div>
   }
 
@@ -43,7 +43,7 @@
                    [min]="act().min" [max]="act().max" [step]="act().step" [nudgeBy]="act().big" [major]="act().major" [mid]="act().mid"></app-amount-dial>
 
   <p class="fine">
-    Tap a card, slide to change it. Same cash as the flat cost all-in; DigiVilla at real past prices, after tax.
+    Tap a card, slide to change it. Same cash as the flat cost all-in; DigiVilla on real index history, after tax.
     <span class="links">
       <button class="how" (click)="go('vs')" aria-label="See flat and DigiVilla side by side">Side by side</button>
       <i aria-hidden="true">·</i>
@@ -156,7 +156,7 @@
       <div class="step-card">
         <span class="step-k">The other path</span>
         <h3>The same {{ fmt(res.outlay) }} in DigiVilla</h3>
-        <p>Put into today's DigiVilla mix in {{ ym(res.months[0]) }}, at real prices. It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ INCOME_PCT }}% a year) by selling a little of the <b>Arbitrage</b> fund — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:</p>
+        <p>Put into today's DigiVilla split in {{ ym(res.months[0]) }}, on real index history. It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ INCOME_PCT }}% a year) by selling a little of the <b>Arbitrage</b> part — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:</p>
         <div class="mixbar" aria-hidden="true">
           @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
         </div>
@@ -196,7 +196,9 @@
       Good to know
     </h4>
     <ul>
-      <li><b>DigiVilla is the past, not a promise.</b> Real fund prices from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. Funds can fall; the next {{ res.years }} years won't repeat.</li>
+      <li><b>DigiVilla is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. Funds can fall; the next {{ res.years }} years won't repeat.</li>
+      <li><b>Indices, not funds.</b> Each part follows its benchmark index — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI and the domestic gold price — so no fund manager's picks are in these numbers. Index values are before any fund's costs.</li>
+      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; mid cap, small cap and gold are brought back to the split they started with. Any gain sold to do that is taxed.</li>
       <li><b>The flat uses your numbers.</b> What it's worth today is your estimate; past rent is worked back from today's at {{ RENT_RISE }}% a year.</li>
       <li><b>Tax:</b> rent at a {{ SLAB }}% slab after the {{ STD_DED }}% standard deduction; DigiVilla's payouts on today's fund-tax rules; {{ cessPct }}% cess on both, no surcharge.</li>
       <li><b>Not counted:</b> home-loan interest, society fees, property tax, and the cost of selling the flat.</li>
@@ -208,9 +210,9 @@
   </section>
 
   <details class="raw">
-    <summary>See every unit and price</summary>
-    <div class="nums" role="table" aria-label="Units and NAVs">
-      <div class="nums-h" role="row"><span>Fund · price then → now</span><span>Units</span><span>Worth now</span></div>
+    <summary>See every unit and index value</summary>
+    <div class="nums" role="table" aria-label="Units and index values">
+      <div class="nums-h" role="row"><span>Index · value then → now</span><span>Units</span><span>Worth now</span></div>
       @for (f of res.dv.funds; track f.name) {
         <div class="nums-r" role="row">
           <span><b>{{ f.name }}</b><small>{{ f.weight * 100 | number: '1.0-0' }}% · {{ nav(f.navStart) }} → {{ nav(f.navNow) }}</small></span>

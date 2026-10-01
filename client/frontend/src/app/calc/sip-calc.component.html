@@ -64,9 +64,9 @@
   @if (r()) {
     <app-year-cols [cols]="yearCols()"></app-year-cols>
   } @else if (failed()) {
-    <div class="fail">Couldn't load fund prices.<button (click)="retry()">Try again</button></div>
+    <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
   } @else {
-    <div class="skel" aria-busy="true" aria-label="Loading fund prices"><i></i><i></i></div>
+    <div class="skel" aria-busy="true" aria-label="Loading index data"><i></i><i></i></div>
   }
 
   <!-- ── years ── -->
@@ -82,7 +82,7 @@
                    [min]="5000" [max]="500000" [step]="1000" [nudgeBy]="10000" [major]="50000" [mid]="10000"></app-amount-dial>
 
   <p class="fine">
-    Today's DigiVilla mix at real past prices, after tax. Each gold cap is that year's {{ INCOME_PCT }}% income.
+    Today's DigiVilla split on real index history, after tax. Each gold cap is that year's {{ INCOME_PCT }}% income.
     <button class="how" (click)="go('notes')">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
       How this is worked out
@@ -137,7 +137,7 @@
       <div class="step-card">
         <span class="step-k">Every year end</span>
         <h3>You got <em class="gold">{{ INCOME_PCT }}%</em> as income</h3>
-        <p>{{ INCOME_PCT }}% of what it was worth is paid to you, mostly from the <b>Arbitrage</b> fund (the steady part). It grew from {{ fmt(x.firstIncome) }} in year 1 to {{ fmt(x.lastIncome) }} in year {{ res.years }} — <b>{{ fmt(res.income) }}</b> in all, after {{ inr(res.incomeTax) }} tax.</p>
+        <p>{{ INCOME_PCT }}% of what it was worth is paid to you, mostly from the <b>Arbitrage</b> part (the steady one). It grew from {{ fmt(x.firstIncome) }} in year 1 to {{ fmt(x.lastIncome) }} in year {{ res.years }} — <b>{{ fmt(res.income) }}</b> in all, after {{ inr(res.incomeTax) }} tax.</p>
       </div>
     </li>
 
@@ -163,7 +163,9 @@
       Good to know
     </h4>
     <ul>
-      <li><b>This is the past, not a promise.</b> Real fund prices from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>Indices, not funds.</b> Each part follows its benchmark index — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI and the domestic gold price — so no fund manager's picks are in these numbers. Index values are before any fund's costs.</li>
+      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; mid cap, small cap and gold are brought back to the split they started with. Any gain sold to do that is taxed.</li>
       <li><b>Today's tax rules</b> for every year: 20% on profit held under a year, 12.5% after (first {{ inr(EXEMPT) }} a year free), gold 12.5% after 2 years, plus {{ cessPct }}% cess. We assume a {{ SLAB }}% slab and no surcharge.</li>
       @for (p of proxies(); track p.fund + p.until) {
         <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
@@ -173,9 +175,9 @@
   </section>
 
   <details class="raw">
-    <summary>See what each fund got</summary>
-    <div class="nums" role="table" aria-label="What each fund got and is worth">
-      <div class="nums-h" role="row"><span>Fund</span><span>Put in</span><span>Worth now</span></div>
+    <summary>See what each index got</summary>
+    <div class="nums" role="table" aria-label="What each index got and is worth">
+      <div class="nums-h" role="row"><span>Index</span><span>Put in</span><span>Worth now</span></div>
       @for (f of res.funds; track f.name) {
         <div class="nums-r" role="row">
           <span><b>{{ f.name }}</b><small>{{ f.weight * 100 | number: '1.0-0' }}% of each month</small></span>

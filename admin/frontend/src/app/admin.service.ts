@@ -365,6 +365,10 @@ export class AdminService {
   auditClient(code: string): Observable<any> {
     return this.http.get<any>(`${this.base}/admin/audit/client/${encodeURIComponent(code)}`, this.opts);
   }
+  /** What the calculators are fed: index series, weights, every month-end value, the rules. */
+  auditData(): Observable<any> {
+    return this.http.get<any>(`${this.base}/admin/audit/data`, this.opts);
+  }
   auditNavs(): Observable<any> {
     return this.http.get<any>(`${this.base}/admin/audit/navs`, this.opts);
   }

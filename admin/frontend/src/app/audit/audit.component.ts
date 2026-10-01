@@ -9,10 +9,10 @@ import {
   VillaFunds, simulateFlat, simulatePayout, simulateSipIncome, windowFor,
 } from '../../../../../client/frontend/src/app/calc/backtest.model';
 
-type Tab = 'client' | 'navs' | 'calc';
+type Tab = 'client' | 'navs' | 'calc' | 'data';
 type Kind = 'fd' | 'lump' | 'sip' | 'flat';
 
-interface Row { label: string; app: number | null; check: number | null; pct?: boolean; }
+interface Row { label: string; app: number | null; check: number | null; pct?: boolean; count?: boolean; }
 
 /**
  * "Check the maths" — every number the client app shows, worked out step by step
@@ -44,6 +44,12 @@ export class AuditComponent implements OnInit {
 
   readonly tab = signal<Tab>('client');
 
+  // ── data used ──
+  readonly data = signal<any>(null);
+  readonly dataLoading = signal(false);
+  readonly dataErr = signal('');
+  readonly dataYear = signal<string>('all');
+
   // ── client ──
   readonly code = signal('');
   readonly client = signal<any>(null);
@@ -71,6 +77,8 @@ export class AuditComponent implements OnInit {
   readonly check = signal<any>(null);
   readonly rows = signal<Row[]>([]);
   readonly showAll = signal(false);
+  readonly openReb = signal<string | null>(null);
+  toggleReb(m: string): void { this.openReb.set(this.openReb() === m ? null : m); }
   private vf: VillaFunds | null = null;
 
   readonly YEARS = [5, 8, 10, 15];
@@ -81,6 +89,7 @@ export class AuditComponent implements OnInit {
   setTab(t: Tab): void {
     this.tab.set(t);
     if (t === 'navs' && !this.navs()) this.loadNavs();
+    if (t === 'data' && !this.data()) this.loadData();
   }
 
   // ── client ──
@@ -98,6 +107,45 @@ export class AuditComponent implements OnInit {
   }
   allOk = computed(() => (this.client()?.checks ?? []).every((c: any) => c.ok));
   toggleVilla(id: string): void { this.openVilla.set(this.openVilla() === id ? null : id); }
+
+  // ── data used ──
+  loadData(): void {
+    this.dataLoading.set(true);
+    this.dataErr.set('');
+    this.api.auditData().subscribe({
+      next: (r) => { this.data.set(r); this.dataLoading.set(false); },
+      error: (e) => { this.dataErr.set(e?.error?.detail || 'Couldn’t load the data.'); this.dataLoading.set(false); },
+    });
+  }
+  dataYears = computed<string[]>(() => [...new Set<string>((this.data()?.rows ?? []).map((r: any) => r.month.slice(0, 4)))].reverse());
+  dataRows = computed<any[]>(() => {
+    const rows = this.data()?.rows ?? [];
+    const y = this.dataYear();
+    return (y === 'all' ? rows : rows.filter((r: any) => r.month.startsWith(y))).slice().reverse();
+  });
+  /** month-on-month change of one series, for the table */
+  mom(row: any, sleeve: string): number | null {
+    const rows = this.data()?.rows ?? [];
+    const i = rows.findIndex((r: any) => r.month === row.month);
+    return i > 0 ? (row[sleeve] / rows[i - 1][sleeve] - 1) * 100 : null;
+  }
+  downloadData(): void {
+    const d = this.data();
+    if (!d) return;
+    const cols = ['month', ...d.series.map((s: any) => s.sleeve)];
+    const head = ['month', ...d.series.map((s: any) => `"${s.name}"`)].join(',');
+    const csv = [head, ...d.rows.map((r: any) => cols.map((c) => r[c]).join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `digivilla-calculator-index-data-${d.start}-to-${d.end}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  /** '2021-12' → 2022: the 1 January the 31-Dec close stands for */
+  nextYear(m: string): number { return Number(m.slice(0, 4)) + 1; }
+  sleeveLabel(s: string): string {
+    return ({ arbitrage: 'Arbitrage', mid: 'Mid cap', small: 'Small cap', gold: 'Gold', large: 'Large cap' } as any)[s] || s;
+  }
 
   // ── navs ──
   loadNavs(): void {
@@ -152,6 +200,7 @@ export class AuditComponent implements OnInit {
         { label: 'DigiVilla total (paid + invested)', app: r.dvTotal, check: h.dvTotal },
         { label: 'Arbitrage share today', app: r.arbNowPct, check: h.arbNowPct, pct: true },
         { label: 'Return a year (after tax)', app: r.dvIrr, check: h.dvIrr, pct: true },
+        { label: '1 January rebalances', app: r.rebalances.length, check: h.rebalances, count: true },
       ];
       if (k === 'fd') rows.push(
         { label: 'FD interest after tax', app: r.fdPaid, check: h.fdPaid },
@@ -170,6 +219,7 @@ export class AuditComponent implements OnInit {
         { label: 'Tax on income', app: r.incomeTax, check: h.incomeTax },
         { label: 'Income after tax', app: r.income, check: h.income },
         { label: 'Return a year (XIRR)', app: r.xirr, check: h.xirr, pct: true },
+        { label: '1 January rebalances', app: r.rebalances.length, check: h.rebalances, count: true },
       ];
     }
     const r = simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: 7, slabPct: this.slab() });
@@ -227,15 +277,16 @@ export class AuditComponent implements OnInit {
   pct(v: number | null | undefined, dp = 2): string {
     return v === null || v === undefined || !isFinite(v) ? '—' : `${v.toFixed(dp)}%`;
   }
-  fig(r: Row, v: number | null): string { return r.pct ? this.pct(v, 4) : this.inr(v, 2); }
+  fig(r: Row, v: number | null): string { return r.count ? String(v ?? '—') : r.pct ? this.pct(v, 4) : this.inr(v, 2); }
   num(v: number | null | undefined, dp = 4): string {
     return v === null || v === undefined ? '—' : v.toLocaleString('en-IN', { maximumFractionDigits: dp });
   }
   colLabel(c: string): string {
-    return ({ month: 'Month', payout: 'Payout', sold_from: 'Sold from', arb_units: 'Arbitrage units', value: 'Value',
+    return ({ month: 'Month', payout: 'Payout', sold_from: 'Sold from', arb_units: 'Arbitrage units', value: 'Value', rebalanced: '1 Jan rebalance',
               tax_paid: 'Tax paid', put_in: 'Put in', invested_so_far: 'Put in so far' } as any)[c] || c;
   }
   cell(c: string, v: any): string {
+    if (c === 'rebalanced') return v ? '↻ rebalanced' : '';
     if (typeof v !== 'number') return v ?? '';
     if (c === 'arb_units') return this.num(v);
     return this.inr(v, 0);

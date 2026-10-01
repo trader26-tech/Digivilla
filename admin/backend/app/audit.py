@@ -279,6 +279,35 @@ def villa_funds() -> dict:
     return d
 
 
+def data_used() -> dict:
+    """Everything the calculators are fed: each series (what it is, where it comes
+    from, its weight, first/last month), every month-end value, the rules."""
+    d = villa_funds()
+    series = []
+    for f in d["funds"]:
+        v = f["nav"]
+        series.append({"sleeve": f["sleeve"], "name": f["name"], "source": f.get("source", ""),
+                       "weight": f["weight"], "first": d["months"][0], "last": d["months"][-1],
+                       "start_value": v[0], "end_value": v[-1],
+                       "growth_x": round(v[-1] / v[0], 4) if v[0] else None,
+                       "cagr": round(((v[-1] / v[0]) ** (12 / (len(v) - 1)) - 1) * 100, 2) if v[0] and len(v) > 1 else None})
+    rows = [{"month": m, **{f["sleeve"]: f["nav"][i] for f in d["funds"]}} for i, m in enumerate(d["months"])]
+    return {
+        "basis": d.get("basis", "index"), "note": d.get("note"), "start": d["months"][0], "end": d["months"][-1],
+        "series": series, "rows": rows,
+        "rules": [
+            "Each sleeve is its benchmark INDEX — no actively managed fund is used.",
+            "Weights are today's DigiVilla split from the admin's villa bucket, summed by sleeve.",
+            "Month-end close; the current month uses the latest close.",
+            "Payout (FD / Lumpsum / Flat): ₹30,000 a month per ₹1 Cr, sold from arbitrage first, then the growth sleeves pro-rata.",
+            "SIP: each month's amount buys every sleeve by weight; 3.6% of the value is paid at each year end (arbitrage first).",
+            "Every 1 January (at the 31 Dec close): arbitrage is left alone; mid cap, small cap and gold are rebalanced back to their starting split.",
+            "Sales take the oldest units first. Tax per financial year on today's rules: equity 20% ≤ 12 months, 12.5% after (₹1.25 L a year free); gold 12.5% after 24 months, slab before; +4% cess.",
+            "Index levels are before any fund's expense ratio.",
+        ],
+    }
+
+
 def _window(d: dict, years: int) -> dict:
     months = d["months"]
     start = max(0, len(months) - 1 - 12 * years)
@@ -337,93 +366,143 @@ def _irr(flows: list[float]) -> Optional[float]:
     return ((1 + (lo + hi) / 2) ** 12 - 1) * 100
 
 
+class _Lots:
+    """Every purchase a lot [units, price, month]; sales oldest-first."""
+    def __init__(self, funds, tax: _Tax):
+        self.f, self.t = funds, tax
+        self.lots = [[] for _ in funds]
+
+    def units(self, k): return sum(l[0] for l in self.lots[k])
+    def val(self, k, i): return self.units(k) * self.f[k]["nav"][i]
+    def total(self, i): return sum(self.val(k, i) for k in range(len(self.f)))
+
+    def buy(self, k, rupees, i):
+        if rupees > 0:
+            self.lots[k].append([rupees / self.f[k]["nav"][i], self.f[k]["nav"][i], i])
+
+    def sell(self, k, rupees, i):
+        u = rupees / self.f[k]["nav"][i]
+        while u > 1e-12 and self.lots[k]:
+            lot = self.lots[k][0]
+            take = min(u, lot[0])
+            self.t.add(self.f[k]["sleeve"], take * (self.f[k]["nav"][i] - lot[1]), i - lot[2])
+            lot[0] -= take; u -= take
+            if lot[0] <= 1e-12: self.lots[k].pop(0)
+
+    def pay(self, need, i, a) -> str:
+        take = min(need, self.val(a, i))
+        if take > 0: self.sell(a, take, i)
+        need -= take
+        if need <= 1e-6:
+            return "arbitrage"
+        vals = [0 if k == a else self.val(k, i) for k in range(len(self.f))]
+        tot = sum(vals)
+        for k in range(len(self.f)):
+            if vals[k] > 0: self.sell(k, min(vals[k], need * vals[k] / tot), i)
+        return "arbitrage + others" if take > 0 else "other funds"
+
+    def rebalance(self, i, a):
+        """1 January: growth part back to its starting split, arbitrage left alone."""
+        g = [k for k in range(len(self.f)) if k != a]
+        wsum = sum(self.f[k]["weight"] for k in g)
+        G = sum(self.val(k, i) for k in g)
+        before = [self.val(k, i) for k in range(len(self.f))]
+        moved = [0.0] * len(self.f)
+        for k in g:
+            moved[k] = G * self.f[k]["weight"] / wsum - before[k]
+        t0 = self.t.tax()
+        for k in g:
+            if moved[k] < -0.005: self.sell(k, -moved[k], i)
+        for k in g:
+            if moved[k] > 0.005: self.buy(k, moved[k], i)
+        return {"before": before, "after": [self.val(k, i) for k in range(len(self.f))],
+                "moved": moved, "tax": max(0.0, self.t.tax() - t0)}
+
+    def exit_tax(self, i):
+        t = self.t.copy()
+        for k, f in enumerate(self.f):
+            for lot in self.lots[k]:
+                t.add(f["sleeve"], lot[0] * (f["nav"][i] - lot[1]), i - lot[2])
+        return max(0.0, t.tax() - self.t.tax())
+
+
+def _rb(months, i): return i > 0 and months[i].endswith("-12")
+
+
+def _rb_row(funds, months, i, r):
+    return {"month": months[i], "funds": [
+        {"name": f["name"], "sleeve": f["sleeve"], "before": round(r["before"][k], 2),
+         "after": round(r["after"][k], 2), "moved": round(r["moved"][k], 2),
+         "share_before": round(r["before"][k] / sum(r["before"]) * 100, 2) if sum(r["before"]) else 0,
+         "share_after": round(r["after"][k] / sum(r["after"]) * 100, 2) if sum(r["after"]) else 0}
+        for k, f in enumerate(funds)], "tax": round(r["tax"], 2)}
+
+
 def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict:
-    """A lumpsum in today's mix paying ₹30,000/month per ₹1 Cr from arbitrage
-    (FD vs DigiVilla, Lumpsum, and the DigiVilla side of Flat)."""
+    """A lumpsum in today's split paying ₹30,000/month per ₹1 Cr from arbitrage
+    (FD vs DigiVilla, Lumpsum, and the DigiVilla side of Flat), rebalanced every
+    1 January (growth part only)."""
     w = _window(villa_funds(), years)
     months, funds = w["months"], w["funds"]
     n = len(months) - 1
     a = next(i for i, f in enumerate(funds) if f["sleeve"] == "arbitrage")
-    units = [amount * f["weight"] / f["nav"][0] for f in funds]
-    pay = amount * 0.003
     tax = _Tax(slab)
-    fy, paid, payout_tax = _fy(months[0]), 0.0, 0.0
+    book = _Lots(funds, tax)
+    for k, f in enumerate(funds):
+        book.buy(k, amount * f["weight"], 0)
+    pay = amount * 0.003
+    fy, paid, tax_paid = _fy(months[0]), 0.0, 0.0
     flows = [-amount]
-    ledger = [{"month": months[0], "payout": 0, "sold_from": "", "arb_units": round(units[a], 4),
-               "value": round(sum(u * f["nav"][0] for u, f in zip(units, funds)), 2), "tax_paid": 0}]
+    rebalances = []
+    ledger = [{"month": months[0], "payout": 0, "sold_from": "", "arb_units": round(book.units(a), 4),
+               "rebalanced": "", "value": round(book.total(0), 2), "tax_paid": 0}]
     for i in range(1, n + 1):
-        tax_now = 0.0
+        t_now = 0.0
         if _fy(months[i]) != fy:
-            tax_now = tax.tax(); payout_tax += tax_now; flows[-1] -= tax_now
+            t_now = tax.tax(); tax_paid += t_now; flows[-1] -= t_now
             tax.reset(); fy = _fy(months[i])
-        need, sold = pay, "arbitrage"
-        arb_val = units[a] * funds[a]["nav"][i]
-        take = min(need, arb_val)
-        if take > 0:
-            u = take / funds[a]["nav"][i]
-            units[a] -= u
-            tax.add("arbitrage", u * (funds[a]["nav"][i] - funds[a]["nav"][0]), i)
-            need -= take
-        if need > 1e-6:
-            sold = "arbitrage + others" if take > 0 else "other funds"
-            vals = [0 if k == a else units[k] * f["nav"][i] for k, f in enumerate(funds)]
-            tot = sum(vals)
-            for k, f in enumerate(funds):
-                if k != a and vals[k] > 0:
-                    r = min(vals[k], need * vals[k] / tot)
-                    u = r / f["nav"][i]
-                    units[k] -= u
-                    tax.add(f["sleeve"], u * (f["nav"][i] - f["nav"][0]), i)
+        sold = book.pay(pay, i, a)
         paid += pay
         flows.append(pay)
-        ledger.append({"month": months[i], "payout": round(pay, 2), "sold_from": sold, "arb_units": round(units[a], 4),
-                       "value": round(sum(u * f["nav"][i] for u, f in zip(units, funds)), 2), "tax_paid": round(tax_now, 2)})
+        rb = ""
+        if _rb(months, i):
+            r = book.rebalance(i, a)
+            rebalances.append(_rb_row(funds, months, i, r))
+            rb = "yes"
+        ledger.append({"month": months[i], "payout": round(pay, 2), "sold_from": sold, "arb_units": round(book.units(a), 4),
+                       "rebalanced": rb, "value": round(book.total(i), 2), "tax_paid": round(t_now, 2)})
     last_tax = tax.tax()
-    payout_tax += last_tax
-    value = sum(u * f["nav"][n] for u, f in zip(units, funds))
-    exit_t = tax.copy()
-    for k, f in enumerate(funds):
-        exit_t.add(f["sleeve"], units[k] * (f["nav"][n] - f["nav"][0]), n)
-    exit_tax = max(0.0, exit_t.tax() - last_tax)
+    payout_tax = tax_paid + last_tax
+    value = book.total(n)
+    exit_tax = book.exit_tax(n)
     flows[-1] += value - exit_tax - last_tax
     fd_month = amount * fd_rate / 1200 * (1 - slab / 100 * 1.04)
-    arb_now = units[a] * funds[a]["nav"][n]
+    arb_now = book.val(a, n)
     return {
-        "start": months[0], "end": months[-1], "months": n, "ledger": ledger,
+        "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
         "headline": {
             "dvPaidGross": round(paid, 2), "dvPayoutTax": round(payout_tax, 2), "dvPaid": round(paid - payout_tax, 2),
             "dvValue": round(value, 2), "dvExitTax": round(exit_tax, 2), "dvTotal": round(paid - payout_tax + value, 2),
             "arbNowPct": round(arb_now / value * 100, 4) if value else 0, "dvIrr": _irr(flows),
+            "rebalances": len(rebalances),
             "fdPaid": round(fd_month * n, 2), "fdTotal": round(amount + fd_month * n, 2),
         },
     }
 
 
 def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
-    """Monthly SIP + yearly step-up, 3.6% of value paid at each year end (FIFO lots)."""
+    """Monthly SIP + yearly step-up, 3.6% of value paid at each year end, growth
+    part rebalanced every 1 January."""
     w = _window(villa_funds(), years)
     months, funds = w["months"], w["funds"]
     n = len(months) - 1
     a = next(i for i, f in enumerate(funds) if f["sleeve"] == "arbitrage")
-    lots = [[] for _ in funds]            # [units, nav, month]
     tax = _Tax(slab)
+    book = _Lots(funds, tax)
     fy = _fy(months[0])
     invested = income = income_tax = 0.0
     flows = [0.0] * (n + 1)
-    ledger = []
-
-    def held(k): return sum(l[0] for l in lots[k])
-    def value(i): return sum(held(k) * f["nav"][i] for k, f in enumerate(funds))
-
-    def sell(k, rupees, i):
-        u = rupees / funds[k]["nav"][i]
-        while u > 1e-12 and lots[k]:
-            lot = lots[k][0]
-            take = min(u, lot[0])
-            tax.add(funds[k]["sleeve"], take * (funds[k]["nav"][i] - lot[1]), i - lot[2])
-            lot[0] -= take; u -= take
-            if lot[0] <= 1e-12: lots[k].pop(0)
-
+    ledger, rebalances = [], []
     for i in range(n + 1):
         t_now = 0.0
         if _fy(months[i]) != fy:
@@ -431,39 +510,33 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
             tax.reset(); fy = _fy(months[i])
         pay = 0.0
         if i > 0 and i % 12 == 0:
-            pay = value(i) * 0.036
-            need = pay
-            take = min(need, held(a) * funds[a]["nav"][i])
-            if take > 0: sell(a, take, i)
-            need -= take
-            if need > 1e-6:
-                vals = [0 if k == a else held(k) * f["nav"][i] for k, f in enumerate(funds)]
-                tot = sum(vals)
-                for k in range(len(funds)):
-                    if vals[k] > 0: sell(k, min(vals[k], need * vals[k] / tot), i)
+            pay = book.total(i) * 0.036
+            book.pay(pay, i, a)
             income += pay; flows[i] += pay
+        rb = ""
+        if _rb(months, i):
+            r = book.rebalance(i, a)
+            rebalances.append(_rb_row(funds, months, i, r))
+            rb = "yes"
         amt = 0.0
         if i < n:
             amt = monthly * (1 + step / 100) ** (i // 12)
             for k, f in enumerate(funds):
-                lots[k].append([amt * f["weight"] / f["nav"][i], f["nav"][i], i])
+                book.buy(k, amt * f["weight"], i)
             invested += amt; flows[i] -= amt
-        ledger.append({"month": months[i], "put_in": round(amt, 2), "payout": round(pay, 2),
-                       "invested_so_far": round(invested, 2), "value": round(value(i), 2), "tax_paid": round(t_now, 2)})
+        ledger.append({"month": months[i], "put_in": round(amt, 2), "payout": round(pay, 2), "rebalanced": rb,
+                       "invested_so_far": round(invested, 2), "value": round(book.total(i), 2), "tax_paid": round(t_now, 2)})
     last_tax = tax.tax()
     income_tax += last_tax
-    v = value(n)
-    exit_t = tax.copy()
-    for k, f in enumerate(funds):
-        for lot in lots[k]:
-            exit_t.add(f["sleeve"], lot[0] * (f["nav"][n] - lot[1]), n - lot[2])
-    exit_tax = max(0.0, exit_t.tax() - last_tax)
+    v = book.total(n)
+    exit_tax = book.exit_tax(n)
     flows[n] += v - exit_tax - last_tax
     return {
-        "start": months[0], "end": months[-1], "months": n, "ledger": ledger,
+        "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
         "headline": {"invested": round(invested, 2), "value": round(v, 2), "exitTax": round(exit_tax, 2),
                      "valueAfterTax": round(v - exit_tax, 2), "incomeGross": round(income, 2),
-                     "incomeTax": round(income_tax, 2), "income": round(income - income_tax, 2), "xirr": _irr(flows)},
+                     "incomeTax": round(income_tax, 2), "income": round(income - income_tax, 2), "xirr": _irr(flows),
+                     "rebalances": len(rebalances)},
     }
 
 
@@ -485,6 +558,7 @@ def flat_check(years: int, price: float, value: float, rent: float, stamp: float
     dv = payout_check(Y, outlay, 0, slab)
     return {
         "start": dv["start"], "end": dv["end"], "months": dv["months"], "ledger": dv["ledger"], "flat_years": rows,
+        "rebalances": dv["rebalances"],
         "headline": {"outlay": round(outlay, 2), "appPct": round(app * 100, 4), "rentGross": round(gross, 2),
                      "rentTax": round(rent_tax, 2), "upkeep": round(upkeep, 2), "rentKept": round(kept, 2),
                      "flTotal": round(value + kept, 2), "dvPaid": dv["headline"]["dvPaid"],

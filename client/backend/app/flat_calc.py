@@ -100,8 +100,32 @@ def villa_fund_paths(start: Optional[str] = None) -> dict:
     }
 
 
+def index_basket_paths(start: Optional[str] = None) -> dict:
+    """The calculators' basket: today's DigiVilla split BY SLEEVE (from the admin's
+    villa bucket), each sleeve on its benchmark INDEX — never an active fund.
+    See app/index_data.py for the series and sources."""
+    from app import index_data
+    weights: dict[str, float] = {}
+    for f in villa_mix():
+        weights[f["sleeve"]] = weights.get(f["sleeve"], 0) + float(f["allocation"])
+    covered = {s["sleeve"] for s in index_data.SERIES}
+    tot = sum(w for k, w in weights.items() if k in covered) or 1.0
+    d = index_data.basket_paths({k: w / tot for k, w in weights.items() if k in covered})
+    if d.get("ok") and start:
+        months = [m for m in d["months"] if m >= start]
+        if len(months) < 13:
+            return {"ok": False, "detail": "Pick a purchase date at least a year ago."}
+        i0 = d["months"].index(months[0])
+        d = {**d, "start": months[0], "months": months,
+             "funds": [{**f, "nav": f["nav"][i0:], "index": [round(v / f["nav"][i0], 6) for v in f["nav"][i0:]]}
+                       for f in d["funds"]]}
+    return d
+
+
 @router.get("/calc/villa-funds")
 def villa_funds(start: Optional[str] = None) -> dict:
     """Month-end growth index (1.0 at `start`, 'YYYY-MM') per sleeve of the
-    standard villa mix, on the window every sleeve has history for."""
-    return villa_fund_paths(start)
+    DigiVilla split, on the window every sleeve has history for — each sleeve on
+    its benchmark index (Nifty Arbitrage / Midcap 150 TRI / Smallcap 250 TRI /
+    domestic gold), not on an actively managed fund."""
+    return index_basket_paths(start)

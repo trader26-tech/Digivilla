@@ -8,6 +8,7 @@
       <button role="tab" [class.on]="tab() === 'client'" (click)="setTab('client')">Client</button>
       <button role="tab" [class.on]="tab() === 'navs'" (click)="setTab('navs')">NAVs</button>
       <button role="tab" [class.on]="tab() === 'calc'" (click)="setTab('calc')">Calculators</button>
+      <button role="tab" [class.on]="tab() === 'data'" (click)="setTab('data')">Data used</button>
     </nav>
   </header>
 
@@ -123,6 +124,56 @@
     </ng-container>
   </ng-container>
 
+  <!-- ═════════ DATA USED ═════════ -->
+  <ng-container *ngIf="tab() === 'data'">
+    <div class="au-sk" *ngIf="dataLoading()"><i></i><i></i><i></i></div>
+    <p class="err" *ngIf="dataErr()">{{ dataErr() }}</p>
+    <ng-container *ngIf="data() as d">
+      <div class="verdict">
+        <span class="v-ic">i</span>
+        <div><b>Benchmark indices only — no actively managed fund</b>
+          <small>{{ d.start | date:'MMM yyyy' }} → {{ d.end | date:'MMM yyyy' }} · {{ d.rows.length }} month-ends · {{ d.note }}</small></div>
+      </div>
+
+      <div class="series">
+        <article class="sr" *ngFor="let s of d.series" [attr.data-s]="s.sleeve">
+          <header><i class="sw" [attr.data-s]="s.sleeve"></i><span>{{ sleeveLabel(s.sleeve) }}</span><b>{{ s.weight * 100 | number:'1.0-1' }}%</b></header>
+          <h3>{{ s.name }}</h3>
+          <p>{{ s.source }}</p>
+          <dl>
+            <div><dt>{{ s.first | date:'MMM yyyy' }}</dt><dd>{{ num(s.start_value, 2) }}</dd></div>
+            <div><dt>{{ s.last | date:'MMM yyyy' }}</dt><dd>{{ num(s.end_value, 2) }}</dd></div>
+            <div><dt>Grew</dt><dd>{{ s.growth_x | number:'1.2-2' }}×</dd></div>
+            <div><dt>A year</dt><dd>{{ s.cagr | number:'1.2-2' }}%</dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <h2>The rules every calculator follows</h2>
+      <ol class="rules"><li *ngFor="let r of d.rules">{{ r }}</li></ol>
+
+      <div class="ledger-h">
+        <h2>Every month-end value <small>(what the calculators read)</small></h2>
+        <div class="dy">
+          <select [ngModel]="dataYear()" (ngModelChange)="dataYear.set($event)">
+            <option value="all">All years</option>
+            <option *ngFor="let y of dataYears()" [value]="y">{{ y }}</option>
+          </select>
+          <button class="ghost" (click)="downloadData()">Download CSV</button>
+        </div>
+      </div>
+      <div class="tbl sm dtab">
+        <div class="tr th" [style.grid-template-columns]="'0.8fr repeat(' + d.series.length + ', 1fr)'">
+          <span>Month</span><span class="n" *ngFor="let s of d.series">{{ sleeveLabel(s.sleeve) }}</span>
+        </div>
+        <div class="tr" *ngFor="let r of dataRows()" [class.dec]="r.month.endsWith('-12')" [style.grid-template-columns]="'0.8fr repeat(' + d.series.length + ', 1fr)'">
+          <span>{{ r.month }}<small *ngIf="r.month.endsWith('-12')">↻ rebalance close</small></span>
+          <span class="n" *ngFor="let s of d.series">{{ num(r[s.sleeve], 2) }}<small [class.pos]="(mom(r, s.sleeve) ?? 0) > 0" [class.neg]="(mom(r, s.sleeve) ?? 0) < 0">{{ mom(r, s.sleeve) === null ? '' : ((mom(r, s.sleeve)! > 0 ? '+' : '') + (mom(r, s.sleeve) | number:'1.2-2') + '%') }}</small></span>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+
   <!-- ═════════ CALCULATORS ═════════ -->
   <ng-container *ngIf="tab() === 'calc'">
     <div class="calc-form">
@@ -148,7 +199,7 @@
         </label>
         <button class="go" (click)="run()" [disabled]="calcLoading()">{{ calcLoading() ? 'Working it out…' : 'Check' }}</button>
       </div>
-      <p class="dim">Runs the app’s own calculator code and a separate, independently written version on the same month-end NAVs the app downloads, then compares every figure.</p>
+      <p class="dim">Runs the app’s own calculator code and a separate, independently written version on the same month-end index values the app downloads, then compares every figure. <a (click)="setTab('data')">See the data used →</a></p>
     </div>
     <p class="err" *ngIf="calcErr()">{{ calcErr() }}</p>
     <div class="au-sk" *ngIf="calcLoading()"><i></i><i></i></div>
@@ -157,14 +208,40 @@
       <div class="verdict" [class.bad]="!calcOk()">
         <span class="v-ic">{{ calcOk() ? '✓' : '!' }}</span>
         <div><b>{{ calcOk() ? 'The app’s formula and the independent check agree' : 'The two calculations differ — see the rows marked ✗' }}</b>
-          <small>{{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }} · {{ k.months }} months · today’s DigiVilla mix at real month-end NAVs</small></div>
+          <small>{{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }} · {{ k.months }} months · today’s DigiVilla split on benchmark indices · rebalanced every 1 January</small></div>
       </div>
       <div class="tbl">
         <div class="tr th cmp"><span>Figure</span><span class="n">App’s formula</span><span class="n">Independent check</span><span class="n">Difference</span><span></span></div>
         <div class="tr cmp" *ngFor="let r of rows()" [class.badr]="!same(r)">
           <span>{{ r.label }}</span><span class="n b">{{ fig(r, r.app) }}</span><span class="n">{{ fig(r, r.check) }}</span>
-          <span class="n dim">{{ diff(r) === null ? '—' : (r.pct ? pct(diff(r), 4) : inr(diff(r), 2)) }}</span>
+          <span class="n dim">{{ diff(r) === null ? '—' : r.count ? diff(r) : (r.pct ? pct(diff(r), 4) : inr(diff(r), 2)) }}</span>
           <span class="n"><i [class.okc]="same(r)" [class.badc]="!same(r)">{{ same(r) ? '✓' : '✗' }}</i></span>
+        </div>
+      </div>
+
+      <!-- every 1 January rebalance -->
+      <div *ngIf="k.rebalances?.length">
+        <h2>Rebalanced every 1 January <small>{{ k.rebalances.length }} times · arbitrage left alone · growth back to its starting split</small></h2>
+        <div class="rbs">
+          <article class="rb" *ngFor="let rb of k.rebalances" [class.open]="openReb() === rb.month">
+            <button class="rb-top" (click)="toggleReb(rb.month)">
+              <b>1 Jan {{ nextYear(rb.month) }}</b>
+              <small>at the 31 Dec {{ rb.month.slice(0, 4) }} close</small>
+              <span class="rb-bars" aria-hidden="true">
+                <ng-container *ngFor="let f of rb.funds"><i [style.flex-basis.%]="f.share_after" [attr.data-s]="f.sleeve"></i></ng-container>
+              </span>
+              <em>tax {{ inr(rb.tax) }}</em>
+            </button>
+            <div class="tbl sm" *ngIf="openReb() === rb.month">
+              <div class="tr th rbr"><span>Sleeve</span><span class="n">Before</span><span class="n">Share</span><span class="n">Bought / sold</span><span class="n">After</span><span class="n">Share</span></div>
+              <div class="tr rbr" *ngFor="let f of rb.funds">
+                <span><i class="sw" [attr.data-s]="f.sleeve"></i>{{ sleeveLabel(f.sleeve) }}</span>
+                <span class="n">{{ inr(f.before) }}</span><span class="n dim">{{ f.share_before | number:'1.2-2' }}%</span>
+                <span class="n" [class.pos]="f.moved > 0.5" [class.neg]="f.moved < -0.5">{{ f.moved > 0.5 ? '+' : '' }}{{ f.sleeve === 'arbitrage' ? 'untouched' : inr(f.moved) }}</span>
+                <span class="n b">{{ inr(f.after) }}</span><span class="n">{{ f.share_after | number:'1.2-2' }}%</span>
+              </div>
+            </div>
+          </article>
         </div>
       </div>
 

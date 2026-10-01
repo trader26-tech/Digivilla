@@ -142,7 +142,8 @@ export class FdVsDvComponent {
   go(p: 'calc' | 'vs' | 'notes'): void { this.picker.set(null); this.page.set(p); window.scrollTo({ top: 0 }); }
 
   units(v: number): string { return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
-  nav(v: number): string { return '₹' + v.toFixed(2); }
+  /** an index level (not ₹) */
+  nav(v: number): string { return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   pct(v: number | null, d = 1): string { return v === null || !isFinite(v) ? '—' : `${v < 0 ? '−' : '+'}${Math.abs(v).toFixed(d)}%`; }
   rate(v: number | null): string { return v === null || !isFinite(v) ? '—' : `${v.toFixed(1)}%`; }
 

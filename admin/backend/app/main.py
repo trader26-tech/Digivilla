@@ -654,6 +654,16 @@ def admin_audit_villa_funds(authorization: Optional[str] = Header(default=None))
         raise HTTPException(status_code=502, detail=f"Couldn't load fund history: {e}")
 
 
+@app.get("/admin/audit/data")
+def admin_audit_data(authorization: Optional[str] = Header(default=None)) -> dict:
+    """What the calculators are fed: each index series, weights, every month-end value, the rules."""
+    _require_admin(authorization)
+    try:
+        return audit_svc.data_used()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Couldn't load the data: {e}")
+
+
 @app.get("/admin/audit/calc")
 def admin_audit_calc(kind: str, years: int = 5, amount: float = 1e7, fd_rate: float = 6.5, slab: float = 30,
                      monthly: float = 25000, step: float = 10, price: float = 6e6, value: float = 9e6,

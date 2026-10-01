@@ -87,7 +87,8 @@ export class LumpsumCalcComponent {
   pickYears(y: number): void { this.years.set(y); this.picker.set(null); }
   go(p: 'calc' | 'notes'): void { this.picker.set(null); this.page.set(p); window.scrollTo({ top: 0 }); }
   units(v: number): string { return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
-  nav(v: number): string { return '₹' + v.toFixed(2); }
+  /** an index level (not ₹) */
+  nav(v: number): string { return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   rate(v: number | null): string { return v === null || !isFinite(v) ? '—' : `${v.toFixed(1)}%`; }
 
   @HostListener('document:keydown.escape')

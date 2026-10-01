@@ -47,9 +47,9 @@
       <span class="g">DigiVilla · {{ rate(res.dvIrr) }} a yr</span>
     </div>
   } @else if (failed()) {
-    <div class="fail">Couldn't load fund prices.<button (click)="retry()">Try again</button></div>
+    <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
   } @else {
-    <div class="skel" aria-busy="true" aria-label="Loading fund prices"><i></i><i></i></div>
+    <div class="skel" aria-busy="true" aria-label="Loading index data"><i></i><i></i></div>
     <div class="legend"><span>&nbsp;</span><span>&nbsp;</span></div>
   }
 
@@ -67,7 +67,7 @@
                    [min]="1000000" [max]="20000000" [step]="100000" [nudgeBy]="500000" [major]="1000000" [mid]="500000"></app-amount-dial>
 
   <p class="fine">
-    Payouts after tax. Today's DigiVilla mix at real past prices — the past isn't a promise.
+    Payouts after tax. Today's DigiVilla split on real index history — the past isn't a promise.
     <span class="links">
       <button class="how" (click)="go('vs')" aria-label="See FD and DigiVilla side by side">Side by side</button>
       <i aria-hidden="true">·</i>
@@ -118,7 +118,7 @@
   </div>
 
   <p class="page-note">
-    {{ ym(res.months[0]) }} → {{ ym(res.months[res.months.length - 1]) }} at real fund prices · inflation {{ INFLATION }}% · FD interest taxed at {{ tax() }}%.
+    {{ ym(res.months[0]) }} → {{ ym(res.months[res.months.length - 1]) }} on real index history · inflation {{ INFLATION }}% · FD interest taxed at {{ tax() }}%.
     <button class="how" (click)="go('notes')">How this is worked out</button>
   </p>
   <div class="page-actions">
@@ -148,7 +148,7 @@
       <div class="step-card">
         <span class="step-k">In {{ ym(res.months[0]) }}</span>
         <h3>You put in <em>{{ fmt(amount()) }}</em></h3>
-        <p>It's split across {{ x.mix.length }} kinds of fund — today's DigiVilla mix.</p>
+        <p>It's split across {{ x.mix.length }} parts — today's DigiVilla split, each following its index.</p>
         <div class="mixbar" aria-hidden="true">
           @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
         </div>
@@ -166,13 +166,13 @@
       <div class="step-card">
         <span class="step-k">Every month</span>
         <h3>You got <em>{{ inr(payout()) }}</em></h3>
-        <p>{{ x.payments }} payments — <b>{{ fmt(res.dvPaidGross) }}</b> in all. To pay you, a little of the <b>Arbitrage</b> fund (the steady part) is sold each month, so it gets smaller:</p>
+        <p>{{ x.payments }} payments — <b>{{ fmt(res.dvPaidGross) }}</b> in all. To pay you, a little of the <b>Arbitrage</b> part (the steady one) is sold each month, so it gets smaller:</p>
         <div class="shrink" aria-label="Arbitrage share of the villa">
           <div><span>{{ ym(res.months[0]) }}</span><div class="track"><i [style.width.%]="res.arbStartPct"></i></div><b>{{ res.arbStartPct | number: '1.0-0' }}%</b></div>
           <div><span>Today</span><div class="track"><i [style.width.%]="res.arbNowPct"></i></div><b>{{ res.arbNowPct | number: '1.0-0' }}%</b></div>
         </div>
         @if (res.arbEmptyMonth) {
-          <p class="soft">It ran out in {{ ym(res.arbEmptyMonth) }}. Since then, a little of the other funds pays you.</p>
+          <p class="soft">It ran out in {{ ym(res.arbEmptyMonth) }}. Since then, a little of the growth part pays you.</p>
         }
       </div>
     </li>
@@ -183,7 +183,7 @@
       <div class="step-card">
         <span class="step-k">Meanwhile</span>
         <h3>The rest kept growing</h3>
-        <p>The other funds were never touched. Here's what each part is worth today:</p>
+        <p>The growth part isn't sold to pay you — once a year, on 1 January, it's rebalanced back to its starting split. Here's what each part is worth today:</p>
         <ul class="grow">
           @for (m of x.mix; track m.key) {
             <li>
@@ -245,7 +245,9 @@
       Good to know
     </h4>
     <ul>
-      <li><b>This is the past, not a promise.</b> Real fund prices from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>Indices, not funds.</b> Each part follows its benchmark index — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI and the domestic gold price — so no fund manager's picks are in these numbers. Index values are before any fund's costs.</li>
+      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; mid cap, small cap and gold are brought back to the split they started with. Any gain sold to do that is taxed.</li>
       <li><b>Today's tax rules</b> are used for every year, though the rules were different earlier. Surcharge isn't included.</li>
       <li><b>The FD rate stays {{ fdRate() }}%</b> the whole time. Real FD rates went up and down.</li>
       @for (p of proxies(); track p.fund + p.until) {
@@ -257,9 +259,9 @@
   </section>
 
   <details class="raw">
-    <summary>See every unit and price</summary>
-    <div class="nums" role="table" aria-label="Units and NAVs">
-      <div class="nums-h" role="row"><span>Fund · price then → now</span><span>Units</span><span>Worth now</span></div>
+    <summary>See every unit and index value</summary>
+    <div class="nums" role="table" aria-label="Units and index values">
+      <div class="nums-h" role="row"><span>Index · value then → now</span><span>Units</span><span>Worth now</span></div>
       @for (f of res.funds; track f.name) {
         <div class="nums-r" role="row">
           <span><b>{{ f.name }}</b><small>{{ f.weight * 100 | number: '1.0-0' }}% · {{ nav(f.navStart) }} → {{ nav(f.navNow) }}</small></span>

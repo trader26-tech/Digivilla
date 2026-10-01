@@ -1,28 +1,35 @@
 /**
- * Backtests on TODAY'S DigiVilla mix at REAL month-end NAVs — the arithmetic,
- * kept pure so it can be checked in isolation.
+ * Backtests of today's DigiVilla split on BENCHMARK INDICES — the arithmetic,
+ * kept pure so it can be checked in isolation (the admin's "Check the maths"
+ * page imports this exact file and compares it with an independent Python
+ * version, admin/backend/app/audit.py).
  *
- * Data: GET /calc/villa-funds → every fund in the admin's villa bucket (sleeve,
- * weight, Regular-plan month-end NAV), from Jul 2007 to the latest month. A fund
- * younger than the window is extended back with a similar fund's returns (listed
- * per fund as `proxy`).
+ * Data: GET /calc/villa-funds → one series per sleeve, month-end, from Apr 2010:
+ *   arbitrage → NIFTY 50 Arbitrage Index · mid → NIFTY Midcap 150 TRI ·
+ *   small → NIFTY Smallcap 250 TRI · gold → domestic gold (passive gold ETF).
+ * No actively managed fund is used. Values are index levels (before any fund's
+ * expense ratio); "units" below are units of the index.
  *
- * FD vs DigiVilla (simulatePayout): the amount buys real units of every fund at
- * the first month's NAV. Every month after, DigiVilla pays PAYOUT_RATE of the
- * amount (₹30,000 a month per ₹1 Cr, a fixed rupee amount) by SELLING ARBITRAGE
- * UNITS at that month's NAV — so the arbitrage share shrinks while the growth
- * funds are never touched. If the arbitrage runs out, the rest of the payout is
- * sold from the other funds in proportion to their value. No rebalancing.
+ * The book: every purchase is its own LOT (units, price, month). Sales take the
+ * oldest lots first, so each sale's gain and holding period are exact.
  *
- * SIP (simulateSip): the same monthly amount buys real units of every fund by
- * weight, every month, at that month's NAV.
+ * Rebalancing — every 1 January (valued at the 31 December month-end close),
+ * whatever the start date: the ARBITRAGE part is left alone; the growth part
+ * (mid cap, small cap, gold) is sold/bought back to the split it started with
+ * (e.g. 24 : 24 : 16). Gains on what's sold are taxed like any other sale.
  *
- * Tax uses TODAY'S rules for every year (illustration): equity-oriented funds
- * (arbitrage, mid, small …) 20% if held ≤ 12 months, 12.5% after, the first
- * ₹1.25 L of long-term gains a financial year free; the gold fund-of-fund 12.5%
- * after 24 months, your slab before. 4% cess on all of it; surcharge ignored;
- * assumes no other equity gains that year. Only the GAIN inside units sold is
- * taxed — most of a payout is your own money coming back.
+ * FD / Lumpsum / Flat (simulatePayout): the amount buys every sleeve by weight.
+ *   Each month DigiVilla pays PAYOUT_RATE of the amount (₹30,000 per ₹1 Cr) by
+ *   selling ARBITRAGE; if that runs out, the growth part pays pro-rata.
+ * SIP (simulateSipIncome): each month's amount (stepping up yearly) buys every
+ *   sleeve by weight; 3.6% of the value is paid out at each year end (arbitrage
+ *   first).
+ *
+ * Tax uses TODAY'S rules for every year (illustration): equity-oriented sleeves
+ * 20% if held ≤ 12 months, 12.5% after, the first ₹1.25 L of long-term gains a
+ * financial year free; gold 12.5% after 24 months, your slab before. 4% cess;
+ * surcharge ignored; no other equity gains that year. Tax is settled per
+ * financial year (April–March).
  */
 
 export const PAYOUT_RATE = 0.003;              // a month — ₹30,000 per ₹1 Cr (3.6% a year)
@@ -32,6 +39,7 @@ export const GOLD_LTCG = 0.125;
 export const EQ_LT_MONTHS = 12, GOLD_LT_MONTHS = 24;
 export const INFLATION = 6;                    // % a year, for "in today's money"
 export const NRI_TDS = 30;                     // % on NRO deposit interest
+export const INCOME_RATE = 0.036;              // SIP: a year, paid at each year end
 
 /** GET /calc/villa-funds */
 export interface VillaFunds {
@@ -41,9 +49,11 @@ export interface VillaFunds {
   end: string;
   earliest: string;
   months: string[];
+  basis?: string;                              // 'index'
   funds: {
     sleeve: string;
     name: string;
+    source?: string;
     weight: number;                            // 0..1
     plan?: string;
     proxy: { name: string; until: string }[];
@@ -51,7 +61,7 @@ export interface VillaFunds {
   }[];
 }
 
-export interface Fund { sleeve: string; name: string; weight: number; plan?: string; nav: number[]; proxy: { name: string; until: string }[]; }
+export interface Fund { sleeve: string; name: string; source?: string; weight: number; plan?: string; nav: number[]; proxy: { name: string; until: string }[]; }
 
 /** The last `years` of history (12 × years monthly steps), or all of it if shorter. */
 export interface Window {
@@ -68,9 +78,9 @@ export function windowFor(f: VillaFunds, years: number): Window {
   return {
     months,
     funds: f.funds.map((x) => ({
-      sleeve: x.sleeve, name: x.name, weight: x.weight, plan: x.plan,
+      sleeve: x.sleeve, name: x.name, source: x.source, weight: x.weight, plan: x.plan,
       nav: x.nav.slice(from),
-      proxy: x.proxy.filter((p) => p.until > months[0]),   // only stand-ins inside this window
+      proxy: (x.proxy || []).filter((p) => p.until > months[0]),
     })),
     years: (months.length - 1) / 12,
     clamped: f.months.length - 1 < want,
@@ -117,7 +127,7 @@ export function irrPct(flows: number[]): number | null {
   return (Math.pow(1 + (lo + hi) / 2, 12) - 1) * 100;
 }
 
-/** The mix bought at the start and simply held — its worst 12-month fall in the window. */
+/** The split bought at the start and simply held — its worst 12-month fall in the window. */
 export function worstYearPct(w: Window): number | null {
   const n = w.months.length;
   if (n < 13) return null;
@@ -126,6 +136,82 @@ export function worstYearPct(w: Window): number | null {
   for (let i = 0; i + 12 < n; i++) worst = Math.min(worst, idx[i + 12] / idx[i] - 1);
   return worst * 100;
 }
+
+// ──────────────────────────────── the book ────────────────────────────────
+
+/** One 1-January rebalance: each sleeve's value before and after, and what moved. */
+export interface Rebalance {
+  month: string;                     // the 31-Dec close it was done at
+  before: number[];                  // ₹ per fund, same order as w.funds
+  after: number[];
+  moved: number[];                   // ₹ bought (+) / sold (−) per fund
+  tax: number;                       // tax this rebalance added to its year (est.)
+}
+
+interface Lot { u: number; nav: number; i: number; }
+
+/** Lots per fund, FIFO sales with exact gains, per-financial-year tax. */
+class Book {
+  lots: Lot[][];
+  year = noGains();
+  constructor(public funds: Fund[], public slab: number) { this.lots = funds.map(() => []); }
+  units(k: number): number { return this.lots[k].reduce((s, l) => s + l.u, 0); }
+  val(k: number, i: number): number { return this.units(k) * this.funds[k].nav[i]; }
+  total(i: number): number { return this.funds.reduce((s, _, k) => s + this.val(k, i), 0); }
+  buy(k: number, rupees: number, i: number): void {
+    if (rupees > 0) this.lots[k].push({ u: rupees / this.funds[k].nav[i], nav: this.funds[k].nav[i], i });
+  }
+  sell(k: number, rupees: number, i: number): void {
+    let u = rupees / this.funds[k].nav[i];
+    const q = this.lots[k];
+    while (u > 1e-12 && q.length) {
+      const l = q[0], take = Math.min(u, l.u);
+      addGain(this.year, this.funds[k].sleeve, take * (this.funds[k].nav[i] - l.nav), i - l.i);
+      l.u -= take; u -= take;
+      if (l.u <= 1e-12) q.shift();
+    }
+  }
+  /** Raise ₹need: arbitrage first, then the growth part pro-rata. Returns true if
+   *  the arbitrage alone couldn't cover it. */
+  pay(need: number, i: number, a: number): boolean {
+    if (a >= 0) {
+      const take = Math.min(need, this.val(a, i));
+      if (take > 0) this.sell(a, take, i);
+      need -= take;
+    }
+    if (need <= 1e-6) return false;
+    const vals = this.funds.map((_, k) => (k === a ? 0 : this.val(k, i)));
+    const tot = vals.reduce((s, v) => s + v, 0);
+    if (tot > 0) vals.forEach((v, k) => { if (v > 0) this.sell(k, Math.min(v, (need * v) / tot), i); });
+    return true;
+  }
+  /** 1 January: the growth part back to its starting split; arbitrage untouched. */
+  rebalance(i: number, a: number, month: string): Rebalance | null {
+    const growth = this.funds.map((_, k) => k).filter((k) => k !== a);
+    const wsum = growth.reduce((s, k) => s + this.funds[k].weight, 0);
+    const G = growth.reduce((s, k) => s + this.val(k, i), 0);
+    if (!(G > 0) || !(wsum > 0)) return null;
+    const before = this.funds.map((_, k) => this.val(k, i));
+    const target = this.funds.map((f, k) => (k === a ? before[k] : (G * f.weight) / wsum));
+    const moved = this.funds.map((_, k) => target[k] - before[k]);
+    const taxBefore = taxOnGains(this.year, this.slab);
+    growth.forEach((k) => { if (moved[k] < -0.005) this.sell(k, -moved[k], i); });
+    growth.forEach((k) => { if (moved[k] > 0.005) this.buy(k, moved[k], i); });
+    return { month, before, after: this.funds.map((_, k) => this.val(k, i)), moved,
+             tax: Math.max(0, taxOnGains(this.year, this.slab) - taxBefore) };
+  }
+  /** Tax if every remaining lot were sold at month i, on top of this year's gains so far. */
+  exitTax(i: number): number {
+    const g: Gains = { ...this.year };
+    this.funds.forEach((f, k) => this.lots[k].forEach((l) => addGain(g, f.sleeve, l.u * (f.nav[i] - l.nav), i - l.i)));
+    return Math.max(0, taxOnGains(g, this.slab) - taxOnGains(this.year, this.slab));
+  }
+  /** Close a financial year: its tax, and a clean slate. */
+  settle(): number { const t = taxOnGains(this.year, this.slab); this.year = noGains(); return t; }
+}
+
+/** 1 January rebalancing happens at each 31-December close (not the start month). */
+const isRebalance = (months: string[], i: number) => i > 0 && months[i].endsWith('-12');
 
 // ─────────────────────────────── FD vs DigiVilla ───────────────────────────────
 
@@ -158,7 +244,7 @@ export interface PayoutResult {
   // DigiVilla
   dvMonthly: number;            // the payout a month, before its tax
   dvPaidGross: number;
-  dvPayoutTax: number;          // tax on the gain inside units sold for payouts
+  dvPayoutTax: number;          // tax on gains realised by payouts and rebalancing
   dvPaid: number;               // received, after that tax
   dvArbValue: number;           // arbitrage still held, today
   dvGrowthValue: number;        // everything else, today
@@ -171,6 +257,7 @@ export interface PayoutResult {
   arbEmptyMonth: string | null; // when the arbitrage ran out (growth funds paid since)
   funds: FundRow[];
   yearly: PayoutYear[];
+  rebalances: Rebalance[];
   // in today's money
   fdReal: number;
   dvReal: number;
@@ -185,73 +272,46 @@ export function simulatePayout(w: Window, amount: number, fdRate: number, fdTaxP
   const fdMonthly = (amount * fdRate / 1200) * (1 - t);
   const fdPaid = fdMonthly * n;
 
-  // ── DigiVilla: real units, payouts from arbitrage ──
+  // ── DigiVilla ──
   const funds = w.funds;
   const a = funds.findIndex((f) => f.sleeve === 'arbitrage');
-  const units = funds.map((f) => (amount * f.weight) / f.nav[0]);
-  const unitsStart = [...units];
+  const book = new Book(funds, fdTaxPct);
+  funds.forEach((f, k) => book.buy(k, amount * f.weight, 0));
+  const unitsStart = funds.map((_, k) => book.units(k));
   const W = amount * PAYOUT_RATE;
-  let paidGross = 0, payoutTax = 0, arbEmptyMonth: string | null = null;
-  let year = noGains(), curFy = fy(w.months[0]);
-  const payFlows: number[] = [-amount];        // for the IRR: payouts in, tax out
+  let paidGross = 0, taxPaid = 0, curFy = fy(w.months[0]), paidThisYear = 0;
+  let arbEmptyMonth: string | null = null;
+  const flows: number[] = [-amount];
   const yearly: PayoutYear[] = [];
-  let paidThisYear = 0;
-
-  const sell = (k: number, rupees: number, i: number) => {
-    const u = rupees / funds[k].nav[i];
-    units[k] -= u;
-    addGain(year, funds[k].sleeve, u * (funds[k].nav[i] - funds[k].nav[0]), i);
-  };
+  const rebalances: Rebalance[] = [];
 
   for (let i = 1; i <= n; i++) {
-    const f = fy(w.months[i]);
-    if (f !== curFy) {                         // a financial year closed: its tax is due
-      const tax = taxOnGains(year, fdTaxPct);
-      payoutTax += tax; payFlows[i - 1] -= tax;
-      year = noGains(); curFy = f;
+    if (fy(w.months[i]) !== curFy) {                 // a financial year closed: its tax is due
+      const tax = book.settle();
+      taxPaid += tax; flows[i - 1] -= tax;
+      curFy = fy(w.months[i]);
     }
-    let need = W;
-    if (a >= 0) {
-      const arbVal = units[a] * funds[a].nav[i];
-      const take = Math.min(need, arbVal);
-      if (take > 0) sell(a, take, i);
-      need -= take;
-    }
-    if (need > 1e-6) {                         // arbitrage empty: the other funds, in proportion
-      if (!arbEmptyMonth) arbEmptyMonth = w.months[i];
-      const others = funds.map((x, k) => (k === a ? 0 : units[k] * x.nav[i]));
-      const tot = others.reduce((s, v) => s + v, 0);
-      if (tot > 0) others.forEach((v, k) => { if (v > 0) sell(k, Math.min(v, (need * v) / tot), i); });
-    }
+    if (book.pay(W, i, a) && !arbEmptyMonth) arbEmptyMonth = w.months[i];
     paidGross += W; paidThisYear += W;
-    payFlows.push(W);
-    if (i % 12 === 0) {                        // a year since the start: snapshot it
-      const value = funds.reduce((s2, x, k) => s2 + units[k] * x.nav[i], 0);
-      const g: Gains = { ...year };
-      funds.forEach((x, k) => addGain(g, x.sleeve, units[k] * (x.nav[i] - x.nav[0]), i));
-      const curTax = taxOnGains(year, fdTaxPct);
-      yearly.push({
-        year: i / 12, month: w.months[i], value,
-        valueAfterTax: value - Math.max(0, taxOnGains(g, fdTaxPct) - curTax),
-        payout: paidThisYear, income: paidGross - payoutTax - curTax,
-      });
+    flows.push(W);
+    if (isRebalance(w.months, i)) {
+      const r = book.rebalance(i, a, w.months[i]);
+      if (r) rebalances.push(r);
+    }
+    if (i % 12 === 0) {                              // a year since the start: snapshot it
+      const value = book.total(i);
+      yearly.push({ year: i / 12, month: w.months[i], value, valueAfterTax: value - book.exitTax(i),
+                    payout: paidThisYear, income: paidGross - taxPaid - taxOnGains(book.year, fdTaxPct) });
       paidThisYear = 0;
     }
   }
-  // the current (partial) financial year's tax on payouts so far
-  const lastTax = taxOnGains(year, fdTaxPct);
-  payoutTax += lastTax;
-
-  const valueNow = funds.map((f, k) => units[k] * f.nav[n]);
+  const lastTax = taxOnGains(book.year, fdTaxPct);   // the current (partial) year, so far
+  const payoutTax = taxPaid + lastTax;
+  const valueNow = funds.map((_, k) => book.val(k, n));
   const dvValue = valueNow.reduce((s, v) => s + v, 0);
   const dvArbValue = a >= 0 ? valueNow[a] : 0;
-
-  // tax if everything were sold today, on top of this year's payout gains
-  const exit: Gains = { ...year };
-  funds.forEach((f, k) => addGain(exit, f.sleeve, units[k] * (f.nav[n] - f.nav[0]), n));
-  const dvExitTax = Math.max(0, taxOnGains(exit, fdTaxPct) - lastTax);
-
-  payFlows[n] += dvValue - dvExitTax - lastTax;
+  const dvExitTax = book.exitTax(n);
+  flows[n] += dvValue - dvExitTax - lastTax;
   const deflate = Math.pow(1 + INFLATION / 100, n / 12);
   const dvPaid = paidGross - payoutTax;
   const fdTotal = amount + fdPaid, dvTotal = dvPaid + dvValue;
@@ -261,14 +321,14 @@ export function simulatePayout(w: Window, amount: number, fdRate: number, fdTaxP
     fdMonthly, fdPaid, fdValue: amount, fdTotal, fdTaxRate: t * 100,
     dvMonthly: W, dvPaidGross: paidGross, dvPayoutTax: payoutTax, dvPaid,
     dvArbValue, dvGrowthValue: dvValue - dvArbValue, dvValue, dvTotal, dvExitTax,
-    dvIrr: irrPct(payFlows),
+    dvIrr: irrPct(flows),
     arbStartPct: a >= 0 ? funds[a].weight * 100 : 0,
     arbNowPct: dvValue > 0 ? (dvArbValue / dvValue) * 100 : 0,
-    arbEmptyMonth, yearly,
+    arbEmptyMonth, yearly, rebalances,
     funds: funds.map((f, k) => ({
       name: f.name, sleeve: f.sleeve, weight: f.weight,
       navStart: f.nav[0], navNow: f.nav[n],
-      unitsStart: unitsStart[k], unitsNow: units[k],
+      unitsStart: unitsStart[k], unitsNow: book.units(k),
       valueStart: amount * f.weight, valueNow: valueNow[k],
     })),
     fdReal: fdTotal / deflate, dvReal: dvTotal / deflate,
@@ -276,80 +336,7 @@ export function simulatePayout(w: Window, amount: number, fdRate: number, fdTaxP
   };
 }
 
-// ─────────────────────────────────── SIP ───────────────────────────────────
-
-export interface SipResult {
-  months: string[];
-  years: number;
-  installments: number;
-  invested: number;
-  value: number;                // today, before tax on selling
-  gain: number;
-  exitTax: number;              // if you sold everything today
-  valueAfterTax: number;
-  xirr: number | null;
-  funds: { name: string; sleeve: string; weight: number; invested: number; valueNow: number }[];
-  path: { invested: number; value: number }[];   // month by month, for a chart
-}
-
-export function simulateSip(w: Window, monthly: number, slabPct = 30): SipResult {
-  const n = w.months.length - 1;
-  const funds = w.funds;
-  const units = funds.map(() => 0);
-  const tranches: { i: number; k: number; u: number }[] = [];
-  const path: { invested: number; value: number }[] = [];
-  let invested = 0;
-  for (let i = 0; i <= n; i++) {
-    if (i < n) {                               // n instalments, valued a month after the last
-      funds.forEach((f, k) => {
-        const u = (monthly * f.weight) / f.nav[i];
-        units[k] += u; tranches.push({ i, k, u });
-      });
-      invested += monthly;
-    }
-    path.push({ invested, value: funds.reduce((s, f, k) => s + units[k] * f.nav[i], 0) });
-  }
-  const value = path[n].value;
-  const g = noGains();
-  for (const t of tranches) addGain(g, funds[t.k].sleeve, t.u * (funds[t.k].nav[n] - funds[t.k].nav[t.i]), n - t.i);
-  const exitTax = taxOnGains(g, slabPct);
-
-  const flows = Array.from({ length: n + 1 }, (_, i) => (i < n ? -monthly : 0));
-  flows[n] += value;
-
-  return {
-    months: w.months, years: n / 12, installments: n, invested, value, gain: value - invested,
-    exitTax, valueAfterTax: value - exitTax, xirr: irrPct(flows),
-    funds: funds.map((f, k) => ({ name: f.name, sleeve: f.sleeve, weight: f.weight, invested: invested * f.weight, valueNow: units[k] * f.nav[n] })),
-    path,
-  };
-}
-
-/** ₹2.62 Cr / ₹36.4 L / ₹8,000 */
-export function fmtInr(n: number): string {
-  const s = n < 0 ? '−' : '';
-  n = Math.abs(n);
-  if (n >= 1e7) return s + '₹' + +(n / 1e7).toFixed(2) + ' Cr';
-  if (n >= 1e5) return s + '₹' + +(n / 1e5).toFixed(1) + ' L';
-  return s + '₹' + Math.round(n).toLocaleString('en-IN');
-}
-
-export function ymLabel(ym: string): string {
-  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const [y, m] = ym.split('-').map(Number);
-  return `${M[m - 1]} ${y}`;
-}
-
 // ──────────────────────── SIP with a yearly income (SWP) ────────────────────────
-
-/**
- * A monthly SIP into today's mix, stepping up `stepPct` every 12 months, that
- * pays out INCOME_RATE of its value at the end of every year — sold from the
- * arbitrage fund first (then the rest, pro-rata). Every purchase is its own lot
- * and sales use first-in-first-out, so each sale's gain and holding period are
- * exact; tax is settled per financial year.
- */
-export const INCOME_RATE = 0.036;            // a year, paid at each year end
 
 export interface SipYear {
   year: number;
@@ -374,74 +361,52 @@ export interface SipIncomeResult {
   income: number;           // all the yearly payouts, after their tax
   xirr: number | null;
   yearly: SipYear[];
+  rebalances: Rebalance[];
   funds: { name: string; sleeve: string; weight: number; invested: number; valueNow: number }[];
 }
-
-interface Lot { u: number; nav: number; i: number; }
 
 export function simulateSipIncome(w: Window, monthly: number, stepPct: number, slabPct = 30): SipIncomeResult {
   const n = w.months.length - 1;
   const funds = w.funds;
-  const lots: Lot[][] = funds.map(() => []);
-  const investedBy = funds.map(() => 0);
   const a = funds.findIndex((f) => f.sleeve === 'arbitrage');
-  let year = noGains(), curFy = fy(w.months[0]);
+  const book = new Book(funds, slabPct);
+  const investedBy = funds.map(() => 0);
+  let curFy = fy(w.months[0]);
   let invested = 0, incomeGross = 0, incomeTax = 0;
   const flows: number[] = Array.from({ length: n + 1 }, () => 0);
   const yearly: SipYear[] = [];
-
-  const valueOf = (k: number, i: number) => lots[k].reduce((s, l) => s + l.u, 0) * funds[k].nav[i];
-  const total = (i: number) => funds.reduce((s, _, k) => s + valueOf(k, i), 0);
-  const sell = (k: number, rupees: number, i: number) => {
-    let u = rupees / funds[k].nav[i];
-    const q = lots[k];
-    while (u > 1e-12 && q.length) {
-      const l = q[0], take = Math.min(u, l.u);
-      addGain(year, funds[k].sleeve, take * (funds[k].nav[i] - l.nav), i - l.i);
-      l.u -= take; u -= take;
-      if (l.u <= 1e-12) q.shift();
-    }
-  };
-  /** tax if every remaining lot were sold at month i, on top of this year's gains so far */
-  const exitTaxAt = (i: number) => {
-    const g: Gains = { ...year };
-    funds.forEach((f, k) => lots[k].forEach((l) => addGain(g, f.sleeve, l.u * (f.nav[i] - l.nav), i - l.i)));
-    return Math.max(0, taxOnGains(g, slabPct) - taxOnGains(year, slabPct));
-  };
+  const rebalances: Rebalance[] = [];
 
   for (let i = 0; i <= n; i++) {
-    const f = fy(w.months[i]);
-    if (f !== curFy) {                       // a financial year closed: tax on what was sold in it
-      const t = taxOnGains(year, slabPct);
+    if (fy(w.months[i]) !== curFy) {                 // a financial year closed: tax on what was sold in it
+      const t = book.settle();
       incomeTax += t; flows[i] -= t;
-      year = noGains(); curFy = f;
+      curFy = fy(w.months[i]);
     }
-    if (i > 0 && i % 12 === 0) {             // year end: pay the income, then record the year
-      const pay = total(i) * INCOME_RATE;
-      let need = pay;
-      if (a >= 0) { const take = Math.min(need, valueOf(a, i)); if (take > 0) sell(a, take, i); need -= take; }
-      if (need > 1e-6) {
-        const others = funds.map((_, k) => (k === a ? 0 : valueOf(k, i)));
-        const tot = others.reduce((s, v) => s + v, 0);
-        if (tot > 0) others.forEach((v, k) => { if (v > 0) sell(k, Math.min(v, (need * v) / tot), i); });
-      }
+    if (i > 0 && i % 12 === 0) {                     // year end: pay the income
+      const pay = book.total(i) * INCOME_RATE;
+      book.pay(pay, i, a);
       incomeGross += pay; flows[i] += pay;
-      const value = total(i);
-      yearly.push({ year: i / 12, month: w.months[i], invested, value, valueAfterTax: value - exitTaxAt(i), payout: pay });
     }
-    if (i < n) {                             // this month's instalment, stepping up each year
+    if (isRebalance(w.months, i)) {
+      const r = book.rebalance(i, a, w.months[i]);
+      if (r) rebalances.push(r);
+    }
+    if (i > 0 && i % 12 === 0) {
+      const value = book.total(i);
+      yearly.push({ year: i / 12, month: w.months[i], invested, value, valueAfterTax: value - book.exitTax(i),
+                    payout: incomeGross - yearly.reduce((s, y) => s + y.payout, 0) });
+    }
+    if (i < n) {                                     // this month's instalment, stepping up each year
       const amt = monthly * Math.pow(1 + stepPct / 100, Math.floor(i / 12));
-      funds.forEach((fd, k) => {
-        lots[k].push({ u: (amt * fd.weight) / fd.nav[i], nav: fd.nav[i], i });
-        investedBy[k] += amt * fd.weight;
-      });
+      funds.forEach((f, k) => { book.buy(k, amt * f.weight, i); investedBy[k] += amt * f.weight; });
       invested += amt; flows[i] -= amt;
     }
   }
-  const lastTax = taxOnGains(year, slabPct);     // this financial year's payout tax, so far
+  const lastTax = taxOnGains(book.year, slabPct);
   incomeTax += lastTax;
-  const value = total(n);
-  const exitTax = exitTaxAt(n);
+  const value = book.total(n);
+  const exitTax = book.exitTax(n);
   flows[n] += value - exitTax - lastTax;
 
   return {
@@ -449,8 +414,8 @@ export function simulateSipIncome(w: Window, monthly: number, stepPct: number, s
     firstMonthly: monthly, lastMonthly: monthly * Math.pow(1 + stepPct / 100, Math.max(0, Math.floor((n - 1) / 12))),
     invested, value, exitTax, valueAfterTax: value - exitTax,
     incomeGross, incomeTax, income: incomeGross - incomeTax,
-    xirr: irrPct(flows), yearly,
-    funds: funds.map((f, k) => ({ name: f.name, sleeve: f.sleeve, weight: f.weight, invested: investedBy[k], valueNow: valueOf(k, n) })),
+    xirr: irrPct(flows), yearly, rebalances,
+    funds: funds.map((f, k) => ({ name: f.name, sleeve: f.sleeve, weight: f.weight, invested: investedBy[k], valueNow: book.val(k, n) })),
   };
 }
 
@@ -463,9 +428,9 @@ export function simulateSipIncome(w: Window, monthly: number, stepPct: number, s
  *   months a year (one vacant); taxed at your slab after the 30% standard
  *   deduction (+ cess); minus upkeep (UPKEEP of the flat's value each year).
  *   Kept = rent after tax − upkeep. Total = today's value + rent kept.
- * DigiVilla: the SAME outlay into today's mix at real NAVs from the purchase
- *   month, paying INCOME_RATE a year as monthly rent out of arbitrage
- *   (simulatePayout). Total = rent paid (after tax) + value today.
+ * DigiVilla: the SAME outlay, from the purchase month, paying 3.6% a year as
+ *   monthly rent out of arbitrage (simulatePayout). Total = rent paid (after
+ *   tax) + value today.
  */
 export const FLAT_REG_PCT = 1, RENT_RISE = 5, UPKEEP = 0.004, VACANT_MONTHS = 1, STD_DEDUCTION = 0.3;
 
@@ -515,4 +480,19 @@ export function simulateFlat(w: Window, inp: FlatInputs): FlatResult {
     flFriction: outlay - price + value * 0.015,
     dv, dvTotal, dvReal: dvTotal / deflate, dvFriction: outlay * 0.00005,
   };
+}
+
+/** ₹2.62 Cr / ₹36.4 L / ₹8,000 */
+export function fmtInr(n: number): string {
+  const s = n < 0 ? '−' : '';
+  n = Math.abs(n);
+  if (n >= 1e7) return s + '₹' + +(n / 1e7).toFixed(2) + ' Cr';
+  if (n >= 1e5) return s + '₹' + +(n / 1e5).toFixed(1) + ' L';
+  return s + '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+export function ymLabel(ym: string): string {
+  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const [y, m] = ym.split('-').map(Number);
+  return `${M[m - 1]} ${y}`;
 }
