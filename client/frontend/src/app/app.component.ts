@@ -162,12 +162,15 @@ export class AppComponent {
 
   /** True when a top-level tab (home/funds/calls) is showing — the bottom nav
    *  is only visible then, not on detail / buy / account pages. */
+  /** A calculator (not the Compare hub) is open: it takes the whole screen, no tab bar. */
+  calcOpen = false;
+
   get onTab(): boolean {
     return (
       !this.intro && this.auth.signedIn() &&
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.building === null && this.buildFlow === null && !this.accountOpen &&
-      !this.levelsOpen &&
+      !this.levelsOpen && !(this.view === 'calc' && this.calcOpen) &&
       (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc')
     );
   }

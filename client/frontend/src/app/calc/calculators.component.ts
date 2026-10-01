@@ -53,6 +53,8 @@ let seenHub = false;
 export class CalculatorsComponent implements OnDestroy {
   /** "Talk to us" — the app opens the booking flow. */
   @Output() talk = new EventEmitter<void>();
+  /** true while a calculator is open — the app hides the tab bar so it gets the whole screen */
+  @Output() calcOpen = new EventEmitter<boolean>();
 
   readonly groups = GROUPS;
   readonly open = signal<CalcKey | null>(null);
@@ -68,6 +70,7 @@ export class CalculatorsComponent implements OnDestroy {
   pick(c: CalcCard): void {
     if (c.key) {
       this.open.set(c.key);
+      this.calcOpen.emit(true);
       window.scrollTo({ top: 0 });
       return;
     }
@@ -78,8 +81,12 @@ export class CalculatorsComponent implements OnDestroy {
 
   close(): void {
     this.open.set(null);
+    this.calcOpen.emit(false);
     window.scrollTo({ top: 0 });
   }
 
-  ngOnDestroy(): void { clearTimeout(this.toastTimer); }
+  ngOnDestroy(): void {
+    clearTimeout(this.toastTimer);
+    if (this.open()) this.calcOpen.emit(false);
+  }
 }

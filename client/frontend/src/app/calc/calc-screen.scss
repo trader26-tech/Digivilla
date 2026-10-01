@@ -13,10 +13,11 @@
 button { font: inherit; -webkit-tap-highlight-color: transparent; }
 button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
 
-/* one screen = fills the space above the tab bar; the chart takes what's left */
+/* one screen = the whole screen (the tab bar hides while a calculator is open);
+   the chart takes whatever height is left */
 .scr {
   position: relative; max-width: 460px; margin: 0 auto; display: flex; flex-direction: column;
-  min-height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+  min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom);
 }
 .glow {
   position: absolute; inset: 0; pointer-events: none;
@@ -146,7 +147,7 @@ button:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
 /* ── full pages (side by side, assumptions): in the page flow, never under the tab bar ── */
 .page {
   position: relative; max-width: 460px; margin: 0 auto; display: flex; flex-direction: column;
-  min-height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+  min-height: 100dvh; padding-bottom: calc(16px + env(safe-area-inset-bottom));
   animation: page-in .32s cubic-bezier(.22, 1, .36, 1);
 }
 @keyframes page-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }

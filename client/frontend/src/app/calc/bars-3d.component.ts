@@ -11,6 +11,7 @@ export interface Seg3d {
   top?: string;     // top-face colour (used for the first segment)
   k: string;        // label colour
   c: string;        // value colour
+  short?: string;   // one word for the breakdown under a short column (default: first word of label)
 }
 export interface Col3d {
   art: string;      // assets/calc/<art>.svg
@@ -20,7 +21,9 @@ export interface Col3d {
 }
 
 const PAD_X = 18, COL_GAP = 30, PAD_BOTTOM = 22;
-const ABOVE_BAR = 36, TOTAL_LINE = 26, MIN_SEG = 32;
+const ABOVE_BAR = 36, TOTAL_LINE = 26;
+/** a segment needs this much height to show its label + value, or just its value */
+const FULL_LABEL = 34, VALUE_ONLY = 17;
 
 /** Width of a total at the chart's font, for the arrow's end points. */
 let ctx: CanvasRenderingContext2D | null = null;
@@ -34,7 +37,10 @@ function textW(s: string): number {
 /**
  * Two isometric 3D columns on a grid floor, each made of stacked segments with
  * its art and total above, and a glowing arrow from the left total to the right.
- * Heights fill whatever space the chart is given; totals count to new values.
+ * Heights are TRUE TO SCALE (the taller column fills the chart; the other is
+ * its real fraction of that), so the gap between the two is the real gap. A
+ * segment too thin for its label shows just its value, or nothing — and then the
+ * column's breakdown is written under it instead. Totals count to new values.
  */
 @Component({
   selector: 'app-bars-3d',
@@ -76,20 +82,23 @@ export class Bars3dComponent implements OnDestroy {
   private build(c: Col3d | null, scale: number) {
     if (!c) return null;
     const segs = c.segs.filter((s) => s.val > 0.5);
-    const budget = Math.round(segs.reduce((s, d) => s + d.val, 0) * scale);
-    const hs = segs.map((d) => Math.max(MIN_SEG, Math.round(d.val * scale)));
-    let excess = hs.reduce((s, h) => s + h, 0) - budget;
-    while (excess > 0) {                       // take the overflow from the tallest segments
-      const i = hs.indexOf(Math.max(...hs));
-      const cut = Math.min(excess, hs[i] - MIN_SEG);
-      if (cut <= 0) break;
-      hs[i] -= cut; excess -= cut;
-    }
+    const total = segs.reduce((s, d) => s + d.val, 0);
+    // true to scale — never padded to fit a label — with a 10px floor so it still reads as a block
+    const k = total * scale < 10 && total > 0 ? 10 / total : scale;
+    const hs = segs.map((d) => Math.max(2, Math.round(d.val * k)));
     let acc = 0;
     const stops = segs.map((d, i) => { const a = acc; acc += hs[i]; return `${d.side} ${a}px ${acc}px`; }).join(',');
+    const out = segs.map((d, i) => ({
+      ...d, h: hs[i], value: fmtInr(d.val),
+      mode: hs[i] >= FULL_LABEL ? 'full' : hs[i] >= VALUE_ONLY ? 'value' : 'none',
+    }));
+    // any segment that can't name itself → spell the column out underneath
+    const brk = out.some((s) => s.mode !== 'full')
+      ? out.map((s) => `${s.value} ${(s.short ?? s.label.split(' ')[0]).toLowerCase()}`).join(' + ')
+      : '';
     return {
       art: c.art, coin: !!c.coin, green: !!c.green,
-      segs: segs.map((d, i) => ({ ...d, h: hs[i], value: fmtInr(d.val) })),
+      segs: out, brk,
       h: acc, side: `linear-gradient(180deg,${stops})`, top: segs[0]?.top ?? segs[0]?.bg ?? '#444',
     };
   }

@@ -9,7 +9,11 @@
   min-height: 100dvh;
   transition: background .25s;
 }
-:host(.calc-open) { background: #0b0c12; }
+:host(.calc-open) {
+  background: #0b0c12;
+  padding-bottom: 0 !important;      /* no tab bar while a calculator is open */
+  animation: none !important;
+}
 
 .hub {
   position: relative; max-width: 460px; margin: 0 auto;

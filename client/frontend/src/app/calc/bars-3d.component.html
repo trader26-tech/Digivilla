@@ -23,15 +23,16 @@
         <div class="block" [style.height.px]="c.h">
           <div class="front">
             @for (s of c.segs; track s.label) {
-              <div class="seg" [style.height.px]="s.h" [style.background]="s.bg">
-                <span [style.color]="s.k">{{ s.label }}</span>
-                <b [style.color]="s.c">{{ s.value }}</b>
+              <div class="seg" [class.slim]="s.mode === 'value'" [style.height.px]="s.h" [style.background]="s.bg">
+                @if (s.mode === 'full') { <span [style.color]="s.k">{{ s.label }}</span> }
+                @if (s.mode !== 'none') { <b [style.color]="s.c">{{ s.value }}</b> }
               </div>
             }
           </div>
           <i class="side" [style.background]="c.side"></i>
           <i class="face" [style.background]="c.top"></i>
         </div>
+        @if (c.brk) { <span class="brk">{{ c.brk }}</span> }
       </div>
     }
   }
