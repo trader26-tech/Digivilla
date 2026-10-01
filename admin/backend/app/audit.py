@@ -571,6 +571,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
         book.buy(k, amount * f["weight"], 0)
     book._i = 0
     snaps, rb_raw = [_snap(book, a)], []
+    yearly, year_paid = [], 0.0
     pay = amount * 0.003
     fy, paid, tax_paid = _fy(months[0]), 0.0, 0.0
     flows = [-amount]
@@ -593,6 +594,15 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
             rb = "yes"
         book._i = i
         snaps.append(_snap(book, a))
+        year_paid += pay
+        if i % 12 == 0:                                   # a year since the start: what the app's column shows
+            v = book.total(i)
+            yearly.append({"year": i // 12, "month": months[i], "value": round(v, 2),
+                           "value_after_tax": round(v - book.exit_tax(i), 2), "payout": round(year_paid, 2),
+                           "income": round(paid - tax_paid - tax.tax(), 2),
+                           "funds": {f["sleeve"]: round(book.val(k, i), 2) for k, f in enumerate(funds)},
+                           "arb_units": round(book.units(a), 4)})
+            year_paid = 0.0
         ledger.append({"month": months[i], "payout": round(pay, 2), "sold_from": sold, "arb_units": round(book.units(a), 4),
                        "rebalanced": rb, "value": round(book.total(i), 2), "tax_paid": round(t_now, 2)})
     last_tax = tax.tax()
@@ -605,6 +615,8 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
         "story": _story(funds, months, book, a, snaps, rb_raw, ledger=ledger),
+        "start_funds": {f["sleeve"]: round(amount * f["weight"], 2) for f in funds},
+        "yearly": yearly,
         "headline": {
             "dvPaidGross": round(paid, 2), "dvPayoutTax": round(payout_tax, 2), "dvPaid": round(paid - payout_tax, 2),
             "dvValue": round(value, 2), "dvExitTax": round(exit_tax, 2), "dvTotal": round(paid - payout_tax + value, 2),
@@ -628,7 +640,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     invested = income = income_tax = 0.0
     flows = [0.0] * (n + 1)
     ledger, rebalances = [], []
-    snaps, rb_raw = [], []
+    snaps, rb_raw, yearly = [], [], []
     for i in range(n + 1):
         t_now = 0.0
         if _fy(months[i]) != fy:
@@ -645,6 +657,11 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
             rebalances.append(_rb_row(funds, months, i, r))
             rb_raw.append((i, r))
             rb = "yes"
+        if i > 0 and i % 12 == 0:                         # what the app's year column shows
+            v = book.total(i)
+            yearly.append({"year": i // 12, "month": months[i], "invested": round(invested, 2), "value": round(v, 2),
+                           "value_after_tax": round(v - book.exit_tax(i), 2), "payout": round(pay, 2),
+                           "funds": {f["sleeve"]: round(book.val(k, i), 2) for k, f in enumerate(funds)}})
         amt = 0.0
         if i < n:
             amt = monthly * (1 + step / 100) ** (i // 12)
@@ -663,6 +680,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
         "story": _story(funds, months, book, a, snaps, rb_raw, sip=True, ledger=ledger),
+        "yearly": yearly,
         "headline": {"invested": round(invested, 2), "value": round(v, 2), "exitTax": round(exit_tax, 2),
                      "valueAfterTax": round(v - exit_tax, 2), "incomeGross": round(income, 2),
                      "incomeTax": round(income_tax, 2), "income": round(income - income_tax, 2), "xirr": _irr(flows),
@@ -688,7 +706,7 @@ def flat_check(years: int, price: float, value: float, rent: float, stamp: float
     dv = payout_check(Y, outlay, 0, slab)
     return {
         "start": dv["start"], "end": dv["end"], "months": dv["months"], "ledger": dv["ledger"], "flat_years": rows,
-        "rebalances": dv["rebalances"], "story": dv["story"],
+        "rebalances": dv["rebalances"], "story": dv["story"], "yearly": dv["yearly"], "start_funds": dv["start_funds"],
         "headline": {"outlay": round(outlay, 2), "appPct": round(app * 100, 4), "rentGross": round(gross, 2),
                      "rentTax": round(rent_tax, 2), "upkeep": round(upkeep, 2), "rentKept": round(kept, 2),
                      "flTotal": round(value + kept, 2), "dvPaid": dv["headline"]["dvPaid"],

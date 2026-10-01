@@ -253,6 +253,49 @@
         <div><b>{{ calcOk() ? 'The app’s formula and the independent check agree' : 'The two calculations differ — see the rows marked ✗' }}</b>
           <small>{{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }} · {{ k.months }} months · today’s DigiVilla split on benchmark indices · rebalanced every 1 January</small></div>
       </div>
+      <!-- ══ year by year: exactly what the app shows, simulated independently ══ -->
+      <ng-container *ngIf="yearRows().length">
+        <h2>Year by year — the app’s screen vs the simulation <small>{{ yearsAllOk() ? 'every year matches to the rupee' : 'some years differ — marked ✗' }}</small></h2>
+        <div class="sim-intro" *ngIf="!isSip()">
+          <b>{{ short(startAmount()) }} put in, {{ k.start + '-01' | date:'MMM yyyy' }}</b>
+          <span *ngFor="let s of SLEEVE_ORDER" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }} {{ short(k.start_funds?.[s] ?? 0) }}</span>
+          <em>then {{ short(startAmount() * 0.003) }} sold from arbitrage and paid to you every month · every 1 January mid / small / gold reset to their split · arbitrage never touched</em>
+        </div>
+        <div class="sim-intro" *ngIf="isSip()">
+          <b>{{ inr(monthly()) }} a month from {{ k.start + '-01' | date:'MMM yyyy' }}, +{{ step() }}% each year</b>
+          <em>each instalment split 36 / 24 / 24 / 16 · each year end 3.6% of the value is paid to you, sold from arbitrage first · every 1 January mid / small / gold reset · arbitrage never touched</em>
+        </div>
+        <div class="tbl sm ytab" [class.sip]="isSip()">
+          <div class="tr th">
+            <span>Year end</span>
+            <span class="n" *ngIf="isSip()">Put in so far</span>
+            <span class="n" *ngFor="let s of SLEEVE_ORDER"><i class="sw" [attr.data-s]="s"></i>{{ sleeveLabel(s) }}</span>
+            <span class="n">{{ isSip() ? 'Income (app: /mo)' : 'Paid to you that year' }}</span>
+            <span class="n">Worth after tax <small>app · simulation</small></span>
+            <span class="n" *ngIf="!isSip()">Income so far <small>app · simulation</small></span>
+            <span class="n" *ngIf="!isSip()">Worth + income</span>
+            <span></span>
+          </div>
+          <div class="tr y0" *ngIf="!isSip()">
+            <span><b>Start</b><small>{{ k.start + '-01' | date:'MMM yyyy' }}</small></span>
+            <span class="n" *ngFor="let s of SLEEVE_ORDER">{{ inr(k.start_funds?.[s] ?? 0) }}</span>
+            <span class="n dim">—</span><span class="n"><b>{{ inr(startAmount()) }}</b></span><span class="n dim">—</span><span class="n">{{ inr(startAmount()) }}</span><span></span>
+          </div>
+          <div class="tr" *ngFor="let r of yearRows()" [class.badr]="!rowOk(r)">
+            <span><b>Year {{ r.year }}</b><small>{{ r.month + '-01' | date:'MMM yyyy' }}</small></span>
+            <span class="n" *ngIf="isSip()"><b>{{ inr(r.invested.check) }}</b><small [class.badc]="!r.invested.ok">{{ r.invested.ok ? 'app same ✓' : 'app ' + inr(r.invested.app) }}</small></span>
+            <span class="n fv" *ngFor="let s of SLEEVE_ORDER" [attr.data-s]="s">{{ inr(r.funds[s]) }}</span>
+            <span class="n" *ngIf="!isSip()"><b class="neg">−{{ inr(r.paidYear) }}</b><small [class.badc]="!r.payout.ok">{{ r.payout.ok ? 'app same ✓' : 'app ' + inr(r.payout.app) }}</small></span>
+            <span class="n" *ngIf="isSip()"><b>{{ inr(r.perMonth.check) }}/mo</b><small [class.badc]="!r.perMonth.ok">{{ r.perMonth.ok ? 'app same ✓' : 'app ' + inr(r.perMonth.app) }}</small></span>
+            <span class="n"><b>{{ inr(r.worth.app) }}</b><small [class.badc]="!r.worth.ok">{{ inr(r.worth.check) }} {{ r.worth.ok ? '✓' : '✗' }}</small></span>
+            <span class="n" *ngIf="!isSip()"><b>{{ inr(r.income.app) }}</b><small [class.badc]="!r.income.ok">{{ inr(r.income.check) }} {{ r.income.ok ? '✓' : '✗' }}</small></span>
+            <span class="n b" *ngIf="!isSip()">{{ inr(r.both) }}</span>
+            <span class="n"><i [class.okc]="rowOk(r)" [class.badc]="!rowOk(r)">{{ rowOk(r) ? '✓' : '✗' }}</i></span>
+          </div>
+        </div>
+        <p class="dim">Fund columns are ₹ after that year’s last payout and 1 January rebalance, before tax. “Worth after tax” = if everything were sold that day (what the app’s year column shows). Each bold figure is the app’s own code; the small figure under it is the separate simulation.</p>
+      </ng-container>
+
       <!-- ══ what the money did ══ -->
       <ng-container *ngIf="story() as st">
         <h2>What the money did <small>independent check · {{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }}</small></h2>

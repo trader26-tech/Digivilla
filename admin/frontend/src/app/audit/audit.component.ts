@@ -80,6 +80,8 @@ export class AuditComponent implements OnInit {
   readonly openReb = signal<string | null>(null);
   toggleReb(m: string): void { this.openReb.set(this.openReb() === m ? null : m); }
   private vf: VillaFunds | null = null;
+  /** The app's own year-by-year numbers (exactly what its year columns show). */
+  readonly appYearly = signal<any[]>([]);
 
   readonly YEARS = [5, 8, 10, 15];
   readonly SLABS = [0, 5, 10, 15, 20, 25, 30];
@@ -193,6 +195,7 @@ export class AuditComponent implements OnInit {
     const w = windowFor(vf, this.years());
     if (k === 'fd' || k === 'lump') {
       const r = simulatePayout(w, this.amount(), k === 'fd' ? this.fdRate() : 0, this.slab());
+      this.appYearly.set(r.yearly);
       const rows: Row[] = [
         { label: 'Payouts received (before tax)', app: r.dvPaidGross, check: h.dvPaidGross },
         { label: 'Tax on payouts', app: r.dvPayoutTax, check: h.dvPayoutTax },
@@ -212,6 +215,7 @@ export class AuditComponent implements OnInit {
     }
     if (k === 'sip') {
       const r = simulateSipIncome(w, this.monthly(), this.step(), this.slab());
+      this.appYearly.set(r.yearly);
       return [
         { label: 'Put in', app: r.invested, check: h.invested },
         { label: 'Worth today (before tax)', app: r.value, check: h.value },
@@ -225,6 +229,7 @@ export class AuditComponent implements OnInit {
       ];
     }
     const r = simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: 7, slabPct: this.slab() });
+    this.appYearly.set(r.dv.yearly);
     return [
       { label: 'All-in cost of the flat', app: r.outlay, check: h.outlay },
       { label: 'Flat price growth a year', app: r.appPct, check: h.appPct, pct: true },
@@ -423,6 +428,36 @@ export class AuditComponent implements OnInit {
     return y && this.growthYear(y).endsWith('*') ? `* ${y.month.slice(0, 4)} from ${this.monthName(y.since)} only` : '';
   });
   monthName(m: string): string { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleString('en-IN', { month: 'short' }); }
+  // ── year by year: the app's screen vs the independent simulation ──
+  /** app value vs check value → one cell */
+  private pair(app: number | undefined, check: number | undefined) {
+    const ok = app !== undefined && check !== undefined && Math.abs(app - check) < 1;
+    return { app: app ?? null, check: check ?? null, ok };
+  }
+  yearRows = computed<any[]>(() => {
+    const k = this.check(), app = this.appYearly();
+    if (!k?.yearly) return [];
+    return k.yearly.map((c: any, i: number) => {
+      const a = app[i] ?? {};
+      return {
+        year: c.year, month: c.month, funds: c.funds, arbUnits: c.arb_units,
+        paidYear: c.payout,
+        worth: this.pair(a.valueAfterTax, c.value_after_tax),
+        before: this.pair(a.value, c.value),
+        income: c.income !== undefined ? this.pair(a.income, c.income) : null,
+        invested: c.invested !== undefined ? this.pair(a.invested, c.invested) : null,
+        perMonth: c.invested !== undefined ? this.pair(a.payout !== undefined ? a.payout / 12 : undefined, c.payout / 12) : null,
+        payout: this.pair(a.payout, c.payout),
+        both: (a.valueAfterTax ?? 0) + (a.income ?? 0),
+      };
+    });
+  });
+  yearsAllOk = computed(() => this.yearRows().length > 0 && this.yearRows().every((r) =>
+    r.worth.ok && r.before.ok && r.payout.ok && (!r.income || r.income.ok) && (!r.invested || r.invested.ok)));
+  rowOk(r: any): boolean { return r.worth.ok && r.before.ok && r.payout.ok && (!r.income || r.income.ok) && (!r.invested || r.invested.ok); }
+  isSip = computed(() => this.kind() === 'sip');
+  startAmount = computed(() => this.kind() === 'flat' ? (this.check()?.headline?.outlay ?? 0) : this.amount());
+
   // ── month by month, per fund ──
   monthlyRows = computed<any[]>(() => {
     const m = this.story()?.monthly ?? [];

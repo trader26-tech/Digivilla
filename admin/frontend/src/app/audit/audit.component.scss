@@ -241,3 +241,15 @@ i { font-style: normal; }
 .mtab .tr.taxrow:not(.rbrow) { background: color-mix(in srgb, var(--negative) 4%, var(--surface)); }
 @media (max-width: 900px) { .mtab .tr { grid-template-columns: 0.8fr repeat(4, 1fr); } .mtab .tr > span:nth-last-child(-n+2) { grid-column: span 5; text-align: left; } }
 .mtab .tr.gap { display: block; color: var(--muted); font-size: 0.76rem; padding: 0.45rem 0.85rem; }
+
+/* year by year vs the app */
+.sim-intro { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1rem; padding: 0.7rem 0.9rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); font-size: 0.82rem;
+  span { display: inline-flex; align-items: center; font-weight: 700; } em { flex-basis: 100%; font-style: normal; color: var(--muted); font-size: 0.78rem; } }
+.ytab .tr { grid-template-columns: 0.8fr repeat(4, 0.85fr) 0.95fr 1.25fr 1.25fr 1.1fr 0.3fr; align-items: start; }
+.ytab.sip .tr { grid-template-columns: 0.8fr 0.95fr repeat(4, 0.85fr) 1fr 1.3fr 0.3fr; }
+.ytab .tr > span { display: flex; flex-direction: column; }
+.ytab .tr > span.n { align-items: flex-end; }
+.ytab small { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+.ytab .th small { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.ytab .fv { border-right: 3px solid var(--sc); padding-right: 0.45rem; }
+.ytab .y0 { background: var(--surface-2); }
