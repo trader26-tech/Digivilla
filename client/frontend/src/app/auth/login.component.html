@@ -42,20 +42,18 @@
         <span *ngIf="!busy()">Continue</span>
         <span *ngIf="busy()" class="lg-spin" aria-hidden="true"></span>
       </button>
-      <!-- try it first: the sample estate, no sign-up -->
-      <button class="lg-demo" type="button" (click)="tryDemo()" [disabled]="demoBusy()">
-        <span class="lg-demo-ic" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
-        </span>
-        <span class="lg-demo-t">
-          <b>{{ demoBusy() ? 'Opening the demo…' : 'Explore the demo' }}</b>
-          <small>A sample estate · no sign-up</small>
-        </span>
-      </button>
       <p class="lg-trust">
         <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         Bank-grade security · OTP verified
       </p>
+
+      <!-- try it first: the sample estate, no sign-up -->
+      <div class="lg-or" aria-hidden="true"><i></i><span>or</span><i></i></div>
+      <button class="lg-demo" type="button" (click)="tryDemo()" [disabled]="demoBusy()">
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M7 4.8v14.4L19 12z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+        {{ demoBusy() ? 'Opening the demo…' : 'Explore a live demo' }}
+      </button>
+      <p class="lg-demo-note">See the full app with a realistic <b>sample estate</b>.<br>No login — and nothing you do is saved.</p>
     </footer>
   </form>
 
