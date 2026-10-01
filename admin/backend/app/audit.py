@@ -371,6 +371,10 @@ class _Lots:
     def __init__(self, funds, tax: _Tax):
         self.f, self.t = funds, tax
         self.lots = [[] for _ in funds]
+        self.tag = "invest"                     # what the next buys/sells are for
+        self.flows = [{"invest": 0.0, "payout": 0.0, "rebal_in": 0.0, "rebal_out": 0.0} for _ in funds]
+        self.arb_rebal_moves = 0                # buys/sells of arbitrage made BY a rebalance (must stay 0)
+        self._i = 0                             # the month the last snapshot was taken at
 
     def units(self, k): return sum(l[0] for l in self.lots[k])
     def val(self, k, i): return self.units(k) * self.f[k]["nav"][i]
@@ -379,8 +383,12 @@ class _Lots:
     def buy(self, k, rupees, i):
         if rupees > 0:
             self.lots[k].append([rupees / self.f[k]["nav"][i], self.f[k]["nav"][i], i])
+            self.flows[k]["rebal_in" if self.tag == "rebalance" else "invest"] += rupees
+            if self.tag == "rebalance" and self.f[k]["sleeve"] == "arbitrage": self.arb_rebal_moves += 1
 
     def sell(self, k, rupees, i):
+        self.flows[k]["rebal_out" if self.tag == "rebalance" else "payout"] += rupees
+        if self.tag == "rebalance" and self.f[k]["sleeve"] == "arbitrage": self.arb_rebal_moves += 1
         u = rupees / self.f[k]["nav"][i]
         while u > 1e-12 and self.lots[k]:
             lot = self.lots[k][0]
@@ -390,6 +398,7 @@ class _Lots:
             if lot[0] <= 1e-12: self.lots[k].pop(0)
 
     def pay(self, need, i, a) -> str:
+        self.tag = "payout"
         take = min(need, self.val(a, i))
         if take > 0: self.sell(a, take, i)
         need -= take
@@ -411,11 +420,14 @@ class _Lots:
         for k in g:
             moved[k] = G * self.f[k]["weight"] / wsum - before[k]
         t0 = self.t.tax()
+        units_before = [self.units(k) for k in range(len(self.f))]
+        self.tag = "rebalance"
         for k in g:
             if moved[k] < -0.005: self.sell(k, -moved[k], i)
         for k in g:
             if moved[k] > 0.005: self.buy(k, moved[k], i)
-        return {"before": before, "after": [self.val(k, i) for k in range(len(self.f))],
+        self.tag = "invest"
+        return {"units_before": units_before, "units_after": [self.units(k) for k in range(len(self.f))],"before": before, "after": [self.val(k, i) for k in range(len(self.f))],
                 "moved": moved, "tax": max(0.0, self.t.tax() - t0)}
 
     def exit_tax(self, i):
@@ -424,6 +436,90 @@ class _Lots:
             for lot in self.lots[k]:
                 t.add(f["sleeve"], lot[0] * (f["nav"][i] - lot[1]), i - lot[2])
         return max(0.0, t.tax() - self.t.tax())
+
+
+def _snap(book, a):
+    """One month's picture, after everything that month (for the story charts)."""
+    n = len(book.f)
+    return {"v": [book.val(k, book._i) for k in range(n)], "u": [book.units(k) for k in range(n)],
+            "arb_paid": book.flows[a]["payout"] if a >= 0 else 0.0,
+            "arb_inv": book.flows[a]["invest"] if a >= 0 else 0.0}
+
+
+def _story(funds, months, book, a, snaps, rb_raw, sip=False) -> dict:
+    """What the money did, in a form the admin can chart and check: each sleeve's
+    index CAGR and flows, every month's value per sleeve, and every 1 January —
+    how much each index moved since the last one, the drift it caused, what was
+    bought/sold, and proof that arbitrage was never touched."""
+    n = len(months) - 1
+    yrs = n / 12 if n else 1
+    growth = [k for k in range(len(funds)) if k != a]
+    wsum = sum(funds[k]["weight"] for k in growth) or 1
+    sleeves = []
+    for k, f in enumerate(funds):
+        nav, fl = f["nav"], book.flows[k]
+        gx = nav[n] / nav[0]
+        sleeves.append({
+            "sleeve": f["sleeve"], "name": f["name"], "weight": f["weight"],
+            "target_growth_share": None if k == a else round(f["weight"] / wsum * 100, 2),
+            "index_start": nav[0], "index_end": nav[n], "index_growth_x": round(gx, 4),
+            "index_cagr": round((gx ** (1 / yrs) - 1) * 100, 2),
+            "invested": round(fl["invest"], 2), "paid_out": round(fl["payout"], 2),
+            "rebal_in": round(fl["rebal_in"], 2), "rebal_out": round(fl["rebal_out"], 2),
+            "rebal_net": round(fl["rebal_in"] - fl["rebal_out"], 2),
+            "value_now": round(book.val(k, n), 2),
+        })
+    years, prev = [], 0
+    for i, r in rb_raw:
+        gb = sum(r["before"][k] for k in growth) or 1
+        ga = sum(r["after"][k] for k in growth) or 1
+        years.append({
+            "month": months[i], "label": f"1 Jan {int(months[i][:4]) + 1}", "since": months[prev],
+            "funds": [{
+                "sleeve": f["sleeve"],
+                "index_ret": round((f["nav"][i] / f["nav"][prev] - 1) * 100, 2),
+                "before": round(r["before"][k], 2), "after": round(r["after"][k], 2), "moved": round(r["moved"][k], 2),
+                "units_before": round(r["units_before"][k], 4), "units_after": round(r["units_after"][k], 4),
+                "share_before": None if k == a else round(r["before"][k] / gb * 100, 2),
+                "share_after": None if k == a else round(r["after"][k] / ga * 100, 2),
+                "target": None if k == a else round(f["weight"] / wsum * 100, 2),
+            } for k, f in enumerate(funds)],
+            "arb_paid_since": round(snaps[i]["arb_paid"] - snaps[prev]["arb_paid"], 2) if a >= 0 else 0,
+            "turnover": round(sum(m for m in r["moved"] if m > 0), 2),
+            "tax": round(r["tax"], 2),
+        })
+        prev = i
+    # ── the checks the admin asked for ──
+    arb_same = all(abs(r["before"][a] - r["after"][a]) < 0.01 and abs(r["units_before"][a] - r["units_after"][a]) < 1e-9
+                   for _, r in rb_raw) and book.arb_rebal_moves == 0
+    u = [sn["u"][a] for sn in snaps]
+    rises = [months[i] for i in range(1, len(u)) if u[i] > u[i - 1] + 1e-9]
+    # SIP: any rise in arbitrage units must be fully explained by that month's new SIP money
+    unexplained = [months[i] for i in range(1, len(u))
+                   if u[i] - u[i - 1] > (snaps[i]["arb_inv"] - snaps[i - 1]["arb_inv"]) / funds[a]["nav"][i] + 1e-6]
+    worst = max((abs(fr["share_after"] - fr["target"]) for y in years for fr in y["funds"] if fr["target"] is not None), default=0)
+    net = max((abs(sum(fr["moved"] for fr in y["funds"])) for y in years), default=0)
+    checks = [
+        {"ok": arb_same, "label": "Arbitrage never bought or sold at a 1 January rebalance",
+         "detail": f"{len(rb_raw)} rebalances · arbitrage units and ₹ identical before and after every one"},
+        ({"ok": not unexplained, "label": "Arbitrage units only grow with new SIP money — payouts and rebalances never add to it",
+          "detail": (f"each instalment buys today's split, so {funds[a]['weight'] * 100:g}% goes to arbitrage; the yearly income is sold from it first"
+                     if not unexplained else f"unexplained rise in {', '.join(unexplained[:5])}")}
+         if sip else
+         {"ok": not rises, "label": "Arbitrage units only ever go down (paid out each month, never topped up)",
+          "detail": "no month where arbitrage units rose" if not rises else f"rose in {', '.join(rises[:5])}"}),
+        {"ok": worst < 0.01, "label": "After every rebalance mid : small : gold is back to its starting split",
+         "detail": "target " + " : ".join(f"{sl['target_growth_share']:g}%" for sl in sleeves if sl["target_growth_share"] is not None)
+                   + f" of the growth part · worst miss {worst:.4f} pts"},
+        {"ok": net < 1, "label": "A rebalance only moves money between growth funds — nothing added or taken out",
+         "detail": f"largest net difference ₹{net:,.2f} (tax on the gains is paid separately)"},
+    ]
+    return {
+        "sleeves": sleeves, "years": years, "checks": checks,
+        "series": {"months": months, "values": {f["sleeve"]: [round(sn["v"][k]) for sn in snaps] for k, f in enumerate(funds)},
+                   "arb_units": [round(x, 4) for x in u],
+                   "rebalance_months": [months[i] for i, _ in rb_raw]},
+    }
 
 
 def _rb(months, i): return i > 0 and months[i].endswith("-12")
@@ -450,6 +546,8 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
     book = _Lots(funds, tax)
     for k, f in enumerate(funds):
         book.buy(k, amount * f["weight"], 0)
+    book._i = 0
+    snaps, rb_raw = [_snap(book, a)], []
     pay = amount * 0.003
     fy, paid, tax_paid = _fy(months[0]), 0.0, 0.0
     flows = [-amount]
@@ -468,7 +566,10 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
         if _rb(months, i):
             r = book.rebalance(i, a)
             rebalances.append(_rb_row(funds, months, i, r))
+            rb_raw.append((i, r))
             rb = "yes"
+        book._i = i
+        snaps.append(_snap(book, a))
         ledger.append({"month": months[i], "payout": round(pay, 2), "sold_from": sold, "arb_units": round(book.units(a), 4),
                        "rebalanced": rb, "value": round(book.total(i), 2), "tax_paid": round(t_now, 2)})
     last_tax = tax.tax()
@@ -480,6 +581,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float) -> dict
     arb_now = book.val(a, n)
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
+        "story": _story(funds, months, book, a, snaps, rb_raw),
         "headline": {
             "dvPaidGross": round(paid, 2), "dvPayoutTax": round(payout_tax, 2), "dvPaid": round(paid - payout_tax, 2),
             "dvValue": round(value, 2), "dvExitTax": round(exit_tax, 2), "dvTotal": round(paid - payout_tax + value, 2),
@@ -503,6 +605,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     invested = income = income_tax = 0.0
     flows = [0.0] * (n + 1)
     ledger, rebalances = [], []
+    snaps, rb_raw = [], []
     for i in range(n + 1):
         t_now = 0.0
         if _fy(months[i]) != fy:
@@ -517,6 +620,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
         if _rb(months, i):
             r = book.rebalance(i, a)
             rebalances.append(_rb_row(funds, months, i, r))
+            rb_raw.append((i, r))
             rb = "yes"
         amt = 0.0
         if i < n:
@@ -524,6 +628,8 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
             for k, f in enumerate(funds):
                 book.buy(k, amt * f["weight"], i)
             invested += amt; flows[i] -= amt
+        book._i = i
+        snaps.append(_snap(book, a))
         ledger.append({"month": months[i], "put_in": round(amt, 2), "payout": round(pay, 2), "rebalanced": rb,
                        "invested_so_far": round(invested, 2), "value": round(book.total(i), 2), "tax_paid": round(t_now, 2)})
     last_tax = tax.tax()
@@ -533,6 +639,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float) -> dict:
     flows[n] += v - exit_tax - last_tax
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
+        "story": _story(funds, months, book, a, snaps, rb_raw, sip=True),
         "headline": {"invested": round(invested, 2), "value": round(v, 2), "exitTax": round(exit_tax, 2),
                      "valueAfterTax": round(v - exit_tax, 2), "incomeGross": round(income, 2),
                      "incomeTax": round(income_tax, 2), "income": round(income - income_tax, 2), "xirr": _irr(flows),
@@ -558,7 +665,7 @@ def flat_check(years: int, price: float, value: float, rent: float, stamp: float
     dv = payout_check(Y, outlay, 0, slab)
     return {
         "start": dv["start"], "end": dv["end"], "months": dv["months"], "ledger": dv["ledger"], "flat_years": rows,
-        "rebalances": dv["rebalances"],
+        "rebalances": dv["rebalances"], "story": dv["story"],
         "headline": {"outlay": round(outlay, 2), "appPct": round(app * 100, 4), "rentGross": round(gross, 2),
                      "rentTax": round(rent_tax, 2), "upkeep": round(upkeep, 2), "rentKept": round(kept, 2),
                      "flTotal": round(value + kept, 2), "dvPaid": dv["headline"]["dvPaid"],

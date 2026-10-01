@@ -164,6 +164,7 @@ export class AuditComponent implements OnInit {
     this.check.set(null);
     this.rows.set([]);
     this.showAll.set(false);
+    this.hoverI.set(null); this.hoverY.set(null);
     const k = this.kind();
     const params: Record<string, string | number> = {
       kind: k, years: this.years(), slab: this.slab(), amount: this.amount(), fd_rate: this.fdRate(),
@@ -267,6 +268,148 @@ export class AuditComponent implements OnInit {
     a.click();
     URL.revokeObjectURL(a.href);
   }
+
+  // ── the story: what the money did (charts) ──
+  readonly SLEEVE_ORDER = ['arbitrage', 'mid', 'small', 'gold'];
+  readonly COLORS: Record<string, string> = { arbitrage: '#7fb39b', mid: '#3f7d1f', small: '#8fd65a', gold: '#e0b23e' };
+  story = computed<any>(() => this.check()?.story ?? null);
+  storyOk = computed(() => (this.story()?.checks ?? []).every((c: any) => c.ok));
+  growthSleeves = computed<any[]>(() => (this.story()?.sleeves ?? []).filter((s: any) => s.sleeve !== 'arbitrage'));
+  growthWeights = computed(() => this.growthSleeves().map((g: any) => Math.round(g.weight * 100)).join(' : '));
+  arbSleeve = computed<any>(() => (this.story()?.sleeves ?? []).find((s: any) => s.sleeve === 'arbitrage'));
+  readonly hoverI = signal<number | null>(null);
+  readonly hoverY = signal<number | null>(null);
+
+  private readonly CW = 1000;          // chart viewBox width
+  private readonly PL = 70; private readonly PR = 14;
+  private xAt(i: number, n: number): number { return this.PL + (n ? i / n : 0) * (this.CW - this.PL - this.PR); }
+
+  /** Stacked area: each sleeve's ₹ value every month, with the 1 January lines. */
+  stack = computed(() => {
+    const st = this.story();
+    if (!st) return null;
+    const months: string[] = st.series.months;
+    const n = months.length - 1;
+    const H = 300, T = 14, B = 30;
+    const order = this.SLEEVE_ORDER.filter((s) => st.series.values[s]);
+    const tot = months.map((_, i) => order.reduce((a, s) => a + st.series.values[s][i], 0));
+    const max = this.niceMax(Math.max(...tot));
+    const y = (v: number) => T + (1 - v / max) * (H - T - B);
+    const cum = months.map(() => 0);
+    const bands = order.map((s) => {
+      const lo = cum.slice();
+      st.series.values[s].forEach((v: number, i: number) => (cum[i] += v));
+      const top = months.map((_, i) => `${this.xAt(i, n).toFixed(1)},${y(cum[i]).toFixed(1)}`);
+      const bot = months.map((_, i) => `${this.xAt(i, n).toFixed(1)},${y(lo[i]).toFixed(1)}`).reverse();
+      return { sleeve: s, color: this.COLORS[s], d: `M${top.join('L')}L${bot.join('L')}Z` };
+    });
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ y: y(max * f), label: this.short(max * f) }));
+    const rb = (st.series.rebalance_months as string[]).map((m) => ({ x: this.xAt(months.indexOf(m), n), label: '1 Jan ’' + String(+m.slice(2, 4) + 1).padStart(2, '0') }));
+    const step = n > 130 ? 2 : 1;
+    const xl = months.map((m, i) => ({ m, i })).filter(({ m, i }) => m.endsWith('-01') && (+m.slice(0, 4)) % step === 0 && i > 2 && i < n - 2)
+      .map(({ m, i }) => ({ x: this.xAt(i, n), label: m.slice(0, 4) }));
+    return { H, T, B, n, months, bands, ticks, rb, xl, tot, order, bottom: H - B };
+  });
+
+  /** Arbitrage units, month by month — only payouts take them down. */
+  arb = computed(() => {
+    const st = this.story();
+    if (!st) return null;
+    const months: string[] = st.series.months;
+    const u: number[] = st.series.arb_units;
+    const n = months.length - 1;
+    const H = 170, T = 14, B = 26;
+    const max = Math.max(...u) * 1.08 || 1;
+    const y = (v: number) => T + (1 - v / max) * (H - T - B);
+    const pts = u.map((v, i) => `${this.xAt(i, n).toFixed(1)},${y(v).toFixed(1)}`);
+    const area = `M${this.xAt(0, n)},${H - B}L${pts.join('L')}L${this.xAt(n, n)},${H - B}Z`;
+    const marks = (st.series.rebalance_months as string[]).map((m) => {
+      const i = months.indexOf(m);
+      return { x: this.xAt(i, n), y: y(u[i]), m };
+    });
+    return { H, B, line: `M${pts.join('L')}`, area, marks, first: u[0], last: u[n], yFirst: Math.min(y(u[0]), H - B - 22), yLast: Math.min(y(u[n]), H - B - 22) };
+  });
+
+  /** Per 1 January: each index's return since the last one, and what was moved. */
+  yearsChart = computed(() => {
+    const st = this.story();
+    if (!st?.years?.length) return null;
+    const ys: any[] = st.years;
+    const H = 230, T = 18, B = 26, mid = 0;
+    const plotW = this.CW - this.PL - this.PR;
+    const gw = plotW / ys.length;
+    const bw = Math.min(16, (gw - 10) / 4);
+    // returns
+    const rets = ys.flatMap((y) => y.funds.map((f: any) => f.index_ret));
+    const rMax = this.niceMax(Math.max(5, ...rets)), rMin = -this.niceMax(Math.max(5, ...rets.map((v: number) => -v)));
+    const ry = (v: number) => T + (rMax - v) / (rMax - rMin) * (H - T - B);
+    // moved
+    const mv = ys.flatMap((y) => y.funds.map((f: any) => f.moved));
+    const mAbs = this.niceMax(Math.max(1, ...mv.map((v: number) => Math.abs(v))));
+    const my = (v: number) => T + (mAbs - v) / (2 * mAbs) * (H - T - B);
+    const groups = ys.map((y, gi) => {
+      const x0 = this.PL + gi * gw + (gw - bw * 4 - 6) / 2;
+      const bars = this.SLEEVE_ORDER.map((s, k) => {
+        const f = y.funds.find((ff: any) => ff.sleeve === s);
+        if (!f) return null;
+        const x = x0 + k * (bw + 2);
+        const r = { x, w: bw, y: Math.min(ry(f.index_ret), ry(0)), h: Math.max(1, Math.abs(ry(f.index_ret) - ry(0))), color: this.COLORS[s] };
+        const m = { x, w: bw, y: Math.min(my(f.moved), my(0)), h: Math.abs(my(f.moved) - my(0)), color: this.COLORS[s], zero: s === 'arbitrage' };
+        return { sleeve: s, r, m };
+      }).filter(Boolean);
+      return { gi, label: this.growthYear(y, true), cx: this.PL + gi * gw + gw / 2, x: this.PL + gi * gw, w: gw, bars };
+    });
+    const rt = [rMax, rMax / 2, 0, rMin / 2, rMin].map((v) => ({ y: ry(v), label: `${v > 0 ? '+' : ''}${Math.round(v)}%` }));
+    const mt = [mAbs, mAbs / 2, 0, -mAbs / 2, -mAbs].map((v) => ({ y: my(v), label: (v > 0 ? '+' : v < 0 ? '−' : '') + this.short(Math.abs(v)) }));
+    return { H, B, groups, rt, mt, r0: ry(0), m0: my(0) };
+  });
+  hoverYear = computed(() => { const i = this.hoverY(); return i === null ? null : this.story()?.years?.[i] ?? null; });
+
+  onStackMove(ev: MouseEvent, svg: Element): void {
+    const c = this.stack();
+    if (!c) return;
+    const r = svg.getBoundingClientRect();
+    const x = ((ev.clientX - r.left) / r.width) * this.CW;
+    const i = Math.round(((x - this.PL) / (this.CW - this.PL - this.PR)) * c.n);
+    this.hoverI.set(i < 0 || i > c.n ? null : i);
+  }
+  hoverX = computed(() => { const c = this.stack(), i = this.hoverI(); return c && i !== null ? this.xAt(i, c.n) : 0; });
+  hoverPct = computed(() => (this.hoverX() / this.CW) * 100);
+  hoverRow = computed(() => {
+    const st = this.story(), i = this.hoverI();
+    if (!st || i === null) return null;
+    const m = st.series.months[i];
+    const vals = this.SLEEVE_ORDER.filter((s) => st.series.values[s]).map((s) => ({ s, v: st.series.values[s][i] })).reverse();
+    return { m, vals, total: vals.reduce((a, b) => a + b.v, 0), units: st.series.arb_units[i], rb: (st.series.rebalance_months as string[]).includes(m) };
+  });
+  /** The calendar year whose growth a 1 January rebalance corrects ('2016', or '’16*' when it's a part year). */
+  growthYear(y: any, short = false): string {
+    const yr = y.month.slice(0, 4);
+    const part = !(y.since.endsWith('-12') && +y.since.slice(0, 4) === +yr - 1);
+    return (short ? '’' + yr.slice(2) : yr) + (part ? '*' : '');
+  }
+  partNote = computed(() => {
+    const y = this.story()?.years?.[0];
+    return y && this.growthYear(y).endsWith('*') ? `* ${y.month.slice(0, 4)} from ${this.monthName(y.since)} only` : '';
+  });
+  monthName(m: string): string { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleString('en-IN', { month: 'short' }); }
+  yearFund(y: any, s: string): any { return y?.funds?.find((f: any) => f.sleeve === s); }
+
+  private niceMax(v: number): number {
+    if (!(v > 0)) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    const f = v / p;
+    return (f <= 1 ? 1 : f <= 1.5 ? 1.5 : f <= 2 ? 2 : f <= 3 ? 3 : f <= 4 ? 4 : f <= 5 ? 5 : f <= 6 ? 6 : f <= 8 ? 8 : 10) * p;
+  }
+  /** ₹ in Cr / L, short */
+  short(v: number): string {
+    const a = Math.abs(v), sg = v < 0 ? '−' : '';
+    if (a >= 1e7) return `${sg}₹${(a / 1e7).toFixed(a >= 1e8 ? 1 : 2)} Cr`;
+    if (a >= 1e5) return `${sg}₹${(a / 1e5).toFixed(a >= 1e6 ? 1 : 2)} L`;
+    if (a >= 1e3) return `${sg}₹${(a / 1e3).toFixed(0)}k`;
+    return `${sg}₹${Math.round(a)}`;
+  }
+  signed(v: number): string { return Math.abs(v) < 0.5 ? '₹0' : (v > 0 ? '+' : '') + this.short(v); }
 
   // ── formatting ──
   inr(v: number | null | undefined, dp = 0): string {

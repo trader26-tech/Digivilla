@@ -219,31 +219,151 @@
         </div>
       </div>
 
-      <!-- every 1 January rebalance -->
-      <div *ngIf="k.rebalances?.length">
-        <h2>Rebalanced every 1 January <small>{{ k.rebalances.length }} times · arbitrage left alone · growth back to its starting split</small></h2>
-        <div class="rbs">
-          <article class="rb" *ngFor="let rb of k.rebalances" [class.open]="openReb() === rb.month">
-            <button class="rb-top" (click)="toggleReb(rb.month)">
-              <b>1 Jan {{ nextYear(rb.month) }}</b>
-              <small>at the 31 Dec {{ rb.month.slice(0, 4) }} close</small>
-              <span class="rb-bars" aria-hidden="true">
-                <ng-container *ngFor="let f of rb.funds"><i [style.flex-basis.%]="f.share_after" [attr.data-s]="f.sleeve"></i></ng-container>
-              </span>
-              <em>tax {{ inr(rb.tax) }}</em>
-            </button>
-            <div class="tbl sm" *ngIf="openReb() === rb.month">
-              <div class="tr th rbr"><span>Sleeve</span><span class="n">Before</span><span class="n">Share</span><span class="n">Bought / sold</span><span class="n">After</span><span class="n">Share</span></div>
-              <div class="tr rbr" *ngFor="let f of rb.funds">
-                <span><i class="sw" [attr.data-s]="f.sleeve"></i>{{ sleeveLabel(f.sleeve) }}</span>
-                <span class="n">{{ inr(f.before) }}</span><span class="n dim">{{ f.share_before | number:'1.2-2' }}%</span>
-                <span class="n" [class.pos]="f.moved > 0.5" [class.neg]="f.moved < -0.5">{{ f.moved > 0.5 ? '+' : '' }}{{ f.sleeve === 'arbitrage' ? 'untouched' : inr(f.moved) }}</span>
-                <span class="n b">{{ inr(f.after) }}</span><span class="n">{{ f.share_after | number:'1.2-2' }}%</span>
-              </div>
+      <!-- ══ what the money did ══ -->
+      <ng-container *ngIf="story() as st">
+        <h2>What the money did <small>independent check · {{ k.start | date:'MMM yyyy' }} → {{ k.end | date:'MMM yyyy' }}</small></h2>
+
+        <!-- the rule, in one picture -->
+        <div class="rule">
+          <div class="rule-arb" data-s="arbitrage">
+            <i class="sw"></i>
+            <div><b>Arbitrage · {{ (arbSleeve()?.weight ?? 0) * 100 | number:'1.0-0' }}% at the start</b>
+              <span>Never rebalanced. {{ kind() === 'sip' ? 'Each SIP instalment adds to it; the yearly income is sold from it first.' : 'Your monthly payout is sold from it, so it shrinks every month until it runs out.' }}</span></div>
+          </div>
+          <div class="rule-gr">
+            <div class="rule-mix">
+              <span *ngFor="let g of growthSleeves()" [attr.data-s]="g.sleeve" [style.flex-basis.%]="g.target_growth_share"><i></i>{{ sleeveLabel(g.sleeve) }} {{ g.weight * 100 | number:'1.0-0' }}%</span>
             </div>
+            <span>The growth part. Every 1 January it goes back to
+              <b><ng-container *ngFor="let g of growthSleeves(); let last = last">{{ g.target_growth_share | number:'1.0-1' }}%{{ last ? '' : ' : ' }}</ng-container></b>
+              of itself — the same {{ growthWeights() }} it started with — selling what ran ahead and buying what fell behind.</span>
+          </div>
+        </div>
+
+        <!-- proof -->
+        <div class="proof">
+          <div class="pf" *ngFor="let c of st.checks" [class.no]="!c.ok">
+            <i>{{ c.ok ? '✓' : '✗' }}</i><div><b>{{ c.label }}</b><small>{{ c.detail }}</small></div>
+          </div>
+        </div>
+
+        <!-- each part: index CAGR + where its money went -->
+        <div class="slv">
+          <article *ngFor="let s of st.sleeves" [attr.data-s]="s.sleeve">
+            <header><i class="sw"></i><b>{{ sleeveLabel(s.sleeve) }}</b><span>{{ s.weight * 100 | number:'1.0-0' }}% at start</span></header>
+            <small class="nm">{{ s.name }}</small>
+            <div class="cagr"><b>{{ s.index_cagr | number:'1.2-2' }}%</b><span>a year (index CAGR)<br>{{ s.index_growth_x | number:'1.2-2' }}× over {{ k.months / 12 | number:'1.0-1' }} yrs</span></div>
+            <dl>
+              <div><dt>Put in</dt><dd>{{ short(s.invested) }}</dd></div>
+              <div><dt>Sold to pay you</dt><dd [class.neg]="s.paid_out > 0.5">{{ s.paid_out > 0.5 ? '−' + short(s.paid_out) : '—' }}</dd></div>
+              <ng-container *ngIf="s.sleeve !== 'arbitrage'; else arbRb">
+                <div><dt>Bought at rebalances</dt><dd class="pos">{{ s.rebal_in > 0.5 ? '+' + short(s.rebal_in) : '—' }}</dd></div>
+                <div><dt>Sold at rebalances</dt><dd class="neg">{{ s.rebal_out > 0.5 ? '−' + short(s.rebal_out) : '—' }}</dd></div>
+              </ng-container>
+              <ng-template #arbRb><div class="never"><dt>Rebalances</dt><dd>never touched</dd></div></ng-template>
+              <div class="tot"><dt>Worth today</dt><dd>{{ short(s.value_now) }}</dd></div>
+            </dl>
           </article>
         </div>
-      </div>
+
+        <!-- chart 1 · where the money sat -->
+        <figure class="chart" *ngIf="stack() as c">
+          <figcaption><b>Where the money sat, month by month</b><span>each part’s ₹ value, stacked · dashed lines = 1 January rebalances · hover for any month</span></figcaption>
+          <div class="cv">
+            <svg #sv [attr.viewBox]="'0 0 1000 ' + c.H" (mousemove)="onStackMove($event, sv)" (mouseleave)="hoverI.set(null)" role="img" aria-label="Value of each part, month by month">
+              <g class="grid"><ng-container *ngFor="let t of c.ticks"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+              <path *ngFor="let b of c.bands" [attr.d]="b.d" [attr.fill]="b.color" class="band"/>
+              <g class="rbl"><ng-container *ngFor="let r of c.rb"><line [attr.x1]="r.x" [attr.x2]="r.x" y1="6" [attr.y2]="c.bottom"/></ng-container></g>
+              <g class="xl"><text *ngFor="let x of c.xl" [attr.x]="x.x" [attr.y]="c.H - 8" text-anchor="middle">{{ x.label }}</text></g>
+              <line *ngIf="hoverI() !== null" class="hl" [attr.x1]="hoverX()" [attr.x2]="hoverX()" y1="6" [attr.y2]="c.bottom"/>
+            </svg>
+            <div class="tip" *ngIf="hoverRow() as h" [style.left.%]="hoverPct()" [class.flip]="hoverPct() > 62">
+              <b>{{ h.m + '-01' | date:'MMM yyyy' }}</b><em *ngIf="h.rb">↻ rebalanced (1 Jan {{ nextYear(h.m) }})</em>
+              <div *ngFor="let v of h.vals" [attr.data-s]="v.s"><i class="sw"></i>{{ sleeveLabel(v.s) }}<span>{{ short(v.v) }}</span></div>
+              <div class="t">Total<span>{{ short(h.total) }}</span></div>
+            </div>
+          </div>
+          <div class="lg"><span *ngFor="let s of c.order" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }}</span><span class="dash">1 January rebalance</span></div>
+        </figure>
+
+        <!-- chart 2 · arbitrage units -->
+        <figure class="chart" *ngIf="arb() as c">
+          <figcaption><b>Arbitrage units — {{ kind() === 'sip' ? 'up only with new SIP money, down with income' : 'only payouts take them down' }}</b>
+            <span>{{ num(c.first, 0) }} → {{ num(c.last, 0) }} units · ● = a 1 January rebalance: the line doesn’t move there</span></figcaption>
+          <div class="cv">
+            <svg [attr.viewBox]="'0 0 1000 ' + c.H" role="img" aria-label="Arbitrage units over time">
+              <path [attr.d]="c.area" class="arb-area"/>
+              <path [attr.d]="c.line" class="arb-line"/>
+              <circle *ngFor="let m of c.marks" [attr.cx]="m.x" [attr.cy]="m.y" r="4.5" class="arb-mk"><title>1 Jan {{ nextYear(m.m) }} — arbitrage untouched</title></circle>
+              <line x1="70" x2="986" [attr.y1]="c.H - c.B" [attr.y2]="c.H - c.B" class="base"/>
+              <text x="70" [attr.y]="c.yFirst - 8" class="lbl">{{ num(c.first, 0) }} units</text>
+              <text x="986" [attr.y]="c.yLast - 8" text-anchor="end" class="lbl">{{ num(c.last, 0) }}</text>
+            </svg>
+          </div>
+        </figure>
+
+        <!-- chart 3 · each year: index growth and what moved -->
+        <figure class="chart" *ngIf="yearsChart() as c">
+          <figcaption><b>Each year: how much each index grew, and what the next 1 January rebalance moved</b><span>hover a year · top = each index’s return during that calendar year · bottom = ₹ bought (up) or sold (down) on the 1 January after it</span></figcaption>
+          <div class="cv">
+            <svg [attr.viewBox]="'0 0 1000 ' + c.H" role="img" aria-label="Index return each year">
+              <g class="grid"><ng-container *ngFor="let t of c.rt"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+              <line x1="70" x2="986" [attr.y1]="c.r0" [attr.y2]="c.r0" class="zero"/>
+              <g *ngFor="let g of c.groups" (mouseenter)="hoverY.set(g.gi)" [class.on]="hoverY() === g.gi" class="yg">
+                <rect [attr.x]="g.x" y="0" [attr.width]="g.w" [attr.height]="c.H - c.B" class="hit"/>
+                <rect *ngFor="let b of g.bars" [attr.x]="b!.r.x" [attr.y]="b!.r.y" [attr.width]="b!.r.w" [attr.height]="b!.r.h" [attr.fill]="b!.r.color" rx="1.5"/>
+                <text [attr.x]="g.cx" [attr.y]="c.H - 8" text-anchor="middle" class="xl1">{{ g.label }}</text>
+              </g>
+            </svg>
+            <svg [attr.viewBox]="'0 0 1000 ' + c.H" role="img" aria-label="Money moved at each rebalance">
+              <g class="grid"><ng-container *ngFor="let t of c.mt"><line x1="70" x2="986" [attr.y1]="t.y" [attr.y2]="t.y"/><text x="62" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text></ng-container></g>
+              <line x1="70" x2="986" [attr.y1]="c.m0" [attr.y2]="c.m0" class="zero"/>
+              <g *ngFor="let g of c.groups" (mouseenter)="hoverY.set(g.gi)" [class.on]="hoverY() === g.gi" class="yg">
+                <rect [attr.x]="g.x" y="0" [attr.width]="g.w" [attr.height]="c.H - c.B" class="hit"/>
+                <ng-container *ngFor="let b of g.bars">
+                  <rect *ngIf="!b!.m.zero" [attr.x]="b!.m.x" [attr.y]="b!.m.y" [attr.width]="b!.m.w" [attr.height]="b!.m.h || 1" [attr.fill]="b!.m.color" rx="1.5"/>
+                  <circle *ngIf="b!.m.zero" [attr.cx]="b!.m.x + b!.m.w / 2" [attr.cy]="c.m0" r="3" class="arb-zero"/>
+                </ng-container>
+                <text [attr.x]="g.cx" [attr.y]="c.H - 8" text-anchor="middle" class="xl1">{{ g.label }}</text>
+              </g>
+            </svg>
+          </div>
+          <div class="lg"><span *ngFor="let s of SLEEVE_ORDER" [attr.data-s]="s"><i class="sw"></i>{{ sleeveLabel(s) }}{{ s === 'arbitrage' ? ' (○ = nothing moved)' : '' }}</span><span *ngIf="partNote()">{{ partNote() }}</span></div>
+          <div class="yd" *ngIf="hoverYear() ?? st.years[st.years.length - 1] as y">
+            <b>Growth in {{ growthYear(y).replace('*', '') }} → rebalanced {{ y.label }}</b><small>{{ y.since + '-01' | date:'MMM yyyy' }} → {{ y.month + '-01' | date:'MMM yyyy' }} close · moved {{ short(y.turnover) }} · tax {{ inr(y.tax) }}</small>
+            <div class="yd-r">
+              <div *ngFor="let f of y.funds" [attr.data-s]="f.sleeve">
+                <i class="sw"></i><b>{{ sleeveLabel(f.sleeve) }}</b>
+                <span>index {{ f.index_ret > 0 ? '+' : '' }}{{ f.index_ret | number:'1.1-1' }}%</span>
+                <span *ngIf="f.sleeve !== 'arbitrage'">{{ f.share_before | number:'1.1-1' }}% → {{ f.share_after | number:'1.1-1' }}% of growth</span>
+                <span *ngIf="f.sleeve !== 'arbitrage'" [class.pos]="f.moved > 0.5" [class.neg]="f.moved < -0.5">{{ f.moved > 0.5 ? 'bought ' : f.moved < -0.5 ? 'sold ' : '' }}{{ short(f.moved < 0 ? -f.moved : f.moved) }}</span>
+                <span *ngIf="f.sleeve === 'arbitrage'">{{ short(f.before) }} → {{ short(f.after) }} · untouched</span>
+                <span *ngIf="f.sleeve === 'arbitrage'" class="dim">paid out {{ short(y.arb_paid_since) }} since</span>
+              </div>
+            </div>
+          </div>
+        </figure>
+
+        <!-- every year, as a table -->
+        <h2>Every 1 January <small>{{ st.years.length }} rebalances · the index’s return since the last one · the growth part’s split before → after · ₹ moved</small></h2>
+        <div class="tbl sm yt">
+          <div class="tr th"><span>Rebalance</span><span *ngFor="let s of SLEEVE_ORDER">{{ sleeveLabel(s) }}</span><span class="n">Tax</span></div>
+          <div class="tr" *ngFor="let y of st.years; let yi = index" (mouseenter)="hoverY.set(yi)" [class.hov]="hoverY() === yi">
+            <span><b>{{ y.label }}</b><small>after {{ growthYear(y).replace('*', '') }}{{ growthYear(y).endsWith('*') ? ' (from ' + monthName(y.since) + ')' : '' }} · moved {{ short(y.turnover) }}</small></span>
+            <span *ngFor="let s of SLEEVE_ORDER" class="yc" [attr.data-s]="s">
+              <ng-container *ngIf="yearFund(y, s) as f">
+                <em [class.pos]="f.index_ret > 0" [class.neg]="f.index_ret < 0">{{ f.index_ret > 0 ? '+' : '' }}{{ f.index_ret | number:'1.1-1' }}%</em>
+                <ng-container *ngIf="s !== 'arbitrage'; else arbCell">
+                  <small>{{ f.share_before | number:'1.1-1' }} → {{ f.share_after | number:'1.1-1' }}%</small>
+                  <small [class.pos]="f.moved > 0.5" [class.neg]="f.moved < -0.5">{{ signed(f.moved) }}</small>
+                </ng-container>
+                <ng-template #arbCell><small>{{ short(f.before) }} = {{ short(f.after) }}</small><small class="dim">untouched</small></ng-template>
+              </ng-container>
+            </span>
+            <span class="n">{{ inr(y.tax) }}</span>
+          </div>
+        </div>
+      </ng-container>
 
       <div *ngIf="k.flat_years?.length">
         <h2>The flat, year by year</h2>
