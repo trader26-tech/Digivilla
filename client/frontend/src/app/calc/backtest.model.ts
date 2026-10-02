@@ -6,7 +6,7 @@
  *
  * Data: GET /calc/villa-funds → one series per sleeve, month-end, from Apr 2010:
  *   arbitrage → NIFTY 50 Arbitrage Index · mid → NIFTY Midcap 150 TRI ·
- *   small → NIFTY Smallcap 250 TRI · gold → domestic gold (passive gold ETF).
+ *   small → NIFTY Smallcap 250 TRI · gold → Gold BeES (Nippon India ETF Gold BeES NAV).
  * No actively managed fund is used. Values are index levels (before any fund's
  * expense ratio); "units" below are units of the index.
  *

@@ -187,7 +187,7 @@
     </h4>
     <ul>
       <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
-      <li><b>Indices, not funds.</b> Each part follows its benchmark index — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI and the domestic gold price — so no fund manager's picks are in these numbers. Index values are before any fund's costs.</li>
+      <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The three indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
       <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; mid cap, small cap and gold are brought back to the split they started with. Any gain sold to do that is taxed.</li>
       <li><b>Today's tax rules</b> for every year: 20% on profit held under a year, 12.5% after (first {{ inr(EXEMPT) }} a year free), gold 12.5% after 2 years, plus {{ cessPct }}% cess. No surcharge; no other equity gains that year.</li>
       @for (p of proxies(); track p.fund + p.until) {

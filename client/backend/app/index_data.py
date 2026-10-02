@@ -6,9 +6,11 @@ split by sleeve on the BENCHMARK each sleeve tracks, never on an active fund:
     arbitrage  → NIFTY 50 Arbitrage Index              (niftyindices.com, from Apr 2010)
     mid cap    → NIFTY Midcap 150 TRI (total return)   (niftyindices.com, from Apr 2005)
     small cap  → NIFTY Smallcap 250 TRI (total return) (niftyindices.com, from Apr 2005)
-    gold       → domestic price of gold, via Invesco India Gold ETF NAV
-                 (a passive gold ETF — there is no Nifty gold index; AMFI/mfapi,
-                 from Mar 2010; its 1:100 unit split in Apr 2026 is adjusted out)
+    gold       → Gold BeES (Nippon India ETF Gold BeES) NAV — there is no Nifty
+                 gold index. One ETF, three AMFI codes as its fund house changed:
+                 105085 Benchmark (Mar 2007 → Aug 2011) → 115744 Goldman Sachs
+                 (→ Nov 2016) → 140088 Nippon India (→ today); unit splits are
+                 scaled out so the series is continuous at today's level
 
 Values are month-end closes keyed 'YYYY-MM'. They are index levels, so they are
 BEFORE any fund's expense ratio (the explainer says so).
@@ -40,8 +42,9 @@ SERIES = [
      "source": "niftyindices.com · total return index", "nifty": "NIFTY MIDCAP 150", "kind": "tri", "from": 2005},
     {"key": "small", "sleeve": "small", "name": "NIFTY Smallcap 250 TRI",
      "source": "niftyindices.com · total return index", "nifty": "NIFTY SMALLCAP 250", "kind": "tri", "from": 2005},
-    {"key": "gold", "sleeve": "gold", "name": "Domestic gold price (Invesco India Gold ETF)",
-     "source": "AMFI / mfapi · scheme 112368, split-adjusted", "mfapi": 112368, "from": 2010},
+    {"key": "gold", "sleeve": "gold", "name": "Gold BeES (Nippon India ETF Gold BeES)",
+     "source": "AMFI / mfapi · schemes 105085 → 115744 → 140088 (same ETF across fund-house changes), split-adjusted",
+     "mfapi": [105085, 115744, 140088], "from": 2007},
 ]
 
 _SNAPSHOT = Path(__file__).resolve().parent / "data" / "index_history.json"
@@ -78,19 +81,21 @@ def _nifty_year(c: httpx.Client, s: dict, y0: date, y1: date) -> dict[str, tuple
     return out
 
 
-def _gold_daily(code: int) -> dict[str, float]:
-    """Gold ETF NAV per day, with unit splits (≥ 5× one-day moves) scaled out."""
-    d = httpx.get(f"https://api.mfapi.in/mf/{code}", timeout=60).json()
-    rows = []
-    for p in d.get("data") or []:
-        try:
-            nav = float(p["nav"])
-        except (TypeError, ValueError):
-            continue
-        if nav > 0:
-            dd, mm, yy = p["date"].split("-")
-            rows.append((f"{yy}-{mm}-{dd}", nav))
-    rows.sort()
+def _gold_daily(codes) -> dict[str, float]:
+    """Gold ETF NAV per day — one ETF stitched across its AMFI codes (a later
+    code wins on a shared day) — with unit splits (≥ 5× one-day moves) scaled out."""
+    by_day: dict[str, float] = {}
+    for code in ([codes] if isinstance(codes, int) else codes):
+        d = httpx.get(f"https://api.mfapi.in/mf/{code}", timeout=60).json()
+        for p in d.get("data") or []:
+            try:
+                nav = float(p["nav"])
+            except (TypeError, ValueError):
+                continue
+            if nav > 0:
+                dd, mm, yy = p["date"].split("-")
+                by_day[f"{yy}-{mm}-{dd}"] = nav
+    rows = sorted(by_day.items())
     factor, out, prev = 1.0, {}, None
     # walk back from today so the latest NAVs keep their real level
     for day, nav in reversed(rows):
@@ -102,9 +107,13 @@ def _gold_daily(code: int) -> dict[str, float]:
 
 
 def _month_end(daily: dict[str, float]) -> dict[str, float]:
+    """Last value of each COMPLETE month (the current month isn't a month-end yet)."""
+    this_month = date.today().isoformat()[:7]
     out: dict[str, tuple[str, float]] = {}
     for day, v in daily.items():
         m = day[:7]
+        if m >= this_month:
+            continue
         if m not in out or day > out[m][0]:
             out[m] = (day, v)
     return {m: v for m, (_, v) in sorted(out.items())}
@@ -131,8 +140,11 @@ def fetch(full: bool = False) -> dict:
                         time.sleep(0.4)                       # be gentle with the site
                 months.update(_month_end(daily))
             else:
-                months.update({m: v for m, v in _month_end(_gold_daily(s["mfapi"])).items()
-                               if m >= f"{s['from']}-01"})
+                # the whole ETF history comes back every time: replace, never merge
+                # (so a change of source can't leave old values behind)
+                months = {m: v for m, v in _month_end(_gold_daily(s["mfapi"])).items() if m >= f"{s['from']}-01"}
+            this_month = today.isoformat()[:7]
+            months = {m: v for m, v in months.items() if m < this_month}     # complete months only
             data["series"][s["key"]] = {k: s[k] for k in ("name", "source", "sleeve")}
             data["series"][s["key"]]["months"] = {m: round(v, 4) for m, v in sorted(months.items())}
     finally:
@@ -148,8 +160,13 @@ def _sb():
 
 def _load_stored() -> Optional[dict]:
     try:
-        raw = _sb().storage.from_(_BUCKET).download(_OBJECT)
-        return json.loads(raw)
+        # a fresh signed link each time: a plain download can be served from the
+        # CDN's cached copy for up to an hour after a refresh overwrote it
+        u = _sb().storage.from_(_BUCKET).create_signed_url(_OBJECT, 60)
+        url = u.get("signedURL") or u.get("signedUrl")
+        r = httpx.get(url, timeout=30)
+        r.raise_for_status()
+        return r.json()
     except Exception:
         pass
     try:
@@ -166,7 +183,8 @@ def save(data: dict) -> None:
             st.create_bucket(_BUCKET, options={"public": False})
         except Exception:
             pass
-        st.from_(_BUCKET).upload(_OBJECT, body, {"content-type": "application/json", "upsert": "true"})
+        # no CDN caching: a refresh must be what the next read gets
+        st.from_(_BUCKET).upload(_OBJECT, body, {"content-type": "application/json", "upsert": "true", "cache-control": "0"})
     except Exception:
         pass
 
@@ -186,7 +204,9 @@ def history() -> dict:
         if d is None:
             d = _load_stored()
             _MEM["data"] = d
-        stale = _latest_month(d) < date.today().isoformat()[:7]
+        t = date.today()
+        last_complete = f"{t.year - 1}-12" if t.month == 1 else f"{t.year}-{t.month - 1:02d}"
+        stale = _latest_month(d) < last_complete
         if stale and now - _MEM["at"] > 6 * 3600:
             _MEM["at"] = now
             threading.Thread(target=_refresh_bg, daemon=True).start()
