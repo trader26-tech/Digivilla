@@ -39,12 +39,19 @@
 
   <!-- ── the chart ── -->
   @if (r(); as res) {
-    <div class="chart-wrap">
-      <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
+    <div class="chart-wrap" [class.veiled]="!revealed()">
+      <app-bars-3d [left]="fdCol()!" [right]="dvCol()!" [veiled]="!revealed()"></app-bars-3d>
+      @if (!revealed()) {
+        <button class="reveal" (click)="reveal()">
+          <span class="rv-k">{{ villa().name }} villa · {{ swp() ? 'with' : 'no' }} monthly income</span>
+          <b>Show me</b>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      }
     </div>
-    <div class="legend">
+    <div class="legend" [class.hid]="!revealed()">
       <span>Fixed deposit · {{ fdRate() }}%</span>
-      <span class="g">DigiVilla · {{ rate(res.dvIrr) }} a yr</span>
+      <span class="g">{{ villa().name }} · {{ rate(res.dvIrr) }} a yr</span>
     </div>
   } @else if (failed()) {
     <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
@@ -67,7 +74,7 @@
                    [min]="1000000" [max]="20000000" [step]="100000" [nudgeBy]="500000" [major]="1000000" [mid]="500000"></app-amount-dial>
 
   <p class="fine">
-    Payouts after tax. Today's DigiVilla split on real index history — the past isn't a promise.
+    {{ swp() ? 'Payouts after tax.' : 'SWP off: nothing withdrawn.' }} The {{ villa().name }} villa on real index history — the past isn't a promise.
     <span class="links">
       <button class="how" (click)="go('vs')" aria-label="See FD and DigiVilla side by side">Side by side</button>
       <i aria-hidden="true">·</i>
@@ -148,7 +155,7 @@
       <div class="step-card">
         <span class="step-k">In {{ ym(res.months[0]) }}</span>
         <h3>You put in <em>{{ fmt(amount()) }}</em></h3>
-        <p>It's split across {{ x.mix.length }} parts — today's DigiVilla split, each following its index.</p>
+        <p>It's split across {{ x.mix.length }} parts — the {{ villa().name }} villa, each following its index.</p>
         <div class="mixbar" aria-hidden="true">
           @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
         </div>
@@ -183,7 +190,7 @@
       <div class="step-card">
         <span class="step-k">Meanwhile</span>
         <h3>The rest kept growing</h3>
-        <p>The growth part isn't sold to pay you — once a year, on 1 January, it's rebalanced back to its starting split. Here's what each part is worth today:</p>
+        <p>The growth part isn't sold to pay you while arbitrage lasts — once a year, on 1 January, it's put back to 25% each. Here's what each part is worth today:</p>
         <ul class="grow">
           @for (m of x.mix; track m.key) {
             <li>
@@ -207,7 +214,6 @@
         <span class="step-k">Tax</span>
         <h3>{{ x.taxTiny ? 'Tax on payouts was tiny:' : 'Tax on payouts:' }} <em>{{ inr(res.dvPayoutTax) }}</em></h3>
         <p>Most of each payout is <b>your own money coming back</b>, which isn't taxed. Only the small profit inside it is — and the first {{ inr(EXEMPT) }} of profit each year is tax-free.</p>
-        <p class="soft">If you sold everything today, the tax would be about <b>{{ fmt(res.dvExitTax) }}</b>.</p>
       </div>
     </li>
 
@@ -246,8 +252,9 @@
     </h4>
     <ul>
       <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
-      <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The three indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
-      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; mid cap, small cap and gold are brought back to the split they started with. Any gain sold to do that is taxed.</li>
+      <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
+      <li><b>Three villas.</b> Gold, large, mid and small cap in equal parts, plus arbitrage — Conservative 30/70, Balanced 64/36, Aggressive 80/20. You're looking at {{ villa().name }}.</li>
+      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; gold, large, mid and small cap go back to 25% each. The tax on what that sells is paid from the proceeds.</li>
       <li><b>Today's tax rules</b> are used for every year, though the rules were different earlier. Surcharge isn't included.</li>
       <li><b>The FD rate stays {{ fdRate() }}%</b> the whole time. Real FD rates went up and down.</li>
       @for (p of proxies(); track p.fund + p.until) {

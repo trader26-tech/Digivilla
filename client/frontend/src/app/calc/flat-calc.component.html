@@ -15,12 +15,19 @@
 
   <!-- ── the chart ── -->
   @if (r(); as res) {
-    <div class="chart-wrap">
-      <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()"></app-bars-3d>
+    <div class="chart-wrap" [class.veiled]="!revealed()">
+      <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()" [veiled]="!revealed()"></app-bars-3d>
+      @if (!revealed()) {
+        <button class="reveal" (click)="reveal()">
+          <span class="rv-k">Your flat vs the {{ villa().name }} villa</span>
+          <b>Show me</b>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      }
     </div>
-    <div class="legend">
+    <div class="legend" [class.hid]="!revealed()">
       <span>Flat · {{ res.appPct | number: '1.1-1' }}% a year</span>
-      <span class="g">DigiVilla · {{ rate(res.dv.dvIrr) }} a yr</span>
+      <span class="g">{{ villa().name }} · {{ rate(res.dv.dvIrr) }} a yr</span>
     </div>
   } @else if (failed()) {
     <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
@@ -43,7 +50,7 @@
                    [min]="act().min" [max]="act().max" [step]="act().step" [nudgeBy]="act().big" [major]="act().major" [mid]="act().mid"></app-amount-dial>
 
   <p class="fine">
-    Tap a card, slide to change it. Same cash as the flat cost all-in; DigiVilla on real index history, after tax.
+    Tap a card, slide to change it. Same cash as the flat cost all-in; the {{ villa().name }} villa on real index history{{ swp() ? ', paying rent after tax' : ', SWP off' }}.
     <span class="links">
       <button class="how" (click)="go('vs')" aria-label="See flat and DigiVilla side by side">Side by side</button>
       <i aria-hidden="true">·</i>
@@ -71,7 +78,7 @@
   <div class="vs-head">
     <div class="who"><img src="assets/calc/flat-building.svg" alt="" /><b>Flat</b><span>{{ res.yieldPct | number: '1.1-1' }}% rent · {{ res.appPct | number: '1.1-1' }}%/yr</span></div>
     <div class="vs-badge"><b>VS</b></div>
-    <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>DigiVilla</b><span>{{ rate(res.dv.dvIrr) }} · {{ INCOME_PCT }}% rent</span></div>
+    <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>{{ villa().name }}</b><span>{{ rate(res.dv.dvIrr) }} · {{ swp() ? INCOME_PCT + '% rent' : 'no rent' }}</span></div>
   </div>
 
   <div class="vs-rows">
@@ -156,7 +163,7 @@
       <div class="step-card">
         <span class="step-k">The other path</span>
         <h3>The same {{ fmt(res.outlay) }} in DigiVilla</h3>
-        <p>Put into today's DigiVilla split in {{ ym(res.months[0]) }}, on real index history. It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ INCOME_PCT }}% a year) by selling a little of the <b>Arbitrage</b> part — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:</p>
+        <p>Put into the {{ villa().name }} villa in {{ ym(res.months[0]) }}, on real index history. @if (swp()) {It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ INCOME_PCT }}% a year) by selling a little of the <b>Arbitrage</b> part — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:} @else {With SWP off nothing was withdrawn — it all kept growing:}</p>
         <div class="mixbar" aria-hidden="true">
           @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
         </div>
@@ -197,8 +204,9 @@
     </h4>
     <ul>
       <li><b>DigiVilla is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. Funds can fall; the next {{ res.years }} years won't repeat.</li>
-      <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The three indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
-      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; mid cap, small cap and gold are brought back to the split they started with. Any gain sold to do that is taxed.</li>
+      <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
+      <li><b>Three villas.</b> Gold, large, mid and small cap in equal parts, plus arbitrage — Conservative 30/70, Balanced 64/36, Aggressive 80/20. You're looking at {{ villa().name }}.</li>
+      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; gold, large, mid and small cap go back to 25% each. The tax on what that sells is paid from the proceeds.</li>
       <li><b>The flat uses your numbers.</b> What it's worth today is your estimate; past rent is worked back from today's at {{ RENT_RISE }}% a year.</li>
       <li><b>Tax:</b> rent at a {{ SLAB }}% slab after the {{ STD_DED }}% standard deduction; DigiVilla's payouts on today's fund-tax rules; {{ cessPct }}% cess on both, no surcharge.</li>
       <li><b>Not counted:</b> home-loan interest, society fees, property tax, and the cost of selling the flat.</li>

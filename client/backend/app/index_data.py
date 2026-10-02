@@ -1,9 +1,11 @@
 """The calculators' benchmark data — INDICES ONLY, no actively managed funds.
 
-The calculators (FD / Flat / SIP / Lumpsum vs DigiVilla) replay today's DigiVilla
-split by sleeve on the BENCHMARK each sleeve tracks, never on an active fund:
+The calculators (FD / Flat / SIP / Lumpsum vs DigiVilla) replay the three
+DigiVilla villas (PORTFOLIOS below) on the BENCHMARK each part tracks, never on
+an active fund:
 
     arbitrage  → NIFTY 50 Arbitrage Index              (niftyindices.com, from Apr 2010)
+    large cap  → NIFTY 50 TRI (total return)           (niftyindices.com, from Apr 2005)
     mid cap    → NIFTY Midcap 150 TRI (total return)   (niftyindices.com, from Apr 2005)
     small cap  → NIFTY Smallcap 250 TRI (total return) (niftyindices.com, from Apr 2005)
     gold       → Gold BeES (Nippon India ETF Gold BeES) NAV — there is no Nifty
@@ -38,6 +40,8 @@ import httpx
 SERIES = [
     {"key": "arbitrage", "sleeve": "arbitrage", "name": "NIFTY 50 Arbitrage Index",
      "source": "niftyindices.com · index close", "nifty": "NIFTY 50 ARBITRAGE", "kind": "price", "from": 2010},
+    {"key": "large", "sleeve": "large", "name": "NIFTY 50 TRI",
+     "source": "niftyindices.com · total return index", "nifty": "NIFTY 50", "kind": "tri", "from": 2005},
     {"key": "mid", "sleeve": "mid", "name": "NIFTY Midcap 150 TRI",
      "source": "niftyindices.com · total return index", "nifty": "NIFTY MIDCAP 150", "kind": "tri", "from": 2005},
     {"key": "small", "sleeve": "small", "name": "NIFTY Smallcap 250 TRI",
@@ -46,6 +50,23 @@ SERIES = [
      "source": "AMFI / mfapi · schemes 105085 → 115744 → 140088 (same ETF across fund-house changes), split-adjusted",
      "mfapi": [105085, 115744, 140088], "from": 2007},
 ]
+
+# The three villas. quadrant = gold / large / mid / small in equal parts (25% each
+# of the quadrant), put back to 25% each every 1 January; the rest is arbitrage,
+# never rebalanced, which pays the monthly income first. One source of truth:
+# the client's backtest.model.ts and the admin's audit.py mirror these numbers.
+QUADRANT = ("gold", "large", "mid", "small")
+PORTFOLIOS = [
+    {"key": "conservative", "name": "Conservative", "quadrant": 0.30, "arbitrage": 0.70, "risk": 1, "risk_name": "Low"},
+    {"key": "balanced", "name": "Balanced", "quadrant": 0.64, "arbitrage": 0.36, "risk": 2, "risk_name": "Medium"},
+    {"key": "aggressive", "name": "Aggressive", "quadrant": 0.80, "arbitrage": 0.20, "risk": 3, "risk_name": "High"},
+]
+
+
+def portfolio_weights(key: str = "balanced") -> dict[str, float]:
+    p = next((x for x in PORTFOLIOS if x["key"] == key), PORTFOLIOS[1])
+    return {"arbitrage": p["arbitrage"], **{s: p["quadrant"] / 4 for s in QUADRANT}}
+
 
 _SNAPSHOT = Path(__file__).resolve().parent / "data" / "index_history.json"
 _BUCKET, _OBJECT = "calc-data", "index_history.json"
@@ -260,4 +281,5 @@ def basket_paths(weights: dict[str, float]) -> dict:
                    "index": [round(r["months"][m] / r["months"][months[0]], 6) for m in months]}
                   for r in rows],
         "note": "Benchmark indices — before any fund's expense ratio.",
+        "portfolios": PORTFOLIOS,
     }

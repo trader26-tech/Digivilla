@@ -12,9 +12,9 @@
   font-variant-numeric: tabular-nums; color: var(--green);
 }
 .hero-sub {
-  display: flex; gap: 18px;
+  display: flex; gap: 14px;
   > div { display: flex; flex-direction: column; gap: 3px; }
-  span { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--n-500); }
+  span { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; color: var(--n-500); }
   b { font-size: 15px; font-weight: 500; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--n-200); }
   .gold span, .gold b { color: #f3dfa8; }
 }

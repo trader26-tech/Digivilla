@@ -305,3 +305,12 @@ button.tr.yrow { width: 100%; border: 0; border-top: 1px solid color-mix(in srgb
   .st-r { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin-top: 0.35rem; span { display: inline-flex; align-items: center; } .tot { margin-left: auto; } }
   .st-e { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; margin-top: 0.3rem; font-weight: 700; .rbt { color: #9a6b12; } } }
 p.simtip { display: flex; align-items: center; }
+
+/* villa + SWP in the calculator form */
+.kinds-sep { width: 1px; align-self: stretch; margin: 0 0.3rem; background: var(--border); }
+.kinds .vl small { font-weight: 600; opacity: .65; margin-left: 0.2rem; }
+.kinds .vl[data-r="1"].on { background: #2f6b1b; } .kinds .vl[data-r="2"].on { background: #8a6a12; } .kinds .vl[data-r="3"].on { background: #9a3f33; }
+.kinds .swp { display: inline-flex; align-items: center; gap: 0.4rem;
+  i { width: 22px; height: 12px; border-radius: 6px; background: var(--border); position: relative; transition: background .2s;
+    &::after { content: ''; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: #fff; transition: left .2s; } }
+  &.on i { background: #e9c15c; &::after { left: 12px; } } }

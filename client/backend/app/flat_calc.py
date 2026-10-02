@@ -101,16 +101,12 @@ def villa_fund_paths(start: Optional[str] = None) -> dict:
 
 
 def index_basket_paths(start: Optional[str] = None) -> dict:
-    """The calculators' basket: today's DigiVilla split BY SLEEVE (from the admin's
-    villa bucket), each sleeve on its benchmark INDEX — never an active fund.
-    See app/index_data.py for the series and sources."""
+    """The calculators' data: every part of the three villas (arbitrage, gold,
+    large, mid, small) on its benchmark INDEX — never an active fund — with the
+    Balanced villa's weights; `portfolios` lists all three so the app can
+    re-weight. See app/index_data.py for the series, sources and villas."""
     from app import index_data
-    weights: dict[str, float] = {}
-    for f in villa_mix():
-        weights[f["sleeve"]] = weights.get(f["sleeve"], 0) + float(f["allocation"])
-    covered = {s["sleeve"] for s in index_data.SERIES}
-    tot = sum(w for k, w in weights.items() if k in covered) or 1.0
-    d = index_data.basket_paths({k: w / tot for k, w in weights.items() if k in covered})
+    d = index_data.basket_paths(index_data.portfolio_weights("balanced"))
     if d.get("ok") and start:
         months = [m for m in d["months"] if m >= start]
         if len(months) < 13:

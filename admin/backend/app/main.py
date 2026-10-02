@@ -667,17 +667,17 @@ def admin_audit_data(authorization: Optional[str] = Header(default=None)) -> dic
 @app.get("/admin/audit/calc")
 def admin_audit_calc(kind: str, years: int = 5, amount: float = 1e7, fd_rate: float = 6.5, slab: float = 30,
                      monthly: float = 25000, step: float = 10, price: float = 6e6, value: float = 9e6,
-                     rent: float = 20000, stamp: float = 7,
+                     rent: float = 20000, stamp: float = 7, villa: str = "balanced", swp: bool = True,
                      authorization: Optional[str] = Header(default=None)) -> dict:
     """A calculator recomputed independently, with a month-by-month ledger."""
     _require_admin(authorization)
     try:
         if kind in ("fd", "lump"):
-            return audit_svc.payout_check(years, amount, fd_rate if kind == "fd" else 0, slab)
+            return audit_svc.payout_check(years, amount, fd_rate if kind == "fd" else 0, slab, villa, swp)
         if kind == "sip":
-            return audit_svc.sip_check(years, monthly, step, slab)
+            return audit_svc.sip_check(years, monthly, step, slab, villa, swp)
         if kind == "flat":
-            return audit_svc.flat_check(years, price, value, rent, stamp, slab)
+            return audit_svc.flat_check(years, price, value, rent, stamp, slab, villa, swp)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
     raise HTTPException(status_code=422, detail="kind must be fd, lump, sip or flat")

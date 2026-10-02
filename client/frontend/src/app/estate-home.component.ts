@@ -23,6 +23,8 @@ import { CallsService } from './shared/calls.service';
 import { AllocRow, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
 import { compact, inr } from './shared/format.util';
+import { PORTFOLIOS, PfKey } from './calc/backtest.model';
+import { CalcDataService } from './calc/calc-data.service';
 
 /** One parcel of the fixed 3x3 reference board — GENERATED from the invested ₹
  *  (villas = floor(invested / ₹5,00,000), plus one building tile from the
@@ -77,6 +79,21 @@ export const ORDER: [number, number][] = [
 const FALLBACK_TILE = ['#tLocked', '#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
 /** Stage names, matching the reference. */
 const STAGE_NAME = ['Open tile', 'The Plot', 'Levelled Ground', 'Foundation', 'Steel Frame', 'The Villa'];
+
+/** "Nov ’27": the 5th (SIP day) of the month `m` months from now. */
+function monthLabel(m: number): string {
+  const d = new Date(); d.setDate(5); d.setMonth(d.getMonth() + m);
+  return d.toLocaleString('en-IN', { month: 'short' }) + ' \u2019' + String(d.getFullYear()).slice(-2);
+}
+/** A client's SIP a month: their SIP orders over the last 6 months, averaged
+ *  over the months that had one (two funds the same month count as one month). */
+function monthlySip(orders: { date: string; kind: string; amount: number; direction: string }[]): number | null {
+  const from = new Date(); from.setMonth(from.getMonth() - 6);
+  const cut = from.toISOString().slice(0, 10);
+  const sips = orders.filter((o) => o.direction === 'in' && /sip/i.test(o.kind) && o.date >= cut && o.amount > 0);
+  const months = new Set(sips.map((o) => o.date.slice(0, 7)));
+  return months.size ? sips.reduce((s, o) => s + o.amount, 0) / months.size : null;
+}
 
 /** Ticket price for one parcel; villas and builds are multiples of it. */
 const PLOT_TICKET = 10_00_000;
@@ -472,7 +489,96 @@ export class EstateHomeComponent implements OnInit {
     // home paints. We still kick a fresh load in case the splash was skipped
     // (deep-link) or the token arrived late.
     if (!this.est.allocRows()) this.est.loadAllocation();
+    // The client's real monthly SIP (for "Next villa" — when it completes).
+    this.est.orders().subscribe({ next: (r) => this.sipMonthly.set(monthlySip(r.orders ?? [])), error: () => {} });
   }
+
+  // ════════════ PULL SHEETS — swipe down: Next villa · swipe up: Types of villas ════════════
+  readonly calc = inject(CalcDataService);
+  readonly PORTFOLIOS = PORTFOLIOS;
+  readonly nextOpen = signal(false);
+  readonly typesOpen = signal(false);
+  /** The client's SIP a month, from their SIP orders over the last 6 months (null = none). */
+  readonly sipMonthly = signal<number | null>(null);
+
+  /** Another sheet / popup owns the screen — swipes leave it alone. */
+  private get overlayOpen(): boolean {
+    return this.keyOpen() || this.callSheetOpen() || this.settingsOpen() || !!this.buying() || !!this.selected()
+      || !!this.selectedBoard() || !!this.unlockCell() || this.showTick();
+  }
+  setNext(open: boolean): void {
+    this.nextOpen.set(open);
+    if (open) this.typesOpen.set(false);
+  }
+  setTypes(open: boolean): void {
+    this.typesOpen.set(open);
+    if (open) { this.nextOpen.set(false); this.calc.load(); }
+  }
+  closeSheets(): void { this.nextOpen.set(false); this.typesOpen.set(false); }
+  /** down = pull the Next villa sheet in (or put Types away); up = the reverse */
+  private swipe(dir: 'down' | 'up'): void {
+    if (dir === 'down') { if (this.typesOpen()) this.setTypes(false); else this.setNext(true); }
+    else if (this.nextOpen()) this.setNext(false); else this.setTypes(true);
+    try { navigator.vibrate?.(8); } catch { /* not supported */ }
+  }
+  private ty: number | null = null;
+  private tx = 0;
+  onTouchStart(e: TouchEvent): void {
+    if (this.overlayOpen || !this.dataReady || e.touches.length > 1) { this.ty = null; return; }
+    this.ty = e.touches[0].clientY; this.tx = e.touches[0].clientX;
+  }
+  onTouchMove(e: TouchEvent): void {
+    if (this.ty === null) return;
+    const dy = e.touches[0].clientY - this.ty, dx = e.touches[0].clientX - this.tx;
+    if (Math.abs(dy) > 64 && Math.abs(dy) > Math.abs(dx) * 1.4) { this.swipe(dy > 0 ? 'down' : 'up'); this.ty = null; }
+  }
+  onTouchEnd(): void { this.ty = null; }
+  private wheelAcc = 0;
+  private wheelT: ReturnType<typeof setTimeout> | undefined;
+  onWheel(e: WheelEvent): void {
+    if (this.overlayOpen || !this.dataReady) return;
+    this.wheelAcc += e.deltaY;
+    clearTimeout(this.wheelT);
+    this.wheelT = setTimeout(() => (this.wheelAcc = 0), 180);
+    if (this.wheelAcc < -60) { this.swipe('down'); this.wheelAcc = 0; }
+    else if (this.wheelAcc > 60) { this.swipe('up'); this.wheelAcc = 0; }
+  }
+
+  /** The Next villa sheet: the stages left on the plot in progress, when it completes, and the income step. */
+  get nextInfo() {
+    const villas = this.villaCount;
+    if (villas >= HOUSES) return { done: true as const, all: INCOME * HOUSES };
+    const rem = Math.max(0, Math.min(HOUSE, this.buildRem));
+    const sip = this.sipMonthly();
+    const toGo = HOUSE - rem;
+    const months = sip && sip > 0 ? Math.max(1, Math.ceil(toGo / sip)) : null;
+    const nowStage = Math.min(5, Math.floor(rem / L) + 1);
+    const ART = ['#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
+    const NAME = ['Plot', 'Levelled', 'Foundation', 'Steel frame', 'Villa'];
+    const steps = ART.map((href, i) => {
+      const k = i + 1, frac = Math.max(0, Math.min(1, (rem - (k - 1) * L) / L));
+      const state = frac >= 1 ? 'done' : k === nowStage ? 'now' : 'todo';
+      const m = state === 'done' ? 'built' : state === 'now' ? Math.round(frac * 100) + '%'
+        : sip && sip > 0 ? monthLabel(Math.max(1, Math.ceil((k * L - rem) / sip))) : inr(k * L - rem);
+      return { href, name: NAME[i], state, pct: Math.round(frac * 100), m };
+    });
+    return {
+      done: false as const, plot: String(villas + 1).padStart(2, '0'), toGo, months,
+      when: months ? monthLabel(months) : null, sip, steps,
+      now: INCOME * villas, after: INCOME * (villas + 1), all: INCOME * HOUSES,
+    };
+  }
+  /** The three villas, for the Types sheet (rate = growth a year since Apr 2010, nothing withdrawn). */
+  readonly villaTypes = computed(() => {
+    const rates = this.calc.rates();
+    return PORTFOLIOS.map((p, i) => ({ ...p, rate: rates ? rates[p.key as PfKey] : null, d: i * 70 }));
+  });
+  readonly historyFrom = computed(() => {
+    const m = this.calc.data()?.months?.[0];
+    if (!m) return '';
+    const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${M[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
+  });
 
   // ── setup call (shown when the estate is empty) ─────────────────────────────
   private loadUpcomingCall(): void {

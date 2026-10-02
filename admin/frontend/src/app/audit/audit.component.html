@@ -225,6 +225,9 @@
         <button [class.on]="kind() === 'lump'" (click)="pickKind('lump')">Lumpsum</button>
         <button [class.on]="kind() === 'sip'" (click)="pickKind('sip')">SIP</button>
         <button [class.on]="kind() === 'flat'" (click)="pickKind('flat')">Flat vs DigiVilla</button>
+        <span class="kinds-sep"></span>
+        <button *ngFor="let p of PORTFOLIOS" class="vl" [attr.data-r]="p.risk" [class.on]="villa() === p.key" (click)="pickVilla(p.key)">{{ p.name }} <small>{{ p.quadrant * 100 | number:'1.0-0' }}/{{ p.arbitrage * 100 | number:'1.0-0' }}</small></button>
+        <button class="swp" role="switch" [attr.aria-checked]="swp()" [class.on]="swp()" (click)="toggleSwp()"><i></i>SWP {{ swp() ? 'on' : 'off' }}</button>
       </div>
       <div class="fields">
         <label>Years ago
@@ -262,18 +265,18 @@
             <b>What was simulated</b>
             <span>{{ inr(startAmount()) }} put in at the {{ k.start + '-01' | date:'MMM yyyy' }} index values, split
               <ng-container *ngFor="let s of SLEEVE_ORDER; let last = last"><i class="sw" [attr.data-s]="s"></i>{{ sleeveLabel(s) }} {{ inr(k.start_funds?.[s] ?? 0) }}{{ last ? '.' : ' · ' }}</ng-container></span>
-            <span>Every month {{ inr(startAmount() * 0.003) }} is paid to you by selling arbitrage units. Every 1 January mid / small / gold are reset to 37.5 : 37.5 : 25 of themselves; arbitrage is never touched. Tax on what was sold is paid each April for the year before.</span>
+            <span>{{ swp() ? 'Every month ' + inr(startAmount() * 0.003) + ' is paid to you by selling arbitrage units (the tax on that sale comes out of the payout).' : 'SWP off — nothing is withdrawn.' }} Every 1 January the quadrant (gold / large / mid / small) goes back to 25% each of its value minus the tax on what that sells; arbitrage is never touched. No tax is taken off the final value.</span>
           </div>
           <div class="how-s" *ngIf="isSip()">
             <b>What was simulated</b>
             <span>{{ inr(monthly()) }} every month from {{ k.start + '-01' | date:'MMM yyyy' }}, +{{ step() }}% each year, each instalment split 36 / 24 / 24 / 16 at that month’s index values.</span>
-            <span>Each year end 3.6% of the value is paid to you, sold from arbitrage first. Every 1 January mid / small / gold reset to 37.5 : 37.5 : 25; arbitrage is never touched. Tax is paid each April for the year before.</span>
+            <span>{{ swp() ? 'Each year end 3.6% of the value is paid to you, sold from arbitrage first (its tax comes out of the payout).' : 'SWP off — nothing is withdrawn.' }} Every 1 January the quadrant goes back to 25% each, its tax paid from the proceeds; arbitrage is never touched.</span>
           </div>
           <dl class="how-c">
             <div><dt>Fund columns</dt><dd>₹ in each fund at that year end = units held × that month’s index value, after the payouts and rebalance.</dd></div>
             <div *ngIf="!isSip()"><dt>Paid to you</dt><dd>12 × {{ inr(startAmount() * 0.003) }}, all from arbitrage while it lasts.</dd></div>
             <div *ngIf="isSip()"><dt>Income</dt><dd>that year end’s 3.6% payout ÷ 12 — the app shows it as a monthly figure.</dd></div>
-            <div><dt>Worth after tax</dt><dd>everything still invested, minus the tax you’d owe if you sold it all that day — the number on the app’s year column.</dd></div>
+            <div><dt>Worth</dt><dd>everything still invested that day — the number on the app’s year column (no tax taken off for selling).</dd></div>
             <div *ngIf="!isSip()"><dt>Income so far</dt><dd>all payouts so far, minus the tax on the gains those sales made.</dd></div>
             <div><dt>Bold vs small</dt><dd>bold = the app’s own code; small = this separate simulation. ✓ = same to the rupee.</dd></div>
           </dl>
@@ -327,7 +330,7 @@
             <span class="n" *ngIf="isSip()">Put in so far</span>
             <span class="n" *ngFor="let s of SLEEVE_ORDER"><i class="sw" [attr.data-s]="s"></i>{{ sleeveLabel(s) }}</span>
             <span class="n">{{ isSip() ? 'Income a month' : 'Paid to you that year' }}</span>
-            <span class="n">Worth after tax</span>
+            <span class="n">Worth</span>
             <span class="n" *ngIf="!isSip()">Income so far</span>
             <span class="n" *ngIf="!isSip()">Worth + income</span>
             <span></span>
@@ -390,18 +393,19 @@
                     <li *ngFor="let e of m.pay.sells" [attr.data-s]="e.sleeve"><i class="sw"></i>{{ sleeveLabel(e.sleeve) }}: {{ inr(e.rupees, 2) }} ÷ {{ ix(e.nav) }} = <b>{{ u(e.units) }} units sold</b>
                       <small>bought for {{ inr(e.cost, 2) }} ({{ e.lots.length === 1 ? 'at ' + ix(e.lots[0].bought_nav) + ', held ' + e.lots[0].held_months + ' months' : e.lots.length + ' purchases' }}) → gain {{ inr(e.gain_st + e.gain_lt, 2) }}{{ e.gain_lt ? ' long-term' : ' short-term' }}, added to {{ fyOf(m.month) }}’s gains</small></li>
                   </ul>
+                  <p class="note" *ngIf="m.payTax">Tax this sale adds to {{ fyOf(m.month) }}: <b>{{ inr(m.payTax.tax, 2) }}</b> (after the ₹1,25,000 exemption still left this year) → you receive <b>{{ inr(m.payTax.net, 2) }}</b>.</p>
                 </div>
 
                 <!-- rebalance -->
                 <div class="st rb" *ngIf="m.rebal">
                   <h5><i>↻</i>1 January {{ nextYear(m.month) }} rebalance (at the 31 Dec close)</h5>
-                  <p class="note">Growth part = <ng-container *ngFor="let r of m.rebal.rows; let last = last">{{ sleeveLabel(r.sleeve).toLowerCase() }} {{ inr(r.before) }}{{ last ? '' : ' + ' }}</ng-container> = <b>{{ inr(m.rebal.growth_total) }}</b>. Arbitrage {{ inr(m.rebal.arbitrage) }} is left alone.</p>
+                  <p class="note">Quadrant = <ng-container *ngFor="let r of m.rebal.rows; let last = last">{{ sleeveLabel(r.sleeve).toLowerCase() }} {{ inr(r.before) }}{{ last ? '' : ' + ' }}</ng-container> = <b>{{ inr(m.rebal.growth_total) }}</b>. Tax on what this sells: <b>{{ inr(m.rebal.tax, 2) }}</b>, paid from the proceeds → reset to 25% each of <b>{{ inr(m.rebal.after_tax) }}</b>. Arbitrage {{ inr(m.rebal.arbitrage) }} is left alone.</p>
                   <div class="mt">
                     <div class="mr mh"><span>Fund</span><span>Before</span><span>Target</span><span>Move</span><span>Units</span></div>
                     <div class="mr" *ngFor="let r of m.rebal.rows" [attr.data-s]="r.sleeve">
                       <span><i class="sw"></i>{{ sleeveLabel(r.sleeve) }}</span>
                       <span>{{ inr(r.before) }}</span>
-                      <span>{{ r.share | number:'1.1-1' }}% × {{ inr(m.rebal.growth_total) }} = {{ inr(r.target) }}</span>
+                      <span>{{ r.share | number:'1.1-1' }}% × {{ inr(m.rebal.after_tax) }} = {{ inr(r.target) }}</span>
                       <span [class.pos]="r.moved > 0.5" [class.neg]="r.moved < -0.5"><b>{{ r.moved > 0.5 ? 'buy ' + inr(r.moved) : r.moved < -0.5 ? 'sell ' + inr(-r.moved) : '—' }}</b></span>
                       <span><ng-container *ngFor="let e of m.rebal.sells">{{ e.sleeve === r.sleeve ? '−' + u(e.units) + ' at ' + ix(e.nav) + ' · gain ' + inr(e.gain_st + e.gain_lt) : '' }}</ng-container><ng-container *ngFor="let e of m.rebal.buys">{{ e.sleeve === r.sleeve ? '+' + u(e.units) + ' at ' + ix(e.nav) : '' }}</ng-container></span>
                     </div>
@@ -410,17 +414,18 @@
 
                 <!-- tax for the year that closed -->
                 <div class="st tx" *ngIf="m.fy_tax">
-                  <h5><i>₹</i>Tax for {{ m.fy_tax.fy }} (Apr–Mar), paid now: {{ inr(m.fy_tax.total, 2) }}</h5>
+                  <h5><i>₹</i>{{ m.fy_tax.fy }} (Apr–Mar) closed — its tax, already paid sale by sale: {{ inr(m.fy_tax.total, 2) }}</h5>
+                  <p class="note" *ngIf="m.credit > 0.5">A later loss lowered the year’s bill: {{ inr(m.credit, 2) }} comes back into the quadrant.</p>
                   <div class="mt">
                     <div class="mr mh"><span>Gains sold in {{ m.fy_tax.fy }}</span><span>Gain</span><span>Taxable</span><span>Rate</span><span>Tax</span></div>
                     <div class="mr" *ngFor="let l of m.fy_tax.lines"><span>{{ l.label }}</span><span>{{ inr(l.gain, 2) }}</span><span>{{ inr(l.taxable, 2) }}</span><span>{{ l.rate }}%</span><span>{{ inr(l.tax, 2) }}</span></div>
                     <div class="mr sum"><span>+ 4% cess on {{ inr(m.fy_tax.before_cess, 2) }}</span><span></span><span></span><span></span><span>{{ inr(m.fy_tax.cess, 2) }}</span></div>
-                    <div class="mr sum"><span><b>Tax paid</b></span><span></span><span></span><span></span><span><b>{{ inr(m.fy_tax.total, 2) }}</b></span></div>
+                    <div class="mr sum"><span><b>The year’s tax</b></span><span></span><span></span><span></span><span><b>{{ inr(m.fy_tax.total, 2) }}</b></span></div>
                   </div>
                 </div>
 
-                <p class="note yr-pt" *ngIf="isSip() && m.i > 0 && m.i % 12 === 0">The app’s <b>Year {{ m.i / 12 }}</b> column is read here — after the income, before this month’s instalment: worth {{ inr(m.total_close - (m.instalment ?? 0)) }} before tax.</p>
-                <p class="note yr-pt" *ngIf="!isSip() && m.i > 0 && m.i % 12 === 0">The app’s <b>Year {{ m.i / 12 }}</b> column is read here — after this month’s payout{{ m.rebal ? ' and rebalance' : '' }}: worth {{ inr(m.total_close) }} before tax.</p>
+                <p class="note yr-pt" *ngIf="isSip() && m.i > 0 && m.i % 12 === 0">The app’s <b>Year {{ m.i / 12 }}</b> column is read here — after the income, before this month’s instalment: worth {{ inr(m.total_close - (m.instalment ?? 0)) }}.</p>
+                <p class="note yr-pt" *ngIf="!isSip() && m.i > 0 && m.i % 12 === 0">The app’s <b>Year {{ m.i / 12 }}</b> column is read here — after this month’s payout{{ m.rebal ? ' and rebalance' : '' }}: worth {{ inr(m.total_close) }}.</p>
 
                 <!-- end of month -->
                 <div class="st end">

@@ -72,7 +72,7 @@
 <app-calculators
   *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'calc'"
   class="has-nav"
-  (talk)="openBooking()"
+  (talk)="calcOpen = false; goCalls()"
   (calcOpen)="calcOpen = $event"
 ></app-calculators>
 }

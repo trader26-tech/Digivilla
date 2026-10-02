@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, Input, OnDestroy, ViewChild, computed, effect, signal, untracked } from '@angular/core';
 
 import { fmtInr } from './backtest.model';
+import { VillaPickComponent } from './villa-pick.component';
 
 export interface Seg3d {
   label: string;
@@ -17,6 +18,7 @@ export interface Col3d {
   art: string;      // assets/calc/<art>.svg
   coin?: boolean;   // a coin bobbing above the art
   green?: boolean;  // DigiVilla styling (green total, glow)
+  pick?: boolean;   // the villa picker (SWP · villa · ← →) instead of plain art
   segs: Seg3d[];    // top → bottom
 }
 
@@ -45,7 +47,7 @@ function textW(s: string): number {
 @Component({
   selector: 'app-bars-3d',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, VillaPickComponent],
   templateUrl: './bars-3d.component.html',
   styleUrls: ['./bars-3d.component.scss'],
 })
@@ -54,6 +56,11 @@ export class Bars3dComponent implements OnDestroy {
   @Input({ required: true }) set right(c: Col3d) { this.r.set(c); }
   /** draw the arrow from the left total to the right one (e.g. only when the right one wins) */
   @Input() showArrow = true;
+  /** until the user taps "Show me": flat columns, hidden totals — then they rise */
+  @Input() set veiled(v: boolean) { if (this.veil() && !v) this.revealing.set(true); this.veil.set(v); }
+  readonly veil = signal(false);
+  /** the first rise after a reveal (slower, staggered) */
+  readonly revealing = signal(false);
   readonly l = signal<Col3d | null>(null);
   readonly r = signal<Col3d | null>(null);
 
@@ -85,7 +92,7 @@ export class Bars3dComponent implements OnDestroy {
     const total = segs.reduce((s, d) => s + d.val, 0);
     // true to scale — never padded to fit a label — with a 10px floor so it still reads as a block
     const k = total * scale < 10 && total > 0 ? 10 / total : scale;
-    const hs = segs.map((d) => Math.max(2, Math.round(d.val * k)));
+    const hs = segs.map((d) => (this.veil() ? 0 : Math.max(2, Math.round(d.val * k))));
     let acc = 0;
     const stops = segs.map((d, i) => { const a = acc; acc += hs[i]; return `${d.side} ${a}px ${acc}px`; }).join(',');
     const out = segs.map((d, i) => ({
@@ -93,17 +100,18 @@ export class Bars3dComponent implements OnDestroy {
       mode: hs[i] >= FULL_LABEL ? 'full' : hs[i] >= VALUE_ONLY ? 'value' : 'none',
     }));
     // any segment that can't name itself → spell the column out underneath
-    const brk = out.some((s) => s.mode !== 'full')
+    const brk = !this.veil() && out.some((s) => s.mode !== 'full')
       ? out.map((s) => `${s.value} ${(s.short ?? s.label.split(' ')[0]).toLowerCase()}`).join(' + ')
       : '';
     return {
-      art: c.art, coin: !!c.coin, green: !!c.green,
+      art: c.art, coin: !!c.coin, green: !!c.green, pick: !!c.pick,
       segs: out, brk,
       h: acc, side: `linear-gradient(180deg,${stops})`, top: segs[0]?.top ?? segs[0]?.bg ?? '#444',
     };
   }
   readonly cols = computed(() => {
-    const maxBar = Math.max(90, this.H() - (this.short ? 172 : 200));
+    const pick = !!(this.l()?.pick || this.r()?.pick);
+    const maxBar = Math.max(90, this.H() - (this.short ? 172 : 200) - (pick ? (this.short ? 16 : 24) : 0));
     const scale = maxBar / Math.max(this.lTotal(), this.rTotal(), 1);
     return { l: this.build(this.l(), scale), r: this.build(this.r(), scale) };
   });
@@ -129,11 +137,15 @@ export class Bars3dComponent implements OnDestroy {
 
   constructor() {
     effect(() => {
-      const lt = this.lTotal(), rt = this.rTotal();
+      const lt = this.lTotal(), rt = this.rTotal(), veiled = this.veil();
+      const first = untracked(this.revealing);
       const l0 = untracked(this.lShown), r0 = untracked(this.rShown);
       cancelAnimationFrame(this.raf);
-      if (!l0 || matchMedia('(prefers-reduced-motion: reduce)').matches) { this.lShown.set(lt); this.rShown.set(rt); return; }
-      const t0 = performance.now(), dur = 450;
+      if (veiled) { this.lShown.set(0); this.rShown.set(0); return; }
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced || (!l0 && !first)) { this.lShown.set(lt); this.rShown.set(rt); this.revealing.set(false); return; }
+      const t0 = performance.now(), dur = first ? 1100 : 450;
+      if (first) setTimeout(() => this.revealing.set(false), 1500);
       const step = (t: number) => {
         const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
         this.lShown.set(l0 + (lt - l0) * e);

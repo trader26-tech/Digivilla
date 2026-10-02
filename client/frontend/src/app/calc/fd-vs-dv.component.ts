@@ -3,7 +3,7 @@ import { Component, EventEmitter, HostListener, Output, computed, inject, signal
 
 import { AmountDialComponent } from './amount-dial.component';
 import {
-  CESS, EQ_EXEMPT, INFLATION, NRI_TDS, PAYOUT_RATE, fmtInr, simulatePayout, windowFor, worstYearPct, ymLabel,
+  CESS, EQ_EXEMPT, INFLATION, NRI_TDS, PAYOUT_RATE, fmtInr, pfByKey, simulatePayout, windowFor, worstYearPct, ymLabel,
 } from './backtest.model';
 import { Bars3dComponent, Col3d } from './bars-3d.component';
 import { CalcDataService } from './calc-data.service';
@@ -60,13 +60,17 @@ export class FdVsDvComponent {
   // ── ui ──
   readonly picker = signal<'rate' | 'tax' | null>(null);
   readonly page = signal<'calc' | 'vs' | 'notes'>('calc');
+  /** the chart stays veiled until "Show me" — then it's live */
+  readonly revealed = signal(false);
+  readonly swp = this.store.swp;
+  readonly villa = computed(() => pfByKey(this.store.villa()));
 
   // ── data + result ──
   readonly failed = this.store.failed;
-  readonly win = computed(() => { const d = this.store.data(); return d ? windowFor(d, this.years()) : null; });
-  readonly r = computed(() => { const w = this.win(); return w ? simulatePayout(w, this.amount(), this.fdRate(), this.tax()) : null; });
-  /** Risk is a property of the mix, so it's measured over all the history there is. */
-  readonly worstEver = computed(() => { const d = this.store.data(); return d ? worstYearPct(windowFor(d, 100)) : null; });
+  readonly win = computed(() => { const d = this.store.villaData(); return d ? windowFor(d, this.years()) : null; });
+  readonly r = computed(() => { const w = this.win(); return w ? simulatePayout(w, this.amount(), this.fdRate(), this.tax(), this.swp()) : null; });
+  /** Risk is a property of the villa, so it's measured over all the history there is. */
+  readonly worstEver = computed(() => { const d = this.store.villaData(); return d ? worstYearPct(windowFor(d, 100)) : null; });
   readonly historyYear = computed(() => (this.store.data()?.months[0] ?? '').slice(0, 4));
   readonly payout = computed(() => this.amount() * PAYOUT_RATE);
   readonly yearOpts = computed(() => yearsAvailable(this.store.data()?.months.length ?? null));
@@ -82,9 +86,11 @@ export class FdVsDvComponent {
   readonly dvCol = computed<Col3d | null>(() => {
     const r = this.r();
     if (!r) return null;
-    return { art: 'villa', coin: true, green: true, segs: [
+    return { art: 'villa', pick: true, green: true, segs: r.swp ? [
       { label: 'Paid out', val: r.dvPaid, bg: 'linear-gradient(180deg,#b9e69a,#9ad471)', side: '#7fb85a', top: '#d3f0bd', k: '#2b4d18', c: '#10240a' },
-      { label: 'Growth', val: r.dvValue, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#d8f2c4', c: '#f2fbe9' },
+      { label: 'Value', val: r.dvValue, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#d8f2c4', c: '#f2fbe9' },
+    ] : [
+      { label: 'Value', val: r.dvValue, bg: 'linear-gradient(180deg,#9ad471 0%,#4f9528 55%,#2a5e18)', side: '#1f4a13', top: '#d3f0bd', k: '#d8f2c4', c: '#f2fbe9' },
     ] };
   });
 
@@ -108,9 +114,14 @@ export class FdVsDvComponent {
       row('Real value', 'M3 12h4l3-8 4 16 3-8h4', fmtInr(r.fdReal), 'in today’s money', r.fdReal < this.amount() ? R : N, fmtInr(r.dvReal), 'in today’s money', G, 'dv'),
       row('Compounding', 'M4 20 20 4M4 20v-6M4 20h6M20 4h-6M20 4v6', 'None', 'interest is paid out', N,
         (r.dvValue >= this.amount() ? '+' : '') + fmtInr(r.dvValue - this.amount()), `${fmtInr(this.amount())} is now ${fmtInr(r.dvValue)}`, G, 'dv'),
-      row('Income', 'M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 9.5 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
-        this.inr(r.fdMonthly), 'a month after tax, never grows', N, this.inr(r.dvMonthly), 'a month, every month', G, 'dv'),
-      row('Paid from', 'M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z', 'Interest', 'principal untouched', N, 'Arbitrage', arbLine, G, 'dv'),
+      r.swp
+        ? row('Income', 'M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 9.5 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
+            this.inr(r.fdMonthly), 'a month after tax, never grows', N, this.inr(r.dvMonthly), 'a month, every month', G, 'dv')
+        : row('Income', 'M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 9.5 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
+            this.inr(r.fdMonthly), 'a month after tax, never grows', N, 'None', 'SWP off — it all compounds', N, 'fd'),
+      r.swp
+        ? row('Paid from', 'M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z', 'Interest', 'principal untouched', N, 'Arbitrage', arbLine, G, 'dv')
+        : row('Paid from', 'M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z', 'Interest', 'principal untouched', N, 'Nothing', 'turn SWP on for a monthly income', N, 'fd'),
     ];
   });
 
@@ -139,6 +150,7 @@ export class FdVsDvComponent {
   pickRate(r: number): void { this.fdRate.set(r); this.picker.set(null); }
   pickSlab(s: number): void { this.nri.set(false); this.slab.set(s); this.picker.set(null); }
   pickNri(): void { this.nri.set(true); this.picker.set(null); }
+  reveal(): void { this.revealed.set(true); try { navigator.vibrate?.(12); } catch { /* not supported */ } }
   go(p: 'calc' | 'vs' | 'notes'): void { this.picker.set(null); this.page.set(p); window.scrollTo({ top: 0 }); }
 
   units(v: number): string { return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }

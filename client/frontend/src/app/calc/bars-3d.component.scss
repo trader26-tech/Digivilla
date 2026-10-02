@@ -10,6 +10,7 @@
   -webkit-mask-image: linear-gradient(180deg, transparent, #000 40px);
   mask-image: linear-gradient(180deg, transparent, #000 40px);
 }
+.chart.has-pick { -webkit-mask-image: linear-gradient(180deg, transparent, #000 8px); mask-image: linear-gradient(180deg, transparent, #000 8px); }
 .floor {
   position: absolute; left: 0; right: 0; bottom: 22px; height: 1px;
   background: linear-gradient(90deg, transparent, #595d6c 20%, #595d6c 80%, transparent);
@@ -17,6 +18,8 @@
 .arc { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; overflow: visible; }
 .arc-line { transition: d .5s cubic-bezier(.4, 0, .2, 1), opacity .3s; filter: drop-shadow(0 0 8px rgba(143, 214, 90, .55)); }
 .arc-line.off { opacity: 0; }
+.arc-line.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .7s .95s cubic-bezier(.4, 0, .2, 1) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
 
 .col { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; }
 .art {
@@ -30,6 +33,14 @@
   font-size: 22px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: #e4e7f5;
 }
 .col.green .total { color: #8fd65a; }
+.total.q { color: #595d6c !important; letter-spacing: .02em; animation: qPulse 1.6s ease-in-out infinite; }
+@keyframes qPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+app-villa-pick.art { height: auto; display: block; }
+/* the first rise after "Show me": slower, the DigiVilla column a beat after the FD */
+.chart.rising .block, .chart.rising .seg { transition-duration: 1.05s; transition-timing-function: cubic-bezier(.2, .9, .25, 1.06); transition-delay: var(--rd, 0s); }
+.chart.rising .col.green .front { animation: glowUp 1.6s .9s ease-out both; }
+@keyframes glowUp { 0% { box-shadow: inset 0 0 0 1px rgba(143, 214, 90, .25), 0 0 0 -8px rgba(108, 186, 54, 0); } 40% { box-shadow: inset 0 0 0 1px rgba(143, 214, 90, .6), 0 0 70px 0 rgba(108, 186, 54, .85); } 100% { box-shadow: inset 0 0 0 1px rgba(143, 214, 90, .25), 0 0 40px -8px rgba(108, 186, 54, .5); } }
+.chart.veiled .col.green .front { box-shadow: inset 0 0 0 1px rgba(143, 214, 90, .25); }
 
 .block { position: relative; width: 96px; margin: 36px 22px 0 0; transition: height .5s cubic-bezier(.4, 0, .2, 1); }
 .front { position: absolute; inset: 0; display: flex; flex-direction: column; box-shadow: inset 0 0 0 1px rgba(233, 233, 237, .08); }
@@ -68,5 +79,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .block, .seg, .arc-line { transition: none; }
+  .arc-line.draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+  .total.q, .chart.rising .col.green .front { animation: none; }
   .art .coin { animation: none; }
 }

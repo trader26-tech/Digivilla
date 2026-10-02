@@ -32,6 +32,9 @@ export class YearColsComponent implements OnDestroy {
     this.data.set(c);
   }
   readonly data = signal<YearCol[]>([]);
+  /** until "Show me": faint outlines only — then the real columns grow up */
+  @Input() set veiled(v: boolean) { this.veil.set(v); }
+  readonly veil = signal(false);
   readonly sel = signal<number | null>(null);
   readonly fmt = fmtInr;
 
@@ -77,7 +80,7 @@ export class YearColsComponent implements OnDestroy {
         putBg: on ? '#4f9528' : `rgba(47,106,26,${a})`,
         top: on ? '#f6e3a6' : cap ? `rgba(240,214,140,${a})` : `rgba(211,240,189,${a})`,
         side: `linear-gradient(180deg, rgba(176,138,44,${a}) 0px ${cap}px, rgba(127,184,90,${a}) ${cap}px ${cap + grew}px, rgba(31,74,19,${a}) ${cap + grew}px ${h}px)`,
-        delay: `${(i * 0.04).toFixed(2)}s`,
+        delay: `${(0.15 + i * 0.06).toFixed(2)}s`,
       };
     });
     const colW = (this.W() - 18 - 34 - gap * (Y - 1)) / Y;

@@ -4,7 +4,7 @@ import { Component, EventEmitter, HostListener, Output, computed, inject, signal
 import { AmountDialComponent } from './amount-dial.component';
 import {
   CESS, FLAT_REG_PCT, INCOME_RATE, INFLATION, RENT_RISE, STD_DEDUCTION, UPKEEP, VACANT_MONTHS,
-  fmtInr, simulateFlat, windowFor, worstYearPct, ymLabel,
+  fmtInr, pfByKey, simulateFlat, windowFor, worstYearPct, ymLabel,
 } from './backtest.model';
 import { Bars3dComponent, Col3d } from './bars-3d.component';
 import { CalcDataService } from './calc-data.service';
@@ -57,6 +57,10 @@ export class FlatCalcComponent {
   readonly bought = signal<number | null>(null);         // set once the data says which years exist
   readonly active = signal<Key>('price');
   readonly page = signal<'calc' | 'vs' | 'notes'>('calc');
+  /** the chart stays veiled until "Show me" — then it's live */
+  readonly revealed = signal(false);
+  readonly swp = this.store.swp;
+  readonly villa = computed(() => pfByKey(this.store.villa()));
 
   readonly failed = this.store.failed;
   /** the last month with prices, and the years real history covers */
@@ -74,11 +78,11 @@ export class FlatCalcComponent {
   });
   readonly held = computed(() => this.endYear() - this.boughtYear());
 
-  readonly win = computed(() => { const d = this.store.data(); return d ? windowFor(d, this.held()) : null; });
+  readonly win = computed(() => { const d = this.store.villaData(); return d ? windowFor(d, this.held()) : null; });
   readonly r = computed(() => {
     const w = this.win();
     if (!w || !(this.price() > 0) || !(this.value() > 0)) return null;
-    return simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: STAMP_PCT, slabPct: SLAB });
+    return simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: STAMP_PCT, slabPct: SLAB }, this.swp());
   });
   readonly dvWins = computed(() => { const r = this.r(); return !!r && r.dvTotal > r.flTotal; });
 
@@ -93,9 +97,11 @@ export class FlatCalcComponent {
   readonly dvCol = computed<Col3d | null>(() => {
     const r = this.r();
     if (!r) return null;
-    return { art: 'villa', coin: true, green: true, segs: [
+    return { art: 'villa', pick: true, green: true, segs: r.dv.swp ? [
       { label: 'Rent paid', val: r.dv.dvPaid, bg: 'linear-gradient(180deg,#b9e69a,#9ad471)', side: '#7fb85a', top: '#d3f0bd', k: '#2b4d18', c: '#10240a' },
       { label: 'Value', val: r.dv.dvValue, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#d8f2c4', c: '#f2fbe9' },
+    ] : [
+      { label: 'Value', val: r.dv.dvValue, bg: 'linear-gradient(180deg,#9ad471 0%,#4f9528 55%,#2a5e18)', side: '#1f4a13', top: '#d3f0bd', k: '#d8f2c4', c: '#f2fbe9' },
     ] };
   });
 
@@ -122,7 +128,7 @@ export class FlatCalcComponent {
   }
 
   // ── side by side ──
-  readonly worstEver = computed(() => { const d = this.store.data(); return d ? worstYearPct(windowFor(d, 100)) : null; });
+  readonly worstEver = computed(() => { const d = this.store.villaData(); return d ? worstYearPct(windowFor(d, 100)) : null; });
   readonly vs = computed(() => {
     const r = this.r();
     if (!r) return [];
@@ -135,7 +141,8 @@ export class FlatCalcComponent {
       row('Real value', 'M3 12h4l3-8 4 16 3-8h4', fmtInr(r.flReal), 'in today’s money', flWins ? A : N, fmtInr(r.dvReal), 'in today’s money', G, flWins ? 'fl' : 'dv'),
       row('Rent', 'M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 9.5 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
         r.yieldPct.toFixed(1) + '%', `${this.inr(this.rent())} a month · ${VACANT_MONTHS} month empty`, N,
-        this.INCOME_PCT + '%', `${this.inr(r.dv.dvMonthly)} a month · every month`, G, r.yieldPct > this.INCOME_PCT ? 'fl' : 'dv'),
+        r.dv.swp ? this.INCOME_PCT + '%' : 'None', r.dv.swp ? `${this.inr(r.dv.dvMonthly)} a month · every month` : 'SWP off — it all compounds', r.dv.swp ? G : N,
+        !r.dv.swp || r.yieldPct > this.INCOME_PCT ? 'fl' : 'dv'),
       row('Risk', 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
         'Medium', 'one building, one city', Y, 'High',
         worst === null ? 'can fall' : `worst 12 months since ${(this.store.data()?.months[0] ?? '').slice(0, 4)}: ${worst < 0 ? '−' : '+'}${Math.abs(worst).toFixed(0)}%`, R, 'fl',
@@ -162,6 +169,7 @@ export class FlatCalcComponent {
 
   constructor() { this.store.load(); }
   retry(): void { this.store.load(); }
+  reveal(): void { this.revealed.set(true); try { navigator.vibrate?.(12); } catch { /* not supported */ } }
   go(p: 'calc' | 'vs' | 'notes'): void { this.page.set(p); window.scrollTo({ top: 0 }); }
   units(v: number): string { return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
   /** an index level (not ₹) */

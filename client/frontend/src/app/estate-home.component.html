@@ -1,6 +1,14 @@
-<section class="estate" [class.no-enter]="entered">
+<section class="estate" [class.no-enter]="entered" [class.next-open]="nextOpen()" [class.types-open]="typesOpen()"
+         (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()" (wheel)="onWheel($event)">
   <!-- ============ HOME CONTENT (above the app's own bottom nav) ============ -->
   <div class="estate-top">
+    <!-- pull-down cue: the Next villa sheet -->
+    @if (dataReady && !isEmptyEstate && !nextInfo.done) {
+      <button class="nv-cue" (click)="setNext(true)" aria-label="Next villa">
+        Next villa <b>{{ nextInfo.when ?? compact(nextInfo.toGo!) + ' to go' }}</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#8fd65a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    }
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
     <!-- ===== LOADING SKELETON: shown until the FIRST real portfolio response
@@ -430,8 +438,78 @@
       <button class="fine-link" (click)="toggleKey()" aria-label="What do Villa and Plot mean?">
         What do Villa and Plot mean? <span aria-hidden="true">›</span>
       </button>
+      <i class="fine-dot" aria-hidden="true">·</i>
+      <button class="fine-link tv-link" (click)="setTypes(true)" aria-label="Types of villas">
+        Types of villas <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
     </div>
   </div>
+
+  <!-- ============ PULL SHEETS — down: Next villa · up: Types of villas ============ -->
+  <div class="ps-dim" (click)="closeSheets()" aria-hidden="true"></div>
+
+  <section class="nv-sheet" aria-label="Next villa" [attr.aria-hidden]="!nextOpen()">
+    @if (nextInfo; as n) {
+      @if (n.done) {
+        <div class="nv-head rise" style="--d:.05s">
+          <span class="nv-k">Your estate</span>
+          <div class="nv-t">All 9 villas</div>
+          <div class="nv-s">They pay <b>{{ inr(n.all) }}</b> a month</div>
+        </div>
+      } @else {
+        <div class="nv-head rise" style="--d:.05s">
+          <span class="nv-k">Next villa · Villa {{ n.plot }}</span>
+          @if (n.when) {
+            <div class="nv-t">{{ n.when.split(' ’')[0] }}<small>’{{ n.when.split('’')[1] }}</small></div>
+            <div class="nv-s"><b>{{ n.months }} {{ n.months === 1 ? 'month' : 'months' }}</b> of SIPs · <b>{{ compact(n.toGo) }}</b> to go</div>
+          } @else {
+            <div class="nv-t">{{ compact(n.toGo) }}</div>
+            <div class="nv-s">to go · start a SIP to see the month it completes</div>
+          }
+        </div>
+        <div class="ladder">
+          @for (st of n.steps; track st.name; let i = $index) {
+            <div class="step rise" [class.done]="st.state === 'done'" [class.now]="st.state === 'now'" [class.todo]="st.state === 'todo'" [style.--d]="(0.12 + i * 0.06) + 's'">
+              <svg viewBox="14 -14 212 182" aria-hidden="true"><use [attr.href]="st.href"></use></svg>
+              <div class="bar"><i [style.width.%]="st.pct"></i></div>
+              <span class="n">{{ st.name }}</span>
+              <span class="m">{{ st.m }}</span>
+            </div>
+          }
+        </div>
+        <div class="nv-inc rise" style="--d:.46s">
+          <div class="c"><span class="k">Income now</span><span class="v">{{ inr(n.now) }}<small>/mo</small></span></div>
+          <div class="mid">
+            <b>+{{ inr(n.after - n.now) }}</b>
+            <svg viewBox="0 0 36 12" aria-hidden="true"><path d="M1 6h31M27 1.5 32 6l-5 4.5" fill="none" stroke="#8fd65a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="c r"><span class="k">With Villa {{ n.plot }}</span><span class="v">{{ inr(n.after) }}<small>/mo</small></span></div>
+        </div>
+        <div class="nv-foot rise" style="--d:.52s">Every villa adds <b>{{ inr(1500) }}</b> a month · all 9 pay <b>{{ inr(n.all) }}</b>@if (n.sip) { · your SIP ≈ <b>{{ inr(n.sip) }}</b>/mo }</div>
+      }
+    }
+    <button class="ps-grip" (click)="setNext(false)" aria-label="Close"></button>
+  </section>
+
+  <section class="tv-sheet" aria-label="Types of villas" [attr.aria-hidden]="!typesOpen()">
+    <button class="ps-grip" (click)="setTypes(false)" aria-label="Close"></button>
+    <div class="tv-head"><span>Types of villas</span></div>
+    <div class="tv-row">
+      @for (p of villaTypes(); track p.key) {
+        <div class="tvc" [attr.data-r]="p.risk" [style.--d]="p.d + 'ms'">
+          <i class="tv-glow" aria-hidden="true"></i>
+          <svg viewBox="14 -14 212 182" aria-hidden="true"><use href="#tVilla"></use></svg>
+          <span class="pn">{{ p.name }}</span>
+          <span class="pr">
+            @if (p.rate !== null) { {{ p.rate.toFixed(1) }}<small>% a yr</small> } @else { <i class="tv-shim"></i> }
+          </span>
+          <span class="rk">{{ p.riskName }} risk</span>
+          <span class="mx">{{ p.quadrant * 100 | number:'1.0-0' }} growth · {{ p.arbitrage * 100 | number:'1.0-0' }} arbitrage</span>
+        </div>
+      }
+    </div>
+    <p class="tv-note">A year since {{ historyFrom() || 'Apr 2010' }} on real benchmark history — nothing withdrawn, after the yearly rebalancing tax. The past isn’t a promise.</p>
+  </section>
 
   <!-- ============ DISCLAIMER SHEET — "What you actually own" ============ -->
   <div class="scrim" [class.open]="keyOpen()" (click)="keyOpen.set(false)">

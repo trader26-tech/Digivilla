@@ -6,7 +6,7 @@ import { AdminService, NetWorthRow } from '../admin.service';
 // The client app's OWN calculator model — the exact code the app runs — so the
 // page can put "what the app computes" next to the independent check.
 import {
-  VillaFunds, simulateFlat, simulatePayout, simulateSipIncome, windowFor,
+  PORTFOLIOS, PfKey, VillaFunds, simulateFlat, simulatePayout, simulateSipIncome, windowFor, withPortfolio,
 } from '../../../../../client/frontend/src/app/calc/backtest.model';
 
 type Tab = 'client' | 'navs' | 'calc' | 'data';
@@ -63,6 +63,11 @@ export class AuditComponent implements OnInit {
 
   // ── calculators ──
   readonly kind = signal<Kind>('fd');
+  readonly villa = signal<PfKey>('balanced');
+  readonly swp = signal(true);
+  readonly PORTFOLIOS = PORTFOLIOS;
+  pickVilla(v: PfKey): void { if (this.villa() !== v) { this.villa.set(v); this.run(); } }
+  toggleSwp(): void { this.swp.set(!this.swp()); this.run(); }
   readonly years = signal(5);
   readonly amount = signal(10000000);
   readonly fdRate = signal(6.5);
@@ -173,6 +178,7 @@ export class AuditComponent implements OnInit {
     const params: Record<string, string | number> = {
       kind: k, years: this.years(), slab: this.slab(), amount: this.amount(), fd_rate: this.fdRate(),
       monthly: this.monthly(), step: this.step(), price: this.price(), value: this.value(), rent: this.rent(), stamp: 7,
+      villa: this.villa(), swp: String(this.swp()),
     };
     const go = (vf: VillaFunds) => {
       this.api.auditCalc(params).subscribe({
@@ -193,16 +199,17 @@ export class AuditComponent implements OnInit {
 
   /** The app's own formula vs the independent check, figure by figure. */
   private compare(k: Kind, vf: VillaFunds, h: any): Row[] {
-    const w = windowFor(vf, this.years());
+    const w = windowFor(withPortfolio(vf, this.villa()), this.years());
+    const swp = this.swp();
     if (k === 'fd' || k === 'lump') {
-      const r = simulatePayout(w, this.amount(), k === 'fd' ? this.fdRate() : 0, this.slab());
+      const r = simulatePayout(w, this.amount(), k === 'fd' ? this.fdRate() : 0, this.slab(), swp);
       this.appYearly.set(r.yearly);
       const rows: Row[] = [
         { label: 'Payouts received (before tax)', app: r.dvPaidGross, check: h.dvPaidGross },
         { label: 'Tax on payouts', app: r.dvPayoutTax, check: h.dvPayoutTax },
         { label: 'Payouts after tax', app: r.dvPaid, check: h.dvPaid },
+        { label: 'Tax on the 1 January rebalances', app: r.dvRebalanceTax, check: h.dvRebalanceTax },
         { label: 'Still invested today', app: r.dvValue, check: h.dvValue },
-        { label: 'Tax if sold today', app: r.dvExitTax, check: h.dvExitTax },
         { label: 'DigiVilla total (paid + invested)', app: r.dvTotal, check: h.dvTotal },
         { label: 'Arbitrage share today', app: r.arbNowPct, check: h.arbNowPct, pct: true },
         { label: 'Return a year (after tax)', app: r.dvIrr, check: h.dvIrr, pct: true },
@@ -215,13 +222,12 @@ export class AuditComponent implements OnInit {
       return rows;
     }
     if (k === 'sip') {
-      const r = simulateSipIncome(w, this.monthly(), this.step(), this.slab());
+      const r = simulateSipIncome(w, this.monthly(), this.step(), this.slab(), swp);
       this.appYearly.set(r.yearly);
       return [
         { label: 'Put in', app: r.invested, check: h.invested },
-        { label: 'Worth today (before tax)', app: r.value, check: h.value },
-        { label: 'Tax if sold today', app: r.exitTax, check: h.exitTax },
-        { label: 'Worth today after tax', app: r.valueAfterTax, check: h.valueAfterTax },
+        { label: 'Worth today', app: r.value, check: h.value },
+        { label: 'Tax on the 1 January rebalances', app: r.rebalanceTax, check: h.rebalanceTax },
         { label: 'Income paid out (before tax)', app: r.incomeGross, check: h.incomeGross },
         { label: 'Tax on income', app: r.incomeTax, check: h.incomeTax },
         { label: 'Income after tax', app: r.income, check: h.income },
@@ -229,7 +235,7 @@ export class AuditComponent implements OnInit {
         { label: '1 January rebalances', app: r.rebalances.length, check: h.rebalances, count: true },
       ];
     }
-    const r = simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: 7, slabPct: this.slab() });
+    const r = simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: 7, slabPct: this.slab() }, swp);
     this.appYearly.set(r.dv.yearly);
     return [
       { label: 'All-in cost of the flat', app: r.outlay, check: h.outlay },
@@ -298,13 +304,13 @@ export class AuditComponent implements OnInit {
       return {
         year: c.year, month: c.month, funds: c.funds, arbUnits: c.arb_units,
         paidYear: c.payout,
-        worth: this.pair(a.valueAfterTax, c.value_after_tax),
+        worth: this.pair(a.value, c.value),
         before: this.pair(a.value, c.value),
         income: c.income !== undefined ? this.pair(a.income, c.income) : null,
         invested: c.invested !== undefined ? this.pair(a.invested, c.invested) : null,
         perMonth: c.invested !== undefined ? this.pair(a.payout !== undefined ? a.payout / 12 : undefined, c.payout / 12) : null,
         payout: this.pair(a.payout, c.payout),
-        both: (a.valueAfterTax ?? 0) + (a.income ?? 0),
+        both: (a.value ?? 0) + (a.income ?? 0),
       };
     });
   });
@@ -399,7 +405,7 @@ export class AuditComponent implements OnInit {
       ...m, label: m.i === 0 ? 'Start' : `Month ${m.i}`,
       funds: m.funds.map((f: any) => ({ ...f, chg: f.nav_prev ? (f.nav / f.nav_prev - 1) * 100 : null })),
       invest: invest.length ? { total: invest.reduce((a, e) => a + e.rupees, 0), rows: invest } : null,
-      pay, payGain: pay ? gain(pay.sells) : 0,
+      pay, payGain: pay ? gain(pay.sells) : 0, payTax: ev.find((e) => e.op === 'pay_tax') ?? null,
       rebal, rebalGain: rebal ? gain(rebal.sells) : 0,
       arbNav: by('arbitrage')?.nav,
     };
