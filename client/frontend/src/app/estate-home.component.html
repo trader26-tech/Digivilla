@@ -2,13 +2,6 @@
          (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()" (wheel)="onWheel($event)">
   <!-- ============ HOME CONTENT (above the app's own bottom nav) ============ -->
   <div class="estate-top">
-    <!-- pull-down cue: the Next villa sheet -->
-    @if (dataReady && !isEmptyEstate && !nextInfo.done) {
-      <button class="nv-cue" (click)="setNext(true)" aria-label="Next villa">
-        Next villa <b>{{ nextInfo.when ?? compact(nextInfo.toGo!) + ' to go' }}</b>
-        <svg viewBox="0 0 24 24" fill="none" stroke="#8fd65a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-    }
     <input #photoInput type="file" accept="image/*" class="avatar-input" (change)="onPhotoChosen($event)" />
 
     <!-- ===== LOADING SKELETON: shown until the FIRST real portfolio response
@@ -437,18 +430,16 @@
       </ng-container>
     </div>
 
-    <!-- ===== "What you own" — opens the compliance sheet; and a
-         disclaimer bottom-sheet. Hidden on the empty estate. ===== -->
-    <div class="fine" *ngIf="dataReady && !isEmptyEstate">
-      <button class="fine-pill tv-link" (click)="setTypes(true)" aria-label="Types of villas">
-        <span class="fp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
-        Types of villas
-        <svg class="fp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
-      </button>
-    </div>
+    <!-- swipe hint, shown once: there are no buttons for the two sheets, only the gestures -->
+    @if (swipeHint() && dataReady && !isEmptyEstate) {
+      <p class="swipe-hint" aria-hidden="true">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Swipe down · next villa</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Swipe up · what a villa represents</span>
+      </p>
+    }
   </div>
 
-  <!-- ============ PULL SHEETS — down: Next villa · up: Types of villas ============ -->
+  <!-- ============ PULL SHEETS — swipe down: Next villa · swipe up: What does a villa represent? ============ -->
   <div class="ps-dim" (click)="closeSheets()" aria-hidden="true"></div>
 
   <section class="nv-sheet" aria-label="Next villa" [attr.aria-hidden]="!nextOpen()">
@@ -494,9 +485,9 @@
     <button class="ps-grip" (click)="setNext(false)" aria-label="Close"></button>
   </section>
 
-  <section class="tv-sheet" aria-label="Types of villas" [attr.aria-hidden]="!typesOpen()">
+  <section class="tv-sheet" aria-label="What does a villa represent?" [attr.aria-hidden]="!typesOpen()">
     <button class="ps-grip" (click)="setTypes(false)" aria-label="Close"></button>
-    <div class="tv-head"><span>Types of villas</span></div>
+    <div class="tv-head"><span>What does a villa represent?</span></div>
     <div class="tv-row">
       @for (p of villaTypes(); track p.key) {
         <div class="tvc" [attr.data-r]="p.risk" [style.--d]="p.d + 'ms'">

@@ -164,3 +164,10 @@ body.lv-sheet-open .tabbar {
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
+/* …and the same for Home's "What does a villa represent?" sheet (swipe up): the bar slides away */
+.tabbar { transition: opacity .25s ease, transform .28s ease-out; }
+body.tv-sheet-open .tabbar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(24px);
+}

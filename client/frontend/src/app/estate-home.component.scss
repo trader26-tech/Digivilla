@@ -1789,7 +1789,7 @@
 }
 .estate.next-open .nv-sheet { transform: translateY(0); box-shadow: inset 0 -1px 0 #3f424d, 0 28px 60px -12px rgba(0, 0, 0, .75), 0 0 80px -20px rgba(108, 186, 54, .35); }
 .tv-sheet {
-  bottom: 0; gap: 12px; padding: 12px 18px calc(6.6rem + env(safe-area-inset-bottom));
+  bottom: 0; gap: 12px; padding: 12px 18px calc(1.8rem + env(safe-area-inset-bottom));   /* the tab bar hides while this is up */
   border-radius: 26px 26px 0 0; transform: translateY(104%);
   box-shadow: inset 0 1px 0 #3f424d;
   transition: transform .28s ease-out, box-shadow .28s;   /* a plain slide — no bounce, nothing animating inside */
@@ -1871,3 +1871,13 @@
   .nv-sheet .rise, .tvc { opacity: 1; transform: none; animation: none !important; }
   .estate-top > .nv-cue svg, .tv-link .fp-chev, .ladder .step .bar i, .nv-inc .mid svg { animation: none !important; }
 }
+
+/* one-time hint: what the two swipes do (there are no buttons for them) */
+.swipe-hint {
+  flex: none; margin: 12px 0 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--color-neutral-500); animation: swipeHint 7s ease both;
+  span { display: inline-flex; align-items: center; gap: 6px; }
+  svg { width: 12px; height: 12px; color: var(--color-accent-300); }
+}
+@keyframes swipeHint { 0% { opacity: 0; } 8%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .swipe-hint { animation: none; } }

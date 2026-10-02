@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   Component,
+  DestroyRef,
   ElementRef,
   EventEmitter,
   Input,
@@ -9,6 +10,7 @@ import {
   Output,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -68,6 +70,7 @@ interface SleeveRow { sleeve: string; allocation: number; }
 /** The board has art for 9 parcels and 5 build stages. */
 export const MAX_PLOTS = 9;
 /** House h (1-based) occupies ORDER[h-1] (col,row): centre, front corner, … */
+const SWIPE_HINT_KEY = 'dv-swipe-hint-v1';
 export const ORDER: [number, number][] = [
   [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
 ];
@@ -504,14 +507,34 @@ export class EstateHomeComponent implements OnInit {
     // The client's real monthly SIP (for "Next villa" — when it completes).
     this.calc.loadConfig();
     this.est.orders().subscribe({ next: (r) => this.sipMonthly.set(monthlySip(r.orders ?? [])), error: () => {} });
+    // first visit only: say what the two swipes do (there are no buttons for them)
+    try {
+      if (!localStorage.getItem(SWIPE_HINT_KEY)) {
+        this.swipeHint.set(true);
+        setTimeout(() => this.dismissHint(), 7000);
+      }
+    } catch { /* private mode — skip the hint */ }
   }
 
-  // ════════════ PULL SHEETS — swipe down: Next villa · swipe up: Types of villas ════════════
+  // ════════════ PULL SHEETS — swipe down: Next villa · swipe up: What does a villa represent? ════════════
   readonly calc = inject(CalcDataService);
   readonly nextOpen = signal(false);
   readonly typesOpen = signal(false);
+  /** the villa sheet rises from the bottom edge — hide the app's tab bar while it's up */
+  private readonly hideTabbar = (() => {
+    effect(() => document.body.classList.toggle('tv-sheet-open', this.typesOpen()));
+    inject(DestroyRef).onDestroy(() => document.body.classList.remove('tv-sheet-open'));
+    return true;
+  })();
   /** The client's SIP a month, from their SIP orders over the last 6 months (null = none). */
   readonly sipMonthly = signal<number | null>(null);
+  /** the one-time "swipe down · swipe up" hint */
+  readonly swipeHint = signal(false);
+  dismissHint(): void {
+    if (!this.swipeHint()) return;
+    this.swipeHint.set(false);
+    try { localStorage.setItem(SWIPE_HINT_KEY, '1'); } catch { /* private mode */ }
+  }
 
   /** Another sheet / popup owns the screen — swipes leave it alone. */
   private get overlayOpen(): boolean {
@@ -529,6 +552,7 @@ export class EstateHomeComponent implements OnInit {
   closeSheets(): void { this.nextOpen.set(false); this.typesOpen.set(false); }
   /** down = pull the Next villa sheet in (or put Types away); up = the reverse */
   private swipe(dir: 'down' | 'up'): void {
+    this.dismissHint();
     if (dir === 'down') { if (this.typesOpen()) this.setTypes(false); else this.setNext(true); }
     else if (this.nextOpen()) this.setNext(false); else this.setTypes(true);
     try { navigator.vibrate?.(8); } catch { /* not supported */ }
