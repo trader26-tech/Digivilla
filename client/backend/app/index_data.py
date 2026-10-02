@@ -1,8 +1,8 @@
 """The calculators' benchmark data — INDICES ONLY, no actively managed funds.
 
-The calculators (FD / Flat / SIP / Lumpsum vs DigiVilla) replay the three
-DigiVilla villas (PORTFOLIOS below) on the BENCHMARK each part tracks, never on
-an active fund:
+The calculators (FD / Flat / SIP / Lumpsum vs DigiVilla) replay the DigiVilla
+villas (their mixes live in the calculator SETTINGS, app/calc_config.py) on the
+BENCHMARK each part tracks, never on an active fund:
 
     arbitrage  → NIFTY 50 Arbitrage Index              (niftyindices.com, from Apr 2010)
     large cap  → NIFTY 50 TRI (total return)           (niftyindices.com, from Apr 2005)
@@ -50,23 +50,6 @@ SERIES = [
      "source": "AMFI / mfapi · schemes 105085 → 115744 → 140088 (same ETF across fund-house changes), split-adjusted",
      "mfapi": [105085, 115744, 140088], "from": 2007},
 ]
-
-# The three villas. quadrant = gold / large / mid / small in equal parts (25% each
-# of the quadrant), put back to 25% each every 1 January; the rest is arbitrage,
-# never rebalanced, which pays the monthly income first. One source of truth:
-# the client's backtest.model.ts and the admin's audit.py mirror these numbers.
-QUADRANT = ("gold", "large", "mid", "small")
-PORTFOLIOS = [
-    {"key": "conservative", "name": "Conservative", "quadrant": 0.30, "arbitrage": 0.70, "risk": 1, "risk_name": "Low"},
-    {"key": "balanced", "name": "Balanced", "quadrant": 0.64, "arbitrage": 0.36, "risk": 2, "risk_name": "Medium"},
-    {"key": "aggressive", "name": "Aggressive", "quadrant": 0.80, "arbitrage": 0.20, "risk": 3, "risk_name": "High"},
-]
-
-
-def portfolio_weights(key: str = "balanced") -> dict[str, float]:
-    p = next((x for x in PORTFOLIOS if x["key"] == key), PORTFOLIOS[1])
-    return {"arbitrage": p["arbitrage"], **{s: p["quadrant"] / 4 for s in QUADRANT}}
-
 
 _SNAPSHOT = Path(__file__).resolve().parent / "data" / "index_history.json"
 _BUCKET, _OBJECT = "calc-data", "index_history.json"
@@ -253,9 +236,7 @@ def basket_paths(weights: dict[str, float]) -> dict:
     h = history().get("series", {})
     rows = []
     for s in SERIES:
-        w = weights.get(s["sleeve"], 0)
-        if w <= 0:
-            continue
+        w = weights.get(s["sleeve"], 0)      # every series is served (even at 0) — any villa can re-weight
         ser = h.get(s["key"])
         if not ser or not ser.get("months"):
             return {"ok": False, "detail": f"No history for {s['name']}."}
@@ -281,5 +262,4 @@ def basket_paths(weights: dict[str, float]) -> dict:
                    "index": [round(r["months"][m] / r["months"][months[0]], 6) for m in months]}
                   for r in rows],
         "note": "Benchmark indices — before any fund's expense ratio.",
-        "portfolios": PORTFOLIOS,
     }

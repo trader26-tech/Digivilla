@@ -68,6 +68,12 @@ export class Bars3dComponent implements OnDestroy {
   private readonly H = signal(342);
   private readonly short = matchMedia('(max-height: 760px)').matches;
   private ro?: ResizeObserver;
+  /** false until the first layout has settled and the columns have risen. Until then the
+   *  FD → DigiVilla arrow is hidden; then it draws in once (`entering`), and after that it
+   *  follows changes smoothly. (While veiled the arrow stays off; the reveal has its own draw.) */
+  readonly settled = signal(false);
+  readonly entering = signal(false);
+  private settleTimer?: ReturnType<typeof setTimeout>;
 
   @ViewChild('chart') set chartEl(ref: ElementRef<HTMLElement> | undefined) {
     this.ro?.disconnect();
@@ -80,6 +86,12 @@ export class Bars3dComponent implements OnDestroy {
     measure();
     this.ro = new ResizeObserver(measure);
     this.ro.observe(el);
+    clearTimeout(this.settleTimer);
+    this.settleTimer = setTimeout(() => {
+      this.settled.set(true);
+      this.entering.set(true);
+      this.settleTimer = setTimeout(() => this.entering.set(false), 800);
+    }, 700);
   }
 
   private total = (c: Col3d | null) => (c ? c.segs.reduce((s, x) => s + x.val, 0) : 0);
@@ -156,5 +168,5 @@ export class Bars3dComponent implements OnDestroy {
     }, { allowSignalWrites: true });
   }
 
-  ngOnDestroy(): void { this.ro?.disconnect(); cancelAnimationFrame(this.raf); }
+  ngOnDestroy(): void { this.ro?.disconnect(); cancelAnimationFrame(this.raf); clearTimeout(this.settleTimer); }
 }

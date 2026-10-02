@@ -1,16 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, HostListener, Output, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, HostListener, Output, computed, effect, inject, signal } from '@angular/core';
 
 import { AmountDialComponent } from './amount-dial.component';
-import { CESS, EQ_EXEMPT, INCOME_RATE, fmtInr, pfByKey, simulateSipIncome, windowFor, ymLabel } from './backtest.model';
+import { fmtInr, simulateSip, windowFor, ymLabel } from './engine';
+import { inr, rate, terms } from './view/common';
+import { sipView } from './view/sip.view';
 import { CalcDataService } from './calc-data.service';
 import { yearsAvailable } from './fd-vs-dv.component';
-import { bySleeve } from './sleeves';
 import { VillaPickComponent } from './villa-pick.component';
 import { YearCol, YearColsComponent } from './year-cols.component';
 
-/** Short-term gains on the gold fund are taxed at the slab; the SIP screen doesn't ask it. */
-const ASSUMED_SLAB = 30;
 /** quick picks — NRI clients often invest well above ₹1 L a month */
 const AMOUNTS = [25_000, 50_000, 1_00_000, 2_00_000, 5_00_000];
 const STEPS = [0, 5, 10, 15];
@@ -39,13 +38,12 @@ export class SipCalcComponent {
 
   readonly AMOUNTS = AMOUNTS;
   readonly STEPS = STEPS;
-  readonly EXEMPT = EQ_EXEMPT;
-  readonly SLAB = ASSUMED_SLAB;
-  readonly INCOME_PCT = Math.round(INCOME_RATE * 1000) / 10;   // 3.6, not 3.5999…
-  readonly cessPct = Math.round((CESS - 1) * 100);
   readonly fmt = fmtInr;
   readonly ym = ymLabel;
-  readonly inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
+  readonly inr = inr;
+  readonly rate = rate;
+  /** the settings, in the words screens quote */
+  readonly t = computed(() => terms(this.store.config()));
 
   // ── answers ──
   readonly monthly = signal(25_000);
@@ -53,52 +51,36 @@ export class SipCalcComponent {
   readonly years = signal(15);
   readonly picker = signal<'amt' | 'step' | null>(null);
   readonly page = signal<'calc' | 'notes'>('calc');
-  /** the chart stays veiled until "Show me" — then it's live */
-  readonly revealed = signal(false);
   readonly swp = this.store.swp;
-  readonly villa = computed(() => pfByKey(this.store.villa()));
+  readonly villa = this.store.villa;
 
   readonly failed = this.store.failed;
   readonly yearOpts = computed(() => yearsAvailable(this.store.data()?.months.length ?? null));
   readonly win = computed(() => { const d = this.store.villaData(); return d ? windowFor(d, this.years()) : null; });
-  readonly r = computed(() => { const w = this.win(); return w ? simulateSipIncome(w, this.monthly(), this.step(), ASSUMED_SLAB, this.swp()) : null; });
-
-  /** One column per year: put in · grew · that year's income (gold). */
-  readonly yearCols = computed<YearCol[]>(() => (this.r()?.yearly ?? []).map((y) => ({
-    tick: 'Y' + y.year, badge: 'Year ' + y.year,
-    put: Math.min(y.invested, y.value), grew: Math.max(0, y.value - y.invested), cap: y.payout,
-    fields: this.swp() ? [
-      { label: 'Put in', value: y.invested },
-      { label: 'Worth', value: y.value, tone: 'g' as const },
-      { label: 'Income', value: y.payout / 12, tone: 'gold' as const, suffix: '/mo' },
-    ] : [
-      { label: 'Put in', value: y.invested },
-      { label: 'Worth', value: y.value, tone: 'g' as const },
-      { label: 'Grew', value: y.value - y.invested },
-    ],
-  })));
-
-  /** The plain-language walk-through on "How this is worked out". */
-  readonly explain = computed(() => {
-    const r = this.r();
-    if (!r) return null;
-    const mix = bySleeve(r.funds.map((f) => ({ sleeve: f.sleeve, weight: f.weight, start: f.invested, now: f.valueNow })));
-    const first = r.yearly[0], last = r.yearly[r.yearly.length - 1];
-    return { mix, perInstalment: mix.map((m) => ({ ...m, amt: this.monthly() * m.pct / 100 })), firstIncome: first?.payout ?? 0, lastIncome: last?.payout ?? 0 };
+  readonly r = computed(() => {
+    const w = this.win();
+    return w ? simulateSip(w, { monthly: this.monthly(), stepPct: this.step(), slabPct: this.t().defaultSlab, swp: this.swp() }, this.store.config()) : null;
   });
+  readonly view = computed(() => { const r = this.r(); return r ? sipView(r, this.monthly()) : null; });
+
+  readonly yearCols = computed<YearCol[]>(() => this.view()?.yearCols ?? []);
+  readonly explain = computed(() => this.view()?.explain ?? null);
 
   readonly proxies = computed(() => (this.win()?.funds ?? []).flatMap((f) => f.proxy.map((p) => ({ fund: f.name, ...p }))));
 
-  constructor() { this.store.load(); }
+  constructor() {
+    this.store.load();
+    // the villa picker shows this screen's figure, so the two can't disagree
+    effect(() => { const r = this.r(); this.store.shown.set(r ? { rate: r.xirr ?? null, years: this.years() } : null); }, { allowSignalWrites: true });
+    inject(DestroyRef).onDestroy(() => this.store.shown.set(null));
+  }
   retry(): void { this.store.load(); }
 
   pickYears(y: number): void { this.years.set(y); }
   togglePicker(p: 'amt' | 'step'): void { this.picker.set(this.picker() === p ? null : p); }
   pickAmount(v: number): void { this.monthly.set(v); this.picker.set(null); }
   pickStep(v: number): void { this.step.set(v); this.picker.set(null); }
-  reveal(): void { this.revealed.set(true); try { navigator.vibrate?.(12); } catch { /* not supported */ } }
   go(p: 'calc' | 'notes'): void { this.picker.set(null); this.page.set(p); window.scrollTo({ top: 0 }); }
-  rate(v: number | null): string { return v === null || !isFinite(v) ? '—' : `${v.toFixed(1)}%`; }
 
   @HostListener('document:keydown.escape')
   onEsc(): void {

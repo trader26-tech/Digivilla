@@ -15,17 +15,10 @@
 
   <!-- ── the chart ── -->
   @if (r(); as res) {
-    <div class="chart-wrap" [class.veiled]="!revealed()">
-      <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()" [veiled]="!revealed()"></app-bars-3d>
-      @if (!revealed()) {
-        <button class="reveal" (click)="reveal()">
-          <span class="rv-k">Your flat vs the {{ villa().name }} villa</span>
-          <b>Show me</b>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      }
+    <div class="chart-wrap">
+      <app-bars-3d [left]="flCol()!" [right]="dvCol()!" [showArrow]="dvWins()"></app-bars-3d>
     </div>
-    <div class="legend" [class.hid]="!revealed()">
+    <div class="legend">
       <span>Flat · {{ res.appPct | number: '1.1-1' }}% a year</span>
       <span class="g">{{ villa().name }} · {{ rate(res.dv.dvIrr) }} a yr</span>
     </div>
@@ -78,7 +71,7 @@
   <div class="vs-head">
     <div class="who"><img src="assets/calc/flat-building.svg" alt="" /><b>Flat</b><span>{{ res.yieldPct | number: '1.1-1' }}% rent · {{ res.appPct | number: '1.1-1' }}%/yr</span></div>
     <div class="vs-badge"><b>VS</b></div>
-    <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>{{ villa().name }}</b><span>{{ rate(res.dv.dvIrr) }} · {{ swp() ? INCOME_PCT + '% rent' : 'no rent' }}</span></div>
+    <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>{{ villa().name }}</b><span>{{ rate(res.dv.dvIrr) }} · {{ swp() ? t().swpYearPct + '% rent' : 'no rent' }}</span></div>
   </div>
 
   <div class="vs-rows">
@@ -130,7 +123,7 @@
       <div class="step-card">
         <span class="step-k">In {{ ym(res.months[0]) }}</span>
         <h3>You bought the flat: <em class="n">{{ fmt(res.outlay) }}</em> all-in</h3>
-        <p>{{ fmt(price()) }} for the flat + <b>{{ fmt(res.stamp) }}</b> stamp duty ({{ STAMP }}%) and registration ({{ REG }}%). That {{ fmt(res.outlay) }} is the money we compare.</p>
+        <p>{{ fmt(price()) }} for the flat + <b>{{ fmt(res.stamp) }}</b> stamp duty ({{ F().stamp_pct }}%) and registration ({{ F().registration_pct }}%). That {{ fmt(res.outlay) }} is the money we compare.</p>
       </div>
     </li>
 
@@ -139,11 +132,11 @@
       <div class="step-card">
         <span class="step-k">Every year</span>
         <h3>It earned rent: you kept <em class="n">{{ fmt(res.rentKept) }}</em></h3>
-        <p>Rent is {{ inr(x.rentNow) }} a month today; we assume it rose {{ RENT_RISE }}% a year to get there (about {{ inr(x.rentThen) }} in year 1), with {{ VACANT }} empty month a year.</p>
+        <p>Rent is {{ inr(x.rentNow) }} a month today; we assume it rose {{ F().rent_rise_pct }}% a year to get there (about {{ inr(x.rentThen) }} in year 1), with {{ F().vacant_months }} empty month a year.</p>
         <ul class="grow">
           <li class="flat"><span>Rent collected</span><b>{{ fmt(res.rentGross) }}</b></li>
-          <li class="flat"><span>Tax ({{ SLAB }}% slab on {{ 100 - STD_DED }}% of it)</span><b class="neg">−{{ fmt(res.rentTax) }}</b></li>
-          <li class="flat"><span>Upkeep ({{ UPKEEP_PCT }}% of value a year)</span><b class="neg">−{{ fmt(res.upkeep) }}</b></li>
+          <li class="flat"><span>Tax ({{ t().defaultSlab }}% slab on {{ 100 - F().std_deduction * 100 }}% of it)</span><b class="neg">−{{ fmt(res.rentTax) }}</b></li>
+          <li class="flat"><span>Upkeep ({{ F().upkeep_pct }}% of value a year)</span><b class="neg">−{{ fmt(res.upkeep) }}</b></li>
           <li class="sum"><span>Rent you kept</span><b>{{ fmt(res.rentKept) }}</b></li>
         </ul>
       </div>
@@ -163,7 +156,7 @@
       <div class="step-card">
         <span class="step-k">The other path</span>
         <h3>The same {{ fmt(res.outlay) }} in DigiVilla</h3>
-        <p>Put into the {{ villa().name }} villa in {{ ym(res.months[0]) }}, on real index history. @if (swp()) {It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ INCOME_PCT }}% a year) by selling a little of the <b>Arbitrage</b> part — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:} @else {With SWP off nothing was withdrawn — it all kept growing:}</p>
+        <p>Put into the {{ villa().name }} villa in {{ ym(res.months[0]) }}, on real index history. @if (swp()) {It paid you <b>{{ inr(res.dv.dvMonthly) }} every month</b> ({{ t().swpYearPct }}% a year) by selling a little of the <b>Arbitrage</b> part — {{ fmt(res.dv.dvPaid) }} after tax. The rest kept growing:} @else {With SWP off nothing was withdrawn — it all kept growing:}</p>
         <div class="mixbar" aria-hidden="true">
           @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
         </div>
@@ -205,15 +198,15 @@
     <ul>
       <li><b>DigiVilla is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. Funds can fall; the next {{ res.years }} years won't repeat.</li>
       <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
-      <li><b>Three villas.</b> Gold, large, mid and small cap in equal parts, plus arbitrage — Conservative 30/70, Balanced 64/36, Aggressive 80/20. You're looking at {{ villa().name }}.</li>
-      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; gold, large, mid and small cap go back to 25% each. The tax on what that sells is paid from the proceeds.</li>
-      <li><b>The flat uses your numbers.</b> What it's worth today is your estimate; past rent is worked back from today's at {{ RENT_RISE }}% a year.</li>
-      <li><b>Tax:</b> rent at a {{ SLAB }}% slab after the {{ STD_DED }}% standard deduction; DigiVilla's payouts on today's fund-tax rules; {{ cessPct }}% cess on both, no surcharge.</li>
+      <li><b>The villas.</b> Growth parts plus arbitrage — {{ t().villasLine }} (growth / arbitrage). You're looking at {{ villa().name }}.</li>
+      <li><b>Rebalanced every {{ t().rebalanceMonth }}.</b> The {{ t().payFirst }} part is left alone; {{ t().rebalanceParts }} go back to the split they started with. The tax on what that sells is paid from the proceeds.</li>
+      <li><b>The flat uses your numbers.</b> What it's worth today is your estimate; past rent is worked back from today's at {{ F().rent_rise_pct }}% a year.</li>
+      <li><b>Tax:</b> rent at a {{ t().defaultSlab }}% slab after the {{ F().std_deduction * 100 }}% standard deduction; DigiVilla's payouts on today's fund-tax rules; {{ t().cessPct }}% cess on both, no surcharge.</li>
       <li><b>Not counted:</b> home-loan interest, society fees, property tax, and the cost of selling the flat.</li>
       @for (p of proxies(); track p.fund + p.until) {
         <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
       }
-      <li><b>"Today's money"</b> assumes prices rise {{ INFLATION }}% a year.</li>
+      <li><b>"Today's money"</b> assumes prices rise {{ t().inflationPct }}% a year.</li>
     </ul>
   </section>
 

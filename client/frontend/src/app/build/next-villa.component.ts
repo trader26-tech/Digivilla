@@ -2,14 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
 
 import { BookingSheetComponent } from '../booking-sheet.component';
-import { HOUSE, HOUSES, INCOME, ORDER } from '../estate-home.component';
+import { CalcDataService } from '../calc/calc-data.service';
+import { ORDER, estateOf } from '../estate-home.component';
 import { EstateService } from '../estate.service';
 import { CountUpDirective } from '../shared/count-up.directive';
 import { compact, inr } from '../shared/format.util';
 import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { loadTileSprite } from '../shared/tile-sprite';
 
-const L = 100_000;
 /** Build-stage art per ₹1L put into a plot (0 ground … 4 steel), from the sprite. */
 const STAGE_ART = ['#lvGround', '#lvLand', '#lvGrade', '#lvFound', '#lvSteel'];
 const STAGE_NAME = ['Breaking ground', 'The plot', 'Levelled', 'Foundation', 'Steel frame'];
@@ -42,23 +42,25 @@ interface Rung { n: number; need: number; income: number; owned: boolean; reache
 })
 export class NextVillaComponent implements OnInit {
   private est = inject(EstateService);
+  /** ₹ per villa, income, plots, stages — from the calculator settings */
+  private readonly E = estateOf(inject(CalcDataService).config().estate);
   @Output() back = new EventEmitter<void>();
 
   inr = inr;
   compact = compact;
-  readonly HOUSE = HOUSE;
-  readonly INCOME = INCOME;
-  readonly HOUSES = HOUSES;
+  readonly HOUSE = this.E.HOUSE;
+  readonly INCOME = this.E.INCOME;
+  readonly HOUSES = this.E.HOUSES;
   readonly STEP = 50_000;
 
   /** What is on the board today — invested ₹, capped at the nine parcels. */
-  readonly worth = Math.min(HOUSES * HOUSE, Math.max(0, this.est.invested));
-  readonly villas = Math.floor(this.worth / HOUSE);
-  readonly rem = this.worth - this.villas * HOUSE;
+  readonly worth = Math.min(this.E.HOUSES * this.E.HOUSE, Math.max(0, this.est.invested));
+  readonly villas = Math.floor(this.worth / this.E.HOUSE);
+  readonly rem = this.worth - this.villas * this.E.HOUSE;
   /** ₹ that completes the next villa (the plot in progress, or a fresh one). */
-  readonly toNext = HOUSE - this.rem;
+  readonly toNext = this.E.HOUSE - this.rem;
   /** Room left on the board. */
-  readonly capacity = HOUSES * HOUSE - this.worth;
+  readonly capacity = this.E.HOUSES * this.E.HOUSE - this.worth;
   readonly max = Math.max(this.STEP, this.capacity);
 
   /** The amount being considered. Opens on exactly what finishes the next villa. */
@@ -71,7 +73,7 @@ export class NextVillaComponent implements OnInit {
 
   // ── presets: finish the next villa, then one and two more ──
   presets = [0, 1, 2]
-    .map((k) => ({ amt: this.toNext + k * HOUSE, villas: this.villas + 1 + k }))
+    .map((k) => ({ amt: this.toNext + k * this.E.HOUSE, villas: this.villas + 1 + k }))
     .filter((p) => p.amt <= this.max);
 
   setAdd(v: number): void {
@@ -84,11 +86,11 @@ export class NextVillaComponent implements OnInit {
 
   // ── the estate after the amount goes in ──
   private after = computed(() => this.worth + this.add());
-  villasAfter = computed(() => Math.min(HOUSES, Math.floor(this.after() / HOUSE)));
-  remAfter = computed(() => this.after() - this.villasAfter() * HOUSE);
+  villasAfter = computed(() => Math.min(this.E.HOUSES, Math.floor(this.after() / this.E.HOUSE)));
+  remAfter = computed(() => this.after() - this.villasAfter() * this.E.HOUSE);
   newVillas = computed(() => this.villasAfter() - this.villas);
-  incomeNow = this.villas * INCOME;
-  incomeAfter = computed(() => this.villasAfter() * INCOME);
+  incomeNow = this.villas * this.E.INCOME;
+  incomeAfter = computed(() => this.villasAfter() * this.E.INCOME);
   /** Slider fill, 0..100. */
   fill = computed(() => (this.add() - this.STEP) / Math.max(1, this.max - this.STEP) * 100);
 
@@ -100,8 +102,8 @@ export class NextVillaComponent implements OnInit {
       const what = n === 1 ? `Villa ${names[0]} is complete` : `Villas ${names[0]}–${names[n - 1]} are complete`;
       return rem > 0 ? `${what}, and Plot ${this.pad(this.villasAfter() + 1)} is under way` : what;
     }
-    const stage = Math.min(4, Math.floor(rem / L));
-    return `Plot ${this.pad(this.villas + 1)} reaches “${STAGE_NAME[stage]}” — ${inr(HOUSE - rem)} from a finished villa`;
+    const stage = this.E.stageOf(rem);
+    return `Plot ${this.pad(this.villas + 1)} reaches “${STAGE_NAME[stage]}” — ${inr(this.E.HOUSE - rem)} from a finished villa`;
   });
 
   private pad(n: number): string { return ('0' + n).slice(-2); }
@@ -110,7 +112,7 @@ export class NextVillaComponent implements OnInit {
   cells = computed<Cell[]>(() => {
     const vA = this.villasAfter(), remA = this.remAfter();
     const artAt = (i: number, villas: number, rem: number): string =>
-      i < villas ? '#lvVilla' : (i === villas && rem > 0) ? STAGE_ART[Math.min(4, Math.floor(rem / L))] : '';
+      i < villas ? '#lvVilla' : (i === villas && rem > 0) ? STAGE_ART[this.E.stageOf(rem)] : '';
     return ORDER.map(([col, row], i) => {
       const href = artAt(i, vA, remA);
       return {
@@ -123,10 +125,10 @@ export class NextVillaComponent implements OnInit {
   trackCell(_: number, c: Cell): string { return c.key; }
 
   /** The road to a full estate: every villa, what it takes from today, what it pays. */
-  rungs = computed<Rung[]>(() => Array.from({ length: HOUSES }, (_, k) => {
+  rungs = computed<Rung[]>(() => Array.from({ length: this.E.HOUSES }, (_, k) => {
     const n = k + 1;
     return {
-      n, need: Math.max(0, n * HOUSE - this.worth), income: n * INCOME,
+      n, need: Math.max(0, n * this.E.HOUSE - this.worth), income: n * this.E.INCOME,
       owned: n <= this.villas, reached: n > this.villas && n <= this.villasAfter(),
     };
   }));

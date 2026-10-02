@@ -23,8 +23,8 @@ import { CallsService } from './shared/calls.service';
 import { AllocRow, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
 import { compact, inr } from './shared/format.util';
-import { PORTFOLIOS, PfKey } from './calc/backtest.model';
 import { CalcDataService } from './calc/calc-data.service';
+import { rateYears } from './calc/engine';
 
 /** One parcel of the fixed 3x3 reference board — GENERATED from the invested ₹
  *  (villas = floor(invested / ₹5,00,000), plus one building tile from the
@@ -61,15 +61,12 @@ interface BoardCell {
  *  allocation (all funds of that sleeve summed). */
 interface SleeveRow { sleeve: string; allocation: number; }
 
-// ---- the estate model (ported verbatim from design/home-m1/estate-model.js) --
-/** ₹1 lakh. */
-const L = 100_000;
-/** One finished villa costs ₹5,00,000. */
-export const HOUSE = 5 * L;
-/** Nine parcels on the board. */
-export const HOUSES = 9;
-/** A finished villa pays this each month (the gold withdrawal). */
-export const INCOME = 1500;
+// ---- the estate model (ported from design/home-m1/estate-model.js) --
+// ₹ per villa, ₹/month per finished villa, the number of plots and the build
+// stages are SETTINGS (CalcDataService.config().estate) — see estateOf() below.
+// Only the board's geometry (ORDER, the tile art) is fixed here.
+/** The board has art for 9 parcels and 5 build stages. */
+export const MAX_PLOTS = 9;
 /** House h (1-based) occupies ORDER[h-1] (col,row): centre, front corner, … */
 export const ORDER: [number, number][] = [
   [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
@@ -79,6 +76,19 @@ export const ORDER: [number, number][] = [
 const FALLBACK_TILE = ['#tLocked', '#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
 /** Stage names, matching the reference. */
 const STAGE_NAME = ['Open tile', 'The Plot', 'Levelled Ground', 'Foundation', 'Steel Frame', 'The Villa'];
+
+/** The estate numbers from the settings, in the shape the board uses. */
+export function estateOf(e: { villa_cost: number; villa_income_monthly: number; plots: number; stages: { name: string; at: number }[] }) {
+  const stages = e.stages;
+  return {
+    HOUSE: e.villa_cost,
+    HOUSES: Math.max(1, Math.min(MAX_PLOTS, e.plots)),
+    INCOME: e.villa_income_monthly,
+    STAGES: stages,
+    /** build stage reached with ₹rem in the plot: 0 (ground) … 4 (steel) — the art has 5 stages */
+    stageOf: (rem: number) => Math.min(4, stages.filter((st) => st.at <= rem).length),
+  };
+}
 
 /** "Nov ’27": the 5th (SIP day) of the month `m` months from now. */
 function monthLabel(m: number): string {
@@ -136,6 +146,8 @@ export class EstateHomeComponent implements OnInit {
   @Output() refresh = new EventEmitter<void>();
 
   readonly est = inject(EstateService);
+  /** the estate numbers (₹ per villa, income, plots, stages) — from the settings */
+  private get E() { return estateOf(this.calc.config().estate); }
   private readonly callsSvc = inject(CallsService);
   private readonly bookingSvc = inject(BookingService);
   private readonly auth = inject(AuthService);
@@ -303,24 +315,24 @@ export class EstateHomeComponent implements OnInit {
   /** The ₹ that drives the board — the user's live INVESTED amount, clamped to
    *  0..₹45,00,000 (nine finished villas). NOT the portfolio value. */
   get boardWorth(): number {
-    return Math.min(HOUSES * HOUSE, Math.max(0, this.est.invested));
+    return Math.min(this.E.HOUSES * this.E.HOUSE, Math.max(0, this.est.invested));
   }
   /** Finished villas — the pinned ones, else floor(worth / ₹5,00,000), max 9. */
   get villaCount(): number {
     const l = this.layout;
-    if (l) return Math.min(HOUSES, l.filter((h) => !h.building).length);
-    return Math.min(HOUSES, Math.floor(this.boardWorth / HOUSE));
+    if (l) return Math.min(this.E.HOUSES, l.filter((h) => !h.building).length);
+    return Math.min(this.E.HOUSES, Math.floor(this.boardWorth / this.E.HOUSE));
   }
   /** ₹ in the house currently being built (0 once all nine are finished). */
   get buildRem(): number {
     const l = this.layout;
     if (l) return l.find((h) => h.building)?.invested ?? 0;
-    return this.boardWorth - this.villaCount * HOUSE;
+    return this.boardWorth - this.villaCount * this.E.HOUSE;
   }
   /** Build stage of the plot in progress (0 ground · 1 Plot · … · 4 Steel). */
-  get buildStage(): number { return this.villaCount >= HOUSES ? 0 : Math.floor(this.buildRem / L); }
+  get buildStage(): number { return this.villaCount >= this.E.HOUSES ? 0 : this.E.stageOf(this.buildRem); }
   /** True while a plot is under construction (some remainder, not yet full). */
-  get building(): boolean { return this.villaCount < HOUSES && this.buildRem > 0; }
+  get building(): boolean { return this.villaCount < this.E.HOUSES && this.buildRem > 0; }
 
   /** The nine parcels, generated + sorted back-to-front for painting. Ported
    *  verbatim from applyEstate(): villas fill ORDER[0..villas-1], the build (if
@@ -329,10 +341,10 @@ export class EstateHomeComponent implements OnInit {
     const layout = this.layout;
     if (layout) return this.pinnedCells(layout);
     const worth = this.boardWorth;
-    const villas = Math.min(HOUSES, Math.floor(worth / HOUSE));
-    const rem = worth - villas * HOUSE;
-    const stage = villas >= HOUSES ? 0 : Math.floor(rem / L);
-    const building = villas < HOUSES && rem > 0;
+    const villas = Math.min(this.E.HOUSES, Math.floor(worth / this.E.HOUSE));
+    const rem = worth - villas * this.E.HOUSE;
+    const stage = villas >= this.E.HOUSES ? 0 : this.E.stageOf(rem);
+    const building = villas < this.E.HOUSES && rem > 0;
 
     // Real holdings, most-established first, so a generated villa/build can be
     // backed by (and deep-link to) a real tile when the user owns one.
@@ -358,7 +370,7 @@ export class EstateHomeComponent implements OnInit {
           ...base, st: 'build',
           href: stage === 0 ? '#tGround' : FALLBACK_TILE[stage],
           name: `Plot ${n}`,
-          note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(rem)} of ₹5,00,000`,
+          note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(rem)} of ${inr(this.E.HOUSE)}`,
           paid: Math.round(rem / 25000),
           tile: realBuild,
         };
@@ -366,7 +378,7 @@ export class EstateHomeComponent implements OnInit {
       const nextIdx = villas + (building ? 1 : 0);
       return {
         ...base, st: 'locked', href: '#tOpen', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
-        next: i === nextIdx && nextIdx < HOUSES,
+        next: i === nextIdx && nextIdx < this.E.HOUSES,
       };
     });
     // Paint back-to-front: (col+row) ascending, ties by col ascending.
@@ -377,20 +389,20 @@ export class EstateHomeComponent implements OnInit {
    *  ORDER[i] — a finished villa, or a build at ITS own stage — so every parcel
    *  is a real villa with its own money, and tapping it opens villa_<i>. */
   private pinnedCells(layout: { building: boolean; invested: number }[]): BoardCell[] {
-    const houses = layout.slice(0, HOUSES);
-    const nextIdx = houses.length < HOUSES ? houses.length : -1;
+    const houses = layout.slice(0, this.E.HOUSES);
+    const nextIdx = houses.length < this.E.HOUSES ? houses.length : -1;
     const cells: BoardCell[] = ORDER.map(([col, row], i) => {
       const n = ('0' + (i + 1)).slice(-2);
       const base = { col, row, d: col + row, idx: i, x: (col - row) * 93.6, y: (col + row) * 54 };
       const h = houses[i];
       if (h && !h.building) {
         return { ...base, st: 'villa', href: '#tVilla', name: `Villa ${n}`,
-                 note: `Complete · ${inr(h.invested)} · pays ₹1,500 a month`, paid: 20, tile: null } as BoardCell;
+                 note: `Complete · ${inr(h.invested)} · pays ${inr(this.E.INCOME)} a month`, paid: 20, tile: null } as BoardCell;
       }
       if (h) {
-        const stage = Math.min(4, Math.floor(h.invested / L));
+        const stage = this.E.stageOf(h.invested);
         return { ...base, st: 'build', href: stage === 0 ? '#tGround' : FALLBACK_TILE[stage], name: `Plot ${n}`,
-                 note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(h.invested)} of ₹5,00,000`,
+                 note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(h.invested)} of ${inr(this.E.HOUSE)}`,
                  paid: Math.round(h.invested / 25000), tile: null } as BoardCell;
       }
       return { ...base, st: 'locked', href: '#tOpen', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
@@ -422,10 +434,10 @@ export class EstateHomeComponent implements OnInit {
       id: `villa_${c.idx}`,
       type: c.st === 'villa' ? 'villa' : 'building',
       variant: 'balanced',
-      cost: HOUSE,
+      cost: this.E.HOUSE,
       sipMonthly: 0,
       sipAccrued: c.paid ? c.paid * 25_000 : 0,
-      rentMonthly: c.st === 'villa' ? INCOME : 0,
+      rentMonthly: c.st === 'villa' ? this.E.INCOME : 0,
       boughtAt: Date.now(),
       label: c.name,
     });
@@ -490,12 +502,12 @@ export class EstateHomeComponent implements OnInit {
     // (deep-link) or the token arrived late.
     if (!this.est.allocRows()) this.est.loadAllocation();
     // The client's real monthly SIP (for "Next villa" — when it completes).
+    this.calc.loadConfig();
     this.est.orders().subscribe({ next: (r) => this.sipMonthly.set(monthlySip(r.orders ?? [])), error: () => {} });
   }
 
   // ════════════ PULL SHEETS — swipe down: Next villa · swipe up: Types of villas ════════════
   readonly calc = inject(CalcDataService);
-  readonly PORTFOLIOS = PORTFOLIOS;
   readonly nextOpen = signal(false);
   readonly typesOpen = signal(false);
   /** The client's SIP a month, from their SIP orders over the last 6 months (null = none). */
@@ -546,35 +558,44 @@ export class EstateHomeComponent implements OnInit {
 
   /** The Next villa sheet: the stages left on the plot in progress, when it completes, and the income step. */
   get nextInfo() {
+    const E = this.E;
     const villas = this.villaCount;
-    if (villas >= HOUSES) return { done: true as const, all: INCOME * HOUSES };
-    const rem = Math.max(0, Math.min(HOUSE, this.buildRem));
+    if (villas >= E.HOUSES) return { done: true as const, all: E.INCOME * E.HOUSES, plots: E.HOUSES };
+    const rem = Math.max(0, Math.min(E.HOUSE, this.buildRem));
     const sip = this.sipMonthly();
-    const toGo = HOUSE - rem;
+    const toGo = E.HOUSE - rem;
     const months = sip && sip > 0 ? Math.max(1, Math.ceil(toGo / sip)) : null;
-    const nowStage = Math.min(5, Math.floor(rem / L) + 1);
     const ART = ['#tLand', '#tGrade', '#tFound', '#tSteel', '#tVilla'];
-    const NAME = ['Plot', 'Levelled', 'Foundation', 'Steel frame', 'Villa'];
-    const steps = ART.map((href, i) => {
-      const k = i + 1, frac = Math.max(0, Math.min(1, (rem - (k - 1) * L) / L));
-      const state = frac >= 1 ? 'done' : k === nowStage ? 'now' : 'todo';
+    const nowIdx = E.STAGES.findIndex((st) => st.at > rem);
+    const steps = E.STAGES.map((st, i) => {
+      const from = i ? E.STAGES[i - 1].at : 0;
+      const frac = Math.max(0, Math.min(1, (rem - from) / (st.at - from)));
+      const state = frac >= 1 ? 'done' : i === nowIdx ? 'now' : 'todo';
       const m = state === 'done' ? 'built' : state === 'now' ? Math.round(frac * 100) + '%'
-        : sip && sip > 0 ? monthLabel(Math.max(1, Math.ceil((k * L - rem) / sip))) : inr(k * L - rem);
-      return { href, name: NAME[i], state, pct: Math.round(frac * 100), m };
+        : sip && sip > 0 ? monthLabel(Math.max(1, Math.ceil((st.at - rem) / sip))) : inr(st.at - rem);
+      return { href: ART[Math.min(i, ART.length - 1)], name: st.name, state, pct: Math.round(frac * 100), m };
     });
     return {
       done: false as const, plot: String(villas + 1).padStart(2, '0'), toGo, months,
       when: months ? monthLabel(months) : null, sip, steps,
-      now: INCOME * villas, after: INCOME * (villas + 1), all: INCOME * HOUSES,
+      each: E.INCOME, plots: E.HOUSES,
+      now: E.INCOME * villas, after: E.INCOME * (villas + 1), all: E.INCOME * E.HOUSES,
     };
   }
   /** The three villas, for the Types sheet (rate = growth a year since Apr 2010, nothing withdrawn). */
   readonly villaTypes = computed(() => {
     const rates = this.calc.rates();
-    return PORTFOLIOS.map((p, i) => ({ ...p, rate: rates ? rates[p.key as PfKey] : null, d: i * 70 }));
+    const first = this.calc.config().income.pay_first;
+    return this.calc.config().villas.map((v, i) => {
+      const w = v.weights as Record<string, number>;
+      const pf = first.reduce((s, k) => s + (w[k] ?? 0), 0);
+      return { ...v, growth: 1 - pf, payFirst: pf, rate: rates ? rates[v.key] ?? null : null, d: i * 70 };
+    });
   });
+  /** first month of the window behind each villa's "% a yr" (the last display.rate_years — a setting) */
   readonly historyFrom = computed(() => {
-    const m = this.calc.data()?.months?.[0];
+    const ms = this.calc.data()?.months;
+    const m = ms?.[Math.max(0, ms.length - 1 - 12 * rateYears(this.calc.config()))];
     if (!m) return '';
     const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${M[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
@@ -904,7 +925,7 @@ export class EstateHomeComponent implements OnInit {
 
   // ── HEADER FLOWS — ported verbatim from applyEstate() ────────────────────
   /** WITHDRAWALS (gold): ₹1,500 per finished villa, per month. */
-  get withdrawAmt(): number { return INCOME * this.villaCount; }
+  get withdrawAmt(): number { return this.E.INCOME * this.villaCount; }
   /** WITHDRAWALS sub-line: "N villa(s) · SWP on the 1st", else the primer. */
   get withdrawSub(): string {
     const v = this.villaCount;
@@ -915,7 +936,7 @@ export class EstateHomeComponent implements OnInit {
   /** INVESTED sub-line: reflects the plot in progress / estate completion. */
   get investedSub(): string {
     if (this.building) return '1 building · SIP on the 5th';
-    return this.villaCount >= HOUSES ? 'Estate complete' : 'Next plot · SIP on the 5th';
+    return this.villaCount >= this.E.HOUSES ? 'Estate complete' : 'Next plot · SIP on the 5th';
   }
 
   // ── PORTFOLIO VALUE allocation bar (bottom) ──

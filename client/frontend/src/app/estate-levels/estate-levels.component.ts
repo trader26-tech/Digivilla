@@ -13,6 +13,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { CalcDataService } from '../calc/calc-data.service';
 import { EstateService } from '../estate.service';
 
 /** A fund inside a level's unlock mix. */
@@ -207,12 +208,13 @@ export class EstateLevelsComponent implements AfterViewInit {
    *  Empty until the first layout measurement — the rail falls back to section math. */
   private readonly bannerTops = signal<Record<number, number>>({});
 
-  // --- constants (ported from renderVals) ---
-  private readonly L = 100000;
-  private readonly HOUSES = 9;
-  private readonly STAGES_N = 5;
-  private readonly TOTAL = this.HOUSES * this.STAGES_N; // 45
-  private readonly INCOME = 1500;
+  // --- the estate numbers: ₹ per stage, plots, income — from the calculator settings ---
+  private readonly estate = inject(CalcDataService).config().estate;
+  private readonly STAGES_N = 5;                                        // the ladder's art has five stages
+  private readonly L = this.estate.villa_cost / this.STAGES_N;
+  private readonly HOUSES = Math.min(9, this.estate.plots);
+  private readonly TOTAL = this.HOUSES * this.STAGES_N;                 // 45 today
+  private readonly INCOME = this.estate.villa_income_monthly;
   private readonly SIP = 25000;
 
   private readonly STAGES = [

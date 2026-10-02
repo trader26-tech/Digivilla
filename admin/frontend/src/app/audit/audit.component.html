@@ -9,6 +9,7 @@
       <button role="tab" [class.on]="tab() === 'navs'" (click)="setTab('navs')">NAVs</button>
       <button role="tab" [class.on]="tab() === 'calc'" (click)="setTab('calc')">Calculators</button>
       <button role="tab" [class.on]="tab() === 'data'" (click)="setTab('data')">Data used</button>
+      <button role="tab" [class.on]="tab() === 'settings'" (click)="setTab('settings')">Settings</button>
     </nav>
   </header>
 
@@ -226,7 +227,7 @@
         <button [class.on]="kind() === 'sip'" (click)="pickKind('sip')">SIP</button>
         <button [class.on]="kind() === 'flat'" (click)="pickKind('flat')">Flat vs DigiVilla</button>
         <span class="kinds-sep"></span>
-        <button *ngFor="let p of PORTFOLIOS" class="vl" [attr.data-r]="p.risk" [class.on]="villa() === p.key" (click)="pickVilla(p.key)">{{ p.name }} <small>{{ p.quadrant * 100 | number:'1.0-0' }}/{{ p.arbitrage * 100 | number:'1.0-0' }}</small></button>
+        <button *ngFor="let p of villas()" class="vl" [attr.data-r]="p.risk" [class.on]="villa() === p.key" (click)="pickVilla(p.key)">{{ p.name }} <small>{{ 100 - (p.weights.arbitrage ?? 0) * 100 | number:'1.0-0' }}/{{ (p.weights.arbitrage ?? 0) * 100 | number:'1.0-0' }}</small></button>
         <button class="swp" role="switch" [attr.aria-checked]="swp()" [class.on]="swp()" (click)="toggleSwp()"><i></i>SWP {{ swp() ? 'on' : 'off' }}</button>
       </div>
       <div class="fields">
@@ -463,5 +464,10 @@
       </div>
 
     </ng-container>
+  </ng-container>
+
+  <!-- ═════════ SETTINGS: the one source of truth for every calculator number ═════════ -->
+  <ng-container *ngIf="tab() === 'settings'">
+    <app-calc-settings (saved)="onSettingsSaved($event)"></app-calc-settings>
   </ng-container>
 </section>

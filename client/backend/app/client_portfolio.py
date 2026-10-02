@@ -81,10 +81,19 @@ _nav_cache: dict[int, tuple[float, Optional[float]]] = {}
 
 
 # ── villa model ──────────────────────────────────────────────────────────────
-# One villa = a fixed ₹5,00,000 pillar (no tiers). Every full ₹5L INVESTED into a
-# villa-forming bucket completes one villa (coin + SWP); the leftover is a single
-# "under construction" pillar. Kept as a constant so it's trivial to change later.
-VILLA_UNIT = 500_000.0
+# One villa = a fixed pillar (₹5,00,000 today, no tiers). Every full pillar
+# INVESTED into a villa-forming bucket completes one villa (coin + SWP); the
+# leftover is a single "under construction" pillar. The ₹ comes from the
+# calculator SETTINGS (app/calc_config.py → estate.villa_cost).
+def _villa_unit() -> float:
+    from app import calc_config
+    return float(calc_config.estate()["villa_cost"])
+
+
+def _houses_max() -> int:
+    from app import calc_config
+    return int(calc_config.estate()["plots"])
+
 
 # Which bucket(s) form villas. For now the SIP bucket(s) — SIP is the
 # accumulation plan that builds a villa up to ₹5L. Lumpsum buckets are shown in
@@ -100,7 +109,7 @@ def _villa_tile(order: int, invested: float, value: float, *, building: bool) ->
         "id": f"villa_{order}",
         "type": "building" if building else "villa",
         "variant": "balanced",
-        "cost": VILLA_UNIT,                 # a full pillar is worth ₹5L
+        "cost": _villa_unit(),                 # a full pillar is worth ₹5L
         "sipMonthly": 0,
         "sipAccrued": round(invested, 2),   # how much of this pillar is funded
         "rentMonthly": 0,
@@ -271,7 +280,6 @@ def live_navs(owner: str) -> dict:
 # ============================================================================
 # HOUSES FROM THE ADMIN'S PINS — each villa is the transactions pinned to it
 # ============================================================================
-HOUSES_MAX = 9
 _REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
 
 
@@ -284,7 +292,7 @@ def _txn_sign(kind) -> float:
 def _is_finished(invested: float, status) -> bool:
     """A house is finished once its pinned money reaches ₹5L (1% slack for the
     rupee rounding a lumpsum gets at purchase), or the admin marked it so."""
-    return status == "constructed" or invested >= VILLA_UNIT * 0.99
+    return status == "constructed" or invested >= _villa_unit() * 0.99
 
 
 def _mapped_houses_load(client_code: str):
@@ -344,7 +352,7 @@ def _mapped_houses_load(client_code: str):
     # finished villas first, each group oldest first — Villa 1 is the one bought first
     houses.sort(key=lambda h: (h["building"], h["since"] or "9999"))
     loose_h = [h for h in loose.values() if h["units"] > 1e-6]
-    return {"houses": houses[:HOUSES_MAX], "loose": loose_h}
+    return {"houses": houses[:_houses_max()], "loose": loose_h}
 
 
 def _mapped_houses(client_code: str):
@@ -366,7 +374,7 @@ def houses_layout(client_code: str):
     if not m or not m["houses"]:
         return None
     return [{"building": h["building"], "invested": h["invested"],
-             "pct": 100.0 if not h["building"] else round(min(99.0, h["invested"] / VILLA_UNIT * 100), 1)}
+             "pct": 100.0 if not h["building"] else round(min(99.0, h["invested"] / _villa_unit() * 100), 1)}
             for h in m["houses"]]
 
 
@@ -389,7 +397,7 @@ def _house_card(idx: int, holdings: list[dict], building: bool, extra: dict) -> 
     return {
         "id": f"villa_{idx}", "index": idx, "building": building,
         "invested": round(invested, 2), "value": round(value, 2), "gain": round(value - invested, 2),
-        "pct": 100.0 if not building else round(min(99.0, invested / VILLA_UNIT * 100), 1),
+        "pct": 100.0 if not building else round(min(99.0, invested / _villa_unit() * 100), 1),
         "funds": funds, **extra,
     }
 
@@ -430,18 +438,18 @@ def live_houses(owner: str) -> dict:
         return {"houses": [], **nav_cache.freshness([h.get("scheme_code") for h in hs])}
 
     # The board is a fixed 3x3, so the estate tops out at 9 villas. Beyond that
-    # there is no plot left to build on: everything above 9 x VILLA_UNIT rolls
+    # there is no plot left to build on: everything above 9 x _villa_unit() rolls
     # into the ninth house rather than inventing a tenth with no board position.
-    n_complete = min(HOUSES_MAX, int(total_inv // VILLA_UNIT))
-    remainder = round(total_inv - n_complete * VILLA_UNIT, 2)
-    spans = [(i * VILLA_UNIT, (i + 1) * VILLA_UNIT, False) for i in range(n_complete)]
-    if n_complete >= HOUSES_MAX:
+    n_complete = min(_houses_max(), int(total_inv // _villa_unit()))
+    remainder = round(total_inv - n_complete * _villa_unit(), 2)
+    spans = [(i * _villa_unit(), (i + 1) * _villa_unit(), False) for i in range(n_complete)]
+    if n_complete >= _houses_max():
         # full estate: fold any surplus into the last house
         if remainder > 1 and spans:
             lo, _, _ = spans[-1]
             spans[-1] = (lo, total_inv, False)
     elif remainder > 1:
-        spans.append((n_complete * VILLA_UNIT, total_inv, True))
+        spans.append((n_complete * _villa_unit(), total_inv, True))
 
     houses = []
     for idx, (lo, hi, building) in enumerate(spans):
@@ -474,7 +482,7 @@ def live_houses(owner: str) -> dict:
             "value": round(value, 2),
             "gain": round(value - invested, 2),
             # how far the in-progress pillar has come (0-100)
-            "pct": (round(min(99.0, (hi - lo) / VILLA_UNIT * 100), 1)
+            "pct": (round(min(99.0, (hi - lo) / _villa_unit() * 100), 1)
                      if building else 100.0),
             "funds": funds,
         })
@@ -594,7 +602,7 @@ def _manual_villa_tiles(client_code: str) -> Optional[list[dict]]:
             "id": f"cvilla_{v['id']}",
             "type": "villa" if constructed else "building",
             "variant": "balanced",
-            "cost": VILLA_UNIT,
+            "cost": _villa_unit(),
             "sipMonthly": 0,
             "sipAccrued": round(g["inv"], 2),
             # coin flag: the map shows a gold coin on villas with rentMonthly>0,
@@ -674,16 +682,16 @@ def portfolio_tiles(owner: str) -> list[dict]:
     tiles: list[dict] = []
     order = 0
 
-    # ── villas: one completed ₹5L pillar per full VILLA_UNIT of INVESTED money;
+    # ── villas: one completed ₹5L pillar per full _villa_unit() of INVESTED money;
     #    the remainder (if any) is a single "under construction" pillar. ──────
     if villa_invested > 0:
-        n_complete = int(villa_invested // VILLA_UNIT)
-        remainder = round(villa_invested - n_complete * VILLA_UNIT, 2)
+        n_complete = int(villa_invested // _villa_unit())
+        remainder = round(villa_invested - n_complete * _villa_unit(), 2)
         # live value scales with the invested split so a completed villa shows a
         # realistic current value (Σ value × its share of invested).
         val_ratio = (villa_value / villa_invested) if villa_invested else 1.0
         for _ in range(n_complete):
-            tiles.append(_villa_tile(order, VILLA_UNIT, round(VILLA_UNIT * val_ratio, 2), building=False))
+            tiles.append(_villa_tile(order, _villa_unit(), round(_villa_unit() * val_ratio, 2), building=False))
             order += 1
         if remainder > 0:
             tiles.append(_villa_tile(order, remainder, round(remainder * val_ratio, 2), building=True))
@@ -743,8 +751,8 @@ def _building_scheme_holdings(client_code: str, tile_id: str) -> Optional[list[d
         if total_inv <= 0:
             return []
         # this villa's rupee span within the stacked ₹5L pillars
-        lo = idx * VILLA_UNIT
-        hi = min((idx + 1) * VILLA_UNIT, total_inv)
+        lo = idx * _villa_unit()
+        hi = min((idx + 1) * _villa_unit(), total_inv)
         share = max(0.0, (hi - lo)) / total_inv if total_inv else 0.0
         if share <= 0:
             return []
@@ -921,7 +929,9 @@ def _month_map(points: list) -> dict:
 
 
 # Monthly payout per finished villa (₹) — the gold withdrawal on the home header.
-VILLA_INCOME = 1500.0
+def _villa_income() -> float:
+    from app import calc_config
+    return float(calc_config.estate()["villa_income_monthly"])
 
 
 def _drained_ranges(holdings: list[dict], navfull: dict, invested: float,
@@ -1187,7 +1197,7 @@ def building_detail(owner: str, tile_id: str, chart: bool = True) -> Optional[di
     overall = {f"ret_{k}": (round(wsum[k] / wt[k], 2) if wt[k] else None) for k in ("1y", "3y", "5y")}
     gain = round(cur_total - total_inv, 2)
 
-    monthly = VILLA_INCOME if constructed else 0.0
+    monthly = _villa_income() if constructed else 0.0
     arb_fund = next((f["scheme_name"] for f in funds if f["tag"] == "ARB"), None)
 
     return {
@@ -1212,10 +1222,10 @@ def building_detail(owner: str, tile_id: str, chart: bool = True) -> Optional[di
             **_pack_ranges(_drained_ranges(holdings, navfull, total_inv, monthly) if chart else {}),
         },
         "progress": {
-            "unit": VILLA_UNIT,
+            "unit": _villa_unit(),
             "funded": round(total_inv, 2),
-            "remaining": round(max(0.0, VILLA_UNIT - total_inv), 2),
-            "pct": round(min(1.0, total_inv / VILLA_UNIT) * 100, 1) if VILLA_UNIT else 0.0,
+            "remaining": round(max(0.0, _villa_unit() - total_inv), 2),
+            "pct": round(min(1.0, total_inv / _villa_unit()) * 100, 1) if _villa_unit() else 0.0,
         },
         "funds": funds,
         "growth": _blended_growth(holdings, navfull) if chart else [],
@@ -1236,10 +1246,10 @@ def building_chart(owner: str, tile_id: str) -> Optional[dict]:
     if holdings is None:
         return None
     total_inv = sum(h["invested"] for h in holdings)
-    constructed = total_inv >= VILLA_UNIT - 1
+    constructed = total_inv >= _villa_unit() - 1
     if tile_id.startswith("cvilla_"):
         constructed = _tile_meta(code, tile_id)["status"] == "constructed"
-    monthly = VILLA_INCOME if constructed else 0.0
+    monthly = _villa_income() if constructed else 0.0
     navfull = _nav_full_map(holdings)
 
     per_fund = {}

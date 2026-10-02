@@ -101,12 +101,15 @@ def villa_fund_paths(start: Optional[str] = None) -> dict:
 
 
 def index_basket_paths(start: Optional[str] = None) -> dict:
-    """The calculators' data: every part of the three villas (arbitrage, gold,
-    large, mid, small) on its benchmark INDEX — never an active fund — with the
-    Balanced villa's weights; `portfolios` lists all three so the app can
-    re-weight. See app/index_data.py for the series, sources and villas."""
-    from app import index_data
-    d = index_data.basket_paths(index_data.portfolio_weights("balanced"))
+    """The calculators' data: every benchmark series (arbitrage, gold, large,
+    mid, small) on its INDEX — never an active fund — weighted for the default
+    villa. Every villa's mix, the SWP rates and the tax rules come from
+    GET /calc/config (app/calc_config.py); the app re-weights locally."""
+    from app import calc_config, index_data
+    w = dict(calc_config.villa()["weights"])
+    for s in calc_config.SERIES:          # every series, even at 0, so any villa can be drawn
+        w.setdefault(s, 0.0)
+    d = index_data.basket_paths(w)
     if d.get("ok") and start:
         months = [m for m in d["months"] if m >= start]
         if len(months) < 13:
@@ -116,6 +119,14 @@ def index_basket_paths(start: Optional[str] = None) -> dict:
              "funds": [{**f, "nav": f["nav"][i0:], "index": [round(v / f["nav"][i0], 6) for v in f["nav"][i0:]]}
                        for f in d["funds"]]}
     return d
+
+
+@router.get("/calc/config")
+def calc_settings() -> dict:
+    """The calculator SETTINGS in force (villas, rebalancing, SWP, tax, estate) —
+    the app, the admin and the research function all read this one object."""
+    from app import calc_config
+    return calc_config.get()
 
 
 @router.get("/calc/villa-funds")

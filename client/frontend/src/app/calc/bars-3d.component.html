@@ -1,4 +1,4 @@
-<div class="chart" #chart [class.veiled]="veil()" [class.rising]="revealing()" [class.has-pick]="!!(l()?.pick || r()?.pick)">
+<div class="chart" #chart [class.settled]="settled()" [class.entering]="entering()" [class.veiled]="veil()" [class.rising]="revealing()" [class.has-pick]="!!(l()?.pick || r()?.pick)">
   <span class="floor" aria-hidden="true"></span>
   <svg class="arc" [attr.viewBox]="'0 0 ' + arrow().W + ' ' + arrow().H" [attr.width]="arrow().W" [attr.height]="arrow().H" aria-hidden="true">
     <defs>

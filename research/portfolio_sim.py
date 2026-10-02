@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -59,18 +60,37 @@ COLUMNS = {
 QUADRANT = ("gold", "large", "mid", "small")
 PARTS = QUADRANT + ("arbitrage",)
 
-# ── the 6 funds (quadrant / arbitrage): aggressive 80/20 · balanced 64/36 · conservative 30/70 ──
-PRESETS = {
-    "aggressive_income":     dict(quadrant_ratio=0.80, arbitrage_ratio=0.20, monthly_income=0.003),
-    "aggressive":            dict(quadrant_ratio=0.80, arbitrage_ratio=0.20, monthly_income=0.0),
-    "balanced_income":       dict(quadrant_ratio=0.64, arbitrage_ratio=0.36, monthly_income=0.003),
-    "balanced":              dict(quadrant_ratio=0.64, arbitrage_ratio=0.36, monthly_income=0.0),
-    "conservative_income":   dict(quadrant_ratio=0.30, arbitrage_ratio=0.70, monthly_income=0.003),
-    "conservative":          dict(quadrant_ratio=0.30, arbitrage_ratio=0.70, monthly_income=0.0),
-}
+# ── the SETTINGS — the same object the app and the admin use (client/backend/app/
+# data/calc_config.json; `python -m scripts.calc_config pull` copies the live one in).
+# The villas become the presets; the tax rules and the default income rate come
+# from here too, so this function can never drift from the app.
+SETTINGS_FILE = Path(__file__).resolve().parent.parent / "client" / "backend" / "app" / "data" / "calc_config.json"
 
-EQ_EXEMPT = 125_000
-CESS = 1.04
+
+def load_settings(path=SETTINGS_FILE) -> dict:
+    with open(path) as fh:
+        return json.load(fh)
+
+
+SETTINGS = load_settings()
+TAX = SETTINGS["tax"]
+DEFAULT_INCOME = SETTINGS["withdrawals"]["lumpsum_monthly_rate"]
+EQ_EXEMPT = TAX["equity_exempt"]
+CESS = 1 + TAX["cess"]
+
+
+def presets(cfg: dict = SETTINGS) -> dict:
+    """Two funds per villa in the settings: with the monthly income, and without."""
+    out = {}
+    for v in cfg["villas"]:
+        arb = float(v["weights"].get("arbitrage", 0.0))
+        mix = dict(quadrant_ratio=round(1 - arb, 10), arbitrage_ratio=arb)
+        out[f"{v['key']}_income"] = dict(mix, monthly_income=cfg["withdrawals"]["lumpsum_monthly_rate"])
+        out[v["key"]] = dict(mix, monthly_income=0.0)
+    return out
+
+
+PRESETS = presets()
 
 
 # ─────────────────────────────── data ───────────────────────────────
@@ -99,9 +119,10 @@ def _plus_months(d: date, n: int) -> date:
     raise ValueError(d)
 
 
-def _long_term(bought: date, sold: date) -> bool:
-    """Held MORE than 12 months."""
-    return sold > _plus_months(bought, 12)
+def _long_term(bought: date, sold: date, part: str = "") -> bool:
+    """Held MORE than the settings' long-term period (equity / gold)."""
+    months = TAX["gold_lt_months"] if part in TAX["gold_parts"] else TAX["equity_lt_months"]
+    return sold > _plus_months(bought, int(months))
 
 
 def _fy(d: date) -> int:
@@ -143,7 +164,7 @@ class TaxYear:
         return t
 
     def add(self, part: str, gain: float, long_term: bool) -> None:
-        if part == "gold":
+        if part in TAX["gold_parts"]:
             if long_term: self.g_lt += gain
             else: self.g_st += gain
         elif long_term:
@@ -157,8 +178,8 @@ class TaxYear:
             lt, st = max(0.0, lt + st), 0.0
         elif lt < 0 < st:
             st, lt = max(0.0, st + lt), 0.0
-        eq = max(0.0, st) * 0.20 + max(0.0, lt - EQ_EXEMPT) * 0.125
-        gold = max(0.0, self.g_st) * self.slab / 100 + max(0.0, self.g_lt) * 0.125
+        eq = max(0.0, st) * TAX["equity_st_rate"] + max(0.0, lt - EQ_EXEMPT) * TAX["equity_lt_rate"]
+        gold = max(0.0, self.g_st) * self.slab / 100 + max(0.0, self.g_lt) * TAX["gold_lt_rate"]
         return (eq + gold) * CESS
 
 
@@ -187,7 +208,7 @@ class Book:
         while u > 1e-12 and lots:
             lot = lots[0]
             q = min(u, lot[0])
-            year.add(p, q * (px[p] - lot[1]), _long_term(lot[2], d))
+            year.add(p, q * (px[p] - lot[1]), _long_term(lot[2], d, p))
             lot[0] -= q
             u -= q
             if lot[0] <= 1e-12:
@@ -256,9 +277,9 @@ def _xirr(flows: list) -> Optional[float]:
 
 
 # ─────────────────────────────── the simulation ───────────────────────────────
-def simulate(quadrant_ratio: float, arbitrage_ratio: float, monthly_income: float = 0.003,
+def simulate(quadrant_ratio: float, arbitrage_ratio: float, monthly_income: float = DEFAULT_INCOME,
              start_date: Optional[str] = None, *,
-             amount: float = 1e7, slab: float = 30, csv_path=DEFAULT_CSV,
+             amount: float = 1e7, slab: float = TAX["default_slab"], csv_path=DEFAULT_CSV,
              end: Optional[str] = None, rebalance_day: str = "jan1", taxes: bool = True,
              start: Optional[str] = None) -> Result:
     """Simulate one portfolio mix.
@@ -430,7 +451,7 @@ def main() -> None:
     ap.add_argument("--arbitrage", type=float, help="share in arbitrage")
     ap.add_argument("--income", type=float, default=0.003, help="monthly income as a fraction of the amount (default 0.003)")
     ap.add_argument("--amount", type=float, default=1e7)
-    ap.add_argument("--slab", type=float, default=30)
+    ap.add_argument("--slab", type=float, default=TAX["default_slab"])
     ap.add_argument("--start-date", "--start", dest="start_date", help="YYYY-MM-DD: when the money goes in (default: the CSV's first day)")
     ap.add_argument("--end")
     ap.add_argument("--rebalance-day", default="jan1", choices=["jan1", "first_trading_day"])

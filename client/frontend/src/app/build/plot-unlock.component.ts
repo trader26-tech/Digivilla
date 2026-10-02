@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 
+import { CalcDataService } from '../calc/calc-data.service';
 import { CountUpDirective } from '../shared/count-up.directive';
 import { compact, inr } from '../shared/format.util';
 
-const L = 100_000;
-const HOUSE = 5 * L;
-const INCOME = 1500;
 /**
  * PLOT UNLOCK — the sheet an EMPTY parcel on the home board opens.
  *
@@ -153,18 +151,21 @@ export class PlotUnlockComponent implements OnInit, OnDestroy {
 
   inr = inr;
   compact = compact;
-  readonly HOUSE = HOUSE;
-  readonly INCOME = INCOME;
+  /** ₹ per villa and the income a finished villa pays — from the calculator settings */
+  private readonly estate = inject(CalcDataService).config().estate;
+  readonly HOUSE = this.estate.villa_cost;
+  readonly INCOME = this.estate.villa_income_monthly;
+  readonly L = this.estate.villa_cost / this.estate.stages.length;
 
   pad(n: number): string { return ('0' + n).slice(-2); }
 
   /** The level the client is on now: every ₹1L is a level, starting at 1. */
-  get level(): number { return Math.min(45, Math.floor(this.worth / L) + 1); }
+  get level(): number { return Math.min(45, Math.floor(this.worth / this.L) + 1); }
   /** ₹ at which this plot opens = every house before it complete. */
-  get unlockAt(): number { return (this.house - 1) * HOUSE; }
+  get unlockAt(): number { return (this.house - 1) * this.HOUSE; }
   get unlockLevel(): number { return (this.house - 1) * 5 + 1; }
   get villaLevel(): number { return this.house * 5; }
-  get villaAt(): number { return this.house * HOUSE; }
+  get villaAt(): number { return this.house * this.HOUSE; }
   get toGo(): number { return Math.max(0, this.unlockAt - this.worth); }
   /** Already open (the estate sits exactly on the previous villa's completion). */
   get ready(): boolean { return this.toGo <= 0; }

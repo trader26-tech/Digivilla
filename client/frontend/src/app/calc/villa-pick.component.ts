@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, computed, inject, signal } from '@angular/core';
 
-import { PORTFOLIOS } from './backtest.model';
 import { CalcDataService } from './calc-data.service';
 
 /**
@@ -24,7 +23,7 @@ import { CalcDataService } from './calc-data.service';
       <div class="row">
         <span class="slot">
           @if (idx() > 0) {
-            <button class="arr l" type="button" (click)="step(-1)" [attr.aria-label]="'Show the ' + PF[idx() - 1].name + ' villa'">
+            <button class="arr l" type="button" (click)="step(-1)" [attr.aria-label]="'Show the ' + villas()[idx() - 1].name + ' villa'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11 3 2 12l9 9v-5.5h11v-7H11z"/></svg>
             </button>
           }
@@ -37,8 +36,8 @@ import { CalcDataService } from './calc-data.service';
           <img class="coin" [class.off]="!store.swp()" src="assets/calc/coin.svg" alt="" />
         </span>
         <span class="slot">
-          @if (idx() < PF.length - 1) {
-            <button class="arr r" type="button" (click)="step(1)" [attr.aria-label]="'Show the ' + PF[idx() + 1].name + ' villa'">
+          @if (idx() < villas().length - 1) {
+            <button class="arr r" type="button" (click)="step(1)" [attr.aria-label]="'Show the ' + villas()[idx() + 1].name + ' villa'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3l9 9-9 9v-5.5H2v-7h11z"/></svg>
             </button>
           }
@@ -46,7 +45,7 @@ import { CalcDataService } from './calc-data.service';
       </div>
       @for (k of [pf().key]; track k) {
         <span class="nm" [class.from-l]="dir() < 0" [class.from-r]="dir() > 0" aria-live="polite">
-          <b>{{ pf().name }}</b>@if (rate() !== null) {<em>{{ rate()!.toFixed(1) }}% a yr</em>}
+          <b>{{ pf().name }}</b>@if (rate() !== null) {<em>{{ rate()!.toFixed(1) }}% a yr@if (store.shown(); as s) { · {{ s.years }} yrs}</em>}
         </span>
       }
     </div>
@@ -59,6 +58,7 @@ import { CalcDataService } from './calc-data.service';
 
     /* SWP pill */
     .swp {
+      margin-bottom: 8px;
       display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 4px; border: 0; border-radius: 11px; cursor: pointer; white-space: nowrap;
       color: #b2b6ca; background: rgba(43, 46, 58, .7); box-shadow: inset 0 0 0 1px #595d6c;
       transition: background .25s, box-shadow .25s, color .25s;
@@ -100,7 +100,7 @@ import { CalcDataService } from './calc-data.service';
       transition: opacity .3s, transform .3s;
     }
     .coin.off { opacity: 0; animation: none; transform: translate(-50%, 10px) scale(.6); }
-    @keyframes bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -6px); } }
+    @keyframes bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -3px); } }
 
     .nm { display: flex; align-items: baseline; gap: 6px; height: 16px; white-space: nowrap; font-size: 11px; }
     .nm b { font-weight: 500; color: var(--rc); letter-spacing: -.01em; }
@@ -109,7 +109,7 @@ import { CalcDataService } from './calc-data.service';
     @keyframes nmR { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
     @keyframes nmL { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 
-    .vp.hero { .stage { width: 104px; height: 84px; } .villa { height: 76px; } .halo { width: 112px; height: 40px; margin-left: -56px; } .coin { width: 20px; top: -4px; } .arr { margin-bottom: 26px; } .slot { width: 18px; } }
+    .vp.hero { .stage { width: 104px; height: 84px; } .villa { height: 76px; } .halo { width: 112px; height: 40px; margin-left: -56px; } .coin { width: 20px; top: 0; } .arr { margin-bottom: 26px; } .slot { width: 18px; } }
 
     @media (max-height: 760px) {
       .stage { height: 54px; } .villa { height: 48px; }
@@ -124,23 +124,25 @@ export class VillaPickComponent {
   /** 'col' sits above a 3D column; 'hero' is the bigger art beside SIP / Lumpsum's headline */
   @Input() size: 'col' | 'hero' = 'col';
   readonly store = inject(CalcDataService);
-  readonly PF = PORTFOLIOS;
-  readonly idx = computed(() => PORTFOLIOS.findIndex((p) => p.key === this.store.villa()));
-  readonly pf = computed(() => PORTFOLIOS[this.idx()]);
-  readonly rate = computed(() => this.store.rates()?.[this.pf().key] ?? null);
+  /** the villas, in the order the settings list them */
+  readonly villas = computed(() => this.store.config().villas);
+  readonly pf = this.store.villa;
+  readonly idx = computed(() => Math.max(0, this.villas().findIndex((v) => v.key === this.pf().key)));
+  /** the calculator's own figure when one is open, else the long-run rate */
+  readonly rate = computed(() => { const s = this.store.shown(); return s ? s.rate : this.store.rates()?.[this.pf().key] ?? null; });
   /** the side the new villa comes in from (0 = no animation, e.g. first paint) */
   readonly dir = signal(0);
   readonly moved = signal(false);
 
   step(d: number): void {
     const i = this.idx() + d;
-    if (i < 0 || i >= PORTFOLIOS.length) return;
+    if (i < 0 || i >= this.villas().length) return;
     this.dir.set(d);
     this.moved.set(true);
-    this.store.villa.set(PORTFOLIOS[i].key);
+    this.store.pickVilla(this.villas()[i].key);
     try { navigator.vibrate?.(8); } catch { /* not supported */ }
   }
-  toggleSwp(): void { this.store.swp.set(!this.store.swp()); }
+  toggleSwp(): void { this.store.setSwp(!this.store.swp()); }
 
   private x0: number | null = null;
   t0(e: TouchEvent): void { this.x0 = e.touches[0]?.clientX ?? null; }

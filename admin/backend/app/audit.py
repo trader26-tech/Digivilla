@@ -27,12 +27,19 @@ from typing import Optional
 import httpx
 
 from app import reports as R
+from app.calc_settings import calc_config
 from app.config import get_settings
 
-VILLA_UNIT = 500_000.0
-FINISHED_AT = VILLA_UNIT * 0.99          # a lumpsum buys ~₹4,99,975 after stamp duty
-VILLA_INCOME = 1500.0                    # ₹ a month per finished villa
-MAX_HOUSES = 9
+
+def _cfg() -> dict:
+    """The calculator SETTINGS in force — the same object the app uses."""
+    return calc_config.get()
+
+
+def _villa_unit() -> float: return float(_cfg()["estate"]["villa_cost"])
+def _finished_at() -> float: return _villa_unit() * 0.99      # a lumpsum buys ~₹4,99,975 after stamp duty
+def _villa_income() -> float: return float(_cfg()["estate"]["villa_income_monthly"])
+def _max_houses() -> int: return int(_cfg()["estate"]["plots"])
 REDEEM = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
 
 
@@ -132,18 +139,18 @@ def client_audit(code: str) -> dict:
             continue
         inv = sum(x["amount"] for x in ls)
         val = sum(x["value"] for x in ls)
-        finished = v.get("status") == "constructed" or inv >= FINISHED_AT
+        finished = v.get("status") == "constructed" or inv >= _finished_at()
         houses.append({
             "villa_id": v["id"], "since": ls[0]["date"], "invested": round(inv, 2), "value": round(val, 2),
             "gain": round(val - inv, 2), "finished": finished,
             "finished_why": ("marked finished by admin" if v.get("status") == "constructed"
-                             else f"₹{inv:,.0f} ≥ ₹{FINISHED_AT:,.0f}" if finished else f"₹{inv:,.0f} < ₹{FINISHED_AT:,.0f}"),
-            "built_pct": 100.0 if finished else round(min(99.0, inv / VILLA_UNIT * 100), 1),
-            "payout": VILLA_INCOME if finished else 0.0, "lines": ls,
+                             else f"₹{inv:,.0f} ≥ ₹{_finished_at():,.0f}" if finished else f"₹{inv:,.0f} < ₹{_finished_at():,.0f}"),
+            "built_pct": 100.0 if finished else round(min(99.0, inv / _villa_unit() * 100), 1),
+            "payout": _villa_income() if finished else 0.0, "lines": ls,
         })
     # the app's order: finished first, then oldest first
     houses.sort(key=lambda h: (not h["finished"], h["since"]))
-    houses = houses[:MAX_HOUSES]
+    houses = houses[:_max_houses()]
     for i, h in enumerate(houses):
         h["label"] = ("Villa " if h["finished"] else "Plot ") + str(i + 1)
 
@@ -174,7 +181,7 @@ def client_audit(code: str) -> dict:
             "portfolio_value": round(total_value, 2), "invested": round(total_inv, 2),
             "gain": round(total_value - total_inv, 2),
             "gain_pct": round((total_value - total_inv) / total_inv * 100, 2) if total_inv else 0,
-            "villas_finished": finished_n, "withdrawals_month": finished_n * VILLA_INCOME,
+            "villas_finished": finished_n, "withdrawals_month": finished_n * _villa_income(),
             "building": next((h for h in houses if not h["finished"]), None) and
                         {"label": next(h for h in houses if not h["finished"])["label"],
                          "built_pct": next(h for h in houses if not h["finished"])["built_pct"]},
@@ -279,21 +286,12 @@ def villa_funds() -> dict:
     return d
 
 
-PORTFOLIOS = {   # mirror of client index_data.PORTFOLIOS / backtest.model.ts PORTFOLIOS
-    "conservative": {"name": "Conservative", "quadrant": 0.30, "arbitrage": 0.70},
-    "balanced": {"name": "Balanced", "quadrant": 0.64, "arbitrage": 0.36},
-    "aggressive": {"name": "Aggressive", "quadrant": 0.80, "arbitrage": 0.20},
-}
-QUADRANT = ("gold", "large", "mid", "small")
-
-
 def _villa(pf: str) -> dict:
-    """The history, weighted for one villa: quadrant parts 25% each of the quadrant share."""
-    p = PORTFOLIOS.get(pf) or PORTFOLIOS["balanced"]
+    """The history, weighted for one villa from the SETTINGS (series it doesn't hold get 0)."""
+    cfg = _cfg()
+    v = next((x for x in cfg["villas"] if x["key"] == pf), None) or next(x for x in cfg["villas"] if x["key"] == cfg["default_villa"])
     d = villa_funds()
-    return {**d, "funds": [{**f, "weight": p["arbitrage"] if f["sleeve"] == "arbitrage"
-                            else p["quadrant"] / len(QUADRANT) if f["sleeve"] in QUADRANT else 0.0}
-                           for f in d["funds"]]}
+    return {**d, "funds": [{**f, "weight": float(v["weights"].get(f["sleeve"], 0.0))} for f in d["funds"]]}
 
 
 def data_used() -> dict:
@@ -312,17 +310,34 @@ def data_used() -> dict:
     return {
         "basis": d.get("basis", "index"), "note": d.get("note"), "start": d["months"][0], "end": d["months"][-1],
         "series": series, "rows": rows,
-        "rules": [
-            "Each sleeve is its benchmark INDEX — no actively managed fund is used.",
-            "Three villas: a quadrant (gold / Nifty 50 / Midcap 150 / Smallcap 250, 25% each) + arbitrage — Conservative 30/70, Balanced 64/36, Aggressive 80/20. The weights shown are Balanced's.",
-            "Month-end closes; only complete months.",
-            "SWP (FD / Lumpsum / Flat): ₹30,000 a month per ₹1 Cr, sold from arbitrage first, then the quadrant pro-rata. The tax on that sale comes out of the payout.",
-            "SIP: each month's amount buys every part by weight; with SWP on, 3.6% of the value is paid at each year end (arbitrage first).",
-            "Every 1 January (at the 31 Dec close): arbitrage is left alone; the quadrant goes back to 25% each of (its value − the tax on what that sells).",
-            "Sales take the oldest units first; each sale is charged the tax it adds to its financial year. Today's rules: equity 20% ≤ 12 months, 12.5% after (₹1.25 L a year free); Gold BeES (listed ETF) slab ≤ 12 months, 12.5% after; +4% cess. No tax is taken off the final value.",
-            "Index levels are before any fund's expense ratio.",
-        ],
+        "rules": _rules_text(_cfg()),
     }
+
+
+def _rules_text(c: dict) -> list[str]:
+    """The rules, in words, written from the SETTINGS (so they can't drift)."""
+    names = {"arbitrage": "arbitrage", "gold": "gold", "large": "Nifty 50", "mid": "Midcap 150", "small": "Smallcap 250"}
+    nm = lambda xs: ", ".join(names.get(x, x) for x in xs)
+    first = c["income"]["pay_first"]
+    mix = lambda v: f"{round(100 - sum(v['weights'].get(k, 0) for k in first) * 100)}/{round(sum(v['weights'].get(k, 0) for k in first) * 100)}"
+    t, w = c["tax"], c["withdrawals"]
+    months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    return [
+        "Each part is its benchmark INDEX — no actively managed fund is used.",
+        "Villas (growth / " + nm(first) + "): " + ", ".join(f"{v['name']} {mix(v)}" for v in c["villas"])
+        + f". The weights shown are the default villa's ({c['default_villa']}).",
+        "Month-end closes; only complete months.",
+        f"SWP (FD / Lumpsum / Flat): {w['lumpsum_monthly_rate'] * 100:g}% of the amount a month (₹{1e7 * w['lumpsum_monthly_rate']:,.0f} per ₹1 Cr), "
+        f"sold from {nm(first)} first, then the rest pro-rata. The tax on that sale comes out of the payout.",
+        f"SIP: each month's amount buys every part by weight; with SWP on, {w['sip_yearly_rate'] * 100:g}% of the value is paid at each year end ({nm(first)} first).",
+        f"Every 1 {months[c['rebalance']['month'] % 12]} (at the month-end close before it): {nm(first)} is left alone; "
+        f"{nm(c['rebalance']['parts'])} go back to their starting split of (value − the tax on what that sells).",
+        f"Sales take the oldest units first; each sale is charged the tax it adds to its financial year. Equity {t['equity_st_rate'] * 100:g}% ≤ {t['equity_lt_months']} months, "
+        f"{t['equity_lt_rate'] * 100:g}% after (₹{t['equity_exempt']:,.0f} a year free); {nm(t['gold_parts'])} slab ≤ {t['gold_lt_months']} months, "
+        f"{t['gold_lt_rate'] * 100:g}% after; +{t['cess'] * 100:g}% cess. No tax is taken off the final value.",
+        "Index levels are before any fund's expense ratio.",
+        f"Settings v{c.get('version')} · {c.get('updated_at', '')} · {c.get('updated_by', '')}",
+    ]
 
 
 def _window(d: dict, years: int) -> dict:
@@ -338,19 +353,20 @@ def _fy(ym: str) -> int:
 
 
 class _Tax:
-    """Gains realised in one financial year → tax, on today's rules."""
-    def __init__(self, slab: float):
+    """Gains realised in one financial year → tax, on the SETTINGS' rules."""
+    def __init__(self, slab: float, rules: Optional[dict] = None):
         self.slab = slab
+        self.r = rules or _cfg()["tax"]
         self.reset()
 
     def reset(self):
         self.eq_st = self.eq_lt = self.g_st = self.g_lt = 0.0
 
     def add(self, sleeve: str, gain: float, held_months: int):
-        if sleeve == "gold":                      # Gold BeES: a listed ETF
-            if held_months > 12: self.g_lt += gain
+        if sleeve in self.r["gold_parts"]:
+            if held_months > self.r["gold_lt_months"]: self.g_lt += gain
             else: self.g_st += gain
-        elif held_months > 12:
+        elif held_months > self.r["equity_lt_months"]:
             self.eq_lt += gain
         else:
             self.eq_st += gain
@@ -361,9 +377,10 @@ class _Tax:
             lt, st = max(0.0, lt + st), 0.0
         elif lt < 0 < st:
             st, lt = max(0.0, st + lt), 0.0
-        eq = max(0.0, st) * 0.20 + max(0.0, lt - 125_000) * 0.125
-        gold = max(0.0, self.g_st) * self.slab / 100 + max(0.0, self.g_lt) * 0.125
-        return (eq + gold) * 1.04
+        r = self.r
+        eq = max(0.0, st) * r["equity_st_rate"] + max(0.0, lt - r["equity_exempt"]) * r["equity_lt_rate"]
+        gold = max(0.0, self.g_st) * self.slab / 100 + max(0.0, self.g_lt) * r["gold_lt_rate"]
+        return (eq + gold) * (1 + r["cess"])
 
     def breakdown(self) -> dict:
         """The year's tax worked out line by line (same maths as tax())."""
@@ -372,21 +389,25 @@ class _Tax:
             lt, st = max(0.0, lt + st), 0.0
         elif lt < 0 < st:
             st, lt = max(0.0, st + lt), 0.0
+        r = self.r
+        m_eq, m_g = r["equity_lt_months"], r["gold_lt_months"]
         lines = [
-            {"label": "Equity short-term gains (held ≤ 12 months)", "gain": self.eq_st, "taxable": max(0.0, st), "rate": 20.0},
-            {"label": "Equity long-term gains (held > 12 months), after the ₹1,25,000 exemption", "gain": self.eq_lt,
-             "taxable": max(0.0, lt - 125_000), "rate": 12.5},
-            {"label": "Gold short-term gains (held ≤ 12 months), at your slab", "gain": self.g_st, "taxable": max(0.0, self.g_st), "rate": float(self.slab)},
-            {"label": "Gold long-term gains (held > 12 months)", "gain": self.g_lt, "taxable": max(0.0, self.g_lt), "rate": 12.5},
+            {"label": f"Equity short-term gains (held ≤ {m_eq} months)", "gain": self.eq_st, "taxable": max(0.0, st), "rate": r["equity_st_rate"] * 100},
+            {"label": f"Equity long-term gains (held > {m_eq} months), after the ₹{r['equity_exempt']:,.0f} exemption", "gain": self.eq_lt,
+             "taxable": max(0.0, lt - r["equity_exempt"]), "rate": r["equity_lt_rate"] * 100},
+            {"label": f"Gold short-term gains (held ≤ {m_g} months), at your slab", "gain": self.g_st, "taxable": max(0.0, self.g_st), "rate": float(self.slab)},
+            {"label": f"Gold long-term gains (held > {m_g} months)", "gain": self.g_lt, "taxable": max(0.0, self.g_lt), "rate": r["gold_lt_rate"] * 100},
         ]
         for l in lines:
             l["tax"] = round(l["taxable"] * l["rate"] / 100, 2)
             l["gain"], l["taxable"] = round(l["gain"], 2), round(l["taxable"], 2)
         before = sum(l["tax"] for l in lines)
-        return {"lines": lines, "before_cess": round(before, 2), "cess": round(before * 0.04, 2), "total": round(before * 1.04, 2)}
+        c = self.r["cess"]
+        return {"lines": lines, "before_cess": round(before, 2), "cess": round(before * c, 2), "total": round(before * (1 + c), 2),
+                "cess_pct": round(c * 100, 4)}
 
     def copy(self):
-        t = _Tax(self.slab)
+        t = _Tax(self.slab, self.r)
         t.eq_st, t.eq_lt, t.g_st, t.g_lt = self.eq_st, self.eq_lt, self.g_st, self.g_lt
         return t
 
@@ -414,6 +435,10 @@ class _Lots:
         self._i = 0                             # the month the last snapshot was taken at
         self.ev = []                            # this month's operations, with their arithmetic
         self.charged = 0.0                      # tax charged so far this financial year
+        cfg = _cfg()
+        idx = lambda keys: [k for k in (next((j for j, f in enumerate(funds) if f["sleeve"] == s), -1) for s in keys) if k >= 0]
+        self.pay_first = idx(cfg["income"]["pay_first"])
+        self.rebal = [k for k in idx(cfg["rebalance"]["parts"]) if funds[k]["weight"] > 0]
 
     def units(self, k): return sum(l[0] for l in self.lots[k])
     def val(self, k, i): return self.units(k) * self.f[k]["nav"][i]
@@ -425,15 +450,16 @@ class _Lots:
             self.ev.append({"op": "buy", "tag": self.tag, "sleeve": self.f[k]["sleeve"], "rupees": round(rupees, 2),
                             "nav": self.f[k]["nav"][i], "units": round(rupees / self.f[k]["nav"][i], 6)})
             self.flows[k]["rebal_in" if self.tag == "rebalance" else "invest"] += rupees
-            if self.tag == "rebalance" and self.f[k]["sleeve"] == "arbitrage": self.arb_rebal_moves += 1
+            if self.tag == "rebalance" and k in self.pay_first: self.arb_rebal_moves += 1
 
     def sell(self, k, rupees, i):
         self.flows[k]["rebal_out" if self.tag == "rebalance" else "payout"] += rupees
-        if self.tag == "rebalance" and self.f[k]["sleeve"] == "arbitrage": self.arb_rebal_moves += 1
+        if self.tag == "rebalance" and k in self.pay_first: self.arb_rebal_moves += 1
         u = rupees / self.f[k]["nav"][i]
         e = {"op": "sell", "tag": self.tag, "sleeve": self.f[k]["sleeve"], "rupees": round(rupees, 2),
              "nav": self.f[k]["nav"][i], "units": round(u, 6), "cost": 0.0, "gain_st": 0.0, "gain_lt": 0.0, "lots": []}
-        lim = 12
+        r = self.t.r
+        lim = r["gold_lt_months"] if self.f[k]["sleeve"] in r["gold_parts"] else r["equity_lt_months"]
         while u > 1e-12 and self.lots[k]:
             lot = self.lots[k][0]
             take = min(u, lot[0])
@@ -473,7 +499,7 @@ class _Lots:
         self.t.reset()
         self.charged = 0.0
         if credit > 0:
-            g = [k for k in range(len(self.f)) if k != a]
+            g = self.rebal or [k for k in range(len(self.f)) if k not in self.pay_first]
             G = sum(self.val(k, i) for k in g)
             W = sum(self.f[k]["weight"] for k in g) or 1
             self.tag = "credit"
@@ -482,27 +508,33 @@ class _Lots:
             self.tag = "invest"
         return credit
 
-    def pay(self, need, i, a) -> str:
+    def pay(self, need, i, a=None) -> str:
+        """Raise ₹need: the settings' pay-first parts in order, then everything else pro-rata."""
         self.tag = "payout"
-        self.ev.append({"op": "pay", "need": round(need, 2), "arb_value": round(self.val(a, i), 2)})
-        take = min(need, self.val(a, i))
-        if take > 0: self.sell(a, take, i)
-        need -= take
+        first_val = sum(self.val(k, i) for k in self.pay_first)
+        self.ev.append({"op": "pay", "need": round(need, 2), "arb_value": round(first_val, 2)})
+        took = 0.0
+        for k in self.pay_first:
+            take = min(need, self.val(k, i))
+            if take > 0: self.sell(k, take, i)
+            need -= take; took += take
         if need <= 1e-6:
             self.tag = "invest"
             return "arbitrage"
-        vals = [0 if k == a else self.val(k, i) for k in range(len(self.f))]
+        vals = [0 if k in self.pay_first else self.val(k, i) for k in range(len(self.f))]
         tot = sum(vals)
         for k in range(len(self.f)):
             if vals[k] > 0: self.sell(k, min(vals[k], need * vals[k] / tot), i)
         self.tag = "invest"
-        return "arbitrage + others" if take > 0 else "other funds"
+        return "arbitrage + others" if took > 0 else "other funds"
 
     def rebalance(self, i, a):
         """1 January: the quadrant back to its split of (value − tax); arbitrage left alone."""
-        g = [k for k in range(len(self.f)) if k != a and self.f[k]["weight"] > 0]
+        g = self.rebal
         wsum = sum(self.f[k]["weight"] for k in g)
         before = [self.val(k, i) for k in range(len(self.f))]
+        if len(g) < 2 or not wsum or not sum(before[k] for k in g):
+            return None
         G = sum(before[k] for k in g)
         units_before = [self.units(k) for k in range(len(self.f))]
 
@@ -669,7 +701,7 @@ def _story(funds, months, book, a, snaps, rb_raw, sip=False, ledger=None) -> dic
     }
 
 
-def _rb(months, i): return i > 0 and months[i].endswith("-12")
+def _rb(months, i): return i > 0 and int(months[i][5:7]) == int(_cfg()["rebalance"]["month"])
 
 
 def _rb_row(funds, months, i, r):
@@ -688,7 +720,8 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float, pf: str
     w = _window(_villa(pf), years)
     months, funds = w["months"], w["funds"]
     n = len(months) - 1
-    a = next(i for i, f in enumerate(funds) if f["sleeve"] == "arbitrage")
+    first = _cfg()["income"]["pay_first"]      # the part the income comes from first (arbitrage today)
+    a = next((i for i, f in enumerate(funds) if f["sleeve"] in first), 0)
     tax = _Tax(slab)
     book = _Lots(funds, tax)
     for k, f in enumerate(funds):
@@ -697,7 +730,8 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float, pf: str
     snaps, rb_raw = [_snap(book, a)], []
     detail = [_month_detail(book, 0, months, [0.0] * len(funds))]
     yearly, year_paid = [], 0.0
-    pay = amount * 0.003 if swp else 0.0
+    cfg = _cfg()
+    pay = amount * cfg["withdrawals"]["lumpsum_monthly_rate"] if swp else 0.0
     fy, paid, pay_tax, rebal_tax = _fy(months[0]), 0.0, 0.0, 0.0
     flows = [-amount]
     rebalances = []
@@ -721,10 +755,11 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float, pf: str
         rb, t_rb = "", 0.0
         if _rb(months, i):
             r = book.rebalance(i, a)
-            rebalances.append(_rb_row(funds, months, i, r))
-            rb_raw.append((i, r))
-            rb, t_rb = "yes", r["tax"]
-            rebal_tax += t_rb
+            if r:
+                rebalances.append(_rb_row(funds, months, i, r))
+                rb_raw.append((i, r))
+                rb, t_rb = "yes", r["tax"]
+                rebal_tax += t_rb
         book._i = i
         snaps.append(_snap(book, a))
         detail.append(_month_detail(book, i, months, units_open, fy_tax, fy_lab,
@@ -742,7 +777,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float, pf: str
                        "rebalanced": rb, "value": round(book.total(i), 2), "tax_paid": round(t_pay + t_rb, 2)})
     value = book.total(n)
     flows[-1] += value
-    fd_month = amount * fd_rate / 1200 * (1 - slab / 100 * 1.04)
+    fd_month = amount * fd_rate / 1200 * (1 - slab / 100 * (1 + cfg["tax"]["cess"]))
     arb_now = book.val(a, n)
     return {
         "start": months[0], "end": months[-1], "months": n, "ledger": ledger, "rebalances": rebalances,
@@ -767,7 +802,8 @@ def sip_check(years: int, monthly: float, step: float, slab: float, pf: str = "b
     w = _window(_villa(pf), years)
     months, funds = w["months"], w["funds"]
     n = len(months) - 1
-    a = next(i for i, f in enumerate(funds) if f["sleeve"] == "arbitrage")
+    first = _cfg()["income"]["pay_first"]      # the part the income comes from first (arbitrage today)
+    a = next((i for i, f in enumerate(funds) if f["sleeve"] in first), 0)
     tax = _Tax(slab)
     book = _Lots(funds, tax)
     fy = _fy(months[0])
@@ -786,7 +822,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float, pf: str = "b
             fy = _fy(months[i])
         pay = t_pay = 0.0
         if swp and i > 0 and i % 12 == 0:
-            pay = book.total(i) * 0.036
+            pay = book.total(i) * _cfg()["withdrawals"]["sip_yearly_rate"]
             book.pay(pay, i, a)
             t_pay = book.charge()
             book.ev.append({"op": "pay_tax", "tax": round(t_pay, 2), "net": round(pay - t_pay, 2)})
@@ -794,10 +830,11 @@ def sip_check(years: int, monthly: float, step: float, slab: float, pf: str = "b
         rb, t_rb = "", 0.0
         if _rb(months, i):
             r = book.rebalance(i, a)
-            rebalances.append(_rb_row(funds, months, i, r))
-            rb_raw.append((i, r))
-            rb, t_rb = "yes", r["tax"]
-            rebal_tax += t_rb
+            if r:
+                rebalances.append(_rb_row(funds, months, i, r))
+                rb_raw.append((i, r))
+                rb, t_rb = "yes", r["tax"]
+                rebal_tax += t_rb
         if i > 0 and i % 12 == 0:                         # what the app's year column shows
             yearly.append({"year": i // 12, "month": months[i], "invested": round(invested, 2), "value": round(book.total(i), 2),
                            "payout": round(pay, 2),
@@ -832,17 +869,19 @@ def flat_check(years: int, price: float, value: float, rent: float, stamp: float
                pf: str = "balanced", swp: bool = True) -> dict:
     """The flat side worked out by hand; the DigiVilla side = payout_check on the
     flat's all-in cost."""
+    F, cess = _cfg()["flat"], _cfg()["tax"]["cess"]
+    stamp = F["stamp_pct"]                            # the settings decide, like the app
     Y = max(1, years)
-    outlay = price * (1 + (stamp + 1) / 100)
+    outlay = price * (1 + (stamp + F["registration_pct"]) / 100)
     app = (value / price) ** (1 / Y) - 1
     gross = upkeep = 0.0
     rows = []
     for t in range(1, Y + 1):
-        r = rent * 11 / 1.05 ** (Y - t)
-        u = 0.004 * price * (1 + app) ** t
+        r = rent * (12 - F["vacant_months"]) / (1 + F["rent_rise_pct"] / 100) ** (Y - t)
+        u = F["upkeep_pct"] / 100 * price * (1 + app) ** t
         gross += r; upkeep += u
         rows.append({"year": t, "rent_collected": round(r, 2), "upkeep": round(u, 2)})
-    rent_tax = gross * slab / 100 * 0.7 * 1.04
+    rent_tax = gross * slab / 100 * (1 - F["std_deduction"]) * (1 + cess)
     kept = gross - rent_tax - upkeep
     dv = payout_check(Y, outlay, 0, slab, pf, swp)
     return {

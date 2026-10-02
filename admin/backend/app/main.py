@@ -787,3 +787,56 @@ def admin_delete_booking(
 from app.static_spa import mount_spa  # noqa: E402
 
 mount_spa(app)
+
+
+# ════════════ CALCULATOR SETTINGS — one source of truth for every calculator number ════════════
+from app.calc_settings import calc_config as calc_cfg  # noqa: E402
+
+
+def _admin_email(request: Request) -> str:
+    try:
+        dev = admin_auth.device_get(_admin_device(request)) or {}
+        return dev.get("email") or "admin"
+    except HTTPException:
+        raise
+    except Exception:
+        return "admin"
+
+
+@app.get("/admin/calc-config")
+def admin_calc_config(authorization: Optional[str] = Header(default=None)) -> dict:
+    """The settings in force, the repo default, and the saved versions."""
+    _require_admin(authorization)
+    cfg = calc_cfg.get(fresh=True)
+    return {"config": cfg, "default": calc_cfg.default(), "history": calc_cfg.history()[:30],
+            "series": list(calc_cfg.SERIES), "cache_seconds": calc_cfg.CACHE_S}
+
+
+@app.post("/admin/calc-config/validate")
+def admin_calc_config_validate(body: dict, authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return {"errors": calc_cfg.validate(body)}
+
+
+@app.put("/admin/calc-config")
+def admin_calc_config_save(body: dict, request: Request, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Validate and publish — the app picks it up within a minute; versions are kept."""
+    _require_admin(authorization)
+    errs = calc_cfg.validate(body)
+    if errs:
+        raise HTTPException(status_code=422, detail={"errors": errs})
+    try:
+        saved = calc_cfg.save(body, by=_admin_email(request))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail={"errors": str(e).split("; ")})
+    audit_svc.reset_cache() if hasattr(audit_svc, "reset_cache") else None
+    return {"config": saved, "history": calc_cfg.history()[:30]}
+
+
+@app.get("/admin/calc-config/version/{version}")
+def admin_calc_config_version(version: int, authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    cfg = calc_cfg.load_version(version)
+    if not cfg:
+        raise HTTPException(status_code=404, detail=f"No saved v{version}")
+    return {"config": cfg}

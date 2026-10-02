@@ -29,9 +29,9 @@
         } @else {
           <span class="pop-k">Your income-tax slab</span>
           <div class="chips seven">
-            @for (s of TAX_SLABS; track s) { <button [class.on]="!nri() && s === slab()" (click)="pickSlab(s)">{{ s }}%</button> }
+            @for (s of TAX_SLABS; track s) { <button [class.on]="!nri() && s === tax()" (click)="pickSlab(s)">{{ s }}%</button> }
           </div>
-          <button class="nri" [class.on]="nri()" (click)="pickNri()"><span><b>NRI</b> · NRO deposit</span><em>30% TDS</em></button>
+          <button class="nri" [class.on]="nri()" (click)="pickNri()"><span><b>NRI</b> · NRO deposit</span><em>{{ t().nriTdsPct }}% TDS</em></button>
         }
       </div>
     }
@@ -39,17 +39,10 @@
 
   <!-- ── the chart ── -->
   @if (r(); as res) {
-    <div class="chart-wrap" [class.veiled]="!revealed()">
-      <app-bars-3d [left]="fdCol()!" [right]="dvCol()!" [veiled]="!revealed()"></app-bars-3d>
-      @if (!revealed()) {
-        <button class="reveal" (click)="reveal()">
-          <span class="rv-k">{{ villa().name }} villa · {{ swp() ? 'with' : 'no' }} monthly income</span>
-          <b>Show me</b>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      }
+    <div class="chart-wrap">
+      <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
     </div>
-    <div class="legend" [class.hid]="!revealed()">
+    <div class="legend">
       <span>Fixed deposit · {{ fdRate() }}%</span>
       <span class="g">{{ villa().name }} · {{ rate(res.dvIrr) }} a yr</span>
     </div>
@@ -125,7 +118,7 @@
   </div>
 
   <p class="page-note">
-    {{ ym(res.months[0]) }} → {{ ym(res.months[res.months.length - 1]) }} on real index history · inflation {{ INFLATION }}% · FD interest taxed at {{ tax() }}%.
+    {{ ym(res.months[0]) }} → {{ ym(res.months[res.months.length - 1]) }} on real index history · inflation {{ t().inflationPct }}% · FD interest taxed at {{ tax() }}%.
     <button class="how" (click)="go('notes')">How this is worked out</button>
   </p>
   <div class="page-actions">
@@ -190,7 +183,7 @@
       <div class="step-card">
         <span class="step-k">Meanwhile</span>
         <h3>The rest kept growing</h3>
-        <p>The growth part isn't sold to pay you while arbitrage lasts — once a year, on 1 January, it's put back to 25% each. Here's what each part is worth today:</p>
+        <p>The growth part isn't sold to pay you while arbitrage lasts — once a year, on {{ t().rebalanceMonth }}, it's put back to its starting split. Here's what each part is worth today:</p>
         <ul class="grow">
           @for (m of x.mix; track m.key) {
             <li>
@@ -213,7 +206,7 @@
       <div class="step-card">
         <span class="step-k">Tax</span>
         <h3>{{ x.taxTiny ? 'Tax on payouts was tiny:' : 'Tax on payouts:' }} <em>{{ inr(res.dvPayoutTax) }}</em></h3>
-        <p>Most of each payout is <b>your own money coming back</b>, which isn't taxed. Only the small profit inside it is — and the first {{ inr(EXEMPT) }} of profit each year is tax-free.</p>
+        <p>Most of each payout is <b>your own money coming back</b>, which isn't taxed. Only the small profit inside it is — and the first {{ inr(t().exempt) }} of profit each year is tax-free.</p>
       </div>
     </li>
 
@@ -253,14 +246,14 @@
     <ul>
       <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
       <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
-      <li><b>Three villas.</b> Gold, large, mid and small cap in equal parts, plus arbitrage — Conservative 30/70, Balanced 64/36, Aggressive 80/20. You're looking at {{ villa().name }}.</li>
-      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; gold, large, mid and small cap go back to 25% each. The tax on what that sells is paid from the proceeds.</li>
+      <li><b>The villas.</b> Growth parts plus arbitrage — {{ t().villasLine }} (growth / arbitrage). You're looking at {{ villa().name }}.</li>
+      <li><b>Rebalanced every {{ t().rebalanceMonth }}.</b> The {{ t().payFirst }} part is left alone; {{ t().rebalanceParts }} go back to the split they started with. The tax on what that sells is paid from the proceeds.</li>
       <li><b>Today's tax rules</b> are used for every year, though the rules were different earlier. Surcharge isn't included.</li>
       <li><b>The FD rate stays {{ fdRate() }}%</b> the whole time. Real FD rates went up and down.</li>
       @for (p of proxies(); track p.fund + p.until) {
         <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
       }
-      <li><b>"Today's money"</b> assumes prices rise {{ INFLATION }}% a year.</li>
+      <li><b>"Today's money"</b> assumes prices rise {{ t().inflationPct }}% a year.</li>
       <li><b>Left out:</b> exit loads, the 0.005% stamp duty, and which day of the month money moves.</li>
     </ul>
   </section>

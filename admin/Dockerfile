@@ -13,6 +13,7 @@ RUN npm ci || npm install
 
 COPY admin/frontend/ ./
 COPY client/frontend/src/app/calc/backtest.model.ts /repo/client/frontend/src/app/calc/backtest.model.ts
+COPY client/frontend/src/app/calc/engine/ /repo/client/frontend/src/app/calc/engine/
 # Combined deploy: the API is same-origin, so apiUrl = ''.
 RUN printf 'window.__env = { apiUrl: "" };\n' > public/assets/env.js
 RUN npm run build -- --configuration production
@@ -30,6 +31,10 @@ COPY admin/backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY admin/backend/ ./
+# The calculator SETTINGS module is SHARED with the client backend (not a copy in
+# the repo): app/calc_settings.py loads it from /app/shared.
+COPY client/backend/app/calc_config.py ./shared/calc_config.py
+COPY client/backend/app/data/calc_config.json ./shared/data/calc_config.json
 
 # Copy the built Angular app to where static_spa.py expects it: backend/static
 COPY --from=frontend /repo/admin/frontend/dist/admin/browser ./static

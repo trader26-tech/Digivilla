@@ -373,6 +373,20 @@ export class AdminService {
     return this.http.get<any>(`${this.base}/admin/audit/navs`, this.opts);
   }
   /** The exact month-end NAVs the client app's calculators use. */
+  // ── calculator settings (one source of truth for every calculator number) ──
+  calcConfig(): Observable<any> {
+    return this.http.get<any>(`${this.base}/admin/calc-config`, this.opts);
+  }
+  calcConfigValidate(cfg: any): Observable<{ errors: string[] }> {
+    return this.http.post<{ errors: string[] }>(`${this.base}/admin/calc-config/validate`, cfg, this.opts);
+  }
+  calcConfigSave(cfg: any): Observable<any> {
+    return this.http.put<any>(`${this.base}/admin/calc-config`, cfg, this.opts);
+  }
+  calcConfigVersion(v: number): Observable<any> {
+    return this.http.get<any>(`${this.base}/admin/calc-config/version/${v}`, this.opts);
+  }
+
   auditVillaFunds(): Observable<any> {
     return this.http.get<any>(`${this.base}/admin/audit/villa-funds`, this.opts);
   }

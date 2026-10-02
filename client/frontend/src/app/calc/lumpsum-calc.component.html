@@ -41,16 +41,16 @@
 
   <!-- ── the hero: what it became ── -->
   @if (r(); as res) {
-    <div class="hero" [class.veiled]="!revealed()">
+    <div class="hero">
       <div class="hero-txt">
         <div class="hero-main">
           <span class="k">Worth today</span>
-          <b class="big" [class.q]="!revealed()">{{ revealed() ? fmt(res.dvValue) : '₹ ?' }}</b>
+          <b class="big">{{ fmt(res.dvValue) }}</b>
         </div>
         <div class="hero-sub">
           <div><span>You put in</span><b>{{ fmt(amount()) }}</b></div>
           @if (res.swp) {
-            <div class="gold"><span>Income you got</span><b [class.q]="!revealed()">{{ revealed() ? fmt(res.dvPaid) : '₹ ?' }}</b></div>
+            <div class="gold"><span>Income you got</span><b>{{ fmt(res.dvPaid) }}</b></div>
           } @else {
             <div><span>Monthly income</span><b class="off">SWP off</b></div>
           }
@@ -64,15 +64,8 @@
 
   <!-- ── one column per year ── -->
   @if (r()) {
-    <div class="chart-wrap yc" [class.veiled]="!revealed()">
-      <app-year-cols [cols]="yearCols()" [veiled]="!revealed()"></app-year-cols>
-      @if (!revealed()) {
-        <button class="reveal" (click)="reveal()">
-          <span class="rv-k">{{ villa().name }} villa · {{ swp() ? 'with' : 'no' }} monthly income</span>
-          <b>Show me</b>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      }
+    <div class="chart-wrap yc">
+      <app-year-cols [cols]="yearCols()"></app-year-cols>
     </div>
   } @else if (failed()) {
     <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
@@ -93,7 +86,7 @@
                    [min]="1000000" [max]="100000000" [step]="500000" [nudgeBy]="2500000" [major]="10000000" [mid]="2500000"></app-amount-dial>
 
   <p class="fine">
-    The {{ villa().name }} villa on real index history. {{ swp() ? inr(30000) + ' a month per ₹1 Cr is paid to you from the arbitrage part, after tax.' : 'SWP off: nothing is withdrawn.' }}
+    The {{ villa().name }} villa on real index history. {{ swp() ? inr(t().perCroreMonthly) + ' a month per ₹1 Cr is paid to you from the ' + t().payFirst + ' part, after tax.' : 'SWP off: nothing is withdrawn.' }}
     <button class="how" (click)="go('notes')">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></svg>
       How this is worked out
@@ -136,7 +129,7 @@
       <div class="step-card">
         <span class="step-k">Every month</span>
         <h3>You got <em class="gold">{{ inr(res.dvMonthly) }}</em></h3>
-        <p>{{ PAY_PCT }}% a year, the same rupees every month — {{ x.payments }} payments, <b>{{ fmt(res.dvPaidGross) }}</b> in all. It's paid by selling a little of the <b>Arbitrage</b> part (the steady one), so it gets smaller:</p>
+        <p>{{ t().swpYearPct }}% a year, the same rupees every month — {{ x.payments }} payments, <b>{{ fmt(res.dvPaidGross) }}</b> in all. It's paid by selling a little of the <b>Arbitrage</b> part (the steady one), so it gets smaller:</p>
         <div class="shrink" aria-label="Arbitrage share of the villa">
           <div><span>{{ ym(res.months[0]) }}</span><div class="track"><i [style.width.%]="res.arbStartPct"></i></div><b>{{ res.arbStartPct | number: '1.0-0' }}%</b></div>
           <div><span>Today</span><div class="track"><i [style.width.%]="res.arbNowPct"></i></div><b>{{ res.arbNowPct | number: '1.0-0' }}%</b></div>
@@ -150,7 +143,7 @@
       <div class="step-card">
         <span class="step-k">Meanwhile</span>
         <h3>The rest kept growing</h3>
-        <p>The growth part isn't sold to pay you while arbitrage lasts — once a year, on 1 January, it's put back to 25% each. Here's what each part is worth today:</p>
+        <p>The growth part isn't sold to pay you while arbitrage lasts — once a year, on {{ t().rebalanceMonth }}, it's put back to its starting split. Here's what each part is worth today:</p>
         <ul class="grow">
           @for (m of x.mix; track m.key) {
             <li>
@@ -170,7 +163,7 @@
       <div class="step-card">
         <span class="step-k">Tax</span>
         <h3>{{ x.taxTiny ? 'Tax on your income was tiny:' : 'Tax on your income:' }} <em>{{ inr(res.dvPayoutTax) }}</em></h3>
-        <p>Most of each payout is <b>your own money coming back</b>, which isn't taxed. Only the small profit inside it is — and the first {{ inr(EXEMPT) }} of profit each year is tax-free.</p>
+        <p>Most of each payout is <b>your own money coming back</b>, which isn't taxed. Only the small profit inside it is — and the first {{ inr(t().exempt) }} of profit each year is tax-free.</p>
       </div>
     </li>
 
@@ -197,9 +190,9 @@
     <ul>
       <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
       <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
-      <li><b>Three villas.</b> Gold, large, mid and small cap in equal parts, plus arbitrage — Conservative 30/70, Balanced 64/36, Aggressive 80/20. You're looking at {{ villa().name }}.</li>
-      <li><b>Rebalanced every 1 January.</b> The arbitrage part is left alone; gold, large, mid and small cap go back to 25% each. The tax on what that sells is paid from the proceeds.</li>
-      <li><b>Today's tax rules</b> for every year: 20% on profit held under a year, 12.5% after (first {{ inr(EXEMPT) }} a year free), Gold BeES 12.5% after 12 months (your slab before), plus {{ cessPct }}% cess. No surcharge; no other equity gains that year.</li>
+      <li><b>The villas.</b> Growth parts plus arbitrage — {{ t().villasLine }} (growth / arbitrage). You're looking at {{ villa().name }}.</li>
+      <li><b>Rebalanced every {{ t().rebalanceMonth }}.</b> The {{ t().payFirst }} part is left alone; {{ t().rebalanceParts }} go back to the split they started with. The tax on what that sells is paid from the proceeds.</li>
+      <li><b>Today's tax rules</b> for every year: {{ t().eqStPct }}% on profit held up to {{ t().eqLtMonths }} months, {{ t().eqLtPct }}% after (first {{ inr(t().exempt) }} a year free), Gold BeES {{ t().goldLtPct }}% after {{ t().goldLtMonths }} months (your slab before), plus {{ t().cessPct }}% cess. No surcharge; no other equity gains that year.</li>
       @for (p of proxies(); track p.fund + p.until) {
         <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
       }

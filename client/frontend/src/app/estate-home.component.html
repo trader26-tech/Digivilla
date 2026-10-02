@@ -415,6 +415,11 @@
            and each label fades up under its segment as it lands — the mix reads
            left → right. `--i` carries the position so the CSS can stagger. -->
       <ng-container *ngIf="fundRows.length">
+        <!-- "What you own" sits right on top of the mix it explains (the compliance sheet) -->
+        <button class="fine-own port-own" (click)="toggleKey()" aria-label="What you actually own">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          What you own
+        </button>
         <div class="port-bar" [class.revealed]="true">
           <span *ngFor="let f of fundRows; let i = index; trackBy: trackSleeve"
                 class="port-seg"
@@ -432,15 +437,13 @@
       </ng-container>
     </div>
 
-    <!-- ===== "What do Villa and Plot mean?" — a quiet link that opens a
+    <!-- ===== "What you own" — opens the compliance sheet; and a
          disclaimer bottom-sheet. Hidden on the empty estate. ===== -->
     <div class="fine" *ngIf="dataReady && !isEmptyEstate">
-      <button class="fine-link" (click)="toggleKey()" aria-label="What do Villa and Plot mean?">
-        What do Villa and Plot mean? <span aria-hidden="true">›</span>
-      </button>
-      <i class="fine-dot" aria-hidden="true">·</i>
-      <button class="fine-link tv-link" (click)="setTypes(true)" aria-label="Types of villas">
-        Types of villas <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+      <button class="fine-pill tv-link" (click)="setTypes(true)" aria-label="Types of villas">
+        <span class="fp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+        Types of villas
+        <svg class="fp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
       </button>
     </div>
   </div>
@@ -453,7 +456,7 @@
       @if (n.done) {
         <div class="nv-head rise" style="--d:.05s">
           <span class="nv-k">Your estate</span>
-          <div class="nv-t">All 9 villas</div>
+          <div class="nv-t">All {{ n.plots }} villas</div>
           <div class="nv-s">They pay <b>{{ inr(n.all) }}</b> a month</div>
         </div>
       } @else {
@@ -485,7 +488,7 @@
           </div>
           <div class="c r"><span class="k">With Villa {{ n.plot }}</span><span class="v">{{ inr(n.after) }}<small>/mo</small></span></div>
         </div>
-        <div class="nv-foot rise" style="--d:.52s">Every villa adds <b>{{ inr(1500) }}</b> a month · all 9 pay <b>{{ inr(n.all) }}</b>@if (n.sip) { · your SIP ≈ <b>{{ inr(n.sip) }}</b>/mo }</div>
+        <div class="nv-foot rise" style="--d:.52s">Every villa adds <b>{{ inr(n.each) }}</b> a month · all {{ n.plots }} pay <b>{{ inr(n.all) }}</b>@if (n.sip) { · your SIP ≈ <b>{{ inr(n.sip) }}</b>/mo }</div>
       }
     }
     <button class="ps-grip" (click)="setNext(false)" aria-label="Close"></button>
@@ -503,12 +506,12 @@
           <span class="pr">
             @if (p.rate !== null) { {{ p.rate.toFixed(1) }}<small>% a yr</small> } @else { <i class="tv-shim"></i> }
           </span>
-          <span class="rk">{{ p.riskName }} risk</span>
-          <span class="mx">{{ p.quadrant * 100 | number:'1.0-0' }} growth · {{ p.arbitrage * 100 | number:'1.0-0' }} arbitrage</span>
+          <span class="rk">{{ p.risk_name }} risk</span>
+          <span class="mx">{{ p.growth * 100 | number:'1.0-0' }} growth · {{ p.payFirst * 100 | number:'1.0-0' }} arbitrage</span>
         </div>
       }
     </div>
-    <p class="tv-note">A year since {{ historyFrom() || 'Apr 2010' }} on real benchmark history — nothing withdrawn, after the yearly rebalancing tax. The past isn’t a promise.</p>
+    <p class="tv-note">A year over the last 15 years{{ historyFrom() ? ' (since ' + historyFrom() + ')' : '' }}, with SWP off — the same as the calculators at 15 years. Real benchmark history, after the yearly rebalancing tax. The past isn’t a promise.</p>
   </section>
 
   <!-- ============ DISCLAIMER SHEET — "What you actually own" ============ -->

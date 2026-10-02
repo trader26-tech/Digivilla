@@ -3,13 +3,14 @@ import { Component, Input, OnInit, computed, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { AdminService, NetWorthRow } from '../admin.service';
+import { CalcSettingsComponent } from './calc-settings.component';
 // The client app's OWN calculator model — the exact code the app runs — so the
 // page can put "what the app computes" next to the independent check.
 import {
-  PORTFOLIOS, PfKey, VillaFunds, simulateFlat, simulatePayout, simulateSipIncome, windowFor, withPortfolio,
+  CalcConfig, DEFAULT_CONFIG, VillaFunds, simulateFlat, simulatePayout, simulateSip, villaOf, windowFor, withVilla,
 } from '../../../../../client/frontend/src/app/calc/backtest.model';
 
-type Tab = 'client' | 'navs' | 'calc' | 'data';
+type Tab = 'client' | 'navs' | 'calc' | 'data' | 'settings';
 type Kind = 'fd' | 'lump' | 'sip' | 'flat';
 
 interface Row { label: string; app: number | null; check: number | null; pct?: boolean; count?: boolean; }
@@ -26,7 +27,7 @@ interface Row { label: string; app: number | null; check: number | null; pct?: b
 @Component({
   selector: 'app-audit',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CalcSettingsComponent],
   templateUrl: './audit.component.html',
   styleUrls: ['./audit.component.scss'],
 })
@@ -63,10 +64,20 @@ export class AuditComponent implements OnInit {
 
   // ── calculators ──
   readonly kind = signal<Kind>('fd');
-  readonly villa = signal<PfKey>('balanced');
+  /** the settings in force (from the admin API) — the same object the app uses */
+  readonly cfg = signal<CalcConfig>(DEFAULT_CONFIG);
+  readonly villa = signal<string>(DEFAULT_CONFIG.default_villa);
   readonly swp = signal(true);
-  readonly PORTFOLIOS = PORTFOLIOS;
-  pickVilla(v: PfKey): void { if (this.villa() !== v) { this.villa.set(v); this.run(); } }
+  readonly villas = computed(() => this.cfg().villas);
+  pickVilla(v: string): void { if (this.villa() !== v) { this.villa.set(v); this.run(); } }
+  private cfgLoaded = false;
+  /** the settings arrived (or were just saved on the Settings tab) */
+  applySettings(r: { config: CalcConfig }): void {
+    this.cfg.set(r.config);
+    this.cfgLoaded = true;
+    if (!r.config.villas.some((v) => v.key === this.villa())) this.villa.set(r.config.default_villa);
+  }
+  onSettingsSaved(cfg: CalcConfig): void { this.applySettings({ config: cfg }); this.check.set(null); }
   toggleSwp(): void { this.swp.set(!this.swp()); this.run(); }
   readonly years = signal(5);
   readonly amount = signal(10000000);
@@ -190,19 +201,27 @@ export class AuditComponent implements OnInit {
         error: (e) => { this.calcErr.set(e?.error?.detail || 'The check failed.'); this.calcLoading.set(false); },
       });
     };
-    if (this.vf) { go(this.vf); return; }
-    this.api.auditVillaFunds().subscribe({
-      next: (vf) => { this.vf = vf; go(vf); },
-      error: (e) => { this.calcErr.set(e?.error?.detail || 'Couldn’t load fund history.'); this.calcLoading.set(false); },
+    const withData = () => {
+      if (this.vf) { go(this.vf); return; }
+      this.api.auditVillaFunds().subscribe({
+        next: (vf) => { this.vf = vf; go(vf); },
+        error: (e) => { this.calcErr.set(e?.error?.detail || 'Couldn’t load fund history.'); this.calcLoading.set(false); },
+      });
+    };
+    if (this.cfgLoaded) { withData(); return; }
+    this.api.calcConfig().subscribe({
+      next: (r) => { this.applySettings(r); withData(); },
+      error: (e) => { this.calcErr.set(e?.error?.detail || 'Couldn’t load the calculator settings.'); this.calcLoading.set(false); },
     });
   }
 
   /** The app's own formula vs the independent check, figure by figure. */
   private compare(k: Kind, vf: VillaFunds, h: any): Row[] {
-    const w = windowFor(withPortfolio(vf, this.villa()), this.years());
+    const cfg = this.cfg();
+    const w = windowFor(withVilla(vf, villaOf(cfg, this.villa())), this.years());
     const swp = this.swp();
     if (k === 'fd' || k === 'lump') {
-      const r = simulatePayout(w, this.amount(), k === 'fd' ? this.fdRate() : 0, this.slab(), swp);
+      const r = simulatePayout(w, { amount: this.amount(), fdRate: k === 'fd' ? this.fdRate() : 0, slabPct: this.slab(), swp }, cfg);
       this.appYearly.set(r.yearly);
       const rows: Row[] = [
         { label: 'Payouts received (before tax)', app: r.dvPaidGross, check: h.dvPaidGross },
@@ -222,7 +241,7 @@ export class AuditComponent implements OnInit {
       return rows;
     }
     if (k === 'sip') {
-      const r = simulateSipIncome(w, this.monthly(), this.step(), this.slab(), swp);
+      const r = simulateSip(w, { monthly: this.monthly(), stepPct: this.step(), slabPct: this.slab(), swp }, cfg);
       this.appYearly.set(r.yearly);
       return [
         { label: 'Put in', app: r.invested, check: h.invested },
@@ -235,7 +254,7 @@ export class AuditComponent implements OnInit {
         { label: '1 January rebalances', app: r.rebalances.length, check: h.rebalances, count: true },
       ];
     }
-    const r = simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), stampPct: 7, slabPct: this.slab() }, swp);
+    const r = simulateFlat(w, { price: this.price(), value: this.value(), rent: this.rent(), slabPct: this.slab(), swp }, cfg);
     this.appYearly.set(r.dv.yearly);
     return [
       { label: 'All-in cost of the flat', app: r.outlay, check: h.outlay },

@@ -18,6 +18,10 @@
 .arc { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; overflow: visible; }
 .arc-line { transition: d .5s cubic-bezier(.4, 0, .2, 1), opacity .3s; filter: drop-shadow(0 0 8px rgba(143, 214, 90, .55)); }
 .arc-line.off { opacity: 0; }
+.chart:not(.settled) .arc-line { opacity: 0; transition: none; }   /* hidden while the columns rise on entry … */
+.chart.entering .arc-line:not(.off):not(.draw) {                     /* … then drawn in once they've settled */
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .7s cubic-bezier(.4, 0, .2, 1) forwards;
+}
 .arc-line.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .7s .95s cubic-bezier(.4, 0, .2, 1) forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 
@@ -79,7 +83,8 @@ app-villa-pick.art { height: auto; display: block; }
 }
 @media (prefers-reduced-motion: reduce) {
   .block, .seg, .arc-line { transition: none; }
-  .arc-line.draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+  .arc-line.draw, .chart.entering .arc-line { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+  .chart:not(.settled) .arc-line:not(.off) { opacity: 1; }
   .total.q, .chart.rising .col.green .front { animation: none; }
   .art .coin { animation: none; }
 }

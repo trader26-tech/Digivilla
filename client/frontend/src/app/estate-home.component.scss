@@ -1667,7 +1667,31 @@
 .fine {
   flex: none;
   padding: 14px 22px 0;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+/* "What you own" — the compliance sheet, as a quiet link right above the allocation bar */
+.port-own { margin-top: 8px; }
+.port-own + .port-bar { margin-top: 4px; }
+.fine-own {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 11.5px; color: var(--color-neutral-500); transition: color .2s;
+  svg { width: 12px; height: 12px; color: var(--color-accent-300); }
+  &:hover { color: var(--color-neutral-300); }
+}
+.fine-pill {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px;
+  border-radius: 999px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 550;
+  color: var(--color-neutral-300);
+  background: rgba(255, 255, 255, .045); border: 1px solid rgba(255, 255, 255, .09);
+  transition: background .2s, border-color .2s, transform .12s, color .2s;
+  &:hover { background: rgba(255, 255, 255, .075); color: var(--color-neutral-200); }
+  &:active { transform: scale(.97); }
+  .fp-ic {
+    width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none;
+    color: var(--color-accent-300); background: rgba(139, 123, 240, .16);
+    svg { width: 14px; height: 14px; }
+  }
+  .fp-chev { width: 12px; height: 12px; color: var(--color-accent-300); }
 }
 .fine-link {
   border: none; background: none; cursor: pointer; font: inherit;
@@ -1743,7 +1767,7 @@
 .estate.next-open .estate-top > .nv-cue, .estate.types-open .estate-top > .nv-cue { opacity: 0; transform: translate(-50%, -8px); pointer-events: none; }
 @keyframes cueBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 .fine-dot { font-style: normal; color: #595d6c; margin: 0 .35rem; }
-.tv-link svg { width: 11px; height: 11px; vertical-align: -1px; animation: cueUp 1.8s ease-in-out infinite; }
+.tv-link .fp-chev { animation: cueUp 1.8s ease-in-out infinite; }
 @keyframes cueUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
 .ps-dim {
@@ -1768,6 +1792,7 @@
   bottom: 0; gap: 12px; padding: 12px 18px calc(6.6rem + env(safe-area-inset-bottom));
   border-radius: 26px 26px 0 0; transform: translateY(104%);
   box-shadow: inset 0 1px 0 #3f424d;
+  transition: transform .28s ease-out, box-shadow .28s;   /* a plain slide — no bounce, nothing animating inside */
 }
 .estate.types-open .tv-sheet { transform: translateY(0); box-shadow: inset 0 1px 0 #3f424d, 0 -28px 60px -12px rgba(0, 0, 0, .75); }
 .ps-grip { align-self: center; flex: none; width: 40px; height: 16px; padding: 6px 0; border: 0; background: none; cursor: pointer;
@@ -1826,7 +1851,6 @@
   &::after { content: ''; width: 28px; height: 2px; border-radius: 1px; background: #8fd65a; box-shadow: 0 0 10px rgba(143, 214, 90, .6); } }
 .tv-row { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 4px; }
 .tvc { --rc: #e9c15c; position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 8px; text-align: center;
-  opacity: 0; transform: translateY(18px);
   svg { position: relative; width: 100%; height: 68px; overflow: visible; filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .55)); transform: scale(var(--s, 1)); transform-origin: 50% 80%; }
   .pn { font-size: 11.5px; font-weight: 500; letter-spacing: -.01em; color: #e4e7f5; }
   .pr { min-height: 20px; font-size: 20px; font-weight: 500; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; color: #e9e9ed;
@@ -1838,8 +1862,6 @@
 .tvc + .tvc { box-shadow: -1px 0 0 #3f424d; }
 .tv-glow { position: absolute; left: 50%; top: 52px; width: 104px; height: 34px; margin-left: -52px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--rc) 45%, transparent), transparent); opacity: .7; }
-.estate.types-open .tvc { animation: tvIn .6s cubic-bezier(.2, .8, .2, 1.1) both; animation-delay: calc(var(--d, 0ms) + 180ms); }
-@keyframes tvIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 .tv-shim { display: inline-block; width: 52px; height: 18px; border-radius: 5px; background: linear-gradient(90deg, #232532, #2f3240, #232532); background-size: 200% 100%; animation: tvSh 1.2s linear infinite; }
 @keyframes tvSh { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .tv-note { margin: 0; text-align: center; font-size: 10px; line-height: 1.5; color: #75798c; text-wrap: balance; }
@@ -1847,5 +1869,5 @@
 @media (prefers-reduced-motion: reduce) {
   .nv-sheet, .tv-sheet, .estate-top > * { transition: none !important; }
   .nv-sheet .rise, .tvc { opacity: 1; transform: none; animation: none !important; }
-  .estate-top > .nv-cue svg, .tv-link svg, .ladder .step .bar i, .nv-inc .mid svg { animation: none !important; }
+  .estate-top > .nv-cue svg, .tv-link .fp-chev, .ladder .step .bar i, .nv-inc .mid svg { animation: none !important; }
 }
