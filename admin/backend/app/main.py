@@ -782,13 +782,6 @@ def admin_delete_booking(
     return {"status": "deleted"}
 
 
-# Serve the built admin Angular SPA (combined single-service deploy). Must be
-# last so the catch-all route does not shadow the API endpoints above.
-from app.static_spa import mount_spa  # noqa: E402
-
-mount_spa(app)
-
-
 # ════════════ CALCULATOR SETTINGS — one source of truth for every calculator number ════════════
 from app.calc_settings import calc_config as calc_cfg  # noqa: E402
 
@@ -840,3 +833,10 @@ def admin_calc_config_version(version: int, authorization: Optional[str] = Heade
     if not cfg:
         raise HTTPException(status_code=404, detail=f"No saved v{version}")
     return {"config": cfg}
+
+
+# Serve the built admin Angular SPA (combined single-service deploy). Must be
+# last so the catch-all route does not shadow the API endpoints above.
+from app.static_spa import mount_spa  # noqa: E402
+
+mount_spa(app)
