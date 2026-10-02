@@ -11,10 +11,10 @@ import importlib.util
 import sys
 from pathlib import Path
 
-_CANDIDATES = [
-    Path(__file__).resolve().parents[1] / "shared" / "calc_config.py",                       # docker
-    Path(__file__).resolve().parents[3] / "client" / "backend" / "app" / "calc_config.py",   # repo
-]
+_HERE = Path(__file__).resolve()
+_CANDIDATES = [_HERE.parents[1] / "shared" / "calc_config.py"]                          # docker: /app/shared
+if len(_HERE.parents) > 3:                                                               # the repo (local dev)
+    _CANDIDATES.append(_HERE.parents[3] / "client" / "backend" / "app" / "calc_config.py")
 
 
 def _load():
