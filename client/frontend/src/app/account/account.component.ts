@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { AccountOrder, ClientDetails, EstateService } from '../estate.service';
 import { AppUpdateService } from '../shared/app-update.service';
+import { APP_NAME, BrandService } from '../shared/brand.service';
 import { inr } from '../shared/format.util';
 
 /** localStorage key for the user-uploaded avatar (shared with the details panel). */
@@ -56,6 +57,7 @@ export class AccountComponent {
   readonly est = inject(EstateService);
   private readonly auth = inject(AuthService);
   private readonly updater = inject(AppUpdateService);
+  readonly brand = inject(BrandService);
   private readonly datePipe = new DatePipe('en-IN');
 
   // ---- REAL client data ----------------------------------------------------
@@ -317,8 +319,8 @@ export class AccountComponent {
   readonly appVersion = '';
   get updateSub(): string {
     return this.appVersion
-      ? `${this.appVersion} · estate levels, payouts on the 1st`
-      : 'estate levels, payouts on the 1st';
+      ? `${this.appVersion} · ${APP_NAME}: new name, new icon`
+      : `${APP_NAME}: new name, new icon`;
   }
   readonly updating = signal(false);
   readonly updated = signal(false);

@@ -21,6 +21,8 @@ import { ExploreComponent } from './explore/explore.component';
 import { LandDetailComponent } from './land/land-detail.component';
 import { PropertyKey } from './property-package.data';
 import { StorefrontComponent } from './storefront.component';
+import { BrandSheetComponent } from './shared/brand-sheet.component';
+import { BrandService } from './shared/brand.service';
 import { EstateService, Tile } from './estate.service';
 
 type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
@@ -52,6 +54,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
     CallsComponent,
     CalculatorsComponent,
     LoginComponent,
+    BrandSheetComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -59,6 +62,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
 export class AppComponent {
   readonly auth = inject(AuthService);
   private readonly est = inject(EstateService);
+  readonly brand = inject(BrandService);
 
   /** The opening animation plays first; flips false when it finishes. */
   intro = true;
@@ -82,6 +86,7 @@ export class AppComponent {
       const v = new URLSearchParams(location.search).get('view');
       if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc') { this.view = v; this.intro = false; }
     } catch {}
+    if (!this.intro) this.meetNewBrand();
     // Never leave a user stuck on a stale cached build: as soon as the service
     // worker fetches a newer version, activate it and reload so the latest app
     // (and the presentation deck) is what they see.
@@ -132,6 +137,8 @@ export class AppComponent {
    *  before login, so just reveal the app. */
   onLoggedIn(): void {
     this.justVerified = true;
+    // signed in on the new login screen — they've already met the new name
+    this.brand.markSeen();
     this.syncProfileFromAuth();
     // Load THIS user's real estate from the DB (empty for a new account),
     // replacing any leftover local cache from a previous/demo session.
@@ -266,6 +273,12 @@ export class AppComponent {
   onIntroDone(): void {
     this.intro = false;
     try { localStorage.setItem('intro_seen_v1', '1'); } catch {}
+    this.meetNewBrand();
+  }
+
+  /** A returning user's first open after the rename: "Meet TheDigiCiti", once. */
+  private meetNewBrand(): void {
+    if (this.auth.signedIn()) this.brand.showOnce();
   }
 
   /** "Build a new asset" -> go to the Explore tab, where villa/land are chosen. */

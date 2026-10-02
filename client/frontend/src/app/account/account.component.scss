@@ -107,6 +107,9 @@
 .up-i { position: relative; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #4a3f8a; color: var(--color-accent-100); flex: none; }
 .up-i::after { content: ''; position: absolute; right: -3px; top: -3px; width: 10px; height: 10px; border-radius: 50%; background: #f6c445; box-shadow: 0 0 0 2px #1e2130; animation: upDot 1.8s ease-in-out infinite; }
 @keyframes upDot { 0%,100% { transform: scale(1) } 50% { transform: scale(1.35) } }
+.up-i.app { background: none; overflow: visible; } .up-i.app img { display: block; width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 6px 14px -6px rgba(246,196,69,.6); }
+.up-new { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin-top: 8px; padding: 10px 14px; border: 0; border-radius: 12px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.up-new span { font-size: 13px; font-weight: 500; } .up-new em { font-style: normal; font-size: 12px; color: var(--color-neutral-400); }
 .up-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .up-t b { font-size: 14px; font-weight: 500; }
 .up-t span { font-size: 11px; color: var(--color-neutral-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
