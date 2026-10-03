@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 4 108 108">
+
+<defs><radialGradient id="cg" cx="34%" cy="28%" r="75%">
+<stop offset="0" stop-color="#ffe9a3"></stop><stop offset="0.38" stop-color="#f6c445"></stop><stop offset="0.72" stop-color="#dc9a1f"></stop><stop offset="1" stop-color="#a86b12"></stop></radialGradient></defs>
+<circle cx="60" cy="58" r="52" fill="#8d5a10"></circle>
+<circle cx="60" cy="58" r="48" fill="url(#cg)"></circle>
+<circle cx="60" cy="58" r="31" fill="none" stroke="#b8902f" stroke-width="1.5" opacity="0.6"></circle>
+<text x="61" y="76" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="52" text-anchor="middle" fill="#8d5a10">₹</text>
+<text x="60" y="75" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="52" text-anchor="middle" fill="#fff3c9">₹</text>
+<ellipse cx="44" cy="38" rx="10" ry="6" fill="#fff" opacity="0.4"></ellipse>
+</svg>

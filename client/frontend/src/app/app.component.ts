@@ -145,6 +145,10 @@ export class AppComponent {
     this.est.syncFromServer();
   }
 
+  /** Home has played the "verified" tick — clear the flag (next tick, outside this
+   *  change-detection pass) so coming back to Home from another tab doesn't replay it. */
+  onVerifiedShown(): void { setTimeout(() => { this.justVerified = false; }); }
+
   /** How many holdings the user has — decides which home to show:
    *  0 → onboarding (book setup call), 1 → single house, 2+ → the map grid. */
   get holdingCount(): number { return this.est.tiles().length; }

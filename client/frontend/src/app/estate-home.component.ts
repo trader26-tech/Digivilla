@@ -136,6 +136,8 @@ export class EstateHomeComponent implements OnInit {
 
   /** Play the "verified" tick once, right after OTP (passed by the shell). */
   @Input() justVerified = false;
+  /** The tick has played — the shell clears justVerified so a later return to Home doesn't replay it. */
+  @Output() verifiedShown = new EventEmitter<void>();
 
   /** Tapping a built tile asks the shell to open its detail page. */
   @Output() openTile = new EventEmitter<Tile>();
@@ -494,6 +496,7 @@ export class EstateHomeComponent implements OnInit {
     this.est.homeEntered.set(true);
     // Play the verified tick once, right after OTP.
     if (this.justVerified) {
+      this.verifiedShown.emit();
       this.showTick.set(true);
       setTimeout(() => this.showTick.set(false), 1900);
     }

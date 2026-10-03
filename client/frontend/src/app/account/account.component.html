@@ -109,7 +109,7 @@
 
   <!-- 4 · Update to latest -->
   <div class="up" [class.done]="updated()">
-    <span class="up-i app"><img src="icons/tdc/icon-96.png" alt="" width="34" height="34" /></span>
+    <span class="up-i app"><img src="icons/tdc2/icon-96.png" alt="" width="34" height="34" /></span>
     <div class="up-t"><b>{{ updated() ? 'Up to date' : 'Update to latest' }}</b><span>{{ updateSub }}</span></div>
     <button type="button" class="up-b" (click)="onUpdate()" [disabled]="updating()">
       {{ updated() ? 'Done' : updating() ? '…' : 'Update' }}

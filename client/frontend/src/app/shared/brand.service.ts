@@ -5,7 +5,8 @@ export const APP_NAME = 'TheDigiCiti';
 /** The name it had before, shown once in the "new name, new look" sheet. */
 export const OLD_NAME = 'Digivilla';
 
-const SEEN_KEY = 'tdc_brand_seen_v1';
+// v2: the final launch icon (bigger villa, smaller coin) — show the sheet once more so iPhones re-add it
+const SEEN_KEY = 'tdc_brand_seen_v2';
 
 /** Where the app is running — decides how we explain getting the new icon. */
 export type Platform = 'ios-app' | 'ios-browser' | 'android-app' | 'other';

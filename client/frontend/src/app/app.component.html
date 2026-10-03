@@ -14,6 +14,7 @@
   *ngIf="detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'home'"
   class="has-nav"
   [justVerified]="justVerified"
+  (verifiedShown)="onVerifiedShown()"
   (openTile)="openTile($event)"
   (explore)="goExplore()"
   (build)="openNext()"
