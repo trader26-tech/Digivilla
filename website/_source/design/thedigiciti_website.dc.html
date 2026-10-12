@@ -20,6 +20,8 @@
     a{color:#E1E0CC;text-decoration:none} a:hover{color:#fff}
     [data-rise]{opacity:0}
     @supports (height:100dvh){[data-screen-label="TheDigiCiti Landing"],#showcase{height:100dvh!important}}
+    @media (max-width:700px){[data-hero-track]{height:190vh!important}}
+    @supports (height:100dvh){@media (max-width:700px){[data-hero-track]{height:190dvh!important}}}
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
@@ -39,7 +41,7 @@
   </style>
 </helmet>
 <div ref="{{ scrollRef }}" style="position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:#000;font-family:Almarai, -apple-system, 'Segoe UI', sans-serif;color:#E1E0CC">
-  <div style="height:280vh">
+  <div data-hero-track="1" style="height:280vh">
     <div data-screen-label="TheDigiCiti Landing" style="position:sticky;top:0;height:100vh;box-sizing:border-box;padding:clamp(12px,1.6vw,24px)">
       <div ref="{{ frameRef }}" style="position:relative;width:100%;height:100%;border-radius:clamp(16px,2vw,32px);overflow:hidden;background:linear-gradient(180deg,#0c0f2c 0%,#1d1d4a 16%,#2a2862 28%,#73467c 44%,#b8606a 54%,#d9814f 63%,#f3bd7c 74%,#a8606a 88%,#3a2a52 100%)">
         <div ref="{{ sunRef }}" style="will-change:transform;position:absolute;right:6%;top:26%;width:42vw;height:42vw;margin:-21vw -21vw 0 0;border-radius:50%;background:radial-gradient(closest-side, rgba(255,222,170,.8), rgba(240,138,74,.35) 38%, rgba(217,129,79,0) 70%);pointer-events:none"></div>
@@ -272,11 +274,12 @@ class Component extends DCLogic {
     // The hero has two states — idle and spread (where "Explore" lives). Any scroll inside it completes the
     // move once the input goes quiet: a short flick on a phone or one wheel notch is enough, and nothing is
     // ever left half-way. Scrolling back up past the middle returns it to idle.
-    this.lastScroll = 0; this.touching = false; this.prevTop = 0; this.heroDir = 1;
+    this.lastScroll = 0; this.touching = false; this.prevTop = 0; this.heroDir = 1; this.snapping = false;
+    this.touchDevice = matchMedia('(pointer: coarse)').matches;
     { const sc0 = this.scrollRef.current;
       if (sc0) {
-        this.onScrollEv = () => { this.lastScroll = performance.now(); };
-        this.onTS = () => { this.touching = true; }; this.onTE = () => { this.touching = false; this.lastScroll = performance.now(); };
+        this.onScrollEv = (e) => { this.lastScroll = performance.now(); if (e.type === 'wheel') this.snapping = false; };
+        this.onTS = () => { this.touching = true; this.snapping = false; }; this.onTE = () => { this.touching = false; this.lastScroll = performance.now(); };
         sc0.addEventListener('scroll', this.onScrollEv, { passive: true }); sc0.addEventListener('wheel', this.onScrollEv, { passive: true });
         sc0.addEventListener('touchstart', this.onTS, { passive: true }); sc0.addEventListener('touchend', this.onTE, { passive: true }); sc0.addEventListener('touchcancel', this.onTE, { passive: true });
       } }
@@ -315,22 +318,27 @@ class Component extends DCLogic {
       if (this.ss) this.ss.tick(dt);
       const aM = 1 - Math.exp(-dt * 3), aP = 1 - Math.exp(-dt * 14);
       sm.x += (this.mx - sm.x) * aM; sm.y += (this.my - sm.y) * aM;
-      const raw = sc ? clamp(sc.scrollTop / Math.max(1, sc.clientHeight * 1.8)) : 0;
+      const track = sc && (this.trackEl || (this.trackEl = sc.querySelector('[data-hero-track]')));
+      const range = sc ? Math.max(1, (track ? track.clientHeight : sc.clientHeight * 2.8) - sc.clientHeight) : 1;   // how far the hero scrolls before the showcase
+      const raw = sc ? clamp(sc.scrollTop / range) : 0;
       if (sc && !rm) {
-        const range = sc.clientHeight * 1.8, top = sc.scrollTop;
+        const top = sc.scrollTop;
         if (Math.abs(top - this.prevTop) > .5) { this.heroDir = top > this.prevTop ? 1 : -1; this.prevTop = top; }
-        const quiet = !this.touching && (t - this.lastScroll) > 140;
+        const inHero = top > range * .03 && top < range * .97;
+        if (!inHero) this.snapping = false;                                    // arrived (or left the hero) — free again
+        const quiet = !this.touching && (t - this.lastScroll) > (this.touchDevice ? 260 : 140);   // past any native momentum
         const elsewhere = this.ss && this.ss.active && this.ss.target > 1 && Math.abs(this.ss.target - range) > 1;   // a nav glide to the calculator etc.
-        if (quiet && !elsewhere && top > range * .03 && top < range * .97) {
+        if (inHero && quiet && !elsewhere && !this.snapping) {
           const want = this.heroDir > 0 ? range : (top < range * .5 ? 0 : range);
-          if (this.ss) { if (!this.ss.active || Math.abs(this.ss.target - want) > 1) this.ss.scrollTo(want, 2.6); }
-          else sc.scrollTo({ top: want, behavior: 'smooth' });
+          this.snapping = true;
+          if (this.touchDevice || !this.ss) sc.scrollTo({ top: want, behavior: 'smooth' });   // the platform's own glide — never fights a finger
+          else this.ss.scrollTo(want, 2.6);
         }
       }
       const sr = this.showRig.current;
       if (sr && this.showOn) { const rv = 'rotateY(' + (sm.x * 6).toFixed(3) + 'deg) rotateX(' + (-sm.y * 4).toFixed(3) + 'deg)'; if (sr.__v !== rv) { sr.style.transform = rv; sr.__v = rv; } }
       this.sp += (raw - this.sp) * aP; const p = this.sp;
-      const landingOn = !sc || sc.scrollTop < sc.clientHeight * 2.9;
+      const landingOn = !sc || sc.scrollTop < range + sc.clientHeight * 1.1;
       const W = fr ? fr.clientWidth : innerWidth, H = fr ? fr.clientHeight : innerHeight;
       const setEl = (el, v, o) => { if (!el) return; if (el.__v !== v) { el.style.transform = v; el.__v = v; } if (o != null && el.__o !== o) { el.style.opacity = o; el.__o = o; } };
       const set = (r, v, o) => setEl(r.current, v, o);
