@@ -24,6 +24,29 @@ python3 -m http.server 4500       # then open http://127.0.0.1:4500/
 
 Never edit `dc/` or the `*.html` pages by hand — they are regenerated.
 
+### Where the build goes beyond the prototype
+
+The prototype's look and timing are kept; what changed is how it runs:
+
+- **Shadows are baked, not filtered.** The villa and the five stage tiles had
+  stacked CSS `drop-shadow` filters on elements that move every frame — several
+  large blur passes per frame. `rt.bakeFilter` renders each filter once into a
+  canvas (same picture) and swaps it in.
+- **Smoothing is time-based** (scroll progress, mouse parallax), so the feel is
+  identical at 30, 60 or 120 Hz. Per-frame DOM writes are skipped when nothing
+  changed, the phone rig only turns while on screen, and the landing loop idles
+  once the calculator is reached.
+- **One scene per wheel gesture** in the story (`rt.wheelStepper`): a trackpad
+  flick is one step, a scroll that is still rolling when a scene lands does not
+  fire the next one.
+- **Nothing flashes in.** Fonts are self-hosted and preloaded
+  (`assets/fonts`); the landing copy rises and the page veil lifts only once
+  fonts and first-screen images are decoded (`rt.ready`).
+- **Images are ~5× lighter** (WebP screens, a 320 px coin, pruned unused art).
+- **Reduced motion** is honoured: no drift, bob or parallax; the pen draws
+  instantly.
+- **Phones** get a real showcase layout (heading above a width-fitted stage).
+
 | Page | Screen |
 |---|---|
 | `index.html` | Landing + mobile showcase (`#showcase`) + calculator (`#calculator`) |

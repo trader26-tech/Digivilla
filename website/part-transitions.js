@@ -1,6 +1,8 @@
 (function () {
   if (window.tdcVeil) return;
   var KEY = 'tdcVeil';
+  // resolved by the page runtime once fonts + first-screen images are in
+  window.__tdcReady = new Promise(function (r) { window.__tdcReadyResolve = r; });
   var BG = 'radial-gradient(ellipse 45% 50% at 50% 45%,rgba(246,196,69,.16),transparent 70%),radial-gradient(ellipse 50% 30% at 50% 100%,rgba(42,43,107,.6),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16)';
   var EASE = 'cubic-bezier(.7,0,.3,1)';
   if (!document.getElementById('tdcVeilKf')) {
@@ -58,7 +60,8 @@
       var s = sky(1), t1 = Date.now();
       if (o.anchor) { var jump = function () { var a = document.getElementById(o.anchor); if (a && a.parentElement) { a.parentElement.scrollTop = a.offsetTop; return true; } }; if (!jump()) { var n = 0, iv = setInterval(function () { if (jump() || ++n > 40) clearInterval(iv); }, 25); } }
       var done = false, fade = function () { if (done) return; done = true; s.style.pointerEvents = 'none'; s.style.transition = o.fast ? 'opacity .3s ease-out' : 'opacity .8s cubic-bezier(.4,0,.2,1)'; s.style.opacity = '0'; setTimeout(function () { s.remove(); }, 900); };
-      setTimeout(fade, o.fast ? 0 : 350); addEventListener('load', fade);
+      var minT = o.fast ? 0 : 350;
+      Promise.race([window.__tdcReady, new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { setTimeout(fade, Math.max(0, minT - (Date.now() - t1))); });
       return;
     }
     var v = build({ num: o.num, kicker: o.kicker, title: o.title, cx: '50%', cy: '50%' }, true), l = v.querySelector('[data-l]');

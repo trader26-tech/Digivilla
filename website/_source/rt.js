@@ -245,7 +245,110 @@ export class DSButton extends Component {
   }
 }
 
+// ── motion helpers ───────────────────────────────────────────────────────────
+/** True when the visitor asked the OS for less motion. */
+export const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/** One step per wheel GESTURE — not per event. A trackpad flick fires dozens
+ *  of wheel events over ~1s with momentum; the prototype stepped on the first
+ *  one, ignored the rest while tweening, then stepped AGAIN on the tail. This
+ *  arms once per gesture (a gap of `quiet` ms starts a new one) and fires when
+ *  the accumulated delta passes `threshold`. */
+export function wheelStepper(step, opts = {}) {
+  const QUIET = opts.quiet ?? 260, TH = opts.threshold ?? 40;
+  let acc = 0, last = 0, armed = true, calmAt = 0, watch = 0;
+  return (e) => {
+    e.preventDefault();
+    // the event's own clock: a main-thread stall mid-gesture must not look like a pause
+    const now = e.timeStamp || performance.now();
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
+    // busy while a scene tweens, and for a beat after it lands — so a scroll
+    // that is still rolling when the tween ends can't fire the next scene
+    const busy = !!(opts.busy && opts.busy()) || now < calmAt;
+    // a real pause starts a new gesture — never while busy
+    if (now - last > QUIET && !busy) { armed = true; acc = 0; }
+    last = now;
+    if (!armed) return;
+    acc += dy;
+    if (Math.abs(acc) < TH) return;
+    armed = false; acc = 0;
+    if (busy) return;
+    step(dy > 0 ? 1 : -1);
+    // once the scene lands, hold for a beat before the next can fire
+    if (opts.busy) { clearInterval(watch); watch = setInterval(() => { if (!opts.busy()) { clearInterval(watch); calmAt = performance.now() + 400; } }, 40); }
+  };
+}
+
+/** Pre-render an element's CSS `filter` (drop-shadow glows, sepia …) into a
+ *  canvas ONCE and swap it in. A CSS filter on an element that moves every
+ *  frame is re-blurred every frame — several large blur passes on a retina
+ *  texture, which is what made the landing stutter. The baked canvas is a
+ *  plain texture: the same picture, composited for free.
+ *  `holder` carries the filter and defines the box; `art` is the <img> or
+ *  <svg> inside it. Falls back to leaving the CSS filter alone. */
+export async function bakeFilter(holder, art, res = 1024) {
+  try {
+    let f = getComputedStyle(holder).filter, fOn = holder;
+    if (!f || f === 'none') { f = getComputedStyle(art).filter; fOn = art; }
+    if (!f || f === 'none' || !holder.clientWidth) return null;
+    const probe = document.createElement('canvas').getContext('2d');
+    if (!probe || !('filter' in probe)) return null;
+    let img, iw, ih;
+    if (art.tagName === 'IMG') {
+      if (!art.complete) await new Promise((r) => { art.onload = r; art.onerror = r; });
+      if (art.decode) await art.decode().catch(() => {});
+      img = art; iw = art.naturalWidth; ih = art.naturalHeight;
+      if (!iw) return null;
+    } else {
+      const vb = (art.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+      iw = vb[2] || art.clientWidth; ih = vb[3] || art.clientHeight;
+      const c = art.cloneNode(true);
+      c.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); c.setAttribute('width', iw); c.setAttribute('height', ih); c.removeAttribute('style');
+      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(c)], { type: 'image/svg+xml' }));
+      img = new Image();
+      await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
+      URL.revokeObjectURL(url);
+    }
+    // draw the art at `res` px wide; shadow lengths scale with it so the
+    // result matches the CSS filter at today's on-screen size
+    const k = res / holder.clientWidth;
+    const resH = Math.round(res * ih / iw), pad = Math.round(res * 0.2);
+    const cv = document.createElement('canvas');
+    cv.width = res + 2 * pad; cv.height = resH + 2 * pad;
+    const ctx = cv.getContext('2d');
+    ctx.filter = f.replace(/(-?\d*\.?\d+)px/g, (_, v) => (parseFloat(v) * k).toFixed(2) + 'px');
+    ctx.drawImage(img, pad, pad, res, resH);
+    const cs = getComputedStyle(holder);
+    if (cs.position === 'static') holder.style.position = 'relative';
+    cv.style.cssText = `position:absolute;left:${-pad / res * 100}%;top:${-pad / resH * 100}%;width:${cv.width / res * 100}%;height:${cv.height / resH * 100}%;pointer-events:none;display:block`;
+    cv.setAttribute('aria-hidden', 'true');
+    fOn.style.filter = 'none';
+    art.style.visibility = 'hidden';
+    holder.appendChild(cv);
+    return cv;
+  } catch (e) { console.warn('bakeFilter', e); return null; }
+}
+
+/** Resolves once the page is really ready to be looked at: the root has
+ *  rendered, the fonts are in, and the images in the first viewport have
+ *  decoded (capped so a slow image can never hold the page hostage). */
+let readyResolve;
+export const ready = new Promise((r) => { readyResolve = r; });
+async function settle() {
+  const cap = new Promise((r) => setTimeout(r, 1800));
+  const fonts = document.fonts ? document.fonts.ready : Promise.resolve();
+  const imgs = [...document.images].filter((i) => {
+    if (i.loading === 'lazy') return false;
+    const r = i.getBoundingClientRect();
+    return r.bottom > 0 && r.top < innerHeight && r.width > 0;
+  });
+  await Promise.race([cap, Promise.all([fonts, ...imgs.map((i) => (i.decode ? i.decode() : Promise.resolve()).catch(() => {}))])]);
+  readyResolve();
+  if (window.__tdcReadyResolve) window.__tdcReadyResolve();
+}
+
 /** Mount a page's root component into #dc-root. */
 export function mount(Root) {
   render(h(Root, {}), document.getElementById('dc-root'));
+  requestAnimationFrame(() => settle());
 }

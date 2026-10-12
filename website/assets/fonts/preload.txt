@@ -1,0 +1,6 @@
+Almarai-400-normal-latin.woff2
+Caveat-500-normal-latin.woff2
+InstrumentSerif-400-italic-latin.woff2
+Inter-400-normal-latin.woff2
+Inter-500-normal-latin.woff2
+Inter-600-normal-latin.woff2

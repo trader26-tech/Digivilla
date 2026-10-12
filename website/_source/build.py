@@ -245,6 +245,8 @@ def helmet_nodes(root: Node):
         attrs = {k: rewrite_urls(v) for k, v in c.attrs}
         if c.tag == 'script' and any(s in attrs.get('src', '') for s in SKIP_HELMET_SRC):
             continue
+        if c.tag == 'link' and 'fonts.g' in attrs.get('href', ''):
+            continue                        # fonts are self-hosted (assets/fonts)
         text = ''.join(x for x in c.children if isinstance(x, str))
         out.append({'tag': c.tag, 'attrs': attrs, 'text': rewrite_urls(text)})
     return out
@@ -287,7 +289,7 @@ def compile_file(path: Path) -> dict:
     fix(xdc)
     kids = comp.children(xdc)
     helmet = helmet_nodes(root)
-    lines = ["import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle"
+    lines = ["import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready"
              + (", DSButton" if comp.uses_ds_button else "") + " } from './rt.js';"]
     for imp in sorted(comp.imports):
         lines.append(f"import {mod_id(imp)} from './{imp}.js';")
@@ -333,6 +335,8 @@ PAGE = '''<!DOCTYPE html>
 <meta name="description" content="A villa in India that pays you rent. Built by your SIP, wherever you live.">
 <meta name="theme-color" content="#0c0f2c">
 <link rel="icon" href="assets/favicon.png">
+{preload}
+<link rel="stylesheet" href="assets/fonts/fonts.css">
 <script>window.__dcStaticHelmet = {root_js};</script>
 {head}
 <style>html,body{{height:100%;margin:0}}#dc-root,#dc-root>.sc-host{{height:100%}}</style>
@@ -370,8 +374,19 @@ def main():
         t = re.sub(r"from '\./([\w-]+)\.js'", lambda m: f"from './{m.group(1)}.js?v={ver}'", t)
         t = t.replace("from './vendor/preact.mjs'", f"from './vendor/preact.mjs?v={ver}'")
         p.write_text(t)
+    # fonts the first paint needs, by page family; plus the landing's hero art
+    pre = {name: f'<link rel="preload" href="assets/fonts/{name}" as="font" type="font/woff2" crossorigin>'
+           for name in (SRC.parent / 'assets' / 'fonts' / 'preload.txt').read_text().split()}
+    FONTS = {
+        'thedigiciti_website': ['Almarai-400-normal-latin.woff2', 'InstrumentSerif-400-italic-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'],
+        'story': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
+        'story-2-map': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
+    }
+    HERO = {'thedigiciti_website': ['assets/explore/villa.webp'], 'story-1-journey': ['assets/explore/villa.webp']}
     for page, root in PAGES.items():
-        (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root),
+        fonts = FONTS.get(root, ['Inter-400-normal-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'])
+        preload = '\n'.join([pre[f] for f in fonts if f in pre] + [f'<link rel="preload" href="{u}" as="image" fetchpriority="high">' for u in HERO.get(root, [])])
+        (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root), preload=preload,
                                             head=head_html(info[root]['helmet']), ver=ver))
     print(f'built {len(info)} components, {len(PAGES)} pages · v={ver}')
 

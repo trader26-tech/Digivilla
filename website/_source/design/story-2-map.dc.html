@@ -139,7 +139,7 @@ class Component extends DCLogic {
     const svg = this.svg.current;
     this.paths = {};
     svg.querySelectorAll('[data-s]').forEach(p => { const L = p.getTotalLength(); this.paths[p.dataset.s] = { el: p, L }; p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.style.opacity = 0; });
-    const dur = (this.props.duration ?? 6) * 1000;
+    const dur = reducedMotion ? 1 : (this.props.duration ?? 6) * 1000;
     const go = () => { this.t0 = performance.now() + 400; const tick = now => { this.p = Math.max(0, Math.min(1, (now - this.t0) / dur)); this.frame(); if (this.p < 1) this.raf = requestAnimationFrame(tick); }; this.raf = requestAnimationFrame(tick); };
     this.replay = () => { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.ar); this.u = 0; this.step = 0; this.busy = false; go(); };
     this.stops = [0, .4, 1.45, 2.5, 3.2, 4.65, 6.05, 6.7, 8.05, 9.25];
@@ -150,14 +150,15 @@ class Component extends DCLogic {
       if ((this.p || 0) < 1) { cancelAnimationFrame(this.raf); this.p = 1; }
       if (i === this.step && !this.busy) { this.frame(); return; }
       this.prev = this.step; this.step = i; this.busy = true; cancelAnimationFrame(this.ar);
+      document.documentElement.dataset.step = i;   // which scene is showing (tests, analytics)
       const fwd = i > this.prev, from = this.u, to = this.stops[i], t0 = performance.now();
-      const dur = fwd ? this.durs[i] * (this.props.drawSpeed ?? 1) : 1000;
+      const dur = reducedMotion ? 1 : fwd ? this.durs[i] * (this.props.drawSpeed ?? 1) : 1000;
       const e = fwd ? (t => .5 - .5 * Math.cos(Math.PI * t)) : (t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
       const tick = now => { const k = Math.min(1, (now - t0) / dur); this.u = from + (to - from) * e(k); this.frame(); if (k < 1) this.ar = requestAnimationFrame(tick); else setTimeout(() => { this.busy = false; }, 280); };
       this.ar = requestAnimationFrame(tick);
     };
     const nav = dir => { if (this.busy) return; if ((this.p || 0) < 1) { cancelAnimationFrame(this.raf); this.p = 1; this.frame(); if (dir > 0) return; } if (dir > 0 && this.step >= this.stops.length - 1) { this.props.onNext && this.props.onNext(); return; } if (dir < 0 && this.step <= 0) { this.props.onPrev && this.props.onPrev(); return; } this.animTo(this.step + dir); };
-    this.onWheel = ev => { ev.preventDefault(); if (Math.abs(ev.deltaY) < 8) return; nav(ev.deltaY > 0 ? 1 : -1); };
+    this.onWheel = wheelStepper(d => nav(d), { busy: () => this.busy });
     this.onKey = ev => { if (['ArrowDown', 'PageDown', ' ', 'Enter'].includes(ev.key)) { ev.preventDefault(); nav(1); } else if (['ArrowUp', 'PageUp'].includes(ev.key)) { ev.preventDefault(); nav(-1); } };
     this.onTS = ev => { this.ty = ev.touches[0].clientY; };
     this.onTE = ev => { const dy = this.ty - ev.changedTouches[0].clientY; if (Math.abs(dy) > 36) nav(dy > 0 ? 1 : -1); };
