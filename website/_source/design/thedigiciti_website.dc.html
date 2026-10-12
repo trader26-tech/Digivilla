@@ -345,8 +345,9 @@ class Component extends DCLogic {
         const el = r.current; if (!el) return;
         const w = el.offsetWidth, hh = el.offsetHeight;
         let x, y, s, op;
-        if (i === 4) { x = cx; y = cy - .02 * e; s = phone ? 2.4 - 1.0 * e : 2.6 - 1.1 * e; op = clamp((p - .1) / .12); }
-        else {
+        // stage 05 is the hero villa itself (below) — this tile only lends its size
+        if (i === 4) { if (el.__o !== 0) { el.style.opacity = 0; el.__o = 0; el.style.pointerEvents = 'none'; } return; }
+        {
           const ei = ease(clamp((p - .16 - Math.abs(i < 2 ? 1 - i : i - 2) * .05) / .55)), [ex, ey, es] = end[i];
           x = cx + (ex - cx) * ei; y = cy + (ey - cy) * ei - Math.sin(ei * Math.PI) * .07; s = .5 + (es - .5) * ei; op = clamp(ei * 3);
         }
@@ -358,9 +359,13 @@ class Component extends DCLogic {
       });
       const v = this.villaRef.current;
       if (v) {
-        const vo = 1 - clamp((p - .08) / .14);
-        v.style.transform = 'translate(' + (cx * W - v.offsetWidth / 2 - sm.x * 34) + 'px,' + (cy * H - v.offsetHeight / 2 + Math.sin(k * .7) * 7 - sm.y * 14 - (1 - vo) * H * .06) + 'px) scale(' + (1 - (1 - vo) * .12) + ')';
-        v.style.opacity = vo;
+        // ONE villa: the hero shrinks and settles into the middle of the row as the
+        // four stages fly out around it — no cross-fade, so it never reads as two.
+        const t4 = tiles[4].current, tileW = t4 && t4.offsetWidth ? t4.offsetWidth * (phone ? 1.4 : 1.5) : v.offsetWidth * .6;
+        const s = 1 + (tileW / v.offsetWidth - 1) * e;
+        const bobV = Math.sin(k * .7) * 7 * (1 - e) + Math.sin(k * .8 + 5.2) * 6 * e;
+        v.style.transform = 'translate(' + (cx * W - v.offsetWidth / 2 - sm.x * (34 - 16 * e)) + 'px,' + ((cy - .02 * e) * H - v.offsetHeight / 2 + bobV - sm.y * (14 - 4 * e)) + 'px) scale(' + s + ')';
+        if (v.__o !== 1) { v.style.opacity = 1; v.__o = 1; }
       }
       set(this.coinRef, 'translateY(' + (Math.sin(k * 1.4) * 8) + 'px) rotateY(' + (k * 70 % 360) + 'deg)', clamp((p - .7) / .2));
       if (this.glowRef.current) this.glowRef.current.style.opacity = 1 - clamp(p / .5) * .6;

@@ -1,9 +1,9 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=ae771412';
-import C_part_footer from './part-footer.js?v=ae771412';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=f0f7fbee';
+import C_part_footer from './part-footer.js?v=f0f7fbee';
 addCSS(".p-calculator-1:hover{box-shadow:inset 0 0 0 1px #8fd65a !important;color:#fff !important}\n.p-calculator-2:hover{color:#e9e9ed !important}\n.p-calculator-3:hover{box-shadow:inset 0 0 0 1px #8fd65a !important}\n.p-calculator-4:hover{box-shadow:inset 0 0 0 1px #8fd65a !important}");
 /* ── logic, verbatim from the design file ── */
-import * as E from './engine.js?v=ae771412';
-import { loadCalc } from './calc-data.js?v=ae771412';
+import * as E from './engine.js?v=f0f7fbee';
+import { loadCalc } from './calc-data.js?v=f0f7fbee';
 /* Every figure here is computed by the app's own calculator engine (dc/engine.js, built from
    client/frontend/src/app/calc/engine) on the real benchmark-index history and the live settings
    (GET /calc/config) — no rate is assumed or typed in this file. */
