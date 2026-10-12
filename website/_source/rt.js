@@ -363,7 +363,8 @@ export function scrubber(opts) {
       if (Math.abs(d) < .0005) pos = target;
       else {
         const seg = Math.max(0, Math.min(max - 1, Math.floor(Math.min(pos, target) + 1e-6)));
-        const cap = (opts.rateFor ? opts.rateFor(seg) : 1.2) * dt;
+        const boost = 1 + Math.max(0, Math.abs(d) - .6) * 1.6;        // more than half a scene behind the finger → hurry a little
+        const cap = (opts.rateFor ? opts.rateFor(seg) : 1.2) * boost * dt;
         const ease = Math.abs(d) * (1 - Math.exp(-dt * (opts.ease ?? 6)));
         pos += Math.sign(d) * Math.min(Math.abs(d), Math.min(ease, cap) + dt * .02);
       }

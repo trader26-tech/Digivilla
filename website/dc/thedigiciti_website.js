@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=356edf03';
-import C_calculator from './calculator.js?v=356edf03';
-import C_part_footer from './part-footer.js?v=356edf03';
-import C_part_stage_foundation from './part-stage-foundation.js?v=356edf03';
-import C_part_stage_grading from './part-stage-grading.js?v=356edf03';
-import C_part_stage_plot from './part-stage-plot.js?v=356edf03';
-import C_part_stage_steel from './part-stage-steel.js?v=356edf03';
-import C_part_stage_villa from './part-stage-villa.js?v=356edf03';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=bb92d1ab';
+import C_calculator from './calculator.js?v=bb92d1ab';
+import C_part_footer from './part-footer.js?v=bb92d1ab';
+import C_part_stage_foundation from './part-stage-foundation.js?v=bb92d1ab';
+import C_part_stage_grading from './part-stage-grading.js?v=bb92d1ab';
+import C_part_stage_plot from './part-stage-plot.js?v=bb92d1ab';
+import C_part_stage_steel from './part-stage-steel.js?v=bb92d1ab';
+import C_part_stage_villa from './part-stage-villa.js?v=bb92d1ab';
 addCSS(".p-thedigicitiwebsite-1:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-2:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-3:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-4:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-5:hover{gap:clamp(24px,2.6vw,48px) !important;color:#fff !important}");
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {

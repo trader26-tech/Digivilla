@@ -18,15 +18,22 @@
 @media (max-width:700px){
   [data-mcaps]{display:block!important}
   foreignObject[data-sc],foreignObject[data-fix],foreignObject[data-ideal]{display:none}
-  [data-g]{top:calc(84px + env(safe-area-inset-top))!important;bottom:auto!important;left:8px!important;right:8px!important;width:calc(100% - 16px)!important;height:calc((100vw - 16px) * 540 / 830)!important}
-  [data-mcaps]{top:calc(118px + env(safe-area-inset-top) + (100vw - 16px) * 540 / 830)!important;height:auto!important;bottom:max(16px,env(safe-area-inset-bottom))!important}
-  [data-mcap]{justify-content:flex-start!important}
+  [data-mcaps]{top:calc(84px + env(safe-area-inset-top))!important;height:34vh!important;bottom:auto!important}
+  [data-mcap]{justify-content:flex-end!important}
+  [data-g]{top:calc(98px + env(safe-area-inset-top) + 34vh)!important;bottom:auto!important;left:8px!important;right:8px!important;width:calc(100% - 16px)!important;height:calc((100vw - 16px) * 540 / 830)!important}
+  [data-hand]{display:none}
   [data-lab] > div > span:first-child{font-size:42px!important}
   [data-lab] > div > span:last-child{font-size:19px!important}
   [data-lab="2"] > div{height:100%;justify-content:flex-end}
   [data-vl] > div{font-size:30px!important}
   [data-prob] h2,[data-sol] h2{font-size:38px!important}
   [data-hint]{display:none}
+}
+@media (max-width:700px) and (max-height:720px){
+  [data-mcap] > div{padding:12px 14px!important;gap:6px!important}
+  [data-mcap] > div > span:first-child{font-size:17px!important}
+  [data-mcap] [data-mans] > div{font-size:13px!important}
+  [data-mcap="ideal"] > span:last-child{font-size:32px!important}
 }</style>
 </helmet>
 <div ref="{{ scRef }}" style="position:fixed;inset:0;overflow:hidden;touch-action:none;overflow-x:hidden;background:#0b0c12">
@@ -191,6 +198,8 @@ class Component extends DCLogic {
       // villa names are right-aligned: widen their boxes to the left so "Conservative" fits at the phone size; the −50% label moves left of the crash
       [[0, 224], [1, 364], [2, 504]].forEach(([i, x]) => { const v = root.querySelector(`[data-vl="${i}"]`); if (v) { v.setAttribute('x', ph ? x - 90 : x); v.setAttribute('width', ph ? 240 : 150); } });
       const cl = root.querySelector('[data-cl]'); if (cl) cl.setAttribute('x', ph ? 748 : 906);
+      this.phone = ph;
+      root.querySelectorAll('foreignObject[data-m]').forEach(fo => { if (!fo.dataset.ox) fo.dataset.ox = fo.getAttribute('x'); fo.setAttribute('x', ph ? -5000 : fo.dataset.ox); });
     };
     this.fit();
     this.on = () => { this.fit(); requestAnimationFrame(() => this.frame()); };
@@ -263,7 +272,7 @@ class Component extends DCLogic {
     });
     const io = F(.68, .8), iout = 1 - F(1.5, 1.62);
     set('[data-ideal]', io * iout);
-    q('[data-ideal]').setAttribute('x', (350 + (1 - io) * -16).toFixed(1));
+    q('[data-ideal]').setAttribute('x', this.phone ? -5000 : (350 + (1 - io) * -16).toFixed(1));
     { const m = q('[data-mcap="ideal"]'); if (m) m.style.transform = `translateX(${((1 - io) * -16).toFixed(1)}px)`; }
     set('[data-boxfill]', .12 * io * iout);
     if (T > 1.88) this.paths.box.el.style.opacity = iout;
