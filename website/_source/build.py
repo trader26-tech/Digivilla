@@ -386,7 +386,7 @@ PAGE = '''<!DOCTYPE html>
 <style>{fonts_css}</style>
 <script>window.__dcStaticHelmet = {root_js};</script>
 {head}
-<style>html,body{{height:100%;margin:0}}#dc-root,#dc-root>.sc-host{{height:100%}}</style>
+<style>html,body{{height:100%;margin:0}}html{{touch-action:manipulation;-webkit-tap-highlight-color:transparent}}#dc-root,#dc-root>.sc-host{{height:100%}}</style>
 {modules}{warm}
 </head>
 <body>

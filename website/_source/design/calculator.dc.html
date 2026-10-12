@@ -64,13 +64,13 @@
 <button onClick="{{ inc }}" aria-label="More" style="width:36px;height:36px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a" style-hover="box-shadow:inset 0 0 0 1px #8fd65a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
 </div>
 </div>
-<div style="position:relative;height:34px;overflow:hidden">
+<div ref="{{ rulerRef }}" style="position:relative;height:34px;overflow:hidden;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none">
 <div style="{{ rulerRow }}">
 <sc-for list="{{ ticks }}" as="t" hint-placeholder-count="30"><i style="{{ t.s }}"></i></sc-for>
 </div>
 <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#121420,rgba(18,20,32,0) 22%,rgba(18,20,32,0) 78%,#121420)"></div>
 <i style="position:absolute;left:50%;top:2px;bottom:2px;width:2px;margin-left:-1px;border-radius:2px;background:#8fd65a;box-shadow:0 0 10px rgba(143,214,90,.7)"></i>
-<input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="Adjust" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize">
+<input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="Adjust" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none">
 </div>
 <div style="display:flex;justify-content:space-between;font-size:11px;color:#5a5e6c"><span>{{ rLo }}</span><span>Drag to adjust</span><span>{{ rHi }}</span></div>
 </div>
@@ -196,7 +196,39 @@ const YEAR_OPTS = [5, 8, 10, 15, 20];
 const RATES = [6, 6.5, 7, 7.5, 8], SLABS = [0, 5, 10, 15, 20, 25, 30];
 class Component extends DCLogic {
   state = { mode: 'fd', villa: null, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price', data: null, failed: false };
-  boxRef = React.createRef(); stageRef = React.createRef();
+  boxRef = React.createRef(); stageRef = React.createRef(); rulerRef = React.createRef();
+  /** the fields the tape can edit (FD: the amount; Flat: price / value / year / rent) */
+  fieldsFor(S) {
+    if (S.mode === 'fd') return [{ key: 'amount', label: 'You invest', min: 1000000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, f: n => this.inr(n) }];
+    const vf = S.data && S.data.vf, endYear = vf ? this.endYear(vf) : new Date().getFullYear(), maxYears = vf ? this.maxYears(vf) : 15;
+    return [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
+      { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
+      { key: 'bought', hint: vf ? `History from ${this.ym(vf.months[0])}` : '', label: 'Bought in', min: endYear - maxYears, max: endYear - 1, step: 1, big: 1, major: 10, mid: 5, f: n => String(n) },
+      { key: 'rent', hint: 'Before tax', label: 'Rent a month', min: 0, max: 300000, step: 1000, big: 5000, major: 50000, mid: 10000, f: n => this.inr(n) }];
+  }
+  activeField(S = this.state) { const F = this.fieldsFor(S); return S.mode === 'fd' ? F[0] : (F.find(q => q.key === S.active) || F[0]); }
+  /** set a field from the tape; `raw` keeps sub-step values while a drag or fling is in flight */
+  setField(a, v, raw) { v = Math.min(a.max, Math.max(a.min, v)); if (!raw) v = Math.round(v / a.step) * a.step; if (v !== this.state[a.key]) this.setState({ [a.key]: v }); }
+  /** The tape measure: drag moves the tape under the needle (10 px a tick), a flick keeps it rolling and it settles on a tick.
+   *  A finger moving up/down still scrolls the page (touch-action: pan-y); keyboard users have the hidden range input. */
+  mountRuler() {
+    const rl = this.rulerRef.current; if (!rl || rl.__tape) return; rl.__tape = true;
+    const PX = 10; let sx = 0, sv = 0, lastX = 0, lastT = 0, vel = 0;
+    const stop = () => { if (this.fling) cancelAnimationFrame(this.fling); this.fling = 0; };
+    rl.addEventListener('pointerdown', e => { if (!this.state.data || e.button) return; stop(); rl.setPointerCapture(e.pointerId); const a = this.activeField(); sx = lastX = e.clientX; sv = this.state[a.key]; lastT = e.timeStamp; vel = 0; this.dragging = true; rl.style.cursor = 'grabbing'; e.preventDefault(); });
+    rl.addEventListener('pointermove', e => { if (!this.dragging) return; const a = this.activeField(), dt = Math.max(1, e.timeStamp - lastT); vel = .75 * vel + .25 * ((e.clientX - lastX) / dt); lastX = e.clientX; lastT = e.timeStamp; this.setField(a, sv - (e.clientX - sx) / PX * a.step, true); });
+    const end = e => {
+      if (!this.dragging) return; this.dragging = false; rl.style.cursor = 'grab';
+      const a = this.activeField(); let v = -vel / PX * a.step;                 // value units per ms
+      const settle = () => { this.fling = 0; this.setField(a, Math.round(this.state[a.key] / a.step) * a.step); };
+      if (Math.abs(vel) < .25 || (e.timeStamp - lastT) > 80) { settle(); return; }   // a deliberate slow drag stops where the finger left it; only a real flick keeps rolling
+      let prev = performance.now();
+      const roll = now => { const dt = Math.min(40, now - prev); prev = now; this.setField(a, this.state[a.key] + v * dt, true); v *= Math.pow(.993, dt); const cur = this.state[a.key]; if (Math.abs(v) > a.step * .0003 && cur > a.min && cur < a.max) this.fling = requestAnimationFrame(roll); else settle(); };
+      this.fling = requestAnimationFrame(roll);
+    };
+    rl.addEventListener('pointerup', end); rl.addEventListener('pointercancel', end);
+    rl.addEventListener('wheel', e => { const a = this.activeField(), d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; if (!d) return; e.preventDefault(); stop(); this.setField(a, this.state[a.key] + Math.sign(d) * a.step * Math.max(1, Math.round(Math.abs(d) / 24))); }, { passive: false });
+  }
   componentDidMount() {
     this.fit = () => {
       const b = document.querySelector('[data-calcbox]');
@@ -226,7 +258,8 @@ class Component extends DCLogic {
       setTimeout(() => { if (!this.dead && this.fit) this.fit(); }, 0);
     }, err => { console.warn('calculator data', err); if (!this.dead) this.setState({ failed: true }); });
   }
-  componentWillUnmount() { this.dead = true; clearTimeout(this.poll); window.removeEventListener('resize', this.onResize); window.removeEventListener('load', this.onResize); this.ro && this.ro.disconnect(); }
+  componentDidUpdate() { this.mountRuler(); }
+  componentWillUnmount() { this.dead = true; clearTimeout(this.poll); if (this.fling) cancelAnimationFrame(this.fling); window.removeEventListener('resize', this.onResize); window.removeEventListener('load', this.onResize); this.ro && this.ro.disconnect(); }
   yearsAvailable(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
   maxYears(vf) { return Math.floor((vf.months.length - 1) / 12); }
   endYear(vf) { return +vf.end.slice(0, 4); }
@@ -238,16 +271,18 @@ class Component extends DCLogic {
   villaRate(key) { const { cfg, vf } = this.state.data; if (!(key in this.rates)) this.rates[key] = E.villaRate(vf, cfg, key); return this.rates[key]; }
   /** one simulation per distinct set of inputs; renders in between reuse it */
   sim(S) {
-    const key = JSON.stringify([S.mode, S.villa, S.amount, S.years, S.fdRate, S.tax, S.income, S.price, S.value, S.bought, S.rent]);
+    const F = this.fieldsFor(S), sn = k => { const q = F.find(x => x.key === k); return q ? Math.round(S[k] / q.step) * q.step : S[k]; };
+    const amount = sn('amount'), price = sn('price'), value = sn('value'), bought = sn('bought'), rent = sn('rent');
+    const key = JSON.stringify([S.mode, S.villa, amount, S.years, S.fdRate, S.tax, S.income, price, value, bought, rent]);
     if (this.memo && this.memo.key === key) return this.memo.out;
     const { cfg, vf } = S.data, villa = E.villaOf(cfg, S.villa), d = E.withVilla(vf, villa);
     let out;
     if (S.mode === 'fd') {
       const w = E.windowFor(d, S.years);
-      out = { villa, w, r: E.simulatePayout(w, { amount: S.amount, fdRate: S.fdRate, slabPct: S.tax, swp: S.income }, cfg) };
+      out = { villa, w, r: E.simulatePayout(w, { amount, fdRate: S.fdRate, slabPct: S.tax, swp: S.income }, cfg) };
     } else {
-      const held = Math.max(1, this.endYear(vf) - S.bought), w = E.windowFor(d, held);
-      const f = E.simulateFlat(w, { price: S.price, value: S.value, rent: S.rent, slabPct: S.tax, swp: S.income }, cfg);
+      const held = Math.max(1, this.endYear(vf) - bought), w = E.windowFor(d, held);
+      const f = E.simulateFlat(w, { price, value, rent, slabPct: S.tax, swp: S.income }, cfg);
       out = { villa, w, f, r: f.dv, held };
     }
     this.memo = { key, out };
@@ -268,16 +303,19 @@ class Component extends DCLogic {
     const first = this.ym(w.months[0]), last = this.ym(w.months[w.months.length - 1]), span = `${first} → ${last}`;
     const endYear = this.endYear(vf), maxYears = this.maxYears(vf);
     const vRate = this.villaRate(villa.key), irr = r.dvIrr;
+    const Fs = this.fieldsFor(S), act = this.activeField(S);
+    const snapped = k => Math.round(S[k] / (Fs.find(q => q.key === k) || act).step) * (Fs.find(q => q.key === k) || act).step;
+    const setA = n => { if (this.fling) { cancelAnimationFrame(this.fling); this.fling = 0; } this.setField(act, n); };
     let L, R, years, start, lName, lCap, rCap, lArt;
     if (isFd) {
-      years = r.years; start = S.amount;
+      years = r.years; start = snapped('amount');
       L = { a: r.fdPaid, b: r.fdValue, la: 'Paid out', lb: 'Value' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Paid out', lb: 'Value', solo: !S.income };
       lName = 'FIXED DEPOSIT · ' + S.fdRate + '%'; lCap = this.fmt(r.fdPaid) + ' paid + ' + this.fmt(r.fdValue) + ' value';
       rCap = S.income ? this.fmt(r.dvPaid) + ' paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ' value, nothing drawn'; lArt = 'assets/art/bank.svg';
     } else {
       years = f.years; start = f.outlay;
-      L = { a: f.rentKept, b: S.value, la: 'Rent kept', lb: 'Worth today' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Rent paid', lb: 'Value', solo: !S.income };
-      lName = 'FLAT · ' + f.appPct.toFixed(1) + '% A YEAR'; lCap = this.fmt(f.rentKept) + ' rent kept + ' + this.fmt(S.value) + ' worth';
+      L = { a: f.rentKept, b: snapped('value'), la: 'Rent kept', lb: 'Worth today' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Rent paid', lb: 'Value', solo: !S.income };
+      lName = 'FLAT · ' + f.appPct.toFixed(1) + '% A YEAR'; lCap = this.fmt(f.rentKept) + ' rent kept + ' + this.fmt(snapped('value')) + ' worth';
       rCap = S.income ? this.fmt(r.dvPaid) + ' rent paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ' value, nothing drawn'; lArt = 'assets/art/flat.svg';
     }
     const lTot = Math.max(0, L.a) + L.b, rTot = (R.solo ? 0 : R.a) + R.b;
@@ -306,13 +344,6 @@ class Component extends DCLogic {
     const cy = Math.min(y0, y1) - 40;
     const chip = on => `flex:1;min-width:0;height:42px;padding:0 4px;border:0;border-radius:9px;font:inherit;font-size:14px;font-weight:${on ? 600 : 500};font-variant-numeric:tabular-nums;cursor:pointer;color:${on ? '#0b0c12' : '#8a8ea3'};background:${on ? '#e9e9ed' : 'transparent'};box-shadow:${on ? '0 2px 8px rgba(0,0,0,.35)' : 'none'};transition:all .25s cubic-bezier(.16,1,.3,1)`;
     const arw = on => `flex:none;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;align-self:center;color:#e9e9ed;background:rgba(18,20,29,.92);box-shadow:inset 0 0 0 1px #2b2e3a,0 6px 14px rgba(0,0,0,.4);cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .28};pointer-events:${on ? 'auto' : 'none'};transition:opacity .25s`;
-    const Fs = isFd ? [{ key: 'amount', label: 'You invest', min: 1000000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, f: n => this.inr(n) }]
-      : [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
-         { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
-         { key: 'bought', hint: `History from ${this.ym(vf.months[0])}`, label: 'Bought in', min: endYear - maxYears, max: endYear - 1, step: 1, big: 1, major: 10, mid: 5, f: n => String(n) },
-         { key: 'rent', hint: 'Before tax', label: 'Rent a month', min: 0, max: 300000, step: 1000, big: 5000, major: 50000, mid: 10000, f: n => this.inr(n) }];
-    const act = isFd ? Fs[0] : (Fs.find(q => q.key === S.active) || Fs[0]);
-    const setA = n => this.setState({ [act.key]: Math.min(act.max, Math.max(act.min, n)) });
     const cnt = Math.round((act.max - act.min) / act.step) + 1, idx = (S[act.key] - act.min) / act.step;
     const i0 = Math.max(0, Math.floor(idx) - 40), i1 = Math.min(cnt - 1, Math.floor(idx) + 40);
     const ticks = Array.from({ length: i1 - i0 + 1 }, (_, j) => { const i = i0 + j, p = act.min + i * act.step, M = p % act.major === 0, m = p % act.mid === 0; return { s: `flex:none;width:1px;margin-right:9px;height:${M ? 22 : m ? 14 : 8}px;background:${M ? 'rgba(233,233,237,.7)' : m ? 'rgba(233,233,237,.35)' : 'rgba(233,233,237,.16)'}` }; });
@@ -321,7 +352,7 @@ class Component extends DCLogic {
     const exempt = T.equity_exempt >= 1e5 ? '₹' + (+(T.equity_exempt / 1e5).toFixed(2)) + ' L' : this.inr(T.equity_exempt);
     const taxLine = `gains taxed at ${+(T.equity_lt_rate * 100).toFixed(1)}% long-term beyond ${exempt} a year and ${+(T.equity_st_rate * 100).toFixed(1)}% short-term (+ ${cessPct}% cess), parts rebalanced every 1 January`;
     const foot = isFd
-      ? `FD: ${S.fdRate}% interest paid monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${S.income ? `; ${swpPct}% a year paid monthly (${this.inr(S.amount * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`
+      ? `FD: ${S.fdRate}% interest paid monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${S.income ? `; ${swpPct}% a year paid monthly (${this.inr(start * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`
       : `Flat: price + ${F.stamp_pct}% stamp duty + ${F.registration_pct}% registration all-in; rent grew ${F.rent_rise_pct}% a year, ${12 - F.vacant_months} months let, taxed at ${S.tax}% after a ${Math.round(F.std_deduction * 100)}% deduction, ${F.upkeep_pct}% upkeep a year. DigiVilla: the same all-in amount in the ${pfName} villa on real benchmark indices, ${span}, ${S.income ? `paying ${swpPct}% a year as rent (SWP) from the arbitrage part first` : 'nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`;
     return {
       ...base_,
@@ -341,16 +372,16 @@ class Component extends DCLogic {
       swpRow: `display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.income ? 'rgba(143,214,90,.4)' : '#22253a'};transition:box-shadow .25s`,
       swpTrack: `flex:none;position:relative;width:40px;height:22px;border-radius:11px;background:${S.income ? '#8fd65a' : '#2b2e3a'};transition:background .25s`,
       swpKnob: `position:absolute;top:3px;left:${S.income ? 21 : 3}px;width:16px;height:16px;border-radius:50%;background:${S.income ? '#0b0c12' : '#7a7c8c'};transition:left .25s cubic-bezier(.16,1,.3,1)`,
-      fields: isFd ? [] : Fs.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: q.f(S[q.key]), pick: () => this.setState({ active: q.key }),
+      fields: isFd ? [] : Fs.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: q.f(snapped(q.key)), pick: () => this.setState({ active: q.key }),
         style: `display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:${on ? 'rgba(143,214,90,.06)' : '#0b0c12'};box-shadow:inset 0 0 0 1px ${on ? 'rgba(143,214,90,.6)' : '#22253a'};transition:all .25s`,
         lStyle: `font-size:14px;font-weight:500;color:${on ? '#8fd65a' : '#e9e9ed'}` }; }),
       flatGrowth: isFd ? '' : f.appPct.toFixed(1) + '%', flatYield: isFd ? '' : f.yieldPct.toFixed(1) + '%',
       rulerLabel: act.label, rLo: act.f(act.min), rHi: act.f(act.max),
       reset: () => this.setState({ custom: false, taxCustom: false, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
-      rulerValue: act.f(S[act.key]),
-      rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:transform .12s ease-out;transform:translateX(${-(idx - i0) * 10}px)`, ticks,
-      rMin: act.min, rMax: act.max, rStep: act.step, rVal: S[act.key], onRange: e => setA(+e.target.value), inc: () => setA(S[act.key] + act.big), dec: () => setA(S[act.key] - act.big),
-      chartHead: isFd ? `${this.fmt(S.amount)} · ${span}` : `${this.fmt(start)} all-in · ${span}`,
+      rulerValue: act.f(snapped(act.key)), rulerRef: this.rulerRef,
+      rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:${this.dragging || this.fling ? 'none' : 'transform .12s ease-out'};transform:translateX(${-(idx - i0) * 10}px)`, ticks,
+      rMin: act.min, rMax: act.max, rStep: act.step, rVal: snapped(act.key), onRange: e => setA(+e.target.value), inc: () => setA(snapped(act.key) + act.big), dec: () => setA(snapped(act.key) - act.big),
+      chartHead: isFd ? `${this.fmt(start)} · ${span}` : `${this.fmt(start)} all-in · ${span}`,
       pfPos: (vi + 1) + ' / ' + villas.length,
       pfPrev: () => this.setState({ villa: villas[Math.max(0, vi - 1)].key }), pfNext: () => this.setState({ villa: villas[Math.min(villas.length - 1, vi + 1)].key }),
       pfPrevS: arw(vi > 0), pfNextS: arw(vi < villas.length - 1),
