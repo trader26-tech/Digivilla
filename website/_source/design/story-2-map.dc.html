@@ -13,11 +13,11 @@
 <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
 <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>html,body{height:100%;overflow:hidden}body{margin:0;background:#0b0c12;color:#fff6ea;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#fff6ea;text-decoration:none}a:hover{color:#f6c445}*{box-sizing:border-box}</style>
+<style>html,body{height:100%;overflow:hidden}body{margin:0;background:#0b0c12;color:#fff6ea;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#fff6ea;text-decoration:none}a:hover{color:#f6c445}*{box-sizing:border-box}@supports (height:100dvh){[data-vhsec]{height:100dvh!important}}</style>
 </helmet>
 <div ref="{{ scRef }}" style="position:fixed;inset:0;overflow:hidden;touch-action:none;overflow-x:hidden;background:#0b0c12">
-<section data-screen-label="Return and risk" style="position:relative;height:100vh">
-<div data-stage="1" style="position:sticky;top:0;height:100vh;overflow:hidden;background:radial-gradient(ellipse 45% 50% at 50% 45%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 50% 30% at 50% 100%,rgba(42,43,107,.5),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16)">
+<section data-screen-label="Return and risk" data-vhsec="1" style="position:relative;height:100vh">
+<div data-stage="1" data-vhsec="1" style="position:sticky;top:0;height:100vh;overflow:hidden;background:radial-gradient(ellipse 45% 50% at 50% 45%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 50% 30% at 50% 100%,rgba(42,43,107,.5),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16)">
 <div style="position:absolute;inset:0;background-image:radial-gradient(rgba(255,236,190,.16) 1px,transparent 1.2px);background-size:28px 28px;-webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 50%,#000 40%,transparent 95%);mask-image:radial-gradient(ellipse 75% 70% at 50% 50%,#000 40%,transparent 95%)"></div>
 
 <svg data-g="1" ref="{{ svgRef }}" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:8vh 2vw 2vh;width:calc(100% - 4vw);height:90vh;overflow:visible">
@@ -137,6 +137,7 @@ class Component extends DCLogic {
   svg = React.createRef();
   componentDidMount() {
     const svg = this.svg.current;
+    (this.sc.current || document).querySelectorAll('foreignObject[opacity]').forEach(fo => { const c = fo.firstElementChild; if (c) { c.style.opacity = fo.getAttribute('opacity'); c.style.visibility = +fo.getAttribute('opacity') > 0 ? '' : 'hidden'; } fo.setAttribute('opacity', '1'); });
     this.paths = {};
     svg.querySelectorAll('[data-s]').forEach(p => { const L = p.getTotalLength(); this.paths[p.dataset.s] = { el: p, L }; p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.style.opacity = 0; });
     const dur = reducedMotion ? 1 : (this.props.duration ?? 6) * 1000;
@@ -214,7 +215,11 @@ class Component extends DCLogic {
       hand = [prevEnd[0] + (nextStart[0] - prevEnd[0]) * t, prevEnd[1] + (nextStart[1] - prevEnd[1]) * t - Math.sin(t * Math.PI) * 26];
     }
     q('[data-hand]').setAttribute('transform', `translate(${hand[0].toFixed(1)} ${hand[1].toFixed(1)})`);
-    const set = (sel, o) => q(sel).setAttribute('opacity', (+o).toFixed(3));
+    const set = (sel, o) => {
+      const el = q(sel), v = (+o).toFixed(3);
+      if (el.tagName.toLowerCase() === 'foreignobject') { const c = el.firstElementChild; if (c) { c.style.opacity = v; c.style.visibility = +v > 0 ? '' : 'hidden'; } }
+      else el.setAttribute('opacity', v);
+    };
     [[6, 'translate(0 ', ')', 20], [7, 'translate(', ' 0)', -24]].forEach(([i, pre, post, d]) => {
       const o = F(0, .15) * (1 - F(.42, .52));
       q(`[data-cr="${i}"]`).setAttribute('x', 0); q(`[data-cr="${i}"]`).setAttribute('width', 1000);
@@ -222,7 +227,7 @@ class Component extends DCLogic {
     });
     const io = F(.68, .8), iout = 1 - F(1.5, 1.62);
     set('[data-ideal]', io * iout);
-    q('[data-ideal]').setAttribute('transform', `translate(${((1 - io) * -16).toFixed(1)} 0)`);
+    { const c = q('[data-ideal]').firstElementChild; if (c) c.style.transform = `translateX(${((1 - io) * -16).toFixed(1)}px)`; }
     set('[data-boxfill]', .12 * io * iout);
     if (T > 1.88) this.paths.box.el.style.opacity = iout;
     const s1 = F(3.85, 3.98) * (1 - F(4.75, 4.88)), s2 = F(4.9, 5.03) * (1 - F(6.2, 6.35));

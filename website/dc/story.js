@@ -1,7 +1,7 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=92be4bce';
-import C_story_1_journey from './story-1-journey.js?v=92be4bce';
-import C_story_2_map from './story-2-map.js?v=92be4bce';
-import C_story_3_numbers from './story-3-numbers.js?v=92be4bce';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=ae771412';
+import C_story_1_journey from './story-1-journey.js?v=ae771412';
+import C_story_2_map from './story-2-map.js?v=ae771412';
+import C_story_3_numbers from './story-3-numbers.js?v=ae771412';
 addCSS(".p-story-1:hover{gap:16px !important;color:#fff !important;box-shadow:inset 0 0 0 1px rgba(255,236,200,.5), inset 0 1px 0 rgba(255,255,255,.2), 0 0 34px rgba(255,200,130,.25), 0 10px 30px -12px rgba(0,0,0,.7) !important}");
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {

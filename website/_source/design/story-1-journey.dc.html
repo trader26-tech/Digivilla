@@ -15,10 +15,40 @@
 <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/tokens/base.css">
 <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
 <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
-<style>html,body{margin:0;overflow:hidden;overscroll-behavior:none;background:#0b0c12;color:#ececf1;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#b5abfc;text-decoration:none}a:hover{color:#d4cdfd}</style>
+<style>html,body{margin:0;overflow:hidden;overscroll-behavior:none;background:#0b0c12;color:#ececf1;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#b5abfc;text-decoration:none}a:hover{color:#d4cdfd}
+@supports (height:100dvh){[data-vhsec]{height:100dvh!important}}
+@media (max-width:700px){
+  [data-fdscene]{padding:60px 12px 14px!important;gap:12px!important}
+  [data-fdscene] h2{font-size:24px!important}
+  [data-fdgrid]{grid-template-columns:1fr 1fr!important;gap:8px!important;align-items:start!important}
+  [data-fdmid]{grid-column:1 / -1;order:3;gap:8px!important}
+  [data-fdslot]{height:112px!important}
+  [data-fdslot] > div:last-child{display:none}
+  [data-fdcol]{padding:12px 10px!important;gap:10px!important}
+  [data-fdcol] > div{gap:8px!important}
+  [data-fdcol] > div > span:first-child{width:22px!important;height:22px!important;font-size:11px!important}
+  [data-fdcol] > div > span:last-child > span:first-child{font-size:13.5px!important;line-height:1.2}
+  [data-fdcol] > div > span:last-child > span:last-child{font-size:11.5px!important;line-height:1.3}
+  [data-rescene]{padding:60px 10px 12px!important}
+  [data-regrid]{grid-template-columns:1fr 1fr!important;grid-template-rows:none!important;grid-auto-rows:minmax(0,1fr)!important;gap:8px!important}
+  [data-regrid] > [data-rep]{grid-column:auto!important;grid-row:auto!important;padding:10px!important}
+  [data-reslot]{grid-column:1 / -1!important;grid-row:auto!important;min-height:150px!important}
+  [data-villas]{padding:60px 12px 14px!important;gap:10px!important}
+  [data-vhead] h2{font-size:26px!important}
+  [data-vrow]{flex-direction:column!important;gap:8px!important;width:100%!important}
+  [data-vc]{display:grid!important;grid-template-columns:70px minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;align-items:center;gap:6px 12px!important;padding:10px 12px!important;max-width:none!important;background:rgba(22,24,38,.72)!important;border-color:rgba(255,255,255,.08)!important}
+  [data-vc] [data-vimg]{grid-row:1 / span 2;height:60px!important;margin:0!important}
+  [data-vc] [data-vname]{grid-column:2;grid-row:1}
+  [data-vc] [data-vname] > span:last-child{font-size:19px!important}
+  [data-vc] [data-vmix]{grid-column:2 / span 2;grid-row:2}
+  [data-vc] [data-vstats]{grid-column:3;grid-row:1;display:flex!important;gap:6px}
+  [data-vc] [data-vstats] > span{padding:6px 9px!important}
+  [data-vc] [data-vstats] > span > span:first-child{font-size:17px!important}
+  [data-vc] [data-vdesc]{display:none}
+}</style>
 </helmet>
-<section data-flight="1" style="position:relative;height:100vh;overflow:hidden;background:#0b0c12">
-<div style="position:sticky;top:0;height:100vh;overflow:hidden">
+<section data-flight="1" data-vhsec="1" style="position:relative;height:100vh;overflow:hidden;background:#0b0c12">
+<div data-vhsec="1" style="position:sticky;top:0;height:100vh;overflow:hidden">
 
 <div data-sky="0" style="position:absolute;inset:0;background:linear-gradient(180deg,#0c0f2c 0%,#2a2862 30%,#73467c 54%,#d9814f 76%,#f3bd7c 100%)">
 <div style="position:absolute;left:0;right:0;top:0;height:60%;background:radial-gradient(1px 1px at 30px 40px,rgba(255,255,255,.7),transparent),radial-gradient(1px 1px at 140px 90px,rgba(255,255,255,.5),transparent),radial-gradient(1.2px 1.2px at 80px 160px,rgba(255,255,255,.6),transparent);background-size:220px 220px;-webkit-mask-image:linear-gradient(180deg,#000,transparent);mask-image:linear-gradient(180deg,#000,transparent)"></div>
@@ -93,7 +123,7 @@
 <div data-depth="1" style="position:absolute;left:0;bottom:0;width:600vw;height:100%;will-change:transform">
 <div style="position:absolute;left:0;width:122vw;bottom:-100vh;height:calc(100vh + 16vh);background:linear-gradient(180deg,#1c1230,#120b20 30%)"></div>
 <div style="position:absolute;left:0;width:122vw;bottom:15.4vh;height:1.2vh;background:linear-gradient(180deg,rgba(90,60,110,.5),transparent)"></div>
-<div style="position:absolute;left:0;width:112vw;bottom:11.6vh;height:4.4vh;background:linear-gradient(180deg,#2a2440,#1a1630 60%,#151226)">
+<div data-runway="1" style="position:absolute;left:0;width:112vw;bottom:11.6vh;height:4.4vh;background:linear-gradient(180deg,#2a2440,#1a1630 60%,#151226)">
 <div style="position:absolute;left:0;right:0;top:0;height:1px;background:rgba(255,255,255,.14)"></div>
 <div style="position:absolute;left:0;right:0;top:46%;height:2px;background:repeating-linear-gradient(90deg,rgba(255,240,210,.8) 0 2.4vw,transparent 2.4vw 4.6vw)"></div>
 <div style="position:absolute;left:1.2vw;width:11vw;top:16%;bottom:16%;background:repeating-linear-gradient(90deg,rgba(255,240,210,.7) 0 .45vw,transparent .45vw 1vw)"></div>
@@ -177,14 +207,14 @@
 </div>
 <div data-fdscene="1" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,30px);padding:80px clamp(16px,4vw,64px) 32px;pointer-events:none">
 <div data-fdp="1" style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;opacity:0"><span style="font-size:11px;letter-spacing:.26em;color:#a3a5b4">FIXED DEPOSIT · THE TRADE-OFF</span><h2 style="margin:0;font-size:clamp(26px,3.4vw,48px);font-weight:500;letter-spacing:-.03em;line-height:1.05;text-wrap:balance">Safe on paper. <span style="color:#e2725b">Shrinking in real life.</span></h2></div>
-<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);gap:clamp(12px,2vw,32px);width:min(1240px,100%);align-items:center">
-<div style="display:flex;flex-direction:column;gap:clamp(12px,2.2vh,22px);padding:clamp(16px,1.8vw,26px);border-radius:22px;background:linear-gradient(180deg,rgba(143,214,90,.08),rgba(22,24,38,.9) 50%);border:1px solid rgba(143,214,90,.3);opacity:0" data-fdp="1">
+<div data-fdgrid="1" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);gap:clamp(12px,2vw,32px);width:min(1240px,100%);align-items:center">
+<div data-fdcol="1" style="display:flex;flex-direction:column;gap:clamp(12px,2.2vh,22px);padding:clamp(16px,1.8vw,26px);border-radius:22px;background:linear-gradient(180deg,rgba(143,214,90,.08),rgba(22,24,38,.9) 50%);border:1px solid rgba(143,214,90,.3);opacity:0" data-fdp="1">
 <span style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;color:#8fd65a"><span style="width:8px;height:8px;border-radius:50%;background:#8fd65a"></span>WHAT WORKS</span>
 <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:50%;background:rgba(143,214,90,.14);border:1px solid rgba(143,214,90,.5);color:#8fd65a;display:grid;place-items:center;font-size:13px;flex:none">✓</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:clamp(14px,1.2vw,17px);font-weight:500">Guaranteed</span><span style="font-size:clamp(11.5px,.95vw,13px);color:#a3a5b4;line-height:1.4">6.4% a year, fixed on day one</span></span></div>
 <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:50%;background:rgba(143,214,90,.14);border:1px solid rgba(143,214,90,.5);color:#8fd65a;display:grid;place-items:center;font-size:13px;flex:none">✓</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:clamp(14px,1.2vw,17px);font-weight:500">Zero market risk</span><span style="font-size:clamp(11.5px,.95vw,13px);color:#a3a5b4;line-height:1.4">The balance never falls</span></span></div>
 <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:50%;background:rgba(143,214,90,.14);border:1px solid rgba(143,214,90,.5);color:#8fd65a;display:grid;place-items:center;font-size:13px;flex:none">✓</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:clamp(14px,1.2vw,17px);font-weight:500">Insured</span><span style="font-size:clamp(11.5px,.95vw,13px);color:#a3a5b4;line-height:1.4">DICGC covers up to ₹5 lakh per bank</span></span></div>
 </div>
-<div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,2vh,18px);min-height:0;opacity:0" data-fdp="1">
+<div data-fdmid="1" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,2vh,18px);min-height:0;opacity:0" data-fdp="1">
 <div data-fdslot="1" style="position:relative;width:100%;height:min(320px,40vh)">
 <div style="position:absolute;left:50%;top:50%;width:130%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(138,142,163,.24),transparent 62%)"></div>
 <div style="position:absolute;left:50%;top:50%;width:min(100%,40vh);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(255,255,255,.07)"></div>
@@ -192,7 +222,7 @@
 <span style="position:relative;font-size:11px;letter-spacing:.22em;color:#a3a5b4">WHAT YOUR MONEY REALLY EARNS</span>
 <div style="position:relative;display:flex;align-items:center;gap:6px;flex-wrap:nowrap;justify-content:center"><span style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:12px;background:rgba(11,12,18,.85);border:1px solid rgba(255,255,255,.1)"><span style="font-size:clamp(15px,1.4vw,20px);letter-spacing:-.02em;color:#ececf1">6.4%</span><span style="font-size:10.5px;color:#a3a5b4;white-space:nowrap">promised</span></span><span style="color:#7a7c8c;font-size:14px">→</span><span style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:12px;background:rgba(11,12,18,.85);border:1px solid rgba(255,255,255,.1)"><span style="font-size:clamp(15px,1.4vw,20px);letter-spacing:-.02em;color:#f6c445">4.5%</span><span style="font-size:10.5px;color:#a3a5b4;white-space:nowrap">after tax</span></span><span style="color:#7a7c8c;font-size:14px">→</span><span style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:12px;background:rgba(11,12,18,.85);border:1px solid rgba(255,255,255,.1)"><span style="font-size:clamp(15px,1.4vw,20px);letter-spacing:-.02em;color:#e2725b">−1.5%</span><span style="font-size:10.5px;color:#a3a5b4;white-space:nowrap">after inflation</span></span></div>
 </div>
-<div style="display:flex;flex-direction:column;gap:clamp(12px,2.2vh,22px);padding:clamp(16px,1.8vw,26px);border-radius:22px;background:linear-gradient(180deg,rgba(226,114,91,.10),rgba(22,24,38,.9) 50%);border:1px solid rgba(226,114,91,.35);opacity:0" data-fdp="1">
+<div data-fdcol="1" style="display:flex;flex-direction:column;gap:clamp(12px,2.2vh,22px);padding:clamp(16px,1.8vw,26px);border-radius:22px;background:linear-gradient(180deg,rgba(226,114,91,.10),rgba(22,24,38,.9) 50%);border:1px solid rgba(226,114,91,.35);opacity:0" data-fdp="1">
 <span style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;color:#e2725b"><span style="width:8px;height:8px;border-radius:50%;background:#e2725b"></span>WHAT DOESN’T</span>
 <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:50%;background:rgba(226,114,91,.14);border:1px solid rgba(226,114,91,.5);color:#e2725b;display:grid;place-items:center;font-size:13px;flex:none">✕</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:clamp(14px,1.2vw,17px);font-weight:500">Taxed at your slab</span><span style="font-size:clamp(11.5px,.95vw,13px);color:#a3a5b4;line-height:1.4">At 30%, 6.4% becomes 4.5%</span></span></div>
 <div style="display:flex;gap:12px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:50%;background:rgba(226,114,91,.14);border:1px solid rgba(226,114,91,.5);color:#e2725b;display:grid;place-items:center;font-size:13px;flex:none">✕</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:clamp(14px,1.2vw,17px);font-weight:500">Loses to inflation</span><span style="font-size:clamp(11.5px,.95vw,13px);color:#a3a5b4;line-height:1.4">Prices rise about 6% a year</span></span></div>
@@ -202,7 +232,7 @@
 </div>
 
 <div data-rescene="1" style="position:absolute;inset:0;padding:clamp(16px,3vh,32px) clamp(14px,3vw,48px);max-width:1440px;margin:0 auto;pointer-events:none">
-<div style="height:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(8px,1vw,14px)">
+<div data-regrid="1" style="height:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(8px,1vw,14px)">
 <div style="grid-column:1;grid-row:1;border-radius:20px;background:linear-gradient(160deg,#7a3326,#3a1813);border:1px solid rgba(236,138,115,.45);padding:clamp(12px,1.4vw,22px);display:flex;flex-direction:column;justify-content:space-between;min-height:0;overflow:hidden;opacity:0" data-rep="1"><span style="font-size:clamp(11px,.95vw,14px);color:#ffb9a6">The problem</span><span style="font-size:min(2.3vw,4.4vh);font-weight:500;letter-spacing:-.02em;line-height:1.08">Real estate, by the numbers.</span><span style="font-size:clamp(10.5px,.9vw,13px);color:rgba(255,226,216,.75)">₹1 crore flat · Chennai · 2026</span></div>
 <div style="grid-column:2;grid-row:1;border-radius:20px;background:linear-gradient(180deg,#1d1719,#141114);border:1px solid rgba(236,138,115,.14);padding:clamp(12px,1.4vw,22px);display:flex;flex-direction:column;justify-content:space-between;min-height:0;overflow:hidden;opacity:0" data-rep="1"><span style="font-size:clamp(11px,.95vw,14px);color:#a3a5b4">High ticket size</span><span style="font-size:min(4.2vw,7.4vh);font-weight:500;letter-spacing:-.035em;line-height:1">₹1 Cr</span><span style="font-size:clamp(11px,.95vw,14px);color:#a3a5b4">All or nothing</span></div>
 <div style="grid-column:3;grid-row:1;border-radius:20px;background:linear-gradient(180deg,#1d1719,#141114);border:1px solid rgba(236,138,115,.14);padding:clamp(12px,1.4vw,22px);display:flex;flex-direction:column;justify-content:space-between;gap:4px;min-height:0;overflow:hidden;opacity:0" data-rep="1"><span style="font-size:clamp(11px,.95vw,14px);color:#a3a5b4">Total cost after 15 years</span><span style="font-size:min(3.6vw,6.4vh);font-weight:500;letter-spacing:-.035em;line-height:1;color:#ec8a73">₹1.74 Cr</span><span style="display:flex;flex-direction:column;gap:3px;font-size:clamp(10.5px,.88vw,13px);color:#a3a5b4"><span>₹58 L interest + ₹16 L entry</span><span>₹76,450 EMI · 80% loan · 8% · 15 yrs</span></span></div>
@@ -229,36 +259,36 @@
 <span style="font-size:11px;letter-spacing:.3em;white-space:nowrap;color:#8fd65a">ONE VILLA · THREE PROFILES</span>
 <h2 style="margin:0;font-size:clamp(28px,3.6vw,52px);font-weight:500;letter-spacing:-.04em;line-height:1.02;color:#ececf1;text-wrap:balance">Performance that fits your profile.</h2>
 </div>
-<div style="display:flex;gap:clamp(10px,1.6vw,22px);width:min(1120px,100%);justify-content:center;align-items:stretch">
+<div data-vrow="1" style="display:flex;gap:clamp(10px,1.6vw,22px);width:min(1120px,100%);justify-content:center;align-items:stretch">
 <div data-vc="0" style="flex:1 1 0;min-width:0;max-width:360px;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,14px);padding:clamp(14px,1.6vw,22px);border-radius:24px;background:transparent;border:1px solid transparent;opacity:0" data-acc="138,168,155">
 <div data-vimg="1" role="img" aria-label="Villa" style="height:clamp(80px,16vh,160px);aspect-ratio:820/700;max-width:100%;margin:0 auto;transform-origin:50% 50%"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
-<span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:.22em;color:#a3a5b4">CALM</span><span style="font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:-.02em;color:#ececf1">Conservative</span></span>
-<div style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:12px;color:#a3a5b4"><span>Vault 70%</span><span>Growth 30%</span></span><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:70;background:#8aa89b"></span><span style="flex:30;background:linear-gradient(90deg,#f6c445,#5cb85c,#8fd48a)"></span></span></div>
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<span data-vname="1" style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:.22em;color:#a3a5b4">CALM</span><span style="font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:-.02em;color:#ececf1">Conservative</span></span>
+<div data-vmix="1" style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:12px;color:#a3a5b4"><span>Vault 70%</span><span>Growth 30%</span></span><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:70;background:#8aa89b"></span><span style="flex:30;background:linear-gradient(90deg,#f6c445,#5cb85c,#8fd48a)"></span></span></div>
+<div data-vstats="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
 <span style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(11,12,18,.6);border:1px solid rgba(255,255,255,.08)"><span style="font-size:clamp(18px,1.8vw,26px);font-weight:500;letter-spacing:-.03em;color:#8fd65a">10.9%</span><span style="font-size:11px;color:#a3a5b4">a year</span></span>
 <span style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(11,12,18,.6);border:1px solid rgba(255,255,255,.08)"><span style="font-size:clamp(18px,1.8vw,26px);font-weight:500;letter-spacing:-.03em;color:#ececf1">5.2%</span><span style="font-size:11px;color:#a3a5b4">volatility</span></span>
 </div>
-<span style="font-size:clamp(12px,1vw,14px);line-height:1.45;color:#a3a5b4">Nifty 50’s return at a third of its volatility.</span>
+<span data-vdesc="1" style="font-size:clamp(12px,1vw,14px);line-height:1.45;color:#a3a5b4">Nifty 50’s return at a third of its volatility.</span>
 </div>
 <div data-vc="1" style="flex:1 1 0;min-width:0;max-width:360px;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,14px);padding:clamp(14px,1.6vw,22px);border-radius:24px;background:transparent;border:1px solid transparent;opacity:0" data-acc="143,214,90">
 <div data-vimg="1" role="img" aria-label="Villa" style="height:clamp(80px,16vh,160px);aspect-ratio:820/700;max-width:100%;margin:0 auto;transform-origin:50% 50%"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
-<span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:.22em;color:#a3a5b4">STEADY</span><span style="font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:-.02em;color:#ececf1">Balanced</span></span>
-<div style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:12px;color:#a3a5b4"><span>Vault 36%</span><span>Growth 64%</span></span><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:36;background:#8aa89b"></span><span style="flex:64;background:linear-gradient(90deg,#f6c445,#5cb85c,#8fd48a)"></span></span></div>
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<span data-vname="1" style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:.22em;color:#a3a5b4">STEADY</span><span style="font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:-.02em;color:#ececf1">Balanced</span></span>
+<div data-vmix="1" style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:12px;color:#a3a5b4"><span>Vault 36%</span><span>Growth 64%</span></span><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:36;background:#8aa89b"></span><span style="flex:64;background:linear-gradient(90deg,#f6c445,#5cb85c,#8fd48a)"></span></span></div>
+<div data-vstats="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
 <span style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(11,12,18,.6);border:1px solid rgba(255,255,255,.08)"><span style="font-size:clamp(18px,1.8vw,26px);font-weight:500;letter-spacing:-.03em;color:#8fd65a">13.9%</span><span style="font-size:11px;color:#a3a5b4">a year</span></span>
 <span style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(11,12,18,.6);border:1px solid rgba(255,255,255,.08)"><span style="font-size:clamp(18px,1.8vw,26px);font-weight:500;letter-spacing:-.03em;color:#ececf1">9.0%</span><span style="font-size:11px;color:#a3a5b4">volatility</span></span>
 </div>
-<span style="font-size:clamp(12px,1vw,14px);line-height:1.45;color:#a3a5b4">More growth, still well below the market’s swings.</span>
+<span data-vdesc="1" style="font-size:clamp(12px,1vw,14px);line-height:1.45;color:#a3a5b4">More growth, still well below the market’s swings.</span>
 </div>
 <div data-vc="2" style="flex:1 1 0;min-width:0;max-width:360px;display:flex;flex-direction:column;gap:clamp(8px,1.4vh,14px);padding:clamp(14px,1.6vw,22px);border-radius:24px;background:transparent;border:1px solid transparent;opacity:0" data-acc="246,196,69">
 <div data-vimg="1" role="img" aria-label="Villa" style="height:clamp(80px,16vh,160px);aspect-ratio:820/700;max-width:100%;margin:0 auto;transform-origin:50% 50%"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
-<span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:.22em;color:#a3a5b4">BOLD</span><span style="font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:-.02em;color:#ececf1">Aggressive</span></span>
-<div style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:12px;color:#a3a5b4"><span>Vault 20%</span><span>Growth 80%</span></span><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:20;background:#8aa89b"></span><span style="flex:80;background:linear-gradient(90deg,#f6c445,#5cb85c,#8fd48a)"></span></span></div>
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<span data-vname="1" style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11px;letter-spacing:.22em;color:#a3a5b4">BOLD</span><span style="font-size:clamp(20px,2vw,28px);font-weight:600;letter-spacing:-.02em;color:#ececf1">Aggressive</span></span>
+<div data-vmix="1" style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:12px;color:#a3a5b4"><span>Vault 20%</span><span>Growth 80%</span></span><span style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px"><span style="flex:20;background:#8aa89b"></span><span style="flex:80;background:linear-gradient(90deg,#f6c445,#5cb85c,#8fd48a)"></span></span></div>
+<div data-vstats="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
 <span style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(11,12,18,.6);border:1px solid rgba(255,255,255,.08)"><span style="font-size:clamp(18px,1.8vw,26px);font-weight:500;letter-spacing:-.03em;color:#8fd65a">15.0%</span><span style="font-size:11px;color:#a3a5b4">a year</span></span>
 <span style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(11,12,18,.6);border:1px solid rgba(255,255,255,.08)"><span style="font-size:clamp(18px,1.8vw,26px);font-weight:500;letter-spacing:-.03em;color:#ececf1">10.6%</span><span style="font-size:11px;color:#a3a5b4">volatility</span></span>
 </div>
-<span style="font-size:clamp(12px,1vw,14px);line-height:1.45;color:#a3a5b4">Close to Midcap returns with far less of the ride.</span>
+<span data-vdesc="1" style="font-size:clamp(12px,1vw,14px);line-height:1.45;color:#a3a5b4">Close to Midcap returns with far less of the ride.</span>
 </div>
 </div>
 <div data-explore="1" style="display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;pointer-events:auto">
@@ -328,7 +358,7 @@ class Component extends DCLogic {
     this.scrub.attach(); addEventListener('keydown', this.onKey);
     const loop = now => { try { frame(now); } catch (err) { window.__flightErr = String(err && err.stack || err); } this._raf = requestAnimationFrame(loop); };
     const frame = now => {
-      const t = now / 1000, vw = innerWidth / 100, vh = innerHeight / 100, dt = Math.min(.05, (now - last) / 1000); last = now;
+      const sec = this._sec || (this._sec = q('[data-flight]')), t = now / 1000, vw = (sec ? sec.clientWidth : innerWidth) / 100, vh = (sec ? sec.clientHeight : innerHeight) / 100, dt = Math.min(.05, (now - last) / 1000); last = now;
       const dur = this.props.duration ?? 3.5;
       u = this.scrub.tick(now);
       const stp = Math.round(u); if (stp !== this._stp) { this._stp = stp; document.documentElement.dataset.step = stp; }
@@ -455,8 +485,9 @@ class Component extends DCLogic {
       const a1 = ss(.15, .35, sp), a2 = ss(.65, .85, sp);
       sky[0].style.opacity = 1 - a1; sky[1].style.opacity = a1 * (1 - a2); sky[2].style.opacity = a2;
       const pw = plane.offsetWidth, ph = plane.offsetHeight;
-      // ground line: runway top at 84vh; wheels sit at 0.775 of plane height, anchor at 0.62 → place anchor so wheels touch the runway
-      this._groundY = 84 - (ph * (.775 - .62)) / vh;
+      // ground line: the runway's MEASURED top (CSS vh and JS heights disagree on phones with a toolbar); wheels sit at 0.775 of
+      // plane height, anchor at 0.62 → place the anchor so the wheels touch the runway. Measured while on the ground, kept in the air.
+      if (!this._groundY || sp < .05 || sp > .97) { const rw = this._runway || (this._runway = q('[data-runway]')); const top = rw && sec ? (rw.getBoundingClientRect().top - sec.getBoundingClientRect().top) / vh : 84; this._groundY = top - (ph * (.775 - .62)) / vh; }
       const x = (14 + 24 * ss(0, .22, sp) + 12 * ss(.22, .9, sp)) * vw;
       const cruise = ss(.18, .26, sp) * (1 - ss(.78, .86, sp));
       const y = planeY(sp) * vh + Math.sin(t * 1.3) * 6 * cruise;

@@ -298,6 +298,8 @@ def find(n: Node, tag: str):
 def compile_file(path: Path) -> dict:
     name = path.name[:-len('.dc.html')]
     src = path.read_text()
+    if '<!--APP-VILLA-->' in src:
+        src = src.replace('<!--APP-VILLA-->', app_villa_svg())
     root = parse(src)
     xdc = find(root, 'x-dc')
     script = next((c for c in iter_nodes(root) if c.tag == 'script' and any(k == 'data-dc-script' for k, _ in c.attrs)), None)
@@ -336,6 +338,19 @@ def compile_file(path: Path) -> dict:
     lines.append(f'export default defineDC({js(name)}, typeof Component !== "undefined" ? Component : null, tpl, {js(defaults)}, HELMET);')
     (DC / f'{name}.js').write_text('\n'.join(lines) + '\n')
     return {'name': name, 'helmet': helmet}
+
+
+APP_VILLA = SRC.parent.parent / 'client' / 'frontend' / 'public' / 'assets' / 'levels' / 'villa.svg'
+
+
+def app_villa_svg() -> str:
+    """The app's villa tile, body only (no <svg> wrapper, no metadata) — the one villa everywhere."""
+    t = APP_VILLA.read_text()
+    t = re.sub(r'<metadata>.*?</metadata>', '', t, flags=re.S)
+    m = re.search(r'<svg[^>]*>(.*)</svg>', t, flags=re.S)
+    if not m:
+        raise SystemExit(f'{APP_VILLA}: no <svg> body')
+    return m.group(1).strip()
 
 
 def iter_nodes(n: Node):

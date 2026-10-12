@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=92be4bce';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=ae771412';
 
 export { h, render, Fragment };
 
@@ -383,7 +383,8 @@ export async function bakeFilter(holder, art, res = 1024) {
     if (!f || f === 'none') { f = getComputedStyle(art).filter; fOn = art; }
     if (!f || f === 'none' || !holder.clientWidth) return null;
     const probe = document.createElement('canvas').getContext('2d');
-    if (!probe || !('filter' in probe)) return null;
+    if (!probe) return null;
+    const hasCtxFilter = 'filter' in probe;             // Chrome/Firefox; Safari lacks it → SVG-filter route below
     let img, iw, ih;
     if (art.tagName === 'IMG') {
       if (!art.complete) await new Promise((r) => { art.onload = r; art.onerror = r; });
@@ -407,8 +408,25 @@ export async function bakeFilter(holder, art, res = 1024) {
     const cv = document.createElement('canvas');
     cv.width = res + 2 * pad; cv.height = resH + 2 * pad;
     const ctx = cv.getContext('2d');
-    ctx.filter = f.replace(/(-?\d*\.?\d+)px/g, (_, v) => (parseFloat(v) * k).toFixed(2) + 'px');
-    ctx.drawImage(img, pad, pad, res, resH);
+    const fScaled = f.replace(/(-?\d*\.?\d+)px/g, (_, v) => (parseFloat(v) * k).toFixed(2) + 'px');
+    if (hasCtxFilter) {
+      ctx.filter = fScaled;
+      ctx.drawImage(img, pad, pad, res, resH);
+    } else {
+      // Safari: let its SVG engine apply the same filter chain while rasterising
+      const prims = cssFilterToSvg(fScaled);
+      if (!prims) return null;
+      const href = img.src || '';
+      const inner = art.tagName === 'IMG'
+        ? `<image href="${href.replace(/&/g, '&amp;')}" x="${pad}" y="${pad}" width="${res}" height="${resH}"/>`
+        : `<svg x="${pad}" y="${pad}" width="${res}" height="${resH}" viewBox="${art.getAttribute('viewBox')}">${art.innerHTML}</svg>`;
+      const doc = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${cv.width}" height="${cv.height}" viewBox="0 0 ${cv.width} ${cv.height}"><defs><filter id="f" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">${prims}</filter></defs><g filter="url(#f)">${inner}</g></svg>`;
+      const url = URL.createObjectURL(new Blob([doc], { type: 'image/svg+xml' }));
+      const fi = new Image();
+      await new Promise((ok, no) => { fi.onload = ok; fi.onerror = no; fi.src = url; });
+      URL.revokeObjectURL(url);
+      ctx.drawImage(fi, 0, 0, cv.width, cv.height);
+    }
     const cs = getComputedStyle(holder);
     if (cs.position === 'static') holder.style.position = 'relative';
     cv.style.cssText = `position:absolute;left:${-pad / res * 100}%;top:${-pad / resH * 100}%;width:${cv.width / res * 100}%;height:${cv.height / resH * 100}%;pointer-events:none;display:block`;
@@ -418,6 +436,43 @@ export async function bakeFilter(holder, art, res = 1024) {
     holder.appendChild(cv);
     return cv;
   } catch (e) { console.warn('bakeFilter', e); return null; }
+}
+
+/** A computed CSS `filter` string → SVG filter primitives (same chain, same
+ *  order). Covers what the site uses: drop-shadow, sepia, brightness, plus a
+ *  few cheap extras. Returns null for anything it can't express. */
+function cssFilterToSvg(css) {
+  const out = []; let n = 0, prev = 'SourceGraphic';
+  const fns = css.match(/[a-z-]+\((?:[^()]|\([^()]*\))*\)/g) || [];
+  const num = (s) => parseFloat(s);
+  for (const fn of fns) {
+    const name = fn.slice(0, fn.indexOf('(')), arg = fn.slice(fn.indexOf('(') + 1, -1).trim(), id = 'r' + (n++);
+    if (name === 'drop-shadow') {
+      const color = (arg.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}|[a-z]+(?![\d.%-])/i) || ['#000'])[0];
+      const lens = arg.replace(color, '').match(/-?\d*\.?\d+(?=px)/g) || [];
+      const [dx = 0, dy = 0, blur = 0] = lens.map(num);
+      let fc = color, fo = 1;
+      const m = color.match(/rgba?\(([^)]*)\)/);
+      if (m) { const c = m[1].split(/[\s,\/]+/).filter(Boolean).map(num); fc = `rgb(${c[0]},${c[1]},${c[2]})`; if (c.length > 3) fo = c[3]; }
+      out.push(`<feDropShadow in="${prev}" dx="${dx}" dy="${dy}" stdDeviation="${(blur / 2).toFixed(2)}" flood-color="${fc}" flood-opacity="${fo}" result="${id}"/>`);
+    } else if (name === 'sepia') {
+      const a = Math.min(1, arg.endsWith('%') ? num(arg) / 100 : num(arg)), i = 1 - a;
+      const v = [0.393 + 0.607 * i, 0.769 - 0.769 * i, 0.189 - 0.189 * i, 0, 0, 0.349 - 0.349 * i, 0.686 + 0.314 * i, 0.168 - 0.168 * i, 0, 0, 0.272 - 0.272 * i, 0.534 - 0.534 * i, 0.131 + 0.869 * i, 0, 0, 0, 0, 0, 1, 0];
+      out.push(`<feColorMatrix in="${prev}" type="matrix" values="${v.map((x) => x.toFixed(4)).join(' ')}" result="${id}"/>`);
+    } else if (name === 'brightness' || name === 'opacity') {
+      const b = arg.endsWith('%') ? num(arg) / 100 : num(arg);
+      out.push(name === 'brightness'
+        ? `<feComponentTransfer in="${prev}" result="${id}"><feFuncR type="linear" slope="${b}"/><feFuncG type="linear" slope="${b}"/><feFuncB type="linear" slope="${b}"/></feComponentTransfer>`
+        : `<feComponentTransfer in="${prev}" result="${id}"><feFuncA type="linear" slope="${b}"/></feComponentTransfer>`);
+    } else if (name === 'saturate' || name === 'grayscale') {
+      const a = arg.endsWith('%') ? num(arg) / 100 : num(arg);
+      out.push(`<feColorMatrix in="${prev}" type="saturate" values="${name === 'saturate' ? a : 1 - Math.min(1, a)}" result="${id}"/>`);
+    } else if (name === 'blur') {
+      out.push(`<feGaussianBlur in="${prev}" stdDeviation="${num(arg)}" result="${id}"/>`);
+    } else return null;
+    prev = id;
+  }
+  return out.join('');
 }
 
 /** Resolves once the page is really ready to be looked at: the root has

@@ -23,6 +23,7 @@
     html,body{margin:0;height:100%;background:#000;overflow:hidden;-webkit-font-smoothing:antialiased}
     a{color:#E1E0CC;text-decoration:none} a:hover{color:#fff}
     [data-rise]{opacity:0}
+    @supports (height:100dvh){[data-screen-label="TheDigiCiti Landing"],#showcase{height:100dvh!important}}
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
@@ -41,26 +42,26 @@
     }
   </style>
 <style>html,body{height:100%;margin:0}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=92be4bce">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=92be4bce">
-<link rel="modulepreload" href="dc/thedigiciti_website.js?v=92be4bce">
-<link rel="modulepreload" href="dc/calculator.js?v=92be4bce">
-<link rel="modulepreload" href="dc/part-footer.js?v=92be4bce">
-<link rel="modulepreload" href="dc/engine.js?v=92be4bce">
-<link rel="modulepreload" href="dc/calc-data.js?v=92be4bce">
-<link rel="modulepreload" href="dc/part-stage-foundation.js?v=92be4bce">
-<link rel="modulepreload" href="dc/part-stage-grading.js?v=92be4bce">
-<link rel="modulepreload" href="dc/part-stage-plot.js?v=92be4bce">
-<link rel="modulepreload" href="dc/part-stage-steel.js?v=92be4bce">
-<link rel="modulepreload" href="dc/part-stage-villa.js?v=92be4bce">
+<link rel="modulepreload" href="dc/rt.js?v=ae771412">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=ae771412">
+<link rel="modulepreload" href="dc/thedigiciti_website.js?v=ae771412">
+<link rel="modulepreload" href="dc/calculator.js?v=ae771412">
+<link rel="modulepreload" href="dc/part-footer.js?v=ae771412">
+<link rel="modulepreload" href="dc/engine.js?v=ae771412">
+<link rel="modulepreload" href="dc/calc-data.js?v=ae771412">
+<link rel="modulepreload" href="dc/part-stage-foundation.js?v=ae771412">
+<link rel="modulepreload" href="dc/part-stage-grading.js?v=ae771412">
+<link rel="modulepreload" href="dc/part-stage-plot.js?v=ae771412">
+<link rel="modulepreload" href="dc/part-stage-steel.js?v=ae771412">
+<link rel="modulepreload" href="dc/part-stage-villa.js?v=ae771412">
 <link rel="preconnect" href="https://client-digivilla-production.up.railway.app" crossorigin>
 <script>(function(){try{var c=JSON.parse(localStorage.getItem("tdc.calc.v1")||"null");if(c&&c.at&&Date.now()-c.at<864e5)return}catch(e){}var A=window.__TDC_API||"https://client-digivilla-production.up.railway.app",j=function(r){if(!r.ok)throw new Error(r.status);return r.json()},q=function(p){var f=fetch(A+p,{priority:"high"}).then(j);f.catch(function(){});return f};window.__tdcCalc={cfg:q("/calc/config"),vf:q("/calc/villa-funds")}})();</script>
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=92be4bce';
-import Root from './dc/thedigiciti_website.js?v=92be4bce';
+import { mount } from './dc/rt.js?v=ae771412';
+import Root from './dc/thedigiciti_website.js?v=ae771412';
 mount(Root);
 </script>
 </body>
