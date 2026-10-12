@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=a21f0bf5';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=356edf03';
 
 export { h, render, Fragment };
 
@@ -287,13 +287,14 @@ export function wheelStepper(step, opts = {}) {
  *  and programmatic scrolls stay native and simply re-sync the target. */
 export function smoothScroll(el, opts = {}) {
   const k = opts.ease ?? 7.5;
-  let target = el.scrollTop, pos = target, expect = -1, active = false;
+  let kk = k, target = el.scrollTop, pos = target, expect = -1, active = false;
   const max = () => Math.max(0, el.scrollHeight - el.clientHeight);
   const onWheel = (e) => {
     if (e.ctrlKey) return;                                   // pinch-zoom
     const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * el.clientHeight : e.deltaY;
     e.preventDefault();
     if (!active) { pos = target = el.scrollTop; active = true; }
+    kk = k;
     target = Math.max(0, Math.min(max(), target + dy));
   };
   const onScroll = () => { if (Math.abs(el.scrollTop - expect) > 1.5) { pos = target = el.scrollTop; active = false; } };
@@ -301,10 +302,12 @@ export function smoothScroll(el, opts = {}) {
   el.addEventListener('scroll', onScroll, { passive: true });
   return {
     get target() { return target; },
-    scrollTo(y) { pos = el.scrollTop; target = Math.max(0, Math.min(max(), y)); active = true; },
+    get active() { return active; },
+    /** glide to y; `ease` (per-second rate) overrides the wheel feel for this move — lower is more cinematic */
+    scrollTo(y, ease) { pos = el.scrollTop; target = Math.max(0, Math.min(max(), y)); active = true; kk = ease ?? k; },
     tick(dt) {
       if (!active) return;
-      pos += (target - pos) * (1 - Math.exp(-dt * k));
+      pos += (target - pos) * (1 - Math.exp(-dt * kk));
       if (Math.abs(target - pos) < .4) { pos = target; active = false; }
       expect = pos; el.scrollTop = pos;
     },
@@ -318,7 +321,7 @@ export function smoothScroll(el, opts = {}) {
  *  the input goes quiet. It never locks: scrolling mid-scene pulls the scene
  *  along. Pushing past either end calls onEnd(±1). */
 export function scrubber(opts) {
-  const max = opts.max, unit = opts.unit ?? 900, QUIET = 220, OVER = opts.overscroll ?? 420;
+  const max = opts.max, unit = opts.unit ?? 900, QUIET = 220, OVER = opts.overscroll ?? 420, DEAD = .035;
   let target = opts.start ?? 0, pos = target, dir = 1, lastIn = 0, over = 0, snapped = true, ty = null, lastT = 0;
   const clamp = (v) => Math.max(0, Math.min(max, v));
   const input = (dpx, now) => {
@@ -349,9 +352,11 @@ export function scrubber(opts) {
     get target() { return target; },
     tick(t) {
       const dt = Math.min(.05, lastT ? (t - lastT) / 1000 : 0); lastT = t;
-      if (!snapped && t - lastIn > QUIET) {          // settle on the scene the user was heading for
-        const f = target - Math.floor(target);
-        target = clamp(dir > 0 ? (f > .25 ? Math.ceil(target) : Math.floor(target)) : (f < .75 ? Math.floor(target) : Math.ceil(target)));
+      if (!snapped && t - lastIn > QUIET) {
+        // settle: a gesture is a commitment — once the user has moved past a small dead zone, the scene
+        // they were heading for plays in full (a short flick on a phone or one wheel notch is enough)
+        const r = Math.round(target), f = target - r;
+        target = clamp(Math.abs(f) < DEAD ? r : (dir > 0 ? Math.ceil(target) : Math.floor(target)));
         snapped = true;
       }
       const d = target - pos;

@@ -33,10 +33,30 @@ body{margin:0;background:var(--bg-app);color:var(--text-primary);font-family:var
   [data-fdcol] > div > span:first-child{width:22px!important;height:22px!important;font-size:11px!important}
   [data-fdcol] > div > span:last-child > span:first-child{font-size:13.5px!important;line-height:1.2}
   [data-fdcol] > div > span:last-child > span:last-child{font-size:11.5px!important;line-height:1.3}
-  [data-rescene]{padding:60px 10px 12px!important}
-  [data-regrid]{grid-template-columns:1fr 1fr!important;grid-template-rows:none!important;grid-auto-rows:minmax(0,1fr)!important;gap:8px!important}
-  [data-regrid] > [data-rep]{grid-column:auto!important;grid-row:auto!important;padding:10px!important}
-  [data-reslot]{grid-column:1 / -1!important;grid-row:auto!important;min-height:150px!important}
+  /* real estate, by the numbers — a stacked summary on phones */
+  [data-rescene]{padding:64px 14px 12px!important}
+  [data-regrid]{display:flex!important;flex-direction:column;gap:8px!important;height:100%!important}
+  [data-regrid] > [data-rk]{flex:none;display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:baseline;padding:11px 14px!important;border-radius:14px!important}
+  [data-rk] [data-rs="label"]{grid-column:1;grid-row:1;font-size:11px!important;letter-spacing:.08em;text-transform:uppercase;color:#a3a5b4}
+  [data-rk] [data-rs="num"]{grid-column:2;grid-row:1 / span 2;font-size:28px!important;line-height:1!important;align-self:center;text-align:right;white-space:nowrap}
+  [data-rk] [data-rs="sub"]{grid-column:1;grid-row:2;font-size:12.5px!important;line-height:1.3;color:#c9c6da}
+  [data-rk] [data-rs="sub"] > span:last-child{display:none}
+  [data-rk] [data-rs="bar"]{display:none!important}
+  [data-rk] [data-rs="list"]{grid-column:1 / -1;grid-row:3;display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:4px 14px!important;margin-top:6px;font-size:12px!important}
+  [data-rk] [data-rs="list"] > span{gap:6px!important}
+  [data-regrid] > [data-rk="ticket"]{display:none!important}
+  [data-rk="head"]{order:-2;background:none!important;border:0!important;padding:0 2px 4px!important;grid-template-columns:1fr!important;row-gap:6px}
+  [data-rk="head"] [data-rs="label"]{color:#ffb9a6;letter-spacing:.26em}
+  [data-rk="head"] [data-rs="title"]{grid-column:1;font-size:26px!important;line-height:1.05!important;letter-spacing:-.03em!important;color:#fff6ea}
+  [data-rk="head"] [data-rs="sub"]{grid-row:3;color:rgba(255,226,216,.7)!important}
+  [data-reslot]{order:-1;flex:none;min-height:0!important;height:clamp(96px,14vh,130px)!important;border-radius:14px!important}
+  [data-reslot] img{width:60%!important;height:88%!important;margin-top:8%!important}
+  [data-reslot] [data-rs="pill"]{top:10px!important;font-size:9.5px!important;padding:5px 12px!important}
+  [data-rk="sell"],[data-rk="div"]{grid-template-columns:1fr!important;grid-template-rows:auto auto auto!important;row-gap:4px}
+  [data-rk="sell"] [data-rs="num"],[data-rk="div"] [data-rs="num"]{grid-column:1!important;grid-row:2!important;text-align:left;font-size:24px!important}
+  [data-rk="sell"] [data-rs="sub"],[data-rk="div"] [data-rs="sub"]{grid-row:3!important}
+  [data-repair]{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;flex:none}
+  [data-repair] > [data-rk]{grid-column:auto!important;grid-row:auto!important;min-width:0}
   [data-villas]{padding:60px 12px 14px!important;gap:10px!important}
   [data-vhead] h2{font-size:26px!important}
   [data-vrow]{flex-direction:column!important;gap:8px!important;width:100%!important}
@@ -51,16 +71,16 @@ body{margin:0;background:var(--bg-app);color:var(--text-primary);font-family:var
   [data-vc] [data-vdesc]{display:none}
 }</style>
 <style>html,body{height:100%;margin:0}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=a21f0bf5">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=a21f0bf5">
-<link rel="modulepreload" href="dc/story-1-journey.js?v=a21f0bf5">
-<link rel="modulepreload" href="dc/part-stage-villa.js?v=a21f0bf5">
+<link rel="modulepreload" href="dc/rt.js?v=356edf03">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=356edf03">
+<link rel="modulepreload" href="dc/story-1-journey.js?v=356edf03">
+<link rel="modulepreload" href="dc/part-stage-villa.js?v=356edf03">
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=a21f0bf5';
-import Root from './dc/story-1-journey.js?v=a21f0bf5';
+import { mount } from './dc/rt.js?v=356edf03';
+import Root from './dc/story-1-journey.js?v=356edf03';
 mount(Root);
 </script>
 </body>

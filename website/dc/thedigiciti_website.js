@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=a21f0bf5';
-import C_calculator from './calculator.js?v=a21f0bf5';
-import C_part_footer from './part-footer.js?v=a21f0bf5';
-import C_part_stage_foundation from './part-stage-foundation.js?v=a21f0bf5';
-import C_part_stage_grading from './part-stage-grading.js?v=a21f0bf5';
-import C_part_stage_plot from './part-stage-plot.js?v=a21f0bf5';
-import C_part_stage_steel from './part-stage-steel.js?v=a21f0bf5';
-import C_part_stage_villa from './part-stage-villa.js?v=a21f0bf5';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=356edf03';
+import C_calculator from './calculator.js?v=356edf03';
+import C_part_footer from './part-footer.js?v=356edf03';
+import C_part_stage_foundation from './part-stage-foundation.js?v=356edf03';
+import C_part_stage_grading from './part-stage-grading.js?v=356edf03';
+import C_part_stage_plot from './part-stage-plot.js?v=356edf03';
+import C_part_stage_steel from './part-stage-steel.js?v=356edf03';
+import C_part_stage_villa from './part-stage-villa.js?v=356edf03';
 addCSS(".p-thedigicitiwebsite-1:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-2:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-3:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-4:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-5:hover{gap:clamp(24px,2.6vw,48px) !important;color:#fff !important}");
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
@@ -50,6 +50,17 @@ class Component extends DCLogic {
     const rm = reducedMotion;
     // inertia on the page scroll (Lenis-style); touch and keys stay native
     this.ss = rm || !this.scrollRef.current ? null : smoothScroll(this.scrollRef.current);
+    // The hero has two states — idle and spread (where "Explore" lives). Any scroll inside it completes the
+    // move once the input goes quiet: a short flick on a phone or one wheel notch is enough, and nothing is
+    // ever left half-way. Scrolling back up past the middle returns it to idle.
+    this.lastScroll = 0; this.touching = false; this.prevTop = 0; this.heroDir = 1;
+    { const sc0 = this.scrollRef.current;
+      if (sc0) {
+        this.onScrollEv = () => { this.lastScroll = performance.now(); };
+        this.onTS = () => { this.touching = true; }; this.onTE = () => { this.touching = false; this.lastScroll = performance.now(); };
+        sc0.addEventListener('scroll', this.onScrollEv, { passive: true }); sc0.addEventListener('wheel', this.onScrollEv, { passive: true });
+        sc0.addEventListener('touchstart', this.onTS, { passive: true }); sc0.addEventListener('touchend', this.onTE, { passive: true }); sc0.addEventListener('touchcancel', this.onTE, { passive: true });
+      } }
     this.onMove = e => { if (rm) return; this.mx = e.clientX / innerWidth - .5; this.my = e.clientY / innerHeight - .5; };
     addEventListener('mousemove', this.onMove);
     const tiles = [this.t0, this.t1, this.t2, this.t3, this.t4];
@@ -86,6 +97,17 @@ class Component extends DCLogic {
       const aM = 1 - Math.exp(-dt * 3), aP = 1 - Math.exp(-dt * 14);
       sm.x += (this.mx - sm.x) * aM; sm.y += (this.my - sm.y) * aM;
       const raw = sc ? clamp(sc.scrollTop / Math.max(1, sc.clientHeight * 1.8)) : 0;
+      if (sc && !rm) {
+        const range = sc.clientHeight * 1.8, top = sc.scrollTop;
+        if (Math.abs(top - this.prevTop) > .5) { this.heroDir = top > this.prevTop ? 1 : -1; this.prevTop = top; }
+        const quiet = !this.touching && (t - this.lastScroll) > 140;
+        const elsewhere = this.ss && this.ss.active && this.ss.target > 1 && Math.abs(this.ss.target - range) > 1;   // a nav glide to the calculator etc.
+        if (quiet && !elsewhere && top > range * .03 && top < range * .97) {
+          const want = this.heroDir > 0 ? range : (top < range * .5 ? 0 : range);
+          if (this.ss) { if (!this.ss.active || Math.abs(this.ss.target - want) > 1) this.ss.scrollTo(want, 2.6); }
+          else sc.scrollTo({ top: want, behavior: 'smooth' });
+        }
+      }
       const sr = this.showRig.current;
       if (sr && this.showOn) { const rv = 'rotateY(' + (sm.x * 6).toFixed(3) + 'deg) rotateX(' + (-sm.y * 4).toFixed(3) + 'deg)'; if (sr.__v !== rv) { sr.style.transform = rv; sr.__v = rv; } }
       this.sp += (raw - this.sp) * aP; const p = this.sp;
@@ -164,7 +186,7 @@ class Component extends DCLogic {
       setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, 60 + d);
     }));
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); { const sc0 = this.scrollRef.current; if (sc0 && this.onScrollEv) { sc0.removeEventListener('scroll', this.onScrollEv); sc0.removeEventListener('wheel', this.onScrollEv); sc0.removeEventListener('touchstart', this.onTS); sc0.removeEventListener('touchend', this.onTE); sc0.removeEventListener('touchcancel', this.onTE); } } removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
   renderVals() {
     const r = {}; ['veilRef','pulseRef','showStage','showRig','scrollRef','frameRef','farRef','nearRef','frontRef','villaRef','coinRef','glowRef','sunRef','sunDisc','copyA','copyB','t0','t1','t2','t3','t4'].forEach(n => r[n] = this[n]);
     r.goExplore = e => { e.preventDefault(); if (this.leaving) return; this.leaving = true; const fr = this.frameRef.current; if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(38vh) scale(1.08)'; } const b = this.copyB.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; } try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {} window.tdcVeil && window.tdcVeil.go('story.html', { style: 'sky' }); };
