@@ -1,7 +1,7 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready } from './rt.js?v=5565a973';
-import C_story_1_journey from './story-1-journey.js?v=5565a973';
-import C_story_2_map from './story-2-map.js?v=5565a973';
-import C_story_3_numbers from './story-3-numbers.js?v=5565a973';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=189297e3';
+import C_story_1_journey from './story-1-journey.js?v=189297e3';
+import C_story_2_map from './story-2-map.js?v=189297e3';
+import C_story_3_numbers from './story-3-numbers.js?v=189297e3';
 addCSS(".p-story-1:hover{gap:16px !important;color:#fff !important;box-shadow:inset 0 0 0 1px rgba(255,236,200,.5), inset 0 1px 0 rgba(255,255,255,.2), 0 0 34px rgba(255,200,130,.25), 0 10px 30px -12px rgba(0,0,0,.7) !important}");
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
@@ -24,8 +24,18 @@ class Component extends DCLogic {
     addEventListener('wheel', this.onWheelEnd, { passive: true });
     addEventListener('touchstart', this.onTouchS, { passive: true }); addEventListener('touchend', this.onTouchE, { passive: true });
     addEventListener('keydown', this.onKeyEnd);
+    // chapter 3 is a page: give its scroller the same inertia as the landing
+    let lt = 0;
+    const loop = now => {
+      const el = this.calcRef.current;
+      if (el && this.ssEl !== el) { this.ss && this.ss.destroy(); this.ss = reducedMotion ? null : smoothScroll(el); this.ssEl = el; }
+      else if (!el && this.ss) { this.ss.destroy(); this.ss = null; this.ssEl = null; }
+      if (this.ss) this.ss.tick(Math.min(.05, lt ? (now - lt) / 1000 : 0));
+      lt = now; this.lp = requestAnimationFrame(loop);
+    };
+    this.lp = requestAnimationFrame(loop);
   }
-  componentWillUnmount() { removeEventListener('wheel', this.onWheelEnd); removeEventListener('touchstart', this.onTouchS); removeEventListener('touchend', this.onTouchE); removeEventListener('keydown', this.onKeyEnd); }
+  componentWillUnmount() { cancelAnimationFrame(this.lp); this.ss && this.ss.destroy(); removeEventListener('wheel', this.onWheelEnd); removeEventListener('touchstart', this.onTouchS); removeEventListener('touchend', this.onTouchE); removeEventListener('keydown', this.onKeyEnd); }
   toApp() {
     if (this.leaving) return; this.leaving = true;
     window.tdcVeil && window.tdcVeil.go('index.html#showcase', { style: 'sky' });

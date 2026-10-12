@@ -313,23 +313,25 @@ class Component extends DCLogic {
     const rf = q('[data-route-fill]'), rd = q('[data-route-dot]');
     const caps = qa('[data-s]').map(el => { const [a, b] = el.dataset.s.split(',').map(Number); return { el, a, b }; });
     const planeY = p => { const g = this._groundY || 76; return g - 40 * ss(.03, .2, p) + 40 * ss(.8, .97, p); };
-    let u = this.props.startAtEnd ? 7 : 0, target = u, last = performance.now();
-    const go = dir => { if (Math.abs(u - target) > .001) return; if (dir > 0 && target >= 7) { this.props.onNext && this.props.onNext(); return; } target = Math.max(0, Math.min(7, target + (dir > 0 ? 1 : -1))); document.documentElement.dataset.step = target; };
+    // The scenes are scrubbed by scroll (with inertia, a cinematic speed cap and
+    // a snap to the nearest scene when the scroll stops) — never locked.
+    const paces = [this.props.duration ?? 3.5, 3.4, 3, 2.6, 2.6, 2.6, 2.6];
+    this.scrub = scrubber({ max: 7, start: this.props.startAtEnd ? 7 : 0, unit: 820,
+      rateFor: seg => 1.6 / paces[Math.max(0, Math.min(6, seg))],
+      onEnd: d => { if (d > 0) this.props.onNext && this.props.onNext(); else this.props.onPrev && this.props.onPrev(); } });
+    let u = this.scrub.pos, last = performance.now();
+    const go = dir => this.scrub.step(dir > 0 ? 1 : -1);
     const rips = qa('[data-rip]'), hl = q('[data-half="l"]'), hr = q('[data-half="r"]'), crack = q('[data-crack]'), ask = q('[data-ask]'), most = q('[data-most]'), cards = qa('[data-card]'), fdp = qa('[data-fdp]'), rep = qa('[data-rep]'), fdslot = q('[data-fdslot]'), reslot = q('[data-reslot]'), abg = q('[data-abg]'), abgRe = q('[data-abg-re]'), rescene = q('[data-rescene]'), abgSol = q('[data-abg-sol]'), sol = q('[data-sol]'), solimg = q('[data-solimg]'), soltxt = q('[data-soltxt]'), villas = q('[data-villas]'), vhead = q('[data-vhead]'), vcs = qa('[data-vc]'), explore = q('[data-explore]');
     const gc = q('[data-gcoin]'), gb = q('[data-gbody]'), gf = q('[data-gface]'), gs = q('[data-gsheen]'), gg = q('[data-gglow]'), sun = q('[data-sun]'), dim = q('[data-dim]'), cglow = q('[data-cardglow]'), saved = q('[data-saved]');
     const P = qa('[data-pt]').map((el, i) => { const r = s => { const v = Math.sin(i * 91.7 + s * 47.3) * 43758.5; return v - Math.floor(v); }; return { el, x: 30 + r(1) * 60, y: 58 + r(2) * 26, d: r(3) * .35 }; });
-    this.onWheel = wheelStepper(d => go(d), { busy: () => Math.abs(u - target) > .001 });
     this.onKey = e => { if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(1); } if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(-1); } };
-    this.onTS = e => { this.ty = e.touches[0].clientY; };
-    this.onTM = e => { if (this.ty == null) return; e.preventDefault(); const d = this.ty - e.touches[0].clientY; if (Math.abs(d) > 30) { go(d); this.ty = null; } };
-    addEventListener('wheel', this.onWheel, { passive: false }); addEventListener('keydown', this.onKey);
-    addEventListener('touchstart', this.onTS, { passive: true }); addEventListener('touchmove', this.onTM, { passive: false });
+    this.scrub.attach(); addEventListener('keydown', this.onKey);
     const loop = now => { try { frame(now); } catch (err) { window.__flightErr = String(err && err.stack || err); } this._raf = requestAnimationFrame(loop); };
     const frame = now => {
       const t = now / 1000, vw = innerWidth / 100, vh = innerHeight / 100, dt = Math.min(.05, (now - last) / 1000); last = now;
       const dur = this.props.duration ?? 3.5;
-      const seg = target > u ? Math.floor(u) : Math.ceil(u) - 1, rate = dt / ([dur, 3.4, 3, 2.6, 2.6, 2.6, 2.6][Math.max(0, Math.min(6, seg))]);
-      u += Math.sign(target - u) * Math.min(Math.abs(target - u), rate);
+      u = this.scrub.tick(now);
+      const stp = Math.round(u); if (stp !== this._stp) { this._stp = stp; document.documentElement.dataset.step = stp; }
       const uf = Math.min(1, u), sp = uf < .5 ? 2 * uf * uf : 1 - Math.pow(-2 * uf + 2, 2) / 2;
       const cu = Math.max(0, Math.min(1, u - 1)), c = cu < .5 ? 4 * cu * cu * cu : 1 - Math.pow(-2 * cu + 2, 3) / 2;
       {
@@ -475,7 +477,7 @@ class Component extends DCLogic {
     };
     this._raf = requestAnimationFrame(loop);
   }
-  componentWillUnmount() { cancelAnimationFrame(this._raf); removeEventListener('wheel', this.onWheel); this.onWheel.dispose && this.onWheel.dispose(); removeEventListener('keydown', this.onKey); removeEventListener('touchstart', this.onTS); removeEventListener('touchmove', this.onTM); }
+  componentWillUnmount() { cancelAnimationFrame(this._raf); this.scrub.detach(); removeEventListener('keydown', this.onKey); }
   componentDidUpdate() { this.applyDest(); }
   applyDest() {
     const d = this.props.destination ?? 'Kuwait', a = document.querySelector('[data-arrival]'), b = document.querySelector('[data-dest]');

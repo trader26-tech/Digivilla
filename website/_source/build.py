@@ -289,7 +289,7 @@ def compile_file(path: Path) -> dict:
     fix(xdc)
     kids = comp.children(xdc)
     helmet = helmet_nodes(root)
-    lines = ["import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready"
+    lines = ["import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber"
              + (", DSButton" if comp.uses_ds_button else "") + " } from './rt.js';"]
     for imp in sorted(comp.imports):
         lines.append(f"import {mod_id(imp)} from './{imp}.js';")

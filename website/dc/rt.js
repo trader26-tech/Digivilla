@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=5565a973';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=189297e3';
 
 export { h, render, Fragment };
 
@@ -279,6 +279,95 @@ export function wheelStepper(step, opts = {}) {
   };
   handler.dispose = () => clearInterval(watch);
   return handler;
+}
+
+/** Lenis-style smooth scrolling for an overflow container: wheel input moves
+ *  a target and the scroll position eases toward it every frame (time-based),
+ *  so a flick has weight and settles instead of stopping dead. Touch, keyboard
+ *  and programmatic scrolls stay native and simply re-sync the target. */
+export function smoothScroll(el, opts = {}) {
+  const k = opts.ease ?? 7.5;
+  let target = el.scrollTop, pos = target, expect = -1, active = false;
+  const max = () => Math.max(0, el.scrollHeight - el.clientHeight);
+  const onWheel = (e) => {
+    if (e.ctrlKey) return;                                   // pinch-zoom
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * el.clientHeight : e.deltaY;
+    e.preventDefault();
+    if (!active) { pos = target = el.scrollTop; active = true; }
+    target = Math.max(0, Math.min(max(), target + dy));
+  };
+  const onScroll = () => { if (Math.abs(el.scrollTop - expect) > 1.5) { pos = target = el.scrollTop; active = false; } };
+  el.addEventListener('wheel', onWheel, { passive: false });
+  el.addEventListener('scroll', onScroll, { passive: true });
+  return {
+    get target() { return target; },
+    scrollTo(y) { pos = el.scrollTop; target = Math.max(0, Math.min(max(), y)); active = true; },
+    tick(dt) {
+      if (!active) return;
+      pos += (target - pos) * (1 - Math.exp(-dt * k));
+      if (Math.abs(target - pos) < .4) { pos = target; active = false; }
+      expect = pos; el.scrollTop = pos;
+    },
+    destroy() { el.removeEventListener('wheel', onWheel); el.removeEventListener('scroll', onScroll); },
+  };
+}
+
+/** Scroll-scrubbed scenes. Wheel / touch move a target in scene units, the
+ *  position eases toward it (with a per-scene speed cap so a flick still
+ *  plays the scene at a cinematic pace) and snaps to the nearest scene once
+ *  the input goes quiet. It never locks: scrolling mid-scene pulls the scene
+ *  along. Pushing past either end calls onEnd(±1). */
+export function scrubber(opts) {
+  const max = opts.max, unit = opts.unit ?? 900, QUIET = 160, OVER = opts.overscroll ?? 420;
+  let target = opts.start ?? 0, pos = target, dir = 1, lastIn = 0, over = 0, snapped = true, ty = null, lastT = 0;
+  const clamp = (v) => Math.max(0, Math.min(max, v));
+  const input = (dpx, now) => {
+    if (opts.onInput) opts.onInput();
+    if (opts.gate && !opts.gate()) return;
+    dir = dpx > 0 ? 1 : -1;
+    const atEnd = dir > 0 ? (target >= max - 1e-6 && pos >= max - .02) : (target <= 1e-6 && pos <= .02);
+    if (atEnd) { over += Math.abs(dpx); if (over > OVER) { over = -1e9; opts.onEnd && opts.onEnd(dir); } return; }
+    over = 0;
+    target = clamp(target + dpx / unit); lastIn = now; snapped = false;
+  };
+  const now = (e) => e.timeStamp || performance.now();
+  const api = {
+    onWheel: (e) => { if (e.ctrlKey) return; e.preventDefault(); input(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY, now(e)); },
+    onTS: (e) => { ty = e.touches[0].clientY; },
+    onTM: (e) => { if (ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; input((ty - y) * 1.7, now(e)); ty = y; },
+    onTE: () => { ty = null; },
+    /** one whole scene (keys) */
+    step(d) {
+      if (opts.onInput) opts.onInput();
+      if (opts.gate && !opts.gate()) return;
+      dir = d;
+      if ((d > 0 && target >= max - 1e-6) || (d < 0 && target <= 1e-6)) { opts.onEnd && opts.onEnd(d); return; }
+      target = clamp(Math.round(target) + d); snapped = true; lastIn = 0;
+    },
+    set(v) { target = pos = clamp(v); snapped = true; over = 0; },
+    get pos() { return pos; },
+    get target() { return target; },
+    tick(t) {
+      const dt = Math.min(.05, lastT ? (t - lastT) / 1000 : 0); lastT = t;
+      if (!snapped && t - lastIn > QUIET) {          // settle on the scene the user was heading for
+        const f = target - Math.floor(target);
+        target = clamp(dir > 0 ? (f > .25 ? Math.ceil(target) : Math.floor(target)) : (f < .75 ? Math.floor(target) : Math.ceil(target)));
+        snapped = true;
+      }
+      const d = target - pos;
+      if (Math.abs(d) < .0005) pos = target;
+      else {
+        const seg = Math.max(0, Math.min(max - 1, Math.floor(Math.min(pos, target) + 1e-6)));
+        const cap = (opts.rateFor ? opts.rateFor(seg) : 1.2) * dt;
+        const ease = Math.abs(d) * (1 - Math.exp(-dt * (opts.ease ?? 9)));
+        pos += Math.sign(d) * Math.min(Math.abs(d), Math.min(ease, cap) + dt * .02);
+      }
+      return pos;
+    },
+    attach() { addEventListener('wheel', api.onWheel, { passive: false }); addEventListener('touchstart', api.onTS, { passive: true }); addEventListener('touchmove', api.onTM, { passive: false }); addEventListener('touchend', api.onTE, { passive: true }); },
+    detach() { removeEventListener('wheel', api.onWheel); removeEventListener('touchstart', api.onTS); removeEventListener('touchmove', api.onTM); removeEventListener('touchend', api.onTE); },
+  };
+  return api;
 }
 
 /** Pre-render an element's CSS `filter` (drop-shadow glows, sepia …) into a

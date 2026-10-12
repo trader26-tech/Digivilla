@@ -82,8 +82,18 @@ class Component extends DCLogic {
     addEventListener('wheel', this.onWheelEnd, { passive: true });
     addEventListener('touchstart', this.onTouchS, { passive: true }); addEventListener('touchend', this.onTouchE, { passive: true });
     addEventListener('keydown', this.onKeyEnd);
+    // chapter 3 is a page: give its scroller the same inertia as the landing
+    let lt = 0;
+    const loop = now => {
+      const el = this.calcRef.current;
+      if (el && this.ssEl !== el) { this.ss && this.ss.destroy(); this.ss = reducedMotion ? null : smoothScroll(el); this.ssEl = el; }
+      else if (!el && this.ss) { this.ss.destroy(); this.ss = null; this.ssEl = null; }
+      if (this.ss) this.ss.tick(Math.min(.05, lt ? (now - lt) / 1000 : 0));
+      lt = now; this.lp = requestAnimationFrame(loop);
+    };
+    this.lp = requestAnimationFrame(loop);
   }
-  componentWillUnmount() { removeEventListener('wheel', this.onWheelEnd); removeEventListener('touchstart', this.onTouchS); removeEventListener('touchend', this.onTouchE); removeEventListener('keydown', this.onKeyEnd); }
+  componentWillUnmount() { cancelAnimationFrame(this.lp); this.ss && this.ss.destroy(); removeEventListener('wheel', this.onWheelEnd); removeEventListener('touchstart', this.onTouchS); removeEventListener('touchend', this.onTouchE); removeEventListener('keydown', this.onKeyEnd); }
   toApp() {
     if (this.leaving) return; this.leaving = true;
     window.tdcVeil && window.tdcVeil.go('index.dc.html#showcase', { style: 'sky' });

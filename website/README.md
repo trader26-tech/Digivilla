@@ -36,9 +36,14 @@ The prototype's look and timing are kept; what changed is how it runs:
   identical at 30, 60 or 120 Hz. Per-frame DOM writes are skipped when nothing
   changed, the phone rig only turns while on screen, and the landing loop idles
   once the calculator is reached.
-- **One scene per wheel gesture** in the story (`rt.wheelStepper`): a trackpad
-  flick is one step, a scroll that is still rolling when a scene lands does not
-  fire the next one.
+- **Smooth scroll with inertia** on the landing and chapter 3 (`rt.smoothScroll`,
+  Lenis-style: wheel moves a target, the position eases to it; touch and keys stay
+  native). The landing's layers parallax at different depths (sun, three cloud
+  decks, villa, copy), and the showcase and calculator rise in as they enter.
+- **Scroll-scrubbed story** (`rt.scrubber`): the flight, the cards and the pen
+  follow the scroll continuously with inertia, capped near the designed pace,
+  and settle on the nearest scene when the scroll stops — nothing ever locks.
+  Pushing past a chapter's end hands over to the next. Keys still step.
 - **Nothing flashes in.** Fonts are self-hosted and preloaded
   (`assets/fonts`); the landing copy rises and the page veil lifts only once
   fonts and first-screen images are decoded (`rt.ready`).
