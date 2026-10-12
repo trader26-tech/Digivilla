@@ -1,0 +1,99 @@
+/* DigiVilla colour tokens — sampled from app screens (dark UI) and investor deck (light/cream) */
+:root{
+/* Night — app surfaces */
+--night-0:#0b0c12;   /* calculator / compare screens */
+--night-1:#161826;   /* app background (home, villa, settings) */
+--night-2:#171925;   /* overview card fill */
+--night-3:#1e2130;   /* cards, list groups, icon-button fill */
+--night-4:#242739;   /* empty estate tile */
+--night-5:#2c2f42;   /* hairline borders */
+--night-6:#3a3d52;   /* strong borders, chart grid */
+
+/* Ink — text on night */
+--ink-1:#ececf1;
+--ink-2:#a3a5b4;
+--ink-3:#7a7c8c;
+--ink-4:#4d4f5e;
+
+/* Violet — interactive / selection */
+--violet-900:#2b2741;  /* active nav pill, chip fill, eyebrow band */
+--violet-700:#4a4380;
+--violet-500:#7f72e0;  /* outline button border */
+--violet-300:#b5abfc;  /* active nav label, chip caret, links */
+--violet-200:#d4cdfd;  /* "Invested" figure */
+--violet-50:#f1effd;   /* light button fill */
+
+/* Grass — growth, gains, DigiVilla */
+--grass-900:#1f4a13;
+--grass-800:#2a5a1c;
+--grass-700:#3f7e21;
+--grass-600:#4a9d47;   /* large cap */
+--grass-500:#5cb85c;   /* mid cap */
+--grass-400:#6cba36;   /* estate turf */
+--grass-300:#8fd65a;   /* primary positive / accent */
+--grass-200:#8fd48a;   /* small cap */
+--grass-100:#b4e394;
+--grass-50:#e6f6d6;    /* year chip fill */
+
+/* Gold — income, withdrawals, coins */
+--gold-900:#2a261c;
+--gold-500:#f6c445;    /* gold allocation, stepper arrows */
+--gold-400:#e9c15c;
+--gold-300:#fbdb81;
+--gold-200:#f3e2a9;    /* withdrawals figure */
+
+/* Sage — arbitrage */
+--sage-400:#8aa89b;
+--sage-300:#8fb7b0;
+
+/* Coral — risk, loss, the "other" option */
+--coral-500:#e2725b;
+--coral-400:#ec8a73;
+
+/* Neutral slate — FD / flat bars */
+--slate-300:#8a8ea3;
+--slate-500:#666a7d;
+--slate-700:#313440;
+--slate-800:#20222d;
+
+/* Deck (light, investor deck) */
+--deck-cream:#f2ece0;
+--deck-cream-2:#fbf7ea;
+--deck-forest:#2f4034;
+--deck-forest-deep:#22312a;
+--deck-moss:#3f6b45;
+--deck-pine:#2f5537;
+--deck-sage:#7fa383;
+--deck-sage-2:#7fb37a;
+--deck-mute:#5d6b5f;
+--deck-line:#c5cdbf;
+--deck-gold:#e0b13f;
+--deck-brick:#a3322b;
+
+/* Semantic */
+--bg-app:var(--night-1);
+--bg-tool:var(--night-0);
+--surface-card:var(--night-3);
+--surface-card-2:var(--night-2);
+--surface-raised:#24273a;
+--border-hairline:rgba(255,255,255,.08);
+--border-strong:rgba(255,255,255,.14);
+--text-primary:var(--ink-1);
+--text-secondary:var(--ink-2);
+--text-muted:var(--ink-3);
+--text-faint:var(--ink-4);
+--accent:var(--violet-300);
+--accent-fill:var(--violet-900);
+--positive:var(--grass-300);
+--negative:var(--coral-500);
+--income:var(--gold-500);
+--risk-low:var(--grass-300);
+--risk-medium:var(--gold-500);
+--risk-high:var(--coral-500);
+/* Asset classes (allocation bar) */
+--asset-arbitrage:var(--sage-400);
+--asset-gold:var(--gold-500);
+--asset-large:var(--grass-600);
+--asset-mid:var(--grass-500);
+--asset-small:var(--grass-200);
+}

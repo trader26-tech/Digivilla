@@ -1,0 +1,4 @@
+body{margin:0;background:var(--bg-app);color:var(--text-primary);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv11" 1}
+a{color:var(--violet-300);text-decoration:none}
+a:hover{color:var(--violet-200)}
+.dv-eyebrow{font:var(--text-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-secondary)}

@@ -1,0 +1,251 @@
+// TheDigiCiti — tiny runtime for the compiled design components.
+//
+// The design handoff ships each screen as a `.dc.html` file: inline-styled
+// markup with {{ holes }}, <sc-if>/<sc-for>, <dc-import>, plus a `Component`
+// class whose renderVals() feeds the holes. `_source/build.py` compiles every
+// file into a plain ES module that renders with Preact through this file, so
+// the site behaves exactly like the prototype without its in-browser compiler
+// (React + Babel from a CDN).
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs';
+
+export { h, render, Fragment };
+
+/** What the prototype's component classes see as `React`. */
+export const React = { createRef, createElement: h, Fragment };
+
+// ── values ───────────────────────────────────────────────────────────────────
+const NUMBER_RE = /^-?\d+(\.\d+)?$/;
+const IDENT_RE = /^[A-Za-z_$][\w$]*/;
+
+function wrapsWhole(e) {
+  let d = 0;
+  for (let i = 0; i < e.length - 1; i++) {
+    if (e[i] === '(') d++;
+    else if (e[i] === ')') { d--; if (d === 0) return false; }
+  }
+  return true;
+}
+function topLevelEq(e) {
+  let d = 0;
+  for (let i = 0; i < e.length; i++) {
+    const c = e[i];
+    if (c === '[' || c === '(') d++;
+    else if (c === ']' || c === ')') d--;
+    else if (d === 0 && (c === '=' || c === '!') && e[i + 1] === '=') {
+      if (i > 0 && (e[i - 1] === '=' || e[i - 1] === '!')) continue;
+      if (!e.slice(0, i).trim()) continue;
+      return { index: i, op: e[i + 2] === '=' ? c + '==' : c + '=' };
+    }
+  }
+  return null;
+}
+function path(vals, e) {
+  const head = e.match(IDENT_RE);
+  if (!head) return undefined;
+  let cur = vals == null ? undefined : vals[head[0]];
+  let i = head[0].length;
+  while (i < e.length) {
+    if (e[i] === '.') {
+      const m = e.slice(i + 1).match(IDENT_RE) || e.slice(i + 1).match(/^\d+/);
+      if (!m) return undefined;
+      cur = cur == null ? undefined : cur[m[0]];
+      i += 1 + m[0].length;
+    } else if (e[i] === '[') {
+      let d = 1, j = i + 1;
+      while (j < e.length && d > 0) { if (e[j] === '[') d++; else if (e[j] === ']') { d--; if (d === 0) break; } j++; }
+      if (d !== 0) return undefined;
+      const k = R(vals, e.slice(i + 1, j));
+      cur = cur == null ? undefined : cur[k];
+      i = j + 1;
+    } else return undefined;
+  }
+  return cur;
+}
+/** Resolve a {{ hole }} expression against the render values (same rules as
+ *  the prototype runtime: paths, !, ==/===/!=/!==, literals). */
+export function R(vals, src) {
+  const e = String(src).trim();
+  if (!e) return undefined;
+  if (e[0] === '(' && e[e.length - 1] === ')' && wrapsWhole(e)) return R(vals, e.slice(1, -1));
+  const eq = topLevelEq(e);
+  if (eq) {
+    const l = R(vals, e.slice(0, eq.index)), r = R(vals, e.slice(eq.index + eq.op.length));
+    return eq.op === '===' ? l === r : eq.op === '!==' ? l !== r : eq.op === '==' ? l == r : l != r; // eslint-disable-line eqeqeq
+  }
+  if (e[0] === '!') return !R(vals, e.slice(1));
+  if (e === 'true') return true;
+  if (e === 'false') return false;
+  if (e === 'null') return null;
+  if (e === 'undefined') return undefined;
+  if (NUMBER_RE.test(e)) return Number(e);
+  if (e.length >= 2 && (e[0] === '"' || e[0] === "'") && e[e.length - 1] === e[0]) return e.slice(1, -1);
+  return path(vals, e);
+}
+/** An attribute mixing text and holes: "CHAPTER {{ n }}". */
+export function J(vals, parts) {
+  let s = '';
+  for (let i = 0; i < parts.length; i++) s += i & 1 ? (R(vals, parts[i]) ?? '') : parts[i];
+  return s;
+}
+/** A text node with holes → children (each hole in a span, as the prototype). */
+export function T(vals, parts) {
+  const out = [];
+  for (let i = 0; i < parts.length; i++) {
+    if (!(i & 1)) { if (parts[i]) out.push(parts[i]); continue; }
+    const v = R(vals, parts[i]);
+    if (v == null || typeof v === 'boolean') continue;
+    if (typeof v === 'object') { out.push(v); continue; }
+    out.push(h('span', { class: 'sc-interp' }, String(v)));
+  }
+  return out;
+}
+
+// ── styles ───────────────────────────────────────────────────────────────────
+const camel = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+const styleCache = new Map();
+function toObj(css) {
+  const o = {};
+  for (const decl of css.split(';')) {
+    const i = decl.indexOf(':');
+    if (i < 0) continue;
+    const p = decl.slice(0, i).trim();
+    o[p.startsWith('--') ? p : camel(p)] = decl.slice(i + 1).trim();
+  }
+  return o;
+}
+/** Inline style string → style object (cached, so an unchanged style keeps its
+ *  identity and never touches the DOM on re-render — imperative styles set by
+ *  the animation code survive, exactly as with React). */
+export function S(css) {
+  if (css == null || typeof css === 'object') return css;
+  let o = styleCache.get(css);
+  if (!o) { o = toObj(css); if (styleCache.size < 4000) styleCache.set(css, o); }
+  return o;
+}
+
+let sheet = null;
+/** Append CSS (the compiled `style-hover="…"` rules) once. */
+export function addCSS(text) {
+  if (!text) return;
+  if (!sheet) { sheet = document.createElement('style'); sheet.setAttribute('data-dc', ''); document.head.appendChild(sheet); }
+  sheet.textContent += text + '\n';
+}
+
+// ── helmets (each component's <head> needs) ─────────────────────────────────
+const seen = new Set();
+function helmetKey(n) { return n.tag + '|' + (n.attrs.href || n.attrs.src || '') + '|' + (n.text || ''); }
+for (const el of document.head.querySelectorAll('link[href],script[src]')) {
+  seen.add((el.tagName.toLowerCase()) + '|' + (el.getAttribute('href') || el.getAttribute('src')) + '|');
+}
+function installHelmet(nodes) {
+  for (const n of nodes) {
+    const k = helmetKey(n);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    if (n.tag === 'title') continue;
+    const el = document.createElement(n.tag);
+    for (const [a, v] of Object.entries(n.attrs)) el.setAttribute(a, v);
+    if (n.text) el.textContent = n.text;
+    document.head.appendChild(el);
+  }
+}
+
+// ── components ───────────────────────────────────────────────────────────────
+/** Base for the prototype's `class Component extends DCLogic`. */
+export class DCLogic {
+  constructor(props) { this.props = props || {}; this.state = {}; this.__host = null; }
+  setState(update, cb) { this.__host && this.__host.__setLogicState(update, cb); }
+  forceUpdate() { this.__host && this.__host.forceUpdate(); }
+  componentDidMount() {}
+  componentDidUpdate() {}
+  componentWillUnmount() {}
+  renderVals() { return {}; }
+}
+
+const HOST_STYLE = new Set(['position', 'left', 'right', 'top', 'bottom', 'inset', 'width', 'height', 'zIndex', 'transform']);
+/** The positioning subset of a <dc-import style="…"> that lands on its host div. */
+export function hostStyle(css) {
+  const all = S(css);
+  if (!all) return undefined;
+  const out = {};
+  for (const [k, v] of Object.entries(all)) if (HOST_STYLE.has(k)) out[k] = v;
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** Wrap a compiled template + its logic class as a Preact component that
+ *  renders `<div class="sc-host">…</div>`, like the prototype's host. */
+export function defineDC(name, Logic, tpl, defaults, helmet) {
+  return class DC extends Component {
+    constructor(props) {
+      super(props);
+      if (helmet && helmet.length && window.__dcStaticHelmet !== name) installHelmet(helmet);
+      this.state = { __v: 0 };
+      try { this.logic = new (Logic || DCLogic)(this.userProps()); } catch (e) { console.error(name, e); this.logic = new DCLogic(this.userProps()); }
+      this.logic.__host = this;
+    }
+    userProps() {
+      const { __hostStyle, ...rest } = this.props;
+      return { ...defaults, ...rest };
+    }
+    __setLogicState(update, cb) {
+      const prev = this.logic.state;
+      const patch = typeof update === 'function' ? update(prev) : update;
+      this.logic.state = { ...prev, ...patch };
+      this.setState((s) => ({ __v: s.__v + 1 }), cb);
+    }
+    componentDidMount() { try { this.logic.componentDidMount(); } catch (e) { console.error(name, e); } }
+    componentDidUpdate(prev) {
+      this.logic.props = this.userProps();
+      try { this.logic.componentDidUpdate(prev); } catch (e) { console.error(name, e); }
+    }
+    componentWillUnmount() { try { this.logic.componentWillUnmount(); } catch (e) { console.error(name, e); } }
+    render() {
+      const up = this.userProps();
+      this.logic.props = up;
+      let vals = up;
+      try { vals = { ...up, ...(this.logic.renderVals() || {}) }; } catch (e) { console.error(name + '.renderVals()', e); }
+      return h('div', { class: 'sc-host', style: this.props.__hostStyle }, tpl(vals));
+    }
+  };
+}
+
+/** The design system's <Button> (the one design-system component the screens
+ *  use, via <x-import>), rebuilt without React. */
+const BTN = {
+  light: { background: 'var(--violet-50)', color: '#1a1830', border: '1px solid transparent' },
+  outline: { background: 'transparent', color: 'var(--ink-1)', border: '1px solid var(--border-strong)' },
+  accent: { background: 'transparent', color: 'var(--ink-1)', border: '1px solid var(--violet-500)' },
+  ghost: { background: 'transparent', color: 'var(--ink-2)', border: '1px solid var(--border-strong)' },
+};
+const SIZES = {
+  sm: { height: '32px', padding: '0 14px', fontSize: '13px', borderRadius: '999px' },
+  md: { height: '36px', padding: '0 16px', fontSize: '14px', borderRadius: '10px' },
+  lg: { height: '44px', padding: '0 20px', fontSize: '15px', borderRadius: '12px' },
+};
+export class DSButton extends Component {
+  constructor(p) { super(p); this.state = { press: false }; }
+  render() {
+    const { variant = 'outline', size = 'lg', block, disabled, children, style = {}, ...rest } = this.props;
+    const press = this.state.press;
+    return h('button', {
+      disabled,
+      onPointerDown: () => this.setState({ press: true }),
+      onPointerUp: () => this.setState({ press: false }),
+      onPointerLeave: () => this.setState({ press: false }),
+      ...rest,
+      style: {
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        fontFamily: 'var(--font-sans)', fontWeight: 400, cursor: disabled ? 'default' : 'pointer',
+        width: block ? '100%' : undefined, opacity: disabled ? 0.4 : 1,
+        transform: press && !disabled ? 'scale(.97)' : 'none',
+        transition: 'transform 140ms var(--ease-out), background 140ms',
+        ...BTN[variant], ...SIZES[size], ...S(style),
+      },
+    }, children);
+  }
+}
+
+/** Mount a page's root component into #dc-root. */
+export function mount(Root) {
+  render(h(Root, {}), document.getElementById('dc-root'));
+}

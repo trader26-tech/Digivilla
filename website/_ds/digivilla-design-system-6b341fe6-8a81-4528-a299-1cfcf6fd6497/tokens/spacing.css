@@ -1,0 +1,16 @@
+:root{
+--space-1:2px;--space-2:4px;--space-3:6px;--space-4:8px;--space-5:10px;--space-6:12px;--space-7:16px;--space-8:18px;--space-9:22px;--space-10:28px;--space-11:36px;
+--gutter:22px;          /* screen side padding */
+--radius-xs:4px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:18px;--radius-2xl:24px;--radius-pill:999px;
+--radius-device:46px;
+--shadow-card:0 1px 0 rgba(255,255,255,.04) inset,0 8px 24px rgba(0,0,0,.25);
+--shadow-float:0 12px 32px rgba(0,0,0,.45);
+--shadow-sheet:0 -12px 40px rgba(0,0,0,.5);
+--glow-green:0 0 24px rgba(143,214,90,.35);
+--glow-gold:0 0 18px rgba(246,196,69,.35);
+--glow-violet:0 0 18px rgba(181,171,252,.35);
+--ease-out:cubic-bezier(.22,1,.36,1);
+--ease-spring:cubic-bezier(.34,1.56,.64,1);
+--dur-fast:140ms;--dur-base:240ms;--dur-slow:420ms;
+--tabbar-h:59px;
+}

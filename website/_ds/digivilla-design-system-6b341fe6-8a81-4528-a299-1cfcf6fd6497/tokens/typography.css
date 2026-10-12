@@ -1,0 +1,22 @@
+:root{
+--font-sans:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
+--font-deck:'Inter',Arial,Helvetica,sans-serif;
+/* App scale (1x, 402pt-wide phone) */
+--fs-hero:36px;      /* portfolio value */
+--fs-display:30px;   /* calculator result ₹1.64 Cr */
+--fs-headline:27px;  /* "What would DigiVilla do for you?" */
+--fs-title:23px;     /* estate name, top figures */
+--fs-h2:18px;        /* screen titles, sentence-builder */
+--fs-h3:15px;        /* card / row titles */
+--fs-body:13px;
+--fs-small:11.5px;
+--fs-micro:10px;     /* eyebrows */
+--fw-regular:400;--fw-medium:500;--fw-semibold:600;
+--lh-tight:1.1;--lh-snug:1.25;--lh-body:1.45;
+--tracking-eyebrow:.22em;
+--tracking-label:.14em;
+--tracking-tight:-.01em;
+/* Semantic */
+--text-eyebrow:var(--fw-regular) var(--fs-micro)/1.2 var(--font-sans);
+--text-body:var(--fw-regular) var(--fs-body)/var(--lh-body) var(--font-sans);
+}
