@@ -14,6 +14,7 @@ import html
 import json
 import re
 import shutil
+import subprocess
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -45,6 +46,12 @@ EVENT_MAP = {'onclick': 'onClick', 'onchange': 'onChange', 'oninput': 'onInput',
              'onmousedown': 'onMouseDown', 'onmouseup': 'onMouseUp', 'onmouseenter': 'onMouseEnter',
              'onmouseleave': 'onMouseLeave', 'onfocus': 'onFocus', 'onblur': 'onBlur'}
 SKIP_HELMET_SRC = ('_ds_bundle.js',)       # React component bundle — replaced by rt.DSButton
+# The calculator's maths: the app's own engine (pure TS), bundled into dc/engine.js so the
+# website and the app can never disagree. Its data comes from the app's API (calc-data.js).
+ENGINE_SRC = SRC.parent.parent / 'client' / 'frontend' / 'src' / 'app' / 'calc' / 'engine' / 'index.ts'
+ESBUILD = SRC.parent.parent / 'client' / 'frontend' / 'node_modules' / '.bin' / 'esbuild'
+API = 'https://client-digivilla-production.up.railway.app'
+FONTS_CSS = SRC.parent / 'assets' / 'fonts' / 'fonts.css'
 HOLE = re.compile(r'\{\{([\s\S]+?)\}\}')
 ATTR = re.compile(r'''([^\s=/>"']+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?''')
 
@@ -232,13 +239,29 @@ class Compiler:
         return f'h({js(tag)}, {{{", ".join(props)}}}{"".join(", " + k for k in kids)})'
 
 
+def inline_css(path: Path, skip=()) -> str:
+    """A stylesheet with its @imports folded in and url()s made page-relative — one <style>
+    instead of a chain of render-blocking requests."""
+    path = path.resolve()
+    if path in skip:
+        return ''
+    css = path.read_text()
+    css = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
+    css = re.sub(r"@import\s+url\(['\"]?([^'\")]+)['\"]?\)\s*;?",
+                 lambda m: inline_css(path.parent / m.group(1), skip), css)
+    css = re.sub(r"url\((['\"]?)(?!data:|https?:|/)([^'\")]+)\1\)",
+                 lambda m: f"url({(path.parent / m.group(2)).resolve().relative_to(OUT).as_posix()})", css)
+    return re.sub(r'\s*\n\s*', '', css).strip()
+
+
 def helmet_nodes(root: Node):
-    """<helmet> children → [{tag, attrs, text}] (URLs rewritten, DS bundle dropped)."""
+    """<helmet> children → [{tag, attrs, text}] (URLs rewritten, DS bundle dropped, DS CSS inlined)."""
     out = []
     xdc = find(root, 'x-dc')
     hel = find(xdc, 'helmet') if xdc else None
     if not hel:
         return out
+    ds_css, ds_at = [], None
     for c in hel.children:
         if isinstance(c, str):
             continue
@@ -247,8 +270,17 @@ def helmet_nodes(root: Node):
             continue
         if c.tag == 'link' and 'fonts.g' in attrs.get('href', ''):
             continue                        # fonts are self-hosted (assets/fonts)
+        if c.tag == 'link' and attrs.get('href', '').startswith('_ds/') and attrs.get('rel') == 'stylesheet':
+            css = inline_css(OUT / attrs['href'], skip=(FONTS_CSS.resolve(),))   # every page inlines fonts.css itself
+            if css and css not in ds_css:
+                ds_css.append(css)
+            if ds_at is None:
+                ds_at = len(out)
+            continue
         text = ''.join(x for x in c.children if isinstance(x, str))
         out.append({'tag': c.tag, 'attrs': attrs, 'text': rewrite_urls(text)})
+    if ds_css:
+        out.insert(ds_at, {'tag': 'style', 'attrs': {'data-ds': ''}, 'text': '\n'.join(ds_css)})
     return out
 
 
@@ -336,12 +368,11 @@ PAGE = '''<!DOCTYPE html>
 <meta name="theme-color" content="#0c0f2c">
 <link rel="icon" href="assets/favicon.png">
 {preload}
-<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>{fonts_css}</style>
 <script>window.__dcStaticHelmet = {root_js};</script>
 {head}
 <style>html,body{{height:100%;margin:0}}#dc-root,#dc-root>.sc-host{{height:100%}}</style>
-<link rel="modulepreload" href="dc/rt.js?v={ver}">
-<link rel="modulepreload" href="dc/{root}.js?v={ver}">
+{modules}{warm}
 </head>
 <body>
 <div id="dc-root"></div>
@@ -355,6 +386,28 @@ mount(Root);
 '''
 
 
+WARM = ('<link rel="preconnect" href="' + API + '" crossorigin>\n'
+        '<script>(function(){try{var c=JSON.parse(localStorage.getItem("tdc.calc.v1")||"null");if(c&&c.at&&Date.now()-c.at<864e5)return}catch(e){}'
+        'var A=window.__TDC_API||"' + API + '",j=function(r){if(!r.ok)throw new Error(r.status);return r.json()},q=function(p){var f=fetch(A+p,{priority:"high"}).then(j);f.catch(function(){});return f};'
+        'window.__tdcCalc={cfg:q("/calc/config"),vf:q("/calc/villa-funds")}})();</script>')
+
+
+def module_closure(root: str) -> list:
+    """Every module a page's root pulls in (so they all preload in parallel, no waterfall)."""
+    seen, order = set(), []
+
+    def walk(name):
+        if name in seen:
+            return
+        seen.add(name)
+        order.append(name)
+        for dep in re.findall(r"from '\./([\w./-]+?)(?:\?v=\w+)?'", (DC / name).read_text()):
+            walk(dep)
+    walk('rt.js')
+    walk(f'{root}.js')
+    return order
+
+
 def main():
     import hashlib
     if DC.exists():
@@ -362,6 +415,9 @@ def main():
     (DC / 'vendor').mkdir(parents=True)
     shutil.copy(SRC / 'rt.js', DC / 'rt.js')
     shutil.copy(SRC / 'vendor' / 'preact.mjs', DC / 'vendor' / 'preact.mjs')
+    shutil.copy(SRC / 'calc-data.js', DC / 'calc-data.js')
+    subprocess.run([str(ESBUILD), str(ENGINE_SRC), '--bundle', '--format=esm', '--target=es2020', '--minify',
+                    '--legal-comments=none', f'--outfile={DC / "engine.js"}'], check=True, capture_output=True)
     info = {}
     for f in sorted(DESIGN.glob('*.dc.html')):
         info[f.name[:-len('.dc.html')]] = compile_file(f)
@@ -372,22 +428,28 @@ def main():
     for p in DC.glob('*.js'):
         t = p.read_text()
         t = re.sub(r"from '\./([\w-]+)\.js'", lambda m: f"from './{m.group(1)}.js?v={ver}'", t)
+        t = re.sub(r'from"\./([\w-]+)\.js"', lambda m: f"from './{m.group(1)}.js?v={ver}'", t)      # esbuild's quoting
         t = t.replace("from './vendor/preact.mjs'", f"from './vendor/preact.mjs?v={ver}'")
         p.write_text(t)
+    fonts_css = inline_css(FONTS_CSS)
     # fonts the first paint needs, by page family; plus the landing's hero art
     pre = {name: f'<link rel="preload" href="assets/fonts/{name}" as="font" type="font/woff2" crossorigin>'
            for name in (SRC.parent / 'assets' / 'fonts' / 'preload.txt').read_text().split()}
+    RUPEE = ['Inter-500-normal-rupee.woff2', 'Inter-600-normal-rupee.woff2']       # the ₹ glyph on its own (1 KB each)
     FONTS = {
-        'thedigiciti_website': ['Almarai-400-normal-latin.woff2', 'InstrumentSerif-400-italic-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'],
+        'thedigiciti_website': ['Almarai-400-normal-latin.woff2', 'InstrumentSerif-400-italic-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'] + RUPEE,
         'story': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
         'story-2-map': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
     }
-    HERO = {'thedigiciti_website': ['assets/explore/villa.webp'], 'story-1-journey': ['assets/explore/villa.webp']}
+    HERO = {}
     for page, root in PAGES.items():
-        fonts = FONTS.get(root, ['Inter-400-normal-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'])
+        fonts = FONTS.get(root, ['Inter-400-normal-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'] + RUPEE)
         preload = '\n'.join([pre[f] for f in fonts if f in pre] + [f'<link rel="preload" href="{u}" as="image" fetchpriority="high">' for u in HERO.get(root, [])])
-        (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root), preload=preload,
-                                            head=head_html(info[root]['helmet']), ver=ver))
+        mods = module_closure(root)
+        modules = '\n'.join(f'<link rel="modulepreload" href="dc/{m}?v={ver}">' for m in mods)
+        warm = ('\n' + WARM) if 'calculator.js' in mods else ''
+        (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root), preload=preload, fonts_css=fonts_css,
+                                            head=head_html(info[root]['helmet']), ver=ver, modules=modules, warm=warm))
     print(f'built {len(info)} components, {len(PAGES)} pages · v={ver}')
 
 

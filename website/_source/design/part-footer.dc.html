@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>.tdcf a{color:#a3a5b4;text-decoration:none;transition:color .2s}.tdcf a:hover{color:#fff6ea}</style>
+</helmet>
+<footer class="tdcf" style="background:#07080d;border-top:1px solid #1a1c28;color:#8a8ea3;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased">
+<div style="max-width:1180px;margin:0 auto;padding:clamp(36px,5vw,56px) clamp(20px,3vw,40px) clamp(28px,4vw,44px);display:flex;flex-direction:column;gap:26px">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:24px 40px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:420px">
+<span style="font-size:20px;font-weight:600;letter-spacing:-.02em;color:#fff6ea">TheDigiCiti</span>
+<span style="font-size:13.5px;line-height:1.55;color:#a3a5b4">A villa in India that pays you rent — built from mutual funds, by your SIP, wherever you live.</span>
+</div>
+<nav aria-label="Footer" style="display:flex;flex-wrap:wrap;gap:10px 28px;font-size:13px;padding-top:6px">
+<a href="index.dc.html">Home</a>
+<a href="story.dc.html#1">Our story</a>
+<a href="story.dc.html#2">Reading the map</a>
+<a href="calculator.dc.html">Calculator</a>
+</nav>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:14px 18px;border-radius:14px;background:#0e1017;box-shadow:inset 0 0 0 1px #23263a">
+<span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:rgba(143,214,90,.12);color:#8fd65a;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
+<span style="font-size:14px;font-weight:500;color:#fff6ea">AMFI-registered Mutual Fund Distributor</span>
+<span style="font-size:14px;font-weight:600;letter-spacing:.04em;font-variant-numeric:tabular-nums;padding:4px 11px;border-radius:999px;background:rgba(143,214,90,.14);color:#8fd65a">ARN-369151</span>
+</div>
+<p style="margin:0;font-size:12px;line-height:1.65;color:#7a7c8c;max-width:980px">Mutual fund investments are subject to market risks. Read all scheme related documents carefully. A “villa” is a way of showing mutual-fund units held in your name at NAV; any monthly “rent” is a Systematic Withdrawal Plan from your own units, which can draw down your capital. Returns are not assured, and past performance does not guarantee future results. We distribute mutual funds and earn commission from the fund houses; we do not give investment advice.</p>
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;font-size:11.5px;color:#5a5e6c;border-top:1px solid #1a1c28;padding-top:16px">
+<span>© {{ year }} TheDigiCiti · DigiVilla is the name of TheDigiCiti’s mutual-fund estate.</span>
+<span>Information, not advice.</span>
+</div>
+</div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return { year: new Date().getFullYear() }; }
+}
+</script>
+</body>
+</html>

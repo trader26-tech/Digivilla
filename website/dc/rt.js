@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=189297e3';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=92be4bce';
 
 export { h, render, Fragment };
 
@@ -318,7 +318,7 @@ export function smoothScroll(el, opts = {}) {
  *  the input goes quiet. It never locks: scrolling mid-scene pulls the scene
  *  along. Pushing past either end calls onEnd(±1). */
 export function scrubber(opts) {
-  const max = opts.max, unit = opts.unit ?? 900, QUIET = 160, OVER = opts.overscroll ?? 420;
+  const max = opts.max, unit = opts.unit ?? 900, QUIET = 220, OVER = opts.overscroll ?? 420;
   let target = opts.start ?? 0, pos = target, dir = 1, lastIn = 0, over = 0, snapped = true, ty = null, lastT = 0;
   const clamp = (v) => Math.max(0, Math.min(max, v));
   const input = (dpx, now) => {
@@ -334,7 +334,7 @@ export function scrubber(opts) {
   const api = {
     onWheel: (e) => { if (e.ctrlKey) return; e.preventDefault(); input(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY, now(e)); },
     onTS: (e) => { ty = e.touches[0].clientY; },
-    onTM: (e) => { if (ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; input((ty - y) * 1.7, now(e)); ty = y; },
+    onTM: (e) => { if (ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; input((ty - y) * 1.25, now(e)); ty = y; },
     onTE: () => { ty = null; },
     /** one whole scene (keys) */
     step(d) {
@@ -359,7 +359,7 @@ export function scrubber(opts) {
       else {
         const seg = Math.max(0, Math.min(max - 1, Math.floor(Math.min(pos, target) + 1e-6)));
         const cap = (opts.rateFor ? opts.rateFor(seg) : 1.2) * dt;
-        const ease = Math.abs(d) * (1 - Math.exp(-dt * (opts.ease ?? 9)));
+        const ease = Math.abs(d) * (1 - Math.exp(-dt * (opts.ease ?? 6)));
         pos += Math.sign(d) * Math.min(Math.abs(d), Math.min(ease, cap) + dt * .02);
       }
       return pos;

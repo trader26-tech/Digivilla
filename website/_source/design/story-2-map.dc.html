@@ -150,7 +150,7 @@ class Component extends DCLogic {
     // nearest step when the scroll stops. The axes intro stays on its own clock;
     // the first scroll during it just completes it.
     this.scrub = scrubber({ max: LAST, start: this.props.startAtEnd ? LAST : 0, unit: 760,
-      rateFor: seg => (reducedMotion ? 50 : 1.7) * 1000 / this.durs[Math.min(LAST, seg + 1)],
+      rateFor: seg => (reducedMotion ? 50 : 1.0) * 1000 / this.durs[Math.min(LAST, seg + 1)],   // the designed pace — never faster
       gate: () => (this.p || 0) >= 1,
       onInput: () => { if ((this.p || 0) < 1) { cancelAnimationFrame(this.raf); this.p = 1; this.frame(); } },
       onEnd: d => { if (d > 0) this.props.onNext && this.props.onNext(); else this.props.onPrev && this.props.onPrev(); } });

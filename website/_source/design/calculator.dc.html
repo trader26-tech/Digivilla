@@ -15,14 +15,14 @@
 <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
 <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#0b0c12;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#b5abfc;text-decoration:none}a:hover{color:#d4cdfd}input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:60px;height:60px;background:transparent;border:0}input[type=range]::-moz-range-thumb{width:60px;height:60px;background:transparent;border:0}@keyframes bobc{ 0%,100%{ transform:translate(-50%,0) } 50%{ transform:translate(-50%,-6px) } }</style>
+<style>body{margin:0;background:#0b0c12;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#b5abfc;text-decoration:none}a:hover{color:#d4cdfd}input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:60px;height:60px;background:transparent;border:0}input[type=range]::-moz-range-thumb{width:60px;height:60px;background:transparent;border:0}@keyframes tdcspin{to{transform:rotate(360deg)}}@media (max-width:700px){[data-back]{padding:0 5px 0 5px!important;top:12px!important;left:12px!important}[data-back-label]{display:none}}@keyframes bobc{ 0%,100%{ transform:translate(-50%,0) } 50%{ transform:translate(-50%,-6px) } }</style>
 </helmet>
 <div style="min-height:100vh;background:radial-gradient(ellipse 40% 50% at 70% 45%,rgba(108,186,54,.10),transparent 70%),#0b0c12">
-<sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><a href="index.dc.html" aria-label="Back to TheDigiCiti home" style="position:fixed;left:clamp(14px,2.4vw,32px);top:18px;z-index:30;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px 0 5px;border-radius:999px;background:rgba(18,20,29,.8);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px #2b2e3a;color:#e9e9ed;font-size:13px;font-weight:500" style-hover="box-shadow:inset 0 0 0 1px #8fd65a;color:#fff"><span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e9e9ed;color:#0b0c12"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></span>TheDigiCiti</a></sc-if>
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><a href="index.dc.html" data-back="1" aria-label="Back to TheDigiCiti home" style="position:fixed;left:clamp(14px,2.4vw,32px);top:18px;z-index:30;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px 0 5px;border-radius:999px;background:rgba(18,20,29,.8);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px #2b2e3a;color:#e9e9ed;font-size:13px;font-weight:500" style-hover="box-shadow:inset 0 0 0 1px #8fd65a;color:#fff"><span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e9e9ed;color:#0b0c12"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></span><span data-back-label="1">TheDigiCiti</span></a></sc-if>
 <main style="max-width:1720px;min-height:100vh;margin:0 auto;padding:clamp(56px,7vh,80px) clamp(16px,3vw,56px) 20px;display:flex;flex-direction:column;gap:clamp(14px,2.4vh,22px)">
 
 <div style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
-<span style="font-size:11px;letter-spacing:.28em;color:#8fd65a">THE CALCULATOR</span>
+<span style="font-size:11px;letter-spacing:.28em;color:#8fd65a">{{ kicker }}</span>
 <h1 style="margin:0;font-size:clamp(28px,3.4vw,48px);font-weight:500;letter-spacing:-.035em;line-height:1.05;text-wrap:balance">{{ title }}</h1>
 <div style="display:flex;gap:4px;padding:4px;border-radius:999px;background:#12141d;box-shadow:inset 0 0 0 1px #2b2e3a">
 <button onClick="{{ pickFd }}" style="{{ tFd }}"><img src="assets/art/bank.svg" alt="" style="height:22px"><span>FD vs DigiVilla</span></button>
@@ -30,6 +30,21 @@
 </div>
 </div>
 
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+<div role="status" aria-live="polite" style="flex:1;min-height:min(62vh,600px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;border-radius:26px;background:#0e1017;box-shadow:inset 0 0 0 1px #1a1c28">
+<span aria-hidden="true" style="width:34px;height:34px;border-radius:50%;border:2px solid #22253a;border-top-color:#8fd65a;animation:tdcspin 1s linear infinite"></span>
+<span style="font-size:14px;color:#a3a5b4">Loading {{ loadingWhat }}</span>
+<span style="font-size:12px;color:#5a5e6c">Real benchmark-index history, the same the app uses.</span>
+</div>
+</sc-if>
+<sc-if value="{{ failed }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="flex:1;min-height:min(62vh,600px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border-radius:26px;background:#0e1017;box-shadow:inset 0 0 0 1px #1a1c28;text-align:center;padding:24px">
+<span style="font-size:15px;color:#e9e9ed">The market history could not be loaded.</span>
+<span style="font-size:12.5px;color:#7a7c8c;max-width:420px">We only show figures computed on real data, so nothing is shown until it arrives.</span>
+<button onClick="{{ retry }}" style="margin-top:6px;height:40px;padding:0 20px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:500;cursor:pointer;color:#0b0c12;background:#e9e9ed">Try again</button>
+</div>
+</sc-if>
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
 <div style="flex:1;display:flex;flex-wrap:wrap;gap:clamp(12px,1.6vw,24px);align-items:stretch">
 
 <section style="flex:1.15 1 460px;min-width:0;display:flex;flex-direction:column;padding:0;border-radius:24px;background:linear-gradient(180deg,#141622,#0f1119);box-shadow:inset 0 0 0 1px #22253a,0 30px 70px -20px rgba(0,0,0,.6);overflow:hidden">
@@ -88,7 +103,6 @@
 <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">Had you started</span><span style="font-size:11px;color:#5a5e6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">years ago</span></div>
 <div style="display:flex;padding:3px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="6"><button onClick="{{ y.pick }}" style="{{ y.style }}">{{ y.n }}</button></sc-for></div>
 </div>
-<button onClick="{{ toggleIncome }}" style="{{ swpRow }}"><span style="display:flex;flex-direction:column;gap:4px;text-align:left"><span style="font-size:13.5px;font-weight:500;color:#e9e9ed">Take a monthly income</span><span style="font-size:12px;color:#7a7c8c">{{ swpNote }}</span></span><span style="{{ swpTrack }}"><i style="{{ swpKnob }}"></i></span></button>
 </div>
 </sc-if>
 
@@ -109,6 +123,9 @@
 </div>
 </div>
 </sc-if>
+<div style="padding:0 22px 22px">
+<button onClick="{{ toggleIncome }}" style="{{ swpRow }}"><span style="display:flex;flex-direction:column;gap:4px;text-align:left"><span style="font-size:13.5px;font-weight:500;color:#e9e9ed">{{ swpTitle }}</span><span style="font-size:12px;color:#7a7c8c">{{ swpNote }}</span></span><span style="{{ swpTrack }}"><i style="{{ swpKnob }}"></i></span></button>
+</div>
 </section>
 
 <section style="flex:1.5 1 480px;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:14px;padding:clamp(16px,2vw,24px);border-radius:26px;background:#0e1017;box-shadow:inset 0 0 0 1px #23263a">
@@ -163,13 +180,22 @@
 <div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:rgba(143,214,90,.08);box-shadow:inset 0 0 0 1px rgba(143,214,90,.3);text-align:center"><span style="font-size:15px;line-height:1.4;color:#e9e9ed;text-wrap:balance">{{ verdict }}</span></div>
 </section>
 </div>
-<p style="margin:0;font-size:11px;color:#5a5e6c;line-height:1.5;text-align:center;max-width:860px;align-self:center">{{ foot }} Information, not advice. DigiVilla is a mutual fund portfolio; returns are assumed and not guaranteed.</p>
+<p style="margin:0;font-size:11px;color:#5a5e6c;line-height:1.5;text-align:center;max-width:900px;align-self:center">{{ foot }} Information, not advice. DigiVilla is a mutual-fund portfolio: these figures come from real benchmark-index history, not an assumed rate, and past returns are no promise of future ones.</p>
+</sc-if>
 </main>
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><dc-import name="part-footer" hint-size="100%,280px"></dc-import></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+import * as E from './engine.js';
+import { loadCalc } from './calc-data.js';
+/* Every figure here is computed by the app's own calculator engine (dc/engine.js, built from
+   client/frontend/src/app/calc/engine) on the real benchmark-index history and the live settings
+   (GET /calc/config) — no rate is assumed or typed in this file. */
+const YEAR_OPTS = [5, 8, 10, 15, 20];
+const RATES = [6, 6.5, 7, 7.5, 8], SLABS = [0, 5, 10, 15, 20, 25, 30];
 class Component extends DCLogic {
-  state = { mode: 'fd', pf: 1, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price' };
+  state = { mode: 'fd', villa: null, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price', data: null, failed: false };
   boxRef = React.createRef(); stageRef = React.createRef();
   componentDidMount() {
     this.fit = () => {
@@ -186,34 +212,73 @@ class Component extends DCLogic {
     poll();
     this.onResize = () => this.fit();
     window.addEventListener('resize', this.onResize); window.addEventListener('load', this.onResize);
+    this.load();
   }
-  componentDidUpdate() { }
+  load() {
+    if (this.state.failed) this.setState({ failed: false });
+    loadCalc().then(d => {
+      if (this.dead) return;
+      const cfg = d.cfg, yrs = this.yearsAvailable(d.vf), end = this.endYear(d.vf);
+      this.rates = {};
+      this.setState(s => ({ data: d, villa: cfg.default_villa, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default,
+        years: yrs.includes(s.years) ? s.years : (yrs[1] || yrs[0] || 5),
+        bought: Math.min(end - 1, Math.max(end - this.maxYears(d.vf), s.bought)) }));
+      setTimeout(() => { if (!this.dead && this.fit) this.fit(); }, 0);
+    }, err => { console.warn('calculator data', err); if (!this.dead) this.setState({ failed: true }); });
+  }
   componentWillUnmount() { this.dead = true; clearTimeout(this.poll); window.removeEventListener('resize', this.onResize); window.removeEventListener('load', this.onResize); this.ro && this.ro.disconnect(); }
-  fmt(n) { if (n >= 1e7) return '₹' + (+(n / 1e7).toFixed(2)) + ' Cr'; if (n >= 1e5) return '₹' + (+(n / 1e5).toFixed(1)) + ' L'; return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  yearsAvailable(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
+  maxYears(vf) { return Math.floor((vf.months.length - 1) / 12); }
+  endYear(vf) { return +vf.end.slice(0, 4); }
+  fmt(n) { return E.fmtInr(n); }
   inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  ym(m) { return E.ymLabel(m); }
+  mix(villa, cfg) { const w = villa.weights, first = cfg.income.pay_first.reduce((s, k) => s + (w[k] || 0), 0); return `${Math.round((1 - first) * 100)}/${Math.round(first * 100)}`; }
+  /** the villa's own "% a yr" (the settings' window, nothing withdrawn) — what the app prints beside each villa */
+  villaRate(key) { const { cfg, vf } = this.state.data; if (!(key in this.rates)) this.rates[key] = E.villaRate(vf, cfg, key); return this.rates[key]; }
+  /** one simulation per distinct set of inputs; renders in between reuse it */
+  sim(S) {
+    const key = JSON.stringify([S.mode, S.villa, S.amount, S.years, S.fdRate, S.tax, S.income, S.price, S.value, S.bought, S.rent]);
+    if (this.memo && this.memo.key === key) return this.memo.out;
+    const { cfg, vf } = S.data, villa = E.villaOf(cfg, S.villa), d = E.withVilla(vf, villa);
+    let out;
+    if (S.mode === 'fd') {
+      const w = E.windowFor(d, S.years);
+      out = { villa, w, r: E.simulatePayout(w, { amount: S.amount, fdRate: S.fdRate, slabPct: S.tax, swp: S.income }, cfg) };
+    } else {
+      const held = Math.max(1, this.endYear(vf) - S.bought), w = E.windowFor(d, held);
+      const f = E.simulateFlat(w, { price: S.price, value: S.value, rent: S.rent, slabPct: S.tax, swp: S.income }, cfg);
+      out = { villa, w, f, r: f.dv, held };
+    }
+    this.memo = { key, out };
+    return out;
+  }
   renderVals() {
-    const S = this.state, isFd = S.mode === 'fd', now = new Date().getFullYear();
-    const PF = [['Conservative', 11], ['Balanced', 14], ['Aggressive', 17]], [pfName, dcRate] = PF[S.pf];
-    const ltcg = 12.5, g = Math.pow(1 + dcRate / 100, 1 / 12);
+    const S = this.state, isFd = S.mode === 'fd';
+    const seg = on => `display:flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;color:${on ? '#0b0c12' : '#a3a5b4'};background:${on ? '#e9e9ed' : 'transparent'};transition:all .25s`;
+    const base_ = {
+      standalone: !this.props.embedded, kicker: this.props.kicker || 'THE CALCULATOR',
+      isFd, isRe: !isFd, pickFd: () => this.setState({ mode: 'fd' }), pickRe: () => this.setState({ mode: 're' }), tFd: seg(isFd), tRe: seg(!isFd),
+      ready: !!S.data, loading: !S.data && !S.failed, failed: !S.data && !!S.failed, retry: () => this.load(),
+      loadingWhat: 'real market history…', title: isFd ? 'What if your FD were a DigiVilla?' : `Had your flat money gone into DigiVilla in ${S.bought}…`,
+    };
+    if (!S.data) return base_;
+    const { cfg, vf } = S.data, { villa, w, r, f } = this.sim(S), villas = cfg.villas, vi = villas.indexOf(villa);
+    const T = cfg.tax, F = cfg.flat, swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2), cessPct = +(T.cess * 100).toFixed(1);
+    const first = this.ym(w.months[0]), last = this.ym(w.months[w.months.length - 1]), span = `${first} → ${last}`;
+    const endYear = this.endYear(vf), maxYears = this.maxYears(vf);
+    const vRate = this.villaRate(villa.key), irr = r.dvIrr;
     let L, R, years, start, lName, lCap, rCap, lArt;
     if (isFd) {
-      years = S.years; start = S.amount;
-      const fdPaid = S.amount * S.fdRate / 100 * years * (1 - S.tax / 100);
-      const mo = S.income ? S.amount * .036 / 12 : 0; let v = S.amount, paid = 0;
-      for (let m = 0; m < years * 12; m++) { v *= g; paid += mo * (1 - Math.max(0, 1 - S.amount / v) * ltcg / 100); v -= mo; }
-      L = { a: fdPaid, b: S.amount, la: 'Paid out', lb: 'Value' }; R = { a: paid, b: v, la: 'Paid out', lb: 'Value', solo: !S.income };
-      lName = 'FIXED DEPOSIT · ' + S.fdRate + '%'; lCap = this.fmt(fdPaid) + ' paid + ' + this.fmt(S.amount) + ' value';
-      rCap = S.income ? this.fmt(paid) + ' paid + ' + this.fmt(v) + ' value' : this.fmt(v) + ' value, nothing drawn'; lArt = 'assets/art/bank.svg';
+      years = r.years; start = S.amount;
+      L = { a: r.fdPaid, b: r.fdValue, la: 'Paid out', lb: 'Value' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Paid out', lb: 'Value', solo: !S.income };
+      lName = 'FIXED DEPOSIT · ' + S.fdRate + '%'; lCap = this.fmt(r.fdPaid) + ' paid + ' + this.fmt(r.fdValue) + ' value';
+      rCap = S.income ? this.fmt(r.dvPaid) + ' paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ' value, nothing drawn'; lArt = 'assets/art/bank.svg';
     } else {
-      years = Math.max(1, now - S.bought);
-      const app = Math.pow(S.value / S.price, 1 / years) - 1, outlay = S.price * 1.08; start = outlay;
-      let rentNet = 0, up = 0;
-      for (let t = 1; t <= years; t++) { rentNet += S.rent * 11 / Math.pow(1.05, years - t) * (1 - .7 * .3); up += .004 * S.price * Math.pow(1 + app, t); }
-      const mo = outlay * .036 / 12; let v = outlay, paid = 0;
-      for (let m = 0; m < years * 12; m++) { v *= g; paid += mo * (1 - Math.max(0, 1 - outlay / v) * ltcg / 100); v -= mo; }
-      L = { a: rentNet - up, b: S.value, la: 'Rent kept', lb: 'Worth today' }; R = { a: paid, b: v, la: 'Rent paid', lb: 'Value' };
-      lName = 'FLAT · ' + (app * 100).toFixed(1) + '% A YEAR'; lCap = this.fmt(rentNet - up) + ' rent kept + ' + this.fmt(S.value) + ' worth';
-      rCap = this.fmt(paid) + ' rent paid + ' + this.fmt(v) + ' value'; lArt = 'assets/art/flat.svg';
+      years = f.years; start = f.outlay;
+      L = { a: f.rentKept, b: S.value, la: 'Rent kept', lb: 'Worth today' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Rent paid', lb: 'Value', solo: !S.income };
+      lName = 'FLAT · ' + f.appPct.toFixed(1) + '% A YEAR'; lCap = this.fmt(f.rentKept) + ' rent kept + ' + this.fmt(S.value) + ' worth';
+      rCap = S.income ? this.fmt(r.dvPaid) + ' rent paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ' value, nothing drawn'; lArt = 'assets/art/flat.svg';
     }
     const lTot = Math.max(0, L.a) + L.b, rTot = (R.solo ? 0 : R.a) + R.b;
     const SH = S.sh || 460, maxH = Math.max(100, SH - (30 + 26 + 14 + 62 + 120 + 24) - 48), scale = maxH / Math.max(lTot, rTot), minSeg = 48, D = 26, W = 120, base = 30;
@@ -241,59 +306,66 @@ class Component extends DCLogic {
     const cy = Math.min(y0, y1) - 40;
     const chip = on => `flex:1;min-width:0;height:42px;padding:0 4px;border:0;border-radius:9px;font:inherit;font-size:14px;font-weight:${on ? 600 : 500};font-variant-numeric:tabular-nums;cursor:pointer;color:${on ? '#0b0c12' : '#8a8ea3'};background:${on ? '#e9e9ed' : 'transparent'};box-shadow:${on ? '0 2px 8px rgba(0,0,0,.35)' : 'none'};transition:all .25s cubic-bezier(.16,1,.3,1)`;
     const arw = on => `flex:none;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;align-self:center;color:#e9e9ed;background:rgba(18,20,29,.92);box-shadow:inset 0 0 0 1px #2b2e3a,0 6px 14px rgba(0,0,0,.4);cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .28};pointer-events:${on ? 'auto' : 'none'};transition:opacity .25s`;
-    const seg = on => `display:flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;color:${on ? '#0b0c12' : '#a3a5b4'};background:${on ? '#e9e9ed' : 'transparent'};transition:all .25s`;
-    const F = isFd ? [{ key: 'amount', label: 'You invest', min: 1000000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, f: n => this.inr(n) }]
+    const Fs = isFd ? [{ key: 'amount', label: 'You invest', min: 1000000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, f: n => this.inr(n) }]
       : [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
          { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
-         { key: 'bought', hint: 'Year of purchase', label: 'Bought in', min: 1995, max: now, step: 1, big: 1, major: 10, mid: 5, f: n => String(n) },
+         { key: 'bought', hint: `History from ${this.ym(vf.months[0])}`, label: 'Bought in', min: endYear - maxYears, max: endYear - 1, step: 1, big: 1, major: 10, mid: 5, f: n => String(n) },
          { key: 'rent', hint: 'Before tax', label: 'Rent a month', min: 0, max: 300000, step: 1000, big: 5000, major: 50000, mid: 10000, f: n => this.inr(n) }];
-    const act = isFd ? F[0] : (F.find(q => q.key === S.active) || F[0]);
+    const act = isFd ? Fs[0] : (Fs.find(q => q.key === S.active) || Fs[0]);
     const setA = n => this.setState({ [act.key]: Math.min(act.max, Math.max(act.min, n)) });
     const cnt = Math.round((act.max - act.min) / act.step) + 1, idx = (S[act.key] - act.min) / act.step;
     const i0 = Math.max(0, Math.floor(idx) - 40), i1 = Math.min(cnt - 1, Math.floor(idx) + 40);
     const ticks = Array.from({ length: i1 - i0 + 1 }, (_, j) => { const i = i0 + j, p = act.min + i * act.step, M = p % act.major === 0, m = p % act.mid === 0; return { s: `flex:none;width:1px;margin-right:9px;height:${M ? 22 : m ? 14 : 8}px;background:${M ? 'rgba(233,233,237,.7)' : m ? 'rgba(233,233,237,.35)' : 'rgba(233,233,237,.16)'}` }; });
-    const diff = rTot - lTot;
+    const diff = rTot - lTot, pfName = villa.name, rateTxt = (irr == null ? vRate : irr).toFixed(1) + '%';
+    const yearOpts = this.yearsAvailable(vf);
+    const exempt = T.equity_exempt >= 1e5 ? '₹' + (+(T.equity_exempt / 1e5).toFixed(2)) + ' L' : this.inr(T.equity_exempt);
+    const taxLine = `gains taxed at ${+(T.equity_lt_rate * 100).toFixed(1)}% long-term beyond ${exempt} a year and ${+(T.equity_st_rate * 100).toFixed(1)}% short-term (+ ${cessPct}% cess), parts rebalanced every 1 January`;
+    const foot = isFd
+      ? `FD: ${S.fdRate}% interest paid monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${S.income ? `; ${swpPct}% a year paid monthly (${this.inr(S.amount * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`
+      : `Flat: price + ${F.stamp_pct}% stamp duty + ${F.registration_pct}% registration all-in; rent grew ${F.rent_rise_pct}% a year, ${12 - F.vacant_months} months let, taxed at ${S.tax}% after a ${Math.round(F.std_deduction * 100)}% deduction, ${F.upkeep_pct}% upkeep a year. DigiVilla: the same all-in amount in the ${pfName} villa on real benchmark indices, ${span}, ${S.income ? `paying ${swpPct}% a year as rent (SWP) from the arbitrage part first` : 'nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`;
     return {
-      standalone: !this.props.embedded,
+      ...base_,
       stageS: `position:absolute;left:50%;bottom:0;width:560px;height:${SH}px;margin-left:-280px;transform-origin:50% 100%;transform:scale(${S.k || 1})`, sh: SH, svgVB: '0 0 560 ' + SH,
-      isFd, isRe: !isFd, title: isFd ? 'What if your FD were a DigiVilla?' : `Had your flat money gone into DigiVilla in ${S.bought}…`,
-      pickFd: () => this.setState({ mode: 'fd' }), pickRe: () => this.setState({ mode: 're' }), tFd: seg(isFd), tRe: seg(!isFd),
-      rateOpts: [6, 6.5, 7, 7.5, 8].map(r => ({ label: r + '%', pick: () => this.setState({ fdRate: r, custom: false }), style: chip(!S.custom && S.fdRate === r) })),
-      isCustom: !!S.custom, pickCustom: () => this.setState(s => ({ custom: true, fdRate: [6, 6.5, 7, 7.5, 8].includes(s.fdRate) ? 8.5 : s.fdRate })),
+      rateOpts: RATES.map(x => ({ label: x + '%', pick: () => this.setState({ fdRate: x, custom: false }), style: chip(!S.custom && S.fdRate === x) })),
+      isCustom: !!S.custom, pickCustom: () => this.setState(s => ({ custom: true, fdRate: RATES.includes(s.fdRate) ? 8.5 : s.fdRate })),
       customChip: chip(!!S.custom), customLabel: S.custom ? (+S.fdRate.toFixed(2)) + '%' : 'Other',
       rateShow: (+S.fdRate.toFixed(2)) + '%',
       rateDec: () => this.setState(s => ({ fdRate: Math.max(3, +(s.fdRate - .25).toFixed(2)) })), rateInc: () => this.setState(s => ({ fdRate: Math.min(12, +(s.fdRate + .25).toFixed(2)) })),
-      taxOpts: [0, 5, 10, 15, 20, 25, 30].map(t => ({ label: String(t), pick: () => this.setState({ tax: t, taxCustom: false }), style: chip(!S.taxCustom && S.tax === t) })),
-      isTaxCustom: !!S.taxCustom, pickTaxCustom: () => this.setState(s => ({ taxCustom: true, tax: [0, 5, 10, 15, 20, 25, 30].includes(s.tax) ? 31.2 : s.tax })),
+      taxOpts: SLABS.map(t => ({ label: String(t), pick: () => this.setState({ tax: t, taxCustom: false }), style: chip(!S.taxCustom && S.tax === t) })),
+      isTaxCustom: !!S.taxCustom, pickTaxCustom: () => this.setState(s => ({ taxCustom: true, tax: SLABS.includes(s.tax) ? 31.2 : s.tax })),
       taxCustomChip: chip(!!S.taxCustom), taxCustomLabel: S.taxCustom ? (+S.tax.toFixed(1)) + '%' : 'Other', taxShow: (+S.tax.toFixed(1)) + '%',
       taxDec: () => this.setState(s => ({ tax: Math.max(0, +(s.tax - .5).toFixed(1)) })), taxInc: () => this.setState(s => ({ tax: Math.min(42.7, +(s.tax + .5).toFixed(1)) })),
-      yearOpts: [3, 5, 8, 10, 15, 20].map(y => ({ n: y + 'y', pick: () => this.setState({ years: y }), style: chip(S.years === y) })),
-      toggleIncome: () => this.setState(s => ({ income: !s.income })), swpNote: S.income ? this.inr(S.amount * .036 / 12) + ' a month from the villa (SWP)' : 'Off · everything stays invested',
+      yearOpts: yearOpts.map(y => ({ n: y + 'y', pick: () => this.setState({ years: y }), style: chip(S.years === y) })),
+      toggleIncome: () => this.setState(s => ({ income: !s.income })), swpTitle: isFd ? 'Take a monthly income (SWP)' : 'Take the rent as a monthly SWP',
+      swpNote: S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' : 'Off · everything stays invested and compounds',
       swpRow: `display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.income ? 'rgba(143,214,90,.4)' : '#22253a'};transition:box-shadow .25s`,
       swpTrack: `flex:none;position:relative;width:40px;height:22px;border-radius:11px;background:${S.income ? '#8fd65a' : '#2b2e3a'};transition:background .25s`,
       swpKnob: `position:absolute;top:3px;left:${S.income ? 21 : 3}px;width:16px;height:16px;border-radius:50%;background:${S.income ? '#0b0c12' : '#7a7c8c'};transition:left .25s cubic-bezier(.16,1,.3,1)`,
-      fields: isFd ? [] : F.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: q.f(S[q.key]), pick: () => this.setState({ active: q.key }),
+      fields: isFd ? [] : Fs.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: q.f(S[q.key]), pick: () => this.setState({ active: q.key }),
         style: `display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:${on ? 'rgba(143,214,90,.06)' : '#0b0c12'};box-shadow:inset 0 0 0 1px ${on ? 'rgba(143,214,90,.6)' : '#22253a'};transition:all .25s`,
         lStyle: `font-size:14px;font-weight:500;color:${on ? '#8fd65a' : '#e9e9ed'}` }; }),
-      flatGrowth: isFd ? '' : ((Math.pow(S.value / S.price, 1 / Math.max(1, now - S.bought)) - 1) * 100).toFixed(1) + '%', flatYield: isFd ? '' : (S.rent * 12 / S.value * 100).toFixed(1) + '%',
-      rulerLabel: act.label, rLo: act.f(act.min), rHi: act.f(act.max), reset: () => this.setState({ custom: false, taxCustom: false, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price' }), rulerValue: act.f(S[act.key]),
+      flatGrowth: isFd ? '' : f.appPct.toFixed(1) + '%', flatYield: isFd ? '' : f.yieldPct.toFixed(1) + '%',
+      rulerLabel: act.label, rLo: act.f(act.min), rHi: act.f(act.max),
+      reset: () => this.setState({ custom: false, taxCustom: false, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
+      rulerValue: act.f(S[act.key]),
       rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:transform .12s ease-out;transform:translateX(${-(idx - i0) * 10}px)`, ticks,
       rMin: act.min, rMax: act.max, rStep: act.step, rVal: S[act.key], onRange: e => setA(+e.target.value), inc: () => setA(S[act.key] + act.big), dec: () => setA(S[act.key] - act.big),
-      chartHead: isFd ? `${this.fmt(S.amount)} · ${years} years ago` : `${this.fmt(start)} all-in · ${years} years ago`,
-      pfPos: (S.pf + 1) + ' / 3',
-      pfPrev: () => this.setState(s => ({ pf: Math.max(0, s.pf - 1) })), pfNext: () => this.setState(s => ({ pf: Math.min(2, s.pf + 1) })),
-      pfPrevS: arw(S.pf > 0), pfNextS: arw(S.pf < 2),
-      pfOpts: PF.map(([n], i) => ({ name: n, pick: () => this.setState({ pf: i }), style: `width:${S.pf === i ? 22 : 7}px;height:7px;border:0;padding:0;border-radius:4px;cursor:pointer;background:${S.pf === i ? '#8fd65a' : '#2b2e3a'};transition:all .35s cubic-bezier(.16,1,.3,1)` })),
+      chartHead: isFd ? `${this.fmt(S.amount)} · ${span}` : `${this.fmt(start)} all-in · ${span}`,
+      pfPos: (vi + 1) + ' / ' + villas.length,
+      pfPrev: () => this.setState({ villa: villas[Math.max(0, vi - 1)].key }), pfNext: () => this.setState({ villa: villas[Math.min(villas.length - 1, vi + 1)].key }),
+      pfPrevS: arw(vi > 0), pfNextS: arw(vi < villas.length - 1),
+      pfOpts: villas.map((v, i) => ({ name: v.name, pick: () => this.setState({ villa: v.key }), style: `width:${vi === i ? 22 : 7}px;height:7px;border:0;padding:0;border-radius:4px;cursor:pointer;background:${vi === i ? '#8fd65a' : '#2b2e3a'};transition:all .35s cubic-bezier(.16,1,.3,1)` })),
       lArt, lArtS: `position:absolute;left:${lcx - 60}px;width:120px;height:88px;object-fit:contain;bottom:${lTopB + 44}px;filter:drop-shadow(0 14px 16px rgba(0,0,0,.55));${tr}`,
       lTotal: lTxt, lTotS: totS(lcx, lTopB, '#d9dbe6'), lBarS: bar(lx, lc), lSegs: lc.segs, lSide: side(lc), lTop: top(lc),
       rArtS: `position:absolute;left:${rcx - 110}px;width:220px;bottom:${rTopB + 62}px;height:120px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;z-index:4;${tr}`,
       rTotal: rTxt, rTotS: totS(rcx, rTopB, '#8fd65a'), rBarS: bar(rx, rc), rSegs: rc.segs, rSide: side(rc), rTop: top(rc),
       rRateS: `position:absolute;left:${rcx - 120}px;width:240px;display:flex;justify-content:center;gap:6px;bottom:${rTopB + 40}px;font-size:12.5px;white-space:nowrap;color:#a3a5b4;${tr}`,
-      coinS: `position:absolute;left:50%;top:4px;width:24px;animation:bobc 4.5s ease-in-out infinite;opacity:${isFd && !S.income ? 0 : 1};transition:opacity .3s`,
+      coinS: `position:absolute;left:50%;top:4px;width:24px;animation:bobc 4.5s ease-in-out infinite;opacity:${S.income ? 1 : 0};transition:opacity .3s`,
       arrowD: `M${x0} ${y0} Q${(x0 + x1) / 2} ${cy} ${x1} ${y1}`, arrowOp: diff > 0 ? 1 : 0,
-      pfName, dcRate, years, rateLine: dcRate + '% a yr', lCap, rCap, lName, rName: `${pfName.toUpperCase()} · ${dcRate}% A YR`,
+      pfName, years, rateLine: rateTxt + ' a yr, realised', lCap, rCap, lName,
+      rName: `${pfName.toUpperCase()} · ${vRate.toFixed(1)}% A YR OVER ${cfg.display.rate_years} YRS`,
       verdict: diff > 0 ? `The ${pfName} villa leaves you ${this.fmt(diff)} richer than your ${isFd ? 'FD' : 'flat'}.` : `Your ${isFd ? 'FD' : 'flat'} is ahead by ${this.fmt(-diff)}.`,
-      foot: isFd ? `FD interest taxed at ${S.tax}% and paid out. DigiVilla SWP 3.6% a year, gains taxed at 12.5% LTCG.` : 'Flat cost includes 7% stamp duty + 1% brokerage. Rent grew 5% a year, 11 months let, taxed at 30% after 30% deduction, 0.4% upkeep. DigiVilla pays 3.6% a year as rent.'
+      foot
     };
   }
 }

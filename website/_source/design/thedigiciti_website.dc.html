@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
   <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
   <script src="part-transitions.js"></script>
-  <script>window.tdcVeil && window.tdcVeil.prefetch(["story.dc.html","story-1-journey.dc.html","story-2-map.dc.html","story-3-numbers.dc.html","assets/bank.webp","assets/real-estate-city.webp","assets/fonts/Caveat-500-normal-latin.woff2"]);</script>
+  <script>(function(){if(!window.tdcVeil)return;var c=navigator.connection||{},slow=c.saveData||/2g|3g/.test(c.effectiveType||'');var u=["story.dc.html","story-1-journey.dc.html","story-2-map.dc.html","story-3-numbers.dc.html"];if(!slow)u.push("assets/bank.webp","assets/real-estate-city.webp","assets/fonts/Caveat-500-normal-latin.woff2","assets/fonts/Caveat-700-normal-latin.woff2");window.tdcVeil.prefetch(u);})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Instrument+Serif:ital@1&display=swap">
   <style>
@@ -22,6 +22,18 @@
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
+      [data-nav]{gap:22px!important;padding:12px 22px!important}
+      [data-nav] a{font-size:13px!important}
+      [data-nav] a[data-x]{display:none}
+      [data-tile]{width:30vw!important}
+      [data-tile] [data-lbl] span:last-child{font-size:12px!important}
+      [data-hero-wrap]{width:min(72vw,46vh)!important}
+      [data-copy]{display:flex!important;flex-direction:column;align-items:flex-start!important;gap:14px!important;padding:0 20px max(22px,env(safe-area-inset-bottom))!important}
+      [data-copy] h1{font-size:17.5vw!important;letter-spacing:-.06em!important}
+      [data-copy] > div{flex-direction:column;gap:14px!important;padding-bottom:0!important}
+      [data-copy] p{max-width:none!important;font-size:16px!important;line-height:1.35!important}
+      [data-explore]{top:67%!important;padding:0 24px;text-align:center}
+      [data-explore] > span:last-child{font-size:14px!important;line-height:1.4}
     }
   </style>
 </helmet>
@@ -37,46 +49,45 @@
 
         <div ref="{{ glowRef }}" style="position:absolute;left:50%;top:44%;width:60vw;height:36vw;margin:-18vw 0 0 -30vw;border-radius:50%;opacity:0;background:radial-gradient(closest-side, rgba(255,214,150,.55), rgba(255,190,120,.15) 50%, transparent);pointer-events:none"></div>
 
-        <div ref="{{ t0 }}" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
-          <div role="img" aria-label="Plot" style="width:100%;aspect-ratio:820/700;filter:drop-shadow(0 0 22px rgba(255,180,110,.32)) drop-shadow(-20px 30px 30px rgba(20,14,30,.5))"><dc-import name="part-stage-plot" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
+        <div ref="{{ t0 }}" data-tile="1" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
+          <div aria-hidden="true" style="position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)"></div><div aria-hidden="true" style="position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.55),rgba(18,12,28,.18) 55%,transparent 75%)"></div><div role="img" aria-label="Plot" style="position:relative;width:100%;aspect-ratio:820/700"><dc-import name="part-stage-plot" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
           <div data-lbl="1" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;margin-top:6px"><span style="font-size:clamp(9px,.75vw,12px);letter-spacing:.24em;color:rgba(225,224,204,.65)">01</span><span style="font-size:clamp(12px,1.1vw,17px);color:#E1E0CC">Plot</span><span style="font-family:'Instrument Serif', serif;font-style:italic;font-size:clamp(13px,1.15vw,18px);color:rgba(225,224,204,.75)">₹1 L</span></div>
         </div>
-        <div ref="{{ t1 }}" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
-          <div role="img" aria-label="Land cleared" style="width:100%;aspect-ratio:820/700;filter:drop-shadow(0 0 22px rgba(255,180,110,.32)) drop-shadow(-20px 30px 30px rgba(20,14,30,.5))"><dc-import name="part-stage-grading" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
+        <div ref="{{ t1 }}" data-tile="1" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
+          <div aria-hidden="true" style="position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)"></div><div aria-hidden="true" style="position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.55),rgba(18,12,28,.18) 55%,transparent 75%)"></div><div role="img" aria-label="Land cleared" style="position:relative;width:100%;aspect-ratio:820/700"><dc-import name="part-stage-grading" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
           <div data-lbl="1" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;margin-top:6px"><span style="font-size:clamp(9px,.75vw,12px);letter-spacing:.24em;color:rgba(225,224,204,.65)">02</span><span style="font-size:clamp(12px,1.1vw,17px);color:#E1E0CC">Land cleared</span><span style="font-family:'Instrument Serif', serif;font-style:italic;font-size:clamp(13px,1.15vw,18px);color:rgba(225,224,204,.75)">₹2 L</span></div>
         </div>
-        <div ref="{{ t2 }}" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
-          <div role="img" aria-label="Foundation" style="width:100%;aspect-ratio:820/700;filter:drop-shadow(0 0 22px rgba(255,180,110,.32)) drop-shadow(-20px 30px 30px rgba(20,14,30,.5))"><dc-import name="part-stage-foundation" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
+        <div ref="{{ t2 }}" data-tile="1" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
+          <div aria-hidden="true" style="position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)"></div><div aria-hidden="true" style="position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.55),rgba(18,12,28,.18) 55%,transparent 75%)"></div><div role="img" aria-label="Foundation" style="position:relative;width:100%;aspect-ratio:820/700"><dc-import name="part-stage-foundation" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
           <div data-lbl="1" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;margin-top:6px"><span style="font-size:clamp(9px,.75vw,12px);letter-spacing:.24em;color:rgba(225,224,204,.65)">03</span><span style="font-size:clamp(12px,1.1vw,17px);color:#E1E0CC">Foundation</span><span style="font-family:'Instrument Serif', serif;font-style:italic;font-size:clamp(13px,1.15vw,18px);color:rgba(225,224,204,.75)">₹3 L</span></div>
         </div>
-        <div ref="{{ t3 }}" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
-          <div role="img" aria-label="Steel frame" style="width:100%;aspect-ratio:820/700;filter:drop-shadow(0 0 22px rgba(255,180,110,.32)) drop-shadow(-20px 30px 30px rgba(20,14,30,.5))"><dc-import name="part-stage-steel" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
+        <div ref="{{ t3 }}" data-tile="1" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
+          <div aria-hidden="true" style="position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)"></div><div aria-hidden="true" style="position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.55),rgba(18,12,28,.18) 55%,transparent 75%)"></div><div role="img" aria-label="Steel frame" style="position:relative;width:100%;aspect-ratio:820/700"><dc-import name="part-stage-steel" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
           <div data-lbl="1" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;margin-top:6px"><span style="font-size:clamp(9px,.75vw,12px);letter-spacing:.24em;color:rgba(225,224,204,.65)">04</span><span style="font-size:clamp(12px,1.1vw,17px);color:#E1E0CC">Steel frame</span><span style="font-family:'Instrument Serif', serif;font-style:italic;font-size:clamp(13px,1.15vw,18px);color:rgba(225,224,204,.75)">₹4 L</span></div>
         </div>
-        <div ref="{{ t4 }}" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
-          <img src="assets/explore/villa.webp" alt="Villa" decoding="async" style="display:block;width:100%;aspect-ratio:820/700;object-fit:contain;filter:drop-shadow(0 0 22px rgba(255,180,110,.4)) drop-shadow(0 0 30px rgba(255,214,150,.35)) drop-shadow(-20px 30px 30px rgba(20,14,30,.5))">
+        <div ref="{{ t4 }}" data-tile="1" style="position:absolute;left:0;top:0;width:15vw;will-change:transform,opacity">
+          <div aria-hidden="true" style="position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)"></div><div aria-hidden="true" style="position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.55),rgba(18,12,28,.18) 55%,transparent 75%)"></div><div role="img" aria-label="Villa" style="position:relative;width:100%;aspect-ratio:820/700"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
           <div data-lbl="1" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;margin-top:6px"><span style="font-size:clamp(9px,.75vw,12px);letter-spacing:.24em;color:#fbdb81">05</span><span style="font-size:clamp(12px,1.1vw,17px);color:#fff">Villa</span><span style="font-family:'Instrument Serif', serif;font-style:italic;font-size:clamp(13px,1.15vw,18px);color:#fbdb81">₹5 L · pays rent</span></div>
         </div>
 
-        <div ref="{{ villaRef }}" style="position:absolute;left:0;top:0;width:min(38vw,60vh);aspect-ratio:1024/870;z-index:3;will-change:transform,opacity">
-          <div style="position:absolute;left:20%;right:-10%;bottom:4%;height:18%;border-radius:50%;filter:blur(26px);background:rgba(40,28,40,.55)"></div>
-          <img data-hero="1" src="assets/explore/villa.webp" alt="A finished DigiVilla" fetchpriority="high" decoding="async" style="opacity:0;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:sepia(.15) brightness(.97) drop-shadow(0 0 28px rgba(255,180,110,.4)) drop-shadow(-30px 40px 50px rgba(20,14,30,.6))">
-          <img ref="{{ coinRef }}" src="assets/explore/coin-sm.png" decoding="async" alt="" style="position:absolute;left:45.5%;top:-2%;width:9%;filter:drop-shadow(0 8px 12px rgba(40,20,10,.5)) drop-shadow(0 0 18px rgba(255,200,90,.6))">
+        <div ref="{{ villaRef }}" data-hero-wrap="1" style="position:absolute;left:0;top:0;width:min(38vw,60vh);aspect-ratio:820/700;z-index:3;will-change:transform,opacity">
+          <div aria-hidden="true" style="position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)"></div><div aria-hidden="true" style="position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.55),rgba(18,12,28,.18) 55%,transparent 75%)"></div>
+          <div data-hero="1" role="img" aria-label="A finished DigiVilla" style="opacity:0;position:absolute;inset:0"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import></div>
+          <img ref="{{ coinRef }}" src="assets/art/coin.svg" decoding="async" alt="" style="position:absolute;left:45.5%;top:-4%;width:9%">
         </div>
 
         <canvas ref="{{ frontRef }}" style="will-change:transform;position:absolute;left:-8%;top:60%;width:116%;height:52%;opacity:.95;pointer-events:none"></canvas>
         <div style="position:absolute;inset:0;pointer-events:none;opacity:.7;mix-blend-mode:overlay;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E&quot;)"></div>
         <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 55%, rgba(0,0,0,.62) 100%)"></div>
 
-        <nav style="position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;align-items:center;gap:clamp(12px,3.4vw,56px);padding:clamp(8px,.8vw,12px) clamp(16px,2.2vw,34px);border-radius:0 0 clamp(16px,1.6vw,24px) clamp(16px,1.6vw,24px);background:#000;white-space:nowrap;z-index:5">
+        <nav data-nav="1" style="position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;align-items:center;gap:clamp(12px,3.4vw,56px);padding:clamp(8px,.8vw,12px) clamp(16px,2.2vw,34px);border-radius:0 0 clamp(16px,1.6vw,24px) clamp(16px,1.6vw,24px);background:#000;white-space:nowrap;z-index:5">
           <a href="story.dc.html#1" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Our story</a>
           <a href="story.dc.html#2" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Villas</a>
-          <a href="story.dc.html#1" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">For NRIs</a>
+          <a href="story.dc.html#1" data-x="1" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">For NRIs</a>
           <a href="#calculator" onClick="{{ goCalc }}" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Calculator</a>
-          <a href="#" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Contact</a>
         </nav>
 
-        <div ref="{{ copyA }}" style="position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-items:end;gap:clamp(12px,2vw,32px);padding:0 clamp(16px,2.4vw,40px) clamp(14px,2.2vw,36px);z-index:4">
+        <div ref="{{ copyA }}" data-copy="1" style="position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-items:end;gap:clamp(12px,2vw,32px);padding:0 clamp(16px,2.4vw,40px) clamp(14px,2.2vw,36px);z-index:4">
           <h1 style="grid-column:span 9;margin:0;font-size:clamp(48px,11.6vw,250px);font-weight:400;line-height:.85;letter-spacing:-.07em;color:#E1E0CC;white-space:nowrap;display:flex">
             <span data-rise="0" style="display:inline-block;transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1)">The</span><span data-rise="1" style="display:inline-block;transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1)">Digi</span><span data-rise="2" style="position:relative;display:inline-block;transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1)">Citi</span>
           </h1>
@@ -87,7 +98,7 @@
         </div>
 
         <div ref="{{ copyB }}" style="position:absolute;inset:0;z-index:4;opacity:0;pointer-events:none">
-          <div style="position:absolute;left:0;right:0;top:calc(43% + min(9.4vw,17vh) + clamp(10px,2vh,24px));display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1vh,12px)">
+          <div data-explore="1" style="position:absolute;left:0;right:0;top:calc(43% + min(9.4vw,17vh) + clamp(10px,2vh,24px));display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1vh,12px)">
             <span style="display:flex;align-items:center;gap:12px;font-size:clamp(9px,.72vw,12px);font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,226,170,.9)"><span style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,226,170,.9))"></span>TheDigiCiti · the NRI story<span style="width:28px;height:1px;background:linear-gradient(90deg,rgba(255,226,170,.9),transparent)"></span></span>
             <a href="story.dc.html" onClick="{{ goExplore }}" style="position:relative;display:flex;align-items:center;gap:clamp(14px,1.6vw,30px);color:#E1E0CC;transition:gap .4s cubic-bezier(.16,1,.3,1)" style-hover="gap:clamp(24px,2.6vw,48px);color:#fff">
               <span ref="{{ pulseRef }}" style="position:absolute;left:50%;top:55%;width:120%;height:140%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side, rgba(255,210,150,.35), rgba(255,190,120,.08) 60%, transparent)"></span>
@@ -211,6 +222,7 @@
 <section id="calculator" data-screen-label="Calculator" style="position:relative;background:#0b0c12;border-top:1px solid #1a1c28">
 <dc-import name="calculator" embedded="{{ true }}" hint-size="100%,100vh"></dc-import>
 </section>
+<dc-import name="part-footer" hint-size="100%,280px"></dc-import>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -279,8 +291,7 @@ class Component extends DCLogic {
     const idle = cb => ('requestIdleCallback' in window ? requestIdleCallback(cb, { timeout: 1200 }) : setTimeout(cb, 200));
     ready.then(async () => {
       const show = el => { if (!el) return; el.style.transition = 'opacity .9s cubic-bezier(.16,1,.3,1)'; el.getBoundingClientRect(); el.style.opacity = '1'; };
-      if (hero) { const cv = await bakeFilter(this.villaRef.current, hero, 1100); if (cv) { cv.style.opacity = '0'; show(cv); } else show(hero); }
-      tiles.forEach((r, i) => idle(() => { const el = r.current; if (!el) return; const holder = el.querySelector('[role="img"]') || el; const art = holder.querySelector('svg') || el.querySelector('img'); if (art) bakeFilter(holder, art, i === 4 ? 1100 : 820); }));
+      show(hero);
     });
     const start = [[.13, .50, .78], [.31, .40, .86], [.50, .32, .94], [.69, .40, .86], [.87, .50, .78]];
     const clamp = v => Math.max(0, Math.min(1, v)), ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -325,14 +336,15 @@ class Component extends DCLogic {
       set(this.farRef, 'translate(' + (Math.sin(k * .05) * 14 - sm.x * 10) + 'px,' + (-sm.y * 4 + p * H * .05) + 'px)');
       set(this.nearRef, 'translate(' + (Math.sin(k * .07 + 1) * 22 - sm.x * 26) + 'px,' + (-sm.y * 10 + p * H * .11) + 'px)');
       set(this.frontRef, 'translate(' + (Math.sin(k * .09 + 2) * 30 - sm.x * 44) + 'px,' + (-sm.y * 14 + p * H * .2) + 'px)');
-      const cx = .5, cy = .43;
-      const end = [[.12, .5, 1.05], [.29, .41, 1.12], [.71, .41, 1.12], [.88, .5, 1.05]];
+      const phone = W <= 700, cx = .5, cy = phone ? .36 : .43;
+      // where the four stages settle: a row on wide screens, two rows on a phone
+      const end = phone ? [[.21, .22, 1], [.79, .22, 1], [.21, .50, 1], [.79, .50, 1]] : [[.12, .5, 1.05], [.29, .41, 1.12], [.71, .41, 1.12], [.88, .5, 1.05]];
       const e = ease(clamp((p - .14) / .6));
       tiles.forEach((r, i) => {
         const el = r.current; if (!el) return;
         const w = el.offsetWidth, hh = el.offsetHeight;
         let x, y, s, op;
-        if (i === 4) { x = cx; y = cy - .02 * e; s = 2.6 - 1.1 * e; op = clamp((p - .1) / .12); }
+        if (i === 4) { x = cx; y = cy - .02 * e; s = phone ? 2.4 - 1.0 * e : 2.6 - 1.1 * e; op = clamp((p - .1) / .12); }
         else {
           const ei = ease(clamp((p - .16 - Math.abs(i < 2 ? 1 - i : i - 2) * .05) / .55)), [ex, ey, es] = end[i];
           x = cx + (ex - cx) * ei; y = cy + (ey - cy) * ei - Math.sin(ei * Math.PI) * .07; s = .5 + (es - .5) * ei; op = clamp(ei * 3);
