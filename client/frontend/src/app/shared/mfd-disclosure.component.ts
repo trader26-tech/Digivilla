@@ -51,6 +51,6 @@ import { CommonModule } from '@angular/common';
 export class MfdDisclosureComponent {
   /** Your registered entity name — fill before launch. */
   @Input() entity = 'Your Entity Pvt. Ltd. (to be added)';
-  /** Your AMFI ARN — fill once issued. */
-  @Input() arn = '';
+  /** The AMFI ARN (issued 2026). */
+  @Input() arn = 'ARN-369151';
 }
