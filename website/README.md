@@ -50,11 +50,15 @@ The prototype's look and timing are kept; what changed is how it runs:
 | Page | Screen |
 |---|---|
 | `index.html` | Landing + mobile showcase (`#showcase`) + calculator (`#calculator`) |
-| `story.html` | Story shell (Explore lands here) — chapter 2, Reading the map |
-| `story-1-journey.html` | Chapter 1 — the journey ("Our story") |
-| `story-2-map.html` | Chapter 2 standalone ("For NRIs") |
-| `story-3-numbers.html` | Chapter 3 — calculator inside the story |
+| `story.html` | The story: all three chapters with pills and the gold-coin wipe. Explore lands on chapter 1; `#1` / `#2` / `#3` open a chapter; the last chapter remembered in `localStorage['thedigiciti.chapter']`. Past chapter 3 → `index.html#showcase`. |
+| `story-1-journey.html` | Chapter 1 on its own — the flight / NRI journey |
+| `story-2-map.html` | Chapter 2 on its own — the pen-drawn return / risk map |
+| `story-3-numbers.html` | Chapter 3 on its own — the calculator in story form |
 | `calculator.html` | Calculator, standalone |
+
+The zip's `story.dc.html` only mounted chapter 2; the shell in `_source/design/story.dc.html`
+was completed to what the handoff README describes (three chapters, pills, wipe, hand-off
+to the showcase). The landing nav points into the shell (`#1`, `#2`).
 
 ## Hosting
 

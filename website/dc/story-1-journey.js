@@ -1,4 +1,4 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, DSButton } from './rt.js?v=736b61a4';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, DSButton } from './rt.js?v=5565a973';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   componentDidMount() {
@@ -173,7 +173,7 @@ class Component extends DCLogic {
     };
     this._raf = requestAnimationFrame(loop);
   }
-  componentWillUnmount() { cancelAnimationFrame(this._raf); removeEventListener('wheel', this.onWheel); removeEventListener('keydown', this.onKey); removeEventListener('touchstart', this.onTS); removeEventListener('touchmove', this.onTM); }
+  componentWillUnmount() { cancelAnimationFrame(this._raf); removeEventListener('wheel', this.onWheel); this.onWheel.dispose && this.onWheel.dispose(); removeEventListener('keydown', this.onKey); removeEventListener('touchstart', this.onTS); removeEventListener('touchmove', this.onTM); }
   componentDidUpdate() { this.applyDest(); }
   applyDest() {
     const d = this.props.destination ?? 'Kuwait', a = document.querySelector('[data-arrival]'), b = document.querySelector('[data-dest]');

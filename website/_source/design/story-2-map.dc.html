@@ -141,7 +141,7 @@ class Component extends DCLogic {
     svg.querySelectorAll('[data-s]').forEach(p => { const L = p.getTotalLength(); this.paths[p.dataset.s] = { el: p, L }; p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.style.opacity = 0; });
     const dur = reducedMotion ? 1 : (this.props.duration ?? 6) * 1000;
     const go = () => { this.t0 = performance.now() + 400; const tick = now => { this.p = Math.max(0, Math.min(1, (now - this.t0) / dur)); this.frame(); if (this.p < 1) this.raf = requestAnimationFrame(tick); }; this.raf = requestAnimationFrame(tick); };
-    this.replay = () => { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.ar); this.u = 0; this.step = 0; this.busy = false; go(); };
+    this.replay = () => { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.ar); this.u = 0; this.step = 0; this.busy = false; this.p = 0; this.frame(); document.documentElement.dataset.step = 0; go(); };
     this.stops = [0, .4, 1.45, 2.5, 3.2, 4.65, 6.05, 6.7, 8.05, 9.25];
     this.step = 0; this.u = 0;
     this.durs = [0, 900, 3800, 3400, 1300, 3600, 3600, 1400, 3400, 4400];
@@ -163,15 +163,17 @@ class Component extends DCLogic {
     this.onTS = ev => { this.ty = ev.touches[0].clientY; };
     this.onTE = ev => { const dy = this.ty - ev.changedTouches[0].clientY; if (Math.abs(dy) > 36) nav(dy > 0 ? 1 : -1); };
     const el = this.sc.current;
-    el.addEventListener('wheel', this.onWheel, { passive: false });
-    el.addEventListener('touchstart', this.onTS, { passive: true });
-    el.addEventListener('touchend', this.onTE, { passive: true });
+    // window-level, like chapter 1: after an interrupted gesture Chrome can keep
+    // routing wheel events above this element, and they must still step the map
+    addEventListener('wheel', this.onWheel, { passive: false });
+    addEventListener('touchstart', this.onTS, { passive: true });
+    addEventListener('touchend', this.onTE, { passive: true });
     window.addEventListener('keydown', this.onKey);
     this.on = () => requestAnimationFrame(() => this.frame());
     window.addEventListener('resize', this.on);
     if (this.props.startAtEnd) { this.p = 1; this.step = this.stops.length - 1; this.u = this.stops[this.step]; this.frame(); } else (document.fonts ? document.fonts.ready : Promise.resolve()).then(go);
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.ar); const el = this.sc.current; if (el) { el.removeEventListener('wheel', this.onWheel); el.removeEventListener('touchstart', this.onTS); el.removeEventListener('touchend', this.onTE); } window.removeEventListener('keydown', this.onKey); window.removeEventListener('resize', this.on); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.ar); removeEventListener('wheel', this.onWheel); removeEventListener('touchstart', this.onTS); removeEventListener('touchend', this.onTE); this.onWheel.dispose && this.onWheel.dispose(); window.removeEventListener('keydown', this.onKey); window.removeEventListener('resize', this.on); }
   frame() {
     const sc = this.sc.current, svg = this.svg.current; if (!sc || !svg || !this.paths) return;
     const q = s => sc.querySelector(s);

@@ -257,7 +257,7 @@ export const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduce
 export function wheelStepper(step, opts = {}) {
   const QUIET = opts.quiet ?? 260, TH = opts.threshold ?? 40;
   let acc = 0, last = 0, armed = true, calmAt = 0, watch = 0;
-  return (e) => {
+  const handler = (e) => {
     e.preventDefault();
     // the event's own clock: a main-thread stall mid-gesture must not look like a pause
     const now = e.timeStamp || performance.now();
@@ -277,6 +277,8 @@ export function wheelStepper(step, opts = {}) {
     // once the scene lands, hold for a beat before the next can fire
     if (opts.busy) { clearInterval(watch); watch = setInterval(() => { if (!opts.busy()) { clearInterval(watch); calmAt = performance.now() + 400; } }, 40); }
   };
+  handler.dispose = () => clearInterval(watch);
+  return handler;
 }
 
 /** Pre-render an element's CSS `filter` (drop-shadow glows, sepia …) into a

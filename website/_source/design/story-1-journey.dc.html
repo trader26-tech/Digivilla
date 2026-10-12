@@ -475,7 +475,7 @@ class Component extends DCLogic {
     };
     this._raf = requestAnimationFrame(loop);
   }
-  componentWillUnmount() { cancelAnimationFrame(this._raf); removeEventListener('wheel', this.onWheel); removeEventListener('keydown', this.onKey); removeEventListener('touchstart', this.onTS); removeEventListener('touchmove', this.onTM); }
+  componentWillUnmount() { cancelAnimationFrame(this._raf); removeEventListener('wheel', this.onWheel); this.onWheel.dispose && this.onWheel.dispose(); removeEventListener('keydown', this.onKey); removeEventListener('touchstart', this.onTS); removeEventListener('touchmove', this.onTM); }
   componentDidUpdate() { this.applyDest(); }
   applyDest() {
     const d = this.props.destination ?? 'Kuwait', a = document.querySelector('[data-arrival]'), b = document.querySelector('[data-dest]');

@@ -1,4 +1,4 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready } from './rt.js?v=736b61a4';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready } from './rt.js?v=5565a973';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   state = { mode: 'fd', pf: 1, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price' };
