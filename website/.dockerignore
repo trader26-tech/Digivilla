@@ -1,5 +1,4 @@
 _source
 Dockerfile
-Caddyfile
 README.md
 .dockerignore
