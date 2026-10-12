@@ -13,7 +13,19 @@
 <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
 <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>html,body{height:100%;overflow:hidden}body{margin:0;background:#0b0c12;color:#fff6ea;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#fff6ea;text-decoration:none}a:hover{color:#f6c445}*{box-sizing:border-box}@supports (height:100dvh){[data-vhsec]{height:100dvh!important}}</style>
+<style>html,body{height:100%;overflow:hidden}body{margin:0;background:#0b0c12;color:#fff6ea;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#fff6ea;text-decoration:none}a:hover{color:#f6c445}*{box-sizing:border-box}@supports (height:100dvh){[data-vhsec]{height:100dvh!important}}
+[data-mcaps]{display:none}
+@media (max-width:700px){
+  [data-mcaps]{display:block!important}
+  foreignObject[data-sc],foreignObject[data-fix],foreignObject[data-ideal]{display:none}
+  [data-g]{top:auto!important;bottom:6vh!important;left:8px!important;right:8px!important;width:calc(100% - 16px)!important;height:36vh!important}
+  [data-lab] > div > span:first-child{font-size:42px!important}
+  [data-lab] > div > span:last-child{font-size:19px!important}
+  [data-lab="2"] > div{height:100%;justify-content:flex-end}
+  [data-vl] > div{font-size:30px!important}
+  [data-prob] h2,[data-sol] h2{font-size:38px!important}
+  [data-hint]{display:none}
+}</style>
 </helmet>
 <div ref="{{ scRef }}" style="position:fixed;inset:0;overflow:hidden;touch-action:none;overflow-x:hidden;background:#0b0c12">
 <section data-screen-label="Return and risk" data-vhsec="1" style="position:relative;height:100vh">
@@ -97,13 +109,13 @@
 <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;overflow:visible">
 <foreignObject data-lab="1" x="256" y="362" width="360" height="90" opacity="0"><div style="display:flex;flex-direction:column;gap:4px;font-family:Inter,system-ui,sans-serif"><span style="font-size:30px;font-weight:500;letter-spacing:-.03em;line-height:1.05;color:#fff6ea">Arbitrage</span><span style="font-size:11px;letter-spacing:.24em;color:#8fd65a;font-weight:600">SAFE · BUT GROWS SLOWLY</span></div></foreignObject>
 <foreignObject data-lab="2" x="420" y="112" width="374" height="90" opacity="0"><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;font-family:Inter,system-ui,sans-serif"><span style="font-size:30px;font-weight:500;letter-spacing:-.03em;line-height:1.05;color:#fff6ea">Stocks &amp; mutual funds</span><span style="font-size:11px;letter-spacing:.24em;color:#e2725b;font-weight:600">GROWS FASTEST · SWINGS HARDEST</span></div></foreignObject>
-<foreignObject data-sc="1" opacity="0" x="150" y="40" width="460" height="300"><div style="height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:18px"><div style="position:relative;display:flex;flex-direction:column;gap:12px;margin:2px;padding:18px 22px;border-radius:26px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="position:absolute;left:66px;bottom:-12px;width:20px;height:20px;background:#0e0f24;border-right:1px solid rgba(246,196,69,.4);border-bottom:1px solid rgba(246,196,69,.4);transform:rotate(45deg)"></span>
+<foreignObject data-sc="1" data-m="sc1" opacity="0" x="150" y="40" width="460" height="300"><div style="height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:18px"><div style="position:relative;display:flex;flex-direction:column;gap:12px;margin:2px;padding:18px 22px;border-radius:26px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="position:absolute;left:66px;bottom:-12px;width:20px;height:20px;background:#0e0f24;border-right:1px solid rgba(246,196,69,.4);border-bottom:1px solid rgba(246,196,69,.4);transform:rotate(45deg)"></span>
 <span data-q="1" style="font-size:24px;font-weight:500;letter-spacing:-.03em;line-height:1.1;color:#fff6ea;text-wrap:balance">What if all ₹1 crore went into <span style="color:#8fd65a">arbitrage</span>?</span>
 <div data-ans="1" style="display:flex;flex-direction:column;gap:8px;opacity:0">
 <div style="display:flex;gap:10px;align-items:baseline;font-size:15px;line-height:1.4;color:#fff6ea"><span style="color:#8fd65a;font-weight:700">✓</span><span>Your ₹1 crore stays safe.</span></div>
 <div style="display:flex;gap:10px;align-items:baseline;font-size:15px;line-height:1.4;color:#fff6ea"><span style="color:#e2725b;font-weight:700">✕</span><span><b style="font-weight:600">But at ~5.5% after tax, it doesn’t even beat inflation.</b> Your money quietly loses value.</span></div>
 </div></div></div></foreignObject>
-<foreignObject data-sc="2" opacity="0" x="336" y="58" width="460" height="300"><div style="height:100%;display:flex;flex-direction:column;justify-content:flex-start;padding-right:18px"><div style="position:relative;display:flex;flex-direction:column;gap:12px;margin:2px;padding:18px 22px;border-radius:26px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="position:absolute;right:-12px;top:80px;width:20px;height:20px;background:#0e0f24;border-right:1px solid rgba(246,196,69,.4);border-top:1px solid rgba(246,196,69,.4);transform:rotate(45deg)"></span>
+<foreignObject data-sc="2" data-m="sc2" opacity="0" x="336" y="58" width="460" height="300"><div style="height:100%;display:flex;flex-direction:column;justify-content:flex-start;padding-right:18px"><div style="position:relative;display:flex;flex-direction:column;gap:12px;margin:2px;padding:18px 22px;border-radius:26px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="position:absolute;right:-12px;top:80px;width:20px;height:20px;background:#0e0f24;border-right:1px solid rgba(246,196,69,.4);border-top:1px solid rgba(246,196,69,.4);transform:rotate(45deg)"></span>
 <span data-q="2" style="font-size:24px;font-weight:500;letter-spacing:-.03em;line-height:1.1;color:#fff6ea;text-wrap:balance">What if all ₹1 crore went into <span style="color:#e2725b">stocks &amp; mutual funds</span>?</span>
 <div data-ans="2" style="display:flex;flex-direction:column;gap:8px;opacity:0">
 <div style="display:flex;gap:10px;align-items:baseline;font-size:15px;line-height:1.4;color:#fff6ea"><span style="color:#8fd65a;font-weight:700">✓</span><span>The highest growth over the long run.</span></div>
@@ -112,9 +124,15 @@
 <foreignObject data-vl="0" opacity="0" x="224" y="286" width="150" height="40"><div style="text-align:right;font-family:Inter,system-ui,sans-serif;font-size:20px;font-weight:600;letter-spacing:-.02em;color:#8fd65a;white-space:nowrap">Conservative</div></foreignObject>
 <foreignObject data-vl="1" opacity="0" x="364" y="227" width="150" height="40"><div style="text-align:right;font-family:Inter,system-ui,sans-serif;font-size:20px;font-weight:600;letter-spacing:-.02em;color:#f6c445;white-space:nowrap">Balanced</div></foreignObject>
 <foreignObject data-vl="2" opacity="0" x="504" y="168" width="150" height="40"><div style="text-align:right;font-family:Inter,system-ui,sans-serif;font-size:20px;font-weight:600;letter-spacing:-.02em;color:#e2725b;white-space:nowrap">Aggressive</div></foreignObject>
-<foreignObject data-fix="1" opacity="0" x="560" y="300" width="380" height="160"><div style="display:flex;flex-direction:column;gap:8px;margin:2px;padding:16px 20px;border-radius:22px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="font-size:11px;letter-spacing:.24em;color:#f6c445;font-weight:600">THE DIGIVILLA WAY</span><span style="font-size:18px;line-height:1.35;color:#fff6ea;text-wrap:pretty">Mix them right and you land in between: <b style="font-weight:600">more growth than arbitrage, a smoother ride than stocks.</b></span></div></foreignObject>
-<foreignObject data-ideal="1" opacity="0" x="350" y="96" width="420" height="120"><div style="display:flex;flex-direction:column;gap:6px;font-family:Inter,system-ui,sans-serif"><span style="font-size:11px;letter-spacing:.26em;color:#8fd65a;font-weight:600">HIGH RETURN · LOW RISK</span><span style="font-size:44px;font-weight:500;letter-spacing:-.035em;line-height:1;color:#fff6ea">Ideal spot</span></div></foreignObject>
+<foreignObject data-fix="1" data-m="fix" opacity="0" x="560" y="300" width="380" height="160"><div style="display:flex;flex-direction:column;gap:8px;margin:2px;padding:16px 20px;border-radius:22px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="font-size:11px;letter-spacing:.24em;color:#f6c445;font-weight:600">THE DIGIVILLA WAY</span><span style="font-size:18px;line-height:1.35;color:#fff6ea;text-wrap:pretty">Mix them right and you land in between: <b style="font-weight:600">more growth than arbitrage, a smoother ride than stocks.</b></span></div></foreignObject>
+<foreignObject data-ideal="1" data-m="ideal" opacity="0" x="350" y="96" width="420" height="120"><div style="display:flex;flex-direction:column;gap:6px;font-family:Inter,system-ui,sans-serif"><span style="font-size:11px;letter-spacing:.26em;color:#8fd65a;font-weight:600">HIGH RETURN · LOW RISK</span><span style="font-size:44px;font-weight:500;letter-spacing:-.035em;line-height:1;color:#fff6ea">Ideal spot</span></div></foreignObject>
 </svg>
+</div>
+<div data-mcaps="1" style="position:absolute;left:16px;right:16px;top:calc(78px + env(safe-area-inset-top));height:48vh;pointer-events:none">
+<div data-mcap="sc1" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;visibility:hidden"><div style="display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:22px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="font-size:21px;font-weight:500;letter-spacing:-.03em;line-height:1.15;color:#fff6ea;text-wrap:balance">What if all ₹1 crore went into <span style="color:#8fd65a">arbitrage</span>?</span><div data-mans="1" style="display:flex;flex-direction:column;gap:8px;opacity:0"><div style="display:flex;gap:10px;align-items:baseline;font-size:14.5px;line-height:1.4;color:#fff6ea"><span style="color:#8fd65a;font-weight:700">✓</span><span>Your ₹1 crore stays safe.</span></div><div style="display:flex;gap:10px;align-items:baseline;font-size:14.5px;line-height:1.4;color:#fff6ea"><span style="color:#e2725b;font-weight:700">✕</span><span><b style="font-weight:600">But at ~5.5% after tax, it doesn’t even beat inflation.</b> Your money quietly loses value.</span></div></div></div></div>
+<div data-mcap="sc2" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;visibility:hidden"><div style="display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:22px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="font-size:21px;font-weight:500;letter-spacing:-.03em;line-height:1.15;color:#fff6ea;text-wrap:balance">What if all ₹1 crore went into <span style="color:#e2725b">stocks &amp; mutual funds</span>?</span><div data-mans="2" style="display:flex;flex-direction:column;gap:8px;opacity:0"><div style="display:flex;gap:10px;align-items:baseline;font-size:14.5px;line-height:1.4;color:#fff6ea"><span style="color:#8fd65a;font-weight:700">✓</span><span>The highest growth over the long run.</span></div><div style="display:flex;gap:10px;align-items:baseline;font-size:14.5px;line-height:1.4;color:#fff6ea"><span style="color:#e2725b;font-weight:700">✕</span><span><b style="font-weight:600">But one crash can wipe out over half.</b> ₹1 crore becomes ₹50 lakh. Could you hold on?</span></div></div></div></div>
+<div data-mcap="fix" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;opacity:0;visibility:hidden"><div style="display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:22px;background:rgba(14,15,36,.96);border:1px solid rgba(246,196,69,.4);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.25);font-family:Inter,system-ui,sans-serif"><span style="font-size:11px;letter-spacing:.24em;color:#f6c445;font-weight:600">THE DIGIVILLA WAY</span><span style="font-size:17px;line-height:1.35;color:#fff6ea;text-wrap:pretty">Mix them right and you land in between: <b style="font-weight:600">more growth than arbitrage, a smoother ride than stocks.</b></span></div></div>
+<div data-mcap="ideal" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 4px 8px;opacity:0;visibility:hidden;font-family:Inter,system-ui,sans-serif"><span style="font-size:11px;letter-spacing:.26em;color:#8fd65a;font-weight:600">HIGH RETURN · LOW RISK</span><span style="font-size:40px;font-weight:500;letter-spacing:-.035em;line-height:1;color:#fff6ea">Ideal spot</span></div>
 </div>
 <div data-prob="1" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0 24px;text-align:center;pointer-events:none;opacity:0">
 <span style="font-size:12px;letter-spacing:.3em;color:#e2725b;font-weight:600">BUT THERE’S A BIG PROBLEM</span>
@@ -160,7 +178,20 @@ class Component extends DCLogic {
     this.onKey = ev => { if (['ArrowDown', 'PageDown', ' ', 'Enter'].includes(ev.key)) { ev.preventDefault(); nav(1); } else if (['ArrowUp', 'PageUp'].includes(ev.key)) { ev.preventDefault(); nav(-1); } };
     this.scrub.attach();
     window.addEventListener('keydown', this.onKey);
-    this.on = () => requestAnimationFrame(() => this.frame());
+    // phones: a tighter viewBox so the drawing fills the width; taller boxes for the bigger point labels
+    const root = this.sc.current || document;
+    this.fit = () => {
+      const ph = innerWidth <= 700, vb = ph ? '100 40 830 540' : '0 0 1000 600';
+      root.querySelectorAll('svg[viewBox]').forEach(x => { if (x.getAttribute('viewBox') !== vb) x.setAttribute('viewBox', vb); });
+      const l1 = root.querySelector('[data-lab="1"]'), l2 = root.querySelector('[data-lab="2"]');
+      if (l1) l1.setAttribute('height', ph ? 150 : 90);
+      if (l2) { l2.setAttribute('y', ph ? 36 : 112); l2.setAttribute('height', ph ? 166 : 90); }
+      // villa names are right-aligned: widen their boxes to the left so "Conservative" fits at the phone size; the −50% label moves left of the crash
+      [[0, 224], [1, 364], [2, 504]].forEach(([i, x]) => { const v = root.querySelector(`[data-vl="${i}"]`); if (v) { v.setAttribute('x', ph ? x - 90 : x); v.setAttribute('width', ph ? 240 : 150); } });
+      const cl = root.querySelector('[data-cl]'); if (cl) cl.setAttribute('x', ph ? 748 : 906);
+    };
+    this.fit();
+    this.on = () => { this.fit(); requestAnimationFrame(() => this.frame()); };
     window.addEventListener('resize', this.on);
     const loop = now => {
       const sPos = this.scrub.tick(now);
@@ -217,7 +248,10 @@ class Component extends DCLogic {
     q('[data-hand]').setAttribute('transform', `translate(${hand[0].toFixed(1)} ${hand[1].toFixed(1)})`);
     const set = (sel, o) => {
       const el = q(sel), v = (+o).toFixed(3);
-      if (el.tagName.toLowerCase() === 'foreignobject') { const c = el.firstElementChild; if (c) { c.style.opacity = v; c.style.visibility = +v > 0 ? '' : 'hidden'; } }
+      if (el.tagName.toLowerCase() === 'foreignobject') {
+        const c = el.firstElementChild; if (c) { c.style.opacity = v; c.style.visibility = +v > 0 ? '' : 'hidden'; }
+        const m = el.dataset.m && q(`[data-mcap="${el.dataset.m}"]`); if (m) { m.style.opacity = v; m.style.visibility = +v > 0 ? '' : 'hidden'; }   // the phone's HTML copy
+      }
       else el.setAttribute('opacity', v);
     };
     [[6, 'translate(0 ', ')', 20], [7, 'translate(', ' 0)', -24]].forEach(([i, pre, post, d]) => {
@@ -227,7 +261,8 @@ class Component extends DCLogic {
     });
     const io = F(.68, .8), iout = 1 - F(1.5, 1.62);
     set('[data-ideal]', io * iout);
-    { const c = q('[data-ideal]').firstElementChild; if (c) c.style.transform = `translateX(${((1 - io) * -16).toFixed(1)}px)`; }
+    q('[data-ideal]').setAttribute('x', (350 + (1 - io) * -16).toFixed(1));
+    { const m = q('[data-mcap="ideal"]'); if (m) m.style.transform = `translateX(${((1 - io) * -16).toFixed(1)}px)`; }
     set('[data-boxfill]', .12 * io * iout);
     if (T > 1.88) this.paths.box.el.style.opacity = iout;
     const s1 = F(3.85, 3.98) * (1 - F(4.75, 4.88)), s2 = F(4.9, 5.03) * (1 - F(6.2, 6.35));
@@ -251,8 +286,7 @@ class Component extends DCLogic {
     const so = F(6.45, 6.65) * (1 - F(7.05, 7.25));
     Object.assign(q('[data-sol]').style, { opacity: so, transform: `translateY(${((1 - F(6.45, 6.65)) * 24 - F(7.05, 7.25) * 24).toFixed(1)}px)` });
     set('[data-sc="1"]', s1); set('[data-sc="2"]', s2); 
-    q('[data-ans="1"]').style.opacity = F(3.95, 4.08);
-    q('[data-ans="2"]').style.opacity = F(5.0, 5.13);
+    { const a1 = F(3.95, 4.08), a2 = F(5.0, 5.13); q('[data-ans="1"]').style.opacity = a1; q('[data-ans="2"]').style.opacity = a2; const m1 = q('[data-mans="1"]'), m2 = q('[data-mans="2"]'); if (m1) m1.style.opacity = a1; if (m2) m2.style.opacity = a2; }
     const g = (1 - F(2.7, 2.95) * (1 - F(3.75, 3.95))) * (1 - F(6.3, 6.5) * (1 - F(7.25, 7.45)));
     q('[data-g="1"]').style.opacity = g; q('[data-g="2"]').style.opacity = g;
     const pr = F(2.95, 3.15) * (1 - F(3.55, 3.75));
