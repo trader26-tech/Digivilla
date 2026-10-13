@@ -20,6 +20,7 @@
     a{color:#E1E0CC;text-decoration:none} a:hover{color:#fff}
     [data-rise]{opacity:0}
     @supports (height:100dvh){[data-screen-label="TheDigiCiti Landing"],#showcase{height:100dvh!important}}
+    @media (max-width:700px){[data-scroller]{scroll-snap-type:y mandatory} .msh,.mcl{height:100dvh!important} footer{scroll-snap-align:end}}
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
@@ -41,7 +42,7 @@
     }
   </style>
 </helmet>
-<div ref="{{ scrollRef }}" style="position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:#000;font-family:Almarai, -apple-system, 'Segoe UI', sans-serif;color:#E1E0CC">
+<div ref="{{ scrollRef }}" data-scroller="1" style="position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:#000;font-family:Almarai, -apple-system, 'Segoe UI', sans-serif;color:#E1E0CC">
   <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}"><dc-import name="landing-mobile" scroller="{{ scrollRef }}" hint-size="100%,260vh"></dc-import></sc-if>
   <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
   <div data-hero-track="1" style="height:200vh">
@@ -119,6 +120,11 @@
     </div>
   </div>
   </sc-if>
+<sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}">
+<dc-import name="showcase-mobile" hint-size="100%,100vh"></dc-import>
+<dc-import name="calc-mobile" hint-size="100%,100vh"></dc-import>
+</sc-if>
+<sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
 <section id="showcase" data-screen-label="Mobile showcase" style="position:relative;height:100vh;overflow:hidden;background:#000">
   <div data-m="mhead" style="display:none;position:absolute;left:0;right:0;top:0;z-index:6;flex-direction:column;gap:10px;padding:calc(22px + env(safe-area-inset-top)) 22px 0;pointer-events:none">
     <span style="font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#7a7c8c">DigiVilla · Digi City</span>
@@ -230,6 +236,7 @@
 <section id="calculator" data-screen-label="Calculator" style="position:relative;background:#0b0c12;border-top:1px solid #1a1c28">
 <dc-import name="calculator" embedded="{{ true }}" hint-size="100%,100vh"></dc-import>
 </section>
+</sc-if>
 <dc-import name="part-footer" hint-size="100%,280px"></dc-import>
 </div>
 </x-dc>

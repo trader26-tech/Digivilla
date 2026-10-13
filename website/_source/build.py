@@ -462,7 +462,7 @@ def main():
         preload = '\n'.join([pre[f] for f in fonts if f in pre] + [f'<link rel="preload" href="{u}" as="image" fetchpriority="high">' for u in HERO.get(root, [])])
         mods = module_closure(root)
         modules = '\n'.join(f'<link rel="modulepreload" href="dc/{m}?v={ver}">' for m in mods)
-        warm = ('\n' + WARM) if 'calculator.js' in mods else ''
+        warm = ('\n' + WARM) if ('calculator.js' in mods or 'calc-mobile.js' in mods) else ''
         (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root), preload=preload, fonts_css=fonts_css,
                                             head=head_html(info[root]['helmet']), ver=ver, modules=modules, warm=warm))
     print(f'built {len(info)} components, {len(PAGES)} pages · v={ver}')

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+/* ── PAGE 3 · CALCULATOR (phones) — the layout of mobile-site.html, the maths of the app ─────
+   FD | Real estate pill, a sentence with dropdown chips, two 3-D bars (FD/flat grey vs
+   DigiVilla green) with the bank/flat icon and the villa + coin over them, a curved arrow from
+   one total to the other, summaries, years-ago picker, YOU INVEST stepper and a ruler.
+   Every figure comes from the app's engine on real benchmark history and the live settings —
+   never an assumed rate. */
+.mcl{position:relative;height:100vh;height:100svh;background:#0b0c12;color:#ececf1;display:flex;flex-direction:column;padding:max(18px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;scrollbar-width:none;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;scroll-snap-align:start;scroll-snap-stop:always}
+.mcl::-webkit-scrollbar{display:none}
+.mcl button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mcl .mono{font-variant-numeric:tabular-nums}
+.mcl-seg{flex:none;align-self:center;display:flex;padding:4px;border-radius:999px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-seg button{display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:0;border-radius:999px;background:transparent;color:#a3a5b4;font-size:16px;font-weight:700;transition:background .25s,color .25s}
+.mcl-seg button.on{background:#ececf1;color:#0b0c12}
+.mcl-seg svg{width:22px;height:22px}
+.mcl-sentence{flex:none;display:flex;align-items:flex-start;gap:12px;margin-top:16px}
+.mcl-back{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:#161826;color:#ececf1;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-sentence p{margin:0;font-size:clamp(18px,5vw,22px);line-height:1.5;color:#ececf1}
+.mcl-chip{display:inline-flex;align-items:center;gap:6px;height:1.55em;padding:0 .45em 0 .55em;margin:0 .1em;border-radius:.4em;background:#2a2548;box-shadow:inset 0 0 0 1px rgba(127,114,224,.55);color:#fff;font:inherit;vertical-align:-.3em;position:relative}
+.mcl-chip::after{content:"";width:0;height:0;border:5px solid transparent;border-top:6px solid #7f72e0;border-bottom:0;margin-top:1px}
+.mcl-chip select{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px}
+.mcl-stage{position:relative;flex:none;height:420px;margin-top:10px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-floor{position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(233,233,237,.18)}
+.mcl-bar{position:absolute;bottom:1px;width:30%;display:flex;flex-direction:column;align-items:center}
+.mcl-barL{left:9%}.mcl-barR{left:55%}
+.mcl-box{position:relative;width:100%;display:flex;flex-direction:column;justify-content:flex-end;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-box .face{position:relative;width:100%;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.mcl-segm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:hidden;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-segm .k{font-size:11px;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap}.mcl-segm .v{font-size:18px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.mcl-boxL .face{background:#4a4d60}.mcl-boxL .paid{background:#6a6d82;color:#f4f4f7}.mcl-boxL .val{background:#4a4d60;color:#f4f4f7}.mcl-boxL .paid .k,.mcl-boxL .val .k{color:#d7d7e2}
+.mcl-boxL .cap{position:absolute;left:0;right:0;top:0;height:40px;transform:translateY(-100%);background:linear-gradient(180deg,#a6a8b8,#8d8fa2);clip-path:polygon(0 100%,24% 0,100% 0,76% 100%)}
+.mcl-boxL .side{position:absolute;left:100%;top:-40px;bottom:0;width:24%;background:linear-gradient(180deg,#2f3140,#262838);clip-path:polygon(0 40px,100% 0,100% 100%,0 100%)}
+.mcl-boxR .face{background:#3f8a2a}.mcl-boxR .paid{background:linear-gradient(180deg,#b9ea7d,#8fd65a);color:#143012}.mcl-boxR .val{background:#3f8a2a;color:#f4fff0}.mcl-boxR .paid .k{color:#2d5a1f}.mcl-boxR .val .k{color:#cdeec0}
+.mcl-boxR .cap{position:absolute;left:0;right:0;top:0;height:40px;transform:translateY(-100%);background:linear-gradient(180deg,#d6f7a3,#b6ea7a);clip-path:polygon(0 100%,24% 0,100% 0,76% 100%)}
+.mcl-boxR .side{position:absolute;left:100%;top:-40px;bottom:0;width:24%;background:linear-gradient(180deg,#2e6b20,#245418);clip-path:polygon(0 40px,100% 0,100% 100%,0 100%)}
+.mcl-total{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:44px;font-size:clamp(30px,9vw,40px);font-weight:700;letter-spacing:-.035em;line-height:1;white-space:nowrap}
+.mcl-totL{color:#f4f4f7}.mcl-totR{color:#8fd65a}
+.mcl-tag{position:absolute;left:70%;transform:translateX(-50%);white-space:nowrap;font-size:13px;color:#a3a5b4;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}.mcl-tag b{color:#8fd65a;font-weight:400}
+.mcl-icon{position:absolute;left:24%;transform:translateX(-50%);width:26%;pointer-events:none;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-rig{position:absolute;left:70%;transform:translateX(-50%);width:42%;display:flex;flex-direction:column;align-items:center;gap:4px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-swp{display:flex;align-items:center;gap:8px;height:32px;padding:0 14px 0 5px;border:0;border-radius:999px;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.7);color:#f6c445;font-size:12px;letter-spacing:.26em;text-transform:uppercase}
+.mcl-swp .tog{width:44px;height:26px;border-radius:999px;background:#f6c445;position:relative;transition:background .3s}
+.mcl-swp .tog::after{content:"";position:absolute;top:4px;left:22px;width:18px;height:18px;border-radius:50%;background:#1a1407;transition:left .3s}
+.mcl-swp.off .tog{background:#3a3620}.mcl-swp.off .tog::after{left:4px}
+.mcl-vrow{position:relative;display:flex;align-items:center;justify-content:center;width:100%}
+.mcl-vrow .arr{position:absolute;top:50%;width:44px;height:44px;transform:translateY(-50%);border:0;background:transparent;color:#a3a5b4;display:grid;place-items:center;font-size:22px}
+.mcl-vrow .arr.l{left:-30%}.mcl-vrow .arr.r{right:-30%}
+.mcl-vrow .v{width:70%;transition:transform .3s}
+.mcl-vrow .v>div{display:block;width:100%}
+.mcl-vrow .c{position:absolute;left:50%;top:-4%;width:16%;transform:translateX(-50%)}
+.mcl-arrow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.mcl-sums{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;text-align:center}
+.mcl-sums .s{font-size:14px;color:#a3a5b4}.mcl-sums .l{margin-top:10px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#7a7c8c}.mcl-sums .l.g{color:#8fd65a}
+.mcl-years{flex:none;display:flex;justify-content:center;gap:6px;margin-top:14px}
+.mcl-years button{min-width:72px;height:52px;border:0;background:transparent;color:#7a7c8c;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.mcl-years button b{font-size:30px;font-weight:400;line-height:1;letter-spacing:-.02em}.mcl-years button span{font-size:11px;letter-spacing:.26em;text-transform:uppercase}
+.mcl-years button.on{color:#ececf1}.mcl-years button.on::after{content:"";position:absolute;left:50%;bottom:-6px;width:40px;height:3px;border-radius:2px;background:#8fd65a;transform:translateX(-50%)}
+.mcl-invest{flex:none;display:flex;align-items:center;gap:10px;margin-top:22px}
+.mcl-invest .st{flex:none;width:44px;height:44px;border:0;background:transparent;color:#f6c445;font-size:18px}
+.mcl-invest .card{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-invest .card span{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#a3a5b4}
+.mcl-invest .card b{font-size:clamp(34px,10vw,42px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.mcl-ruler{flex:none;position:relative;height:44px;margin-top:12px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.mcl-ruler canvas{position:absolute;inset:0;width:100%;height:100%}
+.mcl-ruler input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;pointer-events:none}
+.mcl-note{flex:none;margin:14px 0 0;font-size:11px;line-height:1.5;color:#5a5e6c;text-align:center}
+.mcl-wait{flex:1;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:#a3a5b4;font-size:14px}
+.mcl-wait i{width:30px;height:30px;border-radius:50%;border:2px solid #22253a;border-top-color:#8fd65a;animation:mclspin 1s linear infinite}
+@keyframes mclspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<section id="calculator" class="mcl" data-screen-label="Calculator (phone)">
+<div class="mcl-seg" role="tablist">
+<button class="{{ segFd }}" onClick="{{ pickFd }}" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"></path></svg>FD</button>
+<button class="{{ segRe }}" onClick="{{ pickRe }}" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V5l5-2v18M9 21V8l6-2v15M15 21V11l5-2v12M4 21h16"></path></svg>Real estate</button>
+</div>
+<div class="mcl-sentence">
+<button class="mcl-back" onClick="{{ goBack }}" aria-label="Back to the app"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<sc-if value="{{ isFd }}" hint-placeholder-val="{{ true }}"><p>Your FD pays <span class="mcl-chip"><span>{{ rateTxt }}</span><select onChange="{{ setRate }}" value="{{ rateVal }}" aria-label="FD rate"><sc-for list="{{ rateOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> taxed at <span class="mcl-chip"><span>{{ taxTxt }}</span><select onChange="{{ setTax }}" value="{{ taxVal }}" aria-label="Tax slab"><sc-for list="{{ taxOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> as income.</p></sc-if>
+<sc-if value="{{ isRe }}" hint-placeholder-val="{{ false }}"><p>Your flat grew <span class="mcl-chip"><span>{{ reTxt }}</span><select onChange="{{ setRe }}" value="{{ reVal }}" aria-label="Flat growth a year"><sc-for list="{{ reOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> a year and rents at <span class="mcl-chip"><span>{{ yieldTxt }}</span><select onChange="{{ setYield }}" value="{{ yieldVal }}" aria-label="Rent yield"><sc-for list="{{ yieldOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> of value.</p></sc-if>
+</div>
+
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><div class="mcl-wait" role="status"><i></i><span>Loading real market history…</span></div></sc-if>
+<sc-if value="{{ failed }}" hint-placeholder-val="{{ false }}"><div class="mcl-wait" role="alert"><span>The market history could not be loaded.</span><button onClick="{{ retry }}" style="height:40px;padding:0 18px;border:0;border-radius:999px;background:#ececf1;color:#0b0c12;font-weight:700">Try again</button></div></sc-if>
+
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<div ref="{{ stageRef }}" class="mcl-stage" style="{{ stageS }}">
+<svg class="mcl-arrow"><defs><marker id="mclah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" fill="#8fd65a"></path></marker></defs><path d="{{ arrowD }}" fill="none" stroke="#8fd65a" stroke-width="2" stroke-linecap="round" marker-end="url(#mclah)" opacity="{{ arrowOp }}"></path></svg>
+<div class="mcl-floor"></div>
+<img class="mcl-icon" src="{{ lArt }}" alt="" style="{{ iconS }}">
+<div ref="{{ rigRef }}" class="mcl-rig" style="{{ rigS }}">
+<button class="{{ swpCls }}" onClick="{{ toggleSwp }}" aria-pressed="{{ swpOn }}"><span class="tog"></span>SWP</button>
+<div class="mcl-vrow">
+<button class="arr l" onClick="{{ prevV }}" aria-label="Previous villa">←</button>
+<div class="v" style="{{ villaS }}"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%"></dc-import></div>
+<img class="c" src="assets/art/coin.svg" alt="" style="{{ coinS }}">
+<button class="arr r" onClick="{{ nextV }}" aria-label="Next villa">→</button>
+</div>
+</div>
+<div class="mcl-tag" style="{{ tagS }}"><b>{{ tagName }}</b> {{ tagRate }} · {{ tagYrs }}</div>
+<div class="mcl-bar mcl-barL"><div class="mcl-total mcl-totL mono">{{ totL }}</div>
+<div class="mcl-box mcl-boxL" style="{{ boxLS }}"><div class="cap"></div><div class="side"></div><div class="face">
+<sc-if value="{{ hasPaidL }}" hint-placeholder-val="{{ true }}"><div class="mcl-segm paid" style="{{ segLpS }}"><span class="k">{{ paidLabelL }}</span><span class="v mono">{{ paidL }}</span></div></sc-if>
+<div class="mcl-segm val" style="{{ segLvS }}"><span class="k">{{ valLabelL }}</span><span class="v mono">{{ valL }}</span></div></div></div></div>
+<div class="mcl-bar mcl-barR"><div class="mcl-total mcl-totR mono">{{ totR }}</div>
+<div class="mcl-box mcl-boxR" style="{{ boxRS }}"><div class="cap"></div><div class="side"></div><div class="face">
+<sc-if value="{{ hasPaidR }}" hint-placeholder-val="{{ true }}"><div class="mcl-segm paid" style="{{ segRpS }}"><span class="k">{{ paidLabelR }}</span><span class="v mono">{{ paidR }}</span></div></sc-if>
+<div class="mcl-segm val" style="{{ segRvS }}"><span class="k">Value</span><span class="v mono">{{ valR }}</span></div></div></div></div>
+</div>
+
+<div class="mcl-sums">
+<div><div class="s">{{ sumL }}</div><div class="l">{{ lblL }}</div></div>
+<div><div class="s">{{ sumR }}</div><div class="l g">{{ lblR }}</div></div>
+</div>
+<div class="mcl-years" role="tablist"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="4"><button class="{{ y.cls }}" onClick="{{ y.pick }}"><b>{{ y.n }}</b><span>yrs ago</span></button></sc-for></div>
+<div class="mcl-invest">
+<button class="st" onClick="{{ dec }}" aria-label="Less">◀</button>
+<div class="card"><span>You invest</span><b class="mono">{{ amt }}</b></div>
+<button class="st" onClick="{{ inc }}" aria-label="More">▶</button>
+</div>
+<div ref="{{ rulerRef }}" class="mcl-ruler"><canvas ref="{{ cvRef }}"></canvas><input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="Amount"></div>
+<p class="mcl-note">{{ note }}</p>
+</sc-if>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+import * as E from './engine.js';
+import { loadCalc } from './calc-data.js';
+/* Every figure here is computed by the app's calculator engine (dc/engine.js) on real benchmark-index
+   history with the live settings (GET /calc/config). Nothing in this file assumes a rate. */
+const YEAR_OPTS = [5, 8, 10, 15, 20];
+const AMT_MIN = 1e6, AMT_MAX = 5e7, AMT_STEP = 5e5, AMT_BIG = 25e5;
+class Component extends DCLogic {
+  state = { mode: 'fd', fd: 6.5, tax: 30, re: 7, yield: 2.5, yrs: 8, P: 1e7, villa: null, swp: true, data: null, failed: false, rigH: 0 };
+  stageRef = React.createRef(); rigRef = React.createRef(); rulerRef = React.createRef(); cvRef = React.createRef();
+  componentDidMount() { this.load(); this.onResize = () => { this.measure(); this.drawRuler(); }; addEventListener('resize', this.onResize); }
+  componentDidUpdate() { this.measure(); this.drawRuler(); this.mountRuler(); }
+  componentWillUnmount() { this.dead = true; removeEventListener('resize', this.onResize); }
+  load() {
+    if (this.state.failed) this.setState({ failed: false });
+    loadCalc().then(d => {
+      if (this.dead) return; const cfg = d.cfg, yrs = this.years(d.vf);
+      this.rates = {};
+      this.setState(s => ({ data: d, villa: cfg.default_villa, tax: cfg.tax.default_slab, swp: cfg.withdrawals.swp_default, yrs: yrs.includes(s.yrs) ? s.yrs : (yrs[1] || yrs[0] || 5) }));
+    }, err => { console.warn('calculator data', err); if (!this.dead) this.setState({ failed: true }); });
+  }
+  years(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
+  measure() { const r = this.rigRef.current; if (!r) return; const h = r.offsetHeight; if (h && Math.abs(h - this.state.rigH) > 2) this.setState({ rigH: h }); }
+  fmt(n) { return E.fmtInr(n); }
+  inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  villaRate(key) { const { cfg, vf } = this.state.data; if (!(key in this.rates)) this.rates[key] = E.villaRate(vf, cfg, key); return this.rates[key]; }
+  /** one simulation per distinct set of inputs */
+  sim(S) {
+    const key = JSON.stringify([S.mode, S.fd, S.tax, S.re, S.yield, S.yrs, S.P, S.villa, S.swp]);
+    if (this.memo && this.memo.key === key) return this.memo.out;
+    const { cfg, vf } = S.data, villa = E.villaOf(cfg, S.villa), w = E.windowFor(E.withVilla(vf, villa), S.yrs);
+    let out;
+    if (S.mode === 'fd') {
+      const r = E.simulatePayout(w, { amount: S.P, fdRate: S.fd, slabPct: S.tax, swp: S.swp }, cfg);
+      out = { villa, w, r, L: { paid: r.fdPaid, val: r.fdValue, paidLabel: 'Paid out', valLabel: 'Value', lbl: 'Fixed deposit · ' + S.fd + '%' }, R: { paid: r.dvPaid, val: r.dvValue } };
+    } else {
+      // the flat: bought for P, grew `re` a year to today's value, rents `yield` of value a year — the engine's flat rules (stamp duty,
+      // registration, vacancy, rent growth, upkeep, rent tax) and the villa side on the same window
+      const value = S.P * Math.pow(1 + S.re / 100, S.yrs), rent = value * S.yield / 100 / 12;
+      const f = E.simulateFlat(w, { price: S.P, value, rent, slabPct: S.tax, swp: S.swp }, cfg);
+      out = { villa, w, r: f.dv, f, L: { paid: f.rentKept, val: value, paidLabel: 'Rent kept', valLabel: 'Worth today', lbl: 'Flat · ' + S.re + '% + rent' }, R: { paid: f.dv.dvPaid, val: f.dv.dvValue } };
+    }
+    this.memo = { key, out }; return out;
+  }
+  /** the ruler: a finger drag moves the needle 1:1 along the scale (no absolute jumps), snapping to ₹5 L */
+  mountRuler() {
+    const rl = this.rulerRef.current; if (!rl || rl.__tape) return; rl.__tape = true;
+    let sx = 0, sv = 0, drag = false;
+    rl.addEventListener('pointerdown', e => { if (e.button) return; drag = true; rl.setPointerCapture(e.pointerId); sx = e.clientX; sv = this.state.P; rl.style.cursor = 'grabbing'; e.preventDefault(); });
+    rl.addEventListener('pointermove', e => { if (!drag) return; const w = rl.clientWidth || 1; this.setP(sv + (e.clientX - sx) / w * (AMT_MAX - AMT_MIN)); });
+    const end = () => { drag = false; rl.style.cursor = 'grab'; };
+    rl.addEventListener('pointerup', end); rl.addEventListener('pointercancel', end);
+  }
+  setP(v) { v = Math.round(Math.min(AMT_MAX, Math.max(AMT_MIN, v)) / AMT_STEP) * AMT_STEP; if (v !== this.state.P) this.setState({ P: v }); }
+  drawRuler() {
+    const cv = this.cvRef.current; if (!cv) return;
+    const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    const n = 98, px = (this.state.P - AMT_MIN) / (AMT_MAX - AMT_MIN) * w;
+    for (let i = 0; i <= n; i++) { const x = i / n * w, major = i % 20 === 0; c.fillStyle = major ? 'rgba(233,233,237,.55)' : 'rgba(233,233,237,.2)'; c.fillRect(x - .5, major ? 8 : 16, 1, major ? h - 16 : h - 32); }
+    c.fillStyle = '#8fd65a'; c.fillRect(px - 1.5, 0, 3, h);
+  }
+  renderVals() {
+    const S = this.state, isFd = S.mode === 'fd';
+    const base = {
+      stageRef: this.stageRef, rigRef: this.rigRef, rulerRef: this.rulerRef, cvRef: this.cvRef,
+      isFd, isRe: !isFd, segFd: isFd ? 'on' : '', segRe: isFd ? '' : 'on',
+      pickFd: () => this.setState({ mode: 'fd' }), pickRe: () => this.setState({ mode: 're' }),
+      goBack: e => { e.preventDefault(); const a = document.getElementById('showcase'); if (a && a.parentElement) { let sc = a.parentElement; while (sc && getComputedStyle(sc).overflowY !== 'auto') sc = sc.parentElement; if (sc) { let top = 0; for (let n = a; n && n !== sc; n = n.offsetParent) top += n.offsetTop; sc.scrollTo({ top, behavior: 'smooth' }); } } },
+      rateTxt: S.fd + '%', rateVal: String(S.fd), rateOpts: [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9].map(v => ({ v: String(v), t: v + '%' })), setRate: e => this.setState({ fd: +e.target.value }),
+      taxTxt: S.tax + '%', taxVal: String(S.tax), taxOpts: [0, 5, 10, 20, 30].map(v => ({ v: String(v), t: v + '%' })), setTax: e => this.setState({ tax: +e.target.value }),
+      reTxt: S.re + '%', reVal: String(S.re), reOpts: [4, 5, 6, 7, 8, 9, 10].map(v => ({ v: String(v), t: v + '%' })), setRe: e => this.setState({ re: +e.target.value }),
+      yieldTxt: S.yield + '%', yieldVal: String(S.yield), yieldOpts: [1.5, 2, 2.5, 3, 3.5].map(v => ({ v: String(v), t: v + '%' })), setYield: e => this.setState({ yield: +e.target.value }),
+      ready: !!S.data, loading: !S.data && !S.failed, failed: !S.data && !!S.failed, retry: () => this.load(),
+    };
+    if (!S.data) return base;
+    const { cfg, vf } = S.data, { villa, w, r, L, R } = this.sim(S), villas = cfg.villas, vi = villas.indexOf(villa);
+    const tl = Math.max(0, L.paid) + L.val, tr = (S.swp ? R.paid : 0) + R.val, mx = Math.max(tl, tr);
+    const rigH = S.rigH || 140, headroom = 40 + 52 + 22 + rigH + 24, maxH = Math.max(90, 420 - headroom), MIN = 44;
+    const heights = (t, parts) => { const h = maxH * (t / mx); return parts.map(x => x > 0 ? Math.max(MIN, h * x / t) : 0); };
+    const [lp, lv] = heights(tl, [Math.max(0, L.paid), L.val]), [rp, rv] = heights(tr, [S.swp ? R.paid : 0, R.val]);
+    const stageH = Math.max(380, Math.max(lp + lv, rp + rv) + headroom + 8);
+    const topL = lp + lv + 40 + 52, topR = rp + rv + 40 + 52;
+    const stageW = this.stageRef.current ? this.stageRef.current.clientWidth : 358;
+    const x1 = stageW * .36, y1 = stageH - topL + 22, x2 = stageW * .50, y2 = stageH - topR + 30;
+    const span = E.ymLabel(w.months[0]) + ' → ' + E.ymLabel(w.months[w.months.length - 1]);
+    const vRate = this.villaRate(villa.key), irr = r.dvIrr;
+    const yearOpts = this.years(vf);
+    const swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2);
+    return {
+      ...base,
+      stageS: `height:${stageH.toFixed(0)}px`,
+      arrowD: `M${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 + 6).toFixed(1)} ${(y2 + (y1 - y2) * .35).toFixed(1)}, ${(x2 - 24).toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`, arrowOp: tr > tl ? .9 : 0,
+      lArt: isFd ? 'assets/art/bank.svg' : 'assets/art/flat.svg', iconS: `bottom:${(topL + 8).toFixed(0)}px`,
+      rigS: `bottom:${(topR + 24).toFixed(0)}px`, tagS: `bottom:${(topR + 4).toFixed(0)}px`,
+      swpCls: 'mcl-swp' + (S.swp ? '' : ' off'), swpOn: S.swp, toggleSwp: () => this.setState(s => ({ swp: !s.swp })),
+      prevV: () => this.setState({ villa: villas[(vi + villas.length - 1) % villas.length].key }), nextV: () => this.setState({ villa: villas[(vi + 1) % villas.length].key }),
+      villaS: `transform:scale(${(.85 + vi * .12).toFixed(2)})`, coinS: `opacity:${S.swp ? 1 : .35};transition:opacity .3s`,
+      tagName: villa.name, tagRate: (irr == null ? vRate : irr).toFixed(1) + '% a yr realised', tagYrs: S.yrs + ' yrs',
+      totL: this.fmt(tl), totR: this.fmt(tr),
+      boxLS: `height:${(lp + lv).toFixed(1)}px`, segLpS: `height:${lp.toFixed(1)}px`, segLvS: `height:${lv.toFixed(1)}px`, hasPaidL: L.paid > 0,
+      boxRS: `height:${(rp + rv).toFixed(1)}px`, segRpS: `height:${rp.toFixed(1)}px`, segRvS: `height:${rv.toFixed(1)}px`, hasPaidR: S.swp && R.paid > 0,
+      paidLabelL: L.paidLabel, valLabelL: L.valLabel, paidL: this.fmt(Math.max(0, L.paid)), valL: this.fmt(L.val),
+      paidLabelR: isFd ? 'Paid out' : 'Rent paid', paidR: this.fmt(R.paid), valR: this.fmt(R.val),
+      sumL: (L.paid > 0 ? this.fmt(L.paid) + (isFd ? ' paid + ' : ' rent + ') : '') + this.fmt(L.val) + (isFd ? ' value' : ' worth'), lblL: L.lbl,
+      sumR: (S.swp ? this.fmt(R.paid) + ' paid + ' : '') + this.fmt(R.val) + ' value', lblR: villa.name + ' · ' + vRate.toFixed(1) + '% a yr',
+      yearOpts: yearOpts.map(y => ({ n: y, cls: y === S.yrs ? 'on' : '', pick: () => this.setState({ yrs: y }) })),
+      amt: this.inr(S.P), dec: () => this.setP(S.P - AMT_BIG), inc: () => this.setP(S.P + AMT_BIG),
+      rMin: AMT_MIN, rMax: AMT_MAX, rStep: AMT_STEP, rVal: S.P, onRange: e => this.setP(+e.target.value),
+      note: `Real benchmark-index history, ${span}${S.swp ? `; ${swpPct}% a year paid monthly from the arbitrage part first` : ''}; tax, rebalancing and the flat's costs from the app's settings. Information, not advice — past returns are no promise.`,
+    };
+  }
+}
+</script>
+</body>
+</html>
