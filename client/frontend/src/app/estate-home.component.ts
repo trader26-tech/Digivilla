@@ -22,7 +22,7 @@ import { DataFreshnessComponent } from './shared/data-freshness.component';
 import { CountUpDirective } from './shared/count-up.directive';
 import { PlotUnlockComponent } from './build/plot-unlock.component';
 import { CallsService } from './shared/calls.service';
-import { AllocRow, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
+import { AllocRow, DayChange, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
 import { compact, inr } from './shared/format.util';
 import { CalcDataService } from './calc/calc-data.service';
@@ -59,9 +59,14 @@ interface BoardCell {
   tile: Tile | null;
 }
 
-/** One merged segment of the home allocation bar — a sleeve and its total
- *  allocation (all funds of that sleeve summed). */
-interface SleeveRow { sleeve: string; allocation: number; }
+/** One merged segment of the home allocation bar — a sleeve, its total
+ *  allocation (all funds of that sleeve summed), its whole-number display share
+ *  (largest-remainder, so the shares on screen always add to exactly 100) and
+ *  the funds inside it, biggest first. */
+interface SleeveRow { sleeve: string; allocation: number; value: number; pct: number; funds: AllocRow[]; }
+/** One column of the legend under the bar: a sleeve, or "+N more" folding the
+ *  sub-2% sleeves so six tiny labels never crowd a phone-width row. */
+interface LegendCol { key: string; label: string; color: string; pct: string; }
 
 // ---- the estate model (ported from design/home-m1/estate-model.js) --
 // ₹ per villa, ₹/month per finished villa, the number of plots and the build
@@ -206,6 +211,12 @@ export class EstateHomeComponent implements OnInit {
   /** The "what your estate means" key — closed by default, opens on the ? tap. */
   keyOpen = signal(false);
   toggleKey(): void { this.keyOpen.update((v) => !v); if (navigator.vibrate) navigator.vibrate(4); }
+  /** "Your mix" — the fund-by-fund sheet behind the allocation bar. */
+  mixOpen = signal(false);
+  openMix(): void { this.mixOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
+  /** "Day's change" — the fund-by-fund sheet behind the day chip. */
+  dayOpen = signal(false);
+  openDay(): void { this.dayOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
 
   /** The user's fund-by-fund breakdown (from GET /me/funds) — drives the
    *  PORTFOLIO VALUE allocation bar at the bottom of the home screen. Null until
@@ -483,7 +494,7 @@ export class EstateHomeComponent implements OnInit {
    *  the cached tiles). Until then the home shows a quiet skeleton instead of
    *  flashing ₹0 / a wrong state and then jumping to the real numbers. */
   get dataReady(): boolean {
-    return this.est.portfolioLoaded();
+    return this.est.portfolioLoaded() && this.est.allocLoaded();
   }
 
   // ------------------------------------------------------------ lifecycle --
@@ -541,7 +552,7 @@ export class EstateHomeComponent implements OnInit {
 
   /** Another sheet / popup owns the screen — swipes leave it alone. */
   private get overlayOpen(): boolean {
-    return this.keyOpen() || this.callSheetOpen() || this.settingsOpen() || !!this.buying() || !!this.selected()
+    return this.keyOpen() || this.mixOpen() || this.dayOpen() || this.callSheetOpen() || this.settingsOpen() || !!this.buying() || !!this.selected()
       || !!this.selectedBoard() || !!this.unlockCell() || this.showTick();
   }
   setNext(open: boolean): void {
@@ -967,77 +978,221 @@ export class EstateHomeComponent implements OnInit {
   }
 
   // ── PORTFOLIO VALUE allocation bar (bottom) ──
-  // The bar's label + colour come from each fund's REAL sleeve (set by the admin,
-  // sent as `sleeve` on every allocation row), NOT the row's position. A fund
-  // with no sleeve is inferred from its category/name, and only truly-unknown
-  // funds fall to the neutral "OTHER" style. This is why the mix in admin now
-  // maps 1:1 to what the client shows.
-  private readonly SLEEVE_STYLE: Record<string, { label: string; color: string }> = {
-    arbitrage: { label: 'ARBITRAGE', color: '#8aa89b' },
-    gold:      { label: 'GOLD',      color: '#f6c445' },
-    large:     { label: 'LARGE CAP', color: '#4a9d47' },
-    mid:       { label: 'MID CAP',   color: '#5cb85c' },
-    small:     { label: 'SMALL CAP', color: '#8fd48a' },
-    other:     { label: 'OTHER',     color: '#9fb3ab' },
+  // The bar is the client's REAL mix: every fund they hold at units × live NAV
+  // (GET /me/allocation), grouped by sleeve — never the model villa weights.
+  // Label + colour come from the fund's sleeve (admin-set, else inferred on the
+  // server); only truly-unknown funds fall to the neutral "OTHER" style.
+  // Left → right: steady/income first, then growth by rising risk.
+  private readonly SLEEVE_ORDER = ['arbitrage', 'debt', 'hybrid', 'gold', 'large', 'multi', 'mid', 'small', 'other'];
+  private readonly SLEEVE_STYLE: Record<string, { label: string; name: string; color: string; plain: string }> = {
+    arbitrage: { label: 'ARBITRAGE', name: 'Arbitrage', color: '#8aa89b', plain: 'The steady part — your monthly income is paid from here.' },
+    debt:      { label: 'DEBT',      name: 'Debt',      color: '#7fa9c9', plain: 'Bonds and money-market — steady, low swings.' },
+    hybrid:    { label: 'HYBRID',    name: 'Hybrid',    color: '#a99be6', plain: 'Equity and debt inside one fund.' },
+    gold:      { label: 'GOLD',      name: 'Gold',      color: '#f6c445', plain: 'Moves with gold — a cushion when shares fall.' },
+    large:     { label: 'LARGE CAP', name: 'Large cap', color: '#4a9d47', plain: 'India’s 100 biggest companies.' },
+    multi:     { label: 'MULTI CAP', name: 'Multi cap', color: '#3f9a86', plain: 'Big, mid and small companies in one fund.' },
+    mid:       { label: 'MID CAP',   name: 'Mid cap',   color: '#5cb85c', plain: 'Mid-size companies — more growth, more swing.' },
+    small:     { label: 'SMALL CAP', name: 'Small cap', color: '#8fd48a', plain: 'Small companies — the fastest growth, the biggest swings.' },
+    other:     { label: 'OTHER',     name: 'Other',     color: '#9fb3ab', plain: 'Funds outside the usual mix.' },
   };
 
-  /** Resolve a row's sleeve — the admin's explicit value, else inferred from the
-   *  category/name (same order the backend uses), never blank. */
+  /** Resolve a row's sleeve — the server's value, else inferred from the
+   *  category/name (an older backend), never blank. */
   private sleeveOf(f: AllocRow): string {
     const s = (f.sleeve || '').toLowerCase();
     if (this.SLEEVE_STYLE[s]) return s;
     const hay = `${(f.category || '').toLowerCase()} ${(f.name || '').toLowerCase()}`;
     if (hay.includes('arbitrage')) return 'arbitrage';
     if (hay.includes('gold')) return 'gold';
+    if (hay.includes('hybrid') || hay.includes('equity savings') || hay.includes('balanced')) return 'hybrid';
     if (hay.includes('small')) return 'small';
     if (hay.includes('mid')) return 'mid';
-    if (hay.includes('large') || hay.includes('momentum') || hay.includes('flexi') || hay.includes('index')) return 'large';
+    if (hay.includes('flexi') || hay.includes('multi') || hay.includes('momentum')) return 'multi';
+    if (hay.includes('large') || hay.includes('index')) return 'large';
     return 'other';
   }
 
   /** The allocation bar rows — one per SLEEVE, not per fund. Funds that share a
-   *  sleeve (e.g. two small-cap funds) are merged into a single segment/label,
-   *  their allocations summed, in first-seen order so the bar stays stable
-   *  left → right. Values are derived from the portfolio value so it's instant. */
-  /** Grouped sleeve rows for the bar. A computed (not a getter) so the SAME
-   *  array/objects are returned until the allocation actually changes — with a
-   *  getter, every change-detection pass built fresh objects and *ngFor
-   *  re-created the segments, replaying the wipe animation. */
+   *  sleeve (e.g. two small-cap funds) are merged into a single segment/label.
+   *  A computed (not a getter) so the SAME array/objects are returned until the
+   *  allocation actually changes — with a getter, every change-detection pass
+   *  built fresh objects and *ngFor re-created the segments, replaying the wipe. */
   readonly fundRowsMemo = computed<SleeveRow[]>(() => this.buildFundRows());
   get fundRows(): SleeveRow[] { return this.fundRowsMemo(); }
-  trackSleeve = (_: number, r: SleeveRow) => r.sleeve;
+  trackSleeve = (_: number, r: { sleeve?: string; key?: string }) => r.sleeve ?? r.key;
+  trackFund = (_: number, f: AllocRow) => f.scheme_code ?? f.name;
 
   private buildFundRows(): SleeveRow[] {
-    const order: string[] = [];
     const by = new Map<string, SleeveRow>();
     for (const f of this.alloc()) {
+      if (!(f.allocation > 0)) continue;
       const sleeve = this.sleeveOf(f);
-      const existing = by.get(sleeve);
-      if (existing) {
-        existing.allocation += f.allocation || 0;
-      } else {
-        order.push(sleeve);
-        by.set(sleeve, { sleeve, allocation: f.allocation || 0 });
-      }
+      const row = by.get(sleeve) ?? { sleeve, allocation: 0, value: 0, pct: 0, funds: [] };
+      row.allocation += f.allocation;
+      row.value += f.value ?? 0;
+      row.funds.push(f);
+      by.set(sleeve, row);
     }
-    return order.map((s) => by.get(s)!);
+    const rows = this.SLEEVE_ORDER.filter((k) => by.has(k)).map((k) => by.get(k)!);
+    for (const r of rows) r.funds.sort((a, b) => b.allocation - a.allocation);
+    // Largest remainder: floor every share, then hand the leftover points to the
+    // biggest fractions — the whole numbers on screen always sum to exactly 100.
+    const total = rows.reduce((t, r) => t + r.allocation, 0) || 1;
+    const exact = rows.map((r) => (r.allocation / total) * 100);
+    rows.forEach((r, i) => (r.pct = Math.floor(exact[i])));
+    let left = 100 - rows.reduce((t, r) => t + r.pct, 0);
+    const byFrac = rows.map((_, i) => i).sort((a, b) => (exact[b] % 1) - (exact[a] % 1));
+    for (const i of byFrac) { if (left <= 0) break; rows[i].pct++; left--; }
+    return rows;
   }
-  /** This sleeve's ₹ value = its (summed) allocation × the live portfolio value. */
+
+  /** The legend under the bar: every sleeve of ≥ 2%, the rest folded into one
+   *  "+N MORE" column (they're all in the bar, and all in the Your-mix sheet). */
+  readonly legendMemo = computed<LegendCol[]>(() => {
+    const rows = this.fundRowsMemo();
+    const big = rows.filter((r) => r.allocation >= 2);
+    const small = rows.filter((r) => r.allocation < 2);
+    const cols: LegendCol[] = big.map((r) => ({
+      key: r.sleeve, label: this.fundLabel(0, r), color: this.fundColor(0, r), pct: this.fundPct(r),
+    }));
+    if (small.length === 1 && cols.length < 5) {
+      const r = small[0];
+      cols.push({ key: r.sleeve, label: this.fundLabel(0, r), color: this.fundColor(0, r), pct: this.fundPct(r) });
+    } else if (small.length) {
+      const sum = small.reduce((t, r) => t + r.allocation, 0);
+      cols.push({ key: 'more', label: `+${small.length} MORE`, color: 'var(--color-neutral-400)',
+                  pct: sum < 1 ? '<1%' : Math.round(sum) + '%' });
+    }
+    return cols;
+  });
+  get legend(): LegendCol[] { return this.legendMemo(); }
+
+  /** How many distinct funds the client holds (for the sheet's sub-line). */
+  get fundCount(): number { return this.fundRows.reduce((n, r) => n + r.funds.length, 0); }
+
+  /** Whole-rupee value of every sleeve row and fund, scaled from the server's
+   *  real values onto the headline portfolio value (a NAV refresh can land
+   *  between the two calls) and rounded by largest remainder — sleeves add up
+   *  to the headline to the rupee, and each sleeve's funds add up to it. */
+  private readonly valueMemo = computed(() => {
+    const m = new Map<object, number>();
+    const rows = this.fundRowsMemo();
+    const head = this.est.estateValue;
+    const worth = rows.reduce((t, r) => t + r.value, 0);
+    const exact = (v: number, a: number) => (worth > 0 ? v * head / worth : head * a / 100);
+    const split = (items: { key: object; x: number }[], total: number) => {
+      const fl = items.map((it) => Math.floor(it.x));
+      let left = total - fl.reduce((t, v) => t + v, 0);
+      items.map((_, i) => i).sort((a, b) => (items[b].x % 1) - (items[a].x % 1))
+        .forEach((i) => { if (left > 0) { fl[i]++; left--; } });
+      items.forEach((it, i) => m.set(it.key, fl[i]));
+    };
+    split(rows.map((r) => ({ key: r, x: exact(r.value, r.allocation) })), Math.round(head));
+    for (const r of rows) {
+      split(r.funds.map((f) => ({ key: f, x: exact(f.value ?? 0, f.allocation) })), m.get(r)!);
+    }
+    return m;
+  });
   fundValue(f: { allocation: number }): number {
-    return Math.round(this.est.estateValue * (f.allocation || 0) / 100);
+    return this.valueMemo().get(f) ?? Math.round(this.est.estateValue * (f.allocation || 0) / 100);
   }
-  /** This sleeve's share of the portfolio as a whole-number percent (e.g. "36%"). */
-  fundPct(f: { allocation: number }): string {
-    return Math.round(f.allocation || 0) + '%';
+  /** A sleeve's share as a whole-number percent ("36%"); a real but tiny
+   *  holding reads "<1%", never a misleading "0%". */
+  fundPct(f: { allocation: number; pct?: number }): string {
+    const p = f.pct ?? Math.round(f.allocation || 0);
+    return p < 1 && (f.allocation || 0) > 0 ? '<1%' : p + '%';
+  }
+  /** One fund's share, one decimal ("23.6%") — finer than the sleeve row. */
+  fundPctFine(f: AllocRow): string {
+    const a = f.allocation || 0;
+    return a > 0 && a < 0.1 ? '<0.1%' : a.toFixed(1) + '%';
   }
   /** Colour for a sleeve — matches its label. */
-  fundColor(_i: number, f?: SleeveRow): string {
+  fundColor(_i: number, f?: { sleeve: string }): string {
     return this.SLEEVE_STYLE[f?.sleeve ?? 'other']?.color ?? this.SLEEVE_STYLE['other'].color;
   }
   /** Short display label for a sleeve (ARBITRAGE / GOLD / LARGE CAP / …). */
-  fundLabel(_i: number, f: SleeveRow): string {
+  fundLabel(_i: number, f: { sleeve: string }): string {
     return this.SLEEVE_STYLE[f.sleeve]?.label ?? this.SLEEVE_STYLE['other'].label;
   }
+  /** Sentence-case name + one plain line for the sheet ("Mid cap" · "Mid-size …"). */
+  sleeveName(f: { sleeve: string }): string { return (this.SLEEVE_STYLE[f.sleeve] ?? this.SLEEVE_STYLE['other']).name; }
+  sleevePlain(f: { sleeve: string }): string { return (this.SLEEVE_STYLE[f.sleeve] ?? this.SLEEVE_STYLE['other']).plain; }
+  /** A fund's display name — the server's tidy short name, else the raw one. */
+  fundName(f: AllocRow): string { return f.short || f.name; }
+  /** Bar/legend accessible summary: "Arbitrage 37%, Gold 16%, …". */
+  get mixSummary(): string {
+    return this.fundRows.map((r) => `${this.sleeveName(r)} ${this.fundPct(r)}`).join(', ');
+  }
+  // ════════════ DAY'S CHANGE — the move between the last two published NAVs ════════════
+  /** The portfolio's day move (null until the server knows the previous NAVs —
+   *  then there's simply no chip, never a placeholder that changes). */
+  get day(): DayChange | null { return this.est.portfolio()?.day ?? null; }
+  /** "+₹1,234" / "−₹943" — a true minus sign, rupees grouped the Indian way. */
+  signedInr(v: number): string { return (v < 0 ? '−' : '+') + inr(Math.abs(v)); }
+  /** "+0.42%" / "−0.05%" — two decimals under 1%, one above. */
+  signedPct(v: number): string {
+    const a = Math.abs(v);
+    return (v < 0 ? '−' : '+') + a.toFixed(a < 1 ? 2 : 1) + '%';
+  }
+  /** Count-up formatter for the sheet's hero: the sign is the FINAL value's, so
+   *  rolling from 0 never flashes "+₹0" on a down day. */
+  readonly dayFmt = (n: number) => {
+    const d = this.day;
+    return (d && d.change < 0 ? '−' : '+') + inr(Math.abs(n));
+  };
+  /** When the move happened, in words: today · yesterday · on Fri. NAV dates are
+   *  Indian dates, so "today" is today in IST whatever the phone's zone. */
+  dayWhen(iso: string): string {
+    const ist = (ms: number) => new Date(ms + 330 * 60_000).toISOString().slice(0, 10);
+    if (iso === ist(Date.now())) return 'today';
+    if (iso === ist(Date.now() - 86_400_000)) return 'yesterday';
+    return 'on ' + this.dayShort(iso).split(' ')[0];
+  }
+  /** "Mon 12 Oct". */
+  dayShort(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00Z');
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  }
+  /** Every fund that moved, biggest gain → biggest loss, with its bar width
+   *  (share of the largest single move) and its own NAV move in %. */
+  readonly dayRows = computed(() => {
+    const rows = (this.est.allocRows() ?? []).filter((f) => f.day_change != null);
+    const max = Math.max(1e-9, ...rows.map((f) => Math.abs(f.day_change!)));
+    return rows
+      .map((f) => {
+        const sleeve = this.sleeveOf(f);
+        return {
+          key: String(f.scheme_code ?? f.name),
+          name: this.fundName(f),
+          sleeve,
+          color: this.fundColor(0, { sleeve }),
+          label: this.sleeveName({ sleeve }),
+          change: f.day_change!,
+          w: (Math.abs(f.day_change!) / max) * 50,             // % of the track (half each side)
+          navPct: f.nav && f.prev_nav ? (f.nav / f.prev_nav - 1) * 100 : 0,
+          nav: f.nav ?? null, prev: f.prev_nav ?? null,
+          late: !!this.day && !!f.nav_date && f.nav_date < this.day.nav_date,
+          when: this.dayShort(f.nav_date),
+        };
+      })
+      .sort((a, b) => b.change - a.change);
+  });
+  /** One plain sentence on what drove the day, by sleeve. */
+  get dayStory(): string {
+    const by = new Map<string, number>();
+    for (const r of this.dayRows()) by.set(r.label, (by.get(r.label) ?? 0) + r.change);
+    const s = [...by.entries()].sort((a, b) => b[1] - a[1]);
+    if (!s.length) return '';
+    const [upName, up] = s[0];
+    const [dnName, dn] = s[s.length - 1];
+    if (dn >= 0) return s.length === 1 ? `${upName} rose ${this.signedInr(up)}.` : `Everything rose — ${upName} led with ${this.signedInr(up)}.`;
+    if (up <= 0) return s.length === 1 ? `${dnName} slipped ${this.signedInr(dn)}.` : `Everything slipped — ${dnName} most, ${this.signedInr(dn)}.`;
+    return `${upName} added ${this.signedInr(up)}; ${dnName} took away ${inr(Math.abs(dn))}.`;
+  }
+  trackDay(_: number, r: { key: string }): string { return r.key; }
+
   /** Signed returns % for the meta row (server gain_pct, tile fallback). */
   get gainPct(): number { return this.est.gainPct; }
 

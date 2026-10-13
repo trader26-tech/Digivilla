@@ -43,6 +43,32 @@ def _memo(key: str, ttl: float, fn):
     return val
 
 
+_SWR_BUSY: set = set()
+
+
+def _memo_swr(key: str, ttl: float, fn):
+    """Like _memo, but once a value exists it is ALWAYS served at once: an
+    expired value is returned as is and re-read in the background. For reads
+    that change rarely (names, SWP totals, the CRM phone table) — the home
+    screen should never wait on them twice."""
+    hit = _MEMO.get(key)
+    if hit is None:
+        return _memo(key, ttl, fn)
+    if time.time() - hit[0] >= ttl and key not in _SWR_BUSY:
+        _SWR_BUSY.add(key)
+
+        def refresh():
+            try:
+                _MEMO[key] = (time.time(), fn())
+            except Exception:
+                pass
+            finally:
+                _SWR_BUSY.discard(key)
+        import threading
+        threading.Thread(target=refresh, daemon=True).start()
+    return hit[1]
+
+
 def _memo_clear(prefix: str) -> None:
     for k in [k for k in _MEMO if k.startswith(prefix)]:
         _MEMO.pop(k, None)
@@ -70,7 +96,7 @@ def _user_row(owner: str) -> dict:
             return rows[0] if rows else {}
         except Exception:
             return {}
-    return _memo(f"user:{owner}", 30, load)
+    return _memo_swr(f"user:{owner}", 60, load)
 
 
 # ── live-NAV cache (mirrors villa_sip._ret_cache) ────────────────────────────
@@ -156,7 +182,7 @@ def client_code_for_owner(owner: str) -> Optional[str]:
         # Small CRM table → a full scan matched on last-10 is fine. If it grows,
         # add a generated `phone_last10` column + index.
         try:
-            masters = _memo("client_master", 300, lambda: _sb().table("client_master")
+            masters = _memo_swr("client_master", 300, lambda: _sb().table("client_master")
                             .select("client_code,phone").execute().data or [])
         except Exception:
             return None
@@ -195,7 +221,7 @@ def estate_name_for_owner(owner: str) -> str:
                 return _first_name(cm[0].get("name")) if cm else ""
             except Exception:
                 return ""
-        return _memo(f"cmname:{code}", 600, load)
+        return _memo_swr(f"cmname:{code}", 600, load)
     return ""
 
 
@@ -215,32 +241,64 @@ def _num(v) -> float:
 
 
 def _valued_holdings(client_code: str) -> list[dict]:
-    """Each holding with its live current value.
+    """Each holding with its live current value — and the day's move.
 
     worth = units × live NAV; if the NAV can't be fetched (unknown scheme / mfapi
     down) we fall back to ``invested`` so an unresolved fund never zeroes the
-    client's money.
+    client's money. ``day_change`` = units × (NAV − the NAV published before
+    it); None when that previous NAV isn't known.
     """
     from app import nav_cache
     hs = _holdings(client_code)
-    # Warm every scheme's latest NAV in parallel first, so the per-holding
-    # _live_nav() calls below are all in-memory (cold worker: ~1 round-trip).
+    # One batched read warms every scheme's NAV, so the per-holding lookups
+    # below are all in-memory; the previous NAVs are normally warm already.
     nav_cache.prewarm([h.get("scheme_code") for h in hs])
+    metas = {h.get("scheme_code"): (nav_cache.get_nav_meta(h.get("scheme_code")) or {}) for h in hs}
+    nav_cache.ensure_prev({c: m.get("nav_date") for c, m in metas.items() if c and m.get("nav")},
+                          timeout=2.5)
     out = []
     for h in hs:
+        sc = h.get("scheme_code")
+        meta = metas.get(sc) or {}
         units = _num(h.get("units"))
         invested = _num(h.get("invested"))
-        nav = _live_nav(h.get("scheme_code"))
+        nav = meta.get("nav")
         worth = round(units * nav, 2) if (nav and units) else round(invested, 2)
+        prev = nav_cache.prev_nav(sc, meta.get("nav_date")) if (nav and units) else None
         out.append({
             "scheme_name": h.get("scheme_name"),
-            "scheme_code": h.get("scheme_code"),
+            "scheme_code": sc,
             "units": units,
             "invested": round(invested, 2),
             "nav": nav,
+            "nav_date": meta.get("nav_date"),
             "current_value": worth,
+            "prev_nav": prev[0] if prev else None,
+            "prev_date": prev[1] if prev else None,
+            "day_change": round(units * (nav - prev[0]), 2) if prev else None,
         })
     return out
+
+
+def _day_summary(hs: list[dict]) -> Optional[dict]:
+    """The portfolio's move between the last two published NAVs: Σ units × ΔNAV
+    over every holding whose previous NAV is known. `lagging` counts funds whose
+    latest NAV is older than the newest one (their AMC hasn't published yet)."""
+    moved = [h for h in hs if h.get("day_change") is not None]
+    if not moved:
+        return None
+    change = sum(h["day_change"] for h in moved)
+    base = sum(h["units"] * h["prev_nav"] for h in moved)
+    nav_date = max(h["nav_date"] for h in moved)
+    prevs = [h["prev_date"] for h in moved if h["nav_date"] == nav_date]
+    return {
+        "change": round(change, 2),
+        "pct": round(change / base * 100, 3) if base else 0,
+        "nav_date": nav_date,
+        "prev_date": max(set(prevs), key=prevs.count) if prevs else None,
+        "funds": len({h.get("scheme_code") for h in moved}),
+        "lagging": len({h.get("scheme_code") for h in moved if h["nav_date"] < nav_date}),
+    }
 
 
 def live_navs(owner: str) -> dict:
@@ -364,7 +422,7 @@ def _mapped_houses(client_code: str):
     different times carry their OWN units and value. `loose` = DigiVilla-fund
     transactions not pinned to any villa yet. Memoised briefly (the admin can
     re-pin at any time)."""
-    return _memo(f"mhouses:{client_code}", 20, lambda: _mapped_houses_load(client_code))
+    return _memo_swr(f"mhouses:{client_code}", 20, lambda: _mapped_houses_load(client_code))
 
 
 def houses_layout(client_code: str):
@@ -490,23 +548,32 @@ def live_houses(owner: str) -> dict:
 
 
 def portfolio_summary(owner: str) -> dict:
-    """Real net-worth summary for the logged-in user (empty when unmatched)."""
+    """Real net-worth summary for the logged-in user (empty when unmatched).
+
+    Carries everything the home screen paints — the headline figures, the day's
+    move, the board layout and the fund mix — so the app opens on ONE request."""
     from app import estate as estate_svc
     from app import nav_cache
     from concurrent.futures import ThreadPoolExecutor
-    # These four don't depend on each other — fetch them at the same time.
     with ThreadPoolExecutor(max_workers=4) as ex:
-        f_swp = ex.submit(lambda: _memo(f"swp:{owner}", 60, lambda: estate_svc.total_swp(owner)))
+        # These four don't depend on each other — fetch them at the same time.
+        f_swp = ex.submit(lambda: _memo_swr(f"swp:{owner}", 120, lambda: estate_svc.total_swp(owner)))
         f_name = ex.submit(estate_name_for_owner, owner)
         f_city = ex.submit(_estate_city_for_owner, owner)
         f_code = ex.submit(client_code_for_owner, owner)
-        swp, name, city, code = f_swp.result(), f_name.result(), f_city.result(), f_code.result()
+        code = f_code.result()
+        # …and the holdings + board pins as soon as the client code is known
+        f_hs = ex.submit(_valued_holdings, code) if code else None
+        f_layout = ex.submit(houses_layout, code) if code else None
+        swp, name, city = f_swp.result(), f_name.result(), f_city.result()
+        hs = f_hs.result() if f_hs else []
+        layout = f_layout.result() if f_layout else None
     if not code:
         return {"worth": 0, "invested": 0, "gain": 0, "gain_pct": 0,
                 "total_swp": swp, "estate_name": name, "estate_city": city,
                 "holdings_count": 0, "has_holdings": False, "client_code": None,
+                "day": None, "allocation": {"funds": [], "worth": 0},
                 **nav_cache.freshness([])}
-    hs = _valued_holdings(code)
     worth = round(sum(h["current_value"] for h in hs), 2)
     invested = round(sum(h["invested"] for h in hs), 2)
     gain = round(worth - invested, 2)
@@ -522,7 +589,11 @@ def portfolio_summary(owner: str) -> dict:
         "has_holdings": bool(hs),
         "client_code": code,
         # the home board, from the admin's transaction → villa pins (None = not pinned yet)
-        "houses_layout": houses_layout(code),
+        "houses_layout": layout,
+        # the move between the last two published NAVs (None = not known yet)
+        "day": _day_summary(hs),
+        # the home mix bar — the same holdings, so it ties to `worth` exactly
+        "allocation": _allocation_from(hs),
         # freshness: when the NAVs behind this number were published / pulled,
         # when this response was computed, and when the next daily refresh lands
         **nav_cache.freshness([h.get("scheme_code") for h in hs]),
@@ -802,26 +873,21 @@ def _tile_meta(client_code: str, tile_id: str) -> dict:
 # per worker (a short TTL) instead of a DB round-trip per scheme (the report loop
 # used to hit this twice per fund).
 _CAT_TTL = 600
-_cat_memo: dict = {}
 
 
 def _all_fund_categories() -> dict:
-    import time as _t
-    now = _t.time()
-    hit = _cat_memo.get("m")
-    if hit and now - hit[0] < _CAT_TTL:
-        return hit[1]
-    m: dict = {}
-    try:
-        rows = _sb().table("villa_bucket_funds").select("scheme_code,category").execute().data or []
-        for r in rows:
-            c = r.get("scheme_code")
-            if c and c not in m and r.get("category"):
-                m[c] = r["category"]
-    except Exception:
-        pass
-    _cat_memo["m"] = (now, m)
-    return m
+    def load() -> dict:
+        m: dict = {}
+        try:
+            rows = _sb().table("villa_bucket_funds").select("scheme_code,category").execute().data or []
+            for r in rows:
+                c = r.get("scheme_code")
+                if c and c not in m and r.get("category"):
+                    m[c] = r["category"]
+        except Exception:
+            pass
+        return m
+    return _memo_swr("fund_categories", _CAT_TTL, load)
 
 
 def _fund_category(scheme_code: int) -> Optional[str]:
@@ -1274,49 +1340,111 @@ def building_chart(owner: str, tile_id: str) -> Optional[dict]:
     }
 
 
-def allocation_summary(owner: str) -> dict:
-    """INSTANT fund-allocation for the home allocation bar — just the client's SIP
-    villa mix (name/category/allocation %), two cheap DB reads. No worth/NAV or
-    live-return computation (that's the slow part in /me/funds/portfolio). The
-    frontend multiplies each allocation by its already-loaded portfolio value."""
-    from app import villa_sip
-    def load_rows():
-        buckets = _buckets()
-        sip = next((b for b in buckets if (b.get("kind") or "sip") == "sip"), buckets[0] if buckets else None)
-        if not sip:
-            return []
-        # Try to read the explicit `sleeve` column; if the migration hasn't
-        # been applied yet, fall back to the older column set so the bar keeps
-        # working (sleeve is then inferred from category/name).
+# Left → right order of the home mix bar: income/steady first, then growth by
+# rising risk — so every client's bar reads the same way, whatever they hold.
+_MIX_ORDER = ["arbitrage", "debt", "hybrid", "gold", "large", "multi", "mid", "small", "other"]
+
+
+def _admin_sleeves() -> dict:
+    """scheme_code → the sleeve the admin set on that fund (villa_bucket_funds),
+    memoised 5 min. Funds the admin never configured are absent."""
+    def load():
         try:
-            return (_sb().table("villa_bucket_funds")
-                    .select("scheme_name,scheme_code,category,sleeve,target_weight,sort_order")
-                    .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
+            rows = (_sb().table("villa_bucket_funds").select("scheme_code,sleeve")
+                    .execute().data or [])
         except Exception:
-            return (_sb().table("villa_bucket_funds")
-                    .select("scheme_name,scheme_code,category,target_weight,sort_order")
-                    .eq("bucket_id", sip["id"]).order("sort_order").execute().data or [])
+            return {}
+        return {r["scheme_code"]: (r.get("sleeve") or "").strip().lower()
+                for r in rows if r.get("scheme_code") and r.get("sleeve")}
+    return _memo_swr("admin_sleeves", 300, load)
+
+
+def _holding_sleeve(scheme_code, name: str) -> str:
+    """The home-mix sleeve for a fund the client ACTUALLY holds. The admin's
+    explicit sleeve wins; otherwise the scheme name decides — wider than
+    `_fund_sleeve` because a client can hold funds outside any villa bucket
+    (an aggressive hybrid, a Nifty 500 momentum index, a liquid fund …)."""
+    s = _admin_sleeves().get(scheme_code, "")
+    if s in _MIX_ORDER and s != "other":
+        return s
+    n = (name or "").lower()
+    if "arbitrage" in n:
+        return "arbitrage"
+    if "gold" in n:
+        return "gold"
+    if any(k in n for k in ("hybrid", "balanced", "equity savings", "multi asset", "dynamic asset")):
+        return "hybrid"
+    if any(k in n for k in ("liquid", "overnight", "money market", "gilt", "debt", "bond",
+                            "duration", "corporate", "banking & psu", "credit")):
+        return "debt"
+    if "small" in n:
+        return "small"
+    if "mid" in n and "large" not in n:
+        return "mid"
+    if any(k in n for k in ("flexi", "multi cap", "multicap", "momentum", "nifty 500",
+                            "focused", "value", "contra", "elss", "tax saver", "large & mid",
+                            "large and mid")):
+        return "multi"
+    if "large" in n or "bluechip" in n or "nifty 50" in n or "sensex" in n or "index" in n:
+        return "large"
+    return "other"
+
+
+def allocation_summary(owner: str) -> dict:
+    """The client's REAL mix for the home allocation bar — every fund they hold,
+    valued at units × live NAV (the same numbers behind /me/portfolio's worth),
+    grouped into sleeves. NOT the model villa weights: two clients with
+    different holdings get different bars. (/me/portfolio carries the same
+    payload; this endpoint stays for older app builds.)"""
+    code = client_code_for_owner(owner)
+    if not code:
+        return {"funds": [], "worth": 0}
     try:
-        rows = _memo("alloc_rows", 300, load_rows)
+        hs = _valued_holdings(code)
     except Exception:
-        rows = []
+        hs = []
+    return _allocation_from(hs)
+
+
+def _allocation_from(hs: list[dict]) -> dict:
+    """Rows are per fund (the frontend merges them per sleeve), in _MIX_ORDER then
+    value desc. `allocation` is the fund's % of the total value; `day_change` is
+    its ₹ move between its last two NAVs (None when unknown)."""
+    # one row per scheme — a client can hold the same fund in several folios
+    by: dict = {}
+    for h in hs:
+        key = h.get("scheme_code") or h.get("scheme_name")
+        r = by.setdefault(key, {"scheme_code": h.get("scheme_code"),
+                                "name": h.get("scheme_name") or "Fund",
+                                "value": 0.0, "invested": 0.0, "day_change": None,
+                                "nav": h.get("nav"), "prev_nav": h.get("prev_nav"),
+                                "nav_date": h.get("nav_date"), "prev_date": h.get("prev_date")})
+        r["value"] += h["current_value"]
+        r["invested"] += h["invested"]
+        if h.get("day_change") is not None:
+            r["day_change"] = (r["day_change"] or 0.0) + h["day_change"]
+    rows = [r for r in by.values() if r["value"] > 0]
+    worth = sum(r["value"] for r in rows)
     funds = []
     for r in rows:
-        alloc = villa_sip._to_pct_weight(r.get("target_weight"))
-        name = r.get("scheme_name") or "Fund"
-        category = r.get("category") or ""
-        # The concentration sleeve is authoritative for the home bar's label +
-        # colour — from the admin's explicit setting, else inferred. Sending it
-        # up means the client never has to guess by position again.
-        sleeve = _fund_sleeve(r.get("sleeve") or "", category, name)
+        sleeve = _holding_sleeve(r["scheme_code"], r["name"])
         funds.append({
-            "name": name,
-            "scheme_code": r.get("scheme_code"),
-            "category": category,
+            "name": r["name"],
+            "short": _short_scheme(r["name"]),
+            "scheme_code": r["scheme_code"],
+            "category": _fund_category(r["scheme_code"]) or "",
             "sleeve": sleeve,
-            "allocation": round(alloc, 1),
+            "value": round(r["value"], 2),
+            "invested": round(r["invested"], 2),
+            "allocation": round(r["value"] / worth * 100, 4) if worth else 0,
+            "day_change": round(r["day_change"], 2) if r["day_change"] is not None else None,
+            "nav": r["nav"],
+            "prev_nav": r["prev_nav"],
+            "nav_date": r["nav_date"],
+            "prev_date": r["prev_date"],
         })
-    return {"funds": funds}
+    funds.sort(key=lambda f: (_MIX_ORDER.index(f["sleeve"]), -f["value"]))
+    return {"funds": funds, "worth": round(worth, 2)}
 
 
 # ---------------------------------------------------------------------------

@@ -34,9 +34,13 @@ def _prewarm_caches() -> None:
             nav_cache._amfi_snapshot()
             cp._villa_scheme_codes()
             cp._buckets(); cp._bucket_funds()
-            cp._memo("client_master", 300, lambda: cp._sb().table("client_master")
+            cp._memo_swr("client_master", 300, lambda: cp._sb().table("client_master")
                      .select("client_code,phone").execute().data or [])
-            nav_cache.prewarm(nav_cache.held_scheme_codes())
+            cp._admin_sleeves(); cp._all_fund_categories()
+            # keeps every held NAV (and the one before it) current in memory —
+            # its first pass runs now, so the first home load after a deploy
+            # already has the day's change
+            nav_cache.start_refresher()
         except Exception:
             pass
         try:

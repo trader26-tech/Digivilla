@@ -179,6 +179,7 @@ export class AuthService {
     try {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
+      localStorage.removeItem('dv_home_snap_v1');   // the last home figures
     } catch {}
     this.token.set(null);
     this.user.set(null);

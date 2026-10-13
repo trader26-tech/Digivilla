@@ -70,7 +70,9 @@ export class AppComponent {
   readonly introFull = (() => { try { return !localStorage.getItem('intro_seen_v1'); } catch { return true; } })();
   /** Returning users: the quick intro ends as soon as the home can paint with
    *  real data (or immediately if signed out → login). */
-  get introReady(): boolean { return !this.auth.signedIn() || this.est.portfolioLoaded(); }
+  get introReady(): boolean {
+    return !this.auth.signedIn() || (this.est.portfolioLoaded() && this.est.allocLoaded());
+  }
 
   /** True only on the login→app transition we just made, so the onboarding
    *  screen plays its "verified" tick once (not on every returning visit). */
@@ -86,6 +88,10 @@ export class AppComponent {
       const v = new URLSearchParams(location.search).get('view');
       if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc') { this.view = v; this.intro = false; }
     } catch {}
+    // A returning user whose home figures are already in hand (EstateService
+    // restored this NAV day's snapshot) skips the splash — the home is the
+    // first frame. Otherwise the quick splash waits for the data as before.
+    if (this.intro && !this.introFull && this.auth.signedIn() && this.introReady) this.intro = false;
     if (!this.intro) this.showWhatsNew();
     // Never leave a user stuck on a stale cached build: as soon as the service
     // worker fetches a newer version, activate it and reload so the latest app

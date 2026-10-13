@@ -257,16 +257,35 @@ export interface ClientDetails {
   since: string;
 }
 
-/** One row of the INSTANT home allocation (from GET /me/allocation). `sleeve`
- *  is the concentration bucket set by the admin — 'arbitrage' | 'gold' |
- *  'large' | 'mid' | 'small' | 'other' — and drives the home bar's label +
- *  colour. May be absent from an older backend; the client then infers it. */
+/** One fund the client ACTUALLY holds (from GET /me/allocation) — valued at
+ *  units × live NAV, so the home mix is theirs, not the model villa weights.
+ *  `sleeve` — 'arbitrage' | 'debt' | 'hybrid' | 'gold' | 'large' | 'multi' |
+ *  'mid' | 'small' | 'other' — drives the bar's label + colour (admin-set,
+ *  else inferred from the scheme name on the server). */
 export interface AllocRow {
   name: string;
+  short?: string;              // 'Bandhan Small Cap Fund'
   scheme_code?: number;
   category: string;
   sleeve?: string;
-  allocation: number;
+  value?: number;              // ₹ today (units × live NAV)
+  invested?: number;
+  allocation: number;          // % of the client's total value
+  day_change?: number | null;  // ₹ move between its last two NAVs (null = unknown)
+  nav?: number | null;
+  prev_nav?: number | null;
+  nav_date?: string | null;    // ISO date of `nav`
+  prev_date?: string | null;   // ISO date of `prev_nav`
+}
+
+/** The portfolio's move between the last two published NAVs (Σ units × ΔNAV). */
+export interface DayChange {
+  change: number;              // ₹, signed
+  pct: number;                 // % of the value at the previous NAV
+  nav_date: string;            // the newest NAV date behind it (ISO)
+  prev_date: string | null;    // the NAV date it is measured from (ISO)
+  funds: number;               // funds counted
+  lagging: number;             // funds whose AMC hasn't published nav_date yet
 }
 
 export interface Tile {
@@ -307,6 +326,29 @@ export interface PortfolioSummary {
   fetched_at?: string | null;
   refreshed_at?: string | null;
   next_refresh?: string | null;
+  /** The day's move (null until the previous NAVs are known). */
+  day?: DayChange | null;
+  /** The home mix bar — the same holdings, so the app opens on ONE request. */
+  allocation?: { funds: AllocRow[]; worth?: number };
+}
+
+/** Last home payload, so a returning open paints at once (see restoreSnapshot). */
+const SNAP_KEY = 'dv_home_snap_v1';
+
+/** A NAV "epoch" in IST: NAVs publish on weekday evenings (~8:30 PM → 1:30 AM).
+ *  Returns the epoch a moment belongs to, or null while a publish may be landing
+ *  — two moments in the same non-null epoch are guaranteed to see the same NAVs. */
+function navEpoch(ms: number): string | null {
+  const ist = new Date(ms + 330 * 60_000);              // shift to IST, read as UTC
+  const mins = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  const day = ist.getUTCDay();                           // 0 Sun … 6 Sat
+  const weekdayEve = (d: number) => d >= 1 && d <= 5;
+  if (weekdayEve(day) && mins >= 20 * 60 + 30) return null;          // tonight's publish
+  if (weekdayEve((day + 6) % 7) && mins < 90) return null;            // …still landing after midnight
+  // the epoch is the date of the last weekday-evening publish before now
+  const d = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()));
+  do { d.setUTCDate(d.getUTCDate() - 1); } while (!weekdayEve(d.getUTCDay()));
+  return d.toISOString().slice(0, 10);
 }
 
 // v2: reset the board once to the lean starter (the v1 store had accumulated
@@ -352,7 +394,7 @@ export class EstateService {
   constructor() {
     // When signed in, the DB is the source of truth: load this user's real
     // estate (empty for a new account) and keep localStorage only as a cache.
-    if (this.auth.token()) this.syncFromServer();
+    if (this.auth.token()) { this.restoreSnapshot(); this.syncFromServer(); }
     // Re-sync whenever the app is brought back to the foreground, so a villa the
     // advisor just mapped (or SIP recorded) shows up without a manual refresh.
     if (typeof document !== 'undefined') {
@@ -481,9 +523,13 @@ export class EstateService {
   /** The cached instant allocation, populated once during the splash and shared
    *  with the home screen so the bar appears the instant home paints. */
   readonly allocRows = this._allocRows.asReadonly();
+  /** True once /me/allocation has answered (ok OR error) — the splash waits on
+   *  it with the portfolio, so the mix bar never pops in after the home paints. */
+  readonly allocLoaded = signal(false);
 
-  /** INSTANT fund allocation for the home bar (name/category/sleeve/allocation
-   *  only — no slow live-returns). ₹ values are allocation × portfolio value. */
+  /** The client's REAL fund mix for the home bar — every holding at units × live
+   *  NAV (no slow live-returns). ₹ shown = allocation × the headline value, so
+   *  the parts always add up to the figure above them. */
   allocation(): import('rxjs').Observable<{ funds: AllocRow[] }> {
     return this.http.get<{ funds: AllocRow[] }>(
       `${environment.apiUrl}/me/allocation`, { headers: this.authHeaders });
@@ -492,15 +538,10 @@ export class EstateService {
   /** Warm the allocation cache (called during the splash and on every reload) so
    *  the home bar has its data before it ever paints. Fails silently. */
   loadAllocation(): void {
-    if (!this.auth.token()) return;
+    if (!this.auth.token()) { this.allocLoaded.set(true); return; }
     this.allocation().subscribe({
-      next: (a) => {
-        const rows = a.funds || [];
-        // Same mix as before → keep the SAME array, so nothing re-renders (and the
-        // bar's wipe never replays) when a reload returns identical data.
-        if (JSON.stringify(rows) !== JSON.stringify(this._allocRows())) this._allocRows.set(rows);
-      },
-      error: () => { /* signed out / offline — home falls back to an empty bar */ },
+      next: (a) => this.applyAlloc(a.funds || []),
+      error: () => { this.allocLoaded.set(true); /* signed out / offline — no bar */ },
     });
   }
 
@@ -522,10 +563,8 @@ export class EstateService {
         },
         error: () => { /* offline — keep the local cache */ },
       });
+    // The portfolio carries the mix bar too — one request paints the home.
     this.loadPortfolio();
-    // Warm the home allocation bar's data alongside the portfolio, so both are
-    // ready before the home screen paints (this runs during the splash).
-    this.loadAllocation();
     // Warm the live-values sheet's houses too, so tapping the portfolio value
     // opens instantly with real numbers instead of a spinner.
     this.loadHouses();
@@ -539,14 +578,57 @@ export class EstateService {
       .subscribe({
         next: (p) => {
           this.portfolio.set(p); this.portfolioLoaded.set(true);
+          if (p.allocation) this.applyAlloc(p.allocation.funds || []);
+          else this.loadAllocation();             // an older backend — ask separately
           this.lastLoadedAt.set(Date.now()); this.lastLoadOk.set(true);
           this.refreshing.set(false); this.reloads.update((n) => n + 1);
+          this.saveSnapshot(p);
         },
         error: () => {
           this.portfolioLoaded.set(true); /* keep the tile-derived fallback */
           this.lastLoadOk.set(false); this.refreshing.set(false);
         },
       });
+  }
+
+  private applyAlloc(rows: AllocRow[]): void {
+    // Same mix as before → keep the SAME array, so nothing re-renders (and the
+    // bar's wipe never replays) when a reload returns identical data.
+    if (JSON.stringify(rows) !== JSON.stringify(this._allocRows())) this._allocRows.set(rows);
+    this.allocLoaded.set(true);
+  }
+
+  /** Paint a returning open AT ONCE from the last home payload — but only when
+   *  it is provably what the server would say now: same signed-in session, and
+   *  no NAV publish could have landed since it was saved (navEpoch). Otherwise
+   *  the splash waits for the network as before, so a figure never paints one
+   *  value and then changes to another. */
+  private restoreSnapshot(): void {
+    try {
+      const raw = localStorage.getItem(SNAP_KEY);
+      if (!raw) return;
+      const snap = JSON.parse(raw) as { tok: string; at: number; p: PortfolioSummary };
+      const now = Date.now();
+      const epoch = navEpoch(now);
+      if (snap.tok !== this.tokenTag() || !epoch || navEpoch(snap.at) !== epoch
+          || now - snap.at > 12 * 3600_000 || now < snap.at) return;
+      this.portfolio.set(snap.p);
+      this.portfolioLoaded.set(true);
+      this.applyAlloc(snap.p.allocation?.funds || []);
+      this.lastLoadedAt.set(snap.at);
+    } catch { /* no snapshot / private mode — load normally */ }
+  }
+
+  private saveSnapshot(p: PortfolioSummary): void {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify({ tok: this.tokenTag(), at: Date.now(), p })); } catch {}
+  }
+
+  /** A short, non-secret tag of the current session token (never the token). */
+  private tokenTag(): string {
+    const t = this.auth.token() || '';
+    let h = 0;
+    for (let i = 0; i < t.length; i++) h = (Math.imul(31, h) + t.charCodeAt(i)) | 0;
+    return `${t.length}:${h >>> 0}`;
   }
 
   /** A user-initiated reload (the "Refresh now" button): estate + portfolio. */
