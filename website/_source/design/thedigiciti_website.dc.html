@@ -25,17 +25,20 @@
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
-      [data-nav]{gap:22px!important;padding:12px 22px!important}
-      [data-nav] a{font-size:13px!important}
+      [data-nav]{gap:16px!important;padding:12px 18px!important}
+      [data-nav] a{font-size:12.5px!important}
       [data-nav] a[data-x]{display:none}
-      [data-tile]{width:30vw!important}
-      [data-tile] [data-lbl] span:last-child{font-size:12px!important}
+      [data-tile]{width:19vw!important}
+      [data-tile] [data-lbl]{gap:2px!important;margin-top:4px!important}
+      [data-tile] [data-lbl] span:first-child{font-size:9px!important}
+      [data-tile] [data-lbl] span:nth-child(2){font-size:12px!important}
+      [data-tile] [data-lbl] span:last-child{font-size:13px!important}
       [data-hero-wrap]{width:min(72vw,46vh)!important}
       [data-copy]{display:flex!important;flex-direction:column;align-items:flex-start!important;gap:14px!important;padding:0 20px max(22px,env(safe-area-inset-bottom))!important}
       [data-copy] h1{font-size:17.5vw!important;letter-spacing:-.06em!important}
       [data-copy] > div{flex-direction:column;gap:14px!important;padding-bottom:0!important}
       [data-copy] p{max-width:none!important;font-size:16px!important;line-height:1.35!important}
-      [data-explore]{top:67%!important;padding:0 24px;text-align:center}
+      [data-explore]{top:60%!important;padding:0 24px;text-align:center}
       [data-explore] > span:last-child{font-size:14px!important;line-height:1.4}
     }
   </style>
@@ -87,6 +90,7 @@
           <a href="story.dc.html#1" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Our story</a>
           <a href="story.dc.html#2" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Villas</a>
           <a href="story.dc.html#1" data-x="1" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">For NRIs</a>
+          <a href="#showcase" onClick="{{ goApp }}" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">The app</a>
           <a href="#calculator" onClick="{{ goCalc }}" style="font-size:clamp(10px,.95vw,14px);color:rgba(225,224,204,.8)" style-hover="color:#E1E0CC">Calculator</a>
         </nav>
 
@@ -271,18 +275,7 @@ class Component extends DCLogic {
     const rm = reducedMotion;
     // inertia on the page scroll (Lenis-style); touch and keys stay native
     this.ss = rm || !this.scrollRef.current ? null : smoothScroll(this.scrollRef.current);
-    // The hero has two states — idle and spread (where "Explore" lives). Any scroll inside it completes the
-    // move once the input goes quiet: a short flick on a phone or one wheel notch is enough, and nothing is
-    // ever left half-way. Scrolling back up past the middle returns it to idle.
-    this.lastScroll = 0; this.touching = false; this.prevTop = 0; this.heroDir = 1; this.snapping = false;
-    this.touchDevice = matchMedia('(pointer: coarse)').matches;
-    { const sc0 = this.scrollRef.current;
-      if (sc0) {
-        this.onScrollEv = (e) => { this.lastScroll = performance.now(); if (e.type === 'wheel') this.snapping = false; };
-        this.onTS = () => { this.touching = true; this.snapping = false; }; this.onTE = () => { this.touching = false; this.lastScroll = performance.now(); };
-        sc0.addEventListener('scroll', this.onScrollEv, { passive: true }); sc0.addEventListener('wheel', this.onScrollEv, { passive: true });
-        sc0.addEventListener('touchstart', this.onTS, { passive: true }); sc0.addEventListener('touchend', this.onTE, { passive: true }); sc0.addEventListener('touchcancel', this.onTE, { passive: true });
-      } }
+    // The hero is a pure scroll-scrub (the front-page handoff): the scroll position IS the timeline, nothing scrolls by itself.
     this.onMove = e => { if (rm) return; this.mx = e.clientX / innerWidth - .5; this.my = e.clientY / innerHeight - .5; };
     addEventListener('mousemove', this.onMove);
     const tiles = [this.t0, this.t1, this.t2, this.t3, this.t4];
@@ -316,25 +309,11 @@ class Component extends DCLogic {
       const dt = Math.min(.05, (t - prevT) / 1000); prevT = t;
       const k = rm ? 0 : t / 1000, sm = this.sm, sc = this.scrollRef.current, fr = this.frameRef.current;
       if (this.ss) this.ss.tick(dt);
-      const aM = 1 - Math.exp(-dt * 3), aP = 1 - Math.exp(-dt * 14);
+      const aM = 1 - Math.exp(-dt * 3), aP = 1 - Math.exp(-dt * 7.7);
       sm.x += (this.mx - sm.x) * aM; sm.y += (this.my - sm.y) * aM;
       const track = sc && (this.trackEl || (this.trackEl = sc.querySelector('[data-hero-track]')));
       const range = sc ? Math.max(1, (track ? track.clientHeight : sc.clientHeight * 2.8) - sc.clientHeight) : 1;   // how far the hero scrolls before the showcase
       const raw = sc ? clamp(sc.scrollTop / range) : 0;
-      if (sc && !rm) {
-        const top = sc.scrollTop;
-        if (Math.abs(top - this.prevTop) > .5) { this.heroDir = top > this.prevTop ? 1 : -1; this.prevTop = top; }
-        const inHero = top > range * .03 && top < range * .97;
-        if (!inHero) this.snapping = false;                                    // arrived (or left the hero) — free again
-        const quiet = !this.touching && (t - this.lastScroll) > (this.touchDevice ? 260 : 140);   // past any native momentum
-        const elsewhere = this.ss && this.ss.active && this.ss.target > 1 && Math.abs(this.ss.target - range) > 1;   // a nav glide to the calculator etc.
-        if (inHero && quiet && !elsewhere && !this.snapping) {
-          const want = this.heroDir > 0 ? range : (top < range * .5 ? 0 : range);
-          this.snapping = true;
-          if (this.touchDevice || !this.ss) sc.scrollTo({ top: want, behavior: 'smooth' });   // the platform's own glide — never fights a finger
-          else this.ss.scrollTo(want, 2.6);
-        }
-      }
       const sr = this.showRig.current;
       if (sr && this.showOn) { const rv = 'rotateY(' + (sm.x * 6).toFixed(3) + 'deg) rotateX(' + (-sm.y * 4).toFixed(3) + 'deg)'; if (sr.__v !== rv) { sr.style.transform = rv; sr.__v = rv; } }
       this.sp += (raw - this.sp) * aP; const p = this.sp;
@@ -367,9 +346,9 @@ class Component extends DCLogic {
       set(this.farRef, 'translate(' + (Math.sin(k * .05) * 14 - sm.x * 10) + 'px,' + (-sm.y * 4 + p * H * .05) + 'px)');
       set(this.nearRef, 'translate(' + (Math.sin(k * .07 + 1) * 22 - sm.x * 26) + 'px,' + (-sm.y * 10 + p * H * .11) + 'px)');
       set(this.frontRef, 'translate(' + (Math.sin(k * .09 + 2) * 30 - sm.x * 44) + 'px,' + (-sm.y * 14 + p * H * .2) + 'px)');
-      const phone = W <= 700, cx = .5, cy = phone ? .36 : .43;
+      const phone = W <= 700, cx = .5, cy = phone ? .33 : .43;
       // where the four stages settle: a row on wide screens, two rows on a phone
-      const end = phone ? [[.21, .22, 1], [.79, .22, 1], [.21, .50, 1], [.79, .50, 1]] : [[.12, .5, 1.05], [.29, .41, 1.12], [.71, .41, 1.12], [.88, .5, 1.05]];
+      const end = phone ? [[.12, .42, 1.05], [.31, .33, 1.12], [.69, .33, 1.12], [.88, .42, 1.05]] : [[.12, .5, 1.05], [.29, .41, 1.12], [.71, .41, 1.12], [.88, .5, 1.05]];
       const e = ease(clamp((p - .14) / .6));
       tiles.forEach((r, i) => {
         const el = r.current; if (!el) return;
@@ -413,11 +392,12 @@ class Component extends DCLogic {
       setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, 60 + d);
     }));
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); { const sc0 = this.scrollRef.current; if (sc0 && this.onScrollEv) { sc0.removeEventListener('scroll', this.onScrollEv); sc0.removeEventListener('wheel', this.onScrollEv); sc0.removeEventListener('touchstart', this.onTS); sc0.removeEventListener('touchend', this.onTE); sc0.removeEventListener('touchcancel', this.onTE); } } removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
   renderVals() {
     const r = {}; ['veilRef','pulseRef','showStage','showRig','scrollRef','frameRef','farRef','nearRef','frontRef','villaRef','coinRef','glowRef','sunRef','sunDisc','copyA','copyB','t0','t1','t2','t3','t4'].forEach(n => r[n] = this[n]);
     r.goExplore = e => { e.preventDefault(); if (this.leaving) return; this.leaving = true; const fr = this.frameRef.current; if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(38vh) scale(1.08)'; } const b = this.copyB.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; } try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {} window.tdcVeil && window.tdcVeil.go('story.dc.html', { style: 'sky' }); };
-    r.goCalc = e => { e.preventDefault(); const a = document.getElementById('calculator'), sc = this.scrollRef.current; if (!a || !sc) return; if (this.ss) this.ss.scrollTo(a.offsetTop); else sc.scrollTo({ top: a.offsetTop, behavior: 'smooth' }); };
+    const glide = id => e => { e.preventDefault(); const a = document.getElementById(id), sc = this.scrollRef.current; if (!a || !sc) return; if (this.ss && !matchMedia('(pointer: coarse)').matches) this.ss.scrollTo(a.offsetTop); else sc.scrollTo({ top: a.offsetTop, behavior: 'smooth' }); };
+    r.goCalc = glide('calculator'); r.goApp = glide('showcase');
     return r;
   }
 }
