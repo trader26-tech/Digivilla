@@ -17,9 +17,9 @@
 .mfp{position:relative;max-width:480px;margin:0 auto;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;color:#E1E0CC;-webkit-tap-highlight-color:transparent}
 .mfp a{color:#E1E0CC;text-decoration:none}
 .mfp .serif{font-family:'Instrument Serif',serif;font-style:italic}
-.mfp-landing{position:relative;height:260vh;height:260svh;scroll-snap-align:start}
-.mfp-coverEnd{position:absolute;left:0;right:0;bottom:0;height:100vh;height:100svh;scroll-snap-align:start;pointer-events:none}
-.mfp-sticky{position:sticky;top:0;height:100vh;height:100svh;padding:10px}
+.mfp-landing{position:relative;height:260vh;height:260svh;height:calc(var(--pvh,100svh) * 2.6)}
+.mfp-coverEnd{position:absolute;left:0;right:0;bottom:0;height:100vh;height:100svh;height:var(--pvh,100svh);pointer-events:none}
+.mfp-sticky{position:sticky;top:0;height:100vh;height:100svh;height:var(--pvh,100svh);padding:10px}
 .mfp-frame{position:relative;width:100%;height:100%;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#0c0f2c 0%,#1d1d4a 14%,#2a2862 26%,#73467c 42%,#b8606a 52%,#d9814f 62%,#f3bd7c 73%,#a8606a 88%,#3a2a52 100%)}
 .mfp-halo{position:absolute;right:10%;top:22%;width:120%;aspect-ratio:1;transform:translate(50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,222,170,.75),rgba(240,138,74,.32) 38%,rgba(217,129,79,0) 70%)}
 .mfp-sun{position:absolute;right:10%;top:22%;width:12%;aspect-ratio:1;transform:translate(50%,-50%);border-radius:50%;background:radial-gradient(circle,#fff5d6 0%,#ffd38a 55%,rgba(240,138,74,0) 100%)}
@@ -204,6 +204,8 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
+    this.setVH = () => { const sc = this.scroller(); if (sc && sc.clientHeight) { const v = sc.clientHeight + 'px'; if (sc.__vh !== v) { sc.style.setProperty('--pvh', v); sc.__vh = v; } } };
+    this.setVH(); addEventListener('resize', this.setVH); addEventListener('orientationchange', this.setVH);
     const paint = (ref, tex) => { const c = ref.current; if (!c) return; c.width = tex.width; c.height = tex.height; c.getContext('2d').drawImage(tex, 0, 0); };
     paint(this.farRef, this.makeClouds(240, 90, 7, { persp: 3, fx: 3.2, fy: 1.6, th: .5, topFade: 6, sx: .86, sy: 0, haze: .55 }));
     paint(this.nearRef, this.makeClouds(280, 150, 31, { persp: 1.6, fx: 2.8, fy: 1.5, th: .46, topFade: 5, sx: .9, sy: -.3, haze: .25 }));
@@ -246,7 +248,8 @@ class Component extends DCLogic {
         const nxt = Math.max(0, Math.min(P.length - 1, cur + dir)), to = P[nxt], from = top; if (Math.abs(to - from) < 1) return;
         this.animating = true;
         const coverPlay = Math.max(from, to) <= R + 1;                              // within the cover: the designed play; between pages: a quick glide
-        const D = coverPlay ? 300 + 1300 * Math.abs(to - from) / R : 650, t0 = performance.now();
+        const D = coverPlay ? 400 + 1500 * Math.abs(to - from) / R : 850, t0 = performance.now();
+        const show = document.querySelector('.msh'); if (show && show.__enter && Math.abs(to - offs(show)) < 2) show.__enter(dir);
         const step = now => {
           const u = Math.min(1, (now - t0) / D); sc.scrollTop = from + (to - from) * easeIO(u);
           if (u < 1 && this.animating) requestAnimationFrame(step); else { sc.scrollTop = to; this.animating = false; }
@@ -254,12 +257,12 @@ class Component extends DCLogic {
         requestAnimationFrame(step);
       };
       if (sc0) {
-        let y0 = 0, x0 = 0, armed = false, rail = null, inner = null;
+        let y0 = 0, x0 = 0, armed = false, rail = null, inner = null, inShow = null;
         this.onTS2 = e => {
-          armed = false; rail = null; inner = null;
+          armed = false; rail = null; inner = null; inShow = null;
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
           if (this.state.menuOpen || c('.mfp-capsule') || c('.mfp-ruler') || c('select')) return;
-          rail = c('.msh-rail'); inner = c('.mcl');
+          rail = null; inner = c('.mcl'); inShow = c('.msh');
           armed = true; y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
         };
         this.onTM2 = e => {
@@ -272,7 +275,12 @@ class Component extends DCLogic {
             if ((dy > 0 && canDown) || (dy < 0 && canUp)) { armed = false; return; }
           }
           if (e.cancelable) e.preventDefault();
-          if (Math.abs(dy) > 12) { armed = false; this.goPage(dy > 0 ? 1 : -1); }
+          if (Math.abs(dy) > 12) {
+            armed = false;
+            const show = inShow || null;
+            if (show && show.__step && show.__step(dy > 0 ? 1 : -1)) return;      // the showcase steps to its next phone first
+            this.goPage(dy > 0 ? 1 : -1);
+          }
         };
         sc0.addEventListener('touchstart', this.onTS2, { passive: true });
         sc0.addEventListener('touchmove', this.onTM2, { passive: false });
@@ -288,6 +296,7 @@ class Component extends DCLogic {
       sm.x += ((Math.sin(k * .23) * .12 + tx) - sm.x) * .05; sm.y += ((Math.cos(k * .19) * .08 + ty) - sm.y) * .05;
       const sc = this.scroller(), frame = this.frameRef.current;
       if (!frame) { this.raf = requestAnimationFrame(tick); return; }
+      if (((this.fr = (this.fr || 0) + 1) & 31) === 0) this.setVH();
       const raw = sc ? clamp(sc.scrollTop / Math.max(1, sc.clientHeight * SCRUB_VH)) : 0;
       this.p = (this.p || 0) + (raw - (this.p || 0)) * (this.animating ? .2 : .075); const p = this.p;   // the play is timed by playCover; only a touch of lag on top
       const W = frame.clientWidth, H = frame.clientHeight;
@@ -296,17 +305,17 @@ class Component extends DCLogic {
       setT(this.farRef.current, 'translate(' + (Math.sin(k * .05) * 10 - sm.x * 8).toFixed(1) + 'px,' + (p * 16).toFixed(1) + 'px)');
       setT(this.nearRef.current, 'translate(' + (Math.sin(k * .07 + 1) * 16 - sm.x * 18).toFixed(1) + 'px,' + (p * 30).toFixed(1) + 'px)');
       setT(this.frontRef.current, 'translate(' + (Math.sin(k * .09 + 2) * 22 - sm.x * 30).toFixed(1) + 'px,' + (p * 54).toFixed(1) + 'px)');
-      const e = ease(clamp((p - .14) / .6));
+      const e = ease(clamp((p - .14) / .6)), hero0 = this.heroRef.current;
       if (this.hold < .01) litMin = 5;
       tiles.forEach((el, i) => {
         if (!el) return;
         const w = el.offsetWidth, hh = el.offsetHeight, [ex, ey] = SLOT[i];
         const ei = ease(clamp((p - .1 - (4 - i) * .04) / .56));          // 05 leaves first, 01 last
         let x, y, s, op;
-        if (i === 4) { x = CX + (ex - CX) * ei; y = CY + (ey - CY) * ei; s = 2.1 - 1.1 * ei; op = clamp((p - .06) / .14); }
+        if (i === 4) { const s0 = (hero0 && w) ? hero0.offsetWidth / w : 2.1; x = CX + (ex - CX) * ei; y = CY + (ey - CY) * ei; s = s0 + (1 - s0) * ei; op = p > .05 ? 1 : 0; }
         else { x = CX + (ex - CX) * ei + Math.sin(ei * Math.PI) * .08; y = CY + (ey - CY) * ei; s = .55 + .45 * ei; op = clamp(ei * 2.2); }
-        const bob = Math.sin(k * .8 + i * 1.3) * 4 * e;
-        setT(el, 'translate3d(' + (x * W - w / 2 - sm.x * (10 + i * 3) * e).toFixed(1) + 'px,' + (y * H - hh / 2 + bob - sm.y * 6 * e).toFixed(1) + 'px,0) scale(' + s.toFixed(4) + ')');
+        const bob = Math.sin(k * .8 + i * 1.3) * 4 * e + (i === 4 ? Math.sin(k * .7) * 5 * (1 - ei) : 0);
+        setT(el, 'translate3d(' + (x * W - w / 2 - sm.x * (10 + i * 3) * e - (i === 4 ? sm.x * 20 * (1 - ei) : 0)).toFixed(1) + 'px,' + (y * H - hh / 2 + bob - sm.y * 6 * e - (i === 4 ? sm.y * 10 * (1 - ei) : 0)).toFixed(1) + 'px,0) scale(' + s.toFixed(4) + ')');
         setO(el, op); el.style.zIndex = i === 4 ? 3 : 2;
         const on = this.hold > (4 - i) / 5 + .02;
         if (el.classList.contains('lit') !== on) el.classList.toggle('lit', on);
@@ -316,8 +325,9 @@ class Component extends DCLogic {
       });
       const hero = this.heroRef.current;
       if (hero) {
-        const vo = 1 - ease(clamp((p - .04) / .16));
-        setT(hero, 'translate(' + (CX * W - hero.offsetWidth / 2 - sm.x * 20).toFixed(1) + 'px,' + (.4 * H - hero.offsetHeight / 2 + Math.sin(k * .7) * 5 - sm.y * 10).toFixed(1) + 'px) scale(' + (1 - (1 - vo) * .12).toFixed(4) + ')');
+        // the hero is the villa until p = .05, then tile 05 (same art, same size, same spot) carries on — never two villas
+        const vo = p > .05 ? 0 : 1;
+        setT(hero, 'translate(' + (CX * W - hero.offsetWidth / 2 - sm.x * 20).toFixed(1) + 'px,' + (CY * H - hero.offsetHeight / 2 + (p > .05 ? 0 : Math.sin(k * .7) * 5) - sm.y * 10).toFixed(1) + 'px)');
         setO(hero, vo);
       }
       setT(this.coinRef.current, 'translateY(' + (Math.sin(k * 1.4) * 6).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)');
@@ -341,7 +351,7 @@ class Component extends DCLogic {
     };
     this.raf = requestAnimationFrame(tick);
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.animating = false; removeEventListener('deviceorientation', this.onTilt); const sc = this.scroller(); if (sc && this.onTS2) { sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); } }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.animating = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('orientationchange', this.setVH); const sc = this.scroller(); if (sc && this.onTS2) { sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); } }
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;

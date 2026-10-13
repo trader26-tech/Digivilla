@@ -14,21 +14,21 @@
    one total to the other, summaries, years-ago picker, YOU INVEST stepper and a ruler.
    Every figure comes from the app's engine on real benchmark history and the live settings —
    never an assumed rate. */
-.mcl{position:relative;height:100vh;height:100svh;background:#0b0c12;color:#ececf1;display:flex;flex-direction:column;padding:max(18px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;scrollbar-width:none;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;scroll-snap-align:start;scroll-snap-stop:always}
+.mcl{position:relative;height:100vh;height:100svh;height:var(--pvh,100svh);background:#0b0c12;color:#ececf1;display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;scrollbar-width:none;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;scroll-snap-align:start;scroll-snap-stop:always}
 .mcl::-webkit-scrollbar{display:none}
 .mcl button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mcl .mono{font-variant-numeric:tabular-nums}
 .mcl-seg{flex:none;align-self:center;display:flex;padding:4px;border-radius:999px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
-.mcl-seg button{display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:0;border-radius:999px;background:transparent;color:#a3a5b4;font-size:16px;font-weight:700;transition:background .25s,color .25s}
+.mcl-seg button{display:flex;align-items:center;gap:8px;height:40px;padding:0 18px;border:0;border-radius:999px;background:transparent;color:#a3a5b4;font-size:16px;font-weight:700;transition:background .25s,color .25s}
 .mcl-seg button.on{background:#ececf1;color:#0b0c12}
 .mcl-seg svg{width:22px;height:22px}
-.mcl-sentence{flex:none;display:flex;align-items:flex-start;gap:12px;margin-top:16px}
+.mcl-sentence{flex:none;display:flex;align-items:flex-start;gap:12px;margin-top:12px}
 .mcl-back{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:#161826;color:#ececf1;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #22253a}
-.mcl-sentence p{margin:0;font-size:clamp(18px,5vw,22px);line-height:1.5;color:#ececf1}
+.mcl-sentence p{margin:0;font-size:clamp(17px,4.6vw,20px);line-height:1.5;color:#ececf1}
 .mcl-chip{display:inline-flex;align-items:center;gap:6px;height:1.55em;padding:0 .45em 0 .55em;margin:0 .1em;border-radius:.4em;background:#2a2548;box-shadow:inset 0 0 0 1px rgba(127,114,224,.55);color:#fff;font:inherit;vertical-align:-.3em;position:relative}
 .mcl-chip::after{content:"";width:0;height:0;border:5px solid transparent;border-top:6px solid #7f72e0;border-bottom:0;margin-top:1px}
 .mcl-chip select{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px}
-.mcl-stage{position:relative;flex:none;height:420px;margin-top:10px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-stage{position:relative;flex:none;height:420px;margin-top:8px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
 .mcl-floor{position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(233,233,237,.18)}
 .mcl-bar{position:absolute;bottom:1px;width:30%;display:flex;flex-direction:column;align-items:center}
 .mcl-barL{left:9%}.mcl-barR{left:55%}
@@ -46,7 +46,7 @@
 .mcl-totL{color:#f4f4f7}.mcl-totR{color:#8fd65a}
 .mcl-tag{position:absolute;left:70%;transform:translateX(-50%);white-space:nowrap;font-size:13px;color:#a3a5b4;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}.mcl-tag b{color:#8fd65a;font-weight:400}
 .mcl-icon{position:absolute;left:24%;transform:translateX(-50%);width:26%;pointer-events:none;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
-.mcl-rig{position:absolute;left:70%;transform:translateX(-50%);width:42%;display:flex;flex-direction:column;align-items:center;gap:4px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-rig{position:absolute;left:70%;transform:translateX(-50%);width:40%;display:flex;flex-direction:column;align-items:center;gap:4px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
 .mcl-swp{display:flex;align-items:center;gap:8px;height:32px;padding:0 14px 0 5px;border:0;border-radius:999px;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.7);color:#f6c445;font-size:12px;letter-spacing:.26em;text-transform:uppercase}
 .mcl-swp .tog{width:44px;height:26px;border-radius:999px;background:#f6c445;position:relative;transition:background .3s}
 .mcl-swp .tog::after{content:"";position:absolute;top:4px;left:22px;width:18px;height:18px;border-radius:50%;background:#1a1407;transition:left .3s}
@@ -54,25 +54,25 @@
 .mcl-vrow{position:relative;display:flex;align-items:center;justify-content:center;width:100%}
 .mcl-vrow .arr{position:absolute;top:50%;width:44px;height:44px;transform:translateY(-50%);border:0;background:transparent;color:#a3a5b4;display:grid;place-items:center;font-size:22px}
 .mcl-vrow .arr.l{left:-30%}.mcl-vrow .arr.r{right:-30%}
-.mcl-vrow .v{width:70%;transition:transform .3s}
+.mcl-vrow .v{width:64%;transition:transform .3s}
 .mcl-vrow .v>div{display:block;width:100%}
 .mcl-vrow .c{position:absolute;left:50%;top:-4%;width:16%;transform:translateX(-50%)}
 .mcl-arrow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.mcl-sums{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;text-align:center}
-.mcl-sums .s{font-size:14px;color:#a3a5b4}.mcl-sums .l{margin-top:10px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#7a7c8c}.mcl-sums .l.g{color:#8fd65a}
-.mcl-years{flex:none;display:flex;justify-content:center;gap:6px;margin-top:14px}
-.mcl-years button{min-width:72px;height:52px;border:0;background:transparent;color:#7a7c8c;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
-.mcl-years button b{font-size:30px;font-weight:400;line-height:1;letter-spacing:-.02em}.mcl-years button span{font-size:11px;letter-spacing:.26em;text-transform:uppercase}
+.mcl-sums{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;text-align:center}
+.mcl-sums .s{font-size:13px;color:#a3a5b4;line-height:1.3}.mcl-sums .l{margin-top:6px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7a7c8c;white-space:nowrap}.mcl-sums .l.g{color:#8fd65a}
+.mcl-years{flex:none;display:flex;justify-content:center;gap:6px;margin-top:8px}
+.mcl-years button{min-width:72px;height:46px;border:0;background:transparent;color:#7a7c8c;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.mcl-years button b{font-size:26px;font-weight:400;line-height:1;letter-spacing:-.02em}.mcl-years button span{font-size:11px;letter-spacing:.26em;text-transform:uppercase}
 .mcl-years button.on{color:#ececf1}.mcl-years button.on::after{content:"";position:absolute;left:50%;bottom:-6px;width:40px;height:3px;border-radius:2px;background:#8fd65a;transform:translateX(-50%)}
-.mcl-invest{flex:none;display:flex;align-items:center;gap:10px;margin-top:22px}
+.mcl-invest{flex:none;display:flex;align-items:center;gap:10px;margin-top:14px}
 .mcl-invest .st{flex:none;width:44px;height:44px;border:0;background:transparent;color:#f6c445;font-size:18px}
-.mcl-invest .card{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
-.mcl-invest .card span{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#a3a5b4}
-.mcl-invest .card b{font-size:clamp(34px,10vw,42px);font-weight:700;letter-spacing:-.03em;line-height:1}
-.mcl-ruler{flex:none;position:relative;height:44px;margin-top:12px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.mcl-invest .card{flex:1;display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px;padding:10px 16px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-invest .card span{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#a3a5b4;white-space:nowrap}
+.mcl-invest .card b{font-size:clamp(24px,7vw,30px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.mcl-ruler{flex:none;position:relative;height:36px;margin-top:8px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .mcl-ruler canvas{position:absolute;inset:0;width:100%;height:100%}
 .mcl-ruler input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;pointer-events:none}
-.mcl-note{flex:none;margin:14px 0 0;font-size:11px;line-height:1.5;color:#5a5e6c;text-align:center}
+.mcl-note{flex:none;margin:8px 0 0;font-size:10.5px;line-height:1.4;color:#5a5e6c;text-align:center}
 .mcl-wait{flex:1;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:#a3a5b4;font-size:14px}
 .mcl-wait i{width:30px;height:30px;border-radius:50%;border:2px solid #22253a;border-top-color:#8fd65a;animation:mclspin 1s linear infinite}
 @keyframes mclspin{to{transform:rotate(360deg)}}
@@ -231,18 +231,18 @@ class Component extends DCLogic {
       swpCls: 'mcl-swp' + (S.swp ? '' : ' off'), swpOn: S.swp, toggleSwp: () => this.setState(s => ({ swp: !s.swp })),
       prevV: () => this.setState({ villa: villas[(vi + villas.length - 1) % villas.length].key }), nextV: () => this.setState({ villa: villas[(vi + 1) % villas.length].key }),
       villaS: `transform:scale(${(.85 + vi * .12).toFixed(2)})`, coinS: `opacity:${S.swp ? 1 : .35};transition:opacity .3s`,
-      tagName: villa.name, tagRate: (irr == null ? vRate : irr).toFixed(1) + '% a yr realised', tagYrs: S.yrs + ' yrs',
+      tagName: villa.name, tagRate: (irr == null ? vRate : irr).toFixed(1) + '% a yr', tagYrs: 'last ' + S.yrs + ' yrs',
       totL: this.fmt(tl), totR: this.fmt(tr),
       boxLS: `height:${(lp + lv).toFixed(1)}px`, segLpS: `height:${lp.toFixed(1)}px`, segLvS: `height:${lv.toFixed(1)}px`, hasPaidL: L.paid > 0,
       boxRS: `height:${(rp + rv).toFixed(1)}px`, segRpS: `height:${rp.toFixed(1)}px`, segRvS: `height:${rv.toFixed(1)}px`, hasPaidR: S.swp && R.paid > 0,
       paidLabelL: L.paidLabel, valLabelL: L.valLabel, paidL: this.fmt(Math.max(0, L.paid)), valL: this.fmt(L.val),
       paidLabelR: isFd ? 'Paid out' : 'Rent paid', paidR: this.fmt(R.paid), valR: this.fmt(R.val),
       sumL: (L.paid > 0 ? this.fmt(L.paid) + (isFd ? ' paid + ' : ' rent + ') : '') + this.fmt(L.val) + (isFd ? ' value' : ' worth'), lblL: L.lbl,
-      sumR: (S.swp ? this.fmt(R.paid) + ' paid + ' : '') + this.fmt(R.val) + ' value', lblR: villa.name + ' · ' + vRate.toFixed(1) + '% a yr',
+      sumR: (S.swp ? this.fmt(R.paid) + ' paid + ' : '') + this.fmt(R.val) + ' value', lblR: villa.name + ' villa' + (S.swp ? ' · SWP' : ''),
       yearOpts: yearOpts.map(y => ({ n: y, cls: y === S.yrs ? 'on' : '', pick: () => this.setState({ yrs: y }) })),
       amt: this.inr(S.P), dec: () => this.setP(S.P - AMT_BIG), inc: () => this.setP(S.P + AMT_BIG),
       rMin: AMT_MIN, rMax: AMT_MAX, rStep: AMT_STEP, rVal: S.P, onRange: e => this.setP(+e.target.value),
-      note: `Real benchmark-index history, ${span}${S.swp ? `; ${swpPct}% a year paid monthly from the arbitrage part first` : ''}; tax, rebalancing and the flat's costs from the app's settings. Information, not advice — past returns are no promise.`,
+      note: `Real benchmark-index history, ${span}${S.swp ? ` · ${swpPct}% a year paid monthly` : ''} · not advice, no promise of future returns.`,
     };
   }
 }

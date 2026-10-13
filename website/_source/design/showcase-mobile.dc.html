@@ -13,7 +13,7 @@
    horizontal snap rail of five phones in perspective (the centred one upright and bright, the
    neighbours turned away), the active phone's caption and five progress segments. Dimming is
    an overlay, not a CSS filter, so the rail stays smooth while it scrolls. */
-.msh{position:relative;height:100vh;height:100svh;background:#000;display:flex;flex-direction:column;color:#ececf1;overflow:hidden;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;scroll-snap-align:start;scroll-snap-stop:always}
+.msh{position:relative;height:100vh;height:100svh;height:var(--pvh,100svh);background:#000;display:flex;flex-direction:column;color:#ececf1;overflow:hidden;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;scroll-snap-align:start;scroll-snap-stop:always}
 .msh-grid{position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:linear-gradient(rgba(233,233,237,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.045) 1px,transparent 1px);background-size:36px 36px;-webkit-mask-image:radial-gradient(ellipse 60% 45% at 50% 50%,#000 20%,transparent 100%);mask-image:radial-gradient(ellipse 60% 45% at 50% 50%,#000 20%,transparent 100%)}
 .msh-glowp{position:absolute;left:50%;top:50%;width:120%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;background:radial-gradient(closest-side,rgba(127,114,224,.22),rgba(127,114,224,.05) 50%,transparent)}
 .msh-head{position:relative;z-index:2;padding:max(44px,env(safe-area-inset-top)) 24px 0;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
@@ -23,10 +23,10 @@
 .msh h2 span{color:#7a7c8c}
 .msh-counter{flex:none;display:flex;align-items:baseline;gap:4px;font-family:'Instrument Serif',serif;font-style:italic;font-size:48px;line-height:1;color:#ececf1;transition:opacity .25s}
 .msh-counter small{font-family:Almarai,sans-serif;font-style:normal;font-size:12px;letter-spacing:.2em;color:#7a7c8c}
-.msh-rail{position:relative;z-index:2;flex:1;min-height:0;display:flex;align-items:center;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;perspective:1200px;perspective-origin:50% 50%;padding:0 14%;gap:0;touch-action:pan-x;overscroll-behavior-x:contain}
-.msh-rail::-webkit-scrollbar{display:none}
-.msh-slide{flex:none;width:72%;height:100%;scroll-snap-align:center;display:grid;place-items:center;transform-style:preserve-3d;padding:14px 0}
-.msh-phone{position:relative;height:100%;max-height:600px;max-width:100%;aspect-ratio:360/759;will-change:transform}
+.msh-rail{position:relative;z-index:2;flex:1;min-height:0;overflow:hidden;perspective:1200px;perspective-origin:50% 50%;touch-action:none}
+.msh-slide{position:absolute;left:50%;top:50%;width:72%;height:100%;transform:translate(-50%,-50%);display:grid;place-items:center;padding:14px 0;transition:transform .75s cubic-bezier(.22,.8,.2,1),opacity .5s;will-change:transform}
+.msh-phone{position:relative;height:100%;max-height:600px;max-width:100%;aspect-ratio:360/759}
+.msh-phone .dim{transition:opacity .6s}
 .msh-phone .bezel{position:absolute;inset:0;border-radius:15%/7%;padding:3.2%;background:linear-gradient(160deg,#a8aab1 0%,#3a3b41 10%,#141518 30%,#0a0a0c 60%,#2b2c31 85%,#8e9097 100%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.26),inset 0 0 0 4px #050506,0 50px 90px -30px rgba(0,0,0,1),0 0 90px -20px rgba(127,114,224,.25)}
 .msh-phone .screen{position:relative;width:100%;height:100%;border-radius:13%/6%;overflow:hidden;background:#161826}
 .msh-phone .screen img{display:block;width:100%;height:100%;object-fit:cover}
@@ -41,7 +41,7 @@
 .msh-bars span{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#7a7c8c;margin-left:8px;white-space:nowrap}
 </style>
 </helmet>
-<section id="showcase" class="msh" data-screen-label="App showcase (phone)">
+<section ref="{{ rootRef }}" id="showcase" class="msh" data-screen-label="App showcase (phone)">
 <div class="msh-grid"></div><div class="msh-glowp"></div>
 <div class="msh-head">
 <div><span class="msh-k"><i></i>The DigiVilla app</span><h2>Real estate,<br><span>rebuilt as an app.</span></h2></div>
@@ -54,7 +54,7 @@
 </div>
 <div class="msh-foot">
 <div ref="{{ capRef }}" class="msh-cap"><b>{{ capTitle }}</b><span>{{ capText }}</span></div>
-<div class="msh-bars"><sc-for list="{{ bars }}" as="b" hint-placeholder-count="5"><i class="{{ b.cls }}"></i></sc-for><span>Scroll →</span></div>
+<div class="msh-bars"><sc-for list="{{ bars }}" as="b" hint-placeholder-count="5"><i class="{{ b.cls }}"></i></sc-for><span>Swipe ↑</span></div>
 </div>
 </section>
 </x-dc>
@@ -68,39 +68,39 @@ const SLIDES = [
 ];
 class Component extends DCLogic {
   state = { active: 0 };
-  railRef = React.createRef(); capRef = React.createRef(); counterRef = React.createRef();
-  componentDidMount() {
+  railRef = React.createRef(); capRef = React.createRef(); counterRef = React.createRef(); rootRef = React.createRef();
+  /** place the five phones for `active`: the active one upright and bright, the previous one up above it, the next one waiting below */
+  layout(active) {
     const rail = this.railRef.current; if (!rail) return;
-    this.layout = () => {
-      const slides = [...rail.querySelectorAll('.msh-slide')]; if (!slides.length) return;
-      const rc = rail.getBoundingClientRect(), rcx = rc.left + rc.width / 2;
-      let best = 0, bd = 1e9;
-      slides.forEach((sl, i) => {
-        const r = sl.getBoundingClientRect(), d = (r.left + r.width / 2 - rcx) / r.width, ad = Math.min(1.2, Math.abs(d));
-        const ph = sl.firstElementChild, dim = ph.querySelector('.dim');
-        const tr = 'rotateY(' + (d * -22).toFixed(2) + 'deg) translateZ(' + (-ad * 140).toFixed(1) + 'px) scale(' + (1 - ad * .08).toFixed(4) + ')';
-        if (ph.__t !== tr) { ph.style.transform = tr; ph.__t = tr; }
-        const o = (ad * .45).toFixed(3); if (dim && dim.__o !== o) { dim.style.opacity = o; dim.__o = o; }
-        ph.style.zIndex = Math.round(10 - ad * 5);
-        if (Math.abs(d) < bd) { bd = Math.abs(d); best = i; }
-      });
-      if (best !== this.state.active && !this.swapping) {
-        this.swapping = true;
-        const cap = this.capRef.current, cnt = this.counterRef.current;
-        if (cap) cap.style.opacity = 0; if (cnt) cnt.style.opacity = 0;
-        setTimeout(() => { this.swapping = false; this.setState({ active: best }, () => { if (cap) cap.style.opacity = 1; if (cnt) cnt.style.opacity = 1; }); }, 180);
-      }
-    };
-    this.onScroll = () => { if (!this.pending) { this.pending = true; requestAnimationFrame(() => { this.pending = false; this.layout(); }); } };
-    rail.addEventListener('scroll', this.onScroll, { passive: true });
-    addEventListener('resize', this.layout);
-    requestAnimationFrame(this.layout); setTimeout(this.layout, 300); setTimeout(this.layout, 1200);
+    [...rail.querySelectorAll('.msh-slide')].forEach((sl, i) => {
+      const d = i - active, ad = Math.min(1.2, Math.abs(d));
+      sl.style.transform = 'translate(-50%, calc(-50% + ' + (d * 84) + '%)) translateZ(' + (-ad * 160).toFixed(0) + 'px) scale(' + (1 - ad * .08).toFixed(3) + ')';
+      sl.style.opacity = Math.abs(d) > 1 ? 0 : 1; sl.style.zIndex = Math.round(10 - ad * 5);
+      const dim = sl.querySelector('.dim'); if (dim) dim.style.opacity = (ad * .5).toFixed(3);
+    });
   }
-  componentWillUnmount() { const rail = this.railRef.current; rail && rail.removeEventListener('scroll', this.onScroll); removeEventListener('resize', this.layout); }
+  go(to) {
+    const cap = this.capRef.current, cnt = this.counterRef.current;
+    this.busy = true; this.layout(to);
+    if (cap) cap.style.opacity = 0; if (cnt) cnt.style.opacity = 0;
+    setTimeout(() => this.setState({ active: to }, () => { if (cap) cap.style.opacity = 1; if (cnt) cnt.style.opacity = 1; }), 200);
+    setTimeout(() => { this.busy = false; }, 760);
+  }
+  componentDidMount() {
+    const root = this.rootRef.current;
+    if (root) {
+      // the page pager asks the showcase first: a swipe steps to the next / previous phone until the ends
+      root.__step = dir => { if (this.busy) return true; const to = this.state.active + dir; if (to < 0 || to > SLIDES.length - 1) return false; this.go(to); return true; };
+      root.__enter = dir => { const to = dir > 0 ? 0 : SLIDES.length - 1; if (to !== this.state.active) { this.layout(to); this.setState({ active: to }); } };
+    }
+    this.onResize = () => this.layout(this.state.active); addEventListener('resize', this.onResize);
+    requestAnimationFrame(() => this.layout(this.state.active)); setTimeout(() => this.layout(this.state.active), 300);
+  }
+  componentWillUnmount() { removeEventListener('resize', this.onResize); }
   renderVals() {
     const a = this.state.active;
     return {
-      railRef: this.railRef, capRef: this.capRef, counterRef: this.counterRef,
+      railRef: this.railRef, capRef: this.capRef, counterRef: this.counterRef, rootRef: this.rootRef,
       slides: SLIDES.map(([src, alt]) => ({ src, alt })),
       cnum: String(a + 1).padStart(2, '0'), capTitle: SLIDES[a][2], capText: SLIDES[a][3],
       bars: SLIDES.map((_, i) => ({ cls: i === a ? 'on' : i < a ? 'done' : '' })),
