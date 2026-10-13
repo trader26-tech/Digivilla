@@ -159,3 +159,89 @@
   .cm-rate { width: 100px; }
 }
 @media (prefers-reduced-motion: reduce) { .cm-save, .cm-skel .sk { animation: none; } .cm-bar i { transition: none; } }
+
+/* ── by villa: each client's villa, what it earns, and the funds inside it ── */
+.cv { margin: 6px 0 22px; }
+.cv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 0 4px 12px; }
+.cv-head h2 { margin: 0 0 3px; font-size: 1.1rem; font-weight: 800; letter-spacing: -.3px; color: var(--ink); }
+.cv-head p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); max-width: 60ch; }
+.cv-tot { text-align: right; white-space: nowrap; }
+.cv-tot b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: color-mix(in srgb, var(--brass) 75%, var(--ink)); }
+.cv-tot em, .cv-sum em, .cv-type em { font-style: normal; font-size: .62em; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.cv-tot small { font-size: 12px; color: var(--muted); }
+
+/* villa-type colours, as on the home "Villas sold" tiles */
+[data-t='conservative'] { --vt: var(--positive); }
+[data-t='balanced'] { --vt: var(--brass); }
+[data-t='aggressive'] { --vt: var(--terracotta); }
+[data-t='none'] { --vt: var(--muted); }
+
+.cv-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.cv-type { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border); }
+.cv-type i { width: 10px; height: 10px; border-radius: 50%; background: var(--vt); flex: none; }
+.cv-type span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cv-type span b { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.cv-type span small { font-size: 11.5px; color: var(--muted); }
+.cv-type > b { font-size: 15px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+
+.cv-villa { margin-bottom: 10px; overflow: hidden; box-shadow: inset 4px 0 0 var(--vt), 0 1px 2px rgba(22, 48, 43, .04); }
+.cv-top { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 18px 14px 20px; border: 0; background: none;
+  font: inherit; text-align: left; color: inherit; cursor: pointer; }
+.cv-top:hover { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+.cv-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cv-id > b { font-size: 15px; font-weight: 750; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-id > b em { font-style: normal; font-weight: 600; color: var(--muted); }
+.cv-id small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: var(--muted); }
+.cv-chip { padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--vt); background: color-mix(in srgb, var(--vt) 12%, transparent); }
+.cv-chip.plain { color: var(--muted); background: var(--surface-2); }
+.cv-sum { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; white-space: nowrap; }
+.cv-sum b { font-size: 19px; font-weight: 750; letter-spacing: -.02em; color: var(--ink); }
+.cv-sum small { font-size: 11.5px; color: var(--muted); }
+.cv-car { flex: none; color: var(--muted); transition: transform .2s; }
+.closed .cv-car { transform: rotate(-90deg); }
+
+.cv-funds { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 45%, var(--surface)); padding: 2px 0 6px; }
+.cv-fr { display: grid; grid-template-columns: minmax(0, 2.4fr) 1fr .8fr 1fr; gap: 14px; align-items: center; padding: 9px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); font-size: 13px; color: var(--ink); }
+.cv-fr .r { text-align: right; }
+.cv-fh { border-top: 0; padding-top: 10px; padding-bottom: 6px; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.cv-fr.no-rate { background: color-mix(in srgb, var(--brass) 6%, transparent); }
+.cv-fr.no-rate .cv-rate { color: var(--terracotta); font-weight: 700; }
+.cv-fn { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cv-fn b { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-fn small { font-size: 11px; color: var(--muted); }
+.strong { font-weight: 700; }
+.cv-miss { margin: 6px 20px 6px; font-size: 12px; color: color-mix(in srgb, var(--terracotta) 85%, var(--ink)); }
+
+/* phones: the villa header stacks, the fund rows become two-line cards */
+@media (max-width: 760px) {
+  .cv { margin: 0 0 18px; }
+  .cv-head { flex-direction: column; align-items: stretch; gap: 8px; margin: 0 2px 10px; }
+  .cv-tot { text-align: left; }
+  .cv-tot b { display: inline; font-size: 20px; }
+  .cv-tot small { margin-left: 8px; }
+  .cv-types { grid-template-columns: 1fr; gap: 6px; }
+  .cv-type { min-height: 48px; padding: 8px 12px; }
+  .cv-villa { border-radius: 16px; }
+  .cv-top { flex-wrap: wrap; gap: 8px 12px; padding: 12px 14px 12px 16px; min-height: 56px; }
+  .cv-id { flex-basis: calc(100% - 34px); }
+  .cv-id > b { white-space: normal; }
+  .cv-sum { flex-direction: row; align-items: baseline; gap: 8px; flex: 1; white-space: normal; }
+  .cv-sum b { font-size: 18px; }
+  .cv-car { order: 2; }
+  .cv-fr { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: 'name name name' 'val rate yr'; gap: 4px 8px; padding: 10px 14px 10px 16px; }
+  .cv-fh { display: none; }
+  .cv-fn { grid-area: name; }
+  .cv-fn b { white-space: normal; }
+  .cv-fr > .r:nth-child(2) { grid-area: val; text-align: left; }
+  .cv-fr > .r:nth-child(3) { grid-area: rate; text-align: center; }
+  .cv-fr > .r:nth-child(4) { grid-area: yr; }
+  .cv-fr > .r::before { display: block; font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .cv-fr > .r:nth-child(2)::before { content: 'Value'; }
+  .cv-fr > .r:nth-child(3)::before { content: 'Rate'; }
+  .cv-fr > .r:nth-child(4)::before { content: 'A year'; }
+  .cv-miss { margin: 6px 14px 4px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .cv-car { transition: none; } }

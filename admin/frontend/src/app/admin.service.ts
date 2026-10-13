@@ -213,8 +213,23 @@ export interface MeetOverview { room: MeetRoom; meetings: Meeting[]; client_call
 /** Villas sold, by type. */
 export type VillaType = 'conservative' | 'balanced' | 'aggressive';
 export interface VillaTypeRow { key: VillaType; name: string; risk: string; count: number; constructed: number; value: number; invested: number; commission: number; }
+/** One fund inside a client's villa (its pinned transactions, summed): value today and what it earns. */
+export interface VillaCommFund {
+  key: string; scheme_code: number | null; scheme_name: string;
+  units: number; nav: number | null; value: number; invested: number;
+  rate_pct: number | null; yearly: number;
+}
+/** A client's villa on the Commission tab: what it earns a year and what it is made of. */
+export interface VillaCommRow {
+  villa_id: string; client_code: string; client_name: string;
+  label: string;                 // "Villa 1" / "Plot 2" — as the client sees it
+  finished: boolean; type: VillaType | null; since: string;
+  value: number; invested: number; commission: number;
+  funds: VillaCommFund[];
+}
 export interface VillaSummary {
   types: VillaTypeRow[];
+  villas: VillaCommRow[];
   unset: { count: number; value: number; villas: { villa_id: string; client_code: string; client_name: string; name: string; value: number }[] };
   totals: { count: number; value: number; commission: number };
 }

@@ -39,7 +39,61 @@
       <span>— they count as ₹0 until you add one below.</span>
     </div>
 
-    <!-- 3 · per fund -->
+    <!-- 3 · by villa: what each client's villa earns, and the funds it is made of -->
+    <section class="cv" aria-label="Commission by villa" *ngIf="villaRows().length || villasLoading()">
+      <div class="cv-head">
+        <div>
+          <h2>By villa</h2>
+          <p *ngIf="villaRows().length">{{ villaRows().length }} {{ villaRows().length === 1 ? 'villa' : 'villas' }} with money in them · each one's pinned funds at today's NAV × the rates in the table</p>
+          <p *ngIf="!villaRows().length">Valuing every villa…</p>
+        </div>
+        <div class="cv-tot num" *ngIf="villaRows().length">
+          <b>{{ inr(villasYearly() / 12) }}<em>/mo</em></b>
+          <small>{{ compact(villasYearly()) }} a year</small>
+        </div>
+      </div>
+
+      <div class="cv-types" *ngIf="byType().length > 1 || (byType().length === 1 && byType()[0].key !== 'none')">
+        <div class="cv-type" *ngFor="let t of byType()" [attr.data-t]="t.key">
+          <i aria-hidden="true"></i>
+          <span><b>{{ t.name }}</b><small>{{ t.count }} {{ t.count === 1 ? 'villa' : 'villas' }} · {{ compact(t.value) }}</small></span>
+          <b class="num">{{ inr(t.yearly / 12) }}<em>/mo</em></b>
+        </div>
+      </div>
+
+      <article class="card cv-villa" *ngFor="let v of villaRows(); trackBy: trackVilla" [attr.data-t]="v.type || 'none'" [class.closed]="isClosed(v.villa_id)">
+        <button class="cv-top" (click)="toggleVilla(v.villa_id)" [attr.aria-expanded]="!isClosed(v.villa_id)">
+          <span class="cv-id">
+            <b>{{ v.client_name }}<em> · {{ v.label }}</em></b>
+            <small>
+              <span class="cv-chip" *ngIf="v.type">{{ typeName(v.type) }}</span><span class="cv-chip plain" *ngIf="!v.type">No type set</span>
+              <span class="num">{{ compact(v.value) }} today · {{ compact(v.invested) }} put in<ng-container *ngIf="v.since"> · since {{ v.since | date:'MMM yyyy' }}</ng-container></span>
+            </small>
+          </span>
+          <span class="cv-sum num">
+            <b>{{ inr(v.monthly) }}<em>/mo</em></b>
+            <small>{{ compact(v.yearly) }} a year · {{ pct(v.rate) }}</small>
+          </span>
+          <svg class="cv-car" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+
+        <div class="cv-funds" *ngIf="!isClosed(v.villa_id)">
+          <div class="cv-fr cv-fh"><span>What's in it</span><span class="r">Value today</span><span class="r">Rate</span><span class="r">A year</span></div>
+          <div class="cv-fr" *ngFor="let f of v.funds; trackBy: trackFund" [class.no-rate]="f.rate === null">
+            <span class="cv-fn">
+              <b>{{ f.scheme_name }}</b>
+              <small class="num">{{ share(f.value, v.value) }} of the villa · {{ f.units | number:'1.0-2' }} units<ng-container *ngIf="f.nav"> × ₹{{ f.nav | number:'1.2-2' }}</ng-container></small>
+            </span>
+            <span class="r num">{{ compact(f.value) }}</span>
+            <span class="r num cv-rate">{{ f.rate === null ? 'no rate' : rateFmt(f.rate) }}</span>
+            <span class="r num strong">{{ f.rate === null ? '—' : inr(f.yearly) }}</span>
+          </div>
+          <p class="cv-miss" *ngIf="v.missing">{{ v.missing }} {{ v.missing === 1 ? 'fund has' : 'funds have' }} no rate yet — counted as ₹0 until you set it in the fund table below.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- 4 · per fund -->
     <div class="card cm-table">
       <div class="cm-tr cm-head">
         <span>Fund</span>
