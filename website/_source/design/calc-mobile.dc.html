@@ -14,62 +14,65 @@
    one total to the other, summaries, years-ago picker, YOU INVEST stepper and a ruler.
    Every figure comes from the app's engine on real benchmark history and the live settings —
    never an assumed rate. */
-.mcl{position:relative;height:100vh;height:100svh;height:var(--pvh,100svh);background:#0b0c12;color:#ececf1;display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom));overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+.mcl{position:relative;box-sizing:border-box;height:100vh;height:100svh;height:var(--pvh,100svh);background:#0b0c12;color:#ececf1;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom));overflow:hidden;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
 .mcl::-webkit-scrollbar{display:none}
+.mcl *{box-sizing:border-box}
 .mcl button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mcl .mono{font-variant-numeric:tabular-nums}
 .mcl-seg{flex:none;align-self:center;display:flex;padding:4px;border-radius:999px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
-.mcl-seg button{display:flex;align-items:center;gap:8px;height:40px;padding:0 18px;border:0;border-radius:999px;background:transparent;color:#a3a5b4;font-size:16px;font-weight:700;transition:background .25s,color .25s}
+.mcl-seg button{display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:0;border-radius:999px;background:transparent;color:#a3a5b4;font-size:16px;font-weight:700;transition:background .25s,color .25s}
 .mcl-seg button.on{background:#ececf1;color:#0b0c12}
 .mcl-seg svg{width:22px;height:22px}
-.mcl-sentence{flex:none;display:flex;align-items:flex-start;gap:12px;margin-top:12px}
-.mcl-back{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:#161826;color:#ececf1;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #22253a}
-.mcl-sentence p{margin:0;font-size:clamp(17px,4.6vw,20px);line-height:1.5;color:#ececf1}
+.mcl-sentence{flex:none;display:flex;align-items:flex-start;gap:10px;margin-top:10px}
+.mcl-back{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:#161826;color:#ececf1;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-sentence p{margin:0;font-size:clamp(16px,4.3vw,19px);line-height:1.45;color:#ececf1}
 .mcl-chip{display:inline-flex;align-items:center;gap:6px;height:1.55em;padding:0 .45em 0 .55em;margin:0 .1em;border-radius:.4em;background:#2a2548;box-shadow:inset 0 0 0 1px rgba(127,114,224,.55);color:#fff;font:inherit;vertical-align:-.3em;position:relative}
 .mcl-chip::after{content:"";width:0;height:0;border:5px solid transparent;border-top:6px solid #7f72e0;border-bottom:0;margin-top:1px}
 .mcl-chip select{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px}
-.mcl-stage{position:relative;flex:none;height:420px;margin-top:8px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-stage{position:relative;flex:1 1 auto;min-height:230px;margin-top:8px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
 .mcl-floor{position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(233,233,237,.18)}
 .mcl-bar{position:absolute;bottom:1px;width:30%;display:flex;flex-direction:column;align-items:center}
-.mcl-barL{left:9%}.mcl-barR{left:55%}
+.mcl-barL{left:8%}.mcl-barR{left:54%}
 .mcl-box{position:relative;width:100%;display:flex;flex-direction:column;justify-content:flex-end;transition:height .45s cubic-bezier(.2,.8,.2,1)}
 .mcl-box .face{position:relative;width:100%;flex:1;display:flex;flex-direction:column;overflow:hidden}
 .mcl-segm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:hidden;transition:height .45s cubic-bezier(.2,.8,.2,1)}
-.mcl-segm .k{font-size:11px;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap}.mcl-segm .v{font-size:18px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.mcl-segm .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}.mcl-segm .v{font-size:16px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
 .mcl-boxL .face{background:#4a4d60}.mcl-boxL .paid{background:#6a6d82;color:#f4f4f7}.mcl-boxL .val{background:#4a4d60;color:#f4f4f7}.mcl-boxL .paid .k,.mcl-boxL .val .k{color:#d7d7e2}
-.mcl-boxL .cap{position:absolute;left:0;right:0;top:0;height:40px;transform:translateY(-100%);background:linear-gradient(180deg,#a6a8b8,#8d8fa2);clip-path:polygon(0 100%,24% 0,100% 0,76% 100%)}
-.mcl-boxL .side{position:absolute;left:100%;top:-40px;bottom:0;width:24%;background:linear-gradient(180deg,#2f3140,#262838);clip-path:polygon(0 40px,100% 0,100% 100%,0 100%)}
+.mcl-box .cap{position:absolute;left:0;top:-26px;width:100%;height:26px;transform-origin:0 100%;transform:skewX(-45deg);box-shadow:inset 0 0 0 1px rgba(233,233,237,.08)}
+.mcl-box .side{position:absolute;left:100%;top:0;bottom:0;width:26px;transform-origin:0 0;transform:skewY(-45deg)}
+.mcl-boxL .cap{background:linear-gradient(180deg,#a6a8b8,#8d8fa2)}
+.mcl-boxL .side{background:linear-gradient(180deg,#2f3140,#262838)}
 .mcl-boxR .face{background:#3f8a2a}.mcl-boxR .paid{background:linear-gradient(180deg,#b9ea7d,#8fd65a);color:#143012}.mcl-boxR .val{background:#3f8a2a;color:#f4fff0}.mcl-boxR .paid .k{color:#2d5a1f}.mcl-boxR .val .k{color:#cdeec0}
-.mcl-boxR .cap{position:absolute;left:0;right:0;top:0;height:40px;transform:translateY(-100%);background:linear-gradient(180deg,#d6f7a3,#b6ea7a);clip-path:polygon(0 100%,24% 0,100% 0,76% 100%)}
-.mcl-boxR .side{position:absolute;left:100%;top:-40px;bottom:0;width:24%;background:linear-gradient(180deg,#2e6b20,#245418);clip-path:polygon(0 40px,100% 0,100% 100%,0 100%)}
-.mcl-total{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:44px;font-size:clamp(30px,9vw,40px);font-weight:700;letter-spacing:-.035em;line-height:1;white-space:nowrap}
+.mcl-boxR .cap{background:linear-gradient(180deg,#d6f7a3,#b6ea7a)}
+.mcl-boxR .side{background:linear-gradient(180deg,#2e6b20,#245418)}
+.mcl-total{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:38px;font-size:clamp(26px,7.6vw,34px);font-weight:700;letter-spacing:-.035em;line-height:1;white-space:nowrap}
 .mcl-totL{color:#f4f4f7}.mcl-totR{color:#8fd65a}
-.mcl-tag{position:absolute;left:70%;transform:translateX(-50%);white-space:nowrap;font-size:13px;color:#a3a5b4;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}.mcl-tag b{color:#8fd65a;font-weight:400}
-.mcl-icon{position:absolute;left:24%;transform:translateX(-50%);width:26%;pointer-events:none;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
-.mcl-rig{position:absolute;left:70%;transform:translateX(-50%);width:40%;display:flex;flex-direction:column;align-items:center;gap:4px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
-.mcl-swp{display:flex;align-items:center;gap:8px;height:32px;padding:0 14px 0 5px;border:0;border-radius:999px;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.7);color:#f6c445;font-size:12px;letter-spacing:.26em;text-transform:uppercase}
-.mcl-swp .tog{width:44px;height:26px;border-radius:999px;background:#f6c445;position:relative;transition:background .3s}
-.mcl-swp .tog::after{content:"";position:absolute;top:4px;left:22px;width:18px;height:18px;border-radius:50%;background:#1a1407;transition:left .3s}
-.mcl-swp.off .tog{background:#3a3620}.mcl-swp.off .tog::after{left:4px}
+.mcl-tag{position:absolute;left:68%;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:#a3a5b4;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}.mcl-tag b{color:#8fd65a;font-weight:400}
+.mcl-icon{position:absolute;left:23%;transform:translateX(-50%);width:22%;pointer-events:none;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-rig{position:absolute;left:68%;transform:translateX(-50%);width:38%;display:flex;flex-direction:column;align-items:center;gap:2px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-swp{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 4px;font-size:11px;border:0;border-radius:999px;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.7);color:#f6c445;font-size:12px;letter-spacing:.26em;text-transform:uppercase}
+.mcl-swp .tog{width:38px;height:22px;border-radius:999px;background:#f6c445;position:relative;transition:background .3s}
+.mcl-swp .tog::after{content:"";position:absolute;top:3px;left:19px;width:16px;height:16px;border-radius:50%;background:#1a1407;transition:left .3s}
+.mcl-swp.off .tog{background:#3a3620}.mcl-swp.off .tog::after{left:3px}
 .mcl-vrow{position:relative;display:flex;align-items:center;justify-content:center;width:100%}
-.mcl-vrow .arr{position:absolute;top:50%;width:44px;height:44px;transform:translateY(-50%);border:0;background:transparent;color:#a3a5b4;display:grid;place-items:center;font-size:22px}
+.mcl-vrow .arr{position:absolute;top:50%;width:40px;height:40px;transform:translateY(-50%);border:0;background:transparent;color:#a3a5b4;display:grid;place-items:center;font-size:22px}
 .mcl-vrow .arr.l{left:-30%}.mcl-vrow .arr.r{right:-30%}
-.mcl-vrow .v{width:64%;transition:transform .3s}
+.mcl-vrow .v{width:56%;transition:transform .3s}
 .mcl-vrow .v>div{display:block;width:100%}
 .mcl-vrow .c{position:absolute;left:50%;top:-4%;width:16%;transform:translateX(-50%)}
 .mcl-arrow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.mcl-sums{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;text-align:center}
-.mcl-sums .s{font-size:13px;color:#a3a5b4;line-height:1.3}.mcl-sums .l{margin-top:6px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7a7c8c;white-space:nowrap}.mcl-sums .l.g{color:#8fd65a}
-.mcl-years{flex:none;display:flex;justify-content:center;gap:6px;margin-top:8px}
-.mcl-years button{min-width:72px;height:46px;border:0;background:transparent;color:#7a7c8c;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
-.mcl-years button b{font-size:26px;font-weight:400;line-height:1;letter-spacing:-.02em}.mcl-years button span{font-size:11px;letter-spacing:.26em;text-transform:uppercase}
-.mcl-years button.on{color:#ececf1}.mcl-years button.on::after{content:"";position:absolute;left:50%;bottom:-6px;width:40px;height:3px;border-radius:2px;background:#8fd65a;transform:translateX(-50%)}
-.mcl-invest{flex:none;display:flex;align-items:center;gap:10px;margin-top:14px}
-.mcl-invest .st{flex:none;width:44px;height:44px;border:0;background:transparent;color:#f6c445;font-size:18px}
-.mcl-invest .card{flex:1;display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px;padding:10px 16px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-sums{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;text-align:center}
+.mcl-sums .s{font-size:12px;color:#a3a5b4;line-height:1.3}.mcl-sums .l{margin-top:4px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7a7c8c;white-space:nowrap}.mcl-sums .l.g{color:#8fd65a}
+.mcl-years{flex:none;display:flex;justify-content:center;gap:6px;margin-top:6px}
+.mcl-years button{min-width:68px;height:36px;border:0;background:transparent;color:#7a7c8c;display:flex;align-items:baseline;justify-content:center;gap:5px;position:relative}
+.mcl-years button b{font-size:22px;font-weight:400;line-height:1;letter-spacing:-.02em}.mcl-years button span{font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+.mcl-years button.on{color:#ececf1}.mcl-years button.on::after{content:"";position:absolute;left:50%;bottom:-3px;width:36px;height:3px;border-radius:2px;background:#8fd65a;transform:translateX(-50%)}
+.mcl-invest{flex:none;display:flex;align-items:center;gap:8px;margin-top:10px}
+.mcl-invest .st{flex:none;width:40px;height:40px;border:0;background:transparent;color:#f6c445;font-size:18px}
+.mcl-invest .card{flex:1;display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px;padding:8px 14px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
 .mcl-invest .card span{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#a3a5b4;white-space:nowrap}
-.mcl-invest .card b{font-size:clamp(24px,7vw,30px);font-weight:700;letter-spacing:-.03em;line-height:1}
-.mcl-ruler{flex:none;position:relative;height:36px;margin-top:8px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.mcl-invest .card b{font-size:clamp(22px,6.4vw,28px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.mcl-ruler{flex:none;position:relative;height:30px;margin-top:6px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .mcl-ruler canvas{position:absolute;inset:0;width:100%;height:100%}
 .mcl-ruler input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;pointer-events:none}
 .mcl-note{flex:none;margin:8px 0 0;font-size:10.5px;line-height:1.4;color:#5a5e6c;text-align:center}
@@ -121,14 +124,13 @@
 <div><div class="s">{{ sumL }}</div><div class="l">{{ lblL }}</div></div>
 <div><div class="s">{{ sumR }}</div><div class="l g">{{ lblR }}</div></div>
 </div>
-<div class="mcl-years" role="tablist"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="4"><button class="{{ y.cls }}" onClick="{{ y.pick }}"><b>{{ y.n }}</b><span>yrs ago</span></button></sc-for></div>
+<div class="mcl-years" role="tablist"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="4"><button class="{{ y.cls }}" onClick="{{ y.pick }}"><b>{{ y.n }}</b><span>yrs</span></button></sc-for></div>
 <div class="mcl-invest">
 <button class="st" onClick="{{ dec }}" aria-label="Less">◀</button>
 <div class="card"><span>You invest</span><b class="mono">{{ amt }}</b></div>
 <button class="st" onClick="{{ inc }}" aria-label="More">▶</button>
 </div>
 <div ref="{{ rulerRef }}" class="mcl-ruler"><canvas ref="{{ cvRef }}"></canvas><input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="Amount"></div>
-<p class="mcl-note">{{ note }}</p>
 </sc-if>
 </section>
 </x-dc>
@@ -154,7 +156,12 @@ class Component extends DCLogic {
     }, err => { console.warn('calculator data', err); if (!this.dead) this.setState({ failed: true }); });
   }
   years(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
-  measure() { const r = this.rigRef.current; if (!r) return; const h = r.offsetHeight; if (h && Math.abs(h - this.state.rigH) > 2) this.setState({ rigH: h }); }
+  measure() {
+    const r = this.rigRef.current, st = this.stageRef.current; const patch = {};
+    if (r && r.offsetHeight && Math.abs(r.offsetHeight - this.state.rigH) > 2) patch.rigH = r.offsetHeight;
+    if (st && st.clientHeight && Math.abs(st.clientHeight - (this.state.stageH || 0)) > 2) patch.stageH = st.clientHeight;
+    if (Object.keys(patch).length) this.setState(patch);
+  }
   fmt(n) { return E.fmtInr(n); }
   inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
   villaRate(key) { const { cfg, vf } = this.state.data; if (!(key in this.rates)) this.rates[key] = E.villaRate(vf, cfg, key); return this.rates[key]; }
@@ -211,23 +218,27 @@ class Component extends DCLogic {
     if (!S.data) return base;
     const { cfg, vf } = S.data, { villa, w, r, L, R } = this.sim(S), villas = cfg.villas, vi = villas.indexOf(villa);
     const tl = Math.max(0, L.paid) + L.val, tr = (S.swp ? R.paid : 0) + R.val, mx = Math.max(tl, tr);
-    const rigH = S.rigH || 140, headroom = 40 + 52 + 22 + rigH + 24, maxH = Math.max(90, 420 - headroom), MIN = 44;
-    const heights = (t, parts) => { const h = maxH * (t / mx); return parts.map(x => x > 0 ? Math.max(MIN, h * x / t) : 0); };
+    // on a short phone the villa rig scales down (bottom-anchored) so bars + totals + rig always fit inside the stage
+    const rigH = S.rigH || 110, stageH0 = S.stageH || 300, CAP = 26, TOT = 38 + 30, MIN = 38;
+    const fit = Math.min(1, Math.max(.45, (stageH0 - CAP - TOT - 20 - 14 - 2 * MIN - 6) / rigH)), rigE = rigH * fit;
+    const headroom = CAP + TOT + 20 + rigE + 14, maxH = Math.max(2 * MIN, stageH0 - headroom);
+    // a bar never grows past its share of maxH: a tiny segment is held at MIN and the other segment gives way
+    const heights = (t, parts) => { const h = maxH * (t / mx); if (!(parts[0] > 0)) return [0, Math.max(MIN, h)]; const a = Math.max(MIN, h * parts[0] / t); return [a, Math.max(MIN, h - a)]; };
     const [lp, lv] = heights(tl, [Math.max(0, L.paid), L.val]), [rp, rv] = heights(tr, [S.swp ? R.paid : 0, R.val]);
-    const stageH = Math.max(380, Math.max(lp + lv, rp + rv) + headroom + 8);
-    const topL = lp + lv + 40 + 52, topR = rp + rv + 40 + 52;
+    const stageH = stageH0;
+    const topL = lp + lv + CAP + TOT, topR = rp + rv + CAP + TOT;
     const stageW = this.stageRef.current ? this.stageRef.current.clientWidth : 358;
-    const x1 = stageW * .36, y1 = stageH - topL + 22, x2 = stageW * .50, y2 = stageH - topR + 30;
+    const x1 = stageW * .35, y1 = stageH - topL + 20, x2 = stageW * .49, y2 = stageH - topR + 26;
     const span = E.ymLabel(w.months[0]) + ' → ' + E.ymLabel(w.months[w.months.length - 1]);
     const vRate = this.villaRate(villa.key), irr = r.dvIrr;
     const yearOpts = this.years(vf);
     const swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2);
     return {
       ...base,
-      stageS: `height:${stageH.toFixed(0)}px`,
+      stageS: '',
       arrowD: `M${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 + 6).toFixed(1)} ${(y2 + (y1 - y2) * .35).toFixed(1)}, ${(x2 - 24).toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`, arrowOp: tr > tl ? .9 : 0,
-      lArt: isFd ? 'assets/art/bank.svg' : 'assets/art/flat.svg', iconS: `bottom:${(topL + 8).toFixed(0)}px`,
-      rigS: `bottom:${(topR + 24).toFixed(0)}px`, tagS: `bottom:${(topR + 4).toFixed(0)}px`,
+      lArt: isFd ? 'assets/art/bank.svg' : 'assets/art/flat.svg', iconS: `bottom:${(topL + 4).toFixed(0)}px`,
+      rigS: `bottom:${(topR + 20).toFixed(0)}px;transform:translateX(-50%) scale(${fit.toFixed(3)});transform-origin:50% 100%`, tagS: `bottom:${(topR + 2).toFixed(0)}px`,
       swpCls: 'mcl-swp' + (S.swp ? '' : ' off'), swpOn: S.swp, toggleSwp: () => this.setState(s => ({ swp: !s.swp })),
       prevV: () => this.setState({ villa: villas[(vi + villas.length - 1) % villas.length].key }), nextV: () => this.setState({ villa: villas[(vi + 1) % villas.length].key }),
       villaS: `transform:scale(${(.85 + vi * .12).toFixed(2)})`, coinS: `opacity:${S.swp ? 1 : .35};transition:opacity .3s`,
