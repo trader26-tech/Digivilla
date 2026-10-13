@@ -1,5 +1,16 @@
 /* Commission — matches the admin's light estate theme (paper, ink green, brass). */
 :host { display: block; }
+/* .wrap / .section-head / .card / buttons are app.component's scoped styles and don't reach in here — restate them */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+.section-head { margin-bottom: 1.4rem; }
+.section-head h1 { margin: 0 0 0.3rem; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.6px; color: var(--ink); }
+.section-head p { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.5; max-width: 60ch; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(22, 48, 43, .04), 0 18px 40px -34px rgba(22, 48, 43, .3); }
+.ghost, .primary-btn { padding: 0.5rem 0.95rem; border-radius: 10px; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.ghost { border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+.primary-btn { border: 0; background: var(--brass); color: var(--paper); font-weight: 800; }
+.primary-btn:disabled { opacity: .5; cursor: not-allowed; }
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
 
@@ -71,9 +82,80 @@
 .cm-skel .sk.tall { grid-column: 1 / -1; height: 300px; }
 @keyframes sk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
+/* ── phones: a padded page of stacked cards; the fund table becomes one card per fund ── */
 @media (max-width: 760px) {
-  .cm-kpis { grid-template-columns: 1fr; }
-  .cm-tr { grid-template-columns: minmax(0, 1.6fr) 1fr 1fr; }
-  .cm-tr > :nth-child(2), .cm-tr > :nth-child(5) { display: none; }
+  /* .wrap / .section-head / .card / buttons live in app.component's scoped styles, so restate them here */
+  .wrap { max-width: none; margin: 0; padding: 16px 14px 28px; }
+  .section-head { margin-bottom: 14px; }
+  .section-head h1 { margin: 0 0 4px; font-size: 1.45rem; font-weight: 800; letter-spacing: -.5px; color: var(--ink); }
+  .section-head p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(22, 48, 43, .04), 0 14px 32px -28px rgba(22, 48, 43, .3); }
+  .ghost, .primary-btn { min-height: 40px; padding: 0 14px; border-radius: 11px; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .ghost { border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+  .primary-btn { border: 0; background: var(--brass); color: var(--paper); font-weight: 800; }
+  .primary-btn:disabled { opacity: .5; }
+
+  /* KPIs: the yearly figure full width, the other two side by side — short, no dead space */
+  .cm-kpis { grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
+  .cm-kpi { gap: 2px; padding: 12px 14px; min-width: 0; }
+  .cm-kpi.hero { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; padding: 14px 16px; }
+  .cm-kpi.hero small { flex-basis: 100%; }
+  .cm-kpi.hero b { font-size: 30px; }
+  .cm-kpi b { font-size: 21px; }
+  .cm-kpi small { font-size: 11.5px; }
+  .cm-kpi span { font-size: 12px; line-height: 1.35; }
+
+  .cm-alert { margin: 0 0 12px; padding: 10px 14px; font-size: 12.5px; line-height: 1.45; display: block; }
+  .cm-alert span { display: inline; }
+
+  /* the table → one row-card per fund:  name on top, then  money held · rate box · a year / a month */
+  .cm-table { padding: 0; }
+  .cm-head { display: none; }
+  .cm-tr { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "fund fund" "held rate" "year rate";
+    gap: 4px 12px; padding: 12px 14px; }
+  .cm-tr > :nth-child(1) { grid-area: fund; margin-bottom: 4px; }
+  .cm-tr > :nth-child(2) { grid-area: held; justify-self: start; text-align: left; font-size: 12.5px; color: var(--muted); }
+  .cm-tr > :nth-child(2)::before { content: 'Held '; }
+  .cm-tr > :nth-child(3) { grid-area: rate; align-self: center; }
+  .cm-tr > :nth-child(4) { grid-area: year; justify-self: start; align-items: flex-start; text-align: left; }
+  .cm-tr > :nth-child(5) { display: none; }
+  .cm-fund b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; font-size: 14.5px; }
+  .cm-fund small { line-height: 1.5; }
+  .cm-fund em { white-space: nowrap; margin-left: 4px; }
+  .cm-year { font-size: 14px; }
+  .cm-year::after { content: ' a year'; font-weight: 500; font-size: 12px; color: var(--muted); }
+  .cm-tr .cm-year { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0 4px; }
+  .cm-bar { order: 3; flex-basis: 100%; width: 100%; max-width: 160px; margin-top: 4px; }
+  .cm-rate { width: 112px; height: 44px; border-radius: 12px; }
+  .cm-rate input { font-size: 16px; }   /* 16px: no iOS focus zoom */
+
+  /* total row: label + the two yearly/monthly figures */
+  .cm-total { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "fund year" "held rate"; gap: 2px 12px; padding: 14px; }
+  .cm-total > :nth-child(1) { margin: 0; align-self: center; }
+  .cm-total > :nth-child(2)::before { content: 'Held '; }
+  .cm-total > :nth-child(3) { justify-self: end; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .cm-total > :nth-child(3)::after { content: ' blended'; font-weight: 500; }
+  .cm-total > :nth-child(4) { justify-self: end; font-size: 17px; }
+  .cm-total > :nth-child(4)::after { content: ' a year'; font-size: 12px; font-weight: 500; color: var(--muted); }
+
+  .cm-note { margin: 12px 2px 0; font-size: 12px; }
+
+  /* save bar: full width above the bottom tab bar */
+  .cm-save { bottom: calc(max(var(--tabbar-h, 0px), env(safe-area-inset-bottom, 0px)) + 12px); width: auto; margin: 14px 0 0; padding: 8px 8px 8px 16px; justify-content: flex-start; }
+  .cm-save span { flex: 1; min-width: 0; margin: 0; }
+  .cm-save.ok { justify-content: center; min-height: 52px; }
+  .cm-err { flex-wrap: wrap; padding: 14px; }
+  .cm-skel { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cm-skel .sk { height: 76px; border-radius: 16px; }
+  .cm-skel .sk:first-child { grid-column: 1 / -1; }
+  .cm-skel .sk.tall { height: 260px; }
+}
+@media (max-width: 400px) {
+  .wrap { padding: 14px 12px 24px; }
+  .cm-kpi.hero b { font-size: 27px; }
+  .cm-kpi b { font-size: 19px; }
+  .cm-tr { padding: 12px; gap: 4px 10px; }
+  .cm-rate { width: 100px; }
 }
 @media (prefers-reduced-motion: reduce) { .cm-save, .cm-skel .sk { animation: none; } .cm-bar i { transition: none; } }

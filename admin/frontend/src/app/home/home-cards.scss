@@ -133,3 +133,47 @@
   b { color: var(--ink); font-weight: 800; }
   li.gap { color: var(--terracotta); .cc-n { color: var(--terracotta); } } }
 @media (prefers-reduced-motion: reduce) { .cc-mix-bar i { transition: none; } }
+
+/* ── phones: roomier cards, 40px targets, popups become bottom sheets above the tab bar ── */
+@media (max-width: 760px) {
+  :host { min-width: 0; }
+  .hc { padding: 14px 16px; border-radius: 16px; }
+  .hc-h { margin-bottom: 8px; h3 { font-size: 1.02rem; } &.tight { margin: 10px 0 4px; } }
+  .hc-acts { gap: 6px; }
+  .hc-link { min-height: 40px; min-width: 44px; padding: 0 10px; font-size: 0.84rem; border-radius: 10px; }
+  .hc-add { min-height: 40px; padding: 0 14px; font-size: 0.84rem; }
+  .hc-warn { min-height: 44px; padding: 8px 12px; font-size: 0.8rem; line-height: 1.35; }
+  .hc-empty { font-size: 0.86rem; margin: 2px 0 4px; }
+  .hc-more { min-height: 40px; padding: 0; font-size: 0.8rem; }
+
+  /* meetings card */
+  .mc2 { padding: 0; }
+  .mc2 > :not(.mc2-band) { margin-left: 16px; margin-right: 16px; }
+  .mc2 > :last-child { margin-bottom: 12px; }
+  .mc2-band { gap: 10px; padding: 12px 12px 12px 14px; }
+  .mc2-cam { width: 40px; height: 40px; border-radius: 12px; }
+  .mc2-link { width: 0; min-height: 44px;            /* width 0: the long URL never widens the page */
+    small { font-size: 0.66rem; } span { font-size: 0.9rem; } }
+  .mc2-go { min-height: 44px; padding: 0 18px; font-size: 0.9rem; }
+  .mc2-list { li { grid-template-columns: 88px minmax(0, 1fr); padding: 10px 0; }
+    .mc2-when { font-size: 0.8rem; } .mc2-who b { font-size: 0.9rem; } .mc2-who small { font-size: 0.76rem; } }
+
+  /* commission card */
+  .cc-hero { b { font-size: 1.8rem; } .cc-year b { font-size: 1.1rem; } small { font-size: 0.66rem; } }
+  .cc-meta { font-size: 0.8rem; gap: 4px 14px; }
+  .cc-whatif { min-height: 56px; padding: 12px 14px; b { font-size: 0.9rem; } small { font-size: 0.76rem; } }
+
+  /* sheets: slide up from the bottom, full width, safe-area + tab-bar aware */
+  .hc-scrim { z-index: 33; backdrop-filter: none; }   /* over the top bar (30), under the tab bar (35) */
+  .hc-sheet { top: auto; bottom: 0; left: 0; right: 0; width: 100%; max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px));
+    transform: none; border-radius: 22px 22px 0 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding-bottom: max(var(--tabbar-h, 0px), env(safe-area-inset-bottom, 0px));
+    z-index: 34; animation-name: hc-sheet-up; animation-fill-mode: backwards; }   /* no transform left behind → fixed menus inside stay viewport-fixed */
+  .hc-sheet:not(.cw) { background: var(--surface); }
+  .hc-sheet ::ng-deep app-meet-room .mr { border: 0; border-radius: 22px 22px 0 0; box-shadow: none; }
+  .hc-sheet ::ng-deep app-meet-room .mr-room { border-radius: 22px 22px 0 0; padding-top: 22px; }
+  .hc-x { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 1.4rem; }
+
+}
+@keyframes hc-sheet-up { from { opacity: 0; transform: translateY(32px); } }
+@media (prefers-reduced-motion: reduce) { .hc-sheet { animation: none; } }

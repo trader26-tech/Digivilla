@@ -80,14 +80,9 @@
       <span class="tag">Admin</span>
     </div>
     <nav class="side-nav" aria-label="Admin sections">
-      <button [class.on]="view() === 'commission'" (click)="setView('commission')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5h4a1.7 1.7 0 0 1 0 3.4h-3a1.7 1.7 0 0 0 0 3.4h4M12 7.5V9M12 16.5V18"/></svg><span>Commission</span></button>
-      <button [class.on]="view() === 'clients'" (click)="setView('clients')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.7.7 2.8 2.3 3 4.7"/></svg><span>Clients</span></button>
-      <button [class.on]="view() === 'market'" (click)="setView('market')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg><span>Villas vs market</span></button>
+      <button *ngFor="let n of navMain" [class.on]="view() === n.view" (click)="setView(n.view)"><ng-container *ngTemplateOutlet="navIcon; context: { $implicit: n.view }"></ng-container><span>{{ n.label }}</span></button>
       <span class="side-sep">Data</span>
-      <button [class.on]="view() === 'villas'" (click)="setView('villas')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>Live NAVs</span></button>
-      <button [class.on]="view() === 'buckets'" (click)="setView('buckets')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg><span>Villa buckets</span></button>
-      <button [class.on]="view() === 'uploads'" (click)="setView('uploads')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span>Uploads</span></button>
-      <button [class.on]="view() === 'audit'" (click)="setView('audit')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"/></svg><span>Check the maths</span></button>
+      <button *ngFor="let n of navData" [class.on]="view() === n.view" (click)="setView(n.view)"><ng-container *ngTemplateOutlet="navIcon; context: { $implicit: n.view }"></ng-container><span>{{ n.label }}</span></button>
     </nav>
     <div class="side-foot">
       <button class="meet-top" [class.soon]="meet.liveOrSoon()" (click)="openMeet()" title="Open your Google Meet room">
@@ -100,6 +95,55 @@
       </div>
     </div>
   </aside>
+
+  <!-- ═══ PHONE: top bar + bottom tab bar + "More" sheet (the sidebar hides ≤ 900px) ═══ -->
+  <header class="mbar">
+    <span class="logo" aria-hidden="true">◆</span>
+    <b class="mbar-title" *ngIf="view() !== 'clients'">{{ viewTitle() }}</b>
+    <b class="mbar-title" *ngIf="view() === 'clients'">Digivilla <span class="tag">Admin</span></b>
+    <button class="mbar-meet" [class.soon]="meet.liveOrSoon()" (click)="openMeet()" aria-label="Open your Google Meet room">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 10.5l5-3v9l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>Meet</span>
+    </button>
+  </header>
+
+  <nav class="tabbar" aria-label="Admin sections">
+    <button *ngFor="let n of navTabs" [class.on]="view() === n.view && !moreOpen()" [attr.aria-current]="view() === n.view ? 'page' : null" (click)="setView(n.view)">
+      <ng-container *ngTemplateOutlet="navIcon; context: { $implicit: n.view }"></ng-container><span>{{ n.short }}</span>
+    </button>
+    <button [class.on]="inMore() || moreOpen()" [attr.aria-expanded]="moreOpen()" (click)="toggleMore()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>More</span>
+    </button>
+  </nav>
+
+  <div class="more-scrim" *ngIf="moreOpen()" (click)="closeSheet()"></div>
+  <section class="more-sheet" *ngIf="moreOpen()" role="dialog" aria-label="More sections">
+    <i class="grab" aria-hidden="true"></i>
+    <button class="more-item" *ngFor="let n of navMore" [class.on]="view() === n.view" (click)="setView(n.view)">
+      <ng-container *ngTemplateOutlet="navIcon; context: { $implicit: n.view }"></ng-container><span>{{ n.label }}</span><b aria-hidden="true">›</b>
+    </button>
+    <button class="more-item install" *ngIf="canInstall()" (click)="install()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/></svg><span>Install on this phone</span><b aria-hidden="true">›</b>
+    </button>
+    <p class="install-steps" *ngIf="installSteps()">In Safari, tap <b>Share</b> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="the Share icon"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 11v9h14v-9"/></svg> then <b>Add to Home Screen</b>. The admin then opens full-screen, like an app.</p>
+    <div class="more-foot">
+      <span class="timer" *ngIf="lockCountdown()">🔒 Locks in {{ lockCountdown() }}</span>
+      <button class="ghost" (click)="closeSheet(); signOut()">Sign out</button>
+    </div>
+  </section>
+
+  <!-- one icon per section — shared by the sidebar, the tab bar and the More sheet -->
+  <ng-template #navIcon let-v>
+    <ng-container [ngSwitch]="v">
+      <svg *ngSwitchCase="'commission'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5h4a1.7 1.7 0 0 1 0 3.4h-3a1.7 1.7 0 0 0 0 3.4h4M12 7.5V9M12 16.5V18"/></svg>
+      <svg *ngSwitchCase="'clients'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.7.7 2.8 2.3 3 4.7"/></svg>
+      <svg *ngSwitchCase="'market'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg>
+      <svg *ngSwitchCase="'villas'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>
+      <svg *ngSwitchCase="'buckets'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>
+      <svg *ngSwitchCase="'uploads'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <svg *ngSwitchCase="'audit'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"/></svg>
+    </ng-container>
+  </ng-template>
 
   <!-- ─────────── HOME ─────────── -->
   <div class="wrap wrap-home" *ngIf="view() === 'clients'">
@@ -134,7 +178,7 @@
         <span class="kpi-foot" [class.pos]="nwTotalGain() >= 0" [class.neg]="nwTotalGain() < 0">{{ nwGainPct() >= 0 ? '+' : '' }}{{ nwGainPct() | number:'1.1-1' }}% overall</span>
       </div>
       <div class="kpi">
-        <small>Mapped to villas</small>
+        <small>Mapped<span class="wide"> to villas</span></small>
         <ng-container *ngIf="mapOverview() as mo; else mapSk">
           <b class="figure">{{ mo.mapped }}<span class="kpi-of"> / {{ mo.total }}</span></b>
           <a class="kpi-foot kpi-link" href="#unmapped" *ngIf="mo.unmapped > 0">{{ mo.unmapped }} not mapped · {{ money(mo.unmapped_amount) }} →</a>
@@ -552,10 +596,10 @@
             <div class="hold-tr hold-head"><span>Scheme</span><span class="num">Units</span><span class="num">Invested</span><span class="num">Value</span><span class="num">Gain</span></div>
             <div class="hold-tr" *ngFor="let f of d.holdings">
               <span class="hold-name">{{ f.scheme_name }}</span>
-              <span class="num">{{ f.units | number:'1.0-2' }}</span>
-              <span class="num">{{ money(f.invested) }}</span>
+              <span class="num" data-l="Units">{{ f.units | number:'1.0-2' }}</span>
+              <span class="num" data-l="Invested">{{ money(f.invested) }}</span>
               <span class="num strong">{{ money(f.current_value) }}</span>
-              <span class="num" [class.pos]="f.gain >= 0" [class.neg]="f.gain < 0">{{ money(f.gain) }}</span>
+              <span class="num" data-l="Gain" [class.pos]="f.gain >= 0" [class.neg]="f.gain < 0">{{ money(f.gain) }}</span>
             </div>
           </div>
         </section>
@@ -585,7 +629,7 @@
               <span class="txn-date">{{ t.txn_date }}</span>
               <span><span class="txn-kind">{{ t.kind }}</span></span>
               <span class="num strong">{{ money(t.amount) }}</span>
-              <span class="num">₹{{ t.nav | number:'1.2-2' }}</span>
+              <span class="num" data-l="NAV">₹{{ t.nav | number:'1.2-2' }}</span>
               <span class="txn-villa" *ngIf="villaFor(t) as v; else unmapped"><i [style.background]="villaColour(v.id)"></i>{{ v.name }}</span>
               <ng-template #unmapped><span class="txn-villa un">Not mapped</span></ng-template>
             </div>
@@ -649,7 +693,7 @@
               </div>
             </div>
             <label class="ap-f"><span>Amount</span>
-              <div class="ap-amt"><i>₹</i><input inputmode="numeric" [value]="addAmountText()" (input)="onAddAmount($event)" aria-label="Amount"></div>
+              <div class="ap-amt"><i>₹</i><input class="big" inputmode="numeric" [value]="addAmountText()" (input)="onAddAmount($event)" aria-label="Amount"></div>
             </label>
             <div class="ap-quick">
               <button *ngFor="let q of [500000, 100000, 50000, 25000]" [class.on]="addAmount() === q" (click)="setAddAmount(q)">{{ money(q) }}</button>

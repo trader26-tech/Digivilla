@@ -202,16 +202,124 @@ table.years { min-width: 480px;
 .mc-beat { font-style: normal; font-size: 0.6rem; margin-left: 0.25rem; color: var(--negative); &.won { color: var(--positive); } }
 
 /* ── small screens: the panel stops filling and just stacks ── */
+.mc-note { display: none; }
 @media (max-width: 760px) {
-  .mc { height: auto; padding: 0.85rem 0.8rem 0.5rem; }
-  .mc-plot { flex: none; height: 270px; }
-  .mc-today { flex-wrap: wrap; }
-  .mc-today-h { flex: 1 0 100%; flex-direction: row; align-items: center; gap: 0.6rem; padding: 0.35rem 0.7rem; }
-  .mc-today-c { flex: 1 0 45%; border-top: 1px solid color-mix(in srgb, var(--survey) 70%, transparent); }
+  .mc { position: relative; height: auto; padding: 0.9rem 0.85rem 0.6rem; border-radius: 18px; }
+
+  /* the page already says "Villas vs market": keep the h2 for screen readers only */
+  .mc-bar { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 0.6rem; }
+  .mc-id { justify-content: space-between; min-height: 36px; padding-right: 44px; }
+  .mc-id h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mc-live { font-size: 0.74rem; padding: 0.3rem 0.65rem 0.3rem 0.55rem; }
+
+  /* controls: [since] [vs index ▾] (i)  /  one full-width period strip that scrolls inside itself */
+  .mc-ctrls { gap: 0.5rem; flex-wrap: wrap; }
+  .mc-since { min-height: 40px; padding: 0 0.85rem 0 0.7rem; font-size: 0.82rem; flex: none; }
+  .mc-bench { flex: 1 1 auto; min-width: 0; }
+  .mc-bench-btn { width: 100%; min-height: 40px; padding: 0 0.6rem 0 0.75rem; font-size: 0.86rem;
+    b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; } }
+  /* (i) sits top-right, level with the live badge */
+  .mc-info { position: absolute; top: 0.9rem; right: 0.85rem; width: 36px; height: 36px; font-size: 0.85rem; cursor: pointer; }
+  .mc-seg {
+    order: 9; flex: 1 0 100%; display: flex; padding: 3px; gap: 2px; border-radius: 12px;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+    &::-webkit-scrollbar { display: none; }
+    button { flex: 1 0 auto; justify-content: center; min-height: 36px; padding: 0 0.25rem; font-size: 0.78rem; border-radius: 9px; }
+  }
+  .mc-note {
+    display: block; margin: 0.55rem 0 0; padding: 0.65rem 0.8rem; border-radius: 12px; background: var(--surface-2);
+    font-size: 0.8rem; line-height: 1.45; color: var(--muted); animation: mc-pop 0.16s ease-out both;
+  }
+
+  /* the index picker becomes a bottom sheet */
+  .mc-menu {
+    position: fixed; left: 12px; right: 12px; top: auto; bottom: calc(var(--tabbar-h, 0px) + 12px); width: auto;
+    max-height: min(70vh, 520px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    padding: 0.45rem; border-radius: 18px; z-index: 60;
+    box-shadow: 0 0 0 100vmax rgba(22, 48, 43, 0.38), 0 24px 60px -20px rgba(22, 48, 43, 0.5);
+    animation: mc-sheet 0.22s cubic-bezier(.2, .8, .2, 1) both;
+    button { min-height: 52px; padding: 0.6rem 0.7rem; align-items: center; }
+    .mc-m-txt { b { font-size: 0.95rem; } small { font-size: 0.78rem; } }
+    .mc-m-day { font-size: 0.85rem; padding-top: 0; }
+  }
+
+  .mc-custom { justify-content: stretch;
+    input { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 0 0.5rem; border-radius: 10px; } }
+
+  /* today: a 2 × 2 card */
+  .mc-today { flex-wrap: wrap; margin-top: 0.75rem; }
+  .mc-today-h { flex: 1 0 100%; flex-direction: row; align-items: center; gap: 0.6rem; padding: 0.45rem 0.8rem; }
+  .mc-breadth { flex: 1; width: auto; max-width: 140px; }
+  .mc-today-c { flex: 1 0 45%; padding: 0.5rem 0.8rem; border-top: 1px solid color-mix(in srgb, var(--survey) 70%, transparent);
+    span { font-size: 0.76rem; } b { font-size: 1.12rem; } }
+
+  /* Growth / Drawdown sits on its own row above the plot instead of over the lines */
+  .mc-plot { flex: none; height: auto; min-height: 0; margin-top: 0.75rem; }
+  .mc-overlay { position: static; padding: 0; background: none; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.35rem; }
+  .mc-mode { flex: none; border-radius: 10px;
+    button { min-height: 34px; padding: 0 0.85rem; font-size: 0.78rem; } }
+  .mc-span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 0.72rem; }
+  .mc-plot-wrap { flex: none; height: 290px; }
+  .mc-ylab, .mc-xlab { font-size: 10.5px; }
+  .mc-svg { -webkit-touch-callout: none; }
+  .mc-hit { cursor: default; }
+
+  /* scrub readout: a card pinned just above the plot (over the "today" strip), never off-screen */
+  .mc-tip, .mc-tip.flip {
+    left: 0 !important; right: 0; top: auto !important; bottom: calc(100% + 0.4rem); transform: none; min-width: 0;
+    padding: 0.55rem 0.75rem 0.45rem; border-radius: 14px; box-shadow: 0 18px 40px -16px rgba(22, 48, 43, 0.5);
+  }
+  .mc-tip-row { grid-template-columns: 14px auto 1fr auto; padding: 0.12rem 0;
+    span { overflow: hidden; text-overflow: ellipsis; } }
+
+  /* the numbers: no nested scroller — Risk turns into one stacked card per line */
+  .mc-table { margin-top: 0.6rem; padding-top: 0.6rem; }
+  .mc-scroll { max-height: none; overflow: visible; }
+  .mc-tabs { padding: 3px; border-radius: 10px;
+    button { min-height: 34px; padding: 0 0.9rem; font-size: 0.8rem; border-radius: 8px; } }
+
+  /* both tables: one stacked card per line (Risk) or per year (By year), labels from data-l */
+  table, table.years {
+    display: block; min-width: 0;
+    thead, tbody { display: block; }
+    thead tr { display: flex; }
+    thead th { position: static; border-bottom: 0; padding: 0 0 0.5rem; }
+    thead th:not(.mc-corner) { display: none; }
+    tbody tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.45rem 0.4rem;
+      padding: 0.7rem 0.75rem; margin-bottom: 0.5rem; border-radius: 14px; border: 1px solid var(--border); }
+    tbody tr:last-child { margin-bottom: 0; }
+    tbody tr.bench { border-style: dashed; }
+    tbody th, tbody td { display: block; padding: 0; border-bottom: 0; text-align: left; white-space: normal; }
+    tbody th { grid-column: 1 / -1; font-size: 0.92rem; }
+    tbody td { font-size: 0.86rem; min-width: 0; overflow-wrap: anywhere; }
+    tbody td::before { content: attr(data-l); display: block; margin-bottom: 0.1rem; font-size: 0.6rem; font-weight: 800;
+      letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+  }
+  table.years {
+    tbody tr { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0.6rem 0.75rem; }
+    td.bench { background: none; }
+    .mc-beat { margin-left: 0.15rem; }
+  }
+}
+@media (max-width: 360px) {
   .mc-span { display: none; }
-  .mc-menu { left: 0; right: auto; width: min(300px, calc(100vw - 2.5rem)); }
+  /* the period strip no longer fits: fade its edge so it reads as scrollable */
+  .mc-seg { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    &::after { content: ''; flex: 0 0 20px; } }
+}
+@keyframes mc-sheet { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 400px) {
+  .mc { padding: 0.8rem 0.7rem 0.5rem; }
+  .mc-since { padding: 0 0.7rem 0 0.6rem; font-size: 0.78rem; }
+  .mc-info { top: 0.8rem; right: 0.7rem; }
+  .mc-plot-wrap { height: 260px; }
+  .mc-today-c b { font-size: 1.02rem; }
+  table tbody tr { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.8fr) minmax(0, 1.1fr); gap: 0.45rem 0.3rem; }
+  table tbody td::before { letter-spacing: 0.02em; }
+  table.years tbody tr { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mc-menu, .mc-custom, .mc-live.open i, .mc-end.pulse, .mc-sk-plot i, .mc-today.sk { animation: none; }
+  .mc-menu, .mc-custom, .mc-note, .mc-live.open i, .mc-end.pulse, .mc-sk-plot i, .mc-today.sk { animation: none; }
   .mc-line, .mc-elab, tbody tr { transition: none; }
 }

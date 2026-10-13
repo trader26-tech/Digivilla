@@ -2,7 +2,7 @@
 @if (err()) { <p class="cs-err">{{ err() }}</p> }
 
 @if (draft; as d) {
-<div class="cs">
+<div class="cs" [class.dirty]="dirty()">
   <div class="cs-main">
     <header class="cs-head">
       <div>
@@ -32,10 +32,10 @@
               </small>
             </span>
             @for (s of series(); track s) {
-              <span class="n"><input type="number" step="0.5" min="0" max="100" [ngModel]="pct(v, s)" (ngModelChange)="setPct(v, s, $event)" [attr.aria-label]="(SERIES_LABEL[s] || s) + ' %'" /><i>%</i></span>
+              <span class="n" [attr.data-l]="SERIES_LABEL[s] || s"><input type="number" step="0.5" min="0" max="100" [ngModel]="pct(v, s)" (ngModelChange)="setPct(v, s, $event)" [attr.aria-label]="(SERIES_LABEL[s] || s) + ' %'" /><i>%</i></span>
             }
-            <span class="n tot" [class.bad]="sum(v) !== 100">{{ sum(v) }}%</span>
-            <span><input type="radio" name="defv" [checked]="d.default_villa === v.key" (change)="d.default_villa = v.key; touch()" aria-label="Default villa" /></span>
+            <span class="n tot" data-l="Total" [class.bad]="sum(v) !== 100">{{ sum(v) }}%</span>
+            <span class="dv" data-l="Default"><input type="radio" name="defv" [checked]="d.default_villa === v.key" (change)="d.default_villa = v.key; touch()" aria-label="Default villa" /></span>
             <span class="acts">
               <button class="ic" (click)="moveVilla(i, -1)" [disabled]="i === 0" aria-label="Move up">↑</button>
               <button class="ic" (click)="moveVilla(i, 1)" [disabled]="i === d.villas.length - 1" aria-label="Move down">↓</button>
@@ -164,7 +164,7 @@
         <ul class="probs">@for (e of errors(); track e) { <li>{{ e }}</li> }</ul>
       }
       @if (notice()) { <p class="ok">{{ notice() }}</p> }
-      <div class="btns">
+      <div class="btns" [class.float]="dirty()">
         <button class="ghost" (click)="discard()" [disabled]="!dirty() || saving()">Discard changes</button>
         <button class="go" (click)="save()" [disabled]="!dirty() || errors().length > 0 || saving()">{{ saving() ? 'Publishing…' : 'Save & publish' }}</button>
       </div>

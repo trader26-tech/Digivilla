@@ -23,6 +23,7 @@ RUN printf 'server {\n\
   root /usr/share/nginx/html;\n\
   index index.html;\n\
   location /assets/env.js { add_header Cache-Control "no-store"; }\n\
+  location ~ ^/(index\\.html|ngsw-worker\\.js|ngsw\\.json|safety-worker\\.js|manifest\\.webmanifest)$ { add_header Cache-Control "no-cache"; }\n\
   location / { try_files $uri $uri/ /index.html; }\n\
 }\n' > /etc/nginx/templates/default.conf.template
 

@@ -73,6 +73,8 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
   mode = signal<Mode>('growth');
   table = signal<'stats' | 'years'>('stats');
   benchOpen = signal(false);
+  /** phones: the method note opens under the bar (a title tooltip never shows on touch) */
+  infoOpen = signal(false);
   width = signal(900);
   boxH = signal(360);
 
@@ -161,8 +163,16 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
   onDocClick(e: MouseEvent): void {
     if (this.benchOpen() && !(e.target as HTMLElement)?.closest?.('.mc-bench')) this.benchOpen.set(false);
   }
+  /** Touch: the scrub readout stays after the finger lifts — a tap anywhere else clears it.
+   *  (pointerdown, not click: iOS doesn't send clicks on plain elements up to the document.) */
+  @HostListener('document:pointerdown', ['$event'])
+  onDocPointer(e: PointerEvent): void {
+    const t = e.target as HTMLElement;
+    if (this.hover() !== null && !t?.closest?.('.mc-hit')) this.hover.set(null);
+    if (this.infoOpen() && !t?.closest?.('.mc-info, .mc-note')) this.infoOpen.set(false);
+  }
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.benchOpen.set(false); }
+  onEsc(): void { this.benchOpen.set(false); this.infoOpen.set(false); }
 
   // ───────────────────────────── data (+ today's live point) ─────────────────────────────
   /** The stored closes, plus a provisional point for today while NSE's board is ahead of them. */
@@ -460,6 +470,8 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
     if (i > 0 && target - t[i - 1] < t[i] - target) i--;
     this.hover.set(i);
   }
+  /** a mouse leaving clears the readout; a lifted finger keeps it (see onDocPointer) */
+  onLeave(ev: PointerEvent): void { if (ev.pointerType !== 'touch') this.hover.set(null); }
   onKey(ev: KeyboardEvent): void {
     const n = this.dates().length;
     if (!n) return;

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
 import {
@@ -51,6 +51,17 @@ type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
 
 /** The one workspace has a small set of views, all about clients & money. */
 type View = 'commission' | 'clients' | 'market' | 'villas' | 'buckets' | 'uploads' | 'audit';
+
+/** Every section, in sidebar order. `tab` = on the phone's bottom bar; the rest sit under "More". */
+const NAV: { view: View; label: string; short: string; tab: boolean; group?: 'data' }[] = [
+  { view: 'commission', label: 'Commission', short: 'Commission', tab: true },
+  { view: 'clients', label: 'Clients', short: 'Home', tab: true },
+  { view: 'market', label: 'Villas vs market', short: 'Markets', tab: true },
+  { view: 'villas', label: 'Live NAVs', short: 'NAVs', tab: false, group: 'data' },
+  { view: 'buckets', label: 'Villa buckets', short: 'Buckets', tab: false, group: 'data' },
+  { view: 'uploads', label: 'Uploads', short: 'Uploads', tab: true, group: 'data' },
+  { view: 'audit', label: 'Check the maths', short: 'Maths', tab: false, group: 'data' },
+];
 type DrawerTab = 'overview' | 'transactions' | 'mapping' | 'profile' | 'documents';
 
 /** Villa colours, in fixed order by the villa's position (never by rank): the
@@ -74,7 +85,8 @@ const PROFILE_FIELDS: [string, string][] = [
   standalone: true,
   imports: [CommonModule, FormsModule, AuditComponent, CommissionComponent, MarketsPageComponent, VillaSalesComponent, MeetRoomComponent, CommissionCardComponent, MeetCardComponent, TodayUpdateComponent, UnmappedTxnsComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  // the phone layout lives in its own sheet (app.component.scss is near its 60 kB budget)
+  styleUrls: ['./app.component.scss', './app.component.phone.scss'],
 })
 export class AppComponent implements OnInit {
   private api = inject(AdminService);
@@ -138,7 +150,45 @@ export class AppComponent implements OnInit {
   onTodayUpdated(): void { this.loadNetWorth(); this.loadMappingOverview(); }
 
   view = signal<View>('clients');
+  readonly NAV = NAV;
+  readonly navMain = NAV.filter((n) => !n.group);
+  readonly navData = NAV.filter((n) => n.group === 'data');
+  readonly navTabs = NAV.filter((n) => n.tab);
+  readonly navMore = NAV.filter((n) => !n.tab);
+  /** phone top bar: the open section's name (home shows the brand instead) */
+  viewTitle = computed(() => NAV.find((n) => n.view === this.view())?.label ?? '');
+  /** the bottom bar's "More" lights up for any section that lives in its sheet */
+  inMore = computed(() => this.navMore.some((n) => n.view === this.view()));
+  /** phone: the "More" bottom sheet */
+  moreOpen = signal(false);
+  toggleMore(): void { this.moreOpen() ? this.closeSheet() : this.pushLayer('more'); }
+  closeSheet(): void { if (this.moreOpen()) this.popLayer('more'); }
+
+  /** "Install on this phone": Chrome/Android hands us its install prompt; iOS has
+   *  none, so Safari gets the Share → Add to Home Screen steps instead. */
+  private installEvt: { prompt: () => Promise<void> } | null = null;
+  private readonly standalone = typeof window !== 'undefined' &&
+    (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true);
+  private readonly ios = typeof navigator !== 'undefined' &&
+    (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  canInstall = signal(!this.standalone && this.ios);
+  installSteps = signal(false);
+  @HostListener('window:beforeinstallprompt', ['$event'])
+  onInstallable(e: Event): void {
+    e.preventDefault();
+    this.installEvt = e as unknown as { prompt: () => Promise<void> };
+    this.canInstall.set(!this.standalone);
+  }
+  @HostListener('window:appinstalled')
+  onInstalled(): void { this.installEvt = null; this.canInstall.set(false); }
+  install(): void {
+    if (this.installEvt) { this.installEvt.prompt().catch(() => {}); this.installEvt = null; this.canInstall.set(false); }
+    else this.installSteps.set(!this.installSteps());
+  }
+
   setView(v: View): void {
+    if (this.moreOpen()) this.closeSheet();
+    if (this.view() !== v) window.scrollTo({ top: 0 });
     this.view.set(v);
     if (v === 'villas') this.loadVillasLive();
     if (v === 'buckets' && !this.nwBuckets().length) {
@@ -389,6 +439,17 @@ export class AppComponent implements OnInit {
     this.tick = setInterval(() => this.heartbeat(), 1000);
     this.heartbeat();
     this.refreshAll();
+    this.openLinkedView();
+  }
+
+  /** Home-screen shortcuts open a section directly (/?view=uploads); used once, then dropped from the URL. */
+  private openLinkedView(): void {
+    const url = new URL(location.href);
+    const v = url.searchParams.get('view') as View | null;
+    if (!v) return;
+    url.searchParams.delete('view');
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+    if (NAV.some((n) => n.view === v)) this.setView(v);
   }
 
   private bindActivity(): void {
@@ -573,7 +634,33 @@ export class AppComponent implements OnInit {
   setSort(s: 'net_worth' | 'invested' | 'gain_pct' | 'name'): void { this.nwSort.set(s); }
 
   // ── client detail drawer ────────────────────────────────────────────────────
+  /** Phone back gesture / Android back button: the drawer and the More sheet
+   *  each push one history entry, so "back" closes them instead of leaving. */
+  private layers: ('drawer' | 'more')[] = [];
+  private pushLayer(l: 'drawer' | 'more'): void {
+    if (l === 'more') this.moreOpen.set(true);
+    if (this.layers.includes(l)) return;
+    this.layers.push(l);
+    history.pushState({ dvLayer: l }, '');
+  }
+  /** close a layer from the UI: unwind its history entry too */
+  private popLayer(l: 'drawer' | 'more'): void {
+    this.dropLayer(l);
+    if (history.state?.dvLayer === l) history.back();
+  }
+  private dropLayer(l: 'drawer' | 'more'): void {
+    this.layers = this.layers.filter((x) => x !== l);
+    if (l === 'more') this.moreOpen.set(false);
+    else this.resetDrawer();
+  }
+  @HostListener('window:popstate')
+  onPopState(): void {
+    const top = this.layers[this.layers.length - 1];
+    if (top) this.dropLayer(top);
+  }
+
   openNwClient(code: string, tab: DrawerTab = 'overview'): void {
+    this.pushLayer('drawer');
     this.nwDetailLoading.set(true);
     this.nwDetail.set(null);
     this.drawerTab.set(tab);
@@ -583,6 +670,7 @@ export class AppComponent implements OnInit {
     this.docError.set('');
     this.api.reportClientDetail(code).subscribe({
       next: (d) => {
+        if (this.mapCode() !== code) return;   // closed (or another client opened) meanwhile
         this.nwDetail.set(d);
         this.nwDetailLoading.set(false);
         this.loadDrawerDocs(d.client?.name || '');
@@ -591,8 +679,10 @@ export class AppComponent implements OnInit {
     });
     this.loadMapping(code);
   }
-  closeNwClient(): void {
+  closeNwClient(): void { this.popLayer('drawer'); }
+  private resetDrawer(): void {
     this.nwDetail.set(null);
+    this.nwDetailLoading.set(false);
     this.drawerTab.set('overview');
     this.mapCode.set('');
     this.mapTxns.set([]);

@@ -32,6 +32,13 @@ def mount_spa(app: FastAPI) -> None:
         # Serve a real file if it exists (favicon, *.js, *.css, etc.)
         candidate = os.path.join(STATIC_DIR, full_path)
         if full_path and os.path.isfile(candidate):
-            return FileResponse(candidate)
+            headers = _NO_CACHE if full_path in _ALWAYS_FRESH else None
+            return FileResponse(candidate, headers=headers)
         # Otherwise hand back the SPA shell.
-        return FileResponse(index)
+        return FileResponse(index, headers=_NO_CACHE)
+
+
+# PWA: the service worker, its manifest and the app shell must always be
+# revalidated, or an installed admin can stay pinned to an old build.
+_ALWAYS_FRESH = {"index.html", "ngsw-worker.js", "ngsw.json", "safety-worker.js", "worker-basic.min.js", "manifest.webmanifest"}
+_NO_CACHE = {"Cache-Control": "no-cache"}

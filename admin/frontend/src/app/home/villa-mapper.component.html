@@ -9,7 +9,7 @@
       }
     }
   </header>
-  <p class="vm-how"><b>1</b> Pick a client <span>→</span> <b>2</b> each purchase shows the villas it can go in <span>→</span> <b>3</b> tap one. Dragging works too.</p>
+  <p class="vm-how"><b>1</b> Pick a client <span>→</span> <b>2</b> each purchase shows the villas it can go in <span>→</span> <b>3</b> tap one.<span class="vm-drag-hint"> Dragging works too.</span></p>
 
   <div class="vm-body">
     <!-- ── clients ── -->
@@ -85,7 +85,9 @@
                       <button class="vm-to new" [class.sug]="p.villaFunds && p.suggest === 'new'" (click)="menu.set(menu() === p.key ? null : p.key)" [attr.aria-expanded]="menu() === p.key" [disabled]="!!busy()">+ New villa ▾</button>
                     }
                     @if (menu() === p.key) {
+                      <div class="vm-scrim" (click)="menu.set(null)" aria-hidden="true"></div>
                       <div class="vm-menu" role="menu">
+                        <b class="vm-menu-h">Start a new villa for {{ money(p.total) }}</b>
                         @for (t of TYPES; track t.key) {
                           <button role="menuitem" (click)="pin(p, 'new:' + t.key)"><i class="vm-dot new" [attr.data-t]="t.key"></i>New {{ t.label }} villa</button>
                         }

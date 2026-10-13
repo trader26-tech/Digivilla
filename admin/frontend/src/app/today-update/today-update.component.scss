@@ -156,6 +156,37 @@
   .db-btn { margin-left: auto; }
   .moment h3 { font-size: 1.15rem; }
 }
+/* touch screens: there is nothing to drag — say "tap" instead */
+.hint-touch { display: none; }
+@media (pointer: coarse) { .tu-foot .hint-drag { display: none; } .tu-foot .hint-touch { display: inline; } }
+
+/* ── phones: the whole box is the tap target (it's a <label> for the file input) ── */
+@media (max-width: 760px) {
+  :host { min-width: 0; }
+  .tu { padding: 16px 14px 14px; border-radius: 18px; }
+  .tu-head { gap: 10px; margin-bottom: 12px; }
+  .tu-title small { font-size: 0.68rem; }
+  .tu-title h3 { font-size: 1.04rem; line-height: 1.3; }
+  .tu-x { width: 40px; height: 40px; font-size: 0.9rem; }
+  .tu-slots { grid-template-columns: 1fr; gap: 8px; }
+  .slot { min-height: 72px; padding: 12px; gap: 12px; border-radius: 14px; -webkit-tap-highlight-color: transparent;
+    &:hover { border-color: color-mix(in srgb, var(--ink) 22%, var(--border)); background: var(--surface); }
+    &:active { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 6%, var(--surface)); transform: scale(0.985); } }
+  .slot.done:hover { border-color: color-mix(in srgb, var(--positive) 40%, var(--border)); background: color-mix(in srgb, var(--positive) 5%, var(--surface)); }
+  .s-ic { width: 44px; height: 44px; border-radius: 12px; }
+  .s-body b { font-size: 0.95rem; }
+  .s-sub { font-size: 0.8rem; white-space: normal; line-height: 1.35; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .s-sub.bad { -webkit-line-clamp: 4; }
+  .s-cta { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; font-size: 0.8rem; background: var(--ink); color: var(--paper);
+    .slot:hover & { background: var(--ink); color: var(--paper); } }
+  .slot.done .s-cta, .slot.done:hover .s-cta { background: var(--surface-2); color: var(--ink); }
+  .tu-foot { margin: 10px 2px 0; font-size: 0.78rem; line-height: 1.45; }
+  .done-bar { gap: 10px; padding: 10px 10px 10px 12px; }
+  .db-text { min-width: 0; span { font-size: 0.8rem; line-height: 1.4; } }
+  .db-btn { min-height: 40px; padding: 0 14px; font-size: 0.84rem; margin-left: auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tu, .done-bar, .slot, .slot .s-ic, .tick-path, .m-ring, .moment h3, .moment p { animation: none !important; }
   .m-ring .m-circ, .m-ring .m-tick { animation-duration: 0.01s !important; animation-delay: 0s !important; }

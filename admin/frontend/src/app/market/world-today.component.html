@@ -56,8 +56,8 @@
     <div class="wt-plot" [class.dim]="loadingChart() || (!intraday() && histPending() && !plot())">
       <svg #svg *ngIf="plot() as p; else empty" [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none"
            [class.zoomable]="!intraday()"
-           (mousemove)="move($event, svg)" (mouseleave)="hover.set(null); drag.set(null)"
-           (mousedown)="down($event, svg)" (mouseup)="up()" (dblclick)="reset()" role="img" aria-label="Index comparison chart">
+           (pointermove)="move($event, svg)" (pointerleave)="leave($event)" (pointercancel)="hover.set(null); drag.set(null)"
+           (pointerdown)="down($event, svg)" (pointerup)="up()" (dblclick)="reset()" role="img" aria-label="Index comparison chart">
         <g *ngFor="let t of p.ticks">
           <line x1="0" [attr.x2]="W - 64" [attr.y1]="t.y" [attr.y2]="t.y" class="grid" [class.zero]="t.v === 0" />
           <text [attr.x]="W - 58" [attr.y]="t.y + 4" class="yl">{{ t.label }}</text>
@@ -84,7 +84,7 @@
       <ng-container *ngIf="!real() && cpiLines().length">The dashed lines are inflation in India and the US — a market above its country’s line grew in real terms.</ng-container>
       {{ cpiNote() }}
       {{ hasYield() ? 'Bond yields are charted as the % change in the yield; the tooltip and table show the yield itself and its move in basis points (100 bp = 1 percentage point).' : '' }}
-      {{ range() === '1d' ? 'Today, from the previous close, across each market’s own hours.' : range() === '5d' ? 'The last five sessions of each market.' : 'Change since the start of the window · drag across the chart to zoom in, double-click to zoom out.' }}
+      {{ range() === '1d' ? 'Today, from the previous close, across each market’s own hours.' : range() === '5d' ? 'The last five sessions of each market.' : 'Change since the start of the window · ' }}<ng-container *ngIf="!intraday()"><span class="wt-mouse">drag across the chart to zoom in, double-click to zoom out.</span><span class="wt-touch">touch and slide along the chart to read any day · pick dates above to zoom in.</span></ng-container>
     </p>
   </section>
 

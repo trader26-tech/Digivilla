@@ -49,9 +49,11 @@
           </ul>
         }
       </div>
-      <span class="mc-info" tabindex="0" [attr.title]="methodNote()" aria-label="How this is worked out">i</span>
+      <span class="mc-info" tabindex="0" role="button" [attr.title]="methodNote()" aria-label="How this is worked out"
+            [attr.aria-expanded]="infoOpen()" (click)="infoOpen.set(!infoOpen())" (keydown.enter)="infoOpen.set(!infoOpen())">i</span>
     </div>
   </header>
+  @if (infoOpen()) { <p class="mc-note">{{ methodNote() }}</p> }
 
   @if (period() === 'custom') {
     <div class="mc-custom">
@@ -132,7 +134,7 @@
             }
             <rect class="mc-hit" x="-8" y="-8" [attr.width]="innerW() + 16" [attr.height]="innerH() + 16"
                   tabindex="0" aria-label="Chart: arrow keys move through the days"
-                  (pointermove)="onMove($event)" (pointerdown)="onMove($event)" (pointerleave)="hover.set(null)"
+                  (pointermove)="onMove($event)" (pointerdown)="onMove($event)" (pointerleave)="onLeave($event)" (pointercancel)="hover.set(null)"
                   (keydown)="onKey($event)" (blur)="hover.set(null)"/>
           </g>
         </svg>
@@ -191,14 +193,14 @@
                   <th scope="row">
                     <span class="mc-key"><svg width="18" height="8" aria-hidden="true"><line x1="1" y1="4" x2="17" y2="4" [attr.stroke]="l.colour" stroke-width="3" stroke-linecap="round" [attr.stroke-dasharray]="l.bench ? '5 3' : null"/></svg>{{ l.name }}</span>
                   </th>
-                  <td class="r num strong" [class.neg]="s.ret < 0">{{ pct(s.ret) }}</td>
-                  <td class="r num" [class.pos]="(s.vsBench ?? 0) > 0" [class.neg]="(s.vsBench ?? 0) < 0">{{ l.bench ? '—' : pts(s.vsBench) }}</td>
-                  <td class="r num">{{ s.cagr !== null ? pct(s.cagr) : '—' }}</td>
-                  <td class="r num">{{ (s.vol * 100).toFixed(1) }}%</td>
-                  <td class="r num">{{ num(s.sharpe) }}</td>
-                  <td class="r num neg" [attr.title]="fmtDate(s.ddFrom, true) + ' → ' + fmtDate(s.ddTo, true)">{{ pct(s.maxDd) }}</td>
-                  <td class="r num">{{ num(s.beta) }}</td>
-                  <td class="r num strong">{{ lakh(l.v[l.v.length - 1]) }}</td>
+                  <td class="r num strong" data-l="Return" [class.neg]="s.ret < 0">{{ pct(s.ret) }}</td>
+                  <td class="r num" data-l="vs index" [class.pos]="(s.vsBench ?? 0) > 0" [class.neg]="(s.vsBench ?? 0) < 0">{{ l.bench ? '—' : pts(s.vsBench) }}</td>
+                  <td class="r num" data-l="CAGR">{{ s.cagr !== null ? pct(s.cagr) : '—' }}</td>
+                  <td class="r num" data-l="Volatility">{{ (s.vol * 100).toFixed(1) }}%</td>
+                  <td class="r num" data-l="Sharpe">{{ num(s.sharpe) }}</td>
+                  <td class="r num neg" data-l="Max fall" [attr.title]="fmtDate(s.ddFrom, true) + ' → ' + fmtDate(s.ddTo, true)">{{ pct(s.maxDd) }}</td>
+                  <td class="r num" data-l="Beta">{{ num(s.beta) }}</td>
+                  <td class="r num strong" data-l="₹1 L →">{{ lakh(l.v[l.v.length - 1]) }}</td>
                 </tr>
               }
             </tbody>
@@ -224,7 +226,7 @@
                 <tr>
                   <th scope="row">{{ y.year }}@if (y.part) { <small>part</small> }</th>
                   @for (c of y.cells; track c.key) {
-                    <td class="r num" [class.best]="c.key === y.best" [class.bench]="c.key === 'bench'">
+                    <td class="r num" [attr.data-l]="lines()[$index].name" [class.best]="c.key === y.best" [class.bench]="c.key === 'bench'">
                       <span [class.neg]="c.ret < 0">{{ pct(c.ret) }}</span>
                       @if (c.key !== 'bench' && b.key === 'bench') {
                         <i class="mc-beat" [class.won]="c.ret >= b.ret" [attr.title]="c.ret >= b.ret ? 'Beat the index' : 'Behind the index'">{{ c.ret >= b.ret ? '▲' : '▼' }}</i>

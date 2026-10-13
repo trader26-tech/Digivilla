@@ -77,18 +77,85 @@ $side-w: 232px;
 .side-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .side-row .ghost { margin-left: auto; }
 .upd { margin-left: 0; }
+/* ---------- phone shell: top bar · bottom tab bar · "More" sheet (sidebar hides ≤ 900px) ---------- */
+:root { --tabbar-h: 0px; --mbar-h: 0px; }
+.mbar, .tabbar, .more-sheet, .more-scrim { display: none; }
 @media (max-width: 900px) {
-  .dash { padding-left: 0; }
-  .side { position: sticky; top: 0; inset: auto; width: auto; height: auto; flex-direction: row; align-items: center; gap: 0.6rem;
-    padding: 0.5rem 0.75rem; border-right: 0; border-bottom: 1px solid var(--border);
-    background: color-mix(in srgb, var(--paper) 90%, transparent); backdrop-filter: blur(12px); }
-  .side .brand .tag, .side .brand .brand-name { display: none; }
-  .side-nav { flex-direction: row; overflow-x: auto; flex: 1; }
-  .side-nav button { width: auto; flex: none; padding: 0.5rem 0.65rem; span { white-space: nowrap; } }
-  .side-sep { display: none; }
-  .side-foot { margin: 0; padding: 0; border: 0; flex-direction: row; }
-  .side-foot .meet-top span, .side-row .timer { display: none; }
+  :root { --tabbar-h: calc(58px + env(safe-area-inset-bottom)); --mbar-h: calc(52px + env(safe-area-inset-top)); }
+  .dash { padding-left: 0; padding-bottom: var(--tabbar-h); }
+  .side { display: none; }
+
+  .mbar {
+    position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 0.55rem;
+    height: var(--mbar-h); padding: env(safe-area-inset-top) max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--paper) 86%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(14px); backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+  .mbar-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.45rem; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.3px; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mbar-meet {
+    display: inline-flex; align-items: center; gap: 0.4rem; height: 36px; padding: 0 0.85rem; border: 0; border-radius: 999px;
+    background: var(--ink); color: var(--paper); font: inherit; font-size: 0.82rem; font-weight: 800; cursor: pointer;
+    &.soon { background: var(--brass); }
+    &:active { transform: scale(0.96); }
+  }
+
+  .tabbar {
+    position: fixed; z-index: 35; left: 0; right: 0; bottom: 0; height: var(--tabbar-h); display: flex;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px);
+    border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  }
+  .tabbar button {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    border: 0; background: none; padding: 6px 2px 4px; cursor: pointer; color: var(--muted);
+    font: inherit; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.01em;
+    svg { width: 22px; height: 22px; transition: transform 0.15s; }
+    span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    &.on { color: var(--ink); svg { color: var(--brass); } }
+    &:active svg { transform: scale(0.88); }
+  }
+
+  .more-scrim { display: block; position: fixed; inset: 0; z-index: 36; background: color-mix(in srgb, var(--ink) 35%, transparent); animation: m-fade 0.2s ease both; }
+  .more-sheet {
+    display: flex; flex-direction: column; position: fixed; z-index: 37; left: 0; right: 0; bottom: 0;
+    padding: 0.5rem 0.75rem calc(var(--tabbar-h) + 0.5rem); border-radius: 22px 22px 0 0;
+    background: var(--surface); box-shadow: 0 -20px 50px -20px rgba(22, 48, 43, 0.4);
+    animation: m-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+    .grab { align-self: center; width: 38px; height: 5px; border-radius: 3px; background: var(--border); margin: 0.1rem 0 0.6rem; }
+  }
+  .more-item {
+    display: flex; align-items: center; gap: 0.85rem; min-height: 52px; padding: 0 0.75rem; border: 0; border-radius: 14px;
+    background: none; font: inherit; font-size: 1rem; font-weight: 700; color: var(--ink); text-align: left; cursor: pointer;
+    svg { width: 22px; height: 22px; color: var(--muted); flex: none; }
+    span { flex: 1; }
+    b { color: var(--muted); font-size: 1.3rem; font-weight: 400; }
+    &.on { background: color-mix(in srgb, var(--brass) 12%, var(--surface)); svg { color: var(--brass); } }
+    &:active { background: var(--surface-2); }
+  }
+  .more-item.install { color: var(--brass); svg { color: var(--brass); } }
+  .install-steps { margin: 0.1rem 0.75rem 0.4rem; padding: 0.75rem 0.85rem; border-radius: 12px; background: var(--surface-2);
+    font-size: 0.86rem; line-height: 1.5; color: var(--ink); svg { vertical-align: -2px; color: #0a7aff; } }
+  .more-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 0.5rem; padding: 0.75rem 0.75rem 0; border-top: 1px solid var(--border);
+    .ghost { margin-left: auto; min-height: 40px; } }
 }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-up { from { transform: translateY(100%); } }
+
+/* ---------- touch: no tap flash, no double-tap zoom delay, no iOS focus-zoom ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+button, a, label, select, input, [role='button'] { touch-action: manipulation; }
+@media (pointer: coarse) {
+  /* iOS zooms the page into any field under 16px — keep every field at 16px on touch screens */
+  /* (fields already larger — the PIN/code boxes, the purchase amount — keep their own size) */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not(.code-input):not(.big), select, textarea { font-size: 16px !important; }
+}
+/* installed app (home-screen PWA): no rubber-band past the page, no text-select on chrome */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+  .tabbar, .mbar, .side-nav { -webkit-user-select: none; user-select: none; }
+}
+@media (prefers-reduced-motion: reduce) { .more-sheet, .more-scrim { animation: none; } }
 
 /* client drawer: a villa's type (Conservative / Balanced / Aggressive) — global to spare app.component.scss's budget */
 .vv-type { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 8px 0 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); }

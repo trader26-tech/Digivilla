@@ -22,13 +22,23 @@ import { WorldTodayComponent } from './world-today.component';
   styles: [`
     :host { display: block; }
     .mk { max-width: 1320px; margin: 0 auto; padding: 28px 32px 56px; animation: mkIn .3s ease both; }
+    @keyframes mkFade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes mkIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     .mk-head { margin-bottom: 18px; }
     .mk-world { display: block; margin-top: 34px; }
     h1 { margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
     .mk-head p { margin: 4px 0 0; max-width: 760px; font-size: 0.92rem; color: var(--muted); }
     .mk-chart { display: block; height: 660px; }
-    @media (max-width: 760px) { .mk { padding: 18px 14px 40px; } h1 { font-size: 1.35rem; } }
+    @media (max-width: 760px) {
+      /* fade only: a transform left on .mk (even identity) would trap the chart's position:fixed bottom sheet */
+      .mk { padding: 16px 12px 32px; animation-name: mkFade; }
+      .mk-head { margin-bottom: 14px; padding: 0 2px; }
+      h1 { font-size: 1.45rem; }
+      .mk-head p { font-size: 0.86rem; line-height: 1.45; }
+      /* the chart panel grows with its content on phones (it fills a fixed cell on desktop) */
+      .mk-chart { height: auto; }
+      .mk-world { margin-top: 28px; }
+    }
     @media (prefers-reduced-motion: reduce) { .mk { animation: none; } }
   `],
 })

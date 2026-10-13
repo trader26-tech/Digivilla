@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AdminService, NetWorthRow } from '../admin.service';
@@ -103,12 +103,25 @@ export class AuditComponent implements OnInit {
   readonly SLABS = [0, 5, 10, 15, 20, 25, 30];
 
   /** Calculators is the first tab: run the default check straight away. */
-  ngOnInit(): void { this.run(); }
+  ngOnInit(): void { this.run(); this.centreTab(); }
+
+  @ViewChild('tabsEl') private tabsEl?: ElementRef<HTMLElement>;
 
   setTab(t: Tab): void {
     this.tab.set(t);
+    this.centreTab();
     if (t === 'navs' && !this.navs()) this.loadNavs();
     if (t === 'data' && !this.data()) this.loadData();
+  }
+
+  /** Phones: the tab strip scrolls sideways — keep the chosen tab in view. */
+  private centreTab(): void {
+    setTimeout(() => {
+      const n = this.tabsEl?.nativeElement, b = n?.querySelector<HTMLElement>('.on');
+      if (!n || !b || n.scrollWidth <= n.clientWidth) return;
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      n.scrollTo({ left: b.offsetLeft - (n.clientWidth - b.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
+    });
   }
 
   // ── client ──

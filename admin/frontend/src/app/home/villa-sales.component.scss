@@ -51,4 +51,26 @@
 .vs-seg button:disabled { opacity: .5; }
 .vs-err { margin: 0; font-size: 0.8rem; color: var(--negative); }
 @media (max-width: 640px) { .vs-grid { grid-template-columns: 1fr; } .vs-sum { display: none; } }
+/* phones: compact 2×2 tiles (the three types + all villas), tighter card padding */
+@media (max-width: 760px) {
+  :host { min-width: 0; }
+  .vs { gap: 14px; padding: 16px 14px; border-radius: 18px; }
+  .vs-head h2 { font-size: 1.15rem; }
+  .vs-head p { font-size: 0.8rem; }
+  .vs-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .vs-tile { min-height: 0; gap: 2px; padding: 12px 12px 11px; border-radius: 14px; }
+  .vs-k { flex-wrap: wrap; gap: 0 6px; }
+  .vs-k b { font-size: 0.86rem; }
+  .vs-k small { flex-basis: 100%; margin: 1px 0 0 14px; font-size: 0.62rem; }
+  .vs-tile.total .vs-k small { margin-left: 0; }
+  .vs-n { margin: 4px 0 2px; font-size: 1.9rem; }
+  .vs-f { font-size: 0.76rem; line-height: 1.35; }
+  .vs-tile.sk { min-height: 108px; }
+}
+@media (max-width: 400px) {
+  .vs { padding: 14px 12px; }
+  .vs-tile { padding: 11px 10px 10px; }
+  .vs-n { font-size: 1.7rem; }
+  .vs-f { font-size: 0.72rem; }
+}
 @media (prefers-reduced-motion: reduce) { .vs-tile.sk { animation: none; } }

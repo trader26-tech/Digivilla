@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -16,7 +16,7 @@ const PERIODS = [{ k: '1m', l: '1M' }, { k: '3m', l: '3M' }, { k: '6m', l: '6M' 
 const INTRADAY = new Set(['1d', '5d']);
 const LS = 'dv_admin_world';
 const CPI_COLOUR: Record<string, string> = { 'cpi:IN': '#9A3B3B', 'cpi:US': '#6B7280' };
-const W = 900, H = 300, PAD = { l: 8, r: 64, t: 14, b: 26 };
+const W0 = 900, H0 = 300, PAD = { l: 8, r: 64, t: 14, b: 26 };
 
 /**
  * World markets: Indian and global indices, compared like-for-like.
@@ -36,10 +36,16 @@ const W = 900, H = 300, PAD = { l: 8, r: 64, t: 14, b: 26 };
   templateUrl: './world-today.component.html',
   styleUrl: './world-today.component.scss',
 })
-export class WorldTodayComponent implements OnInit, OnDestroy {
+export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   private api = inject(AdminService);
+  private host = inject(ElementRef<HTMLElement>);
+  private ro?: ResizeObserver;
   readonly RANGES = RANGES;
-  readonly W = W; readonly H = H;
+  /** the chart's drawing box: 900 × 300 stretched to fit on wide screens; on a phone the
+   *  plot's real pixel size, so the labels aren't squashed by preserveAspectRatio="none" */
+  private readonly box = signal({ w: W0, h: H0 });
+  get W(): number { return this.box().w; }
+  get H(): number { return this.box().h; }
 
   /** the markets from Yahoo, and our three villa baskets (worked out here) on top */
   readonly apiQuotes = signal<WorldQuote[]>([]);
@@ -99,7 +105,19 @@ export class WorldTodayComponent implements OnInit, OnDestroy {
       localStorage.setItem(LS, JSON.stringify({ selected: this.selected(), range: this.range(), ccy: this.ccy(), real: this.real(), cpiOff: this.cpiOff(), from: this.from(), to: this.to(), view: this.view() }));
     } catch { /* ignore */ }
   }
-  ngOnDestroy(): void { clearInterval(this.timer); }
+  ngAfterViewInit(): void {
+    const el = this.host.nativeElement.querySelector('.wt-plot') as HTMLElement | null;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    this.ro = new ResizeObserver((es) => {
+      const c = es[0]?.contentRect;
+      if (!c?.width || !c.height) return;
+      const next = c.width < 600 ? { w: Math.round(c.width), h: Math.round(c.height) } : { w: W0, h: H0 };
+      const cur = this.box();
+      if (next.w !== cur.w || next.h !== cur.h) this.box.set(next);
+    });
+    this.ro.observe(el);
+  }
+  ngOnDestroy(): void { clearInterval(this.timer); this.ro?.disconnect(); }
 
   loadQuotes(): void {
     this.api.worldQuotes().subscribe({
@@ -322,6 +340,7 @@ export class WorldTodayComponent implements OnInit, OnDestroy {
     // 1D / 5D: markets trade at different hours — plot each one across ITS OWN session (0 → 1),
     // so every line starts at the open and ends at the latest price. Longer ranges use real dates.
     const session = this.range() === '1d' || this.range() === '5d';
+    const W = this.W, H = this.H;
     if (session) for (const s of series) { const n = s.pts.length - 1 || 1; s.pts = s.pts.map((p, i) => [i / n, p[1]] as [number, number]); }
     const ts = series.flatMap((s) => s.pts.map((p) => p[0])), vs = series.flatMap((s) => s.pts.map((p) => p[1]));
     const t0 = Math.min(...ts), t1 = Math.max(...ts);
@@ -358,10 +377,10 @@ export class WorldTodayComponent implements OnInit, OnDestroy {
 
   /** hover: the nearest point in time on each line */
   private px(e: MouseEvent, svg: Element): number {
-    const b = svg.getBoundingClientRect();
+    const b = svg.getBoundingClientRect(), W = this.W;
     return Math.max(PAD.l, Math.min(W - PAD.r, ((e.clientX - b.left) / b.width) * W));
   }
-  private tAt(px: number): number { const p = this.plot()!; return p.t0 + ((px - PAD.l) / (W - PAD.l - PAD.r)) * (p.t1 - p.t0); }
+  private tAt(px: number): number { const p = this.plot()!; return p.t0 + ((px - PAD.l) / (this.W - PAD.l - PAD.r)) * (p.t1 - p.t0); }
   move(e: MouseEvent, svg: Element): void {
     const p = this.plot();
     if (!p) return;
@@ -372,6 +391,8 @@ export class WorldTodayComponent implements OnInit, OnDestroy {
   }
   /** drag across the chart to zoom into that stretch (not on 1D / 5D) */
   down(e: MouseEvent, svg: Element): void {
+    // a finger scrubs (shows the readout) rather than zooming — zoom on a phone is the date boxes
+    if ((e as PointerEvent).pointerType === 'touch') { this.move(e, svg); return; }
     if (this.intraday() || !this.plot() || e.button !== 0) return;
     const px = this.px(e, svg);
     this.drag.set({ a: px, b: px });
@@ -381,6 +402,16 @@ export class WorldTodayComponent implements OnInit, OnDestroy {
     this.drag.set(null);
     if (!d || Math.abs(d.b - d.a) < 12) return;
     this.setCustom(Math.round(this.tAt(Math.min(d.a, d.b)) / 86400), Math.round(this.tAt(Math.max(d.a, d.b)) / 86400));
+  }
+  /** a mouse leaving clears the readout and any drag; a lifted finger keeps the readout */
+  leave(e: PointerEvent): void {
+    this.drag.set(null);
+    if (e.pointerType !== 'touch') this.hover.set(null);
+  }
+  /** touch: a tap anywhere off the chart clears the readout (pointerdown: iOS won't bubble taps as clicks) */
+  @HostListener('document:pointerdown', ['$event'])
+  onDocPointer(e: PointerEvent): void {
+    if (this.hover() !== null && !(e.target as Element)?.closest?.('.wt-plot svg')) this.hover.set(null);
   }
   /** "Custom" button: start from the window on screen, so the dates can be nudged */
   setCustomFromNow(): void { const [a, b] = this.window(); this.setCustom(a, b); }
@@ -405,7 +436,7 @@ export class WorldTodayComponent implements OnInit, OnDestroy {
     });
     rows.sort((a, b) => b.v - a.v);
     const session = this.intraday();
-    return { x: p.x(t), label: session ? `${Math.round(t * 100)}% through the session` : this.tLabel(t, true), rows, left: p.x(t) > W * 0.55 };
+    return { x: p.x(t), label: session ? `${Math.round(t * 100)}% through the session` : this.tLabel(t, true), rows, left: p.x(t) > this.W * 0.55 };
   });
 
   // ── compare: the ticked markets side by side ──

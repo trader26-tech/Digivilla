@@ -79,3 +79,26 @@
   .cb-miss { color: var(--terracotta); } }
 .cb-pct { flex: none; padding: 0.25rem 0.55rem; border-radius: 9px; font-size: 1rem; font-weight: 800; color: var(--t);
   background: color-mix(in srgb, var(--t) 11%, var(--surface)); }
+
+/* phones: the what-if popup is a bottom sheet (sheet chrome in home-cards.scss) */
+@media (max-width: 760px) {
+  .cb-row { padding: 10px 0; }
+  .cb-name { b { font-size: 0.92rem; } small { white-space: normal; line-height: 1.4; font-size: 0.74rem; margin-top: 2px; } }
+  .cb-pct { font-size: 1.02rem; padding: 6px 10px; }
+  .cw { top: auto; width: 100%; padding: 20px 16px calc(max(var(--tabbar-h, 0px), env(safe-area-inset-bottom, 0px)) + 16px); }
+  .cw-t { font-size: 1.15rem; padding-right: 44px; }
+  .cw-s { font-size: 0.84rem; line-height: 1.45; }
+  .cw-picks { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 6px; padding: 2px 16px;
+    &::-webkit-scrollbar { display: none; }
+    button { flex: none; min-height: 40px; padding: 0 14px; font-size: 0.82rem; } span { flex: none; } }
+  .cw .cv-rows li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "type type" "step sum"; row-gap: 8px; padding: 12px 0; }
+  .cw .cv-type { grid-area: type; b { font-size: 0.95rem; } small { font-size: 0.76rem; } }
+  .cw .cv-step { grid-area: step; justify-self: start; border-radius: 12px;
+    button { width: 44px; height: 44px; font-size: 1.2rem; }
+    input { width: 3.4rem; height: 44px; font-size: 16px; } }
+  .cw .cw-row-sum { grid-area: sum; b { font-size: 0.95rem; } small { font-size: 0.74rem; } }
+  .cw-sum { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cw-cell.cost { grid-column: 1 / -1; }
+  .cw-cell { padding: 12px; b { font-size: 1.15rem; } }
+  .cw-note { font-size: 0.76rem; }
+}
