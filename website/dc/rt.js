@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=d5655622';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=ebb43ec9';
 
 export { h, render, Fragment };
 
@@ -294,7 +294,7 @@ export function smoothScroll(el, opts = {}) {
     const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * el.clientHeight : e.deltaY;
     e.preventDefault();
     if (!active) { pos = target = el.scrollTop; active = true; }
-    kk = k;
+    kk = Math.abs(dy) < 40 ? 14 : k;        // trackpad (small, frequent deltas) brings its own momentum — just smooth it; wheel notches glide
     target = Math.max(0, Math.min(max(), target + dy));
   };
   const onScroll = () => { if (Math.abs(el.scrollTop - expect) > 1.5) { pos = target = el.scrollTop; active = false; } };
@@ -323,20 +323,26 @@ export function smoothScroll(el, opts = {}) {
 export function scrubber(opts) {
   const max = opts.max, unit = opts.unit ?? 900, QUIET = 220, OVER = opts.overscroll ?? 420, DEAD = .035;
   let target = opts.start ?? 0, pos = target, dir = 1, lastIn = 0, over = 0, snapped = true, ty = null, lastT = 0;
+  // a GESTURE = wheel events less than GAP apart (a trackpad swipe and its momentum tail), or one touch.
+  // It can move at most one scene from where it started, and a chapter hand-off needs a fresh gesture at the end.
+  const GAP = 450; let gStart = target, gLast = -1e9, gAtEnd = false;
   const clamp = (v) => Math.max(0, Math.min(max, v));
+  const beginGesture = (now) => { gStart = snapped ? Math.round(target) : Math.round(pos); gAtEnd = (gStart >= max && pos >= max - .02) || (gStart <= 0 && pos <= .02); gLast = now; };   // anchored on the scene already committed, so a flick during a play adds exactly one more
   const input = (dpx, now) => {
     if (opts.onInput) opts.onInput();
     if (opts.gate && !opts.gate()) return;
+    if (now - gLast > GAP) beginGesture(now);
+    gLast = now;
     dir = dpx > 0 ? 1 : -1;
     const atEnd = dir > 0 ? (target >= max - 1e-6 && pos >= max - .02) : (target <= 1e-6 && pos <= .02);
-    if (atEnd) { over += Math.abs(dpx); if (over > OVER) { over = -1e9; opts.onEnd && opts.onEnd(dir); } return; }
+    if (atEnd) { if (!gAtEnd) return; over += Math.abs(dpx); if (over > OVER) { over = -1e9; opts.onEnd && opts.onEnd(dir); } return; }
     over = 0;
-    target = clamp(target + dpx / unit); lastIn = now; snapped = false;
+    target = clamp(Math.max(gStart - 1, Math.min(gStart + 1, target + dpx / unit))); lastIn = now; snapped = false;
   };
   const now = (e) => e.timeStamp || performance.now();
   const api = {
     onWheel: (e) => { if (e.ctrlKey) return; e.preventDefault(); input(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY, now(e)); },
-    onTS: (e) => { ty = e.touches[0].clientY; },
+    onTS: (e) => { ty = e.touches[0].clientY; beginGesture(now(e)); },
     onTM: (e) => { if (ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; input((ty - y) * 1.25, now(e)); ty = y; },
     onTE: () => { ty = null; },
     /** one whole scene (keys) */
@@ -363,7 +369,7 @@ export function scrubber(opts) {
       if (Math.abs(d) < .0005) pos = target;
       else {
         const seg = Math.max(0, Math.min(max - 1, Math.floor(Math.min(pos, target) + 1e-6)));
-        const boost = 1 + Math.max(0, Math.abs(d) - .6) * 1.6;        // more than half a scene behind the finger → hurry a little
+        const boost = 1 + Math.max(0, Math.abs(d) - 1.3) * 1.2;       // only when several gestures have queued up does the scene hurry
         const cap = (opts.rateFor ? opts.rateFor(seg) : 1.2) * boost * dt;
         const ease = Math.abs(d) * (1 - Math.exp(-dt * (opts.ease ?? 6)));
         pos += Math.sign(d) * Math.min(Math.abs(d), Math.min(ease, cap) + dt * .02);
