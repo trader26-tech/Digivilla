@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
-import { AdminService, CommissionFund, CommissionOverview, VillaCommFund, VillaSummary, VillaType } from '../admin.service';
+import { AdminService, CommissionFund, CommissionOverview, VillaBucket } from '../admin.service';
+import { fundKey } from '../home/commission-whatif';
+
+const DEFAULT_VILLA_COST = 500000;
 
 interface Row extends CommissionFund {
   draft: string;        // what's typed in the rate box
@@ -33,10 +36,12 @@ export class CommissionComponent implements OnInit {
   /** fund key → what's typed (only funds the admin has touched) */
   readonly drafts = signal<Record<string, string>>({});
 
-  /** every client's villa with its pinned funds — the "By villa" section */
-  readonly summary = signal<VillaSummary | null>(null);
-  readonly villasLoading = signal(false);
-  /** villas whose fund list is folded away (all open by default) */
+  /** every villa bucket — one villa of each is costed below */
+  readonly buckets = signal<VillaBucket[]>([]);
+  readonly bucketsLoading = signal(false);
+  /** what one villa is: the settings' villa_cost (₹5 L) invested in a bucket */
+  readonly villaCost = signal(DEFAULT_VILLA_COST);
+  /** buckets whose fund list is folded away (all open by default) */
   readonly closed = signal<Set<string>>(new Set());
 
   ngOnInit(): void { this.load(); }
@@ -48,52 +53,50 @@ export class CommissionComponent implements OnInit {
       next: (d) => { this.data.set(d); this.drafts.set({}); this.loading.set(false); },
       error: (e) => { this.error.set(e?.error?.detail || 'Could not load commission data.'); this.loading.set(false); },
     });
-    this.villasLoading.set(true);
-    this.api.villasSummary().subscribe({
-      next: (s) => { this.summary.set(s); this.villasLoading.set(false); },
-      error: () => this.villasLoading.set(false),
+    this.bucketsLoading.set(true);
+    this.api.reportBuckets().subscribe({
+      next: (b) => { this.buckets.set(b || []); this.bucketsLoading.set(false); },
+      error: () => this.bucketsLoading.set(false),
+    });
+    this.api.calcConfig().subscribe({
+      next: (c) => { const cost = c?.config?.estate?.villa_cost; if (cost > 0) this.villaCost.set(cost); },
+      error: () => {},
     });
   }
 
-  // ── by villa: each villa's funds at today's value × the rate in the table (live as you type) ──
+  // ── per villa: one villa (₹5 L) in each bucket, split by the bucket's weights, at the rates in the table (live as you type) ──
   readonly villaRows = computed(() => {
-    const s = this.summary();
-    if (!s?.villas) return [];
+    const cost = this.villaCost();
     const rate: Record<string, number | null> = {};
     for (const r of this.rows()) rate[r.key] = r.rate;
-    return s.villas.map((v) => {
-      const funds = v.funds.map((f) => {
-        const r = f.key in rate ? rate[f.key] : f.rate_pct;
-        return { ...f, rate: r, yearly: r === null ? 0 : (f.value * r) / 100 };
+    return this.buckets().map((b) => {
+      const tot = b.funds.reduce((s, f) => s + (f.target_weight || 0), 0) || 1;
+      const funds = b.funds.map((f) => {
+        const key = fundKey(f.scheme_code, f.scheme_name);
+        const r = key in rate ? rate[key] : null;
+        const share = (f.target_weight || 0) / tot;
+        const amount = cost * share;
+        return { key, name: f.scheme_name, share, amount, rate: r, yearly: r === null ? 0 : (amount * r) / 100 };
       });
       const yearly = funds.reduce((a, f) => a + f.yearly, 0);
       return {
-        ...v, funds, yearly, monthly: yearly / 12,
-        rate: v.value > 0 ? (yearly / v.value) * 100 : 0,
-        missing: funds.filter((f) => f.rate === null && f.value > 0).length,
+        id: b.id, name: b.name, tier: b.tier || '', kind: (b.kind || 'sip').toLowerCase(), subtitle: b.subtitle || '',
+        funds, yearly, monthly: yearly / 12, rate: cost > 0 ? (yearly / cost) * 100 : 0,
+        missing: funds.filter((f) => f.rate === null).length,
       };
     });
   });
-  readonly villasYearly = computed(() => this.villaRows().reduce((a, v) => a + v.yearly, 0));
-  /** the three villa types (plus "no type"), totalled */
-  readonly byType = computed(() => {
-    const order: (VillaType | 'none')[] = ['conservative', 'balanced', 'aggressive', 'none'];
-    const acc: Record<string, { key: string; name: string; count: number; value: number; yearly: number }> = {};
-    for (const v of this.villaRows()) {
-      const k = v.type ?? 'none';
-      const t = (acc[k] ??= { key: k, name: k === 'none' ? 'No type set' : this.typeName(k), count: 0, value: 0, yearly: 0 });
-      t.count++; t.value += v.value; t.yearly += v.yearly;
-    }
-    return order.filter((k) => acc[k]).map((k) => acc[k]);
-  });
-  typeName(t: VillaType | string | null): string { return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
+  typeKey(tier: string): string {
+    const t = tier.trim().toLowerCase();
+    return ['conservative', 'balanced', 'aggressive'].includes(t) ? t : 'none';
+  }
   isClosed(id: string): boolean { return this.closed().has(id); }
   toggleVilla(id: string): void {
     this.closed.update((c) => { const n = new Set(c); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
-  share(part: number, whole: number): string { return whole > 0 ? Math.round((part / whole) * 100) + '%' : '—'; }
-  trackVilla = (_: number, v: { villa_id: string }) => v.villa_id;
-  trackFund = (_: number, f: VillaCommFund) => f.key;
+  pctShare(v: number): string { return Math.round(v * 1000) / 10 + '%'; }
+  trackVilla = (_: number, v: { id: string }) => v.id;
+  trackFund = (_: number, f: { key: string }) => f.key;
 
   readonly max = computed(() => this.data()?.max_rate_pct ?? 5);
 

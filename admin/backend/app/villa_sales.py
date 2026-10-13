@@ -59,7 +59,6 @@ def summary() -> dict:
     buckets = {t["key"]: {**t, "count": 0, "constructed": 0, "value": 0.0, "invested": 0.0, "commission": 0.0}
                for t in TYPES}
     unset = {"count": 0, "value": 0.0, "villas": []}
-    villa_rows: list[dict] = []          # every client villa with money in it, with its funds
     # every client's villas and transactions in two reads (not two per client),
     # and every pinned fund's NAV in one batched lookup
     R = reports_svc
@@ -76,42 +75,18 @@ def summary() -> dict:
             continue
         txns = sorted(all_txns.get(code, []), key=lambda t: str(t.get("txn_date") or ""), reverse=True)
         villas = R.list_client_villas(code, villas=all_villas[code], txns=txns, vtypes=types)
-        # commission per villa: its pinned funds at today's NAV × each fund's rate —
-        # kept per fund too, so the Commission tab can show what each villa is made of
+        # commission per villa: its pinned funds at today's NAV × each fund's rate
         for v in villas:
             items = [t for t in txns if t.get("villa_id") == v["id"]]
             comm = 0.0
-            funds: dict[str, dict] = {}
             for t in items:
-                sc = t.get("scheme_code")
-                k = commission_svc._key(sc, t.get("scheme_name"))   # same key as the fund table
-                r = rates.get(k)
-                nav = reports_svc.live_nav(sc)[0] if sc else None
-                units = reports_svc._signed(t, "units")
-                val = units * nav if nav else reports_svc._signed(t, "amount")
-                f = funds.setdefault(k, {
-                    "key": k, "scheme_code": sc, "scheme_name": t.get("scheme_name") or "Fund",
-                    "units": 0.0, "nav": nav, "value": 0.0, "invested": 0.0, "rate_pct": r, "yearly": 0.0,
-                })
-                f["units"] += units
-                f["value"] += val
-                f["invested"] += reports_svc._signed(t, "amount")
-                if r is not None:
-                    f["yearly"] += val * r / 100
-                    comm += val * r / 100
+                r = rates.get(str(t.get("scheme_code"))) if t.get("scheme_code") else None
+                if r is None:
+                    continue
+                nav = reports_svc.live_nav(t["scheme_code"])[0] if t.get("scheme_code") else None
+                val = reports_svc._signed(t, "units") * nav if nav else reports_svc._signed(t, "amount")
+                comm += val * r / 100
             t_key = types.get(v["id"])
-            if items:
-                villa_rows.append({
-                    "villa_id": v["id"], "client_code": code, "client_name": (c.get("name") or code).strip(),
-                    "label": ("Villa " if v.get("finished") else "Plot ") + str((v.get("position") or 0) + 1),
-                    "finished": bool(v.get("finished")), "type": t_key, "since": v.get("since") or "",
-                    "value": round(v.get("value") or 0, 2), "invested": round(v.get("mapped_total") or 0, 2),
-                    "commission": round(comm, 2),
-                    "funds": sorted(
-                        [{**f, "units": round(f["units"], 4), "value": round(f["value"], 2),
-                          "invested": round(f["invested"], 2), "yearly": round(f["yearly"], 2)} for f in funds.values()],
-                        key=lambda f: -f["value"]),
-                })
             if t_key:
                 b = buckets[t_key]
                 b["count"] += 1
@@ -129,10 +104,8 @@ def summary() -> dict:
     for b in rows:
         for k in ("value", "invested", "commission"):
             b[k] = round(b[k], 2)
-    villa_rows.sort(key=lambda v: (v["client_name"].lower(), not v["finished"], v["since"] or "9999"))
     return {
         "types": rows,
-        "villas": villa_rows,
         "unset": {**unset, "value": round(unset["value"], 2)},
         "totals": {
             "count": sum(b["count"] for b in rows) + unset["count"],
