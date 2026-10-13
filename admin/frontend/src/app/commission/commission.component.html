@@ -1,0 +1,103 @@
+<div class="wrap cm">
+  <div class="section-head">
+    <h1>Commission</h1>
+    <p>Enter each fund's trail commission — the % a year the AMC pays you on money held in it. Everything else is worked out.</p>
+  </div>
+
+  <!-- loading / error -->
+  <div class="cm-skel" *ngIf="loading() && !data()" aria-busy="true">
+    <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+    <div class="sk tall"></div>
+  </div>
+  <div class="empty card cm-err" *ngIf="error() && !data()">
+    {{ error() }} <button class="ghost" (click)="load()">Try again</button>
+  </div>
+
+  <ng-container *ngIf="data() as d">
+    <!-- 1 · what you earn -->
+    <div class="cm-kpis">
+      <div class="card cm-kpi hero">
+        <small>Commission a year</small>
+        <b class="num">{{ inr(totals().yearly) }}</b>
+        <span>{{ inr(totals().monthly) }} a month</span>
+      </div>
+      <div class="card cm-kpi">
+        <small>Money held</small>
+        <b class="num">{{ compact(totals().aum) }}</b>
+        <span>{{ d.totals.clients }} clients · {{ rows().length }} funds</span>
+      </div>
+      <div class="card cm-kpi">
+        <small>Blended rate</small>
+        <b class="num">{{ pct(totals().avg) }}</b>
+        <span>a year, on money with a rate</span>
+      </div>
+    </div>
+
+    <!-- 2 · funds still without a rate -->
+    <div class="cm-alert" *ngIf="totals().missing.length">
+      <b>{{ totals().missing.length }} {{ totals().missing.length === 1 ? 'fund has' : 'funds have' }} money but no rate</b>
+      <span>— they count as ₹0 until you add one below.</span>
+    </div>
+
+    <!-- 3 · per fund -->
+    <div class="card cm-table">
+      <div class="cm-tr cm-head">
+        <span>Fund</span>
+        <span class="r">Money held</span>
+        <span class="r">Rate, a year</span>
+        <span class="r">A year</span>
+        <span class="r">A month</span>
+      </div>
+
+      <div class="cm-tr" *ngFor="let r of rows(); trackBy: trackKey" [class.no-rate]="r.rate === null && r.aum > 0" [class.edited]="r.changed">
+        <span class="cm-fund">
+          <b>{{ r.scheme_name }}</b>
+          <small>
+            <ng-container *ngIf="r.scheme_code">{{ r.scheme_code }} · </ng-container>
+            {{ r.clients ? r.clients + (r.clients === 1 ? ' client' : ' clients') : 'not held yet' }}
+            <em *ngIf="r.in_villa">in a villa</em>
+          </small>
+        </span>
+        <span class="r num">{{ compact(r.aum) }}</span>
+        <span class="r">
+          <label class="cm-rate" [class.bad]="r.bad" [class.set]="r.rate !== null">
+            <input inputmode="decimal" autocomplete="off" placeholder="0.00" [value]="r.draft"
+                   (input)="type(r.key, $event)" (keyup.enter)="save()" [attr.aria-label]="'Commission rate for ' + r.scheme_name" />
+            <i>%</i>
+          </label>
+          <small class="cm-bad" *ngIf="r.bad">0 – {{ max() }}%</small>
+        </span>
+        <span class="r num cm-year">
+          {{ r.rate === null ? '—' : inr(r.yearly) }}
+          <i class="cm-bar" *ngIf="r.yearly > 0"><i [style.width.%]="r.yearly / totals().maxYearly * 100"></i></i>
+        </span>
+        <span class="r num muted">{{ r.rate === null ? '—' : inr(r.monthly) }}</span>
+      </div>
+
+      <div class="cm-tr cm-total">
+        <span>Total</span>
+        <span class="r num">{{ compact(totals().aum) }}</span>
+        <span class="r num">{{ pct(totals().avg) }}</span>
+        <span class="r num">{{ inr(totals().yearly) }}</span>
+        <span class="r num">{{ inr(totals().monthly) }}</span>
+      </div>
+    </div>
+
+    <p class="cm-note">
+      Commission = money held × rate. Money held is today's value of every client's units at live NAV (the demo client is left out).
+      An estimate — what you're paid follows each AMC's statement.
+      <ng-container *ngIf="d.updated_at"> Rates last saved {{ when(d.updated_at) }}.</ng-container>
+    </p>
+
+    <!-- save bar: only while there are unsaved rates -->
+    <div class="cm-save" *ngIf="changedCount() || savedAt()" [class.ok]="!changedCount() && savedAt()">
+      <ng-container *ngIf="changedCount(); else saved">
+        <span>{{ changedCount() }} {{ changedCount() === 1 ? 'rate' : 'rates' }} changed</span>
+        <button class="ghost" (click)="discard()" [disabled]="saving()">Discard</button>
+        <button class="primary-btn" (click)="save()" [disabled]="saving() || hasBad()">{{ saving() ? 'Saving…' : 'Save rates' }}</button>
+      </ng-container>
+      <ng-template #saved><span>✓ Rates saved</span></ng-template>
+    </div>
+    <p class="cm-err-inline" *ngIf="error() && data()">{{ error() }}</p>
+  </ng-container>
+</div>

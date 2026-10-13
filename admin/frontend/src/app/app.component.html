@@ -20,7 +20,8 @@
     <!-- otp -->
     <ng-container *ngIf="phase() === 'otp'">
       <h1>Enter the code</h1>
-      <p class="sub">Sent to <b>{{ maskedEmail() }}</b>. It expires in 5 minutes.</p>
+      <p class="sub" *ngIf="!devCode()">Sent to <b>{{ maskedEmail() }}</b>. It expires in 5 minutes.</p>
+      <p class="sub" *ngIf="devCode()">Local dev — enter <b>1234</b>.</p>
       <input class="code-input" inputmode="numeric" maxlength="6" placeholder="000000"
         [ngModel]="otpCode()" (ngModelChange)="otpCode.set($event)" (keydown.enter)="verifyCode()" autofocus />
       <p class="note" *ngIf="notice()">{{ notice() }}</p>
@@ -28,7 +29,7 @@
       <button class="cta" [disabled]="busy()" (click)="verifyCode()">
         {{ busy() ? 'Checking…' : 'Verify & continue' }}
       </button>
-      <button class="link" (click)="sendCode()" [disabled]="busy()">Resend code</button>
+      <button class="link" (click)="sendCode()" [disabled]="busy()">{{ devCode() ? 'Email me a real code instead' : 'Resend code' }}</button>
     </ng-container>
 
     <!-- set pin -->
@@ -53,7 +54,8 @@
     <!-- pin unlock -->
     <ng-container *ngIf="phase() === 'pin'">
       <h1>Welcome back</h1>
-      <p class="sub">Enter your 4-digit PIN to unlock.</p>
+      <p class="sub" *ngIf="!devCode()">Enter your 4-digit PIN to unlock.</p>
+      <p class="sub" *ngIf="devCode()">Enter your PIN — or <b>1234</b> (local dev).</p>
       <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" (keydown.enter)="doUnlock()" autofocus />
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
@@ -70,106 +72,90 @@
 <!-- ═══════════════════════ WORKSPACE ═══════════════════════ -->
 <div class="dash" *ngIf="phase() === 'unlocked'">
   <div class="upd" *ngIf="updateReady()" role="status">A newer version of the admin is ready.<button (click)="reloadNow()">Reload now</button></div>
-  <header class="top">
+  <!-- ═══ SIDEBAR: the admin's navigation (replaces the old top tabs) ═══ -->
+  <aside class="side">
     <div class="brand">
       <span class="logo">◆</span>
       <span class="brand-name">Digivilla</span>
       <span class="tag">Admin</span>
     </div>
-    <nav class="top-tabs">
-      <button [class.on]="view() === 'clients'" (click)="setView('clients')">Clients</button>
-      <button [class.on]="view() === 'villas'" (click)="setView('villas')">Live NAVs</button>
-      <button [class.on]="view() === 'buckets'" (click)="setView('buckets')">Villa buckets</button>
-      <button [class.on]="view() === 'uploads'" (click)="setView('uploads')">Uploads</button>
-      <button [class.on]="view() === 'audit'" (click)="setView('audit')">Check the maths</button>
+    <nav class="side-nav" aria-label="Admin sections">
+      <button [class.on]="view() === 'commission'" (click)="setView('commission')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5h4a1.7 1.7 0 0 1 0 3.4h-3a1.7 1.7 0 0 0 0 3.4h4M12 7.5V9M12 16.5V18"/></svg><span>Commission</span></button>
+      <button [class.on]="view() === 'clients'" (click)="setView('clients')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.7.7 2.8 2.3 3 4.7"/></svg><span>Clients</span></button>
+      <button [class.on]="view() === 'market'" (click)="setView('market')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg><span>Villas vs market</span></button>
+      <span class="side-sep">Data</span>
+      <button [class.on]="view() === 'villas'" (click)="setView('villas')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>Live NAVs</span></button>
+      <button [class.on]="view() === 'buckets'" (click)="setView('buckets')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg><span>Villa buckets</span></button>
+      <button [class.on]="view() === 'uploads'" (click)="setView('uploads')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span>Uploads</span></button>
+      <button [class.on]="view() === 'audit'" (click)="setView('audit')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"/></svg><span>Check the maths</span></button>
     </nav>
-    <div class="top-right">
-      <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">🔒 {{ lockCountdown() }}</span>
-      <button class="ghost" (click)="signOut()">Sign out</button>
+    <div class="side-foot">
+      <button class="meet-top" [class.soon]="meet.liveOrSoon()" (click)="openMeet()" title="Open your Google Meet room">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 10.5l5-3v9l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span>Meet</span>
+      </button>
+      <div class="side-row">
+        <span class="timer" *ngIf="lockCountdown()" title="Auto-locks when idle">🔒 {{ lockCountdown() }}</span>
+        <button class="ghost" (click)="signOut()">Sign out</button>
+      </div>
     </div>
-  </header>
+  </aside>
 
-  <!-- ─────────── CLIENTS VIEW ─────────── -->
-  <div class="wrap" *ngIf="view() === 'clients'">
-    <!-- greeting + data freshness -->
-    <div class="hero">
+  <!-- ─────────── HOME ─────────── -->
+  <div class="wrap wrap-home" *ngIf="view() === 'clients'">
+    <!-- header: who / when / refresh -->
+    <div class="hero ov-hero">
       <div class="hero-text">
         <h1 class="hero-title">{{ greeting() }}, {{ adminName() }}</h1>
-        <p class="hero-sub">{{ todayLong() }}</p>
-      </div>
-      <div class="fresh" [class.ok]="reportsFresh()">
-        <span class="fresh-dot"></span>
-        <span *ngIf="reportsFresh()">Today’s reports are in</span>
-        <span *ngIf="!reportsFresh()">Reports pending for today</span>
-        <button class="fresh-cta" (click)="setView('uploads')">Manage</button>
+        <p class="hero-sub">{{ todayLong() }}<ng-container *ngIf="refreshedLabel()"> · figures as of {{ refreshedLabel() }}</ng-container></p>
       </div>
       <button class="refresh-btn" [class.spinning]="refreshing()" [disabled]="refreshing()" (click)="refreshAll()"
               title="Pull the latest clients, net worth and mapping">
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 5v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>{{ refreshing() ? 'Refreshing…' : 'Refresh' }}</span>
-        <small *ngIf="!refreshing() && refreshedLabel()">{{ refreshedLabel() }}</small>
       </button>
     </div>
 
-    <!-- ═══ MAPPING ALERT — transactions with no villa. First thing on the home screen. ═══ -->
-    <ng-container *ngIf="mapOverview() as mo">
-      <section class="map-alert" *ngIf="mo.unmapped > 0" role="alert">
-        <div class="ma-head">
-          <span class="ma-ic" aria-hidden="true">!</span>
-          <div class="ma-title">
-            <b>{{ mo.unmapped }} transaction{{ mo.unmapped === 1 ? '' : 's' }} not mapped to a villa</b>
-            <span>{{ money(mo.unmapped_amount) }} across {{ mo.clients_affected }} client{{ mo.clients_affected === 1 ? '' : 's' }} · the client app can’t place this money until it is mapped</span>
-          </div>
-          <div class="ma-meter" [attr.title]="mo.mapped + ' of ' + mo.total + ' mapped'">
-            <div class="ma-bar"><i [style.width.%]="mo.total ? mo.mapped / mo.total * 100 : 0"></i></div>
-            <small>{{ mo.mapped }} / {{ mo.total }} mapped</small>
-          </div>
-        </div>
-        <ul class="ma-list">
-          <li *ngFor="let c of mo.clients" [class.open]="alertOpen() === c.client_code">
-            <div class="ma-row">
-              <button class="ma-toggle" (click)="toggleAlertClient(c.client_code)" [attr.aria-expanded]="alertOpen() === c.client_code">
-                <span class="cr-avatar sm">{{ initials(c.name) }}</span>
-                <span class="ma-name"><b>{{ c.name }}</b><small>{{ c.mapped }} of {{ c.total }} mapped<ng-container *ngIf="!c.villa_count"> · no villa created yet</ng-container></small></span>
-                <span class="ma-count">{{ c.unmapped }} unmapped</span>
-                <b class="ma-amt">{{ money(c.unmapped_amount) }}</b>
-                <span class="ma-chev"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-              </button>
-              <button class="ma-fix" (click)="openNwClient(c.client_code, 'mapping')">Map now →</button>
-            </div>
-            <div class="ma-txns" *ngIf="alertOpen() === c.client_code">
-              <div class="ma-txn" *ngFor="let t of c.txns">
-                <span class="ma-t-name">{{ t.scheme_name }}</span>
-                <span class="ma-t-meta">{{ t.txn_date || '—' }} · {{ t.kind || '—' }}</span>
-                <b>{{ money(t.amount) }}</b>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </section>
-      <section class="map-ok" *ngIf="mo.unmapped === 0 && mo.total > 0">
-        <span class="ok-ic" aria-hidden="true">✓</span>
-        <b>All {{ mo.total }} transactions are mapped to a villa</b>
-      </section>
-    </ng-container>
-
-    <!-- portfolio KPIs -->
-    <section class="kpis">
+    <!-- the four numbers that matter -->
+    <section class="kpis ov-kpis" aria-label="Key figures">
       <div class="kpi hero-kpi">
-        <small>Total net worth · live</small>
+        <small>Net worth · live</small>
         <b class="figure">{{ money(nwTotal()) }}</b>
-        <span class="kpi-foot">{{ nwTotalCount() }} clients tracked</span>
+        <span class="kpi-foot">{{ nwTotalCount() }} client{{ nwTotalCount() === 1 ? '' : 's' }} · at today’s NAV</span>
       </div>
       <div class="kpi">
-        <small>Total invested</small>
+        <small>Invested</small>
         <b class="figure">{{ money(nwTotalInvested()) }}</b>
+        <span class="kpi-foot">money put in</span>
       </div>
       <div class="kpi">
-        <small>Total gain</small>
+        <small>Gain</small>
         <b class="figure" [class.pos]="nwTotalGain() >= 0" [class.neg]="nwTotalGain() < 0">{{ money(nwTotalGain()) }}</b>
-        <span class="kpi-foot" [class.pos]="nwTotalGain() >= 0" [class.neg]="nwTotalGain() < 0">{{ nwGainPct() >= 0 ? '+' : '' }}{{ nwGainPct() | number:'1.1-1' }}%</span>
+        <span class="kpi-foot" [class.pos]="nwTotalGain() >= 0" [class.neg]="nwTotalGain() < 0">{{ nwGainPct() >= 0 ? '+' : '' }}{{ nwGainPct() | number:'1.1-1' }}% overall</span>
+      </div>
+      <div class="kpi">
+        <small>Mapped to villas</small>
+        <ng-container *ngIf="mapOverview() as mo; else mapSk">
+          <b class="figure">{{ mo.mapped }}<span class="kpi-of"> / {{ mo.total }}</span></b>
+          <a class="kpi-foot kpi-link" href="#unmapped" *ngIf="mo.unmapped > 0">{{ mo.unmapped }} not mapped · {{ money(mo.unmapped_amount) }} →</a>
+          <span class="kpi-foot pos" *ngIf="mo.unmapped === 0">Everything is mapped</span>
+        </ng-container>
+        <ng-template #mapSk><b class="figure">—</b><span class="kpi-foot">loading…</span></ng-template>
       </div>
     </section>
+
+    <!-- villas sold + today's work -->
+    <div class="home">
+      <app-villa-sales class="home-main" [overview]="mapOverview()" (mapped)="loadMappingOverview()" (openClient)="openNwClient($event, 'mapping')"></app-villa-sales>
+      <aside class="home-side">
+        <app-today-update (updated)="onTodayUpdated()"></app-today-update>
+        <app-meet-card [clients]="nwClients()"></app-meet-card>
+        <app-commission-card (open)="setView('commission')"></app-commission-card>
+      </aside>
+    </div>
+
+    <!-- every transaction still to be mapped — the full list, nothing hidden -->
+    <app-unmapped-txns [overview]="mapOverview()" (map)="openNwClient($event, 'mapping')"></app-unmapped-txns>
 
     <!-- client directory -->
     <section class="directory card">
@@ -227,6 +213,9 @@
       </ul>
     </section>
   </div>
+
+  <!-- ─────────── VILLAS VS MARKET (today's world markets + the villa replay) ─────────── -->
+  <app-markets-page *ngIf="view() === 'market'"></app-markets-page>
 
   <!-- ─────────── LIVE NAVs VIEW ─────────── -->
   <div class="wrap" *ngIf="view() === 'villas'">
@@ -361,6 +350,9 @@
 
   <!-- ─────────── UPLOADS VIEW ─────────── -->
   <app-audit *ngIf="view() === 'audit'" [clients]="nwClients()"></app-audit>
+  <!-- ─────────── COMMISSION VIEW ─────────── -->
+  <app-commission *ngIf="view() === 'commission'"></app-commission>
+  <!-- ─────────── CLIENT CARE VIEW ─────────── -->
 
   <div class="wrap" *ngIf="view() === 'uploads'">
     <div class="section-head">
@@ -624,6 +616,10 @@
                 <ng-template #nothing>Nothing pinned yet</ng-template>
               </div>
               <div class="progress" *ngIf="!v.finished && v.txn_count"><span [style.width.%]="v.hint.progress"></span></div>
+              <div class="vv-type" role="radiogroup" aria-label="Villa type">
+                <button *ngFor="let t of VILLA_TYPES" role="radio" [attr.data-t]="t.key" [class.on]="v.villa_type === t.key"
+                        [attr.aria-checked]="v.villa_type === t.key" (click)="setVillaTypeFor(v, t.key)">{{ t.label }}</button>
+              </div>
               <footer>
                 <button class="vv-btn" [class.on]="v.coin" (click)="toggleCoin(v)" [attr.aria-pressed]="v.coin">🪙 {{ v.coin ? 'Pays out' : 'No payout' }}</button>
                 <button class="vv-btn" [class.on]="v.status === 'constructed'" (click)="setVillaStatus(v, v.status === 'constructed' ? 'building' : 'constructed')">{{ v.status === 'constructed' ? '✓ Finished' : 'Mark finished' }}</button>

@@ -19,11 +19,12 @@ _LOCAL_PATH = os.path.join(os.path.dirname(__file__), "data", "bookings.json")
 
 
 def _new_meet_link(booking_id: str = "") -> str:
-    """The single Google Meet room used for every call (from settings.meet_link).
+    """The single Google Meet room used for every call (set on the admin home,
+    else settings.meet_link).
     An advisor-set per-booking link, when present, still takes precedence."""
     try:
-        from app.config import get_settings
-        return (get_settings().meet_link or "").strip()
+        from app import meetings
+        return meetings.room_url()  # the admin-set room, else settings.meet_link
     except Exception:
         return ""
 

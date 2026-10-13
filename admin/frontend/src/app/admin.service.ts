@@ -22,6 +22,18 @@ export interface Booking {
   created_at: string;
 }
 
+/** /admin/market/performance — daily closes on one shared calendar (null before a series starts). */
+export interface MarketData {
+  as_of: string | null;
+  days: string[];
+  series: Record<string, { name: string; values: (number | null)[] }>;
+  villas: { key: string; name: string; risk_name?: string; weights: Record<string, number> }[];
+  default_villa?: string;
+  rebalance?: { parts: string[]; month: number };
+  benchmarks: { key: string; label: string; about: string }[];
+  first_investment: string | null;
+}
+
 export interface SessionInfo {
   device_known: boolean;
   has_pin: boolean;
@@ -38,6 +50,8 @@ export interface TokenResponse {
   has_pin?: boolean;
   email?: string;
   lock_presets?: number[];
+  /** trusted-device credential (verify-otp / unlock) — kept as a cookie fallback */
+  device_token?: string;
 }
 
 export interface AvailabilityConfig {
@@ -153,8 +167,81 @@ export interface ClientDoc {
   created_at: string;
 }
 
+/** One fund on the Commission page: money held across clients, its trail rate, what it earns. */
+export interface CommissionFund {
+  key: string;                 // scheme code, or "name:…" when the report had none
+  scheme_code: number | null;
+  scheme_name: string;
+  aum: number;                 // ₹ held today at live NAV (demo client excluded)
+  invested: number;
+  clients: number;
+  in_villa: boolean;
+  nav_date: string | null;
+  rate_pct: number | null;     // trail commission, % a year (null = not set)
+  yearly: number;
+  monthly: number;
+}
+export interface CommissionOverview {
+  as_of: string;
+  updated_at: string | null;
+  max_rate_pct: number;
+  funds: CommissionFund[];
+  totals: {
+    aum: number; aum_with_rate: number; yearly: number; monthly: number;
+    avg_rate_pct: number | null; funds: number; funds_missing_rate: number; clients: number;
+  };
+}
+
+/** /admin/meet — the one Meet room, the admin's own meetings, and calls clients booked in the app. */
+export interface MeetRoom { url: string; is_default: boolean; updated_at: string | null; }
+export interface Meeting {
+  id: string;
+  title: string;
+  with_name: string;
+  with_phone?: string;
+  client_code?: string | null;
+  starts_at: string;          // ISO with offset
+  duration_min: number;
+  note: string;
+  status: 'scheduled' | 'done' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+export interface ClientCall { id: string; name: string; phone: string; starts_at: string; status: string; note: string; }
+export interface MeetOverview { room: MeetRoom; meetings: Meeting[]; client_calls: ClientCall[]; }
+
+/** Villas sold, by type. */
+export type VillaType = 'conservative' | 'balanced' | 'aggressive';
+export interface VillaTypeRow { key: VillaType; name: string; risk: string; count: number; constructed: number; value: number; invested: number; commission: number; }
+export interface VillaSummary {
+  types: VillaTypeRow[];
+  unset: { count: number; value: number; villas: { villa_id: string; client_code: string; client_name: string; name: string; value: number }[] };
+  totals: { count: number; value: number; commission: number };
+}
+/** World markets today (Yahoo, cached on the server). */
+export interface WorldQuote {
+  key: string; symbol: string; name: string; region: string; currency: string | null;
+  /** 'yield' = a bond yield in % a year (moves in basis points); unit e.g. '$/bbl' */
+  kind?: string | null; change_bp?: number | null; unit?: string;
+  last: number | null; prev_close: number | null; change: number | null; change_pct: number | null;
+  /** in US dollars: local move combined with the currency's move against the dollar */
+  usd_last: number | null; usd_prev: number | null; usd_change_pct: number | null; fx_pct: number | null;
+  day_high: number | null; day_low: number | null; high_52w: number | null; low_52w: number | null;
+  time: number | null; tz: string | null; spark: number[];
+}
+export interface WorldQuotes { regions: string[]; indices: WorldQuote[]; as_of: number; }
+/** /admin/world/history — d = day number since 1970-01-01 (UTC), v = close (own currency), u = close in US$ */
+export interface WorldHistory { key: string; name: string; region: string; kind?: string | null; currency: string | null; d: number[]; v: number[]; u: (number | null)[]; }
+/** monthly consumer-price levels (d = day number of the 1st of each month) */
+export interface CpiSeries { name: string; source: string; d: number[]; v: number[]; last_actual: number; latest_yoy: number | null; estimated_from: number | null; }
+export interface WorldCpi { US: CpiSeries; IN: CpiSeries; }
+export interface WorldChart { key: string; name: string; range: string; currency: string | null; local_currency?: string | null; prev_close: number | null; points: [number, number][]; }
+
 const AT = 'ml_admin_at';       // access token
 const AT_EXP = 'ml_admin_at_exp';
+// Copy of the trusted-device credential (the httpOnly cookie is the primary).
+// Sent as X-Admin-Device so a browser that drops the cookie still skips the email code.
+const DEV = 'ml_admin_device';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -178,6 +265,21 @@ export class AdminService {
     localStorage.removeItem(AT);
     localStorage.removeItem(AT_EXP);
   }
+  get deviceToken(): string {
+    try { return localStorage.getItem(DEV) || ''; } catch { return ''; }
+  }
+  storeDevice(raw: string | undefined): void {
+    if (!raw) return;
+    try { localStorage.setItem(DEV, raw); } catch { /* ignore */ }
+  }
+  clearDevice(): void {
+    try { localStorage.removeItem(DEV); } catch { /* ignore */ }
+  }
+  private get deviceOpts() {
+    const d = this.deviceToken;
+    const headers: Record<string, string> = d ? { 'X-Admin-Device': d } : {};
+    return { headers, withCredentials: true };
+  }
   private get authHeaders() {
     return { Authorization: `Bearer ${this.token}` };
   }
@@ -187,7 +289,7 @@ export class AdminService {
 
   // ── auth flow ─────────────────────────────────────────────────────────────
   session(): Observable<SessionInfo> {
-    return this.http.get<SessionInfo>(`${this.base}/admin/auth/session`, { withCredentials: true });
+    return this.http.get<SessionInfo>(`${this.base}/admin/auth/session`, this.deviceOpts);
   }
   requestOtp(email = ''): Observable<{ ok: boolean; emailed: boolean; masked: string }> {
     return this.http.post<{ ok: boolean; emailed: boolean; masked: string }>(
@@ -202,13 +304,15 @@ export class AdminService {
   }
   unlock(pin: string): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(
-      `${this.base}/admin/auth/unlock`, { pin }, { withCredentials: true });
+      `${this.base}/admin/auth/unlock`, { pin }, this.deviceOpts);
   }
   refresh(): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.base}/admin/auth/refresh`, {}, this.opts);
   }
   logoutDevice(): Observable<{ ok: boolean }> {
-    return this.http.post<{ ok: boolean }>(`${this.base}/admin/auth/logout`, {}, this.opts);
+    const o = this.deviceOpts;
+    return this.http.post<{ ok: boolean }>(`${this.base}/admin/auth/logout`, {},
+      { ...o, headers: { ...o.headers, ...this.authHeaders } });
   }
   setLockMinutes(lock_minutes: number): Observable<{ ok: boolean; lock_minutes: number }> {
     return this.http.post<{ ok: boolean; lock_minutes: number }>(
@@ -309,6 +413,32 @@ export class AdminService {
     fd.append('file', file);
     return this.http.post<ReportUpload>(`${this.base}/admin/reports/upload`, fd, this.opts);
   }
+  // ── meeting room ─────────────────────────────────────────────────────────
+  meet(): Observable<MeetOverview> {
+    return this.http.get<MeetOverview>(`${this.base}/admin/meet`, this.opts);
+  }
+  /** empty url = back to the default room */
+  setMeetRoom(url: string): Observable<MeetRoom> {
+    return this.http.put<MeetRoom>(`${this.base}/admin/meet/room`, { url }, this.opts);
+  }
+  createMeeting(m: Partial<Meeting>): Observable<Meeting> {
+    return this.http.post<Meeting>(`${this.base}/admin/meetings`, m, this.opts);
+  }
+  updateMeeting(id: string, patch: Partial<Meeting>): Observable<Meeting> {
+    return this.http.patch<Meeting>(`${this.base}/admin/meetings/${id}`, patch, this.opts);
+  }
+  deleteMeeting(id: string): Observable<{ status: string }> {
+    return this.http.delete<{ status: string }>(`${this.base}/admin/meetings/${id}`, this.opts);
+  }
+  // ── commission ──────────────────────────────────────────────────────────────
+  commission(): Observable<CommissionOverview> {
+    return this.http.get<CommissionOverview>(`${this.base}/admin/commission`, this.opts);
+  }
+  /** rates: {fund key: % a year, or null to clear} — returns the recomputed page */
+  saveCommissionRates(rates: Record<string, number | null>): Observable<CommissionOverview> {
+    return this.http.put<CommissionOverview>(`${this.base}/admin/commission/rates`, { rates }, this.opts);
+  }
+
   reportUploads(): Observable<ReportUpload[]> {
     return this.http.get<ReportUpload[]>(`${this.base}/admin/reports/uploads`, this.opts);
   }
@@ -360,6 +490,37 @@ export class AdminService {
   }
   unassignTxns(orderIds: string[]): Observable<{ unassigned: number }> {
     return this.http.post<{ unassigned: number }>(`${this.base}/admin/reports/villas/unassign`, { order_ids: orderIds }, this.opts);
+  }
+  // ── villas vs the market (home chart) ─────────────────────────────────────
+  /** Daily index levels + the villa mixes; the chart replays each villa from any start day. */
+  // ── villas sold by type ─────────────────────────────────────────────────────
+  villasSummary(): Observable<VillaSummary> {
+    return this.http.get<VillaSummary>(`${this.base}/admin/villas/summary`, this.opts);
+  }
+  setVillaType(villaId: string, type: VillaType | null): Observable<{ ok: boolean }> {
+    return this.http.put<{ ok: boolean }>(`${this.base}/admin/villas/${villaId}/type`, { type }, this.opts);
+  }
+  // ── world markets ───────────────────────────────────────────────────────────
+  worldQuotes(): Observable<WorldQuotes> {
+    return this.http.get<WorldQuotes>(`${this.base}/admin/world/quotes`, this.opts);
+  }
+  worldChart(key: string, range: string, ccy: 'usd' | 'local' = 'usd'): Observable<WorldChart> {
+    return this.http.get<WorldChart>(`${this.base}/admin/world/chart`, { ...this.opts, params: { key, range, ccy } });
+  }
+  /** daily closes since 2000 (own currency + US dollars); every longer time frame is cut from it */
+  worldHistory(key: string): Observable<WorldHistory> {
+    return this.http.get<WorldHistory>(`${this.base}/admin/world/history`, { ...this.opts, params: { key } });
+  }
+
+  worldInflation(): Observable<WorldCpi> {
+    return this.http.get<WorldCpi>(`${this.base}/admin/world/inflation`, this.opts);
+  }
+
+  marketPerformance(): Observable<MarketData> {
+    return this.http.get<MarketData>(`${this.base}/admin/market/performance`, this.opts);
+  }
+  marketLive(): Observable<MarketLive> {
+    return this.http.get<MarketLive>(`${this.base}/admin/market/live`, this.opts);
   }
   // ── check the maths ──────────────────────────────────────────────────────
   auditClient(code: string): Observable<any> {
@@ -478,6 +639,8 @@ export interface ClientVilla {
   finished: boolean;
   /** its place on the client's estate (0 = Villa 1); null when nothing is pinned */
   position: number | null;
+  /** admin-set villa type (null = not set yet) */
+  villa_type?: VillaType | null;
 }
 /** One fund line of a purchase being added by hand. */
 export interface PurchaseLine {
@@ -499,4 +662,14 @@ export interface VillaBucket { id: string; name: string; tier?: string; kind?: s
 export interface VillaLive {
   bucket_id: string; name: string; tier?: string; nav_sum: number;
   funds: { scheme_name: string; scheme_code?: number; nav?: number; nav_date?: string; target_weight?: number }[];
+}
+
+/** /admin/market/live — today's index moves from NSE (price indices; cached 60 s server-side). */
+export interface MarketLive {
+  open: boolean;
+  status: string;
+  day: string | null;      // trade date of the board, yyyy-mm-dd
+  time: string | null;     // HH:MM IST
+  quotes: Record<string, { last: number; prev: number; pct: number; adv: number | null; dec: number | null; high: number; low: number }>;
+  stale?: boolean;
 }

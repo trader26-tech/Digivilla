@@ -1,0 +1,65 @@
+@if (data(); as d) {
+  @if (d.unmapped > 0) {
+    <section class="um" id="unmapped" aria-labelledby="um-title">
+      <header class="um-head">
+        <div class="um-title">
+          <span class="um-ic" aria-hidden="true">!</span>
+          <div>
+            <h2 id="um-title">{{ d.unmapped }} transaction{{ d.unmapped === 1 ? '' : 's' }} not mapped to a villa</h2>
+            <p>{{ money(d.unmapped_amount) }} across {{ d.clients_affected }} client{{ d.clients_affected === 1 ? '' : 's' }} · the client app can’t place this money until each line is mapped</p>
+          </div>
+        </div>
+        <div class="um-meter" [attr.title]="d.mapped + ' of ' + d.total + ' transactions mapped'">
+          <div class="um-meter-top"><span>Mapped</span><b class="num">{{ d.mapped }} / {{ d.total }}</b></div>
+          <div class="um-bar"><i [style.width.%]="mappedPct()"></i></div>
+        </div>
+      </header>
+
+      <div class="um-table" role="table" aria-label="Unmapped transactions">
+        <div class="um-cols" role="row">
+          <span role="columnheader">Client · scheme</span>
+          <span role="columnheader">Date</span>
+          <span role="columnheader">Type</span>
+          <span role="columnheader" class="num">Amount</span>
+          <span role="columnheader"></span>
+        </div>
+
+        @for (c of clients(); track c.client_code) {
+          <div class="um-group" role="rowgroup">
+            <div class="um-client" role="row">
+              <span class="um-who" role="cell">
+                <span class="um-av" aria-hidden="true">{{ initials(c.name) }}</span>
+                <span class="um-name">
+                  <b>{{ title(c.name) }}</b>
+                  <small class="num">{{ c.client_code }} · {{ c.unmapped }} of {{ c.total }} unmapped@if (!c.villa_count) { · <em>no villa created yet</em> }</small>
+                </span>
+              </span>
+              <span role="cell"></span>
+              <span role="cell"></span>
+              <b class="num um-sum" role="cell">{{ money(c.unmapped_amount) }}</b>
+              <span role="cell" class="um-act"><button class="um-map" (click)="map.emit(c.client_code)">Map now <span aria-hidden="true">→</span></button></span>
+            </div>
+
+            @for (t of c.txns; track (t.order_id || t.scheme_name + t.txn_date)) {
+              <div class="um-row" role="row">
+                <span class="um-scheme" role="cell">{{ t.scheme_name }}</span>
+                <span class="um-date num" role="cell">{{ day(t.txn_date) }}</span>
+                <span role="cell"><span class="um-kind">{{ t.kind || '—' }}</span></span>
+                <b class="num" role="cell">{{ money(t.amount) }}</b>
+                <span role="cell"><span class="um-tag">Not mapped</span></span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  } @else if (d.total > 0) {
+    <section class="um-ok" role="status">
+      <span class="um-ok-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <b>Every transaction is mapped to a villa</b>
+      <span class="num">{{ d.total }} of {{ d.total }}</span>
+    </section>
+  }
+}

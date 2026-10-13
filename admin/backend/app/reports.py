@@ -29,6 +29,7 @@ import io
 import json
 import os
 import re
+import time as _time
 import uuid
 from datetime import datetime, timezone
 
@@ -389,10 +390,64 @@ def resolve_scheme_codes(raw_names: list[str]) -> dict[str, int | None]:
     return {raw: resolved.get(key_of[raw]) for raw in raw_names}
 
 
+# NAVs already looked up by this worker: {code: (time, nav, nav_date)}. A page
+# values the same handful of funds for every client — without this each lookup
+# was its own Supabase round-trip (~0.2 s), dozens per page.
+_NAV_MEMO: dict = {}
+_NAV_MEMO_S = 600
+
+
+def _nav_memo_get(code) -> tuple[float | None, str | None] | None:
+    hit = _NAV_MEMO.get(code)
+    if hit and hit[1] and (_time.time() - hit[0]) < _NAV_MEMO_S:
+        return hit[1], hit[2]
+    return None
+
+
+def prime_navs(codes, max_age_hours: int = 6) -> None:
+    """Look up many NAVs at once: ONE read of scheme_nav_cache for all of them,
+    then any missing / stale ones fetched in parallel (the same source and rules
+    as live_nav). Afterwards live_nav() answers them from memory."""
+    want = sorted({int(c) for c in codes if c} - {c for c in _NAV_MEMO if _nav_memo_get(c)})
+    if not want:
+        return
+    stale = list(want)
+    if _use_supabase():
+        try:
+            rows = _sb().table("scheme_nav_cache").select("scheme_code,nav,nav_date,fetched_at") \
+                .in_("scheme_code", want).execute().data or []
+            now = datetime.now(timezone.utc)
+            fresh = set()
+            for r in rows:
+                f = r.get("fetched_at")
+                if f and r.get("nav"):
+                    age = (now - datetime.fromisoformat(f.replace("Z", "+00:00"))).total_seconds() / 3600
+                    if age < max_age_hours:
+                        _NAV_MEMO[int(r["scheme_code"])] = (_time.time(), float(r["nav"]), r.get("nav_date"))
+                        fresh.add(int(r["scheme_code"]))
+            stale = [c for c in want if c not in fresh]
+        except Exception:
+            pass
+    if stale:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(8, len(stale))) as ex:
+            list(ex.map(lambda c: live_nav(c, max_age_hours), stale))
+
+
 def live_nav(scheme_code: int, max_age_hours: int = 6) -> tuple[float | None, str | None]:
     """Latest regular-plan NAV for a scheme code, cached for a few hours."""
     if not scheme_code:
         return None, None
+    hit = _nav_memo_get(scheme_code)
+    if hit:
+        return hit
+    nav, ndate = _live_nav(scheme_code, max_age_hours)
+    if nav:
+        _NAV_MEMO[scheme_code] = (_time.time(), nav, ndate)
+    return nav, ndate
+
+
+def _live_nav(scheme_code: int, max_age_hours: int = 6) -> tuple[float | None, str | None]:
     now = datetime.now(timezone.utc)
 
     def _fetch() -> tuple[float | None, str | None, str | None]:
@@ -739,12 +794,32 @@ def _holdings(code: str) -> list[dict]:
     return [h for h in _load_local().get("holdings", []) if h["client_code"] == code]
 
 
+def _holdings_by_client() -> dict[str, list[dict]]:
+    """Every client's holdings in one read (paged), grouped by client code."""
+    rows: list[dict] = []
+    if _use_supabase():
+        try:
+            rows = _all_rows("client_holdings", "*")
+        except Exception:
+            rows = []
+    else:
+        rows = list(_load_local().get("holdings", []))
+    by: dict[str, list[dict]] = {}
+    for h in rows:
+        by.setdefault(h.get("client_code"), []).append(h)
+    return by
+
+
 def list_clients_summary() -> list[dict]:
-    """Light list for the CRM grid: name, code, net worth, invested, gain."""
+    """Light list for the CRM grid: name, code, net worth, invested, gain.
+    Two reads in all (clients, holdings) + one batched NAV lookup."""
+    clients = _all_clients()
+    holdings = _holdings_by_client()
+    prime_navs(h.get("scheme_code") for hs in holdings.values() for h in hs)
     out = []
-    for c in _all_clients():
+    for c in clients:
         code = c["client_code"]
-        val = _valuate(_holdings(code))
+        val = _valuate(holdings.get(code, []))
         out.append({
             "client_code": code, "name": c.get("name", "").strip(),
             "city": c.get("city", ""), "phone": c.get("phone", ""),
@@ -760,6 +835,7 @@ def _valuate(holdings: list[dict]) -> dict:
     """Compute live net worth from holdings using regular-plan NAVs."""
     net = invested = 0.0
     detailed = []
+    prime_navs(h.get("scheme_code") for h in holdings)
     for h in holdings:
         units = float(h.get("units") or 0)
         inv = float(h.get("invested") or 0)
@@ -978,14 +1054,33 @@ def list_transactions(client_code: str) -> list[dict]:
         key=lambda t: t.get("txn_date") or "", reverse=True)
 
 
-def list_client_villas(client_code: str) -> list[dict]:
+def list_client_villas(client_code: str, *, villas: list[dict] | None = None,
+                       txns: list[dict] | None = None, vtypes: dict | None = None) -> list[dict]:
     """The admin-created villas for a client + each villa's mapped total and a
-    ₹5L completion hint (suggests constructed/coin, never forces)."""
-    if _use_supabase():
+    ₹5L completion hint (suggests constructed/coin, never forces).
+    villas / txns / vtypes may be passed in (already read for every client at
+    once) so a portfolio-wide summary doesn't read per client."""
+    if villas is not None and txns is not None:
+        villas = sorted(villas, key=lambda v: v.get("sort_order") or 0)
+    elif _use_supabase():
+        # the three reads at once (villas, transactions, villa types)
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _types():
+            try:
+                from app.villa_sales import get_types
+                return get_types()
+            except Exception:
+                return {}
         try:
-            villas = (_sb().table("client_villas").select("*")
-                      .eq("client_code", client_code).order("sort_order").execute().data or [])
-            txns = list_transactions(client_code)
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                fv = ex.submit(lambda: _sb().table("client_villas").select("*")
+                               .eq("client_code", client_code).order("sort_order").execute().data or [])
+                ft = ex.submit(list_transactions, client_code)
+                fy = ex.submit(_types) if vtypes is None else None
+                villas, txns = fv.result(), ft.result()
+                if fy is not None:
+                    vtypes = fy.result()
         except Exception:
             villas, txns = [], []
     else:
@@ -1000,11 +1095,14 @@ def list_client_villas(client_code: str) -> list[dict]:
             by_villa.setdefault(t["villa_id"], []).append(t)
     # today's NAV for every scheme pinned to any villa (cached, in parallel)
     codes = {t.get("scheme_code") for ts in by_villa.values() for t in ts if t.get("scheme_code")}
-    navs: dict = {}
-    if codes:
-        from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=min(8, len(codes))) as ex:
-            navs = dict(zip(codes, ex.map(lambda c: live_nav(c)[0], codes)))
+    prime_navs(codes)
+    navs: dict = {c: live_nav(c)[0] for c in codes}
+    if vtypes is None:
+        try:
+            from app.villa_sales import get_types
+            vtypes = get_types()
+        except Exception:
+            vtypes = {}
     out = []
     for v in villas:
         items = by_villa.get(v["id"], [])
@@ -1015,6 +1113,7 @@ def list_client_villas(client_code: str) -> list[dict]:
         finished = v.get("status") == "constructed" or mapped >= VILLA_UNIT * 0.99
         out.append({
             **v,
+            "villa_type": vtypes.get(v["id"]),          # conservative / balanced / aggressive (admin-set)
             "mapped_total": mapped,
             "txn_count": len(items),
             # what the client app shows for this villa: its own transactions at today's NAV

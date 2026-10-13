@@ -1,0 +1,167 @@
+<section class="vm" aria-label="Map clients to villas">
+  <header class="vm-h">
+    <h3>Map to villas</h3>
+    @if (overview(); as o) {
+      @if (o.unmapped) {
+        <span class="vm-pill warn"><i aria-hidden="true">!</i>{{ o.unmapped }} transaction{{ o.unmapped === 1 ? '' : 's' }} to map · {{ money(o.unmapped_amount) }}</span>
+      } @else {
+        <span class="vm-pill ok"><i aria-hidden="true">✓</i>Everything is mapped</span>
+      }
+    }
+  </header>
+  <p class="vm-how"><b>1</b> Pick a client <span>→</span> <b>2</b> each purchase shows the villas it can go in <span>→</span> <b>3</b> tap one. Dragging works too.</p>
+
+  <div class="vm-body">
+    <!-- ── clients ── -->
+    <aside class="vm-clients">
+      <div class="vm-search">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input placeholder="Find a client" [value]="q()" (input)="q.set($any($event.target).value)" aria-label="Find a client" />
+      </div>
+      <div class="vm-seg" role="tablist">
+        <button role="tab" [class.on]="filter() === 'todo'" [attr.aria-selected]="filter() === 'todo'" (click)="filter.set('todo')">To map</button>
+        <button role="tab" [class.on]="filter() === 'all'" [attr.aria-selected]="filter() === 'all'" (click)="filter.set('all')">All</button>
+      </div>
+      <ul class="vm-list">
+        @for (c of list(); track c.client_code) {
+          <li>
+            <button [class.on]="c.client_code === code()" (click)="select(c.client_code)">
+              <span class="vm-av">{{ initials(c.name) }}</span>
+              <span class="vm-cn"><b>{{ name(c.name) }}</b><small>{{ money(c.net_worth) }}</small></span>
+              @if (todoOf(c.client_code); as n) { <em class="vm-badge">{{ n }}</em> } @else { <i class="vm-tick" aria-label="All mapped">✓</i> }
+            </button>
+          </li>
+        } @empty {
+          <li class="vm-none">No clients match</li>
+        }
+      </ul>
+    </aside>
+
+    <!-- ── the client's villas ── -->
+    <div class="vm-work" [class.loading]="loading()">
+      @if (client(); as c) {
+        <div class="vm-ch">
+          <div class="vm-ch-id">
+            <b>{{ name(c.name) }}</b>
+            <small>{{ c.client_code }} · {{ villas().length }} villa{{ villas().length === 1 ? '' : 's' }} · {{ money(c.net_worth) }}</small>
+          </div>
+          <button class="vm-open" (click)="openClient.emit(c.client_code)" title="Open the full client view">Client ›</button>
+        </div>
+
+        <!-- ① purchases to place — always visible, each with explicit "Put in" targets -->
+        @if (places().length) {
+          <div class="vm-place">
+            <div class="vm-place-h">
+              <div><b>Purchases to place</b><span>{{ places().length }} · {{ money(placeAmount()) }}</span></div>
+              @if (todo().length > 1) {
+                <button class="vm-auto" (click)="autoMap()" [disabled]="!!busy()" title="Put each villa-fund purchase where it's suggested">Place all as suggested</button>
+              }
+            </div>
+            @for (p of places(); track p.key) {
+              <div class="vm-row" draggable="true" [class.busy]="busy() === p.key" [class.drag]="dragKey() === p.key" [class.outside]="!p.villaFunds"
+                   (dragstart)="dragStart($event, p)" (dragend)="dragEnd()">
+                <div class="vm-r-info">
+                  <b class="vm-r-amt">{{ money(p.total) }}</b>
+                  <div class="vm-r-meta">
+                    <span>{{ day(p.date) }} · {{ p.kind }}</span>
+                    <small>{{ short(p.txns[0].scheme_name) }}@if (p.txns.length > 1) { + {{ p.txns.length - 1 }} more fund{{ p.txns.length > 2 ? 's' : '' }} }</small>
+                  </div>
+                  @if (!p.villaFunds) { <em class="vm-tag out" title="This fund isn't in any villa bucket">Not a villa fund</em> }
+                  @else if (p.type) { <em class="vm-tag" [attr.data-t]="p.type">{{ typeLabel(p.type) }} mix</em> }
+                </div>
+                <div class="vm-r-to">
+                  <span class="vm-r-lbl">Put in</span>
+                  @for (v of villas(); track v.id) {
+                    <button class="vm-to" [class.sug]="p.villaFunds && p.suggest === v.id" [attr.data-t]="v.villa_type" (click)="pin(p, v.id)" [disabled]="!!busy()"
+                            [title]="(p.villaFunds && p.suggest === v.id ? 'Suggested · ' : '') + label(v) + (v.villa_type ? ' · ' + typeLabel(v.villa_type) : '')">
+                      @if (p.villaFunds && p.suggest === v.id) { <i aria-hidden="true">★</i> }{{ label(v) }}
+                    </button>
+                  }
+                  <span class="vm-menu-wrap">
+                    @if (p.type) {
+                      <button class="vm-to new" [class.sug]="p.villaFunds && p.suggest === 'new'" (click)="pin(p, 'new:' + p.type)" [disabled]="!!busy()">+ New {{ typeLabel(p.type) }} villa</button>
+                      <button class="vm-to new more" (click)="menu.set(menu() === p.key ? null : p.key)" [attr.aria-expanded]="menu() === p.key" [disabled]="!!busy()" aria-label="New villa of another type">▾</button>
+                    } @else {
+                      <button class="vm-to new" [class.sug]="p.villaFunds && p.suggest === 'new'" (click)="menu.set(menu() === p.key ? null : p.key)" [attr.aria-expanded]="menu() === p.key" [disabled]="!!busy()">+ New villa ▾</button>
+                    }
+                    @if (menu() === p.key) {
+                      <div class="vm-menu" role="menu">
+                        @for (t of TYPES; track t.key) {
+                          <button role="menuitem" (click)="pin(p, 'new:' + t.key)"><i class="vm-dot new" [attr.data-t]="t.key"></i>New {{ t.label }} villa</button>
+                        }
+                      </div>
+                    }
+                  </span>
+                </div>
+              </div>
+            }
+            @if (other().length) { <p class="vm-note">“Not a villa fund” = a fund that isn't in any villa bucket. Put it in a villa only if it belongs there.</p> }
+          </div>
+        } @else if (!loading()) {
+          <div class="vm-done"><i aria-hidden="true">✓</i>All of {{ name(c.name) }}'s purchases are in villas.</div>
+        }
+
+        <!-- ② their villas — where purchases land -->
+        <div class="vm-sub">{{ name(c.name) }}'s villas <small>set each one's type · × takes a purchase back out</small></div>
+        <!-- villas -->
+        <div class="vm-villas">
+          @for (v of villas(); track v.id) {
+            <article class="vm-v" [attr.data-t]="v.villa_type" [class.drop]="dropOn() === v.id" [class.busy]="busy() === v.id"
+                     (dragover)="over($event, v.id)" (dragleave)="dropOn.set(null)" (drop)="drop($event, v.id)">
+              <div class="vm-v-h">
+                <b>{{ label(v) }}</b>
+                <span class="vm-status" [class.done]="v.finished">{{ v.finished ? 'Complete' : (progress(v) | number:'1.0-0') + '% built' }}</span>
+              </div>
+              <div class="vm-types" role="radiogroup" [attr.aria-label]="'Type of ' + label(v)">
+                @for (t of TYPES; track t.key) {
+                  <button role="radio" [attr.data-t]="t.key" [class.on]="v.villa_type === t.key" [attr.aria-checked]="v.villa_type === t.key"
+                          (click)="setType(v, t.key)" [disabled]="!!busy()">{{ t.label }}</button>
+                }
+              </div>
+              <div class="vm-v-fig">
+                <b>{{ money(v.value) }}</b><small>today · {{ money(v.mapped_total) }} put in</small>
+              </div>
+              <div class="vm-bar"><i [style.width.%]="progress(v)"></i></div>
+              @if (mixType(v); as m) {
+                @if (v.villa_type && m !== v.villa_type) {
+                  <p class="vm-warn">Its money is a {{ typeLabel(m) }} mix
+                    <button (click)="setType(v, m)" [disabled]="!!busy()">Make it {{ typeLabel(m) }}</button></p>
+                }
+              }
+              @if (!v.villa_type) { <p class="vm-warn soft">Pick a type above</p> }
+              <ul class="vm-pinned">
+                @for (p of pinnedTo(v); track p.key) {
+                  <li [class.busy]="busy() === p.key" draggable="true" (dragstart)="dragStart($event, p)" (dragend)="dragEnd()">
+                    <span>{{ day(p.date) }} · {{ p.kind }}</span><b>{{ money(p.total) }}</b>
+                    <button (click)="unpin(p)" [disabled]="!!busy()" [attr.aria-label]="'Unpin ' + day(p.date) + ' ' + p.kind" title="Unpin">×</button>
+                  </li>
+                } @empty {
+                  <li class="vm-empty">Drop a purchase here
+                    <button class="vm-rm" (click)="removeEmpty(v)" [disabled]="!!busy()">Remove</button></li>
+                }
+              </ul>
+            </article>
+          }
+
+          <!-- a new villa, by type -->
+          <article class="vm-v vm-new" [class.dragging]="!!dragKey()">
+            <div class="vm-v-h"><b>New villa</b></div>
+            <div class="vm-new-ts">
+              @for (t of TYPES; track t.key) {
+                <button [attr.data-t]="t.key" [class.drop]="dropOn() === 'new:' + t.key" [disabled]="!!busy()"
+                        (click)="addVilla(t.key)" (dragover)="over($event, 'new:' + t.key)" (dragleave)="dropOn.set(null)" (drop)="drop($event, 'new:' + t.key)">
+                  <i class="vm-dot" [attr.data-t]="t.key"></i>{{ t.label }}<small>{{ dragKey() ? 'drop to start one' : '+ add' }}</small>
+                </button>
+              }
+            </div>
+          </article>
+        </div>
+
+      } @else {
+        <div class="vm-blank">Pick a client</div>
+      }
+    </div>
+  </div>
+
+  @if (toast()) { <div class="vm-toast" role="status">{{ toast() }}</div> }
+</section>

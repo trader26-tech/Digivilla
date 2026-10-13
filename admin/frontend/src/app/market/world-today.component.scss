@@ -1,0 +1,123 @@
+:host { display: block; }
+.pos { color: var(--positive); } .neg { color: var(--negative); }
+.r { text-align: right; justify-self: end; }
+.wt { display: flex; flex-direction: column; gap: 18px; }
+.wt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 1px 2px rgba(22, 48, 43, .04), 0 10px 30px -18px rgba(22, 48, 43, .25); }
+
+/* segmented controls */
+.wt-seg { display: inline-flex; padding: 3px; border-radius: 11px; background: var(--surface-2); }
+.wt-seg button { border: 0; background: none; cursor: pointer; padding: 6px 12px; border-radius: 8px; font: 700 0.8rem var(--font-body); color: var(--muted); transition: color .15s; }
+.wt-seg button:hover { color: var(--ink); }
+.wt-seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(22, 48, 43, .14); }
+
+/* chart */
+.wt-chart { padding: 18px 20px 14px; }
+.wt-ch { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.wt-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.wt-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 6px 5px 11px; border-radius: 999px; font-size: 0.8rem; font-weight: 650;
+  color: var(--ink); background: var(--surface-2);
+  i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+  b { font-variant-numeric: tabular-nums; }
+  button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; padding: 0 4px; border-radius: 50%; }
+  button:hover { color: var(--ink); } }
+.wt-hint { font-size: 0.85rem; color: var(--muted); padding-top: 4px; }
+.wt-plot { position: relative; height: 320px; transition: opacity .2s; }
+.wt-plot.dim { opacity: .5; }
+.wt-plot svg { width: 100%; height: 100%; display: block; cursor: crosshair; }
+.grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
+.grid.zero { stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-dasharray: none; }
+.yl, .xl { font: 600 11px var(--font-body); fill: var(--muted); }
+.ln { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.cross { stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.wt-empty { height: 100%; display: grid; place-items: center; color: var(--muted); font-size: 0.9rem; }
+.wt-tip { position: absolute; top: 8px; left: 10px; display: flex; flex-direction: column; gap: 3px; min-width: 210px; padding: 10px 12px; border-radius: 12px; pointer-events: none;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: 0 10px 24px -12px rgba(22, 48, 43, .35); font-size: 0.78rem; color: var(--ink);
+  b { font-size: 0.76rem; color: var(--muted); font-weight: 650; margin-bottom: 2px; }
+  span { display: flex; align-items: center; gap: 7px; } i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  em { font-style: normal; font-weight: 750; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; } }
+.wt-note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); }
+
+/* the markets table */
+.wt-list { padding: 14px 6px 8px; }
+.wt-lh { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 0 14px 12px; }
+.wt-asof { display: inline-flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); b { font-weight: 750; } }
+.wt-err { margin: 0 14px 10px; color: var(--negative); font-size: 0.85rem; }
+.wt-th, .wt-tr { display: grid; grid-template-columns: 28px minmax(0, 1.6fr) 1fr 1fr 130px minmax(150px, 1.1fr); gap: 14px; align-items: center; padding: 0 14px; }
+.wt-th { padding-bottom: 8px; font-size: 0.68rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.wt-gh { display: flex; align-items: baseline; gap: 10px; padding: 14px 14px 6px 56px; b { font-size: 0.78rem; font-weight: 750; color: var(--ink); }
+  em { font-style: normal; font-size: 0.74rem; font-weight: 700; } }
+.wt-tr { width: 100%; min-height: 52px; border: 0; border-radius: 12px; background: none; cursor: pointer; text-align: left; font-family: var(--font-body); color: var(--ink);
+  transition: background .12s; }
+.wt-tr:hover { background: var(--surface-2); }
+.wt-tr.on { background: color-mix(in srgb, var(--c) 7%, var(--surface)); }
+.wt-tick i { display: block; width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--border); background: var(--surface); }
+.wt-tr.on .wt-tick i { border-color: var(--c); background: var(--c); box-shadow: inset 0 0 0 3px var(--surface); }
+.wt-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; b { font-size: 0.9rem; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  small { font-size: 0.68rem; font-weight: 700; color: var(--muted); } }
+.wt-price { font-size: 0.92rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wt-pill { display: inline-block; min-width: 64px; padding: 3px 8px; border-radius: 8px; font-style: normal; font-size: 0.8rem; font-weight: 750; text-align: center;
+  font-variant-numeric: tabular-nums; color: var(--muted); background: var(--surface-2); }
+.wt-pill.pos { color: var(--positive); background: color-mix(in srgb, var(--positive) 11%, transparent); }
+.wt-pill.neg { color: var(--negative); background: color-mix(in srgb, var(--negative) 10%, transparent); }
+.wt-abs { display: block; margin-top: 2px; font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wt-spark { width: 120px; height: 30px; }
+.wt-spark path { fill: none; stroke-width: 1.7; vector-effect: non-scaling-stroke; stroke: var(--muted); stroke-linejoin: round; }
+.wt-spark path.pos { stroke: var(--positive); } .wt-spark path.neg { stroke: var(--negative); }
+.wt-spark .base { stroke: var(--border); stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.wt-52 { display: flex; flex-direction: column; gap: 4px; }
+.wt-rng { position: relative; height: 4px; border-radius: 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--negative) 35%, var(--surface-2)), var(--surface-2), color-mix(in srgb, var(--positive) 35%, var(--surface-2)));
+  i { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px var(--surface); } }
+.wt-52 small { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 900px) {
+  .wt-th, .wt-tr { grid-template-columns: 24px minmax(0, 1fr) auto auto; }
+  .wt-th > :nth-child(5), .wt-th > :nth-child(6), .wt-tr > :nth-child(5), .wt-tr > :nth-child(6) { display: none; }
+  .wt-gh { padding-left: 52px; }
+  .wt-plot { height: 240px; }
+}
+
+/* ── time frames, currency, custom dates ── */
+.wt-ccy { margin-left: auto; } .wt-ccy button { padding: 6px 11px; }
+.wt-bar { display: flex; align-items: center; justify-content: flex-start; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.wt-ranges button { padding: 6px 10px; }
+.wt-dates { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted);
+  input { font: 650 0.8rem var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 5px 8px;
+          &:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 18%, transparent); } }
+  em { font-style: normal; font-weight: 650; margin-left: 4px; white-space: nowrap; } }
+.wt-plot svg.zoomable { cursor: col-resize; user-select: none; }
+.brush { fill: color-mix(in srgb, var(--brass) 14%, transparent); stroke: color-mix(in srgb, var(--brass) 55%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.wt-tip.right { left: auto; right: 74px; }
+
+/* ── compare table ── */
+.wt-cmp { padding: 16px 20px 18px; }
+.wt-cmp-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  h3 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--ink); }
+  p { margin: 3px 0 0; max-width: 640px; font-size: 0.78rem; color: var(--muted); } }
+.wt-tbl-wrap { overflow-x: auto; }
+.wt-tbl { width: 100%; border-collapse: separate; border-spacing: 3px; font-variant-numeric: tabular-nums;
+  th { font-size: 0.68rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: right; padding: 4px 8px; white-space: nowrap;
+       small { display: block; font-size: 0.6rem; letter-spacing: 0; text-transform: none; font-weight: 650; } }
+  td { text-align: right; padding: 8px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; color: var(--ink); white-space: nowrap; border: 1.5px solid transparent; }
+  .nm { text-align: left; font-weight: 700; min-width: 170px; i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; } }
+  td.best { border-color: color-mix(in srgb, var(--ink) 55%, transparent); }
+  td.na { text-align: left; color: var(--muted); font-weight: 600; } }
+.wt-empty.sm { height: 80px; }
+
+/* section heading (moved here from the page so it can follow the currency switch) */
+.wt-sec { margin: 0 0 2px; }
+.wt-sec h2 { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.wt-sec h2 span { margin-left: 6px; font-size: 0.78rem; font-weight: 700; color: var(--brass); text-transform: uppercase; letter-spacing: .06em; }
+.wt-sec p { margin: 4px 0 0; font-size: 0.88rem; color: var(--muted); }
+
+/* inflation: the dashed yardstick line, its chip, and the As quoted / After inflation switch */
+.ln.dash { stroke-dasharray: 6 5; stroke-width: 1.8; opacity: .9; }
+.wt-cpi i { background: none !important; border-top: 2px dashed var(--c); border-radius: 0; height: 0; width: 12px; }
+.wt-cpi b { color: var(--muted); }
+.wt-cpi-add { border: 1px dashed var(--border); background: none; cursor: pointer; padding: 5px 11px; border-radius: 999px;
+  font: 650 0.8rem var(--font-body); color: var(--muted); }
+.wt-cpi-add:hover { color: var(--ink); border-color: var(--muted); }
+.wt-real button { padding: 6px 11px; }
+.wt-real button:disabled { opacity: .45; cursor: default; }
+.wt-real-note { display: block; margin-bottom: 3px; font-weight: 600; color: var(--ink); }
+.wt-ch .wt-legend { flex: 1 1 0; min-width: 0; }
+.wt-ch .wt-real { flex: none; }

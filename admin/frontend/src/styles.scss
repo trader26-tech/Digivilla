@@ -51,3 +51,50 @@ html, body {
   outline: 2px solid var(--brass);
   outline-offset: 2px;
 }
+
+/* ---------- admin sidebar (app.component's navigation; global to keep that component under its style budget) ---------- */
+$side-w: 232px;
+.dash { padding-left: $side-w; --top-h: 0px; }   /* no top bar on desktop (the home grid reads --top-h) */
+.side {
+  position: fixed; inset: 0 auto 0 0; z-index: 30; width: $side-w; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 1.4rem; padding: 1.25rem 0.85rem 1rem;
+  background: var(--surface); border-right: 1px solid var(--border);
+}
+.side .brand { padding: 0 0.6rem; }
+.side-nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.side-nav button {
+  display: flex; align-items: center; gap: 0.7rem; width: 100%; padding: 0.6rem 0.7rem; border: 0; border-radius: 10px;
+  background: none; cursor: pointer; text-align: left; font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+  svg { flex: none; opacity: 0.85; }
+  &:hover { background: var(--surface-2); color: var(--ink); }
+  &.on { background: color-mix(in srgb, var(--brass) 12%, var(--surface)); color: var(--ink);
+    svg { color: var(--brass); opacity: 1; } }
+}
+.side-sep { margin: 0.9rem 0.7rem 0.3rem; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.9rem; border-top: 1px solid var(--border); }
+.side-foot .meet-top { justify-content: center; width: 100%; }
+.side-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.side-row .ghost { margin-left: auto; }
+.upd { margin-left: 0; }
+@media (max-width: 900px) {
+  .dash { padding-left: 0; }
+  .side { position: sticky; top: 0; inset: auto; width: auto; height: auto; flex-direction: row; align-items: center; gap: 0.6rem;
+    padding: 0.5rem 0.75rem; border-right: 0; border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--paper) 90%, transparent); backdrop-filter: blur(12px); }
+  .side .brand .tag, .side .brand .brand-name { display: none; }
+  .side-nav { flex-direction: row; overflow-x: auto; flex: 1; }
+  .side-nav button { width: auto; flex: none; padding: 0.5rem 0.65rem; span { white-space: nowrap; } }
+  .side-sep { display: none; }
+  .side-foot { margin: 0; padding: 0; border: 0; flex-direction: row; }
+  .side-foot .meet-top span, .side-row .timer { display: none; }
+}
+
+/* client drawer: a villa's type (Conservative / Balanced / Aggressive) — global to spare app.component.scss's budget */
+.vv-type { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 8px 0 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
+.vv-type button { --t: var(--brass); border: 0; background: none; cursor: pointer; padding: 5px 4px; border-radius: 7px;
+  font: 700 0.7rem var(--font-body); color: var(--muted); transition: background .15s, color .15s; }
+.vv-type button[data-t='conservative'] { --t: var(--positive); }
+.vv-type button[data-t='aggressive'] { --t: var(--terracotta); }
+.vv-type button:hover { color: var(--ink); }
+.vv-type button.on { color: #fff; background: var(--t); }

@@ -1,0 +1,242 @@
+<section class="mc" aria-labelledby="mc-title">
+  <!-- ── one bar: title + live state · period · benchmark ── -->
+  <header class="mc-bar">
+    <div class="mc-id">
+      <h2 id="mc-title">Villas vs market</h2>
+      @if (liveLabel(); as ll) {
+        <span class="mc-live" [class.open]="ll.cls === 'open'" [attr.title]="live()?.stale ? 'NSE not reachable — last known board' : null">
+          <i aria-hidden="true"></i>{{ ll.text }}@if (ll.sub) { <small>{{ ll.sub }}</small> }
+        </span>
+      }
+    </div>
+
+    <div class="mc-ctrls">
+      @if (data()?.first_investment) {
+        <button class="mc-since" [class.on]="period() === 'since'" (click)="setPeriod('since')"
+                [attr.aria-pressed]="period() === 'since'" [attr.title]="'Since the first client money went in · ' + sinceLabel()">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 20V10l8-6 8 6v10h-5v-6H9v6H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          Since we invested
+        </button>
+      }
+      <div class="mc-seg" role="group" aria-label="Period">
+        @for (p of periods; track p.key) {
+          <button [class.on]="period() === p.key" [attr.aria-pressed]="period() === p.key" (click)="setPeriod(p.key)">{{ p.label }}</button>
+        }
+        <button [class.on]="period() === 'custom'" [attr.aria-pressed]="period() === 'custom'" (click)="setPeriod('custom')" title="Pick dates" aria-label="Pick dates">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="mc-bench">
+        <button class="mc-bench-btn" (click)="benchOpen.set(!benchOpen())" [attr.aria-expanded]="benchOpen()" aria-haspopup="listbox" title="Compare with">
+          <svg width="20" height="8" aria-hidden="true"><line x1="1" y1="4" x2="19" y2="4" stroke="#16302B" stroke-width="2" stroke-dasharray="5 3" stroke-linecap="round"/></svg>
+          <span>vs</span><b>{{ benchMeta()?.label || '…' }}</b>
+          <svg class="mc-chev" [class.up]="benchOpen()" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        @if (benchOpen() && data(); as d) {
+          <ul class="mc-menu" role="listbox" aria-label="Benchmark index">
+            @for (b of d.benchmarks; track b.key) {
+              <li>
+                <button role="option" [attr.aria-selected]="b.key === bench()" [class.on]="b.key === bench()" (click)="pickBench(b.key)">
+                  <span class="mc-check" aria-hidden="true">@if (b.key === bench()) { <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> }</span>
+                  <span class="mc-m-txt"><b>{{ b.label }}</b><small>{{ b.about }}</small></span>
+                  @if (live()?.quotes?.[b.key]; as q) {
+                    <span class="mc-m-day num" [class.neg]="q.pct < 0" [class.pos]="q.pct > 0">{{ pct(q.pct / 100, 2) }}</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      <span class="mc-info" tabindex="0" [attr.title]="methodNote()" aria-label="How this is worked out">i</span>
+    </div>
+  </header>
+
+  @if (period() === 'custom') {
+    <div class="mc-custom">
+      <input type="date" aria-label="From" [min]="minDay()" [max]="customTo() || maxDay()" [ngModel]="customFrom()" (ngModelChange)="setCustom('from', $event)">
+      <span aria-hidden="true">→</span>
+      <input type="date" aria-label="To" [min]="customFrom() || minDay()" [max]="maxDay()" [ngModel]="customTo()" (ngModelChange)="setCustom('to', $event)">
+    </div>
+  }
+
+  @if (error()) {
+    <div class="mc-error" role="alert"><span>{{ error() }}</span><button (click)="load()">Try again</button></div>
+  }
+
+  <!-- ── today ── -->
+  <div class="mc-today" [class.sk]="!today()">
+    @if (today(); as t) {
+      <div class="mc-today-h">
+        <b>{{ t.isToday ? 'Today' : fmtDate(t.day, false, true) }}</b>
+        @if (t.breadth; as br) {
+          <span class="mc-breadth" [attr.title]="benchMeta()?.label + ' stocks up / down today'">
+            <i class="up" [style.flex-grow]="br.adv"></i><i class="down" [style.flex-grow]="br.dec"></i>
+          </span>
+          <small class="num"><span class="pos">{{ br.adv }}↑</span> <span class="neg">{{ br.dec }}↓</span></small>
+        }
+      </div>
+      @for (r of t.rows; track r.key) {
+        <div class="mc-today-c" [class.bench]="r.bench" [class.off]="hidden().has(r.key)">
+          <svg width="16" height="6" aria-hidden="true"><line x1="1" y1="3" x2="15" y2="3" [attr.stroke]="r.colour" stroke-width="3" stroke-linecap="round" [attr.stroke-dasharray]="r.bench ? '4 3' : null"/></svg>
+          <span>{{ r.name }}</span>
+          <b class="num" [class.neg]="r.pct < 0" [class.pos]="r.pct > 0">{{ pct(r.pct, 2) }}</b>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- ── the chart ── -->
+  <div class="mc-plot">
+    <div class="mc-overlay">
+    <div class="mc-mode" role="group" aria-label="Chart view">
+      <button [class.on]="mode() === 'growth'" (click)="mode.set('growth')" [attr.aria-pressed]="mode() === 'growth'">Growth</button>
+      <button [class.on]="mode() === 'falls'" (click)="mode.set('falls')" [attr.aria-pressed]="mode() === 'falls'">Drawdown</button>
+    </div>
+    <span class="mc-span">{{ periodLabel() }}</span>
+    </div>
+
+    <div class="mc-plot-wrap">
+      @if (data() && dates().length) {
+        <svg class="mc-svg" [attr.width]="width()" [attr.height]="height()" role="img"
+             [attr.aria-label]="'Villas compared with ' + (benchMeta()?.label || '') + ', ' + periodLabel()">
+          <g [attr.transform]="'translate(' + margins().l + ',' + margins().t + ')'">
+            @for (t of yTicks(); track t.v) {
+              <line class="mc-grid" [class.zero]="t.zero" x1="0" [attr.x2]="innerW()" [attr.y1]="t.y" [attr.y2]="t.y"/>
+              <text class="mc-ylab" x="-10" [attr.y]="t.y" dy="0.32em" text-anchor="end">{{ t.label }}</text>
+            }
+            @for (t of xTicks(); track t.x) {
+              <text class="mc-xlab" [attr.x]="t.x" [attr.y]="innerH() + 18" text-anchor="middle">{{ t.label }}</text>
+            }
+            @if (benchArea()) { <path class="mc-bench-area" [attr.d]="benchArea()"/> }
+            @for (p of paths(); track p.key) {
+              <path class="mc-line" [class.bench]="p.bench" [class.dim]="focusKey() && focusKey() !== p.key"
+                    [class.hot]="focusKey() === p.key" [attr.d]="p.d" [attr.stroke]="p.colour"/>
+            }
+            @for (e of endLabels(); track e.key) {
+              <circle class="mc-end" [class.pulse]="provisional()" [attr.cx]="innerW()" [attr.cy]="e.y0" r="4" [attr.fill]="e.colour"/>
+              @if (e.y !== e.y0) {
+                <path class="mc-leader" [attr.d]="'M' + (innerW() + 6) + ',' + e.y0 + ' L' + (innerW() + 14) + ',' + e.y"/>
+              }
+              <g class="mc-elab" [class.dim]="focusKey() && focusKey() !== e.key" [attr.transform]="'translate(' + (innerW() + 16) + ',' + e.y + ')'">
+                <text class="v" y="-2">{{ e.value }}</text>
+                <text class="n" y="12">{{ e.name }}</text>
+              </g>
+            }
+            @if (tip(); as t) {
+              <line class="mc-cross" [attr.x1]="t.x" [attr.x2]="t.x" y1="0" [attr.y2]="innerH()"/>
+              @for (r of t.rows; track r.key) {
+                <circle class="mc-dot" [attr.cx]="t.x" [attr.cy]="r.y" r="4.5" [attr.fill]="r.colour"/>
+              }
+            }
+            <rect class="mc-hit" x="-8" y="-8" [attr.width]="innerW() + 16" [attr.height]="innerH() + 16"
+                  tabindex="0" aria-label="Chart: arrow keys move through the days"
+                  (pointermove)="onMove($event)" (pointerdown)="onMove($event)" (pointerleave)="hover.set(null)"
+                  (keydown)="onKey($event)" (blur)="hover.set(null)"/>
+          </g>
+        </svg>
+
+        @if (tip(); as t) {
+          <div class="mc-tip" [class.flip]="t.flip" [style.left.px]="t.x + margins().l" [style.top.px]="margins().t">
+            <div class="mc-tip-date">{{ t.date }}@if (t.live) { <em>live</em> }</div>
+            @for (r of t.rows; track r.key) {
+              <div class="mc-tip-row">
+                <svg width="14" height="6" aria-hidden="true"><line x1="1" y1="3" x2="13" y2="3" [attr.stroke]="r.colour" stroke-width="2.5" stroke-linecap="round" [attr.stroke-dasharray]="r.bench ? '4 2.5' : null"/></svg>
+                <b class="num">{{ pct(r.value / 100) }}</b>
+                <span>{{ r.name }}</span>
+                @if (r.day !== null) { <small class="num" [class.neg]="r.day < 0" [class.pos]="r.day > 0">{{ pct(r.day, 2) }}</small> }
+              </div>
+            }
+            <div class="mc-tip-foot">{{ mode() === 'growth' ? 'since start' : 'below peak' }} · that day</div>
+          </div>
+        }
+      } @else if (!error()) {
+        <div class="mc-sk-plot"><i></i></div>
+      }
+    </div>
+  </div>
+
+  <!-- ── the numbers ── -->
+  @if (data() && dates().length) {
+    <div class="mc-table">
+
+      <div class="mc-scroll">
+        @if (table() === 'stats') {
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" class="mc-corner">
+                  <span class="mc-tabs" role="tablist">
+                    <button role="tab" [class.on]="table() === 'stats'" [attr.aria-selected]="table() === 'stats'" (click)="table.set('stats')">Risk</button>
+                    <button role="tab" [class.on]="table() === 'years'" [attr.aria-selected]="table() === 'years'" (click)="table.set('years')">By year</button>
+                  </span>
+                </th>
+                <th scope="col" class="r">Return</th>
+                <th scope="col" class="r" [attr.title]="'Percentage points over ' + benchMeta()?.label">vs index</th>
+                <th scope="col" class="r" title="Compound yearly return (needs a year of history)">CAGR</th>
+                <th scope="col" class="r" title="Annualised volatility of daily returns">Volatility</th>
+                <th scope="col" class="r" title="Return over the arbitrage index per unit of volatility (annualised)">Sharpe</th>
+                <th scope="col" class="r" title="Largest fall from a previous high">Max drawdown</th>
+                <th scope="col" class="r" [attr.title]="'Sensitivity to ' + benchMeta()?.label + ' (1 = moves with it)'">Beta</th>
+                <th scope="col" class="r">₹1 L →</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lines(); track l.key) {
+                @let s = stats()[l.key];
+                <tr [class.bench]="l.bench" [class.off]="hidden().has(l.key)" (click)="toggle(l.key)"
+                    (mouseenter)="focusKey.set(l.key)" (mouseleave)="focusKey.set(null)"
+                    [attr.title]="(hidden().has(l.key) ? 'Show ' : 'Hide ') + l.name + (l.mix ? ' · ' + l.mix : '')">
+                  <th scope="row">
+                    <span class="mc-key"><svg width="18" height="8" aria-hidden="true"><line x1="1" y1="4" x2="17" y2="4" [attr.stroke]="l.colour" stroke-width="3" stroke-linecap="round" [attr.stroke-dasharray]="l.bench ? '5 3' : null"/></svg>{{ l.name }}</span>
+                  </th>
+                  <td class="r num strong" [class.neg]="s.ret < 0">{{ pct(s.ret) }}</td>
+                  <td class="r num" [class.pos]="(s.vsBench ?? 0) > 0" [class.neg]="(s.vsBench ?? 0) < 0">{{ l.bench ? '—' : pts(s.vsBench) }}</td>
+                  <td class="r num">{{ s.cagr !== null ? pct(s.cagr) : '—' }}</td>
+                  <td class="r num">{{ (s.vol * 100).toFixed(1) }}%</td>
+                  <td class="r num">{{ num(s.sharpe) }}</td>
+                  <td class="r num neg" [attr.title]="fmtDate(s.ddFrom, true) + ' → ' + fmtDate(s.ddTo, true)">{{ pct(s.maxDd) }}</td>
+                  <td class="r num">{{ num(s.beta) }}</td>
+                  <td class="r num strong">{{ lakh(l.v[l.v.length - 1]) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <table class="years">
+            <thead>
+              <tr>
+                <th scope="col" class="mc-corner">
+                  <span class="mc-tabs" role="tablist">
+                    <button role="tab" [class.on]="table() === 'stats'" [attr.aria-selected]="table() === 'stats'" (click)="table.set('stats')">Risk</button>
+                    <button role="tab" [class.on]="table() === 'years'" [attr.aria-selected]="table() === 'years'" (click)="table.set('years')">By year</button>
+                  </span>
+                </th>
+                @for (l of lines(); track l.key) {
+                  <th scope="col" class="r"><span class="mc-key r"><svg width="14" height="6" aria-hidden="true"><line x1="1" y1="3" x2="13" y2="3" [attr.stroke]="l.colour" stroke-width="2.5" stroke-linecap="round" [attr.stroke-dasharray]="l.bench ? '4 2.5' : null"/></svg>{{ l.name }}</span></th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (y of yearRows(); track y.year) {
+                @let b = y.cells[y.cells.length - 1];
+                <tr>
+                  <th scope="row">{{ y.year }}@if (y.part) { <small>part</small> }</th>
+                  @for (c of y.cells; track c.key) {
+                    <td class="r num" [class.best]="c.key === y.best" [class.bench]="c.key === 'bench'">
+                      <span [class.neg]="c.ret < 0">{{ pct(c.ret) }}</span>
+                      @if (c.key !== 'bench' && b.key === 'bench') {
+                        <i class="mc-beat" [class.won]="c.ret >= b.ret" [attr.title]="c.ret >= b.ret ? 'Beat the index' : 'Behind the index'">{{ c.ret >= b.ret ? '▲' : '▼' }}</i>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  }
+</section>

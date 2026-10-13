@@ -1,0 +1,58 @@
+<section class="hc mc2" aria-label="Meeting room">
+  <div class="mc2-band" [class.soon]="store.liveOrSoon()">
+    <span class="mc2-cam" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18"><rect x="2.5" y="6" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 10.5l5-3v9l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </span>
+    <button class="mc2-link" (click)="copy()" [attr.title]="'Copy ' + store.roomUrl()">
+      <small>{{ copied() ? 'Copied ✓' : 'Google Meet' }}</small>
+      <span>{{ roomShort() }}</span>
+    </button>
+    <button class="mc2-go" (click)="start()">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+      {{ store.liveOrSoon() ? 'Join' : 'Start' }}
+    </button>
+  </div>
+
+  <header class="hc-h tight">
+    <h3>Meetings @if (store.upcoming().length) { <em>{{ store.upcoming().length }}</em> }</h3>
+    <div class="hc-acts">
+      <button class="hc-link" (click)="openSheet(false)">All</button>
+      <button class="hc-add" (click)="openSheet(true)">
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+        Schedule
+      </button>
+    </div>
+  </header>
+
+  @if (store.data()) {
+    @if (soon().length) {
+      <ul class="mc2-list">
+        @for (a of soon(); track a.key) {
+          <li [class.live]="isLive(a)">
+            <span class="mc2-when num">{{ when(a) }}</span>
+            <span class="mc2-who">
+              <b>{{ a.who || a.title }}</b>
+              @if (a.who && a.title !== 'Meeting') { <small>{{ a.title }}</small> }
+              @if (a.source === 'client') { <small class="tag">booked in app</small> }
+            </span>
+          </li>
+        }
+      </ul>
+      @if (more()) { <button class="hc-more" (click)="openSheet(false)">+{{ more() }} more</button> }
+    } @else {
+      <p class="hc-empty">Nothing scheduled</p>
+    }
+  } @else if (store.error()) {
+    <button class="hc-warn" (click)="store.load()"><span aria-hidden="true">!</span>Couldn’t load · retry</button>
+  } @else {
+    <div class="hc-sk"><i class="w80"></i><i class="w60"></i></div>
+  }
+</section>
+
+@if (sheet()) {
+  <div class="hc-scrim" (click)="close()"></div>
+  <div class="hc-sheet" role="dialog" aria-label="Meetings">
+    <button class="hc-x" (click)="close()" aria-label="Close">×</button>
+    <app-meet-room [clients]="clients"></app-meet-room>
+  </div>
+}

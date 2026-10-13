@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"
     cookie_secure: bool = False
 
+    # LOCAL DEV ONLY: a fixed admin sign-in code (e.g. ADMIN_DEV_CODE=1234 in .env).
+    # Ignored whenever the API runs on Railway — see admin_auth.dev_code().
+    admin_dev_code: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property

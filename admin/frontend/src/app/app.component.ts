@@ -16,10 +16,20 @@ import {
   CalDay,
   ClientTxn,
   ClientVilla,
+  VillaType,
   MappingOverview,
   PurchaseLine,
 } from './admin.service';
 import { AuditComponent } from './audit/audit.component';
+import { MarketsPageComponent } from './market/markets-page.component';
+import { VillaSalesComponent } from './home/villa-sales.component';
+import { UnmappedTxnsComponent } from './home/unmapped-txns.component';
+import { CommissionCardComponent } from './home/commission-card.component';
+import { MeetCardComponent } from './home/meet-card.component';
+import { CommissionComponent } from './commission/commission.component';
+import { MeetRoomComponent } from './meet/meet-room.component';
+import { MeetStore } from './meet/meet.store';
+import { TodayUpdateComponent } from './today-update/today-update.component';
 
 /** One purchase = the transactions of one day and type (a ₹5L villa buy is
  *  4–5 fund lines on one day). It is pinned to a villa as a whole. */
@@ -40,7 +50,7 @@ const VILLA_FULL = 500_000;
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
 
 /** The one workspace has a small set of views, all about clients & money. */
-type View = 'clients' | 'villas' | 'buckets' | 'uploads' | 'audit';
+type View = 'commission' | 'clients' | 'market' | 'villas' | 'buckets' | 'uploads' | 'audit';
 type DrawerTab = 'overview' | 'transactions' | 'mapping' | 'profile' | 'documents';
 
 /** Villa colours, in fixed order by the villa's position (never by rank): the
@@ -62,7 +72,7 @@ const PROFILE_FIELDS: [string, string][] = [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, AuditComponent],
+  imports: [CommonModule, FormsModule, AuditComponent, CommissionComponent, MarketsPageComponent, VillaSalesComponent, MeetRoomComponent, CommissionCardComponent, MeetCardComponent, TodayUpdateComponent, UnmappedTxnsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -109,6 +119,8 @@ export class AppComponent implements OnInit {
   lockPresets = signal<number[]>([10, 30, 60, 120]);
 
   otpCode = signal('');
+  /** local dev only: the server accepts a fixed code (ADMIN_DEV_CODE) — show the code box at once */
+  devCode = signal(false);
   pinInput = signal('');
   pin2Input = signal('');
 
@@ -119,6 +131,12 @@ export class AppComponent implements OnInit {
   private activityBound = false;
 
   // ── workspace ───────────────────────────────────────────────────────────────
+  /** the one Meet room — the header button opens it from any tab */
+  readonly meet = inject(MeetStore);
+  openMeet(): void { window.open(this.meet.roomUrl(), '_blank', 'noopener'); }
+  /** a report was added from the home portal — re-pull the figures it feeds */
+  onTodayUpdated(): void { this.loadNetWorth(); this.loadMappingOverview(); }
+
   view = signal<View>('clients');
   setView(v: View): void {
     this.view.set(v);
@@ -230,12 +248,13 @@ export class AppComponent implements OnInit {
   }
 
   // ═══════════════════════════ AUTH ═══════════════════════════
-  private initAuth(): void {
+  private initAuth(attempt = 0): void {
     const now = Math.floor(Date.now() / 1000);
     const storedExp = this.api.storedExp;
     this.api.session().subscribe({
       next: (s) => {
         this.hasPin.set(!!s.has_pin);
+        this.devCode.set(!!(s as { dev_code?: boolean }).dev_code);
         this.lockMinutes.set(s.lock_minutes || 30);
         this.lockPresets.set(s.lock_presets || this.lockPresets());
         if (s.email) this.maskedEmail.set(s.email);
@@ -247,10 +266,14 @@ export class AppComponent implements OnInit {
           return;
         }
         this.api.clearToken();
-        this.phase.set(s.device_known && s.has_pin ? 'pin' : 'email');
+        if (!s.device_known) this.api.clearDevice();
+        this.phase.set(s.device_known && s.has_pin ? 'pin' : this.devCode() ? 'otp' : 'email');
       },
       error: () => {
-        this.phase.set('email');
+        // server unreachable (e.g. mid-redeploy) says nothing about the device —
+        // retry rather than dropping a trusted device to the email-code screen
+        if (attempt < 5) { setTimeout(() => this.initAuth(attempt + 1), 1500 * (attempt + 1)); return; }
+        this.phase.set(this.api.deviceToken ? 'pin' : 'email');
       },
     });
   }
@@ -276,8 +299,9 @@ export class AppComponent implements OnInit {
 
   verifyCode(): void {
     const code = this.otpCode().trim();
-    if (code.length < 6 || this.busy()) {
-      if (code.length < 6) this.authError.set('Enter the 6-digit code.');
+    // real codes are 6 digits; 4 is allowed for the local dev code (ADMIN_DEV_CODE) — the server decides
+    if (code.length < 4 || this.busy()) {
+      if (code.length < 4) this.authError.set('Enter the 6-digit code.');
       return;
     }
     this.busy.set(true);
@@ -285,6 +309,7 @@ export class AppComponent implements OnInit {
     this.api.verifyOtp('', code).subscribe({
       next: (r) => {
         this.api.store(r.access_token, r.expires_at);
+        this.api.storeDevice(r.device_token);
         this.exp = r.expires_at;
         this.lockMinutes.set(r.lock_minutes || 30);
         this.lockPresets.set(r.lock_presets || this.lockPresets());
@@ -333,6 +358,7 @@ export class AppComponent implements OnInit {
     this.api.unlock(p).subscribe({
       next: (r) => {
         this.api.store(r.access_token, r.expires_at);
+        this.api.storeDevice(r.device_token);
         this.exp = r.expires_at;
         this.lockMinutes.set(r.lock_minutes || this.lockMinutes());
         this.pinInput.set('');
@@ -343,7 +369,7 @@ export class AppComponent implements OnInit {
         const detail = e?.error?.detail || 'Incorrect PIN.';
         this.authError.set(detail);
         this.busy.set(false);
-        if (/email/i.test(detail)) { this.hasPin.set(false); this.phase.set('email'); }
+        if (/email/i.test(detail)) { this.api.clearDevice(); this.hasPin.set(false); this.phase.set('email'); }
       },
     });
   }
@@ -351,7 +377,7 @@ export class AppComponent implements OnInit {
   useEmailInstead(): void {
     this.authError.set('');
     this.pinInput.set('');
-    this.phase.set('email');
+    this.phase.set(this.devCode() ? 'otp' : 'email');
   }
 
   private enterUnlocked(): void {
@@ -406,8 +432,10 @@ export class AppComponent implements OnInit {
   }
 
   signOut(): void {
-    this.api.logoutDevice().subscribe({ next: () => {}, error: () => {} });
+    const out = this.api.logoutDevice();   // headers captured before the copies are cleared
+    out.subscribe({ next: () => {}, error: () => {} });
     this.api.clearToken();
+    this.api.clearDevice();
     this.hasPin.set(false);
     if (this.tick) { clearInterval(this.tick); this.tick = null; }
     this.phase.set('email');
@@ -621,6 +649,17 @@ export class AppComponent implements OnInit {
     this.api.updateClientVilla(v.id, { status }).subscribe({
       next: () => this.loadMapping(this.mapCode()),
       error: (e) => { if (e?.status === 401) this.lock(); },
+    });
+  }
+  /** the villa types the admin can give a client villa (counted on the home "Villas sold") */
+  readonly VILLA_TYPES: { key: VillaType; label: string }[] = [
+    { key: 'conservative', label: 'Conservative' }, { key: 'balanced', label: 'Balanced' }, { key: 'aggressive', label: 'Aggressive' },
+  ];
+  setVillaTypeFor(v: ClientVilla, type: VillaType): void {
+    const next = v.villa_type === type ? null : type;          // tap the chosen one again to clear it
+    this.mapVillas.update((vs) => vs.map((x) => (x.id === v.id ? { ...x, villa_type: next } : x)));
+    this.api.setVillaType(v.id, next).subscribe({
+      error: () => this.mapVillas.update((vs) => vs.map((x) => (x.id === v.id ? { ...x, villa_type: v.villa_type ?? null } : x))),
     });
   }
   toggleCoin(v: ClientVilla): void {

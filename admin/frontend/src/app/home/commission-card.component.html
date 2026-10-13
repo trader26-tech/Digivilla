@@ -1,0 +1,116 @@
+<section class="hc cc" aria-label="Commission">
+  <header class="hc-h">
+    <h3>Commission</h3>
+    <div class="hc-acts">
+      <button class="hc-link" (click)="open.emit()" title="Set each fund's trail rate">Rates →</button>
+    </div>
+  </header>
+
+  @if (data(); as d) {
+    <!-- the current basket: what it earns now -->
+    <div class="cc-hero">
+      <div>
+        <small>Current basket · a month</small>
+        <b class="num">{{ inr(nowYear() / 12) }}</b>
+      </div>
+      <div class="cc-year">
+        <small>A year</small>
+        <b class="num">{{ compact(nowYear()) }}</b>
+      </div>
+    </div>
+    <div class="cc-meta num">
+      @if (heldVillas() !== null) { <span>from <b>{{ plural(heldVillas()!, 'villa') }}</b></span> }
+      <span><b>{{ compact(d.totals.aum) }}</b> invested</span>
+      <span><b>{{ d.totals.clients }}</b> clients</span>
+    </div>
+
+    <!-- brokerage by bucket: each villa type's blended trail rate -->
+    <div class="cb">
+      <div class="cb-h"><span>Brokerage by bucket</span><span>% a year</span></div>
+      @for (r of rows(); track r.key) {
+        <div class="cb-row" [attr.data-t]="r.key">
+          <span class="cb-name"><i></i><b>{{ r.name }}</b>
+            <small class="num">{{ inr(r.perYear / 12) }}/mo per {{ compact(villaCost()) }} villa · {{ plural(r.held, 'villa') }} now@if (r.held) { · {{ inr(r.heldYear / 12) }}/mo}</small>
+            @if (r.missing.length) { <small class="cb-miss">{{ r.missing.join(', ') }} not counted — no rate yet</small> }
+          </span>
+          <b class="cb-pct num">{{ r.rate.toFixed(2) }}%</b>
+        </div>
+      }
+    </div>
+
+    <button class="cc-whatif" (click)="whatIf.set(true)">
+      <span><b>What if I sell more villas?</b><small>See the commission — and the investment it takes</small></span>
+      <i aria-hidden="true">→</i>
+    </button>
+
+    @if (missing().length) {
+      <button class="hc-warn" (click)="open.emit()">
+        <span aria-hidden="true">!</span>No rate yet for {{ missing().join(', ') }} — counted as ₹0
+      </button>
+    }
+  } @else if (error()) {
+    <button class="hc-warn" (click)="load()"><span aria-hidden="true">!</span>Couldn’t load · retry</button>
+  } @else {
+    <div class="hc-sk"><i class="w60 tall"></i><i class="w90"></i><i class="w80"></i></div>
+  }
+</section>
+
+<!-- ═══ popup: if you sell more villas ═══ -->
+@if (whatIf() && data()) {
+  <div class="hc-scrim" (click)="whatIf.set(false)"></div>
+  <div class="hc-sheet cw" role="dialog" aria-modal="true" aria-label="If you sell more villas">
+    <button class="hc-x" (click)="whatIf.set(false)" aria-label="Close">×</button>
+    <h3 class="cw-t">If you sell more villas</h3>
+    <p class="cw-s">Pick how many of each type. One villa is {{ compact(villaCost()) }} invested by the client.</p>
+
+    <div class="cv-picks cw-picks">
+      <span>Quick:</span>
+      @for (p of picks; track p) { <button (click)="each(p)">{{ p }} each</button> }
+      @if (plan().villas) { <button class="cv-clear" (click)="clear()">Clear</button> }
+    </div>
+
+    <ul class="cv-rows">
+      @for (r of rows(); track r.key) {
+        <li [class.on]="count(r.key) > 0">
+          <span class="cv-type">
+            <b>{{ r.name }}</b>
+            <small class="num">{{ inr(r.perYear / 12) }}/mo commission each</small>
+          </span>
+          <span class="cv-step" role="group" [attr.aria-label]="r.name + ' villas to sell'">
+            <button (click)="step(r.key, -1)" [disabled]="!count(r.key)" aria-label="One fewer">−</button>
+            <input inputmode="numeric" autocomplete="off" [value]="count(r.key)" (input)="typeCount(r.key, $event)"
+                   (focus)="$any($event.target).select()" [attr.aria-label]="r.name + ' villas'" />
+            <button (click)="step(r.key, 1)" aria-label="One more">+</button>
+          </span>
+          <span class="cw-row-sum num">
+            <b>{{ count(r.key) ? '+' + compact(count(r.key) * r.perYear / 12) + '/mo' : '—' }}</b>
+            <small>{{ count(r.key) ? compact(count(r.key) * villaCost()) + ' to invest' : '' }}</small>
+          </span>
+        </li>
+      }
+    </ul>
+
+    <div class="cw-sum" [class.zero]="!plan().villas">
+      @if (plan().villas) {
+        <div class="cw-cell cost">
+          <small>Investment needed</small>
+          <b class="num">{{ compact(plan().money) }}</b>
+          <span>{{ plural(plan().villas, 'villa') }} × {{ compact(villaCost()) }}</span>
+        </div>
+        <div class="cw-cell gain">
+          <small>Extra commission</small>
+          <b class="num">+{{ inr(plan().yearly / 12) }}<em>/mo</em></b>
+          <span class="num">+{{ compact(plan().yearly) }} a year</span>
+        </div>
+        <div class="cw-cell">
+          <small>Total, with today's</small>
+          <b class="num">{{ inr((nowYear() + plan().yearly) / 12) }}<em>/mo</em></b>
+          <span class="num">{{ compact(nowYear() + plan().yearly) }} a year</span>
+        </div>
+      } @else {
+        <p>Add villas above to see what they'd pay you and how much money it takes.</p>
+      }
+    </div>
+    <p class="cw-note">Trail commission at your saved fund rates, for as long as clients stay invested.</p>
+  </div>
+}

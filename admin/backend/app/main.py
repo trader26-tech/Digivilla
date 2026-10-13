@@ -16,6 +16,7 @@ Routes:
 
 from __future__ import annotations
 
+import hmac
 from typing import Optional
 
 from fastapi import (
@@ -30,6 +31,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import Response as RawResponse
 
 from app import admin_auth
@@ -67,6 +69,9 @@ app.add_middleware(
 )
 
 
+app.add_middleware(GZipMiddleware, minimum_size=2048)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -94,6 +99,28 @@ def _admin_device(request: Request) -> str:
 # a different origin than this API again.
 _COOKIE_SAMESITE = (settings.cookie_samesite or "lax").lower()
 _COOKIE_SECURE = _COOKIE_SAMESITE == "none" or settings.cookie_secure
+
+
+# The device credential also travels in this header (the SPA keeps a copy in
+# localStorage), so a browser that drops the cookie — Safari / home-screen app —
+# still lands on the PIN screen instead of asking for a fresh email code.
+DEVICE_HEADER = "x-admin-device"
+
+
+def _device_raw(request: Request) -> str:
+    raw = request.cookies.get(admin_auth.DEVICE_COOKIE, "")
+    if "." not in raw:
+        raw = request.headers.get(DEVICE_HEADER, "").strip()
+    return raw if "." in raw else ""
+
+
+def _known_device(request: Request) -> tuple[str, Optional[dict]]:
+    """(raw credential, device row) when the request carries a valid trusted device."""
+    raw = _device_raw(request)
+    if not raw:
+        return "", None
+    did, tok = raw.split(".", 1)
+    return raw, admin_auth.device_valid(did, tok)
 
 
 def _set_admin_cookie(resp: Response, raw: str) -> None:
@@ -161,19 +188,20 @@ def free_days(days: int = 14, limit: int = 4) -> dict:
 
 # --- Admin sign-in: email OTP → trusted device → PIN → access tokens ------
 @app.get("/admin/auth/session")
-def admin_session(request: Request) -> dict:
+def admin_session(request: Request, response: Response) -> dict:
     """Bootstrap the lock screen — reads the device cookie only, returns no data."""
-    raw = request.cookies.get(admin_auth.DEVICE_COOKIE, "")
-    dev = None
-    if "." in raw:
-        did, tok = raw.split(".", 1)
-        dev = admin_auth.device_valid(did, tok)
+    raw, dev = _known_device(request)
     signin_email = admin_auth.mask_email(admin_auth.primary_email())
     if not dev:
         return {"device_known": False, "has_pin": False, "email": None,
                 "signin_email": signin_email,
+                # local dev only (never on Railway): the lock screen offers the fixed code
+                "dev_code": bool(admin_auth.dev_code()),
                 "lock_minutes": admin_auth.default_lock_minutes(),
                 "lock_presets": admin_auth.LOCK_PRESETS}
+    # every visit keeps the device trusted for another DEVICE_TTL_DAYS
+    admin_auth.device_touch(dev["device_id"])
+    _set_admin_cookie(response, raw)
     return {
         "device_known": True,
         "has_pin": bool(dev.get("pin_hash")),
@@ -181,6 +209,7 @@ def admin_session(request: Request) -> dict:
         "signin_email": signin_email,
         "lock_minutes": int(dev.get("lock_minutes") or admin_auth.default_lock_minutes()),
         "lock_presets": admin_auth.LOCK_PRESETS,
+        "dev_code": bool(admin_auth.dev_code()),
     }
 
 
@@ -211,7 +240,7 @@ def admin_verify_otp(body: AdminOtpVerify, response: Response) -> dict:
     device_id, raw = admin_auth.device_create(email)
     _set_admin_cookie(response, f"{device_id}.{raw}")
     token, exp = admin_auth.mint_access(device_id, admin_auth.default_lock_minutes() * 60)
-    return {"access_token": token, "expires_at": exp,
+    return {"access_token": token, "expires_at": exp, "device_token": f"{device_id}.{raw}",
             "lock_minutes": admin_auth.default_lock_minutes(), "has_pin": False,
             "email": admin_auth.mask_email(email), "lock_presets": admin_auth.LOCK_PRESETS}
 
@@ -230,21 +259,22 @@ def admin_set_pin(body: AdminPinBody, request: Request) -> dict:
 
 
 @app.post("/admin/auth/unlock")
-def admin_unlock(body: AdminPinBody, request: Request) -> dict:
-    raw = request.cookies.get(admin_auth.DEVICE_COOKIE, "")
-    if "." not in raw:
-        raise HTTPException(status_code=401, detail="Device not recognised — sign in with email.")
-    did, tok = raw.split(".", 1)
-    dev = admin_auth.device_valid(did, tok)
+def admin_unlock(body: AdminPinBody, request: Request, response: Response) -> dict:
+    raw, dev = _known_device(request)
     if not dev:
         raise HTTPException(status_code=401, detail="Device not recognised — sign in with email.")
-    ok, msg = admin_auth.device_check_pin(did, (body.pin or "").strip())
+    pin = (body.pin or "").strip()
+    did = dev["device_id"]
+    dc = admin_auth.dev_code()           # local dev only: the fixed code also unlocks the PIN screen
+    ok, msg = (True, "") if dc and hmac.compare_digest(pin, dc) else admin_auth.device_check_pin(did, pin)
     if not ok:
         raise HTTPException(status_code=401, detail=msg)
     admin_auth.device_touch(did)
+    _set_admin_cookie(response, raw)
     lock_minutes = int(dev.get("lock_minutes") or admin_auth.default_lock_minutes())
     token, exp = admin_auth.mint_access(did, lock_minutes * 60)
-    return {"access_token": token, "expires_at": exp, "lock_minutes": lock_minutes}
+    return {"access_token": token, "expires_at": exp, "lock_minutes": lock_minutes,
+            "device_token": raw}
 
 
 @app.post("/admin/auth/refresh")
@@ -260,8 +290,8 @@ def admin_refresh(request: Request) -> dict:
 
 @app.post("/admin/auth/logout")
 def admin_logout(request: Request, response: Response) -> dict:
-    raw = request.cookies.get(admin_auth.DEVICE_COOKIE, "")
-    if "." in raw:
+    raw = _device_raw(request)
+    if raw:
         admin_auth.device_delete(raw.split(".", 1)[0])
     response.delete_cookie(admin_auth.DEVICE_COOKIE, path="/", samesite=_COOKIE_SAMESITE, secure=_COOKIE_SECURE)
     return {"ok": True}
@@ -628,6 +658,24 @@ def admin_assign_transactions(
     return {"assigned": n}
 
 
+# --- Villas vs the market (admin home chart) ---------------------------------
+from app import market as market_svc  # noqa: E402
+
+
+@app.get("/admin/market/performance")
+def admin_market_performance(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Daily index levels + the villa mixes; the browser replays each villa from any start day."""
+    _require_admin(authorization)
+    return market_svc.performance()
+
+
+@app.get("/admin/market/live")
+def admin_market_live(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Today's index moves from NSE (cached 60 s) — the chart's live strip and provisional last point."""
+    _require_admin(authorization)
+    return market_svc.live()
+
+
 # --- Check the maths: every number the client app shows, worked out ---------
 from app import audit as audit_svc  # noqa: E402
 
@@ -837,6 +885,139 @@ def admin_calc_config_version(version: int, authorization: Optional[str] = Heade
 
 # Serve the built admin Angular SPA (combined single-service deploy). Must be
 # last so the catch-all route does not shadow the API endpoints above.
+# --- Commission: per-fund trail rates → what the money held earns ---------
+# (registered BEFORE mount_spa, or the SPA catch-all would answer these paths)
+from app import commission as commission_svc  # noqa: E402
+
+
+@app.get("/admin/commission")
+def admin_commission(authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return commission_svc.overview()
+
+
+@app.put("/admin/commission/rates")
+def admin_commission_rates(body: dict, authorization: Optional[str] = Header(default=None)) -> dict:
+    """body = {"rates": {fund_key: rate_pct | null}} — merged into the saved rates."""
+    _require_admin(authorization)
+    try:
+        commission_svc.set_rates((body or {}).get("rates") or {})
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return commission_svc.overview(fresh=True)
+
+
+# --- Meeting room: the one Meet link + the admin's own schedule (admin home) ---
+from app import meetings as meetings_svc  # noqa: E402
+
+
+@app.get("/admin/meet")
+def admin_meet(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Room link, the admin's meetings (history included) and client-booked calls."""
+    _require_admin(authorization)
+    return meetings_svc.overview()
+
+
+@app.put("/admin/meet/room")
+def admin_meet_room(body: dict = Body(...), authorization: Optional[str] = Header(default=None)) -> dict:
+    """body = {"url": "..."} — empty url goes back to the default room."""
+    _require_admin(authorization)
+    try:
+        return meetings_svc.set_room((body or {}).get("url"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/admin/meetings")
+def admin_meeting_create(body: dict = Body(...), authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    try:
+        return meetings_svc.create(body or {})
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.patch("/admin/meetings/{meeting_id}")
+def admin_meeting_update(meeting_id: str, body: dict = Body(...), authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    try:
+        m = meetings_svc.update(meeting_id, body or {})
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not m:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    return m
+
+
+@app.delete("/admin/meetings/{meeting_id}")
+def admin_meeting_delete(meeting_id: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    if not meetings_svc.delete(meeting_id):
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    return {"status": "deleted"}
+
+
+# --- Villas sold by type + world markets (registered BEFORE mount_spa) -------
+from app import villa_sales as villa_sales_svc  # noqa: E402
+from app import world as world_svc  # noqa: E402
+
+
+@app.get("/admin/villas/summary")
+def admin_villas_summary(authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return villa_sales_svc.summary()
+
+
+@app.put("/admin/villas/{villa_id}/type")
+def admin_villa_type(villa_id: str, body: dict, authorization: Optional[str] = Header(default=None)) -> dict:
+    """body = {"type": "conservative" | "balanced" | "aggressive" | null}"""
+    _require_admin(authorization)
+    try:
+        villa_sales_svc.set_type(villa_id, (body or {}).get("type"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"ok": True, "type": (body or {}).get("type")}
+
+
+@app.get("/admin/world/quotes")
+def admin_world_quotes(authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return world_svc.quotes()
+
+
+@app.get("/admin/world/chart")
+def admin_world_chart(key: str, range: str = "1d", ccy: str = "usd",
+                      authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    c = world_svc.chart(key, range, ccy)
+    if not c:
+        raise HTTPException(status_code=404, detail="No data for that index right now.")
+    return c
+
+
+@app.get("/admin/world/history")
+def admin_world_history(key: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Daily closes since 2000 (own currency + US dollars) — the page cuts every time frame from it."""
+    _require_admin(authorization)
+    h = world_svc.history(key)
+    if not h:
+        raise HTTPException(status_code=404, detail="No history for that index right now.")
+    return h
+
+
+from app import inflation as inflation_svc  # noqa: E402
+
+
+@app.get("/admin/world/inflation")
+def admin_world_inflation(authorization: Optional[str] = Header(default=None)) -> dict:
+    """US and India consumer prices (monthly) — the World markets chart's after-inflation view."""
+    _require_admin(authorization)
+    try:
+        return inflation_svc.cpi()
+    except Exception:
+        raise HTTPException(status_code=503, detail="Inflation data is unavailable right now.")
+
+
 from app.static_spa import mount_spa  # noqa: E402
 
 mount_spa(app)

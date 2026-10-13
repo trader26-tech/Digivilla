@@ -1,0 +1,54 @@
+:host { display: block; }
+.vs { display: flex; flex-direction: column; gap: 16px; height: 100%; box-sizing: border-box; padding: 20px 22px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(22, 48, 43, .04), 0 10px 30px -18px rgba(22, 48, 43, .25); }
+.vs-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.vs-head h2 { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.vs-head p { margin: 2px 0 0; font-size: 0.8rem; color: var(--muted); }
+.vs-sum { display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted); }
+.vs-sum b { color: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
+
+.vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (min-width: 1280px) { .vs-grid { grid-template-columns: repeat(4, 1fr); } .vs-tile { min-height: 112px; } }   /* one row, so the mapper below gets the room */
+.vs-tile { --c: var(--brass); display: flex; flex-direction: column; gap: 6px; min-height: 128px; padding: 16px 18px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border); position: relative; overflow: hidden; transition: border-color .2s; }
+.vs-tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--c); }
+.vs-tile[data-t='conservative'] { --c: var(--positive); }
+.vs-tile[data-t='balanced'] { --c: var(--brass); }
+.vs-tile[data-t='aggressive'] { --c: var(--terracotta); }
+.vs-tile.zero { background: var(--surface-2); border-color: transparent; }
+.vs-tile.zero .vs-n { color: color-mix(in srgb, var(--ink) 30%, transparent); }
+.vs-tile.total { background: var(--ink); border-color: var(--ink); color: var(--paper);
+  &::before { display: none; }
+  .vs-k b, .vs-n { color: var(--paper); } .vs-f span { color: color-mix(in srgb, var(--paper) 72%, transparent); }
+  .vs-f .vs-c { color: #e9c15c; } }
+.vs-tile.sk { background: var(--surface-2); border-color: transparent; animation: vsk 1.2s ease-in-out infinite; &::before { display: none; } }
+@keyframes vsk { 50% { opacity: .55; } }
+.vs-k { display: flex; align-items: center; gap: 8px; }
+.vs-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.vs-k b { font-size: 0.9rem; font-weight: 750; color: var(--ink); }
+.vs-k small { margin-left: auto; font-size: 0.68rem; font-weight: 750; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.vs-n { font-size: 2.4rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vs-f { margin-top: auto; display: flex; flex-direction: column; gap: 2px; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vs-c { font-weight: 700; color: color-mix(in srgb, var(--c) 85%, var(--ink)); }
+
+.vs-unset { border-radius: 16px; background: var(--surface-2); padding: 14px 16px 6px; }
+.vs-uh { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+  b { font-size: 0.86rem; color: var(--ink); } span { font-size: 0.78rem; color: var(--muted); } }
+.vs-client { padding: 8px 0 6px; border-top: 1px solid var(--border); }
+.vs-client:first-of-type { border-top: 0; }
+.vs-who { border: 0; background: none; padding: 2px 0 4px; cursor: pointer; font: 750 0.84rem var(--font-body); color: var(--ink);
+  span { color: var(--muted); margin-left: 2px; } }
+.vs-who:hover { color: var(--brass); }
+.vs-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; flex-wrap: wrap; }
+.vs-v { display: flex; align-items: baseline; gap: 8px; font-size: 0.84rem; color: var(--ink);
+  small { font-size: 0.76rem; color: var(--muted); font-variant-numeric: tabular-nums; } }
+.vs-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+.vs-seg button { --c: var(--brass); border: 0; background: none; cursor: pointer; padding: 5px 10px; border-radius: 7px;
+  font: 700 0.74rem var(--font-body); color: var(--muted); transition: background .15s, color .15s; }
+.vs-seg button[data-t='conservative'] { --c: var(--positive); } .vs-seg button[data-t='aggressive'] { --c: var(--terracotta); }
+.vs-seg button:hover { color: #fff; background: var(--c); }
+.vs-seg button:disabled { opacity: .5; }
+.vs-err { margin: 0; font-size: 0.8rem; color: var(--negative); }
+@media (max-width: 640px) { .vs-grid { grid-template-columns: 1fr; } .vs-sum { display: none; } }
+@media (prefers-reduced-motion: reduce) { .vs-tile.sk { animation: none; } }

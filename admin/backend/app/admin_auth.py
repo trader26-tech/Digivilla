@@ -194,8 +194,27 @@ def otp_put(email: str, code: str) -> None:
     _save(_OTP_JSON, data)
 
 
+_RAILWAY_VARS = ("RAILWAY_ENVIRONMENT", "RAILWAY_ENVIRONMENT_NAME", "RAILWAY_PROJECT_ID", "RAILWAY_SERVICE_ID")
+
+
+def dev_code() -> str:
+    """LOCAL DEV ONLY — a fixed sign-in code from ADMIN_DEV_CODE (admin/backend/.env).
+    Never honoured on Railway, so it can't open the live admin even if the
+    variable were set there by mistake."""
+    if any(os.environ.get(k) for k in _RAILWAY_VARS):
+        return ""
+    return (get_settings().admin_dev_code or "").strip()
+
+
+if dev_code():
+    print(f"⚠ ADMIN_DEV_CODE is set — the admin accepts '{dev_code()}' as a sign-in code (local dev only).", flush=True)
+
+
 def otp_check(email: str, code: str) -> tuple[bool, str]:
     email = email.strip().lower()
+    dc = dev_code()
+    if dc and hmac.compare_digest(code.strip(), dc) and is_allowed(email):
+        return True, ""
     code_hash = _sha(code, salt=email)
     c = _client()
     if c:
@@ -312,7 +331,13 @@ def device_update(device_id: str, **fields: Any) -> None:
 
 
 def device_touch(device_id: str) -> None:
-    device_update(device_id, last_used=_iso(_now()) if _client() else _now())
+    """Mark the device used AND slide its expiry: a trusted device lasts
+    DEVICE_TTL_DAYS from its last visit, not from the day it was first trusted."""
+    expires = _now() + device_ttl_days() * 86400
+    if _client():
+        device_update(device_id, last_used=_iso(_now()), expires_at=_iso(expires))
+    else:
+        device_update(device_id, last_used=_now(), expires_at=expires)
 
 
 def device_delete(device_id: str) -> None:
