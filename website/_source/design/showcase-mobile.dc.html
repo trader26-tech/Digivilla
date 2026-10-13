@@ -24,7 +24,7 @@
 .msh-counter{flex:none;display:flex;align-items:baseline;gap:4px;font-family:'Instrument Serif',serif;font-style:italic;font-size:48px;line-height:1;color:#ececf1;transition:opacity .25s}
 .msh-counter small{font-family:Almarai,sans-serif;font-style:normal;font-size:12px;letter-spacing:.2em;color:#7a7c8c}
 .msh-rail{position:relative;z-index:2;flex:1;min-height:0;overflow:hidden;perspective:1200px;perspective-origin:50% 50%;touch-action:none}
-.msh-slide{position:absolute;left:50%;top:50%;width:72%;height:100%;transform:translate(-50%,-50%);display:grid;place-items:center;padding:14px 0;transition:transform .75s cubic-bezier(.22,.8,.2,1),opacity .5s;will-change:transform}
+.msh-slide{position:absolute;left:50%;top:50%;width:72%;height:100%;transform:translate(-50%,-50%);display:grid;place-items:center;padding:14px 0;transition:transform .8s cubic-bezier(.22,.8,.2,1),opacity .6s;will-change:transform;transform-style:preserve-3d}
 .msh-phone{position:relative;height:100%;max-height:600px;max-width:100%;aspect-ratio:360/759}
 .msh-phone .dim{transition:opacity .6s}
 .msh-phone .bezel{position:absolute;inset:0;border-radius:15%/7%;padding:3.2%;background:linear-gradient(160deg,#a8aab1 0%,#3a3b41 10%,#141518 30%,#0a0a0c 60%,#2b2c31 85%,#8e9097 100%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.26),inset 0 0 0 4px #050506,0 50px 90px -30px rgba(0,0,0,1),0 0 90px -20px rgba(127,114,224,.25)}
@@ -74,8 +74,8 @@ class Component extends DCLogic {
     const rail = this.railRef.current; if (!rail) return;
     [...rail.querySelectorAll('.msh-slide')].forEach((sl, i) => {
       const d = i - active, ad = Math.min(1.2, Math.abs(d));
-      sl.style.transform = 'translate(-50%, calc(-50% + ' + (d * 84) + '%)) translateZ(' + (-ad * 160).toFixed(0) + 'px) scale(' + (1 - ad * .08).toFixed(3) + ')';
-      sl.style.opacity = Math.abs(d) > 1 ? 0 : 1; sl.style.zIndex = Math.round(10 - ad * 5);
+      sl.style.transform = 'translate(calc(-50% + ' + (d * 88) + '%), -50%) rotateY(' + (d * -22).toFixed(1) + 'deg) translateZ(' + (-ad * 140).toFixed(0) + 'px) scale(' + (1 - ad * .08).toFixed(3) + ')';
+      sl.style.opacity = Math.abs(d) > 1.5 ? 0 : 1; sl.style.zIndex = Math.round(10 - ad * 5);
       const dim = sl.querySelector('.dim'); if (dim) dim.style.opacity = (ad * .5).toFixed(3);
     });
   }

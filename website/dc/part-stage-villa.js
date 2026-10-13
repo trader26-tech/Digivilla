@@ -1,4 +1,4 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=9e388ee7';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=88d1e071';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   renderVals() { return { doc: !this.props.tile, wrapPad: this.props.tile ? '0' : '48px 24px 80px' }; }

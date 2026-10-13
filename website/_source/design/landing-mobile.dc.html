@@ -241,14 +241,20 @@ class Component extends DCLogic {
         if (app) list.push(offs(app)); if (calc) list.push(offs(calc)); if (foot) list.push(Math.min(max, offs(foot)));
         return list.filter((v, i, a) => i === 0 || v > a[i - 1] + 4);
       };
-      this.goPage = dir => {
+      this.goPage = (dir, quick) => {                                              // dir 0 = settle on the nearest page
         const sc = this.scroller(); if (!sc) return;
         const P = pages(), top = sc.scrollTop, R = rangeOf();
         let cur = 0; P.forEach((v, i) => { if (Math.abs(v - top) < Math.abs(P[cur] - top)) cur = i; });
-        const nxt = Math.max(0, Math.min(P.length - 1, cur + dir)), to = P[nxt], from = top; if (Math.abs(to - from) < 1) return;
+        // forward goes to the first page below the current position, back to the last page above it (so a page
+        // left part-way is completed first); 0 settles on the nearest
+        let nxt = cur;
+        if (dir > 0) { nxt = P.findIndex(v => v > top + 4); if (nxt < 0) nxt = P.length - 1; }
+        else if (dir < 0) { nxt = -1; P.forEach((v, i) => { if (v < top - 4) nxt = i; }); if (nxt < 0) nxt = 0; }
+        const to = P[nxt], from = top; if (Math.abs(to - from) < 1) return;
+        if (quick) { sc.scrollTop = to; return; }
         this.animating = true;
-        const coverPlay = Math.max(from, to) <= R + 1;                              // within the cover: the designed play; between pages: a quick glide
-        const D = coverPlay ? 400 + 1500 * Math.abs(to - from) / R : 850, t0 = performance.now();
+        const coverPlay = Math.max(from, to) <= R + 1;                              // within the cover: the designed play; between pages: a glide
+        const D = dir === 0 ? 450 : coverPlay ? 400 + 1500 * Math.abs(to - from) / R : 850, t0 = performance.now();
         const show = document.querySelector('.msh'); if (show && show.__enter && Math.abs(to - offs(show)) < 2) show.__enter(dir);
         const step = now => {
           const u = Math.min(1, (now - t0) / D); sc.scrollTop = from + (to - from) * easeIO(u);
@@ -262,9 +268,11 @@ class Component extends DCLogic {
           armed = false; rail = null; inner = null; inShow = null;
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
           if (this.state.menuOpen || c('.mfp-capsule') || c('.mfp-ruler') || c('select')) return;
-          rail = null; inner = c('.mcl'); inShow = c('.msh');
+          inner = c('.mcl'); inShow = c('.msh');
+          if (inner && Math.abs(sc0.scrollTop - offs(inner)) > 4) inner = null;     // its own scrolling only once the page is in place
           armed = true; y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
         };
+        this.onTE2 = () => { if (this.animating) return; setTimeout(() => { if (!this.animating) this.goPage(0); }, 60); };   // never rest between pages
         this.onTM2 = e => {
           if (!armed) return;
           if (this.animating) { if (e.cancelable) e.preventDefault(); return; }
@@ -284,6 +292,9 @@ class Component extends DCLogic {
         };
         sc0.addEventListener('touchstart', this.onTS2, { passive: true });
         sc0.addEventListener('touchmove', this.onTM2, { passive: false });
+        sc0.addEventListener('touchend', this.onTE2, { passive: true }); sc0.addEventListener('touchcancel', this.onTE2, { passive: true });
+        this.onVV = () => { this.setVH(); if (!this.animating) this.goPage(0, true); };   // Safari's toolbars: re-measure, keep the page in place
+        addEventListener('resize', this.onVV); if (window.visualViewport) visualViewport.addEventListener('resize', this.onVV);
       }
     }
     const tiles = [this.t0, this.t1, this.t2, this.t3, this.t4].map(r => r.current);
@@ -351,7 +362,7 @@ class Component extends DCLogic {
     };
     this.raf = requestAnimationFrame(tick);
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.animating = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('orientationchange', this.setVH); const sc = this.scroller(); if (sc && this.onTS2) { sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); } }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.animating = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;
