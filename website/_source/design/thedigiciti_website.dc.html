@@ -20,8 +20,6 @@
     a{color:#E1E0CC;text-decoration:none} a:hover{color:#fff}
     [data-rise]{opacity:0}
     @supports (height:100dvh){[data-screen-label="TheDigiCiti Landing"],#showcase{height:100dvh!important}}
-    @media (max-width:700px){[data-hero-track]{height:190vh!important}}
-    @supports (height:100dvh){@media (max-width:700px){[data-hero-track]{height:190dvh!important}}}
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
@@ -44,6 +42,8 @@
   </style>
 </helmet>
 <div ref="{{ scrollRef }}" style="position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:#000;font-family:Almarai, -apple-system, 'Segoe UI', sans-serif;color:#E1E0CC">
+  <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}"><dc-import name="landing-mobile" scroller="{{ scrollRef }}" hint-size="100%,260vh"></dc-import></sc-if>
+  <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
   <div data-hero-track="1" style="height:200vh">
     <div data-screen-label="TheDigiCiti Landing" style="position:sticky;top:0;height:100vh;box-sizing:border-box;padding:clamp(12px,1.6vw,24px)">
       <div ref="{{ frameRef }}" style="position:relative;width:100%;height:100%;border-radius:clamp(16px,2vw,32px);overflow:hidden;background:linear-gradient(180deg,#0c0f2c 0%,#1d1d4a 16%,#2a2862 28%,#73467c 44%,#b8606a 54%,#d9814f 63%,#f3bd7c 74%,#a8606a 88%,#3a2a52 100%)">
@@ -118,6 +118,7 @@
       </div>
     </div>
   </div>
+  </sc-if>
 <section id="showcase" data-screen-label="Mobile showcase" style="position:relative;height:100vh;overflow:hidden;background:#000">
   <div data-m="mhead" style="display:none;position:absolute;left:0;right:0;top:0;z-index:6;flex-direction:column;gap:10px;padding:calc(22px + env(safe-area-inset-top)) 22px 0;pointer-events:none">
     <span style="font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#7a7c8c">DigiVilla · Digi City</span>
@@ -234,6 +235,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
+  state = { mobile: typeof innerWidth === 'number' && innerWidth <= 700 };
   scrollRef = React.createRef(); frameRef = React.createRef();
   farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef();
   villaRef = React.createRef(); coinRef = React.createRef(); glowRef = React.createRef(); sunRef = React.createRef(); sunDisc = React.createRef();
@@ -290,6 +292,8 @@ class Component extends DCLogic {
       this.stageZ = z; ss.style.top = phone ? '60%' : '50%';
     };
     this.fitStage(); addEventListener('resize', this.fitStage);
+    this.onBreak = () => { const m = innerWidth <= 700; if (m !== this.state.mobile) this.setState({ mobile: m }); };
+    addEventListener('resize', this.onBreak);
     this.showOn = false;
     const showEl = document.getElementById('showcase');
     if (showEl && 'IntersectionObserver' in window) { this.io = new IntersectionObserver(es => { this.showOn = es[0].isIntersecting; }); this.io.observe(showEl); } else this.showOn = true;
@@ -392,9 +396,9 @@ class Component extends DCLogic {
       setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, 60 + d);
     }));
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.onBreak); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
   renderVals() {
-    const r = {}; ['veilRef','pulseRef','showStage','showRig','scrollRef','frameRef','farRef','nearRef','frontRef','villaRef','coinRef','glowRef','sunRef','sunDisc','copyA','copyB','t0','t1','t2','t3','t4'].forEach(n => r[n] = this[n]);
+    const r = { mobile: this.state.mobile, desktop: !this.state.mobile }; ['veilRef','pulseRef','showStage','showRig','scrollRef','frameRef','farRef','nearRef','frontRef','villaRef','coinRef','glowRef','sunRef','sunDisc','copyA','copyB','t0','t1','t2','t3','t4'].forEach(n => r[n] = this[n]);
     r.goExplore = e => { e.preventDefault(); if (this.leaving) return; this.leaving = true; const fr = this.frameRef.current; if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(38vh) scale(1.08)'; } const b = this.copyB.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; } try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {} window.tdcVeil && window.tdcVeil.go('story.dc.html', { style: 'sky' }); };
     const glide = id => e => { e.preventDefault(); const a = document.getElementById(id), sc = this.scrollRef.current; if (!a || !sc) return; if (this.ss && !matchMedia('(pointer: coarse)').matches) this.ss.scrollTo(a.offsetTop); else sc.scrollTo({ top: a.offsetTop, behavior: 'smooth' }); };
     r.goCalc = glide('calculator'); r.goApp = glide('showcase');

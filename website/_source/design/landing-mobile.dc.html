@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+/* ── TheDigiCiti · MOBILE FRONT PAGE (ported from mobile-front-page.html) ───────────────────────
+   One pinned dusk-sky frame scrubbed by 160svh of scroll (p 0→1): the hero villa shrinks into the
+   bottom slot of a vertical column of five build-stage tiles on the left, labels to their right,
+   a gold spine joining them, and a tall glass capsule on the right — "THE NRI STORY · Explore ·
+   HOLD" — whose button is held for 1.4 s to leave for the story. Art = the app's own stage tiles
+   (vector), glows are gradients (no CSS filters on anything that moves). */
+.mfp{position:relative;max-width:480px;margin:0 auto;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;color:#E1E0CC;-webkit-tap-highlight-color:transparent}
+.mfp a{color:#E1E0CC;text-decoration:none}
+.mfp .serif{font-family:'Instrument Serif',serif;font-style:italic}
+.mfp-landing{height:260vh;height:260svh}
+.mfp-sticky{position:sticky;top:0;height:100vh;height:100svh;padding:10px}
+.mfp-frame{position:relative;width:100%;height:100%;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#0c0f2c 0%,#1d1d4a 14%,#2a2862 26%,#73467c 42%,#b8606a 52%,#d9814f 62%,#f3bd7c 73%,#a8606a 88%,#3a2a52 100%)}
+.mfp-halo{position:absolute;right:10%;top:22%;width:120%;aspect-ratio:1;transform:translate(50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,222,170,.75),rgba(240,138,74,.32) 38%,rgba(217,129,79,0) 70%)}
+.mfp-sun{position:absolute;right:10%;top:22%;width:12%;aspect-ratio:1;transform:translate(50%,-50%);border-radius:50%;background:radial-gradient(circle,#fff5d6 0%,#ffd38a 55%,rgba(240,138,74,0) 100%)}
+.mfp-cloud{position:absolute;pointer-events:none;will-change:transform}
+.mfp-far{left:-10%;top:32%;width:120%;height:30%;opacity:.9}
+.mfp-near{left:-12%;top:44%;width:124%;height:46%}
+.mfp-front{left:-14%;top:64%;width:128%;height:40%;opacity:.95}
+.mfp-glow{position:absolute;left:50%;top:40%;width:150%;aspect-ratio:1.6;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,214,150,.5),rgba(255,190,120,.14) 50%,transparent)}
+.mfp-spine{position:absolute;left:22%;top:15%;height:64%;width:1px;transform-origin:50% 0;transform:scaleY(0);opacity:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,226,170,0),rgba(255,226,170,.55) 12%,rgba(255,226,170,.55) 88%,rgba(251,219,129,.9))}
+.mfp-fill{position:absolute;left:calc(22% - 1px);top:15%;height:64%;width:3px;border-radius:2px;transform-origin:50% 100%;transform:scaleY(0);pointer-events:none;z-index:1;background:linear-gradient(180deg,#fffaf0,#fbdb81 40%,#f6c445);box-shadow:0 0 12px rgba(251,219,129,.9)}
+.mfp-tile{position:absolute;left:0;top:0;width:37%;width:min(37%,14.5svh);opacity:0;will-change:transform,opacity}
+.mfp-art{position:relative;width:100%;aspect-ratio:820/700}
+.mfp-art>div{display:block;width:100%;height:100%}
+.mfp-tglow{position:absolute;left:-18%;top:-14%;width:136%;height:128%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.30),rgba(255,190,120,.10) 50%,transparent 72%)}
+.mfp-tshade{position:absolute;left:-4%;top:58%;width:108%;height:54%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(18,12,28,.5),rgba(18,12,28,.16) 55%,transparent 75%)}
+.mfp-lit{position:absolute;left:-26%;top:-24%;width:152%;height:150%;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(closest-side,rgba(251,219,129,.6),rgba(246,196,69,.28) 50%,transparent 74%)}
+.mfp-tile.lit .mfp-lit{opacity:1}
+.mfp-lbl{position:absolute;left:100%;top:50%;margin-left:14px;transform:translateY(-50%);transform-origin:0 50%;opacity:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
+.mfp-lbl .n{font-size:11px;letter-spacing:.22em;color:rgba(225,224,204,.7)}
+.mfp-lbl .t{font-size:13px;color:#E1E0CC}
+.mfp-lbl .p{font-family:'Instrument Serif',serif;font-style:italic;font-size:15px;color:rgba(225,224,204,.8)}
+.mfp-tile.villa .mfp-lbl .n,.mfp-tile.villa .mfp-lbl .p{color:#fbdb81}.mfp-tile.villa .mfp-lbl .t{color:#fff}
+.mfp-coin{position:absolute;left:45%;top:-6%;width:11%;opacity:0}
+.mfp-hero{position:absolute;left:0;top:0;width:82%;width:min(82%,42svh);aspect-ratio:820/700;z-index:3;will-change:transform,opacity}
+.mfp-hero .mfp-coin{left:45.5%;top:-2%;width:9%;opacity:1}
+.mfp-hglow{position:absolute;left:-16%;top:-12%;width:132%;height:124%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,196,130,.32),rgba(255,190,120,.10) 50%,transparent 72%)}
+.mfp-grain{position:absolute;inset:0;pointer-events:none;opacity:.6;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
+.mfp-vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.32) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 50%,rgba(0,0,0,.7) 100%)}
+.mfp-nav{position:absolute;left:50%;top:0;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:18px;padding:6px 6px 6px 18px;border-radius:0 0 18px 18px;background:#000;white-space:nowrap}
+.mfp-nav .wordmark{font-size:14px;font-weight:700;letter-spacing:-.02em}
+.mfp-nav button{width:44px;height:44px;border:0;border-radius:14px;background:#14131a;color:#E1E0CC;display:grid;place-items:center;cursor:pointer;padding:0;font:inherit}
+.mfp-menu{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;padding:24px 24px 32px;background:rgba(6,6,14,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.mfp-menu header{display:flex;justify-content:space-between;align-items:center}
+.mfp-menu header span{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,226,170,.9)}
+.mfp-menu header button{width:44px;height:44px;border:0;border-radius:50%;background:#E1E0CC;color:#000;display:grid;place-items:center;cursor:pointer;padding:0;font:inherit}
+.mfp-menu .links{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.mfp-menu .links a{font-size:44px;letter-spacing:-.05em;line-height:1.15;background:none;border:0;padding:0;text-align:left;font:inherit;font-size:44px;color:#E1E0CC;cursor:pointer}
+.mfp-menu .links a.dim{color:rgba(225,224,204,.55)}
+.mfp-menu p{margin:0;font-size:14px;line-height:1.5;color:rgba(222,219,200,.7)}.mfp-menu p .serif{font-size:1.15em;color:#E1E0CC}
+.mfp-copyA{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;gap:16px;padding:0 20px 24px}
+.mfp-copyA h1{margin:0;display:flex;flex-direction:column;font-size:clamp(52px,23vw,118px);font-size:clamp(52px,min(23vw,11svh),118px);font-weight:400;line-height:.84;letter-spacing:-.07em}
+.mfp-copyA h1 .row{display:flex}
+.mfp-copyA .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.mfp-copyA p{margin:0;max-width:230px;font-size:15px;line-height:1.3;color:rgba(222,219,200,.75);text-wrap:pretty}.mfp-copyA p .serif{font-size:1.2em;color:#E1E0CC}
+.mfp-copyA .hint{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(225,224,204,.75)}
+.mfp-copyA .hint i{width:1px;height:26px;background:linear-gradient(rgba(225,224,204,0),#E1E0CC)}
+.mfp [data-rise]{display:inline-block;transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+.mfp-copyB{position:absolute;inset:0;z-index:4;opacity:0;pointer-events:none}
+.mfp-capsule{position:absolute;right:4.5%;top:13%;bottom:13%;width:24%;max-width:104px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:22px 0 10px;border-radius:999px;color:#E1E0CC;touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;background:linear-gradient(180deg,rgba(255,236,205,.16),rgba(255,214,160,.06) 55%,rgba(255,236,205,.14));box-shadow:inset 0 0 0 1px rgba(255,236,205,.32),inset 0 1px 0 rgba(255,255,255,.25),0 30px 60px -20px rgba(20,10,30,.6);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}
+.mfp-pulse{position:absolute;left:50%;top:50%;width:220%;height:90%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(closest-side,rgba(255,210,150,.35),rgba(255,190,120,.08) 60%,transparent)}
+.mfp .vert{writing-mode:vertical-rl;transform:rotate(180deg)}
+.mfp-capsule .top{display:flex;flex-direction:column;align-items:center;gap:10px}
+.mfp-capsule .dot{width:5px;height:5px;border-radius:50%;background:#fbdb81;box-shadow:0 0 10px #fbdb81}
+.mfp-capsule .kicker{font-size:11px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,226,170,.95)}
+.mfp-shine{font-size:clamp(50px,17vw,80px);font-size:clamp(50px,min(17vw,8.5svh),80px);font-weight:400;line-height:.9;letter-spacing:-.05em;padding:.08em 0;color:transparent;background:linear-gradient(90deg,#cdb894 0%,#E1E0CC 35%,#fffaf0 50%,#E1E0CC 65%,#cdb894 100%);background-size:100% 300%;-webkit-background-clip:text;background-clip:text}
+.mfp-capsule .bottom{display:flex;flex-direction:column;align-items:center;gap:8px}
+.mfp-holdLbl{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,226,170,.95)}
+.mfp-knob{position:relative;flex:none;width:76px;height:76px;display:grid;place-items:center;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.mfp-knob svg.ring{position:absolute;inset:0;transform:rotate(-90deg);overflow:visible}
+.mfp-knob .btn{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:#E1E0CC;color:#000;box-shadow:0 0 0 1px rgba(255,236,200,.8),0 0 36px rgba(255,214,150,.6),0 14px 26px -10px rgba(0,0,0,.6)}
+.mfp-caption{position:absolute;left:6.5%;right:34%;bottom:3.5%;font-size:13px;line-height:1.4;color:rgba(225,224,204,.75)}.mfp-caption .serif{font-size:1.15em;color:#E1E0CC}
+@media (prefers-reduced-motion:reduce){.mfp [data-rise],.mfp-knob{transition:none}}
+</style>
+</helmet>
+<div class="mfp">
+<div data-hero-track="1" class="mfp-landing">
+<div class="mfp-sticky">
+<div ref="{{ frameRef }}" class="mfp-frame">
+<div class="mfp-halo"></div><div class="mfp-sun"></div>
+<canvas ref="{{ farRef }}" class="mfp-cloud mfp-far"></canvas>
+<canvas ref="{{ nearRef }}" class="mfp-cloud mfp-near"></canvas>
+<div ref="{{ glowRef }}" class="mfp-glow"></div>
+<div ref="{{ spineRef }}" class="mfp-spine"></div>
+<div ref="{{ fillRef }}" class="mfp-fill"></div>
+
+<div ref="{{ t0 }}" class="mfp-tile"><div class="mfp-tglow"></div><div class="mfp-tshade"></div><div class="mfp-lit"></div><div class="mfp-art" role="img" aria-label="Plot"><dc-import name="part-stage-plot" tile="1" hint-size="100%,100%"></dc-import></div>
+<div class="mfp-lbl"><span class="n">01</span><span class="t">Plot</span><span class="p">₹1 L</span></div></div>
+<div ref="{{ t1 }}" class="mfp-tile"><div class="mfp-tglow"></div><div class="mfp-tshade"></div><div class="mfp-lit"></div><div class="mfp-art" role="img" aria-label="Land cleared"><dc-import name="part-stage-grading" tile="1" hint-size="100%,100%"></dc-import></div>
+<div class="mfp-lbl"><span class="n">02</span><span class="t">Land cleared</span><span class="p">₹2 L</span></div></div>
+<div ref="{{ t2 }}" class="mfp-tile"><div class="mfp-tglow"></div><div class="mfp-tshade"></div><div class="mfp-lit"></div><div class="mfp-art" role="img" aria-label="Foundation"><dc-import name="part-stage-foundation" tile="1" hint-size="100%,100%"></dc-import></div>
+<div class="mfp-lbl"><span class="n">03</span><span class="t">Foundation</span><span class="p">₹3 L</span></div></div>
+<div ref="{{ t3 }}" class="mfp-tile"><div class="mfp-tglow"></div><div class="mfp-tshade"></div><div class="mfp-lit"></div><div class="mfp-art" role="img" aria-label="Steel frame"><dc-import name="part-stage-steel" tile="1" hint-size="100%,100%"></dc-import></div>
+<div class="mfp-lbl"><span class="n">04</span><span class="t">Steel frame</span><span class="p">₹4 L</span></div></div>
+<div ref="{{ t4 }}" class="mfp-tile villa"><div class="mfp-tglow"></div><div class="mfp-tshade"></div><div class="mfp-lit"></div><div class="mfp-art" role="img" aria-label="Villa"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%"></dc-import></div>
+<div class="mfp-lbl"><span class="n">05</span><span class="t">Villa</span><span class="p">₹5 L · pays rent</span></div>
+<img ref="{{ coin2Ref }}" class="mfp-coin" src="assets/art/coin.svg" alt="" decoding="async"></div>
+
+<div ref="{{ heroRef }}" class="mfp-hero">
+<div class="mfp-hglow"></div><div class="mfp-tshade"></div>
+<div class="mfp-art" role="img" aria-label="A finished DigiVilla"><dc-import name="part-stage-villa" tile="1" hint-size="100%,100%"></dc-import></div>
+<img ref="{{ coinRef }}" class="mfp-coin" src="assets/art/coin.svg" alt="" decoding="async">
+</div>
+
+<canvas ref="{{ frontRef }}" class="mfp-cloud mfp-front"></canvas>
+<div class="mfp-grain"></div><div class="mfp-vignette"></div>
+
+<nav class="mfp-nav" aria-label="Main">
+<span class="wordmark">TheDigiCiti</span>
+<button onClick="{{ openMenu }}" aria-label="Open menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 9h14M5 15h9"></path></svg></button>
+</nav>
+
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<div class="mfp-menu" role="dialog" aria-label="Menu">
+<header><span>Menu</span><button onClick="{{ closeMenu }}" aria-label="Close menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></header>
+<div class="links">
+<a href="story.dc.html" onClick="{{ goStory }}">Our story</a>
+<a href="#showcase" onClick="{{ goApp }}">The app</a>
+<a href="#calculator" onClick="{{ goCalc }}">Calculator</a>
+<a href="#contact" class="dim" onClick="{{ goContact }}">Contact</a>
+</div>
+<p>A villa in India that pays you rent. <span class="serif">Built by your SIP.</span></p>
+</div>
+</sc-if>
+
+<div ref="{{ copyARef }}" class="mfp-copyA">
+<h1><span class="row"><span data-rise="0">The</span><span data-rise="1">Digi</span></span><span data-rise="2">Citi</span></h1>
+<div class="foot">
+<p data-rise="3">A villa in India that pays you rent. <span class="serif">Built by your SIP,</span> wherever you live.</p>
+<span class="hint" data-rise="4">Scroll<i></i></span>
+</div>
+</div>
+
+<div ref="{{ copyBRef }}" class="mfp-copyB">
+<a ref="{{ capRef }}" class="mfp-capsule" href="story.dc.html" onClick="{{ capClick }}" aria-label="Hold to explore the NRI story">
+<span ref="{{ pulseRef }}" class="mfp-pulse"></span>
+<span class="top"><span class="dot"></span><span class="kicker vert">The NRI story</span></span>
+<span ref="{{ shineRef }}" class="mfp-shine vert">Explore</span>
+<span class="bottom">
+<span ref="{{ holdLblRef }}" class="mfp-holdLbl">Hold</span>
+<span ref="{{ knobRef }}" class="mfp-knob">
+<svg class="ring" viewBox="0 0 76 76" width="76" height="76"><circle cx="38" cy="38" r="35" fill="none" stroke="rgba(255,236,205,.22)" stroke-width="2"></circle><circle ref="{{ ringRef }}" cx="38" cy="38" r="35" fill="none" stroke="#fbdb81" stroke-width="3" stroke-linecap="round" stroke-dasharray="219.9" stroke-dashoffset="219.9"></circle></svg>
+<span class="btn"><svg ref="{{ arrowRef }}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+</span>
+</span>
+</a>
+<span class="mfp-caption">Every villa, <span class="serif">five stages</span> in the making.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { menuOpen: false };
+  frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
+  spineRef = React.createRef(); fillRef = React.createRef(); heroRef = React.createRef(); coinRef = React.createRef(); coin2Ref = React.createRef();
+  copyARef = React.createRef(); copyBRef = React.createRef(); capRef = React.createRef(); pulseRef = React.createRef(); shineRef = React.createRef();
+  holdLblRef = React.createRef(); knobRef = React.createRef(); ringRef = React.createRef(); arrowRef = React.createRef();
+  t0 = React.createRef(); t1 = React.createRef(); t2 = React.createRef(); t3 = React.createRef(); t4 = React.createRef();
+
+  makeClouds(W, H, seed, o) {
+    const clamp = v => Math.max(0, Math.min(1, v));
+    const P = new Uint8Array(512), p = [...Array(256).keys()];
+    let s = seed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    for (let i = 0; i < 512; i++) P[i] = p[i & 255];
+    const fade = t => t * t * (3 - 2 * t);
+    const n2 = (x, y) => { const xi = Math.floor(x) & 255, yi = Math.floor(y) & 255, xf = x - Math.floor(x), yf = y - Math.floor(y), h = (a, b) => P[P[a] + b] / 255, u = fade(xf), v = fade(yf), a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+    const fbm = (x, y) => { let t = 0, a = .5, f = 1; for (let k = 0; k < 5; k++) { t += a * n2(x * f, y * f); f *= 2.03; a *= .5; } return t; };
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), D = new Float32Array(W * (H + 2));
+    for (let y = 0; y < H + 2; y++) { const v = y / H, depth = 1 / (v * o.persp + .12); for (let x = 0; x < W; x++) D[y * W + x] = fbm((x / W - .5) * depth * o.fx + 10, depth * o.fy); }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, d = D[i], v = y / H;
+      const a = clamp((d - (o.th - v * .08)) / .14) * Math.min(1, v * o.topFade);
+      const lit = clamp((d - D[i + 2 * W]) * 9 + .55);
+      const sun = Math.max(0, 1 - Math.hypot(x / W - o.sx, (v - o.sy) * 1.4) * 1.3);
+      const k = Math.min(1, lit * (.55 + sun * .7)), sh = [84, 58, 112], li = [255, 216, 168];
+      let r = sh[0] + (li[0] - sh[0]) * k, g = sh[1] + (li[1] - sh[1]) * k, b = sh[2] + (li[2] - sh[2]) * k;
+      const hz = (1 - v) * o.haze; r += (226 - r) * hz; g += (140 - g) * hz; b += (96 - b) * hz;
+      img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = a * 255;
+    }
+    ctx.putImageData(img, 0, 0); return cv;
+  }
+
+  scroller() {
+    const r = this.props.scroller; if (r && r.current) return r.current;
+    let el = this.frameRef.current; while (el && el !== document.body) { if (getComputedStyle(el).overflowY === 'auto') return el; el = el.parentElement; }
+    return null;
+  }
+
+  componentDidMount() {
+    const paint = (ref, tex) => { const c = ref.current; if (!c) return; c.width = tex.width; c.height = tex.height; c.getContext('2d').drawImage(tex, 0, 0); };
+    paint(this.farRef, this.makeClouds(240, 90, 7, { persp: 3, fx: 3.2, fy: 1.6, th: .5, topFade: 6, sx: .86, sy: 0, haze: .55 }));
+    paint(this.nearRef, this.makeClouds(280, 150, 31, { persp: 1.6, fx: 2.8, fy: 1.5, th: .46, topFade: 5, sx: .9, sy: -.3, haze: .25 }));
+    paint(this.frontRef, this.makeClouds(280, 130, 101, { persp: 1.2, fx: 2.3, fy: 1.3, th: .52, topFade: 4, sx: .95, sy: -.6, haze: .1 }));
+    const clamp = v => Math.max(0, Math.min(1, v)), ease = t => -(Math.cos(Math.PI * t) - 1) / 2;
+    // device tilt → parallax (silent where the browser needs a permission; a slow idle drift remains)
+    let tx = 0, ty = 0; const sm = { x: 0, y: 0 };
+    this.onTilt = e => { if (e.gamma == null) return; tx = clamp(e.gamma / 60 + .5) - .5; ty = clamp((e.beta - 45) / 80 + .5) - .5; };
+    addEventListener('deviceorientation', this.onTilt);
+    // hold-to-explore
+    this.hold = 0; this.holding = false; let litMin = 5, last = 0;
+    const cap = this.capRef.current;
+    if (cap) {
+      cap.addEventListener('pointerdown', e => { if (e.button > 0) return; this.holding = true; });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => cap.addEventListener(ev, () => { this.holding = false; }));
+      cap.addEventListener('contextmenu', e => e.preventDefault());
+    }
+    const SCRUB_VH = 1.6, CX = .5, CY = .37;
+    const SLOT = [[.22, .15], [.22, .31], [.22, .47], [.22, .63], [.22, .79]];
+    const tiles = [this.t0, this.t1, this.t2, this.t3, this.t4].map(r => r.current);
+    const lbls = tiles.map(el => el && el.querySelector('.mfp-lbl'));
+    const setT = (el, v) => { if (el && el.__v !== v) { el.style.transform = v; el.__v = v; } };
+    const setO = (el, v) => { v = +(+v).toFixed(3); if (el && el.__o !== v) { el.style.opacity = v; el.__o = v; } };
+    const tick = t => {
+      const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; const k = t / 1000;
+      this.hold = this.holding ? Math.min(1, this.hold + dt / 1.4) : Math.max(0, this.hold - dt * 1.6);
+      sm.x += ((Math.sin(k * .23) * .12 + tx) - sm.x) * .05; sm.y += ((Math.cos(k * .19) * .08 + ty) - sm.y) * .05;
+      const sc = this.scroller(), frame = this.frameRef.current;
+      if (!frame) { this.raf = requestAnimationFrame(tick); return; }
+      const raw = sc ? clamp(sc.scrollTop / Math.max(1, sc.clientHeight * SCRUB_VH)) : 0;
+      this.p = (this.p || 0) + (raw - (this.p || 0)) * .075; const p = this.p;
+      const W = frame.clientWidth, H = frame.clientHeight;
+      const onScreen = !sc || sc.scrollTop < sc.clientHeight * 2.8;
+      if (!onScreen) { this.raf = requestAnimationFrame(tick); return; }           // nothing to move once the frame has scrolled away
+      setT(this.farRef.current, 'translate(' + (Math.sin(k * .05) * 10 - sm.x * 8).toFixed(1) + 'px,' + (p * 16).toFixed(1) + 'px)');
+      setT(this.nearRef.current, 'translate(' + (Math.sin(k * .07 + 1) * 16 - sm.x * 18).toFixed(1) + 'px,' + (p * 30).toFixed(1) + 'px)');
+      setT(this.frontRef.current, 'translate(' + (Math.sin(k * .09 + 2) * 22 - sm.x * 30).toFixed(1) + 'px,' + (p * 54).toFixed(1) + 'px)');
+      const e = ease(clamp((p - .14) / .6));
+      if (this.hold < .01) litMin = 5;
+      tiles.forEach((el, i) => {
+        if (!el) return;
+        const w = el.offsetWidth, hh = el.offsetHeight, [ex, ey] = SLOT[i];
+        const ei = ease(clamp((p - .1 - (4 - i) * .04) / .56));          // 05 leaves first, 01 last
+        let x, y, s, op;
+        if (i === 4) { x = CX + (ex - CX) * ei; y = CY + (ey - CY) * ei; s = 2.1 - 1.1 * ei; op = clamp((p - .06) / .14); }
+        else { x = CX + (ex - CX) * ei + Math.sin(ei * Math.PI) * .08; y = CY + (ey - CY) * ei; s = .55 + .45 * ei; op = clamp(ei * 2.2); }
+        const bob = Math.sin(k * .8 + i * 1.3) * 4 * e;
+        setT(el, 'translate3d(' + (x * W - w / 2 - sm.x * (10 + i * 3) * e).toFixed(1) + 'px,' + (y * H - hh / 2 + bob - sm.y * 6 * e).toFixed(1) + 'px,0) scale(' + s.toFixed(4) + ')');
+        setO(el, op); el.style.zIndex = i === 4 ? 3 : 2;
+        const on = this.hold > (4 - i) / 5 + .02;
+        if (el.classList.contains('lit') !== on) el.classList.toggle('lit', on);
+        if (on && i < litMin) { litMin = i; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} }
+        const l = lbls[i];
+        if (l) { setO(l, clamp((p - .64 - i * .02) / .16)); setT(l, 'translateY(-50%) translateX(' + ((1 - clamp((p - .64) / .18)) * -10).toFixed(1) + 'px) scale(' + (1 / s).toFixed(4) + ')'); }
+      });
+      const hero = this.heroRef.current;
+      if (hero) {
+        const vo = 1 - ease(clamp((p - .04) / .16));
+        setT(hero, 'translate(' + (CX * W - hero.offsetWidth / 2 - sm.x * 20).toFixed(1) + 'px,' + (.4 * H - hero.offsetHeight / 2 + Math.sin(k * .7) * 5 - sm.y * 10).toFixed(1) + 'px) scale(' + (1 - (1 - vo) * .12).toFixed(4) + ')');
+        setO(hero, vo);
+      }
+      setT(this.coinRef.current, 'translateY(' + (Math.sin(k * 1.4) * 6).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)');
+      setT(this.coin2Ref.current, 'translateY(' + (Math.sin(k * 1.4) * 4).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)'); setO(this.coin2Ref.current, clamp((p - .7) / .2));
+      setO(this.glowRef.current, 1 - clamp(p / .5) * .6);
+      const a = this.copyARef.current, oa = 1 - clamp(p / .18);
+      if (a) { setO(a, oa); setT(a, 'translateY(' + (-p * 50).toFixed(1) + 'px)'); a.style.pointerEvents = oa < .1 ? 'none' : 'auto'; }
+      const so = clamp((p - .55) / .3); setO(this.spineRef.current, so); setT(this.spineRef.current, 'scaleY(' + so.toFixed(4) + ')');
+      const b = this.copyBRef.current, ob = clamp((p - .7) / .22);
+      if (b) { setO(b, ob); setT(b, 'translate3d(' + ((1 - ease(ob)) * 36).toFixed(1) + 'px,0,0)'); b.style.pointerEvents = ob > .5 ? 'auto' : 'none'; }
+      setO(this.pulseRef.current, .55 + .45 * Math.sin(k * 1.6));
+      if (this.shineRef.current) this.shineRef.current.style.backgroundPosition = '0 ' + ((k * 18) % 150).toFixed(1) + '%';
+      if (this.ringRef.current) this.ringRef.current.setAttribute('stroke-dashoffset', (219.9 * (1 - this.hold)).toFixed(1));
+      setT(this.fillRef.current, 'scaleY(' + this.hold.toFixed(4) + ')');
+      setT(this.knobRef.current, 'scale(' + (this.holding ? .92 : 1) + ')');
+      const hl = this.holdLblRef.current, txt = this.hold > .02 && this.hold < 1 ? Math.round(this.hold * 5) + ' / 5' : 'Hold';
+      if (hl && hl.textContent !== txt) hl.textContent = txt;
+      if (!this.holding) { const ph = (k % 2.4) / 2.4, q = ph < .5 ? ph * 2 : 1; setT(this.arrowRef.current, 'translateX(' + (q < 1 ? Math.sin(q * Math.PI) * 6 : 0).toFixed(1) + 'px)'); }
+      if (this.hold >= 1 && !this.leaving) { this.holding = false; this.explore(); }
+      this.raf = requestAnimationFrame(tick);
+    };
+    this.raf = requestAnimationFrame(tick);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); removeEventListener('deviceorientation', this.onTilt); }
+  explore() {
+    if (this.leaving) return; this.leaving = true;
+    const fr = this.frameRef.current;
+    if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(30vh) scale(1.06)'; }
+    const b = this.copyBRef.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; }
+    try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {}
+    if (window.tdcVeil) window.tdcVeil.go('story.dc.html', { style: 'sky' }); else setTimeout(() => { location.href = 'story.dc.html'; }, 600);
+  }
+  glideTo(find) {
+    return e => {
+      e.preventDefault(); this.setState({ menuOpen: false });
+      const sc = this.scroller(), el = find(); if (!sc || !el) return;
+      let top = 0; for (let n = el; n && n !== sc; n = n.offsetParent) top += n.offsetTop;
+      sc.scrollTo({ top, behavior: 'smooth' });
+    };
+  }
+  renderVals() {
+    const r = {};
+    ['frameRef', 'farRef', 'nearRef', 'frontRef', 'glowRef', 'spineRef', 'fillRef', 'heroRef', 'coinRef', 'coin2Ref', 'copyARef', 'copyBRef', 'capRef', 'pulseRef', 'shineRef', 'holdLblRef', 'knobRef', 'ringRef', 'arrowRef', 't0', 't1', 't2', 't3', 't4'].forEach(n => r[n] = this[n]);
+    r.menuOpen = this.state.menuOpen;
+    r.openMenu = () => this.setState({ menuOpen: true }); r.closeMenu = () => this.setState({ menuOpen: false });
+    r.goStory = e => { e.preventDefault(); this.setState({ menuOpen: false }); this.explore(); };
+    r.goApp = this.glideTo(() => document.getElementById('showcase'));
+    r.goCalc = this.glideTo(() => document.getElementById('calculator'));
+    r.goContact = this.glideTo(() => document.querySelector('footer'));
+    r.capClick = e => { e.preventDefault(); if (e.detail === 0) this.explore(); };     // keyboard Enter only; touch uses the hold
+    return r;
+  }
+}
+</script>
+</body>
+</html>
