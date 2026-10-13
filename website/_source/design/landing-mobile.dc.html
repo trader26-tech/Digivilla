@@ -223,6 +223,61 @@ class Component extends DCLogic {
     }
     const SCRUB_VH = 1.6, CX = .5, CY = .37;
     const SLOT = [[.22, .15], [.22, .31], [.22, .47], [.22, .63], [.22, .79]];
+    // ONE swipe = one page. On a phone the site is paged: cover start → cover end (the hero → column play,
+    // 1.4 s) → the app → the calculator → the footer. Any deliberate swipe (12 px) moves one page with an eased
+    // scroll; nothing is ever left part-way and a short swipe never bounces back. Inner scrollers keep their
+    // own native gestures: the phone rail sideways, the calculator's content up and down until it hits an end.
+    {
+      const sc0 = this.scroller();
+      const rangeOf = () => { const tr = sc0 && sc0.querySelector('[data-hero-track]'); return tr ? tr.clientHeight - sc0.clientHeight : (sc0 ? sc0.clientHeight * SCRUB_VH : 1); };
+      const easeIO = t => -(Math.cos(Math.PI * t) - 1) / 2;
+      const offs = el => { let t = 0; for (let n = el; n && n !== sc0; n = n.offsetParent) t += n.offsetTop; return t; };
+      const pages = () => {
+        const R = rangeOf(), max = Math.max(0, sc0.scrollHeight - sc0.clientHeight);
+        const list = [0, R];
+        const app = document.getElementById('showcase'), calc = document.getElementById('calculator'), foot = document.querySelector('footer');
+        if (app) list.push(offs(app)); if (calc) list.push(offs(calc)); if (foot) list.push(Math.min(max, offs(foot)));
+        return list.filter((v, i, a) => i === 0 || v > a[i - 1] + 4);
+      };
+      this.goPage = dir => {
+        const sc = this.scroller(); if (!sc) return;
+        const P = pages(), top = sc.scrollTop, R = rangeOf();
+        let cur = 0; P.forEach((v, i) => { if (Math.abs(v - top) < Math.abs(P[cur] - top)) cur = i; });
+        const nxt = Math.max(0, Math.min(P.length - 1, cur + dir)), to = P[nxt], from = top; if (Math.abs(to - from) < 1) return;
+        this.animating = true;
+        const coverPlay = Math.max(from, to) <= R + 1;                              // within the cover: the designed play; between pages: a quick glide
+        const D = coverPlay ? 300 + 1300 * Math.abs(to - from) / R : 650, t0 = performance.now();
+        const step = now => {
+          const u = Math.min(1, (now - t0) / D); sc.scrollTop = from + (to - from) * easeIO(u);
+          if (u < 1 && this.animating) requestAnimationFrame(step); else { sc.scrollTop = to; this.animating = false; }
+        };
+        requestAnimationFrame(step);
+      };
+      if (sc0) {
+        let y0 = 0, x0 = 0, armed = false, rail = null, inner = null;
+        this.onTS2 = e => {
+          armed = false; rail = null; inner = null;
+          const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
+          if (this.state.menuOpen || c('.mfp-capsule') || c('.mfp-ruler') || c('select')) return;
+          rail = c('.msh-rail'); inner = c('.mcl');
+          armed = true; y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+        };
+        this.onTM2 = e => {
+          if (!armed) return;
+          if (this.animating) { if (e.cancelable) e.preventDefault(); return; }
+          const t = e.touches[0], dy = y0 - t.clientY, dx = x0 - t.clientX;      // dy > 0: finger moved up = towards the next page
+          if (rail && Math.abs(dx) > Math.abs(dy)) { armed = false; return; }       // the phone rail scrolls sideways natively
+          if (inner) {                                                            // the calculator scrolls its own content until an end
+            const canDown = inner.scrollTop < inner.scrollHeight - inner.clientHeight - 8, canUp = inner.scrollTop > 8;
+            if ((dy > 0 && canDown) || (dy < 0 && canUp)) { armed = false; return; }
+          }
+          if (e.cancelable) e.preventDefault();
+          if (Math.abs(dy) > 12) { armed = false; this.goPage(dy > 0 ? 1 : -1); }
+        };
+        sc0.addEventListener('touchstart', this.onTS2, { passive: true });
+        sc0.addEventListener('touchmove', this.onTM2, { passive: false });
+      }
+    }
     const tiles = [this.t0, this.t1, this.t2, this.t3, this.t4].map(r => r.current);
     const lbls = tiles.map(el => el && el.querySelector('.mfp-lbl'));
     const setT = (el, v) => { if (el && el.__v !== v) { el.style.transform = v; el.__v = v; } };
@@ -234,7 +289,7 @@ class Component extends DCLogic {
       const sc = this.scroller(), frame = this.frameRef.current;
       if (!frame) { this.raf = requestAnimationFrame(tick); return; }
       const raw = sc ? clamp(sc.scrollTop / Math.max(1, sc.clientHeight * SCRUB_VH)) : 0;
-      this.p = (this.p || 0) + (raw - (this.p || 0)) * .075; const p = this.p;
+      this.p = (this.p || 0) + (raw - (this.p || 0)) * (this.animating ? .2 : .075); const p = this.p;   // the play is timed by playCover; only a touch of lag on top
       const W = frame.clientWidth, H = frame.clientHeight;
       const onScreen = !sc || sc.scrollTop < sc.clientHeight * 2.8;
       if (!onScreen) { this.raf = requestAnimationFrame(tick); return; }           // nothing to move once the frame has scrolled away
@@ -286,7 +341,7 @@ class Component extends DCLogic {
     };
     this.raf = requestAnimationFrame(tick);
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); removeEventListener('deviceorientation', this.onTilt); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.animating = false; removeEventListener('deviceorientation', this.onTilt); const sc = this.scroller(); if (sc && this.onTS2) { sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); } }
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;

@@ -24,7 +24,7 @@
     a{color:#E1E0CC;text-decoration:none} a:hover{color:#fff}
     [data-rise]{opacity:0}
     @supports (height:100dvh){[data-screen-label="TheDigiCiti Landing"],#showcase{height:100dvh!important}}
-    @media (max-width:700px){[data-scroller]{scroll-snap-type:y mandatory} .msh,.mcl{height:100dvh!important} footer{scroll-snap-align:end}}
+    @media (max-width:700px){[data-scroller]{overscroll-behavior:none} .msh,.mcl{height:100dvh!important}}
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
@@ -46,29 +46,29 @@
     }
   </style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=6fa182a2">
-<link rel="modulepreload" href="dc/thedigiciti_website.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/calc-mobile.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/part-stage-villa.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/engine.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/calc-data.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/calculator.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/part-footer.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/landing-mobile.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/part-stage-foundation.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/part-stage-grading.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/part-stage-plot.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/part-stage-steel.js?v=6fa182a2">
-<link rel="modulepreload" href="dc/showcase-mobile.js?v=6fa182a2">
+<link rel="modulepreload" href="dc/rt.js?v=88e84342">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=88e84342">
+<link rel="modulepreload" href="dc/thedigiciti_website.js?v=88e84342">
+<link rel="modulepreload" href="dc/calc-mobile.js?v=88e84342">
+<link rel="modulepreload" href="dc/part-stage-villa.js?v=88e84342">
+<link rel="modulepreload" href="dc/engine.js?v=88e84342">
+<link rel="modulepreload" href="dc/calc-data.js?v=88e84342">
+<link rel="modulepreload" href="dc/calculator.js?v=88e84342">
+<link rel="modulepreload" href="dc/part-footer.js?v=88e84342">
+<link rel="modulepreload" href="dc/landing-mobile.js?v=88e84342">
+<link rel="modulepreload" href="dc/part-stage-foundation.js?v=88e84342">
+<link rel="modulepreload" href="dc/part-stage-grading.js?v=88e84342">
+<link rel="modulepreload" href="dc/part-stage-plot.js?v=88e84342">
+<link rel="modulepreload" href="dc/part-stage-steel.js?v=88e84342">
+<link rel="modulepreload" href="dc/showcase-mobile.js?v=88e84342">
 <link rel="preconnect" href="https://client-digivilla-production.up.railway.app" crossorigin>
 <script>(function(){try{var c=JSON.parse(localStorage.getItem("tdc.calc.v1")||"null");if(c&&c.at&&Date.now()-c.at<864e5)return}catch(e){}var A=window.__TDC_API||"https://client-digivilla-production.up.railway.app",j=function(r){if(!r.ok)throw new Error(r.status);return r.json()},q=function(p){var f=fetch(A+p,{priority:"high"}).then(j);f.catch(function(){});return f};window.__tdcCalc={cfg:q("/calc/config"),vf:q("/calc/villa-funds")}})();</script>
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=6fa182a2';
-import Root from './dc/thedigiciti_website.js?v=6fa182a2';
+import { mount } from './dc/rt.js?v=88e84342';
+import Root from './dc/thedigiciti_website.js?v=88e84342';
 mount(Root);
 </script>
 </body>
