@@ -1825,95 +1825,34 @@
   .mx-sl { animation: none; opacity: 1; transform: none; }
 }
 
-/* ===== DAY'S CHANGE — chip under the headline value + its sheet ===== */
-.day-chip {
-  --dc: #8fd65a;
-  display: inline-flex; align-items: center; gap: 5px;
-  height: 24px; padding: 0 10px 0 8px; margin: 0; border-radius: 999px; cursor: pointer;
-  font: inherit; font-size: 12px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap;
-  color: var(--dc);
-  background: color-mix(in srgb, var(--dc) 11%, transparent);
-  border: 1px solid color-mix(in srgb, var(--dc) 26%, transparent);
-  -webkit-tap-highlight-color: transparent;
-  transition: transform .2s cubic-bezier(.22,1,.36,1), background .2s;
-  &.down { --dc: #d98a8a; }
-  &:active { transform: scale(.96); background: color-mix(in srgb, var(--dc) 18%, transparent); }
-  &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 3px; }
-  .dc-tri { width: 7px; height: 7px; fill: currentColor; flex: none; }
-  .dc-amt { font-weight: 600; letter-spacing: -.01em; }
-  .dc-pct { opacity: .8; }
-  .dc-when { color: var(--color-neutral-400); font-size: 11px; }
-}
-
-.day-sheet {
-  --dc: #8fd65a;
-  &.down { --dc: #d98a8a; }
-  .mx-sub span { color: var(--color-neutral-500); }
-}
-.dy-hero { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; }
-.dy-amt {
-  font-family: var(--ref-font); font-weight: var(--ref-heading);
-  font-size: 34px; line-height: 1.05; letter-spacing: -.02em;
-  font-variant-numeric: tabular-nums; color: var(--dc);
-}
-.dy-pct {
-  display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--dc);
-  background: color-mix(in srgb, var(--dc) 13%, transparent);
-  svg { width: 7px; height: 7px; fill: currentColor; }
-}
-.dy-story { margin: 8px 0 2px; font-size: 12.5px; line-height: 1.45; color: var(--color-neutral-300); }
-.dy-list { list-style: none; margin: 8px 0 0; padding: 0; }
-.dy-row {
+/* ===== THE STRIP under the headline value: today's move | since you started.
+   One button → "How your funds moved" (home/fund-moves-sheet). Two cells that
+   each stack label / ₹ / %, so nothing overlaps at 360 px however long the ₹ is. */
+.port-strip {
   --up: #8fd65a; --dn: #d98a8a;
-  padding: 12px 0 11px; border-bottom: 1px solid rgba(255, 255, 255, .06);
-  &:last-child { border-bottom: 0; }
-  opacity: 0; transform: translateY(6px);
-  animation: labelIn .36s cubic-bezier(.22, 1, .36, 1) both;
-  animation-delay: calc(.12s + var(--i, 0) * .06s);
+  display: flex; align-items: stretch; gap: 0; width: 100%; max-width: 340px; margin: 6px auto 0; padding: 8px 6px 8px 12px;
+  border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px; cursor: pointer;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .02));
+  font: inherit; color: var(--color-text); text-align: left; -webkit-tap-highlight-color: transparent;
+  transition: transform .2s cubic-bezier(.22, 1, .36, 1), background .2s;
+  &:active { transform: scale(.985); background: rgba(255, 255, 255, .07); }
+  &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 3px; }
 }
-.dy-top { display: grid; grid-template-columns: 8px 1fr auto; align-items: baseline; column-gap: 10px; }
-.dy-nm {
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 13.5px; color: var(--color-text);
-}
-.dy-vl {
-  font-family: var(--ref-font); font-weight: var(--ref-heading); font-size: 14px;
-  font-variant-numeric: tabular-nums; color: var(--up);
-}
-.dy-row.neg .dy-vl { color: var(--dn); }
-/* a centre line; gains grow right, losses grow left — widths share one scale */
-.dy-track {
-  position: relative; height: 6px; margin: 9px 0 7px 18px;
-  border-radius: 3px; background: rgba(255, 255, 255, .045);
-  &::after {
-    content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px;
-    background: rgba(255, 255, 255, .22);
+.ps-cell {
+  --c: var(--up);
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0 8px 0 0;
+  &.down { --c: var(--dn); }
+  small { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-neutral-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  b {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--ref-font); font-weight: var(--ref-heading); font-size: 16px; line-height: 1.15; letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums; color: var(--c); white-space: nowrap;
+    svg { width: 8px; height: 8px; fill: currentColor; flex: none; }
   }
+  em { font-style: normal; font-size: 11px; color: var(--color-neutral-400); font-variant-numeric: tabular-nums; white-space: nowrap; }
 }
-.dy-bar {
-  position: absolute; top: 0; bottom: 0; left: 50%; min-width: 2px;
-  border-radius: 0 3px 3px 0; background: var(--up);
-  transform: scaleX(0); transform-origin: left center;
-  animation: segWipe .5s cubic-bezier(.22, 1, .36, 1) both;
-  animation-delay: calc(.2s + var(--i, 0) * .06s);
-}
-.dy-row.neg .dy-bar {
-  left: auto; right: 50%; border-radius: 3px 0 0 3px; background: var(--dn);
-  transform-origin: right center;
-}
-.dy-meta {
-  display: flex; justify-content: space-between; gap: 10px; margin-left: 18px;
-  font-size: 11px; color: var(--color-neutral-500); font-variant-numeric: tabular-nums;
-  .dy-nav { white-space: nowrap; }
-  b { font-weight: 600; color: var(--up); }
-}
-.dy-row.neg .dy-meta b { color: var(--dn); }
-.dy-late { color: var(--color-neutral-400); }
-@media (prefers-reduced-motion: reduce) {
-  .dy-row { animation: none; opacity: 1; transform: none; }
-  .dy-bar { animation: none; transform: none; }
-}
+.ps-sep { flex: none; width: 1px; margin: 2px 10px 2px 2px; background: rgba(255, 255, 255, .09); }
+.ps-chev { flex: none; align-self: center; width: 16px; height: 16px; color: var(--color-neutral-600); }
 
 /* ════════════ PULL SHEETS — down: Next villa · up: Types of villas ════════════ */
 .estate { overscroll-behavior-y: contain; }

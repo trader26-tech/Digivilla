@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
 
-import { MappingOverview, UnmappedClient } from '../admin.service';
+import { AdminService, MappingOverview, UnmappedClient } from '../admin.service';
 
 /**
  * Home: every transaction that is not yet mapped to a villa, in full — one
@@ -19,8 +19,28 @@ export class UnmappedTxnsComponent {
   @Input() set overview(v: MappingOverview | null) { this.data.set(v); }
   /** "Map now" → open that client's drawer on the Villas tab */
   @Output() map = new EventEmitter<string>();
+  /** after a holdings rebuild → the home re-pulls its figures */
+  @Output() rebuilt = new EventEmitter<void>();
 
+  private api = inject(AdminService);
   readonly data = signal<MappingOverview | null>(null);
+  readonly rebuilding = signal(false);
+  readonly rebuildMsg = signal('');
+
+  /** Repair: holdings := the roll-up of every transaction (idempotent). */
+  rebuild(): void {
+    if (this.rebuilding()) return;
+    this.rebuilding.set(true); this.rebuildMsg.set('');
+    this.api.rebuildHoldings().subscribe({
+      next: (r) => {
+        this.rebuilding.set(false);
+        this.rebuildMsg.set(r.consistency.ok ? `Rebuilt ${r.rows} holdings for ${r.clients} clients — everything ties out.` : `Rebuilt, but ${r.consistency.off.length} client(s) still differ.`);
+        this.data.update((d) => d ? { ...d, consistency: { ok: r.consistency.ok, off: r.consistency.off } } : d);
+        this.rebuilt.emit();
+      },
+      error: () => { this.rebuilding.set(false); this.rebuildMsg.set('Couldn’t rebuild — try again.'); },
+    });
+  }
 
   /** biggest unmapped amount first */
   readonly clients = computed<UnmappedClient[]>(() =>

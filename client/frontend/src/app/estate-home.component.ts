@@ -21,6 +21,7 @@ import { CallScheduleComponent } from './shared/call-schedule.component';
 import { DataFreshnessComponent } from './shared/data-freshness.component';
 import { CountUpDirective } from './shared/count-up.directive';
 import { PlotUnlockComponent } from './build/plot-unlock.component';
+import { FundMovesSheetComponent } from './home/fund-moves-sheet.component';
 import { CallsService } from './shared/calls.service';
 import { AllocRow, DayChange, EstateService, FundsBreakdown, Tile, TileType, Variant } from './estate.service';
 import { Cell, buildCells } from './estate/board-layout';
@@ -129,7 +130,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, CountUpDirective, PlotUnlockComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, CountUpDirective, PlotUnlockComponent, FundMovesSheetComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -215,8 +216,9 @@ export class EstateHomeComponent implements OnInit {
   mixOpen = signal(false);
   openMix(): void { this.mixOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
   /** "Day's change" — the fund-by-fund sheet behind the day chip. */
-  dayOpen = signal(false);
-  openDay(): void { this.dayOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
+  /** "How your funds moved" (today fund by fund · each fund vs its index). */
+  movesOpen = signal(false);
+  openMoves(): void { this.est.loadMoves(); this.movesOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
 
   /** The user's fund-by-fund breakdown (from GET /me/funds) — drives the
    *  PORTFOLIO VALUE allocation bar at the bottom of the home screen. Null until
@@ -503,6 +505,8 @@ export class EstateHomeComponent implements OnInit {
   readonly entered = this.est.homeEntered();
 
   ngOnInit(): void {
+    // the day-change sheet's data, warmed after the home has settled (one cached call)
+    setTimeout(() => this.est.loadMoves(), 4500);
     // Mark the entrance as played (for the next mount, not this one).
     this.est.homeEntered.set(true);
     // Play the verified tick once, right after OTP.
@@ -552,7 +556,7 @@ export class EstateHomeComponent implements OnInit {
 
   /** Another sheet / popup owns the screen — swipes leave it alone. */
   private get overlayOpen(): boolean {
-    return this.keyOpen() || this.mixOpen() || this.dayOpen() || this.callSheetOpen() || this.settingsOpen() || !!this.buying() || !!this.selected()
+    return this.keyOpen() || this.mixOpen() || this.movesOpen() || this.callSheetOpen() || this.settingsOpen() || !!this.buying() || !!this.selected()
       || !!this.selectedBoard() || !!this.unlockCell() || this.showTick();
   }
   setNext(open: boolean): void {
@@ -1135,19 +1139,13 @@ export class EstateHomeComponent implements OnInit {
     const a = Math.abs(v);
     return (v < 0 ? '−' : '+') + a.toFixed(a < 1 ? 2 : 1) + '%';
   }
-  /** Count-up formatter for the sheet's hero: the sign is the FINAL value's, so
-   *  rolling from 0 never flashes "+₹0" on a down day. */
-  readonly dayFmt = (n: number) => {
-    const d = this.day;
-    return (d && d.change < 0 ? '−' : '+') + inr(Math.abs(n));
-  };
-  /** When the move happened, in words: today · yesterday · on Fri. NAV dates are
-   *  Indian dates, so "today" is today in IST whatever the phone's zone. */
+  /** When the move happened, in words: today · yesterday · Fri 10 Oct. NAV dates
+   *  are Indian dates, so "today" is today in IST whatever the phone's zone. */
   dayWhen(iso: string): string {
     const ist = (ms: number) => new Date(ms + 330 * 60_000).toISOString().slice(0, 10);
     if (iso === ist(Date.now())) return 'today';
     if (iso === ist(Date.now() - 86_400_000)) return 'yesterday';
-    return 'on ' + this.dayShort(iso).split(' ')[0];
+    return this.dayShort(iso);
   }
   /** "Mon 12 Oct". */
   dayShort(iso: string | null | undefined): string {
@@ -1155,43 +1153,6 @@ export class EstateHomeComponent implements OnInit {
     const d = new Date(iso + 'T00:00:00Z');
     return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   }
-  /** Every fund that moved, biggest gain → biggest loss, with its bar width
-   *  (share of the largest single move) and its own NAV move in %. */
-  readonly dayRows = computed(() => {
-    const rows = (this.est.allocRows() ?? []).filter((f) => f.day_change != null);
-    const max = Math.max(1e-9, ...rows.map((f) => Math.abs(f.day_change!)));
-    return rows
-      .map((f) => {
-        const sleeve = this.sleeveOf(f);
-        return {
-          key: String(f.scheme_code ?? f.name),
-          name: this.fundName(f),
-          sleeve,
-          color: this.fundColor(0, { sleeve }),
-          label: this.sleeveName({ sleeve }),
-          change: f.day_change!,
-          w: (Math.abs(f.day_change!) / max) * 50,             // % of the track (half each side)
-          navPct: f.nav && f.prev_nav ? (f.nav / f.prev_nav - 1) * 100 : 0,
-          nav: f.nav ?? null, prev: f.prev_nav ?? null,
-          late: !!this.day && !!f.nav_date && f.nav_date < this.day.nav_date,
-          when: this.dayShort(f.nav_date),
-        };
-      })
-      .sort((a, b) => b.change - a.change);
-  });
-  /** One plain sentence on what drove the day, by sleeve. */
-  get dayStory(): string {
-    const by = new Map<string, number>();
-    for (const r of this.dayRows()) by.set(r.label, (by.get(r.label) ?? 0) + r.change);
-    const s = [...by.entries()].sort((a, b) => b[1] - a[1]);
-    if (!s.length) return '';
-    const [upName, up] = s[0];
-    const [dnName, dn] = s[s.length - 1];
-    if (dn >= 0) return s.length === 1 ? `${upName} rose ${this.signedInr(up)}.` : `Everything rose — ${upName} led with ${this.signedInr(up)}.`;
-    if (up <= 0) return s.length === 1 ? `${dnName} slipped ${this.signedInr(dn)}.` : `Everything slipped — ${dnName} most, ${this.signedInr(dn)}.`;
-    return `${upName} added ${this.signedInr(up)}; ${dnName} took away ${inr(Math.abs(dn))}.`;
-  }
-  trackDay(_: number, r: { key: string }): string { return r.key; }
 
   /** Signed returns % for the meta row (server gain_pct, tile fallback). */
   get gainPct(): number { return this.est.gainPct; }

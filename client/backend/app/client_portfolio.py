@@ -122,10 +122,11 @@ def _houses_max() -> int:
 
 
 # Which bucket(s) form villas. For now the SIP bucket(s) — SIP is the
-# accumulation plan that builds a villa up to ₹5L. Lumpsum buckets are shown in
-# the picker/modal but don't drive the estate map. Easy to widen later.
+# accumulation plan that builds a villa up to ₹5L; a lumpsum into the lumpsum mix
+# builds villas just the same (2026-10-14: a ₹20 L lumpsum drew no house because
+# its funds sat only in a lumpsum bucket). Every DigiVilla bucket forms villas.
 def _is_villa_bucket(bucket: dict) -> bool:
-    return (bucket.get("kind") or "sip") == "sip"
+    return True
 
 
 def _villa_tile(order: int, invested: float, value: float, *, building: bool) -> dict:
@@ -354,74 +355,40 @@ def _is_finished(invested: float, status) -> bool:
 
 
 def _mapped_houses_load(client_code: str):
+    """The client's villas by the ONE shared rule (app/villa_alloc.py): the
+    admin's pins stay where they are, everything else fills villas oldest-first
+    in date order, and a big purchase is split pro-rata across the villas it
+    makes. None only when the client has no transactions at all (→ the
+    holdings fallback)."""
     try:
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=2) as ex:
-            f_v = ex.submit(lambda: _sb().table("client_villas").select("id,name,status,sort_order,created_at").eq(
+            f_v = ex.submit(lambda: _sb().table("client_villas").select("id,name,status,coin,sort_order,created_at").eq(
                 "client_code", client_code).execute().data or [])
             f_t = ex.submit(lambda: _sb().table("client_transactions").select(
-                "scheme_code,scheme_name,units,amount,villa_id,txn_date,kind").eq(
+                "order_id,scheme_code,scheme_name,units,amount,villa_id,txn_date,kind").eq(
                 "client_code", client_code).execute().data or [])
             villas, txns = f_v.result(), f_t.result()
     except Exception:
         return None
-    vmap = {v["id"]: v for v in villas}
-    if not any(t.get("villa_id") in vmap for t in txns):
-        return None                                   # nothing pinned yet → old behaviour
-
-    per: dict[str, dict] = {}
-    loose: dict = {}
-    codes_in_villa = _villa_scheme_codes()
-    for t in txns:
-        code = t.get("scheme_code")
-        if not code:
-            continue
-        sign = _txn_sign(t.get("kind"))
-        units = abs(_num(t.get("units"))) * sign
-        amount = abs(_num(t.get("amount"))) * sign
-        vid = t.get("villa_id")
-        if vid in vmap:
-            g = per.setdefault(vid, {"schemes": {}, "dates": []})
-            agg = g["schemes"]
-            if t.get("txn_date"):
-                g["dates"].append(str(t["txn_date"])[:10])
-        elif code in codes_in_villa:
-            agg = loose                                # DigiVilla money not pinned to a villa yet
-        else:
-            continue                                   # other funds: net worth, not a house
-        e = agg.setdefault(code, {"scheme_code": code, "scheme_name": t.get("scheme_name"),
-                                  "units": 0.0, "invested": 0.0})
-        e["units"] += units
-        e["invested"] += amount
-
-    houses = []
-    for vid, g in per.items():
-        hold = [h for h in g["schemes"].values() if h["units"] > 1e-6]
-        inv = sum(h["invested"] for h in hold)
-        if inv <= 0:
-            continue
-        v = vmap[vid]
-        houses.append({
-            "villa_id": vid, "name": v.get("name") or "Villa",
-            "building": not _is_finished(inv, v.get("status")),
-            "since": min(g["dates"]) if g["dates"] else "",
-            "invested": round(inv, 2), "holdings": hold,
-        })
-    # finished villas first, each group oldest first — Villa 1 is the one bought first
-    houses.sort(key=lambda h: (h["building"], h["since"] or "9999"))
-    loose_h = [h for h in loose.values() if h["units"] > 1e-6]
-    return {"houses": houses[:_houses_max()], "loose": loose_h}
+    if not txns:
+        return None
+    from app import villa_alloc
+    r = villa_alloc.allocate(txns, villas, unit=_villa_unit(), max_houses=_houses_max(),
+                             villa_codes=_villa_scheme_codes(), client_code=client_code)
+    if not r["houses"]:
+        return None
+    return {"houses": r["houses"], "loose": [], "outside": r["outside"], "placements": r["placements"]}
 
 
 def _mapped_houses(client_code: str):
-    """{houses: [...], loose: [...]} from the admin's pins, or None when the admin
-    hasn't pinned any of this client's transactions to a villa yet.
+    """{houses: [...], outside: [...]} by the shared allocation rule, or None when
+    the client has no transactions yet (→ the invested-₹ fallback).
 
-    Each house = the transactions pinned to that villa, aggregated per scheme
-    (units, ₹ invested) with its first purchase date — so two villas bought at
-    different times carry their OWN units and value. `loose` = DigiVilla-fund
-    transactions not pinned to any villa yet. Memoised briefly (the admin can
-    re-pin at any time)."""
+    Each house carries its OWN per-scheme units and ₹ with its first purchase
+    date, so two villas bought at different times have different values.
+    `outside` = funds in no DigiVilla bucket (net worth only). Memoised briefly
+    (an upload or a re-pin shows within seconds)."""
     return _memo_swr(f"mhouses:{client_code}", 20, lambda: _mapped_houses_load(client_code))
 
 

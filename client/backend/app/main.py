@@ -51,6 +51,9 @@ def _prewarm_caches() -> None:
 
     threading.Thread(target=warm, daemon=True).start()
 
+# daily series (fund vs index) are a few hundred KB uncompressed — gzip them
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=2048)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -425,6 +428,15 @@ def get_my_estate(authorization: Optional[str] = Header(default=None)) -> dict:
     """This user's estate tiles. Empty for a brand-new account (all values zero)."""
     owner = _owner_or_401(authorization)
     return {"tiles": estate_svc.get_tiles(owner)}
+
+
+@app.get("/me/funds/moves")
+def get_my_fund_moves(authorization: Optional[str] = Header(default=None)) -> dict:
+    """How each fund moved today and against its own index, day by day — the
+    home screen's day-change sheet (see app/fund_moves.py for the shape)."""
+    owner = _owner_or_401(authorization)
+    from app import fund_moves
+    return fund_moves.fund_moves(owner)
 
 
 @app.get("/me/portfolio")

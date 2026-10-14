@@ -510,6 +510,22 @@ async def admin_upload_report(
         raise HTTPException(status_code=500, detail=f"Parse/upload failed: {e}")
 
 
+@app.get("/admin/reports/consistency")
+def admin_report_consistency(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Holdings vs transactions tie-out for every client (the system's own check)."""
+    _require_admin(authorization)
+    return reports_svc.holdings_consistency()
+
+
+@app.post("/admin/reports/rebuild-holdings")
+def admin_rebuild_holdings(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Repair: make every client's holdings equal the roll-up of their transactions."""
+    _require_admin(authorization)
+    out = reports_svc.rebuild_holdings()
+    out["consistency"] = reports_svc.holdings_consistency()
+    return out
+
+
 @app.get("/admin/reports/uploads")
 def admin_report_uploads(authorization: Optional[str] = Header(default=None)) -> list[dict]:
     _require_admin(authorization)
@@ -604,7 +620,7 @@ def admin_client_transactions(
 ) -> list[dict]:
     """The client's raw transactions, each with its assigned villa_id (or null)."""
     _require_admin(authorization)
-    return reports_svc.list_transactions(code)
+    return reports_svc.list_transactions_placed(code)
 
 
 @app.get("/admin/reports/clients/{code}/villas")

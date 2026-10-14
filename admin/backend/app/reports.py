@@ -144,7 +144,7 @@ def parse_transactions_raw(content: bytes) -> list[dict]:
     text = content.decode("utf-8-sig", errors="replace")
     reader = csv.DictReader(io.StringIO(text))
     out: list[dict] = []
-    seen: set[str] = set()
+    seen: dict[str, tuple] = {}
     for row in reader:
         code = (row.get("Client Code") or "").strip()
         scheme = (row.get("Scheme Name") or "").strip()
@@ -154,9 +154,18 @@ def parse_transactions_raw(content: bytes) -> list[dict]:
         # fall back to a synthetic id when a line has no order id, so nothing is lost
         if not oid:
             oid = f"{code}:{scheme}:{(row.get('Folio No') or '').strip()}:{(row.get('NAV Date') or '').strip()}:{(row.get('Amount') or '').strip()}"
+        # one AMC order id normally = one line; when a file repeats an id for a
+        # different line (another scheme/folio), keep it under a stable suffix
+        # instead of silently dropping money — an exact repeat is skipped
+        sig = (scheme, (row.get("Folio No") or "").strip(), (row.get("Amount") or "").strip())
         if oid in seen:
-            continue
-        seen.add(oid)
+            if seen[oid] == sig:
+                continue
+            n = 2
+            while f"{oid}#{n}" in seen:
+                n += 1
+            oid = f"{oid}#{n}"
+        seen[oid] = sig
         out.append({
             "order_id": oid,
             "client_code": code,
@@ -533,13 +542,24 @@ def _store_file(report_date: str, report_type: str, filename: str, content: byte
 
 def upload_report(report_type: str, filename: str, content: bytes,
                   report_date: str | None = None) -> dict:
-    """Store the file as proof, parse it, and replace that day's data."""
+    """Store the file as proof, parse it, and fold it into the record.
+
+    A Transaction Report ADDS to what is already known: every line is keyed by
+    its AMC order id, so a line seen before updates in place and nothing is ever
+    counted twice. Holdings are then rebuilt from the WHOLE transaction history
+    (never from one day's file), so a client's invested total only ever grows
+    with new money. The result says how many lines were new vs already known."""
     if report_type not in ("user", "transaction"):
         raise ValueError("report_type must be 'user' or 'transaction'")
 
+    stats: dict = {}
     if report_type == "transaction":
-        rows, parsed_date = parse_transaction_csv(content)
+        _, parsed_date = parse_transaction_csv(content)
         report_date = report_date or parsed_date or datetime.now().strftime("%Y-%m-%d")
+        raw_txns = parse_transactions_raw(content)
+        if not raw_txns:
+            raise ValueError("No transactions found — is this the Transaction Report (Client Code, Order Id, Scheme Name, Units, Amount…)?")
+        rows = raw_txns
     else:
         rows = parse_user_report(content, filename)
         report_date = report_date or datetime.now().strftime("%Y-%m-%d")
@@ -549,20 +569,14 @@ def upload_report(report_type: str, filename: str, content: bytes,
     if report_type == "user":
         _save_clients(rows, report_date)
     else:
-        raw_txns = parse_transactions_raw(content)
-        # resolve every distinct scheme ONCE (parallel + cached), then reuse the
-        # result for both the holdings roll-up and the raw transaction rows.
-        codes = resolve_scheme_codes(
-            [r["scheme_name"] for r in rows] + [r["scheme_name"] for r in raw_txns])
-        _save_holdings(rows, report_date, codes)
-        # also persist the RAW per-transaction rows (for manual villa mapping),
-        # preserving any villa assignments already made (upsert by order_id).
-        # A hand-added purchase that now appears in the report is absorbed:
-        # the report's line takes over and keeps the villa it was pinned to.
-        _save_transactions(raw_txns, report_date, codes)
-        # holdings were rebuilt from the CSV — add back hand-added purchases the
-        # report doesn't contain yet, so the client's total stays whole
-        _reapply_manual_holdings()
+        codes = resolve_scheme_codes([r["scheme_name"] for r in raw_txns])
+        # 1 · the per-line record (upsert by order id: new lines added, known
+        #     lines refreshed, villa pins kept, hand-added purchases absorbed)
+        stats = _save_transactions(raw_txns, report_date, codes)
+        # 2 · holdings = roll-up of EVERY transaction of the clients in this file
+        touched = sorted({r["client_code"] for r in raw_txns})
+        stats["holdings"] = rebuild_holdings(touched)
+        stats["clients"] = touched
 
     meta = {
         "report_date": report_date, "report_type": report_type,
@@ -571,7 +585,7 @@ def upload_report(report_type: str, filename: str, content: bytes,
         "status": "parsed", "uploaded_at": _now_iso(),
     }
     _record_upload(meta)
-    return meta
+    return {**meta, **stats}
 
 
 def _record_upload(meta: dict) -> None:
@@ -608,39 +622,108 @@ def _save_clients(rows: list[dict], report_date: str) -> None:
     _save_local(store)
 
 
-def _save_holdings(rows: list[dict], report_date: str, codes: dict[str, int | None] | None = None) -> None:
-    """Replace ALL holdings with the latest transaction report (one per day).
-
-    Scheme codes are resolved in one batch up front (pass `codes` to reuse a
-    resolution already done by the caller), and the rows are written in one bulk
-    upsert instead of one round-trip per row."""
-    if codes is None:
-        codes = resolve_scheme_codes([r["scheme_name"] for r in rows])
-    enriched = []
-    for r in rows:
-        enriched.append({
-            "client_code": r["client_code"], "scheme_name": r["scheme_name"],
-            "scheme_code": codes.get(r["scheme_name"]), "folio_no": r.get("folio_no", ""),
-            "units": round(r["units"], 4), "invested": round(r["invested"], 2),
-            "last_nav": r.get("last_nav"), "report_date": report_date,
-            "updated_at": _now_iso(),
+def _holdings_from_txns(txns: list[dict]) -> list[dict]:
+    """Roll transactions up into holdings rows: one per (client, scheme, folio),
+    units and ₹ signed (redemptions take away), last NAV = the latest line's."""
+    agg: dict[tuple, dict] = {}
+    for t in sorted(txns, key=lambda t: (str(t.get("txn_date") or ""), str(t.get("order_id") or ""))):
+        key = (t["client_code"], t["scheme_name"], t.get("folio_no") or "")
+        e = agg.setdefault(key, {
+            "client_code": t["client_code"], "scheme_name": t["scheme_name"],
+            "scheme_code": t.get("scheme_code"), "folio_no": t.get("folio_no") or "",
+            "units": 0.0, "invested": 0.0, "last_nav": None, "report_date": None,
         })
+        e["units"] += _signed(t, "units")
+        e["invested"] += _signed(t, "amount")
+        if t.get("scheme_code") and not e["scheme_code"]:
+            e["scheme_code"] = t["scheme_code"]
+        if _to_float(t.get("nav")):
+            e["last_nav"] = _to_float(t.get("nav"))
+        rd = str(t.get("report_date") or t.get("txn_date") or "")[:10] or None
+        if rd and (not e["report_date"] or rd > e["report_date"]):
+            e["report_date"] = rd
+    out = []
+    for e in agg.values():
+        e["units"] = round(e["units"], 4)
+        e["invested"] = round(e["invested"], 2)
+        if e["units"] <= 1e-4 and e["invested"] <= 1:
+            continue                                   # fully redeemed → no holding
+        e["updated_at"] = _now_iso()
+        out.append(e)
+    return out
+
+
+def rebuild_holdings(client_codes: list[str] | None = None) -> dict:
+    """Make `client_holdings` equal the roll-up of `client_transactions` — for
+    the given clients, or for every client that has transactions.
+
+    This is the ONLY writer of holdings. It is idempotent and safe to run any
+    time (after an upload, a hand-added purchase, or as a repair): rows that
+    the transactions no longer support are removed, the rest upserted on the
+    table's (client, scheme, folio) key. A client with holdings but NO
+    transactions at all is left untouched and reported, never wiped."""
     if _use_supabase():
-        try:
-            # every client's holdings come from the report — except the demo's
-            _sb().table("client_holdings").delete().neq("client_code", DEMO_CODE).execute()
-            if enriched:
-                _sb().table("client_holdings").upsert(
-                    enriched, on_conflict="client_code,scheme_name,folio_no").execute()
-            return
-        except Exception:
-            pass
+        txns = _all_rows("client_transactions", "order_id,client_code,txn_date,scheme_name,scheme_code,folio_no,kind,amount,nav,units,report_date")
+        if client_codes is not None:
+            want = set(client_codes)
+            txns = [t for t in txns if t["client_code"] in want]
+        codes = {t["client_code"] for t in txns}
+        if client_codes is not None:
+            codes |= set(client_codes)
+        rows = _holdings_from_txns(txns)
+        removed = 0
+        for code in codes:
+            have = _sb().table("client_holdings").select("id,scheme_name,folio_no").eq("client_code", code).execute().data or []
+            mine = {(r["scheme_name"], r["folio_no"]) for r in rows if r["client_code"] == code}
+            if not mine:
+                continue                               # no transactions → leave as is (reported below)
+            stale = [h["id"] for h in have if (h["scheme_name"], h.get("folio_no") or "") not in mine]
+            if stale:
+                _sb().table("client_holdings").delete().in_("id", stale).execute()
+                removed += len(stale)
+        if rows:
+            _sb().table("client_holdings").upsert(rows, on_conflict="client_code,scheme_name,folio_no").execute()
+        untouched = sorted(c for c in codes if not any(r["client_code"] == c for r in rows))
+        return {"clients": len(codes), "rows": len(rows), "removed": removed, "no_transactions": untouched}
     store = _load_local()
-    store["holdings"] = enriched
+    txns = store.get("transactions", [])
+    if client_codes is not None:
+        want = set(client_codes)
+        keep = [h for h in store.get("holdings", []) if h["client_code"] not in want]
+        rows = _holdings_from_txns([t for t in txns if t["client_code"] in want])
+        store["holdings"] = keep + rows
+    else:
+        rows = _holdings_from_txns(txns)
+        store["holdings"] = rows
     _save_local(store)
+    return {"clients": len({r["client_code"] for r in rows}), "rows": len(rows), "removed": 0, "no_transactions": []}
 
 
-def _save_transactions(rows: list[dict], report_date: str, codes: dict[str, int | None] | None = None) -> None:
+def holdings_consistency() -> dict:
+    """Does every client's holdings total equal their transactions total? The
+    system's own tie-out — the admin home shows it and the audit page lists it."""
+    txns = _all_rows("client_transactions", "client_code,kind,amount,units") if _use_supabase() else _load_local().get("transactions", [])
+    holds = _all_rows("client_holdings", "client_code,invested,units") if _use_supabase() else _load_local().get("holdings", [])
+    names = {c["client_code"]: (c.get("name") or "").strip() for c in _all_clients()}
+    per: dict[str, dict] = {}
+    for t in txns:
+        c = per.setdefault(t["client_code"], {"txn_amount": 0.0, "txn_units": 0.0, "hold_amount": 0.0, "hold_units": 0.0, "txns": 0})
+        c["txn_amount"] += _signed(t, "amount"); c["txn_units"] += _signed(t, "units"); c["txns"] += 1
+    for h in holds:
+        c = per.setdefault(h["client_code"], {"txn_amount": 0.0, "txn_units": 0.0, "hold_amount": 0.0, "hold_units": 0.0, "txns": 0})
+        c["hold_amount"] += _to_float(h.get("invested")); c["hold_units"] += _to_float(h.get("units"))
+    clients = []
+    for code, c in per.items():
+        ok = abs(c["txn_amount"] - c["hold_amount"]) <= 1.0 and abs(c["txn_units"] - c["hold_units"]) <= 0.01
+        clients.append({"client_code": code, "name": names.get(code) or code, "ok": ok,
+                        "transactions": round(c["txn_amount"], 2), "holdings": round(c["hold_amount"], 2),
+                        "diff": round(c["hold_amount"] - c["txn_amount"], 2), "txn_count": c["txns"]})
+    clients.sort(key=lambda c: (c["ok"], -abs(c["diff"])))
+    return {"as_of": _now_iso(), "ok": all(c["ok"] for c in clients),
+            "clients": clients, "off": [c for c in clients if not c["ok"]]}
+
+
+def _save_transactions(rows: list[dict], report_date: str, codes: dict[str, int | None] | None = None) -> dict:
     """Upsert raw transactions by order_id — NEVER delete-all, and NEVER clobber
     an existing manual `villa_id`. New txns are added; re-uploaded ones update
     their facts (units/nav) but keep whatever villa the admin assigned.
@@ -649,11 +732,11 @@ def _save_transactions(rows: list[dict], report_date: str, codes: dict[str, int 
     query and everything is written in one bulk upsert that carries each row's
     preserved villa_id, instead of a round-trip per transaction."""
     if not rows:
-        return
+        return {"added": 0, "updated": 0, "absorbed": 0}
     if codes is None:
         codes = resolve_scheme_codes([r["scheme_name"] for r in rows])
     if _use_supabase():
-        try:
+        if True:
             # preserved villa_id per existing order_id (one query per client code)
             preserved: dict[str, str | None] = {}
             for code in {r["client_code"] for r in rows}:
@@ -693,11 +776,11 @@ def _save_transactions(rows: list[dict], report_date: str, codes: dict[str, int 
                     recs, on_conflict="order_id").execute()
             if absorbed:
                 _sb().table("client_transactions").delete().in_("order_id", list(absorbed)).execute()
-            return
-        except Exception:
-            pass
+            known = sum(1 for r in rows if r["order_id"] in preserved)
+            return {"added": len(rows) - known, "updated": known, "absorbed": len(absorbed)}
     store = _load_local()
     txns = {t["order_id"]: t for t in store.get("transactions", [])}
+    known = sum(1 for r in rows if r["order_id"] in txns)
     for r in rows:
         prev = txns.get(r["order_id"], {})
         txns[r["order_id"]] = {**r, "report_date": report_date,
@@ -705,6 +788,7 @@ def _save_transactions(rows: list[dict], report_date: str, codes: dict[str, int 
                                "villa_id": prev.get("villa_id")}
     store["transactions"] = list(txns.values())
     _save_local(store)
+    return {"added": len(rows) - known, "updated": known, "absorbed": 0}
 
 
 # ============================================================================
@@ -1034,6 +1118,49 @@ def villas_live() -> list[dict]:
 # MANUAL TRANSACTION → VILLA MAPPING (admin)
 # ============================================================================
 VILLA_UNIT = 500_000.0   # a full villa = ₹5L invested (a UI hint, not enforced)
+
+
+def _villa_unit() -> float:
+    try:
+        from app.calc_settings import calc_config
+        return float(calc_config.estate()["villa_cost"])
+    except Exception:
+        return VILLA_UNIT
+
+
+def _houses_max() -> int:
+    try:
+        from app.calc_settings import calc_config
+        return int(calc_config.estate()["plots"])
+    except Exception:
+        return 9
+
+
+_VC: dict = {"at": 0.0, "codes": set()}
+
+
+def _villa_codes() -> set:
+    """Every fund in any DigiVilla bucket (memo 5 min) — the funds that build villas."""
+    if _time.time() - _VC["at"] < 300 and _VC["codes"]:
+        return _VC["codes"]
+    try:
+        rows = _all_rows("villa_bucket_funds", "scheme_code") if _use_supabase() else _load_local().get("bucket_funds", [])
+        _VC.update(at=_time.time(), codes={int(r["scheme_code"]) for r in rows if r.get("scheme_code")})
+    except Exception:
+        pass
+    return _VC["codes"]
+
+
+def allocate_client(client_code: str, *, villas: list[dict] | None = None, txns: list[dict] | None = None) -> dict:
+    """The client's villas by the shared rule (client/backend/app/villa_alloc.py)."""
+    from app.shared_alloc import villa_alloc
+    if villas is None:
+        villas = (_sb().table("client_villas").select("*").eq("client_code", client_code).execute().data or []) if _use_supabase() \
+            else [v for v in _load_local().get("client_villas", []) if v.get("client_code") == client_code]
+    if txns is None:
+        txns = list_transactions(client_code)
+    return villa_alloc.allocate(txns, villas, unit=_villa_unit(), max_houses=_houses_max(),
+                                villa_codes=_villa_codes(), client_code=client_code)
 # The public demo account (client app → "Explore the demo", phone 9999999999).
 # Its sample portfolio is seeded by client/backend/scripts/seed_demo.py; uploads
 # never touch it and it is left out of the admin's totals and alerts.
@@ -1052,6 +1179,23 @@ def list_transactions(client_code: str) -> list[dict]:
     return sorted(
         [t for t in _load_local().get("transactions", []) if t.get("client_code") == client_code],
         key=lambda t: t.get("txn_date") or "", reverse=True)
+
+
+def list_transactions_placed(client_code: str) -> list[dict]:
+    """Transactions with `placements`: where each line's money sits by the shared
+    rule — [{villa_id, position, amount, fraction}] (a split line lists several),
+    or [] for a fund outside every DigiVilla bucket."""
+    txns = list_transactions(client_code)
+    try:
+        r = allocate_client(client_code, txns=txns)
+        pl = r["placements"]
+        outside = {o["scheme_code"] for o in r["outside"]}
+    except Exception:
+        pl, outside = {}, set()
+    for t in txns:
+        t["placements"] = pl.get(t["order_id"], [])
+        t["outside"] = bool(t.get("scheme_code") in outside and not t.get("villa_id"))
+    return txns
 
 
 def list_client_villas(client_code: str, *, villas: list[dict] | None = None,
@@ -1089,12 +1233,10 @@ def list_client_villas(client_code: str, *, villas: list[dict] | None = None,
                         key=lambda v: v.get("sort_order", 0))
         txns = list_transactions(client_code)
 
-    by_villa: dict[str, list] = {}
-    for t in txns:
-        if t.get("villa_id"):
-            by_villa.setdefault(t["villa_id"], []).append(t)
-    # today's NAV for every scheme pinned to any villa (cached, in parallel)
-    codes = {t.get("scheme_code") for ts in by_villa.values() for t in ts if t.get("scheme_code")}
+    r = allocate_client(client_code, villas=villas, txns=txns)
+    houses = r["houses"]
+    # today's NAV for every scheme in any villa (cached, in parallel)
+    codes = {l["scheme_code"] for h in houses for l in h["holdings"] if l.get("scheme_code")}
     prime_navs(codes)
     navs: dict = {c: live_nav(c)[0] for c in codes}
     if vtypes is None:
@@ -1103,36 +1245,44 @@ def list_client_villas(client_code: str, *, villas: list[dict] | None = None,
             vtypes = get_types()
         except Exception:
             vtypes = {}
+    rows_by_id = {v["id"]: v for v in villas}
+    pinned_count: dict[str, int] = {}
+    for t in txns:
+        if t.get("villa_id"):
+            pinned_count[t["villa_id"]] = pinned_count.get(t["villa_id"], 0) + 1
     out = []
-    for v in villas:
-        items = by_villa.get(v["id"], [])
-        mapped = round(sum(_signed(t, "amount") for t in items), 2)
-        value = round(sum(_signed(t, "units") * navs[t["scheme_code"]] if navs.get(t.get("scheme_code"))
-                          else _signed(t, "amount") for t in items), 2)
-        dates = sorted(str(t["txn_date"])[:10] for t in items if t.get("txn_date"))
-        finished = v.get("status") == "constructed" or mapped >= VILLA_UNIT * 0.99
+    seen = set()
+    for h in houses:
+        v = rows_by_id.get(h["villa_id"], {})
+        seen.add(h["villa_id"])
+        mapped = h["invested"]
+        value = round(sum(l["units"] * navs[l["scheme_code"]] if navs.get(l.get("scheme_code")) else l["invested"]
+                          for l in h["holdings"]), 2)
         out.append({
-            **v,
-            "villa_type": vtypes.get(v["id"]),          # conservative / balanced / aggressive (admin-set)
+            "id": h["villa_id"], "client_code": client_code, "name": h["name"],
+            "status": v.get("status") or h["status"], "coin": bool(v.get("coin")) or h["coin"],
+            "sort_order": v.get("sort_order", h["order"]), "created_at": v.get("created_at"), "updated_at": v.get("updated_at"),
+            "auto": h["auto"],                              # made by the rule, not an admin row
+            "villa_type": vtypes.get(h["villa_id"]),        # conservative / balanced / aggressive (admin-set)
             "mapped_total": mapped,
-            "txn_count": len(items),
-            # what the client app shows for this villa: its own transactions at today's NAV
+            "pinned_count": pinned_count.get(h["villa_id"], 0),
+            "txn_count": len(h["holdings"]),
+            "funds": h["holdings"],
             "value": value,
             "gain": round(value - mapped, 2),
-            "since": dates[0] if dates else "",
-            "finished": finished,
-            "hint": {
-                "unit": VILLA_UNIT,
-                "progress": round(min(mapped / VILLA_UNIT, 1.0) * 100, 1) if VILLA_UNIT else 0,
-                "suggest_constructed": mapped >= VILLA_UNIT * 0.99,
-            },
+            "since": h["since"],
+            "finished": not h["building"],
+            "position": h["position"],
+            "hint": {"unit": r["unit"], "progress": h["pct"], "suggest_constructed": not h["building"]},
         })
-    # the client app's order: finished villas first, each group oldest first
-    # (empty villas last) → "Villa 1" here is "Villa 1" on the client's phone
-    order = sorted(out, key=lambda v: (v["txn_count"] == 0, not v["finished"], v["since"] or "9999"))
-    for i, v in enumerate(order):
-        v["position"] = i if v["txn_count"] else None
-    return order
+    # admin rows the rule didn't need (no money in them) — still listed, so they can be deleted
+    for v in villas:
+        if v["id"] in seen:
+            continue
+        out.append({**v, "auto": False, "villa_type": vtypes.get(v["id"]), "mapped_total": 0.0, "pinned_count": 0,
+                    "txn_count": 0, "funds": [], "value": 0.0, "gain": 0.0, "since": "", "finished": False,
+                    "position": None, "hint": {"unit": r["unit"], "progress": 0, "suggest_constructed": False}})
+    return out
 
 
 def create_client_villa(client_code: str, name: str) -> dict:
@@ -1239,13 +1389,14 @@ def _all_rows(table: str, columns: str) -> list[dict]:
 
 
 def mapping_overview() -> dict:
-    """Portfolio-wide mapping health for the admin home screen.
+    """Portfolio-wide placement health for the admin home screen.
 
-    A transaction is MAPPED when its villa_id points at a villa that still
-    exists; anything else (no villa_id, or a dangling one) is UNMAPPED. Returns
-    the totals, plus every client that has unmapped transactions with those
-    transactions listed (newest first), worst client first."""
-    cols = "order_id,client_code,txn_date,scheme_name,kind,amount,villa_id"
+    Villas are placed automatically by the shared rule, so a transaction needs
+    the admin only when its fund is OUTSIDE every DigiVilla bucket and it isn't
+    pinned by hand (the rule can't tell which villa it belongs to). Those are the
+    "unmapped" lines here: totals, the clients that have them (worst first) with
+    the lines listed, plus per-client counts for the row badges."""
+    cols = "order_id,client_code,txn_date,scheme_name,scheme_code,kind,amount,villa_id"
     txns: list[dict] | None = None
     villas: list[dict] = []
     if _use_supabase():
@@ -1259,11 +1410,12 @@ def mapping_overview() -> dict:
         txns = list(store.get("transactions", []))
         villas = list(store.get("client_villas", []))
 
-    villa_name = {v["id"]: v.get("name") or "Villa" for v in villas}
+    villa_ids = {v["id"] for v in villas}
     villas_per_client: dict[str, int] = {}
     for v in villas:
         villas_per_client[v.get("client_code")] = villas_per_client.get(v.get("client_code"), 0) + 1
     names = {c["client_code"]: (c.get("name") or "").strip() for c in _all_clients()}
+    codes = _villa_codes()
 
     per: dict[str, dict] = {}
     for t in txns:
@@ -1276,7 +1428,8 @@ def mapping_overview() -> dict:
             "total": 0, "mapped": 0, "unmapped": 0, "unmapped_amount": 0.0, "txns": [],
         })
         c["total"] += 1
-        if t.get("villa_id") and t["villa_id"] in villa_name:
+        placed = (t.get("villa_id") in villa_ids) or (t.get("scheme_code") in codes)
+        if placed:
             c["mapped"] += 1
             continue
         c["unmapped"] += 1
@@ -1297,6 +1450,10 @@ def mapping_overview() -> dict:
 
     total = sum(c["total"] for c in per.values())
     unmapped = sum(c["unmapped"] for c in per.values())
+    try:
+        tie = holdings_consistency()
+    except Exception:
+        tie = {"ok": True, "off": []}
     return {
         "as_of": _now_iso(),
         "total": total, "mapped": total - unmapped, "unmapped": unmapped,
@@ -1306,6 +1463,8 @@ def mapping_overview() -> dict:
         # per-client counts for every client with transactions (row badges)
         "by_client": {code: {"total": c["total"], "mapped": c["mapped"], "unmapped": c["unmapped"]}
                       for code, c in per.items()},
+        # the system's own tie-out: holdings == transactions, per client
+        "consistency": {"ok": tie["ok"], "off": tie["off"]},
     }
 
 
@@ -1439,7 +1598,7 @@ def add_purchase(client_code: str, day: str, amount: float, kind: str,
         "units": l["units"], "villa_id": villa_id, "report_date": day, "updated_at": now,
     } for l in lines]
     _sb().table("client_transactions").insert(recs).execute()
-    _apply_holdings(client_code, recs, +1)
+    rebuild_holdings([client_code])
     return {"villa_id": villa_id, "transactions": recs}
 
 
@@ -1451,41 +1610,7 @@ def delete_manual_transaction(order_id: str) -> bool:
     if not got:
         return False
     _sb().table("client_transactions").delete().eq("order_id", order_id).execute()
-    _apply_holdings(got[0]["client_code"], got, -1)
+    rebuild_holdings([got[0]["client_code"]])
     return True
 
 
-def _apply_holdings(client_code: str, txns: list[dict], sign: int) -> None:
-    """Add (+1) or remove (-1) hand-added lines from client_holdings, by fund."""
-    rows = _sb().table("client_holdings").select("*").eq("client_code", client_code).execute().data or []
-    for t in txns:
-        units, amt = sign * _to_float(t.get("units")), sign * _to_float(t.get("amount"))
-        row = next((h for h in rows if h.get("scheme_code") == t.get("scheme_code")), None)
-        if row:
-            row["units"] = round(_to_float(row.get("units")) + units, 4)
-            row["invested"] = round(_to_float(row.get("invested")) + amt, 2)
-            _sb().table("client_holdings").update(
-                {"units": row["units"], "invested": row["invested"], "updated_at": _now_iso()}).eq("id", row["id"]).execute()
-        elif sign > 0:
-            new = {"client_code": client_code, "scheme_name": t["scheme_name"], "scheme_code": t.get("scheme_code"),
-                   "folio_no": "MANUAL", "units": round(units, 4), "invested": round(amt, 2),
-                   "last_nav": t.get("nav"), "report_date": t.get("txn_date"), "updated_at": _now_iso()}
-            ins = _sb().table("client_holdings").insert(new).execute().data or [new]
-            rows.append(ins[0])
-
-
-def _reapply_manual_holdings() -> None:
-    """After an upload rebuilt every client's holdings from the CSV, put back the
-    hand-added purchases the report doesn't contain yet."""
-    if not _use_supabase():
-        return
-    try:
-        manual = _all_rows("client_transactions", "*")
-        manual = [t for t in manual if str(t.get("order_id", "")).startswith("MAN-")]
-        by_client: dict[str, list] = {}
-        for t in manual:
-            by_client.setdefault(t["client_code"], []).append(t)
-        for code, ts in by_client.items():
-            _apply_holdings(code, ts, +1)
-    except Exception:
-        pass

@@ -278,6 +278,25 @@ export interface AllocRow {
   prev_date?: string | null;   // ISO date of `prev_nav`
 }
 
+/** One fund in the day-change sheet: today's move next to its index's, and the
+ *  daily NAV / index series (aligned to FundMoves.days from `from`). */
+export interface FundMove {
+  scheme_code: number; name: string; short: string; sleeve: string;
+  units: number; value: number; invested: number; weight: number;
+  since: string | null;
+  nav: number | null; prev_nav: number | null; nav_date: string | null; prev_date: string | null;
+  day_change: number | null; day_pct: number | null;
+  bench: { key: string; name: string; day_pct: number | null; day_date: string | null } | null;
+  from: number; nav_series: (number | null)[]; index_series: (number | null)[];
+}
+export interface FundMoves {
+  nav_date: string | null; prev_date: string | null;
+  total: { change: number | null; pct: number | null; value: number };
+  index_as_of: string | null;
+  days: string[];
+  funds: FundMove[];
+}
+
 /** The portfolio's move between the last two published NAVs (Σ units × ΔNAV). */
 export interface DayChange {
   change: number;              // ₹, signed
@@ -549,6 +568,21 @@ export class EstateService {
   fundNav(schemeCode: number): import('rxjs').Observable<FundNav> {
     return this.http.get<FundNav>(`${environment.apiUrl}/dashboard/funds/${schemeCode}/nav`);
   }
+
+  /** How each fund moved today and against its own index, day by day (the
+   *  home day-change sheet). Cached for the session; `force` re-pulls. */
+  readonly moves = signal<FundMoves | null>(null);
+  private movesAt = 0;
+  loadMoves(force = false): void {
+    if (!force && this.moves() && Date.now() - this.movesAt < 15 * 60_000) return;
+    if (this.movesBusy) return;
+    this.movesBusy = true;
+    this.http.get<FundMoves>(`${environment.apiUrl}/me/funds/moves`).subscribe({
+      next: (m) => { this.moves.set(m); this.movesAt = Date.now(); this.movesBusy = false; },
+      error: () => { this.movesBusy = false; },
+    });
+  }
+  private movesBusy = false;
 
   /** Pull this user's estate + real net worth from the backend. */
   syncFromServer(): void {

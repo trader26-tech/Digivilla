@@ -1156,3 +1156,6 @@ $un: #b4531f;                       /* "not mapped" — a warning orange, used w
   .home-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 }
 @media (max-width: 760px) { .home > .home-main { height: auto; min-height: 0; } .wrap.wrap-home { padding: 0.75rem 0.75rem 2rem; } .ov-kpis { grid-template-columns: 1fr; } }
+
+/* a villa the rule placed (no admin row yet) */
+.vv-chip.auto { background: #eef2ff; color: #4338ca; }

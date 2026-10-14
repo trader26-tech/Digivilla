@@ -1,0 +1,145 @@
+<!-- ============ HOW YOUR FUNDS MOVED — today · vs index ============ -->
+<div class="scrim mix-scrim fm-scrim" [class.open]="isOpen()" (click)="close()">
+  @if (isOpen()) {
+    <div class="sheet mix-sheet fm-sheet" [class.down]="down()" role="dialog" aria-modal="true"
+         aria-labelledby="fmTitle" (click)="$event.stopPropagation()">
+      <div class="pad">
+        <div class="head">
+          <span class="h" id="fmTitle">How your funds moved</span>
+          <button class="close" (click)="close()">close ✕</button>
+        </div>
+
+        <!-- the two views -->
+        <div class="fm-tabs" role="tablist" aria-label="View">
+          <button role="tab" [attr.aria-selected]="view() === 'today'" [class.on]="view() === 'today'" (click)="setView('today')">Today</button>
+          <button role="tab" [attr.aria-selected]="view() === 'index'" [class.on]="view() === 'index'" (click)="setView('index')">Vs its index</button>
+          <i class="fm-ink" [class.r]="view() === 'index'" aria-hidden="true"></i>
+        </div>
+
+        @if (!m()) {
+          <!-- quiet skeleton until the one call lands -->
+          <div class="fm-skel" aria-hidden="true">
+            <span class="sk w40"></span><span class="sk w70 tall"></span>
+            <span class="sk w90"></span><span class="sk w90"></span><span class="sk w90"></span><span class="sk w90"></span>
+          </div>
+        } @else if (view() === 'today') {
+          <!-- ───────── VIEW 1 · TODAY ───────── -->
+          @if (m(); as d) {
+            <p class="mx-sub">NAV of <b>{{ dayShort(d.nav_date) }}</b>@if (d.prev_date) {<span> vs {{ dayShort(d.prev_date) }}</span>}</p>
+            <div class="fm-hero">
+              <span class="fm-amt">{{ signedInr(d.total.change) }}</span>
+              <span class="fm-pct">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="down() ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+                {{ signedPct(d.total.pct) }}
+              </span>
+            </div>
+            @if (story()) { <p class="fm-story">{{ story() }}</p> }
+
+            <div class="fm-legend" aria-hidden="true">
+              <span><i class="f"></i>Your fund</span><span><i class="b"></i>Its index, same day</span>
+            </div>
+
+            <ul class="fm-rows">
+              @for (r of todayRows(); track r.key; let i = $index) {
+                <li class="fm-row" [style.--i]="i" [style.--c]="r.color" [class.neg]="(r.change ?? 0) < 0">
+                  <div class="fm-top">
+                    <i class="fm-dot" aria-hidden="true"></i>
+                    <span class="fm-nm">{{ r.name }}</span>
+                    <span class="fm-rs">{{ signedInr(r.change) }}</span>
+                  </div>
+                  <!-- two bars either side of one centre line, on one scale -->
+                  <div class="fm-trk" aria-hidden="true">
+                    <span class="fm-bar f" [class.l]="(r.pct ?? 0) < 0" [style.width.%]="r.wF"></span>
+                    <em class="fm-v f" [class.l]="(r.pct ?? 0) < 0" [style.--w.%]="r.wF">{{ signedPct(r.pct, 2) }}</em>
+                  </div>
+                  <div class="fm-trk b" aria-hidden="true">
+                    @if (r.benchPct != null) {
+                      <span class="fm-bar b" [class.l]="r.benchPct < 0" [style.width.%]="r.wB"></span>
+                      <em class="fm-v b" [class.l]="r.benchPct < 0" [style.--w.%]="r.wB">{{ signedPct(r.benchPct, 2) }}</em>
+                    } @else if (r.benchPending) {
+                      <em class="fm-v b wait">index close not in yet</em>
+                    }
+                  </div>
+                  <div class="fm-meta">
+                    <span>{{ r.bench || sleeveName(r.sleeve) }}@if (r.late) { · {{ r.when }} NAV}</span>
+                    @if (r.nav && r.prev) { <span class="fm-nav">NAV {{ r.prev | number:'1.2-4' }} → {{ r.nav | number:'1.2-4' }}</span> }
+                  </div>
+                </li>
+              }
+            </ul>
+            <p class="fine-note">Your units × the change in each fund’s NAV between its last two published days, next to the index each fund tracks. NAVs publish once a day after the market closes — this is the market’s move, not money you added or took out.</p>
+          }
+        } @else {
+          <!-- ───────── VIEW 2 · VS ITS INDEX ───────── -->
+          @if (m(); as d) {
+            <div class="fm-chips" role="tablist" aria-label="Fund">
+              @for (f of d.funds; track f.scheme_code) {
+                <button role="tab" [attr.aria-selected]="fund()?.scheme_code === f.scheme_code"
+                        [class.on]="fund()?.scheme_code === f.scheme_code" [style.--c]="color(f.sleeve)" (click)="setPick(f.scheme_code)">
+                  <i aria-hidden="true"></i>{{ f.short }}
+                </button>
+              }
+            </div>
+
+            @if (fund(); as f) {
+              <div class="fm-wins" role="radiogroup" aria-label="Period">
+                @for (w of wins; track w.key) {
+                  <button role="radio" [attr.aria-checked]="win() === w.key" [class.on]="win() === w.key" [disabled]="!winOk(w.key)" (click)="setWin(w.key)">{{ w.label }}</button>
+                }
+              </div>
+
+              @if (line(); as l) {
+                @if (read(); as r) {
+                  <div class="fm-read" [class.live]="r.scrubbing">
+                    <div><small>{{ f.short }}</small><b class="f" [class.neg]="r.fundPct < 0">{{ signedPct(r.fundPct) }}</b></div>
+                    <div><small>{{ f.bench?.name || 'Index' }}</small><b class="b">{{ r.indexPct == null ? '—' : signedPct(r.indexPct) }}</b></div>
+                    <div><small>{{ r.gap == null ? '' : (r.gap >= 0 ? 'Ahead by' : 'Behind by') }}</small>
+                      <b class="g" [class.neg]="(r.gap ?? 0) < 0">{{ r.gap == null ? '' : (r.gap >= 0 ? '+' : '−') + (r.gap < 0 ? -r.gap : r.gap).toFixed((r.gap < 0 ? -r.gap : r.gap) < 1 ? 2 : 1) + ' pts' }}</b></div>
+                  </div>
+                  <p class="fm-when">{{ r.scrubbing ? dateShort(r.date) : 'From ' + dateShort(l.start) + ' to ' + dateShort(l.end) }} · both start at 100</p>
+                }
+
+                <svg #chart class="fm-chart" viewBox="0 0 320 150" preserveAspectRatio="none" [style.--c]="color(f.sleeve)"
+                     (pointerdown)="onScrub($event, chart)" (pointermove)="$event.buttons ? onScrub($event, chart) : null"
+                     (pointerup)="endScrub()" (pointercancel)="endScrub()" (pointerleave)="endScrub()" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="fmFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="var(--c)" stop-opacity=".28"/><stop offset="1" stop-color="var(--c)" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <line class="fm-base" x1="0" x2="320" [attr.y1]="l.base" [attr.y2]="l.base"/>
+                  <path class="fm-area" [attr.d]="l.area" fill="url(#fmFill)"/>
+                  <path class="fm-idx" [attr.d]="l.index" vector-effect="non-scaling-stroke"/>
+                  <path class="fm-fund" [attr.d]="l.fund" vector-effect="non-scaling-stroke"/>
+                  @if (read(); as r) {
+                    @if (r.scrubbing) { <line class="fm-cursor" [attr.x1]="r.x" [attr.x2]="r.x" y1="0" y2="150" vector-effect="non-scaling-stroke"/> }
+                  }
+                </svg>
+                <div class="fm-axis"><span>{{ dateShort(l.start) }}</span><span>100 = {{ dateShort(l.start, false) }}</span><span>{{ dateShort(l.end) }}</span></div>
+                <div class="fm-key"><span><i class="f" [style.background]="color(f.sleeve)"></i>{{ f.short }}</span><span><i class="b"></i>{{ f.bench?.name || 'Index' }}</span></div>
+
+                @if (bars(); as b) {
+                  <h4 class="fm-h">Move {{ b.per === 'day' ? 'each day' : b.per === 'week' ? 'each week' : 'each month' }} <small>% change in NAV</small></h4>
+                  <svg class="fm-bars" viewBox="0 0 320 64" preserveAspectRatio="none" aria-hidden="true">
+                    <line class="fm-zero" x1="0" x2="320" [attr.y1]="b.zero" [attr.y2]="b.zero"/>
+                    @for (x of b.bars; track $index) {
+                      <rect [attr.x]="x.x" [attr.y]="x.y" [attr.width]="b.w" [attr.height]="x.h" [attr.rx]="b.w > 3 ? 1 : 0" [class.up]="x.up" [class.dn]="!x.up"/>
+                    }
+                  </svg>
+                  <div class="fm-stats">
+                    <span><small>Best day</small><b class="up">{{ signedPct(b.best, 2) }}</b></span>
+                    <span><small>Worst day</small><b class="dn">{{ signedPct(b.worst, 2) }}</b></span>
+                    <span><small>Up days</small><b>{{ b.ups }} <em>of {{ b.total }}</em></b></span>
+                  </div>
+                }
+              } @else {
+                <p class="fine-note">Not enough history for this period yet.</p>
+              }
+              <p class="fine-note">Fund = its published NAV. Index = {{ f.bench?.name || 'the broad market' }} (total return where published), from {{ d.index_as_of ? 'NSE / mfapi, as of ' + dateShort(d.index_as_of) : 'NSE' }}. Index values are before any fund’s costs. Past moves don’t predict future ones.</p>
+            }
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

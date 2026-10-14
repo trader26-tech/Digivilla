@@ -58,7 +58,10 @@
             <span *ngSwitchCase="'error'" class="s-sub bad">{{ slot($any(k)).error }}</span>
             <ng-container *ngSwitchDefault>
               <span class="s-sub ok" *ngIf="upload($any(k)) as u; else hint">
-                {{ u.row_count | number }} {{ k === 'user' ? 'clients' : 'holdings' }} · {{ u.filename }}
+                <ng-container *ngIf="k === 'transaction' && u.added != null; else plain">
+                  <b>{{ u.added | number }} new</b> · {{ u.updated | number }} already on record<ng-container *ngIf="u.absorbed"> · {{ u.absorbed }} hand-added confirmed</ng-container> · holdings rebuilt for {{ u.holdings?.clients || u.clients?.length || 0 }} client{{ (u.holdings?.clients || u.clients?.length || 0) === 1 ? '' : 's' }}
+                </ng-container>
+                <ng-template #plain>{{ u.row_count | number }} {{ k === 'user' ? 'clients' : 'transactions' }} · {{ u.filename }}</ng-template>
               </span>
               <ng-template #hint>
                 <span class="s-sub">{{ k === 'user' ? 'User Report — .xlsx or .csv' : 'Transaction Report — .csv' }}</span>
@@ -78,7 +81,7 @@
   <p class="tu-foot">
     <span class="hint-drag">Drop both files anywhere on this card — we’ll sort out which is which.</span>
     <span class="hint-touch">Tap a box to pick its report from Files, iCloud Drive or Downloads.</span>
-    <span>Adding again today replaces today’s file, so nothing doubles up.</span>
+    <span>Every line is kept by its AMC order number — a file added twice, or a line that was in yesterday’s file too, is never counted twice. Holdings are rebuilt from the whole history after each upload.</span>
   </p>
 
   <!-- ═══ the moment: both files in ═══ -->

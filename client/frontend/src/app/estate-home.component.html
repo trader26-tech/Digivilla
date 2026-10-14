@@ -395,22 +395,25 @@
               aria-label="See the live NAVs behind this value">
         <span [appCountUp]="est.estateValue" [countDuration]="800" [countInstant]="entered"></span><i class="port-live" aria-hidden="true"></i>
       </button>
-      <div class="port-m">
-        <!-- the day's move (last two published NAVs) — tap for what moved it -->
+      <!-- the day's move and the move since the start, side by side — one tap
+           opens "How your funds moved" (today fund by fund · each fund vs its index) -->
+      <button type="button" class="port-strip" (click)="openMoves()"
+              [attr.aria-label]="(day ? dayWhen(day.nav_date) + ' ' + signedInr(day.change) + ', ' + signedPct(day.pct) + '. ' : '') + 'Since you started ' + signedPct(gainPct) + '. See how each fund moved'">
         @if (day; as d) {
-          <button type="button" class="day-chip" [class.down]="d.change < 0" (click)="openDay()"
-                  [attr.aria-label]="'Day’s change ' + dayWhen(d.nav_date) + ': ' + signedInr(d.change) + ', ' + signedPct(d.pct) + '. See fund by fund'">
-            <svg class="dc-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="d.change < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-            <span class="dc-amt">{{ signedInr(d.change) }}</span>
-            <span class="dc-pct">{{ signedPct(d.pct) }}</span>
-            <span class="dc-when">{{ dayWhen(d.nav_date) }}</span>
-          </button>
-          <i aria-hidden="true"></i>
+          <span class="ps-cell" [class.down]="d.change < 0">
+            <small>{{ dayWhen(d.nav_date) | titlecase }}</small>
+            <b><svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="d.change < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>{{ signedInr(d.change) }}</b>
+            <em>{{ signedPct(d.pct) }}</em>
+          </span>
+          <i class="ps-sep" aria-hidden="true"></i>
         }
-        <b [class.pos]="gainPct >= 0" [class.neg]="gainPct < 0">
-          {{ gainPct >= 0 ? '+' : '' }}{{ gainPct | number:'1.0-2' }}% returns
-        </b>
-      </div>
+        <span class="ps-cell" [class.down]="gainPct < 0">
+          <small>Since you started</small>
+          <b>{{ signedInr(est.gain) }}</b>
+          <em>{{ signedPct(gainPct) }} returns</em>
+        </span>
+        <svg class="ps-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <!-- the live-values sheet (renders nothing until the figure is tapped) -->
       <app-data-freshness></app-data-freshness>
 
@@ -571,58 +574,9 @@
     }
   </div>
 
-  <!-- ============ DAY'S CHANGE — the move between the last two NAVs ============
-       Opened from the day chip. Each fund's ₹ move = its units × (NAV − the NAV
-       before it), drawn as a bar either side of a centre line, biggest gain on
-       top. Rows add up to the chip exactly. -->
-  <div class="scrim mix-scrim" [class.open]="dayOpen()" (click)="dayOpen.set(false)">
-    @if (dayOpen() && day; as d) {
-      <div class="sheet mix-sheet day-sheet" [class.down]="d.change < 0" role="dialog" aria-modal="true"
-           aria-labelledby="dayTitle" (click)="$event.stopPropagation()">
-        <div class="pad">
-          <div class="head">
-            <span class="h" id="dayTitle">Day’s change</span>
-            <button class="close" (click)="dayOpen.set(false)">close ✕</button>
-          </div>
-          <p class="mx-sub">NAV of <b>{{ dayShort(d.nav_date) }}</b>@if (d.prev_date) {<span> vs {{ dayShort(d.prev_date) }}</span>}</p>
-
-          <div class="dy-hero">
-            <span class="dy-amt" [appCountUp]="d.change" [countFormat]="dayFmt" [countDuration]="700"></span>
-            <span class="dy-pct">
-              <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="d.change < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-              {{ signedPct(d.pct) }}
-            </span>
-          </div>
-          @if (dayStory) { <p class="dy-story">{{ dayStory }}</p> }
-
-          <ul class="dy-list">
-            @for (r of dayRows(); track r.key; let i = $index) {
-              <li class="dy-row" [style.--i]="i" [style.--c]="r.color" [class.neg]="r.change < 0">
-                <div class="dy-top">
-                  <i class="mx-dot" aria-hidden="true"></i>
-                  <span class="dy-nm">{{ r.name }}</span>
-                  <span class="dy-vl">{{ signedInr(r.change) }}</span>
-                </div>
-                <div class="dy-track" aria-hidden="true">
-                  <span class="dy-bar" [style.width.%]="r.w"></span>
-                </div>
-                <div class="dy-meta">
-                  <span>{{ r.label }}@if (r.late) { · {{ r.when }} NAV}</span>
-                  @if (r.nav && r.prev) {
-                    <span class="dy-nav">NAV {{ r.prev | number:'1.2-4' }} → {{ r.nav | number:'1.2-4' }} <b>{{ signedPct(r.navPct) }}</b></span>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-          @if (d.lagging) {
-            <p class="fine-note dy-late">{{ d.lagging }} fund{{ d.lagging === 1 ? ' hasn’t' : 's haven’t' }} published {{ dayShort(d.nav_date) }}’s NAV yet — {{ d.lagging === 1 ? 'its' : 'their' }} last move is shown and updates overnight.</p>
-          }
-          <p class="fine-note">Your units × the change in each fund’s NAV between its last two published days. NAVs publish once a day, after the market closes — this is the market’s move, not money you added or took out.</p>
-        </div>
-      </div>
-    }
-  </div>
+  <!-- ============ HOW YOUR FUNDS MOVED — opened from the strip under the value
+       (lives out here: an ancestor with a `translate` would box its fixed scrim) ============ -->
+  <app-fund-moves [open]="movesOpen()" (closed)="movesOpen.set(false)"></app-fund-moves>
 
   <!-- ============ DISCLAIMER SHEET — "What you actually own" ============ -->
   <div class="scrim" [class.open]="keyOpen()" (click)="keyOpen.set(false)">

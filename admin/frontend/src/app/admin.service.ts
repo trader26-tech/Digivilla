@@ -439,6 +439,14 @@ export class AdminService {
     return this.http.put<CommissionOverview>(`${this.base}/admin/commission/rates`, { rates }, this.opts);
   }
 
+  /** Holdings vs transactions, per client. */
+  consistency(): Observable<Consistency> {
+    return this.http.get<Consistency>(`${this.base}/admin/reports/consistency`, this.opts);
+  }
+  /** Repair: holdings := the roll-up of every transaction, for every client. */
+  rebuildHoldings(): Observable<{ clients: number; rows: number; removed: number; consistency: Consistency }> {
+    return this.http.post<{ clients: number; rows: number; removed: number; consistency: Consistency }>(`${this.base}/admin/reports/rebuild-holdings`, {}, this.opts);
+  }
   reportUploads(): Observable<ReportUpload[]> {
     return this.http.get<ReportUpload[]>(`${this.base}/admin/reports/uploads`, this.opts);
   }
@@ -579,7 +587,17 @@ export interface ReportUpload {
   id?: string; report_date: string; report_type: 'user' | 'transaction';
   filename: string; storage_path?: string; size_bytes?: number;
   row_count?: number; status?: string; uploaded_at?: string;
+  /** transaction uploads only (returned by the upload call, not stored): lines
+   *  new by order id · lines already known (refreshed in place) · hand-added
+   *  purchases the report confirmed · the holdings rebuild that followed */
+  added?: number; updated?: number; absorbed?: number; clients?: string[];
+  holdings?: { clients: number; rows: number; removed: number; no_transactions: string[] };
 }
+/** The system's own tie-out: every client's holdings vs their transactions. */
+export interface ConsistencyRow {
+  client_code: string; name: string; ok: boolean; transactions: number; holdings: number; diff: number; txn_count: number;
+}
+export interface Consistency { as_of: string; ok: boolean; clients: ConsistencyRow[]; off: ConsistencyRow[]; }
 export interface TodayStatus {
   report_date: string; user: ReportUpload | null; transaction: ReportUpload | null;
 }
@@ -608,6 +626,11 @@ export interface ClientTxn {
   scheme_name: string; scheme_code?: number; folio_no?: string;
   kind: string; amount: number; nav: number; units: number;
   villa_id: string | null; report_date: string;
+  /** where this line's money sits by the shared villa rule (a split line lists
+   *  several villas); [] when the fund is outside every DigiVilla bucket */
+  placements?: { villa_id: string; position: number; amount: number; units: number; fraction: number }[];
+  /** fund in no DigiVilla bucket and not pinned → needs the admin */
+  outside?: boolean;
 }
 /** One unmapped transaction, as listed in the home-screen alert. */
 export interface UnmappedTxn {
@@ -621,6 +644,8 @@ export interface UnmappedClient {
 }
 export interface MappingOverview {
   as_of: string;
+  /** holdings == transactions for every client? (`off` lists who isn't) */
+  consistency?: { ok: boolean; off: ConsistencyRow[] };
   total: number; mapped: number; unmapped: number; unmapped_amount: number;
   clients_affected: number;
   clients: UnmappedClient[];
@@ -641,6 +666,12 @@ export interface ClientVilla {
   position: number | null;
   /** admin-set villa type (null = not set yet) */
   villa_type?: VillaType | null;
+  /** made by the shared rule (no admin row yet) — create a villa to name it / set its type */
+  auto?: boolean;
+  /** lines the admin pinned here by hand (the rest were placed by the rule) */
+  pinned_count?: number;
+  /** the funds inside it, by the rule */
+  funds?: { scheme_code: number; scheme_name: string; units: number; invested: number }[];
 }
 /** One fund line of a purchase being added by hand. */
 export interface PurchaseLine {

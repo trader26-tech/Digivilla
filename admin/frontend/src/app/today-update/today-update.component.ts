@@ -93,7 +93,7 @@ export class TodayUpdateComponent implements OnInit, OnDestroy {
     const u = this.status()?.user?.row_count, t = this.status()?.transaction?.row_count;
     const parts: string[] = [];
     if (u != null) parts.push(`${u.toLocaleString('en-IN')} client${u === 1 ? '' : 's'}`);
-    if (t != null) parts.push(`${t.toLocaleString('en-IN')} holding${t === 1 ? '' : 's'}`);
+    if (t != null) parts.push(`${t.toLocaleString('en-IN')} transaction${t === 1 ? '' : 's'}`);
     return parts.join(' · ');
   });
 

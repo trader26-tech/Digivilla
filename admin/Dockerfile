@@ -34,6 +34,8 @@ COPY admin/backend/ ./
 # The calculator SETTINGS module is SHARED with the client backend (not a copy in
 # the repo): app/calc_settings.py loads it from /app/shared.
 COPY client/backend/app/calc_config.py ./shared/calc_config.py
+# The villa allocation rule is shared the same way (app/shared_alloc.py loads it).
+COPY client/backend/app/villa_alloc.py ./shared/villa_alloc.py
 COPY client/backend/app/data/calc_config.json ./shared/data/calc_config.json
 
 # Copy the built Angular app to where static_spa.py expects it: backend/static

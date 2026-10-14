@@ -199,7 +199,7 @@
     </div>
 
     <!-- every transaction still to be mapped — the full list, nothing hidden -->
-    <app-unmapped-txns [overview]="mapOverview()" (map)="openNwClient($event, 'mapping')"></app-unmapped-txns>
+    <app-unmapped-txns [overview]="mapOverview()" (map)="openNwClient($event, 'mapping')" (rebuilt)="onTodayUpdated()"></app-unmapped-txns>
 
     <!-- client directory -->
     <section class="directory card">
@@ -542,10 +542,10 @@
       <ng-container *ngIf="drawerTab()==='overview'">
         <!-- where each fund's money goes: one bar per fund, one segment per villa -->
         <section class="dr-block" *ngIf="fundFlow().length">
-          <h3 class="dr-h">Which villa each fund goes to <small>(by mapped transactions)</small></h3>
+          <h3 class="dr-h">Which villa each fund goes to <small>(by the villa rule)</small></h3>
           <div class="flow-legend">
             <span *ngFor="let v of mapVillas()"><i [style.background]="villaColour(v.id)"></i>{{ v.name }}</span>
-            <span *ngIf="mapUnmapped().length"><i class="hatch"></i>Not mapped</span>
+            <span *ngIf="mapUnmapped().length"><i class="hatch"></i>Outside the mix</span>
           </div>
           <div class="flow" *ngFor="let f of fundFlow()">
             <div class="flow-top">
@@ -642,32 +642,40 @@
         <!-- the villas, as the client sees them -->
         <section>
           <div class="vp-h">
-            <h3>Villas <small>as the client sees them · live value</small></h3>
+            <h3>Villas <small>as the client sees them · live value · placed by the villa rule, oldest first</small></h3>
           </div>
-          <div class="vp-empty" *ngIf="!mapVillas().length">No villas yet — pin a purchase below and a villa is made for it.</div>
+          <div class="vp-empty" *ngIf="!mapVillas().length">No villas yet — they appear by themselves once a Transaction Report has this client’s purchases.</div>
           <div class="vp-villas" *ngIf="mapVillas().length">
             <article class="vv" *ngFor="let v of mapVillas()" [style.--vc]="villaColour(v.id)" [class.empty]="!v.txn_count">
               <header>
                 <i class="vv-dot" aria-hidden="true"></i>
                 <b>{{ villaLabel(v) }}</b>
                 <span class="vv-chip" [class.build]="!v.finished">{{ v.finished ? 'Villa' : (v.hint.progress | number:'1.0-0') + '% built' }}</span>
-                <button class="vv-x" (click)="removeVilla(v)" title="Delete villa" aria-label="Delete villa">×</button>
+                <span class="vv-chip auto" *ngIf="v.auto" title="Placed by the villa rule — no admin row yet">by the rule</span>
+                <button class="vv-x" *ngIf="!v.auto" (click)="removeVilla(v)" title="Delete villa" aria-label="Delete villa">×</button>
               </header>
               <div class="vv-val">{{ money(v.value) }}</div>
               <div class="vv-gain" [class.pos]="v.gain >= 0" [class.neg]="v.gain < 0" *ngIf="v.txn_count">{{ v.gain >= 0 ? '+' : '' }}{{ money(v.gain) }}</div>
               <div class="vv-meta">
                 <ng-container *ngIf="v.txn_count; else nothing">{{ money(v.mapped_total) }} in · bought {{ v.since | date:'d MMM yyyy' }}</ng-container>
-                <ng-template #nothing>Nothing pinned yet</ng-template>
+                <ng-template #nothing>Nothing in it yet</ng-template>
               </div>
               <div class="progress" *ngIf="!v.finished && v.txn_count"><span [style.width.%]="v.hint.progress"></span></div>
-              <div class="vv-type" role="radiogroup" aria-label="Villa type">
-                <button *ngFor="let t of VILLA_TYPES" role="radio" [attr.data-t]="t.key" [class.on]="v.villa_type === t.key"
-                        [attr.aria-checked]="v.villa_type === t.key" (click)="setVillaTypeFor(v, t.key)">{{ t.label }}</button>
-              </div>
-              <footer>
-                <button class="vv-btn" [class.on]="v.coin" (click)="toggleCoin(v)" [attr.aria-pressed]="v.coin">🪙 {{ v.coin ? 'Pays out' : 'No payout' }}</button>
-                <button class="vv-btn" [class.on]="v.status === 'constructed'" (click)="setVillaStatus(v, v.status === 'constructed' ? 'building' : 'constructed')">{{ v.status === 'constructed' ? '✓ Finished' : 'Mark finished' }}</button>
-              </footer>
+              <ng-container *ngIf="!v.auto; else adopt">
+                <div class="vv-type" role="radiogroup" aria-label="Villa type">
+                  <button *ngFor="let t of VILLA_TYPES" role="radio" [attr.data-t]="t.key" [class.on]="v.villa_type === t.key"
+                          [attr.aria-checked]="v.villa_type === t.key" (click)="setVillaTypeFor(v, t.key)">{{ t.label }}</button>
+                </div>
+                <footer>
+                  <button class="vv-btn" [class.on]="v.coin" (click)="toggleCoin(v)" [attr.aria-pressed]="v.coin">🪙 {{ v.coin ? 'Pays out' : 'No payout' }}</button>
+                  <button class="vv-btn" [class.on]="v.status === 'constructed'" (click)="setVillaStatus(v, v.status === 'constructed' ? 'building' : 'constructed')">{{ v.status === 'constructed' ? '✓ Finished' : 'Mark finished' }}</button>
+                </footer>
+              </ng-container>
+              <ng-template #adopt>
+                <footer>
+                  <button class="vv-btn" (click)="adoptVilla(v)" [disabled]="!!pinning()">Name it &amp; set its type</button>
+                </footer>
+              </ng-template>
             </article>
           </div>
         </section>
@@ -735,11 +743,11 @@
           <div class="vp-empty" *ngIf="!purchases().length && !addOpen()">No purchases yet — upload a Transaction Report, or add one by hand.</div>
           <div class="vp-banner" *ngIf="unpinnedPurchases().length">
             <span class="ma-ic sm" aria-hidden="true">!</span>
-            <span><b>{{ unpinnedPurchases().length }} purchase{{ unpinnedPurchases().length === 1 ? '' : 's' }} not in a villa</b> · {{ money(unpinnedAmount()) }}</span>
+            <span><b>{{ unpinnedPurchases().length }} purchase{{ unpinnedPurchases().length === 1 ? '' : 's' }} in funds outside every villa bucket</b> · {{ money(unpinnedAmount()) }} · pin to a villa, or add the fund to a bucket</span>
             <button (click)="pinAllSuggested()" [disabled]="!!pinning()">Pin all as suggested</button>
           </div>
           <div class="vp-banner ok" *ngIf="purchases().length && !unpinnedPurchases().length">
-            <span class="ok-ic sm" aria-hidden="true">✓</span><span><b>Every purchase is in a villa</b></span>
+            <span class="ok-ic sm" aria-hidden="true">✓</span><span><b>Every purchase sits in a villa</b> · placed by the rule, oldest villa first; a pin here overrides it</span>
           </div>
 
           <div class="vp-list">
@@ -754,14 +762,15 @@
                 <svg class="pp-car" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               </button>
               <div class="pp-pin">
-                <span class="pp-k">{{ p.villa ? 'In' : p.mixed ? 'Split — pick one' : 'Pin to' }}</span>
+                <span class="pp-k">{{ p.villa ? 'In' : p.mixed ? 'Across' : 'Pin to' }}</span>
                 <div class="pp-opts">
                   <button *ngFor="let v of mapVillas()" [class.on]="p.villa?.id === v.id" [class.sug]="!p.villa && p.suggest === v.id"
                           [style.--vc]="villaColour(v.id)" (click)="pinPurchase(p, v.id)" [disabled]="!!pinning()"><i></i>{{ villaLabel(v) }}</button>
                   <button class="new" [class.sug]="!p.villa && p.suggest === 'new'" (click)="pinPurchase(p, 'new')" [disabled]="!!pinning()">+ New villa</button>
                   <button class="unpin" *ngIf="p.villa || p.mixed" (click)="unpinPurchase(p)" [disabled]="!!pinning()">Unpin</button>
                 </div>
-                <small class="pp-sug" *ngIf="!p.villa">Suggested: <b>{{ suggestionLabel(p) }}</b></small>
+                <small class="pp-sug" *ngIf="p.mixed">{{ placementLabel(p) }}</small>
+                <small class="pp-sug" *ngIf="!p.villa && !p.mixed">Suggested: <b>{{ suggestionLabel(p) }}</b></small>
               </div>
               <div class="pp-lines" *ngIf="openPurchase() === p.key">
                 <div class="pl" *ngFor="let t of p.txns">

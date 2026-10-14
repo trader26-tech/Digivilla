@@ -44,6 +44,8 @@ interface Purchase {
   manual: boolean;
   /** where it should go: a villa id, or 'new' */
   suggest: string;
+  /** has a line in a fund outside every villa bucket (the rule can't place it) */
+  outside?: boolean;
 }
 const VILLA_FULL = 500_000;
 
@@ -781,9 +783,11 @@ export class AppComponent implements OnInit {
   }
   /** The villa a transaction is mapped to (null when unmapped or its villa is gone). */
   villaFor(t: ClientTxn): ClientVilla | null {
-    return t.villa_id ? (this.mapVillas().find((v) => v.id === t.villa_id) ?? null) : null;
+    const id = t.villa_id ?? t.placements?.[0]?.villa_id ?? null;
+    return id ? (this.mapVillas().find((v) => v.id === id) ?? null) : null;
   }
-  mapUnmapped = computed<ClientTxn[]>(() => this.mapTxns().filter((t) => !this.villaFor(t)));
+  /** lines the rule can't place: a fund outside every villa bucket, not pinned */
+  mapUnmapped = computed<ClientTxn[]>(() => this.mapTxns().filter((t) => t.outside || (!t.villa_id && !t.placements?.length)));
   mapUnmappedAmount = computed(() => this.mapUnmapped().reduce((s, t) => s + (t.amount || 0), 0));
   /** Mapping list order: unmapped first (they need action), then newest first. */
   mapTxnsSorted = computed<ClientTxn[]>(() => [...this.mapTxns()].sort((a, b) =>
@@ -802,10 +806,15 @@ export class AppComponent implements OnInit {
   fundFlow = computed<FundFlow[]>(() => {
     const byFund = new Map<string, Map<string | null, { amount: number; count: number }>>();
     for (const t of this.mapTxns()) {
-      const vid = this.villaFor(t)?.id ?? null;
+      // a split line puts part of its money in several villas
+      const parts: [string | null, number][] = t.placements?.length
+        ? t.placements.map((pl) => [pl.villa_id, pl.amount] as [string, number])
+        : [[this.villaFor(t)?.id ?? null, t.amount || 0]];
       const m = byFund.get(t.scheme_name) ?? new Map();
-      const cur = m.get(vid) ?? { amount: 0, count: 0 };
-      m.set(vid, { amount: cur.amount + (t.amount || 0), count: cur.count + 1 });
+      for (const [vid, amt] of parts) {
+        const cur = m.get(vid) ?? { amount: 0, count: 0 };
+        m.set(vid, { amount: cur.amount + amt, count: cur.count + 1 });
+      }
       byFund.set(t.scheme_name, m);
     }
     const order = (id: string | null) => id === null ? 999 : this.mapVillas().findIndex((v) => v.id === id);
@@ -813,7 +822,7 @@ export class AppComponent implements OnInit {
       const total = [...m.values()].reduce((s, x) => s + x.amount, 0);
       const segs = [...m.entries()].sort((a, b) => order(a[0]) - order(b[0])).map(([vid, x]) => ({
         villaId: vid,
-        name: vid === null ? 'Not mapped' : (this.mapVillas().find((v) => v.id === vid)?.name || 'Villa'),
+        name: vid === null ? 'Outside the mix' : (this.mapVillas().find((v) => v.id === vid)?.name || 'Villa'),
         amount: x.amount, count: x.count,
         pct: total > 0 ? (x.amount / total) * 100 : 0,
         colour: this.villaColour(vid),
@@ -824,6 +833,11 @@ export class AppComponent implements OnInit {
 
   /** The funds inside one villa (from its mapped transactions), biggest first. */
   villaFunds(v: ClientVilla): { scheme: string; amount: number; count: number; pct: number }[] {
+    if (v.funds?.length) {
+      const total = v.funds.reduce((s, f) => s + (f.invested || 0), 0);
+      return v.funds.map((f) => ({ scheme: f.scheme_name, amount: f.invested, count: 1, pct: total > 0 ? (f.invested / total) * 100 : 0 }))
+        .sort((a, b) => b.amount - a.amount);
+    }
     const m = new Map<string, { amount: number; count: number }>();
     for (const t of this.mapTxns()) {
       if (t.villa_id !== v.id) continue;
@@ -852,13 +866,14 @@ export class AppComponent implements OnInit {
     }
     const out: Purchase[] = [];
     for (const [key, txns] of groups) {
-      const ids = new Set(txns.map((t) => this.villaFor(t)?.id ?? null));
+      const ids = new Set(txns.flatMap((t) => t.placements?.length ? t.placements.map((pl) => pl.villa_id) : [this.villaFor(t)?.id ?? null]));
       const one = ids.size === 1 ? [...ids][0] : undefined;
       const villa = one ? this.mapVillas().find((v) => v.id === one) ?? null : null;
       const total = txns.reduce((s, t) => s + (t.amount || 0), 0);
       out.push({
         key, date: (txns[0].txn_date || '').slice(0, 10), kind: (txns[0].kind || 'Purchase').trim(), total, txns,
         villa, mixed: ids.size > 1, manual: txns.every((t) => this.isManual(t)), suggest: '',
+        outside: txns.some((t) => !!t.outside),
       });
     }
     out.sort((a, b) => b.date.localeCompare(a.date));
@@ -873,7 +888,25 @@ export class AppComponent implements OnInit {
     }
     return out;
   });
-  unpinnedPurchases = computed(() => this.purchases().filter((p) => !p.villa));
+  /** purchases with a line the rule can't place (fund outside every bucket) */
+  unpinnedPurchases = computed(() => this.purchases().filter((p) => p.outside && !p.villa));
+  /** "₹4.75 L → Villa 1 · ₹5 L → Villa 2 · …" for a purchase the rule split */
+  placementLabel(p: Purchase): string {
+    const by = new Map<string, number>();
+    for (const t of p.txns) for (const pl of t.placements || []) by.set(pl.villa_id, (by.get(pl.villa_id) ?? 0) + pl.amount);
+    return [...by.entries()].map(([id, amt]) => {
+      const v = this.mapVillas().find((x) => x.id === id);
+      return `${this.money(amt)} → ${v ? this.villaLabel(v) : 'Villa'}`;
+    }).join(' · ');
+  }
+  /** Give an automatic villa an admin row (same position: rows are the containers, in order). */
+  adoptVilla(v: ClientVilla): void {
+    this.pinning.set('adopt');
+    this.api.createClientVilla(this.mapCode(), v.name || `Villa ${(v.position ?? 0) + 1}`).subscribe({
+      next: () => { this.pinning.set(null); this.afterMappingChange(); },
+      error: (e) => { this.pinning.set(null); if (e?.status === 401) this.lock(); else this.flash('Couldn’t create that villa — try again'); },
+    });
+  }
   unpinnedAmount = computed(() => this.unpinnedPurchases().reduce((s, p) => s + p.total, 0));
   suggestionLabel(p: Purchase): string {
     if (p.suggest === 'new') return p.total >= VILLA_FULL * 0.99 ? 'a new villa (it’s a full ₹5L)' : 'a new villa';
