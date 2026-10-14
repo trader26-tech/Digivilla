@@ -262,20 +262,154 @@ def _first_investment() -> Optional[str]:
         return None
 
 
+# ─────────────────────────────── the actual funds ───────────────────────────────
+# The villa lines are built from INDICES (a clean, cost-free replica). The admin can
+# also see the ACTUAL funds in each villa bucket — their published NAVs, day by day —
+# and build the villas from those instead. NAV histories come from mfapi, fetched
+# concurrently and kept 6 h per worker.
+_FUND_HIST: dict[int, tuple[float, dict[str, float]]] = {}
+_FUNDS_TTL = 6 * 3600
+_FB: dict = {"at": 0.0, "days": None, "block": None}
+
+
+def _short(name: str) -> str:
+    import re
+    s = re.sub(r"\s*-\s*(Direct|Regular)?\s*(Plan)?\s*-?\s*(Growth|IDCW|Dividend).*$", "", name or "", flags=re.I)
+    s = re.sub(r"\s+(Growth|Gr)$", "", s, flags=re.I)
+    s = re.sub(r"\s+Fund$", "", s.strip(), flags=re.I).strip()
+    if s and s == s.upper():
+        s = " ".join(w if w in ("ETF", "FOF", "SBI", "HDFC", "ICICI", "UTI", "DSP", "LIC", "PGIM", "HSBC") else w.capitalize() for w in s.split())
+    return s or (name or "Fund")
+
+
+def _fund_hist(code: int) -> dict[str, float]:
+    """{YYYY-MM-DD: nav} for one scheme (mfapi), memo 6 h; an empty dict on failure (retried next time)."""
+    hit = _FUND_HIST.get(code)
+    if hit and time.time() - hit[0] < _FUNDS_TTL:
+        return hit[1]
+    out: dict[str, float] = {}
+    try:
+        d = httpx.get(f"https://api.mfapi.in/mf/{code}", timeout=40).json()
+        for p in d.get("data") or []:
+            try:
+                nav = float(p["nav"])
+            except (TypeError, ValueError):
+                continue
+            if nav > 0:
+                dd, mm, yy = p["date"].split("-")
+                out[f"{yy}-{mm}-{dd}"] = nav
+    except Exception:
+        out = {}
+    if out:
+        _FUND_HIST[code] = (time.time(), out)
+    return out
+
+
+def _bucket_funds() -> tuple[list[dict], list[dict]]:
+    try:
+        from app import reports as R
+        return (R._all_rows("villa_buckets", "id,name,kind"),
+                R._all_rows("villa_bucket_funds", "bucket_id,scheme_code,scheme_name,sleeve,target_weight"))
+    except Exception:
+        return [], []
+
+
+def funds_block(days: list[str], villas: list[dict]) -> dict:
+    """{funds: [...], villa_funds: {villa_key: {sleeve: [{scheme_code, weight}]}}}.
+
+    funds       every distinct fund in any villa bucket, its NAV on each of `days`
+                (null before its first NAV, carried over a gap after), plus the
+                sleeve it plays and which villas hold it
+    villa_funds each villa's ACTUAL composition — the funds of the SIP bucket
+                named after it, grouped by sleeve, weights normalised per sleeve"""
+    if _FB["block"] is not None and _FB["days"] == len(days) and time.time() - _FB["at"] < _FUNDS_TTL:
+        return _FB["block"]
+    buckets, rows = _bucket_funds()
+    bname = {b["id"]: ((b.get("name") or ""), (b.get("kind") or "sip")) for b in buckets}
+    # which villa each bucket stands for: "Balanced Digi Villa" / "Lumpsum - Balanced" → balanced
+    def villa_of(bucket_id):
+        name = bname.get(bucket_id, ("", ""))[0].lower()
+        for v in villas:
+            if v["name"].lower() in name or v["key"].lower() in name:
+                return v["key"]
+        return None
+    funds: dict[int, dict] = {}
+    villa_funds: dict[str, dict[str, list]] = {}
+    for r in rows:
+        code = r.get("scheme_code")
+        if not code:
+            continue
+        code = int(code)
+        vk = villa_of(r.get("bucket_id"))
+        kind = bname.get(r.get("bucket_id"), ("", "sip"))[1]
+        sleeve = (r.get("sleeve") or "other").lower()
+        f = funds.setdefault(code, {"key": f"fund:{code}", "scheme_code": code, "name": r.get("scheme_name") or "Fund",
+                                    "short": _short(r.get("scheme_name") or ""), "sleeve": sleeve, "villas": []})
+        if vk and vk not in f["villas"]:
+            f["villas"].append(vk)
+        # the SIP bucket defines the villa's actual mix (the lumpsum bucket is the same mix for one-off money)
+        if vk and kind == "sip":
+            lst = villa_funds.setdefault(vk, {}).setdefault(sleeve, [])
+            if not any(x["scheme_code"] == code for x in lst):
+                lst.append({"scheme_code": code, "weight": float(r.get("target_weight") or 0)})
+    for vk in list(villa_funds):
+        for sl, lst in villa_funds[vk].items():
+            tot = sum(x["weight"] for x in lst) or len(lst)
+            for x in lst:
+                x["weight"] = round((x["weight"] or 1.0) / tot, 6)
+    # NAV histories, concurrently
+    from concurrent.futures import ThreadPoolExecutor
+    codes = list(funds)
+    with ThreadPoolExecutor(max_workers=min(8, max(1, len(codes)))) as ex:
+        hists = dict(zip(codes, ex.map(_fund_hist, codes)))
+    out_funds = []
+    for code in codes:
+        hist = hists.get(code) or {}
+        keys = sorted(hist)
+        vals, j, last = [], 0, None
+        for d in days:
+            while j < len(keys) and keys[j] <= d:
+                last = hist[keys[j]]
+                j += 1
+            vals.append(None if last is None else round(last, 4))
+        f = dict(funds[code])
+        f["values"] = vals
+        f["since"] = keys[0] if keys else None
+        f["ok"] = bool(keys)
+        out_funds.append(f)
+    order = {"arbitrage": 0, "gold": 1, "large": 2, "mid": 3, "small": 4}
+    out_funds.sort(key=lambda f: (order.get(f["sleeve"], 9), f["short"]))
+    block = {"funds": out_funds, "villa_funds": villa_funds}
+    if all(f["ok"] for f in out_funds):
+        _FB.update(at=time.time(), days=len(days), block=block)
+    return block
+
+
 def performance() -> dict:
     from app.calc_settings import calc_config
     cfg = calc_config.get()
     h = history()
+    villas = [{"key": v["key"], "name": v["name"], "risk_name": v.get("risk_name"), "weights": v["weights"]}
+              for v in cfg["villas"]]
+    days = h.get("days", [])
+    try:
+        fb = funds_block(days, villas)
+    except Exception:
+        fb = {"funds": [], "villa_funds": {}}
     return {
-        "as_of": h["days"][-1] if h.get("days") else None,
-        "days": h.get("days", []),
+        "as_of": days[-1] if days else None,
+        "days": days,
         "series": h.get("series", {}),
-        "villas": [{"key": v["key"], "name": v["name"], "risk_name": v.get("risk_name"), "weights": v["weights"]}
-                   for v in cfg["villas"]],
+        "villas": villas,
         "default_villa": cfg.get("default_villa"),
         "rebalance": cfg.get("rebalance"),
         "benchmarks": BENCHMARKS,
         "first_investment": _first_investment(),
+        # the villa lines are built from the indices above; these are the ACTUAL funds
+        "funds": fb["funds"],
+        "villa_funds": fb["villa_funds"],
+        "sources": {"index": "Built from the indices (Nifty 50 Arbitrage, Nifty 50 / Midcap 150 / Smallcap 250 TRI, Gold BeES) — before fund costs",
+                    "funds": "Built from the actual funds in each villa bucket, at their published NAVs — after fund costs"},
     }
 
 

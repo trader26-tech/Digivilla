@@ -130,12 +130,37 @@
            &.on { background: var(--ink); color: var(--paper); } }
 }
 .mc-span { font-size: 0.7rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+/* "Villas from: Indices | Actual funds" */
+.mc-src { display: inline-flex; align-items: center; gap: 0.4rem;
+  small { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; } }
+/* the source caption + the actual funds as chips */
+.mc-funds { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.7rem; margin-top: 0.6rem; }
+.mc-srcpill { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.7rem 0.3rem 0.55rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 800; color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); white-space: nowrap;
+  i { width: 8px; height: 8px; border-radius: 50%; background: #16302B; }
+  small { font-weight: 600; color: var(--muted); white-space: normal; }
+  &.funds { background: color-mix(in srgb, #1baf7a 14%, transparent); i { background: #1baf7a; } } }
+.mc-funds-l { font-size: 0.7rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.mc-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.mc-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.6rem 0.28rem 0.5rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: 0.72rem; font-weight: 700; color: var(--ink);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 25%, transparent); }
+  small { font-weight: 600; color: var(--muted); }
+  &:hover { border-color: color-mix(in srgb, var(--c) 60%, var(--border)); }
+  &.on { background: color-mix(in srgb, var(--c) 14%, var(--surface)); border-color: color-mix(in srgb, var(--c) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent); }
+  &:disabled { opacity: 0.45; cursor: default; } }
+.mc-tag { font-style: normal; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.1rem 0.4rem; border-radius: 999px;
+  color: var(--muted); background: color-mix(in srgb, var(--ink) 6%, transparent);
+  &.funds { color: #0f7a52; background: color-mix(in srgb, #1baf7a 16%, transparent); }
+  &.fund { color: #5b4a9a; background: color-mix(in srgb, #4a3aa7 12%, transparent); } }
 .mc-plot-wrap { position: relative; flex: 1 1 auto; min-height: 0; overflow: visible; }
 .mc-svg { position: absolute; inset: 0 auto auto 0; display: block; overflow: visible; user-select: none; -webkit-user-select: none; }
 .mc-grid { stroke: color-mix(in srgb, var(--survey) 70%, transparent); stroke-width: 1; shape-rendering: crispEdges;
            &.zero { stroke: color-mix(in srgb, var(--ink) 40%, transparent); } }
 .mc-ylab, .mc-xlab { font-size: 11px; fill: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
 .mc-bench-area { fill: color-mix(in srgb, var(--ink) 5%, transparent); }
+.mc-line.fund { stroke-width: 1.6; stroke-linecap: round; }
 .mc-line {
   fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; transition: opacity 0.2s, stroke-width 0.2s;
   &.bench { stroke-dasharray: 6 4; }
@@ -259,6 +284,10 @@ table.years { min-width: 480px;
   .mc-mode { flex: none; border-radius: 10px;
     button { min-height: 34px; padding: 0 0.85rem; font-size: 0.78rem; } }
   .mc-span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 0.72rem; }
+  .mc-overlay { flex-wrap: wrap; }
+  .mc-src { flex: 1 0 100%; justify-content: space-between; }
+  .mc-funds { margin-top: 0.75rem; } .mc-funds-l { flex: 1 0 100%; } .mc-srcpill { white-space: normal; }
+  .mc-chip { min-height: 34px; }
   .mc-plot-wrap { flex: none; height: 290px; }
   .mc-ylab, .mc-xlab { font-size: 10.5px; }
   .mc-svg { -webkit-touch-callout: none; }

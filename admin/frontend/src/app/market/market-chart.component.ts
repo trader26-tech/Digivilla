@@ -21,12 +21,21 @@ import {
 
 type Period = 'since' | '1m' | '3m' | '6m' | 'ytd' | '1y' | '3y' | '5y' | '10y' | 'max' | 'custom';
 type Mode = 'growth' | 'falls';
+/** what the villa lines are built from: the indices, or the actual funds' NAVs */
+type Source = 'index' | 'funds';
 
 interface Line {
   key: string; name: string; colour: string; bench: boolean; mix?: string;
+  /** villa (built from the chosen source) · bench · fund (one actual fund, rebased) */
+  kind: 'villa' | 'bench' | 'fund';
   /** level, 100 = start */
   v: number[];
 }
+/** the sleeve colours of the client app, for the actual-fund lines */
+const SLEEVE_COLOURS: Record<string, string> = {
+  arbitrage: '#6f8f82', gold: '#d4a017', large: '#3a8a3a', mid: '#4ea84e', small: '#7cc27a', other: '#8a9a92',
+};
+const SLEEVE_NAMES: Record<string, string> = { arbitrage: 'arbitrage', gold: 'gold', large: 'large cap', mid: 'mid cap', small: 'small cap', other: 'other' };
 interface Stats {
   ret: number; cagr: number | null; vol: number; sharpe: number | null; beta: number | null;
   maxDd: number; ddFrom: string; ddTo: string;
@@ -71,6 +80,10 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
   focusKey = signal<string | null>(null);
   hover = signal<number | null>(null);
   mode = signal<Mode>('growth');
+  /** villas from the indices (default) or from the actual funds' NAVs */
+  source = signal<Source>('index');
+  /** the actual funds drawn as their own lines */
+  fundKeys = signal<Set<string>>(new Set());
   table = signal<'stats' | 'years'>('stats');
   benchOpen = signal(false);
   /** phones: the method note opens under the bar (a title tooltip never shows on touch) */
@@ -85,6 +98,8 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
       if (s.period) this.period.set(s.period);
       if (s.from) this.customFrom.set(s.from);
       if (s.to) this.customTo.set(s.to);
+      if (s.source === 'funds' || s.source === 'index') this.source.set(s.source);
+      if (Array.isArray(s.funds)) this.fundKeys.set(new Set(s.funds));
     } catch { /* no storage: defaults */ }
     this.load();
     this.loadLive();
@@ -129,6 +144,7 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({
         bench: this.bench(), period: this.period(), from: this.customFrom(), to: this.customTo(),
+        source: this.source(), funds: [...this.fundKeys()],
       }));
     } catch { /* ignore */ }
   }
@@ -153,6 +169,15 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
     this.benchOpen.set(false);
     this.remember();
   }
+  setSource(src: Source): void { this.source.set(src); this.hover.set(null); this.remember(); }
+  toggleFund(key: string): void {
+    const f = new Set(this.fundKeys());
+    if (f.has(key)) f.delete(key); else f.add(key);
+    this.fundKeys.set(f); this.hover.set(null); this.remember();
+  }
+  isFundOn(key: string): boolean { return this.fundKeys().has(key); }
+  fundColour(sleeve: string): string { return SLEEVE_COLOURS[sleeve] ?? SLEEVE_COLOURS['other']; }
+  sleeveName(sleeve: string): string { return SLEEVE_NAMES[sleeve] ?? sleeve; }
   toggle(key: string): void {
     const h = new Set(this.hidden());
     if (h.has(key)) h.delete(key);
@@ -185,7 +210,9 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
       const q = l.quotes[k];
       series[k] = { ...s, values: [...s.values, last === null ? null : q ? last * (1 + q.pct / 100) : last] };
     }
-    return { ...d, days: [...d.days, l.day], series };
+    // a fund has no live NAV: its last close carries over today's provisional point
+    const funds = (d.funds ?? []).map((f) => ({ ...f, values: [...f.values, f.values[f.values.length - 1] ?? null] }));
+    return { ...d, days: [...d.days, l.day], series, funds };
   });
   /** true when the last point on the chart is today's live (not yet published) one */
   provisional = computed(() => this.data() !== this.raw());
@@ -225,9 +252,47 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
         break;
       }
     }
+    // the actual funds (villas built from them, or drawn on their own) only exist from their first NAV
+    const floor = this.fundsFloor();
+    if (floor > s) s = Math.min(floor, e - 1);
     if (e - s < 1) { s = Math.max(0, e - 1); }
     return { s, e };
   });
+  /** the first day on which every fund in use has a NAV (0 when none is in use) */
+  fundsFloor = computed<number>(() => {
+    const d = this.data(); if (!d?.funds?.length) return 0;
+    const need = new Set<string>();
+    if (this.source() === 'funds') for (const v of d.villas) for (const lst of Object.values(d.villa_funds?.[v.key] ?? {})) for (const f of lst) need.add('fund:' + f.scheme_code);
+    for (const k of this.fundKeys()) need.add(k);
+    let floor = 0;
+    for (const f of d.funds) if (need.has(f.key)) { const i = f.values.findIndex((v) => v !== null); if (i > floor) floor = i; }
+    return floor;
+  });
+  /** the fund that sets that floor (the youngest one in use) */
+  fundsFloorFund = computed(() => {
+    const d = this.data(), fl = this.fundsFloor(); if (!d?.funds?.length || !fl) return null;
+    return d.funds.find((f) => f.values.findIndex((v) => v !== null) === fl) ?? null;
+  });
+  /** one villa's level series on [s, e] — from the indices, or from its actual funds */
+  private villaLevels(d: MarketData, v: MarketData['villas'][number], s: number, e: number): { v: number[]; viaIndex: string[] } {
+    if (this.source() !== 'funds' || !d.funds?.length) return { v: replay(d, v.weights, d.rebalance, s, e), viaIndex: [] };
+    const byKey = new Map(d.funds.map((f) => [f.key, f]));
+    const series: MarketData['series'] = {};
+    const viaIndex: string[] = [];
+    for (const part of Object.keys(v.weights)) {
+      const lst = (d.villa_funds?.[v.key]?.[part] ?? []).map((f) => ({ w: f.weight, f: byKey.get('fund:' + f.scheme_code) })).filter((x) => x.f && x.f.values[s] != null);
+      if (!lst.length) { if (d.series[part]) { series[part] = d.series[part]; viaIndex.push(part); } continue; }
+      // the sleeve's basket: each fund rebased to 1 at s, weighted — a level that starts at 1
+      const vals: (number | null)[] = new Array(d.days.length).fill(null);
+      for (let i = s; i <= e; i++) {
+        let lvl = 0, ok = true;
+        for (const x of lst) { const a = x.f!.values[i], b = x.f!.values[s]; if (a == null || !b) { ok = false; break; } lvl += x.w * (a / b); }
+        vals[i] = ok ? lvl : null;
+      }
+      series[part] = { name: part, values: vals };
+    }
+    return { v: replay({ ...d, series }, v.weights, d.rebalance, s, e), viaIndex };
+  }
 
   dates = computed<string[]>(() => {
     const d = this.data(), r = this.range();
@@ -239,18 +304,34 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
   lines = computed<Line[]>(() => {
     const d = this.data(), r = this.range();
     if (!d || !r) return [];
-    const out: Line[] = d.villas.map((v, i) => ({
-      key: 'villa:' + v.key, name: v.name, colour: VILLA_COLOURS[i % VILLA_COLOURS.length], bench: false,
-      mix: mixLabel(v.weights, d.rebalance?.parts ?? ['gold', 'large', 'mid', 'small']),
-      v: replay(d, v.weights, d.rebalance, r.s, r.e),
-    }));
+    const out: Line[] = d.villas.map((v, i) => {
+      const lv = this.villaLevels(d, v, r.s, r.e);
+      const mix = mixLabel(v.weights, d.rebalance?.parts ?? ['gold', 'large', 'mid', 'small'])
+        + (this.source() === 'funds' ? ' · actual funds' + (lv.viaIndex.length ? ` (${lv.viaIndex.join(', ')}: index, no fund set)` : '') : ' · indices');
+      return { key: 'villa:' + v.key, name: v.name, colour: VILLA_COLOURS[i % VILLA_COLOURS.length], bench: false, kind: 'villa' as const, mix, v: lv.v };
+    });
+    // the actual funds the admin switched on, each rebased to 100 at the window's start
+    for (const f of d.funds ?? []) {
+      if (!this.fundKeys().has(f.key)) continue;
+      const vals = carry(f.values.slice(r.s, r.e + 1));
+      const f0 = vals[0] || 1;
+      out.push({ key: f.key, name: f.short, colour: this.fundColour(f.sleeve), bench: false, kind: 'fund',
+                 mix: `${this.sleeveName(f.sleeve)} fund · published NAV · in ${f.villas.join(', ') || 'no'} villa${f.villas.length === 1 ? '' : 's'}`,
+                 v: vals.map((x) => (x / f0) * 100) });
+    }
     const b = d.series[this.bench()];
     if (b) {
       const vals = carry(b.values.slice(r.s, r.e + 1));
       const b0 = vals[0] || 1;
-      out.push({ key: 'bench', name: this.benchMeta()?.label ?? b.name, colour: BENCH_COLOUR, bench: true, v: vals.map((x) => (x / b0) * 100) });
+      out.push({ key: 'bench', name: this.benchMeta()?.label ?? b.name, colour: BENCH_COLOUR, bench: true, kind: 'bench', v: vals.map((x) => (x / b0) * 100) });
     }
     return out;
+  });
+  /** what is on screen, in words */
+  sourceLabel = computed(() => this.source() === 'funds' ? 'Villas built from the actual funds (NAV, after costs)' : 'Villas built from the indices (before fund costs)');
+  fundsFrom = computed(() => {
+    const d = this.data(), f = this.fundsFloorFund(), fl = this.fundsFloor();
+    return d && f && fl ? `${f.short} has NAVs from ${this.fmtDate(d.days[fl], true)}, so the window starts there` : '';
   });
   visible = computed(() => this.lines().filter((l) => !this.hidden().has(l.key)));
 
@@ -298,10 +379,15 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
       if (l.bench) {
         const v = d.series[this.bench()]?.values;
         pct = v && v[e] !== null && v[e - 1] ? (v[e]! / v[e - 1]! - 1) : 0;
+      } else if (l.kind === 'fund') {
+        // a fund's move is between its last two PUBLISHED NAVs (there is no live NAV)
+        const v = d.funds?.find((f) => f.key === l.key)?.values, eF = this.provisional() ? e - 1 : e;
+        pct = v && v[eF] != null && v[eF - 1] ? (v[eF]! / v[eF - 1]! - 1) : 0;
       } else {
         const w = d.villas.find((x) => 'villa:' + x.key === l.key)!;
-        const yr = replay(d, w.weights, d.rebalance, Math.max(0, e - 250), e);
-        pct = yr[yr.length - 1] / yr[yr.length - 2] - 1;
+        const eV = this.source() === 'funds' && this.provisional() ? e - 1 : e;
+        const yr = this.villaLevels(d, w, Math.max(this.fundsFloor(), eV - 250), eV).v;
+        pct = yr.length > 1 ? yr[yr.length - 1] / yr[yr.length - 2] - 1 : 0;
       }
       return { key: l.key, name: l.name, colour: l.colour, bench: l.bench, pct };
     });
@@ -387,7 +473,7 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
       let p = '';
       for (let i = 0; i < n; i += step) p += (p ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v[i]).toFixed(1);
       if ((n - 1) % step) p += 'L' + x(n - 1).toFixed(1) + ',' + y(v[n - 1]).toFixed(1);
-      return { key: l.key, colour: l.colour, bench: l.bench, d: p };
+      return { key: l.key, colour: l.colour, bench: l.bench, fund: l.kind === 'fund', d: p };
     });
   });
 
@@ -522,8 +608,11 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
   minDay = computed(() => this.raw()?.days[0] ?? '');
   maxDay = computed(() => this.data()?.days.at(-1) ?? '');
   methodNote = computed(() =>
-    'Villas: each part on its index (Nifty 50 / Midcap 150 / Smallcap 250 TRI, Gold BeES, Nifty 50 Arbitrage), '
-    + 'growth part back to equal shares every 1 Jan, arbitrage untouched; before fund costs and tax. '
+    (this.source() === 'funds'
+      ? 'Villas: each part on the ACTUAL fund(s) of its villa bucket at their published NAVs (after fund costs; a sleeve with no fund set falls back to its index), '
+      : 'Villas: each part on its INDEX (Nifty 50 / Midcap 150 / Smallcap 250 TRI, Gold BeES, Nifty 50 Arbitrage) — not on fund NAVs; before fund costs — ')
+    + 'growth part back to its shares every 1 Jan, arbitrage untouched; before tax. '
+    + 'Fund lines are the real schemes’ NAVs, rebased to 100 at the window’s start. '
     + 'Sharpe uses the arbitrage index as the risk-free rate. Beta is against ' + (this.benchMeta()?.label ?? 'the index') + '. '
     + (this.provisional() ? 'Today’s point is live from NSE (equity parts; gold and arbitrage at their last close).' : ''));
 }
