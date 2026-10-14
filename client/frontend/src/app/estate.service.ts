@@ -295,6 +295,8 @@ export interface FundMoves {
   index_as_of: string | null;
   days: string[];
   funds: FundMove[];
+  /** what was put in vs what it was worth, day by day since the first purchase */
+  portfolio: { from: number; invested: number[]; value: number[] } | null;
 }
 
 /** The portfolio's move between the last two published NAVs (Σ units × ΔNAV). */

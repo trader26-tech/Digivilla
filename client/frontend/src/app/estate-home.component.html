@@ -395,24 +395,14 @@
               aria-label="See the live NAVs behind this value">
         <span [appCountUp]="est.estateValue" [countDuration]="800" [countInstant]="entered"></span><i class="port-live" aria-hidden="true"></i>
       </button>
-      <!-- the day's move and the move since the start, side by side — one tap
-           opens "How your funds moved" (today fund by fund · each fund vs its index) -->
-      <button type="button" class="port-strip" (click)="openMoves()"
-              [attr.aria-label]="(day ? dayWhen(day.nav_date) + ' ' + signedInr(day.change) + ', ' + signedPct(day.pct) + '. ' : '') + 'Since you started ' + signedPct(gainPct) + '. See how each fund moved'">
-        @if (day; as d) {
-          <span class="ps-cell" [class.down]="d.change < 0">
-            <small>{{ dayWhen(d.nav_date) | titlecase }}</small>
-            <b><svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="d.change < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>{{ signedInr(d.change) }}</b>
-            <em>{{ signedPct(d.pct) }}</em>
-          </span>
-          <i class="ps-sep" aria-hidden="true"></i>
-        }
-        <span class="ps-cell" [class.down]="gainPct < 0">
-          <small>Since you started</small>
-          <b>{{ signedInr(est.gain) }}</b>
-          <em>{{ signedPct(gainPct) }} returns</em>
-        </span>
-        <svg class="ps-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <!-- how much the money has grown overall, in one line — tap for the graph,
+           today's move fund by fund, and each fund against its index -->
+      <button type="button" class="port-growth" [class.down]="est.gain < 0" (click)="openMoves()"
+              [attr.aria-label]="'Grown ' + signedInr(est.gain) + ', ' + signedPct(gainPct) + '. See the graph and how each fund moved'">
+        <svg class="pg-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+        <b>{{ signedInr(est.gain) }}</b>
+        <span>({{ signedPct(gainPct) }})</span>
+        <svg class="pg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <!-- the live-values sheet (renders nothing until the figure is tapped) -->
       <app-data-freshness></app-data-freshness>

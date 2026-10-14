@@ -1,19 +1,20 @@
-<!-- ============ HOW YOUR FUNDS MOVED — today · vs index ============ -->
+<!-- ============ HOW YOUR MONEY GREW — growth · today · vs index ============ -->
 <div class="scrim mix-scrim fm-scrim" [class.open]="isOpen()" (click)="close()">
   @if (isOpen()) {
-    <div class="sheet mix-sheet fm-sheet" [class.down]="down()" role="dialog" aria-modal="true"
+    <div class="sheet mix-sheet fm-sheet" [class.down]="view() === 'today' ? down() : est.gain < 0" role="dialog" aria-modal="true"
          aria-labelledby="fmTitle" (click)="$event.stopPropagation()">
       <div class="pad">
         <div class="head">
-          <span class="h" id="fmTitle">How your funds moved</span>
+          <span class="h" id="fmTitle">How your money grew</span>
           <button class="close" (click)="close()">close ✕</button>
         </div>
 
-        <!-- the two views -->
+        <!-- the three views -->
         <div class="fm-tabs" role="tablist" aria-label="View">
+          <button role="tab" [attr.aria-selected]="view() === 'growth'" [class.on]="view() === 'growth'" (click)="setView('growth')">Growth</button>
           <button role="tab" [attr.aria-selected]="view() === 'today'" [class.on]="view() === 'today'" (click)="setView('today')">Today</button>
-          <button role="tab" [attr.aria-selected]="view() === 'index'" [class.on]="view() === 'index'" (click)="setView('index')">Vs its index</button>
-          <i class="fm-ink" [class.r]="view() === 'index'" aria-hidden="true"></i>
+          <button role="tab" [attr.aria-selected]="view() === 'index'" [class.on]="view() === 'index'" (click)="setView('index')">Vs index</button>
+          <i class="fm-ink" [class.p1]="view() === 'today'" [class.p2]="view() === 'index'" aria-hidden="true"></i>
         </div>
 
         @if (!m()) {
@@ -22,6 +23,61 @@
             <span class="sk w40"></span><span class="sk w70 tall"></span>
             <span class="sk w90"></span><span class="sk w90"></span><span class="sk w90"></span><span class="sk w90"></span>
           </div>
+        } @else if (view() === 'growth') {
+          <!-- ───────── VIEW 0 · GROWTH ───────── -->
+          @if (gread(); as r) {
+            <div class="fm-gread" [class.live]="r.scrubbing" [class.neg]="r.gain < 0">
+              <div class="fm-ghero">
+                <span class="fm-gamt">{{ signedInr(r.gain) }}</span>
+                <span class="fm-pct">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="r.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+                  {{ signedPct(r.pct) }}
+                </span>
+              </div>
+              <p class="fm-gsub">
+                @if (r.scrubbing) { On <b>{{ dateShort(r.date) }}</b>: } @else { Today: }
+                worth <b>{{ inr(r.value) }}</b> · put in <b>{{ inr(r.invested) }}</b>
+              </p>
+            </div>
+          }
+
+          @if (m()?.portfolio; as pf) {
+            <div class="fm-wins" role="radiogroup" aria-label="Period">
+              @for (w of gwins; track w.key) {
+                <button role="radio" [attr.aria-checked]="gwin() === w.key" [class.on]="gwin() === w.key" [disabled]="!gwinOk(w.key)" (click)="setGwin(w.key)">{{ w.label }}</button>
+              }
+            </div>
+
+            @if (growth(); as g) {
+              @if (gwin() !== 'since' && gwinStat(); as st) {
+                <p class="fm-when">Over this period: <b [class.neg]="st.gain < 0">{{ signedInr(st.gain) }} ({{ signedPct(st.pct) }})</b>@if (st.added > 0) { · {{ inr(st.added) }} added }</p>
+              } @else {
+                <p class="fm-when">From {{ dateShort(g.start) }} · {{ g.n }} trading days</p>
+              }
+              <svg #gchart class="fm-chart fm-gchart" viewBox="0 0 320 150" preserveAspectRatio="none"
+                   (pointerdown)="onGscrub($event, gchart)" (pointermove)="$event.buttons ? onGscrub($event, gchart) : null"
+                   (pointerup)="endGscrub()" (pointercancel)="endGscrub()" (pointerleave)="endGscrub()" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fmGFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="var(--dc)" stop-opacity=".3"/><stop offset="1" stop-color="var(--dc)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path class="fm-area" [attr.d]="g.area" fill="url(#fmGFill)"/>
+                <path class="fm-inv" [attr.d]="g.invested" vector-effect="non-scaling-stroke"/>
+                <path class="fm-val" [attr.d]="g.value" vector-effect="non-scaling-stroke"/>
+                @if (gread(); as r) {
+                  @if (r.scrubbing) { <line class="fm-cursor" [attr.x1]="r.x" [attr.x2]="r.x" y1="0" y2="150" vector-effect="non-scaling-stroke"/> }
+                }
+              </svg>
+              <div class="fm-axis"><span>{{ dateShort(g.start) }}</span><span>{{ dateShort(g.end) }}</span></div>
+              <div class="fm-key"><span><i class="f" style="background: var(--dc)"></i>What it was worth</span><span><i class="b"></i>What you put in</span></div>
+              <p class="fine-note">Drag across the graph for any day. Worth = your units on that day × that day’s NAV; put in = every purchase up to that day, less redemptions. Today’s figures are the live ones above.</p>
+            } @else {
+              <p class="fm-soon">Your graph starts drawing from the next NAV — one point a day, from {{ dateShort(m()!.days[pf.from]) }}.</p>
+            }
+          } @else {
+            <p class="fine-note">No purchases on record yet.</p>
+          }
         } @else if (view() === 'today') {
           <!-- ───────── VIEW 1 · TODAY ───────── -->
           @if (m(); as d) {

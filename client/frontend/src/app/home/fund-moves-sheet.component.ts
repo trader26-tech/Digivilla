@@ -17,7 +17,7 @@ const SLEEVES: Record<string, { name: string; color: string }> = {
   other: { name: 'Other', color: '#9fb3ab' },
 };
 
-type View = 'today' | 'index';
+type View = 'growth' | 'today' | 'index';
 type Win = 'since' | '1y' | '3y' | '5y';
 
 /** One fund row of the Today view: its move and its index's, on one scale. */
@@ -27,7 +27,7 @@ interface TodayRow {
   wF: number; wB: number; nav: number | null; prev: number | null; late: boolean; when: string;
 }
 
-/** The line chart of the Vs-index view (viewBox 320 × 150). */
+/** The fund-vs-index line chart (viewBox 320 × 150). */
 interface Line {
   fund: string; index: string; area: string;
   base: number;                      // y of the 100 line
@@ -41,16 +41,24 @@ interface Bars {
   w: number; zero: number; per: 'day' | 'week' | 'month';
   best: number; worst: number; ups: number; total: number; idx: string;
 }
+/** The growth chart: what was put in (steps) vs what it was worth (line). */
+interface Growth {
+  value: string; area: string; invested: string;
+  n: number; start: string; end: string; min: number; max: number;
+}
 
 const W = 320, H = 150, BH = 64;
 
 /**
- * "How your funds moved" — opened from the strip under the portfolio value.
+ * "How your money grew" — opened from the growth line under the portfolio value.
  *
+ *  · Growth    the whole estate: what was put in vs what it was worth, day by
+ *              day since the first purchase (or 1y / 3y / 5y), scrubbable, with
+ *              the ₹ and % at the top.
  *  · Today     each fund's move between its last two NAVs, as a bar either side
  *              of a centre line, with its index's move for the same day drawn
  *              underneath on the SAME scale, so "beat its index" is visible at a
- *              glance. Rows add up to the headline exactly.
+ *              glance. Rows add up to the day's move exactly.
  *  · Vs index  one fund at a time: its NAV and its index rebased to 100 from the
  *              day the client first bought it (or 1y / 3y / 5y), a scrubbable
  *              line chart, then every day's % move as bars with best / worst /
@@ -75,10 +83,12 @@ export class FundMovesSheetComponent {
   get open(): boolean { return this._open(); }
   @Output() closed = new EventEmitter<void>();
 
-  readonly view = signal<View>('today');
-  readonly win = signal<Win>('since');
-  readonly pick = signal<number | null>(null);         // scheme_code of the fund in view 2
-  readonly scrub = signal<number | null>(null);        // index into the window's points
+  readonly view = signal<View>('growth');
+  readonly win = signal<Win>('since');                 // vs-index window
+  readonly gwin = signal<Win>('since');                // growth window
+  readonly pick = signal<number | null>(null);         // scheme_code of the fund in the vs-index view
+  readonly scrub = signal<number | null>(null);        // index into the window's points (vs index)
+  readonly gscrub = signal<number | null>(null);       // index into the growth window's points
   readonly isOpen = computed(() => this._open());
   readonly m = computed<FundMoves | null>(() => this.est.moves());
 
@@ -88,8 +98,9 @@ export class FundMovesSheetComponent {
   }
 
   close(): void { this._open.set(false); this.closed.emit(); }
-  setView(v: View): void { this.view.set(v); this.scrub.set(null); }
+  setView(v: View): void { this.view.set(v); this.scrub.set(null); this.gscrub.set(null); }
   setWin(w: Win): void { if (this.winOk(w)) { this.win.set(w); this.scrub.set(null); } }
+  setGwin(w: Win): void { if (this.gwinOk(w)) { this.gwin.set(w); this.gscrub.set(null); } }
   setPick(code: number): void { this.pick.set(code); this.scrub.set(null); this.defaultWin(); }
   /** "Since you bought" only when there is something to see (≥ 20 trading days); else 1Y. */
   private defaultWin(): void {
@@ -103,9 +114,10 @@ export class FundMovesSheetComponent {
   }
 
   // ── formatting ────────────────────────────────────────────────────────────
+  inr(v: number | null | undefined): string { return v == null ? '—' : inr(v); }
   signedInr(v: number | null | undefined): string { return v == null ? '—' : (v < 0 ? '−' : '+') + inr(Math.abs(v)); }
   signedPct(v: number | null | undefined, dp?: number): string {
-    if (v == null) return '—';
+    if (v == null || !isFinite(v)) return '—';
     const a = Math.abs(v);
     return (v < 0 ? '−' : '+') + a.toFixed(dp ?? (a < 1 ? 2 : 1)) + '%';
   }
@@ -126,6 +138,70 @@ export class FundMovesSheetComponent {
   }
   color(s: string): string { return SLEEVES[s]?.color ?? SLEEVES['other'].color; }
   sleeveName(s: string): string { return SLEEVES[s]?.name ?? 'Other'; }
+  private yearsAgo(days: string[], years: number): string {
+    const d = new Date(days[days.length - 1] + 'T00:00:00Z');
+    d.setUTCFullYear(d.getUTCFullYear() - years);
+    return d.toISOString().slice(0, 10);
+  }
+
+  // ── view 0 · growth ───────────────────────────────────────────────────────
+  readonly gwins: { key: Win; label: string }[] = [
+    { key: 'since', label: 'Since you started' }, { key: '1y', label: '1Y' }, { key: '3y', label: '3Y' }, { key: '5y', label: '5Y' },
+  ];
+  /** a growth window is offered when the estate is older than it (90% of it) */
+  gwinOk(w: Win): boolean {
+    const p = this.m()?.portfolio; if (!p) return false;
+    if (w === 'since') return true;
+    return p.value.length / 248 >= (w === '1y' ? 1 : w === '3y' ? 3 : 5) * 0.9;
+  }
+  readonly gpts = computed(() => {
+    const m = this.m(), p = m?.portfolio; if (!m || !p) return null;
+    const w = this.gwin();
+    const start = w === 'since' ? m.days[p.from] : this.yearsAgo(m.days, w === '1y' ? 1 : w === '3y' ? 3 : 5);
+    const dates: string[] = [], value: number[] = [], invested: number[] = [];
+    for (let i = 0; i < p.value.length; i++) {
+      const d = m.days[p.from + i]; if (d < start) continue;
+      dates.push(d); value.push(p.value[i]); invested.push(p.invested[i]);
+    }
+    return { dates, value, invested };
+  });
+  readonly growth = computed<Growth | null>(() => {
+    const g = this.gpts(); if (!g || g.value.length < 2) return null;
+    const vals = [...g.value, ...g.invested].filter((v) => v > 0);
+    let min = Math.min(...vals), max = Math.max(...vals);
+    const pad = Math.max((max - min) * 0.12, max * 0.015); min = Math.max(0, min - pad); max += pad;
+    const n = g.value.length;
+    const X = (i: number) => (i / (n - 1)) * W;
+    const Y = (v: number) => H - ((v - min) / (max - min)) * H;
+    let value = '', pen = false;
+    g.value.forEach((v, i) => { if (!v) { pen = false; return; } value += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); pen = true; });
+    // invested is a staircase: flat until the next purchase lands
+    let invested = `M0 ${Y(g.invested[0]).toFixed(1)}`;
+    for (let i = 1; i < n; i++) {
+      if (g.invested[i] !== g.invested[i - 1]) invested += `L${X(i).toFixed(1)} ${Y(g.invested[i - 1]).toFixed(1)}L${X(i).toFixed(1)} ${Y(g.invested[i]).toFixed(1)}`;
+    }
+    invested += `L${W} ${Y(g.invested[n - 1]).toFixed(1)}`;
+    return { value, area: value + `L${W} ${H}L0 ${H}Z`, invested, n, start: g.dates[0], end: g.dates[n - 1], min, max };
+  });
+  /** the growth readout: at the scrub point, else now (= the live headline figures) */
+  readonly gread = computed(() => {
+    const g = this.gpts(); if (!g || !g.value.length) return null;
+    const scrubbing = this.gscrub() != null;
+    const i = this.gscrub() ?? g.value.length - 1;
+    const value = scrubbing ? g.value[i] : this.est.estateValue;
+    const invested = scrubbing ? g.invested[i] : this.est.invested;
+    const gain = value - invested;
+    return { date: g.dates[i], value, invested, gain, pct: invested > 0 ? gain / invested * 100 : 0,
+             x: (i / Math.max(1, g.value.length - 1)) * W, scrubbing, since: g.dates[0] };
+  });
+  /** the growth over the chosen window: value now vs value at the window's start (plus money added since) */
+  readonly gwinStat = computed(() => {
+    const g = this.gpts(); if (!g || g.value.length < 2) return null;
+    const added = g.invested[g.invested.length - 1] - g.invested[0];
+    const gain = (g.value[g.value.length - 1] - g.value[0]) - added;
+    const base = g.value[0] + Math.max(0, added);
+    return { gain, pct: base > 0 ? gain / base * 100 : 0, added };
+  });
 
   // ── view 1 · today ────────────────────────────────────────────────────────
   readonly total = computed(() => this.m()?.total ?? null);
@@ -166,17 +242,14 @@ export class FundMovesSheetComponent {
   private winStart(w: Win, f: FundMove, days: string[]): string {
     const first = days[f.from] ?? '';
     if (w === 'since') return f.since && f.since > first ? f.since : first;
-    const d = new Date(days[days.length - 1] + 'T00:00:00Z');
-    d.setUTCFullYear(d.getUTCFullYear() - (w === '1y' ? 1 : w === '3y' ? 3 : 5));
-    return d.toISOString().slice(0, 10);
+    return this.yearsAgo(days, w === '1y' ? 1 : w === '3y' ? 3 : 5);
   }
   /** a window is offered only when the fund's history reaches back that far (90% of it) */
   winOk(w: Win): boolean {
     const m = this.m(), f = this.fund(); if (!m || !f) return false;
     if (w === 'since') return !!f.since;
     const years = w === '1y' ? 1 : w === '3y' ? 3 : 5;
-    const have = (f.nav_series.length) / 248;
-    return have >= years * 0.9;
+    return f.nav_series.length / 248 >= years * 0.9;
   }
   readonly wins: { key: Win; label: string }[] = [
     { key: 'since', label: 'Since you bought' }, { key: '1y', label: '1Y' }, { key: '3y', label: '3Y' }, { key: '5y', label: '5Y' },
@@ -264,13 +337,20 @@ export class FundMovesSheetComponent {
   }
 
   // ── scrubbing ─────────────────────────────────────────────────────────────
+  private frac(ev: PointerEvent, svg: Element): number {
+    const r = (svg as SVGSVGElement).getBoundingClientRect();
+    return Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
+  }
   onScrub(ev: PointerEvent, svg: Element): void {
     const p = this.pts(); if (!p) return;
-    const r = (svg as SVGSVGElement).getBoundingClientRect();
-    const x = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
-    this.scrub.set(Math.round(x * (p.fund.length - 1)));
+    this.scrub.set(Math.round(this.frac(ev, svg) * (p.fund.length - 1)));
   }
   endScrub(): void { this.scrub.set(null); }
+  onGscrub(ev: PointerEvent, svg: Element): void {
+    const g = this.gpts(); if (!g) return;
+    this.gscrub.set(Math.round(this.frac(ev, svg) * (g.value.length - 1)));
+  }
+  endGscrub(): void { this.gscrub.set(null); }
 
   trackRow(_: number, r: TodayRow): number { return r.key; }
   trackFund(_: number, f: FundMove): number { return f.scheme_code; }
