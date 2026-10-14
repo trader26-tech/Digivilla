@@ -574,15 +574,18 @@ export class EstateService {
   readonly moves = signal<FundMoves | null>(null);
   private movesAt = 0;
   loadMoves(force = false): void {
+    if (!this.auth.token()) return;
+    if (this.movesTok !== this.tokenTag()) { this.moves.set(null); this.movesTok = this.tokenTag(); }   // another sign-in: never show the last user's funds
     if (!force && this.moves() && Date.now() - this.movesAt < 15 * 60_000) return;
     if (this.movesBusy) return;
     this.movesBusy = true;
-    this.http.get<FundMoves>(`${environment.apiUrl}/me/funds/moves`).subscribe({
+    this.http.get<FundMoves>(`${environment.apiUrl}/me/funds/moves`, { headers: this.authHeaders }).subscribe({
       next: (m) => { this.moves.set(m); this.movesAt = Date.now(); this.movesBusy = false; },
       error: () => { this.movesBusy = false; },
     });
   }
   private movesBusy = false;
+  private movesTok = '';
 
   /** Pull this user's estate + real net worth from the backend. */
   syncFromServer(): void {
