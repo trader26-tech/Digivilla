@@ -292,7 +292,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const rs = this.region() === 'All' ? this.regions() : [this.region()];
     return rs.map((r) => {
       const items = this.quotes().filter((q) => q.region === r);
-      const moves = items.filter((q) => !this.isYield(q.key)).map((q) => q.usd_change_pct).filter((v): v is number => v !== null);
+      const moves = items.filter((q) => !this.isYield(q.key)).map((q) => q.change_pct).filter((v): v is number => v !== null);
       return { region: r, name: this.REGION_NAME[r] ?? r, items, avg: moves.length ? moves.reduce((a, b) => a + b, 0) / moves.length : null };
     }).filter((g) => g.items.length);
   });
@@ -304,8 +304,8 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   readonly breadth = computed(() => {
     // yields aren't "up" or "down" markets — count the priced ones only
-    const qs = this.apiQuotes().filter((q) => q.usd_change_pct !== null && q.kind !== 'yield');
-    return { up: qs.filter((q) => q.usd_change_pct! > 0).length, down: qs.filter((q) => q.usd_change_pct! < 0).length };
+    const qs = this.apiQuotes().filter((q) => q.change_pct !== null && q.kind !== 'yield');
+    return { up: qs.filter((q) => q.change_pct! > 0).length, down: qs.filter((q) => q.change_pct! < 0).length };
   });
   readonly hasYield = computed(() => this.selected().some((k) => this.isYield(k)));
   isYield(key: string): boolean { return this.quote(key)?.kind === 'yield' || !!this.hist()[key]?.kind?.includes('yield'); }
@@ -486,6 +486,39 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     return !!e && v !== null && v !== undefined && this.compareRows().filter((r) => !r.yield && !r.cpi).length > 1 && (invert ? -v : v) === e.hi;
   }
 
+  /** the table shows each market in ITS OWN currency (what the news reports); the chart's currency switch is separate */
+  flagOf(q: WorldQuote): string { return q.flag || (q.kind === 'villa' ? '◆' : ''); }
+  sub(q: WorldQuote): string {
+    if (q.kind === 'yield') return '% a year';
+    if (q.kind === 'villa') return q.unit + ' mix';
+    return q.unit ? (q.currency || '') + ' · ' + q.unit.replace('$', '') : (q.currency || '');
+  }
+  /** the day's move in the market's own units: points for an index, bp for a yield */
+  chgText(q: WorldQuote): string {
+    if (q.kind === 'yield') return this.bps(q.change_bp);
+    const v = q.change;
+    if (v === null || v === undefined) return '—';
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  /** the time of the latest price, on the exchange's clock; a villa shows its last close's date */
+  localClock(q: WorldQuote): string {
+    if (!q.time) return '—';
+    const d = new Date(q.time * 1000);
+    if (q.kind === 'villa') return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    try { return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: q.tz || undefined }); } catch { return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }); }
+  }
+  /** "Session of 14 Oct · vs the 13 Oct close" — which sessions a day's move compares */
+  sessionNote(q: WorldQuote): string {
+    const f = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    if (q.kind === 'villa') return 'Last close vs the close before it';
+    return (q.session ? 'Session of ' + f(q.session) : 'Latest price') + (q.prev_date ? ' · vs the ' + f(q.prev_date) + ' close' : '');
+  }
+  /** a chart row's level in the chart's currency */
+  levelOf(key: string): string {
+    const q = this.quote(key); if (!q) return '';
+    if (q.kind === 'yield') return this.num(q.last) + '%';
+    return this.num(this.ccy() === 'usd' ? q.usd_last : q.last);
+  }
   spark(q: WorldQuote): string {
     const v = q.spark;
     if (!v || v.length < 2) return '';

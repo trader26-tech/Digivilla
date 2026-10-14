@@ -3,7 +3,11 @@
 Quotes and charts come from Yahoo Finance's public chart API (no key), fetched on
 the server and cached so the page never hammers it:
   quotes()          every index: last, previous close, day change, day range, a
-                    small intraday line — cached 60 s
+                    small intraday line — cached 60 s. The PREVIOUS CLOSE is taken from
+                    the daily bars (the last close of a session before the one the
+                    latest price belongs to) — Yahoo's own "previous close" field is
+                    sometimes a session or two stale for Indian indices, which showed
+                    Nifty up on a down day (14 Oct 2026).
   chart(key, range) one index over 1D … 5Y — cached 60 s for 1D/5D, 15 min otherwise
   history(key)      one index's DAILY closes since 2000, in its own currency AND in US
                     dollars — cached 6 h; the page slices any time frame from it
@@ -14,49 +18,52 @@ from __future__ import annotations
 
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import httpx
 
 INDICES = [
     # India
-    {"key": "nifty50", "symbol": "^NSEI", "name": "Nifty 50", "region": "India"},
-    {"key": "nifty500", "symbol": "^CRSLDX", "name": "Nifty 500", "region": "India"},
-    {"key": "sensex", "symbol": "^BSESN", "name": "Sensex", "region": "India"},
-    {"key": "banknifty", "symbol": "^NSEBANK", "name": "Nifty Bank", "region": "India"},
-    {"key": "midcap50", "symbol": "^NSEMDCP50", "name": "Nifty Midcap 50", "region": "India"},
+    {"key": "nifty50", "flag": "🇮🇳", "symbol": "^NSEI", "name": "Nifty 50", "region": "India"},
+    {"key": "nifty500", "flag": "🇮🇳", "symbol": "^CRSLDX", "name": "Nifty 500", "region": "India"},
+    {"key": "sensex", "flag": "🇮🇳", "symbol": "^BSESN", "name": "Sensex", "region": "India"},
+    {"key": "banknifty", "flag": "🇮🇳", "symbol": "^NSEBANK", "name": "Nifty Bank", "region": "India"},
+    {"key": "midcap50", "flag": "🇮🇳", "symbol": "^NSEMDCP50", "name": "Nifty Midcap 50", "region": "India"},
     # Nippon India ETF Gold BeES — the ETF behind Nippon India Gold Savings Fund (the mutual-fund route)
-    {"key": "goldbees", "symbol": "GOLDBEES.NS", "name": "Nippon India Gold BeES", "region": "India"},
+    {"key": "goldbees", "flag": "🇮🇳", "symbol": "GOLDBEES.NS", "name": "Nippon India Gold BeES", "region": "India"},
     # United States
-    {"key": "sp500", "symbol": "^GSPC", "name": "S&P 500", "region": "US"},
-    {"key": "nasdaq", "symbol": "^IXIC", "name": "Nasdaq Composite", "region": "US"},
-    {"key": "nasdaq100", "symbol": "^NDX", "name": "Nasdaq-100", "region": "US"},
-    {"key": "dow", "symbol": "^DJI", "name": "Dow Jones", "region": "US"},
+    {"key": "sp500", "flag": "🇺🇸", "symbol": "^GSPC", "name": "S&P 500", "region": "US"},
+    {"key": "nasdaq", "flag": "🇺🇸", "symbol": "^IXIC", "name": "Nasdaq Composite", "region": "US"},
+    {"key": "nasdaq100", "flag": "🇺🇸", "symbol": "^NDX", "name": "Nasdaq-100", "region": "US"},
+    {"key": "dow", "flag": "🇺🇸", "symbol": "^DJI", "name": "Dow Jones", "region": "US"},
     # Asia
-    {"key": "kospi", "symbol": "^KS11", "name": "KOSPI (South Korea)", "region": "Asia"},
-    {"key": "nikkei", "symbol": "^N225", "name": "Nikkei 225 (Japan)", "region": "Asia"},
-    {"key": "hangseng", "symbol": "^HSI", "name": "Hang Seng (Hong Kong)", "region": "Asia"},
-    {"key": "shanghai", "symbol": "000001.SS", "name": "Shanghai Composite", "region": "Asia"},
-    {"key": "taiwan", "symbol": "^TWII", "name": "Taiwan Weighted", "region": "Asia"},
+    {"key": "kospi", "flag": "🇰🇷", "symbol": "^KS11", "name": "KOSPI (South Korea)", "region": "Asia"},
+    {"key": "nikkei", "flag": "🇯🇵", "symbol": "^N225", "name": "Nikkei 225 (Japan)", "region": "Asia"},
+    {"key": "hangseng", "flag": "🇭🇰", "symbol": "^HSI", "name": "Hang Seng (Hong Kong)", "region": "Asia"},
+    {"key": "shanghai", "flag": "🇨🇳", "symbol": "000001.SS", "name": "Shanghai Composite", "region": "Asia"},
+    {"key": "taiwan", "flag": "🇹🇼", "symbol": "^TWII", "name": "Taiwan Weighted", "region": "Asia"},
     # Europe
-    {"key": "ftse", "symbol": "^FTSE", "name": "FTSE 100 (UK)", "region": "Europe"},
-    {"key": "dax", "symbol": "^GDAXI", "name": "DAX (Germany)", "region": "Europe"},
-    {"key": "cac", "symbol": "^FCHI", "name": "CAC 40 (France)", "region": "Europe"},
-    {"key": "stoxx50", "symbol": "^STOXX50E", "name": "Euro Stoxx 50", "region": "Europe"},
+    {"key": "ftse", "flag": "🇬🇧", "symbol": "^FTSE", "name": "FTSE 100 (UK)", "region": "Europe"},
+    {"key": "dax", "flag": "🇩🇪", "symbol": "^GDAXI", "name": "DAX (Germany)", "region": "Europe"},
+    {"key": "cac", "flag": "🇫🇷", "symbol": "^FCHI", "name": "CAC 40 (France)", "region": "Europe"},
+    {"key": "stoxx50", "flag": "🇪🇺", "symbol": "^STOXX50E", "name": "Euro Stoxx 50", "region": "Europe"},
     # Global & other
-    {"key": "msciworld", "symbol": "URTH", "name": "MSCI World (ETF)", "region": "Global"},
+    {"key": "msciworld", "flag": "🌐", "symbol": "URTH", "name": "MSCI World (ETF)", "region": "Global"},
     # gold is priced in US$; its "local" view is in RUPEES (US$ price × ₹ per US$), as an Indian investor holds it
-    {"key": "gold", "symbol": "GC=F", "name": "Gold", "region": "Global", "local": "INR"},
+    {"key": "gold", "flag": "🥇", "symbol": "GC=F", "name": "Gold", "region": "Global", "local": "INR"},
     # US Treasury yields — a YIELD in % a year, not a price: shown as its level and moves in
     # basis points (1 bp = 0.01 percentage point); no currency conversion
-    {"key": "us3m", "symbol": "^IRX", "name": "US 3-month T-bill", "region": "Bonds", "kind": "yield"},
-    {"key": "us5y", "symbol": "^FVX", "name": "US 5-year Treasury", "region": "Bonds", "kind": "yield"},
-    {"key": "us10y", "symbol": "^TNX", "name": "US 10-year Treasury", "region": "Bonds", "kind": "yield"},
-    {"key": "us30y", "symbol": "^TYX", "name": "US 30-year Treasury", "region": "Bonds", "kind": "yield"},
+    {"key": "us3m", "flag": "🇺🇸", "symbol": "^IRX", "name": "US 3-month T-bill", "region": "Bonds", "kind": "yield"},
+    {"key": "us5y", "flag": "🇺🇸", "symbol": "^FVX", "name": "US 5-year Treasury", "region": "Bonds", "kind": "yield"},
+    {"key": "us10y", "flag": "🇺🇸", "symbol": "^TNX", "name": "US 10-year Treasury", "region": "Bonds", "kind": "yield"},
+    {"key": "us30y", "flag": "🇺🇸", "symbol": "^TYX", "name": "US 30-year Treasury", "region": "Bonds", "kind": "yield"},
     # crude oil, US$ a barrel (front-month futures); "local" = in rupees, like gold
-    {"key": "wti", "symbol": "CL=F", "name": "Crude oil · WTI", "region": "Commodities", "local": "INR", "unit": "$/bbl"},
-    {"key": "brent", "symbol": "BZ=F", "name": "Crude oil · Brent", "region": "Commodities", "local": "INR", "unit": "$/bbl"},
+    {"key": "wti", "flag": "🛢️", "symbol": "CL=F", "name": "Crude oil · WTI", "region": "Commodities", "local": "INR", "unit": "$/bbl"},
+    {"key": "brent", "flag": "🛢️", "symbol": "BZ=F", "name": "Crude oil · Brent", "region": "Commodities", "local": "INR", "unit": "$/bbl"},
 ]
 REGIONS = ["India", "US", "Asia", "Europe", "Global", "Bonds", "Commodities"]
 # every index is also shown in US DOLLARS: local value ÷ (local currency per USD)
@@ -104,10 +111,10 @@ def _cached(key: str, ttl: int, fn):
     return val
 
 
-def _spark(symbols: list[str]) -> dict[str, dict]:
+def _spark(symbols: list[str], rng: str = "1d", interval: str = "5m") -> dict[str, dict]:
     """One batched request for many symbols (Yahoo's spark API) → {symbol: response}."""
     url = ("https://query1.finance.yahoo.com/v7/finance/spark?symbols="
-           + ",".join(quote(s) for s in symbols) + "&range=1d&interval=5m")
+           + ",".join(quote(s) for s in symbols) + f"&range={rng}&interval={interval}")
     try:
         r = httpx.get(url, headers=_UA, timeout=20)
         if r.status_code != 200:
@@ -135,15 +142,48 @@ def _at(series: list[list], t: float) -> Optional[float]:
     return best
 
 
-def _row(ix: dict, res: dict, fx: Optional[dict]) -> dict:
+def _session_date(m: dict) -> Optional[str]:
+    """The exchange-local date the latest price belongs to (ISO), from regularMarketTime."""
+    t = m.get("regularMarketTime")
+    if not t:
+        return None
+    try:
+        return datetime.fromtimestamp(t, ZoneInfo(m.get("exchangeTimezoneName") or "UTC")).date().isoformat()
+    except Exception:
+        return datetime.utcfromtimestamp(t).date().isoformat()
+
+
+def _prev_close(m: dict, bars: Optional[dict]) -> tuple[Optional[float], Optional[str]]:
+    """The last close of a session BEFORE the one the latest price belongs to, from the
+    daily bars (→ (close, date)); Yahoo's previousClose fields are the fallback."""
+    fallback = (m.get("chartPreviousClose") or m.get("previousClose"), None)
+    if not bars:
+        return fallback
+    session = _session_date(m)
+    if not session:
+        return fallback
+    try:
+        tz = ZoneInfo(m.get("exchangeTimezoneName") or "UTC")
+    except Exception:
+        tz = ZoneInfo("UTC")
+    best = None
+    for t, c in _points(bars):
+        d = datetime.fromtimestamp(t, tz).date().isoformat()
+        if d < session and c:
+            best = (c, d)
+    return best or fallback
+
+
+def _row(ix: dict, res: dict, fx: Optional[dict], bars: Optional[dict] = None, fx_bars: Optional[dict] = None) -> dict:
     m = res.get("meta") or {}
-    last, prev = m.get("regularMarketPrice"), m.get("chartPreviousClose") or m.get("previousClose")
+    last = m.get("regularMarketPrice")
+    prev, prev_date = _prev_close(m, bars)
     pts = _points(res)
     ccy = m.get("currency")
     # US-dollar terms: divide by the currency's rate now and at the previous close
     if fx and ccy in FX:
         fm = fx.get("meta") or {}
-        fx_now, fx_prev = fm.get("regularMarketPrice"), fm.get("chartPreviousClose") or fm.get("previousClose")
+        fx_now, fx_prev = fm.get("regularMarketPrice"), _prev_close(fm, fx_bars)[0]
         fx_pts = _points(fx)
         usd_last = last / fx_now if last is not None and fx_now else None
         usd_prev = prev / fx_prev if prev and fx_prev else None
@@ -165,16 +205,17 @@ def _row(ix: dict, res: dict, fx: Optional[dict]) -> dict:
         "day_high": m.get("regularMarketDayHigh"), "day_low": m.get("regularMarketDayLow"),
         "high_52w": m.get("fiftyTwoWeekHigh"), "low_52w": m.get("fiftyTwoWeekLow"),
         "time": m.get("regularMarketTime"), "tz": m.get("exchangeTimezoneName"),
+        "session": _session_date(m), "prev_date": prev_date,
         "spark": [p[1] for p in (usd_pts or pts)[::step]],
         "change_bp": round((last - prev) * 100, 1) if ix.get("kind") == "yield" and last is not None and prev else None,
     }
 
 
-def _to_local(row: dict, fx: Optional[dict]) -> dict:
+def _to_local(row: dict, fx: Optional[dict], fx_bars: Optional[dict] = None) -> dict:
     """A US$-priced index shown locally in another currency (gold → ₹): its own-currency
     figures become US$ × that currency per US$; the US$ figures stay as they are."""
     fm = (fx or {}).get("meta") or {}
-    now, prev = fm.get("regularMarketPrice"), fm.get("chartPreviousClose") or fm.get("previousClose")
+    now, prev = fm.get("regularMarketPrice"), _prev_close(fm, fx_bars)[0]
     if not now or not prev or row.get("currency") != "USD":
         return row
     mul = lambda v, r=now: v * r if v is not None else None
@@ -200,23 +241,39 @@ def quotes() -> dict:
     def load():
         syms = [x["symbol"] for x in INDICES] + list(FX.values())
         got: dict[str, dict] = {}
-        for i in range(0, len(syms), 10):          # Yahoo takes ~20 symbols a call; stay well under
-            got.update(_spark(syms[i:i + 10]))
+        bars: dict[str, dict] = {}
+        chunks = [syms[i:i + 10] for i in range(0, len(syms), 10)]   # Yahoo takes ~20 symbols a call; stay well under
+        with ThreadPoolExecutor(max_workers=8) as ex:               # intraday lines + daily bars, all batches at once
+            intraday = list(ex.map(lambda c: _spark(c), chunks))
+            dailies = list(ex.map(lambda c: _spark(c, "1mo", "1d"), chunks))   # daily bars → the true previous close
+        for g in intraday:
+            got.update(g)
+        for b in dailies:
+            bars.update(b)
+        for sym, b in bars.items():
+            with _LOCK:
+                _CACHE[f"bars:{sym}"] = (time.time(), b)
         rows = []
         for ix in INDICES:
             res = got.get(ix["symbol"])
             if not res:
                 continue
             ccy = (res.get("meta") or {}).get("currency")
-            row = _row(ix, res, got.get(FX.get(ccy, "")))
+            fxs = FX.get(ccy, "")
+            row = _row(ix, res, got.get(fxs), bars.get(ix["symbol"]), bars.get(fxs))
             if ix.get("local") in FX:
-                row = _to_local(row, got.get(FX[ix["local"]]))
+                row = _to_local(row, got.get(FX[ix["local"]]), bars.get(FX[ix["local"]]))
             if ix.get("kind") == "yield":
                 row = {**row, **_yield_52w(ix["symbol"])}
             rows.append(row)
         return rows or None
     rows = _cached("quotes", 60, load) or []
     return {"regions": REGIONS, "indices": rows, "as_of": int(time.time()), "basis": "USD"}
+
+
+def _daily_bars(symbol: str) -> Optional[dict]:
+    """A month of daily bars for one symbol (filled by quotes() in batches; fetched alone otherwise), cached 10 min."""
+    return _cached(f"bars:{symbol}", 600, lambda: _spark([symbol], "1mo", "1d").get(symbol))
 
 
 def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
@@ -234,13 +291,14 @@ def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
             return None
         m = res.get("meta") or {}
         ccy = m.get("currency")
-        pts, prev = _points(res), m.get("chartPreviousClose")
+        pts = _points(res)
+        prev = _prev_close(m, _daily_bars(ix["symbol"]))[0] if rng == "1d" else m.get("chartPreviousClose")
         if ccy in FX and want == "usd":
             fx = _get(FX[ccy], yr, iv)
             if not fx:
                 return None
             fx_pts = _points(fx)
-            fx_prev = (fx.get("meta") or {}).get("chartPreviousClose")
+            fx_prev = _prev_close(fx.get("meta") or {}, _daily_bars(FX[ccy]))[0] if rng == "1d" else (fx.get("meta") or {}).get("chartPreviousClose")
             pts = [[t, v / r] for t, v in pts if (r := _at(fx_pts, t))]
             prev = prev / fx_prev if prev and fx_prev else None
         elif want == "local" and ix.get("local") in FX and ccy == "USD":
@@ -248,7 +306,7 @@ def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
             if not fx:
                 return None
             fx_pts = _points(fx)
-            fx_prev = (fx.get("meta") or {}).get("chartPreviousClose")
+            fx_prev = _prev_close(fx.get("meta") or {}, _daily_bars(FX[ix["local"]]))[0] if rng == "1d" else (fx.get("meta") or {}).get("chartPreviousClose")
             pts = [[t, v * r] for t, v in pts if (r := _at(fx_pts, t))]
             prev = prev * fx_prev if prev and fx_prev else None
             return {"key": key, "name": ix["name"], "range": rng, "currency": ix["local"],

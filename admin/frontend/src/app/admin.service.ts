@@ -32,6 +32,15 @@ export interface MarketData {
   rebalance?: { parts: string[]; month: number };
   benchmarks: { key: string; label: string; about: string }[];
   first_investment: string | null;
+  /** the ACTUAL funds in the villa buckets: NAV on each of `days` (null before the first NAV) */
+  funds?: MarketFund[];
+  /** each villa's real composition: sleeve → funds with weights (normalised per sleeve) */
+  villa_funds?: Record<string, Record<string, { scheme_code: number; weight: number }[]>>;
+  sources?: { index: string; funds: string };
+}
+export interface MarketFund {
+  key: string; scheme_code: number; name: string; short: string; sleeve: string; villas: string[];
+  values: (number | null)[]; since: string | null; ok: boolean;
 }
 
 export interface SessionInfo {
@@ -228,6 +237,8 @@ export interface WorldQuote {
   usd_last: number | null; usd_prev: number | null; usd_change_pct: number | null; fx_pct: number | null;
   day_high: number | null; day_low: number | null; high_52w: number | null; low_52w: number | null;
   time: number | null; tz: string | null; spark: number[];
+  /** an emoji flag for the table; the exchange-local date of the latest price and of the close it is compared with */
+  flag?: string; session?: string | null; prev_date?: string | null;
 }
 export interface WorldQuotes { regions: string[]; indices: WorldQuote[]; as_of: number; }
 /** /admin/world/history — d = day number since 1970-01-01 (UTC), v = close (own currency), u = close in US$ */
