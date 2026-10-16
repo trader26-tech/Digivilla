@@ -1,10 +1,6 @@
-Almarai-400-normal-latin.woff2
-Caveat-500-normal-latin.woff2
+Inter-latin.woff2
+Inter-rupee.woff2
+Almarai-400-latin.woff2
+Almarai-700-latin.woff2
 InstrumentSerif-400-italic-latin.woff2
-Inter-400-normal-latin.woff2
-Inter-500-normal-latin.woff2
-Inter-600-normal-latin.woff2
-Inter-400-normal-rupee.woff2
-Inter-500-normal-rupee.woff2
-Inter-600-normal-rupee.woff2
-Caveat-700-normal-latin.woff2
+Caveat-700-latin.woff2

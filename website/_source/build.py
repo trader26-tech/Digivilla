@@ -10,6 +10,7 @@ no React/Babel from a CDN — the browser loads plain JS.
 
     python3 _source/build.py        # from website/ ; rewrites dc/ and the *.html pages
 """
+import hashlib
 import html
 import json
 import re
@@ -398,6 +399,7 @@ import {{ mount }} from './dc/rt.js?v={ver}';
 import Root from './dc/{root}.js?v={ver}';
 mount(Root);
 </script>
+{sw}
 </body>
 </html>
 '''
@@ -407,6 +409,35 @@ WARM = ('<link rel="preconnect" href="' + API + '" crossorigin>\n'
         '<script>(function(){try{var c=JSON.parse(localStorage.getItem("tdc.calc.v1")||"null");if(c&&c.at&&Date.now()-c.at<864e5)return}catch(e){}'
         'var A=window.__TDC_API||"' + API + '",j=function(r){if(!r.ok)throw new Error(r.status);return r.json()},q=function(p){var f=fetch(A+p,{priority:"high"}).then(j);f.catch(function(){});return f};'
         'window.__tdcCalc={cfg:q("/calc/config"),vf:q("/calc/villa-funds")}})();</script>')
+
+
+# Service worker (sw.js, hand-written, at the root): registered once the page has loaded and the
+# main thread is idle, https only (localhost for tests). The page then hands the worker the URLs it
+# already fetched (HTTP-cached, so no extra download) so the next visit is answered from the device.
+SW_REGISTER = ('<script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\\.0\\.0\\.1)$/.test(location.hostname)))return;'
+               'var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){'
+               'var u=performance.getEntriesByType("resource").map(function(e){return e.name});'
+               'if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};'
+               'addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>')
+
+
+def stamp_sw(ver: str) -> str:
+    """Version the worker's cache by everything it may serve cache-first: the module graph (ver), the
+    pages, part-transitions.js and every asset. A deploy that changes any of them → new sw.js bytes →
+    the browser installs it → it takes over and drops the old caches."""
+    h = hashlib.sha1(ver.encode())
+    files = sorted(OUT.glob('*.html')) + [OUT / 'part-transitions.js'] + sorted(p for p in (OUT / 'assets').rglob('*') if p.is_file())
+    for f in files:
+        h.update(f.relative_to(OUT).as_posix().encode() + b'\0' + f.read_bytes())
+    swv = f'{ver}-{h.hexdigest()[:8]}'
+    sw = OUT / 'sw.js'
+    src = sw.read_text()
+    out, n = re.subn(r"^const VERSION = '[^']*';", f"const VERSION = '{swv}';", src, count=1, flags=re.M)
+    if n != 1:
+        raise SystemExit('sw.js: no `const VERSION = \'…\';` line to stamp')
+    if out != src:
+        sw.write_text(out)
+    return swv
 
 
 def module_closure(root: str) -> list:
@@ -426,7 +457,6 @@ def module_closure(root: str) -> list:
 
 
 def main():
-    import hashlib
     if DC.exists():
         shutil.rmtree(DC)
     (DC / 'vendor').mkdir(parents=True)
@@ -449,26 +479,44 @@ def main():
         t = t.replace("from './vendor/preact.mjs'", f"from './vendor/preact.mjs?v={ver}'")
         p.write_text(t)
     fonts_css = inline_css(FONTS_CSS)
-    # fonts the first paint needs, by page family; plus the landing's hero art
-    pre = {name: f'<link rel="preload" href="assets/fonts/{name}" as="font" type="font/woff2" crossorigin>'
-           for name in (SRC.parent / 'assets' / 'fonts' / 'preload.txt').read_text().split()}
-    RUPEE = ['Inter-500-normal-rupee.woff2', 'Inter-600-normal-rupee.woff2']       # the ₹ glyph on its own (1 KB each)
+    # Preload only the fonts the first screen draws (see _source/fonts.py for what each file holds).
+    # preload.txt lists the files that may be preloaded; a font can be phone- or desktop-only
+    # ('PHONE' / 'DESK' media) where the first screen differs (≤700px = the phone layouts).
+    allowed = set((SRC.parent / 'assets' / 'fonts' / 'preload.txt').read_text().split())
+    PHONE, DESK = '(max-width: 700px)', '(min-width: 701px)'
+    INTER, RUPEE, CAVEAT = 'Inter-latin.woff2', 'Inter-rupee.woff2', 'Caveat-700-latin.woff2'
     FONTS = {
-        'thedigiciti_website': ['Almarai-400-normal-latin.woff2', 'InstrumentSerif-400-italic-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'] + RUPEE,
-        'story': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
-        'story-2-map': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
-        'explore-mobile': ['Inter-400-normal-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-700-normal-latin.woff2'] + RUPEE,
+        # landing: Almarai + the Instrument Serif accent line (Inter only appears further down)
+        'thedigiciti_website': ['Almarai-400-latin.woff2', ('Almarai-700-latin.woff2', PHONE), 'InstrumentSerif-400-italic-latin.woff2'],
+        # the story opens on the flight on phones (Inter only), on the pen-drawn map on laptops
+        'story': [INTER, (CAVEAT, DESK)],
+        'story-1-journey': [INTER],
+        'story-2-map': [INTER, CAVEAT],
+        'explore-mobile': [INTER, CAVEAT],
+        # calculators: figures in ₹ on the first screen
+        'story-3-numbers': [INTER, RUPEE],
+        'calculator': [INTER, RUPEE],
     }
+
+    def preload_font(spec):
+        name, media = spec if isinstance(spec, tuple) else (spec, None)
+        if name not in allowed:
+            return None
+        if not (SRC.parent / 'assets' / 'fonts' / name).exists():
+            raise SystemExit(f'preload: assets/fonts/{name} is missing (run _source/fonts.py)')
+        m = f' media="{media}"' if media else ''
+        return f'<link rel="preload" href="assets/fonts/{name}" as="font" type="font/woff2" crossorigin{m}>'
     HERO = {}
     for page, root in PAGES.items():
-        fonts = FONTS.get(root, ['Inter-400-normal-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'] + RUPEE)
-        preload = '\n'.join([pre[f] for f in fonts if f in pre] + [f'<link rel="preload" href="{u}" as="image" fetchpriority="high">' for u in HERO.get(root, [])])
+        fonts = [l for l in map(preload_font, FONTS.get(root, [INTER])) if l]
+        preload = '\n'.join(fonts + [f'<link rel="preload" href="{u}" as="image" fetchpriority="high">' for u in HERO.get(root, [])])
         mods = module_closure(root)
         modules = '\n'.join(f'<link rel="modulepreload" href="dc/{m}?v={ver}">' for m in mods)
         warm = ('\n' + WARM) if ('calculator.js' in mods or 'calc-mobile.js' in mods) else ''
         (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root), preload=preload, fonts_css=fonts_css,
-                                            head=head_html(info[root]['helmet']), ver=ver, modules=modules, warm=warm))
-    print(f'built {len(info)} components, {len(PAGES)} pages · v={ver}')
+                                            head=head_html(info[root]['helmet']), ver=ver, modules=modules, warm=warm, sw=SW_REGISTER))
+    swv = stamp_sw(ver)
+    print(f'built {len(info)} components, {len(PAGES)} pages · v={ver} · sw={swv}')
 
 
 if __name__ == '__main__':

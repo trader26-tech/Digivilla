@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=88532b4b';
-import C_part_stage_foundation from './part-stage-foundation.js?v=88532b4b';
-import C_part_stage_grading from './part-stage-grading.js?v=88532b4b';
-import C_part_stage_plot from './part-stage-plot.js?v=88532b4b';
-import C_part_stage_steel from './part-stage-steel.js?v=88532b4b';
-import C_part_stage_villa from './part-stage-villa.js?v=88532b4b';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=e558e6dd';
+import C_part_stage_foundation from './part-stage-foundation.js?v=e558e6dd';
+import C_part_stage_grading from './part-stage-grading.js?v=e558e6dd';
+import C_part_stage_plot from './part-stage-plot.js?v=e558e6dd';
+import C_part_stage_steel from './part-stage-steel.js?v=e558e6dd';
+import C_part_stage_villa from './part-stage-villa.js?v=e558e6dd';
 /* ── logic, verbatim from the design file ── */
-import * as _explore from './explore-mobile.js?v=88532b4b';   // the Explore page's module, warmed with the landing
+import * as _explore from './explore-mobile.js?v=e558e6dd';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
@@ -106,7 +106,7 @@ class Component extends DCLogic {
         this.onTS2 = e => {
           armed = false; rail = null; inner = null; inShow = null;
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
-          if (this.state.menuOpen || this.cascading || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-sheet') || c('select') || c('input')) return;   // the calculator's ruler, sheet and typing keep their own touches
+          if (this.state.menuOpen || this.cascading || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-ystep') || c('.mcl-sheet') || c('select') || c('input')) return;   // the calculator's ruler, sheet and typing keep their own touches
           inner = c('.mcl'); inShow = c('.msh');
           if (inner && Math.abs(sc0.scrollTop - offs(inner)) > 4) inner = null;     // its own scrolling only once the page is in place
           armed = true; y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
@@ -124,7 +124,6 @@ class Component extends DCLogic {
           if (e.cancelable) e.preventDefault();
           if (Math.abs(dy) > 12) {
             armed = false;
-            if (dy > 0 && this.atColumn()) { this.startExplore(); return; }        // the column's swipe up = explore
             const show = inShow || null;
             if (show && show.__step && show.__step(dy > 0 ? 1 : -1)) return;      // the showcase steps to its next phone first
             this.goPage(dy > 0 ? 1 : -1);

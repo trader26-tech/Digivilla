@@ -16,6 +16,9 @@
 	header @media Cache-Control "public, max-age=604800"
 	@pages not path /dc/* /assets/* /_ds/*
 	header @pages Cache-Control "no-cache"
+	# the service worker must always be revalidated: a new build = new sw.js bytes = new caches
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache"
 
 	header X-Content-Type-Options nosniff
 	header Referrer-Policy strict-origin-when-cross-origin

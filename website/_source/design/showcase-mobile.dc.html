@@ -22,7 +22,7 @@
 .msh-k{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#7a7c8c}
 .msh-k i{width:6px;height:6px;border-radius:50%;background:#8fd65a;box-shadow:0 0 10px #8fd65a}
 .msh h2{margin:12px 0 0;font-size:clamp(30px,9.5vw,40px);font-weight:800;line-height:1.02;letter-spacing:-.045em}
-.msh h2 span{color:#7a7c8c}
+.msh h2>span{color:#7a7c8c}
 .msh-counter{flex:none;display:flex;align-items:baseline;gap:4px;font-family:'Instrument Serif',serif;font-style:italic;font-size:48px;line-height:1;color:#ececf1;transition:opacity .25s}
 .msh-counter small{font-family:Almarai,sans-serif;font-style:normal;font-size:12px;letter-spacing:.2em;color:#7a7c8c}
 .msh-rail{position:relative;z-index:2;flex:1;min-height:0;overflow:hidden;perspective:1200px;perspective-origin:50% 50%;touch-action:none}
@@ -37,14 +37,14 @@
 .msh-phone .dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 .msh-foot{position:relative;z-index:2;padding:0 24px max(22px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
 .msh-cap{display:flex;flex-direction:column;gap:6px;min-height:72px;transition:opacity .25s}
-.msh-cap b{font-size:24px;font-weight:800;letter-spacing:-.04em;color:#ececf1}.msh-cap span{font-size:15px;line-height:1.4;color:#a3a5b4;text-wrap:pretty}
+.msh-cap b{font-size:24px;font-weight:800;letter-spacing:-.04em;color:#ececf1}.msh-cap>span{font-size:15px;line-height:1.4;color:#a3a5b4;text-wrap:pretty}
 .msh-bars{display:flex;align-items:center;gap:10px}
 .msh-dots{flex:1;display:flex;align-items:center;gap:7px}
 .msh-dot{position:relative;width:7px;height:7px;border-radius:999px;background:rgba(236,236,241,.26);overflow:hidden;transition:width .45s cubic-bezier(.2,.8,.2,1),background .3s}
 .msh-dot.done{background:rgba(143,214,90,.42)}
 .msh-dot.on{width:28px;background:rgba(236,236,241,.2)}
 .msh-dot i{position:absolute;inset:0;border-radius:999px;background:#8fd65a;transform-origin:0 50%;transform:scaleX(0)}
-.msh-bars span{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#7a7c8c;white-space:nowrap}
+.msh-bars>span{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#7a7c8c;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.msh-slide,.msh-dot{transition:none}}
 </style>
 </helmet>

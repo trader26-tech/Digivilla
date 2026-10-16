@@ -15,14 +15,14 @@
 <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
 <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#0b0c12;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#b5abfc;text-decoration:none}a:hover{color:#d4cdfd}input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:60px;height:60px;background:transparent;border:0}input[type=range]::-moz-range-thumb{width:60px;height:60px;background:transparent;border:0}@keyframes tdcspin{to{transform:rotate(360deg)}}@media (max-width:700px){[data-back]{padding:0 5px 0 5px!important;top:12px!important;left:12px!important}[data-back-label]{display:none}}@keyframes bobc{ 0%,100%{ transform:translate(-50%,0) } 50%{ transform:translate(-50%,-6px) } }</style>
+<style>body{margin:0;background:#0b0c12;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#b5abfc;text-decoration:none}a:hover{color:#d4cdfd}input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;margin:0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:60px;height:60px;background:transparent;border:0}input[type=range]::-moz-range-thumb{width:60px;height:60px;background:transparent;border:0}@keyframes tdcspin{to{transform:rotate(360deg)}}@media (max-width:700px){[data-back]{padding:0 5px 0 5px!important;top:12px!important;left:12px!important}[data-back-label]{display:none}}@keyframes tdcpop{from{opacity:0;transform:translateY(-4px) scale(.98)}}@keyframes bobc{ 0%,100%{ transform:translate(-50%,0) } 50%{ transform:translate(-50%,-6px) } }</style>
 </helmet>
 <div style="min-height:100vh;background:radial-gradient(ellipse 40% 50% at 70% 45%,rgba(108,186,54,.10),transparent 70%),#0b0c12">
-<sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><a href="index.dc.html" data-back="1" aria-label="Back to TheDigiCiti home" style="position:fixed;left:clamp(14px,2.4vw,32px);top:18px;z-index:30;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px 0 5px;border-radius:999px;background:rgba(18,20,29,.8);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px #2b2e3a;color:#e9e9ed;font-size:13px;font-weight:500" style-hover="box-shadow:inset 0 0 0 1px #8fd65a;color:#fff"><span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e9e9ed;color:#0b0c12"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></span><span data-back-label="1">TheDigiCiti</span></a></sc-if>
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><a href="index.dc.html" data-back="1" aria-label="Back to TheDigiCiti home" style="position:fixed;left:clamp(14px,2.4vw,32px);top:18px;z-index:30;display:flex;align-items:center;gap:10px;height:44px;padding:0 14px 0 7px;border-radius:999px;background:rgba(18,20,29,.8);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px #2b2e3a;color:#e9e9ed;font-size:13px;font-weight:500" style-hover="box-shadow:inset 0 0 0 1px #8fd65a;color:#fff"><span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e9e9ed;color:#0b0c12"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></span><span data-back-label="1">TheDigiCiti</span></a></sc-if>
 <main style="max-width:1720px;min-height:100vh;margin:0 auto;padding:clamp(56px,7vh,80px) clamp(16px,3vw,56px) 20px;display:flex;flex-direction:column;gap:clamp(14px,2.4vh,22px)">
 
 <div style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
-<span style="font-size:11px;letter-spacing:.28em;color:#8fd65a">{{ kicker }}</span>
+<span style="font-size:12px;letter-spacing:.26em;color:#8fd65a">{{ kicker }}</span>
 <h1 style="margin:0;font-size:clamp(28px,3.4vw,48px);font-weight:500;letter-spacing:-.035em;line-height:1.05;text-wrap:balance">{{ title }}</h1>
 <div style="display:flex;gap:4px;padding:4px;border-radius:999px;background:#12141d;box-shadow:inset 0 0 0 1px #2b2e3a">
 <button onClick="{{ pickFd }}" style="{{ tFd }}"><img src="assets/art/bank.svg" alt="" style="height:22px"><span>FD vs DigiVilla</span></button>
@@ -34,7 +34,7 @@
 <div role="status" aria-live="polite" style="flex:1;min-height:min(62vh,600px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;border-radius:26px;background:#0e1017;box-shadow:inset 0 0 0 1px #1a1c28">
 <span aria-hidden="true" style="width:34px;height:34px;border-radius:50%;border:2px solid #22253a;border-top-color:#8fd65a;animation:tdcspin 1s linear infinite"></span>
 <span style="font-size:14px;color:#a3a5b4">Loading {{ loadingWhat }}</span>
-<span style="font-size:12px;color:#5a5e6c">Real benchmark-index history, the same the app uses.</span>
+<span style="font-size:12px;color:#8a8ea3">Real benchmark-index history, the same the app uses.</span>
 </div>
 </sc-if>
 <sc-if value="{{ failed }}" hint-placeholder-val="{{ false }}">
@@ -50,17 +50,17 @@
 <section style="flex:1.15 1 460px;min-width:0;display:flex;flex-direction:column;padding:0;border-radius:24px;background:linear-gradient(180deg,#141622,#0f1119);box-shadow:inset 0 0 0 1px #22253a,0 30px 70px -20px rgba(0,0,0,.6);overflow:hidden">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid #1f2233">
 <span style="font-size:15px;font-weight:500;letter-spacing:-.01em;color:#e9e9ed">Your numbers</span>
-<button onClick="{{ reset }}" style="display:flex;align-items:center;gap:6px;border:0;background:transparent;padding:0;font:inherit;font-size:12.5px;color:#7a7c8c;cursor:pointer" style-hover="color:#e9e9ed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>Reset</button>
+<button onClick="{{ reset }}" aria-label="Reset to the starting figures" style="display:flex;align-items:center;gap:6px;height:44px;margin:-8px -12px -8px 0;padding:0 14px;border:0;border-radius:999px;background:transparent;font:inherit;font-size:13px;color:#a3a5b4;cursor:pointer;transition:background .2s,color .2s" style-hover="color:#e9e9ed;background:#1a1c28"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>Reset</button>
 </div>
 
 <div style="display:flex;flex-direction:column;gap:14px;padding:22px 22px 20px;border-bottom:1px solid #1f2233">
 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px">
 <div style="display:flex;flex-direction:column;gap:8px;min-width:0;flex:1">
-<span style="display:flex;align-items:center;gap:8px;font-size:12px;color:#7a7c8c">{{ rulerLabel }}<sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:#5a5e6c">· tap the figure to type it</span></sc-if></span>
+<span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#a3a5b4">{{ rulerLabel }}<sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:#8a8ea3">· tap the figure to type it</span></sc-if></span>
 <sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}">
 <button onClick="{{ startEdit }}" aria-label="{{ editAria }}" title="Type an exact figure" style="align-self:flex-start;display:flex;align-items:center;gap:10px;max-width:100%;margin:-6px -10px;padding:6px 10px;border:0;border-radius:12px;background:transparent;font:inherit;color:#f4f4f7;cursor:text;transition:background .2s,box-shadow .2s" style-hover="background:rgba(143,214,90,.06);box-shadow:inset 0 0 0 1px rgba(143,214,90,.35)">
 <b style="font-size:clamp(30px,2.8vw,40px);font-weight:500;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap">{{ rulerValue }}</b>
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a5e6c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8ea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
 </button>
 </sc-if>
 <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
@@ -76,8 +76,8 @@
 </sc-if>
 </div>
 <div style="display:flex;gap:6px;flex:none">
-<button onClick="{{ dec }}" aria-label="Less" style="width:36px;height:36px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a" style-hover="box-shadow:inset 0 0 0 1px #8fd65a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
-<button onClick="{{ inc }}" aria-label="More" style="width:36px;height:36px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a" style-hover="box-shadow:inset 0 0 0 1px #8fd65a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+<button onClick="{{ dec }}" aria-label="Less" style="width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a" style-hover="box-shadow:inset 0 0 0 1px #8fd65a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+<button onClick="{{ inc }}" aria-label="More" style="width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a" style-hover="box-shadow:inset 0 0 0 1px #8fd65a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
 </div>
 </div>
 <div ref="{{ rulerRef }}" style="position:relative;height:34px;overflow:hidden;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none">
@@ -88,40 +88,40 @@
 <i style="position:absolute;left:50%;top:2px;bottom:2px;width:2px;margin-left:-1px;border-radius:2px;background:#8fd65a;box-shadow:0 0 10px rgba(143,214,90,.7)"></i>
 <input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="Adjust" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none">
 </div>
-<div style="display:flex;justify-content:space-between;font-size:11px;color:#5a5e6c"><span>{{ rLo }}</span><span>Drag to adjust</span><span>{{ rHi }}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12px;color:#8a8ea3"><span>{{ rLo }}</span><span>Drag to adjust</span><span>{{ rHi }}</span></div>
 </div>
 
 <sc-if value="{{ isFd }}" hint-placeholder-val="{{ true }}">
 <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:22px;padding:22px 22px 24px">
 <div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">FD interest rate</span><span style="font-size:11px;color:#5a5e6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">a year, before tax</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">FD interest rate</span><span style="font-size:12px;color:#8a8ea3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">a year, before tax</span></div>
 <div style="display:flex;padding:3px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ rateOpts }}" as="o" hint-placeholder-count="6"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for><button onClick="{{ pickCustom }}" style="{{ customChip }}">{{ customLabel }}</button></div>
 <sc-if value="{{ isCustom }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px rgba(143,214,90,.4)">
-<button onClick="{{ rateDec }}" aria-label="Lower rate" style="width:32px;height:32px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><b style="font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ rateShow }}</b><span style="font-size:11px;color:#5a5e6c">your rate, 3% to 12%</span></div>
-<button onClick="{{ rateInc }}" aria-label="Higher rate" style="width:32px;height:32px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+<button onClick="{{ rateDec }}" aria-label="Lower rate" style="width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><b style="font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ rateShow }}</b><span style="font-size:12px;color:#8a8ea3">your rate, 3% to 12%</span></div>
+<button onClick="{{ rateInc }}" aria-label="Higher rate" style="width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
 </div>
 </sc-if>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">Your tax slab</span><span style="font-size:11px;color:#5a5e6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">% on FD interest</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">Your tax slab</span><span style="font-size:12px;color:#8a8ea3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">% on FD interest</span></div>
 <div style="display:flex;padding:3px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ taxOpts }}" as="o" hint-placeholder-count="7"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for><button onClick="{{ pickTaxCustom }}" style="{{ taxCustomChip }}">{{ taxCustomLabel }}</button></div>
 <sc-if value="{{ isTaxCustom }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px rgba(143,214,90,.4)">
-<button onClick="{{ taxDec }}" aria-label="Lower tax" style="width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><b style="font-size:20px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ taxShow }}</b><span style="font-size:11px;color:#5a5e6c">incl. surcharge &amp; cess, up to 42.7%</span></div>
-<button onClick="{{ taxInc }}" aria-label="Higher tax" style="width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+<button onClick="{{ taxDec }}" aria-label="Lower tax" style="width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><b style="font-size:20px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ taxShow }}</b><span style="font-size:12px;color:#8a8ea3">incl. surcharge &amp; cess, up to 42.7%</span></div>
+<button onClick="{{ taxInc }}" aria-label="Higher tax" style="width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
 </div>
 </sc-if>
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">Had you started</span><span style="font-size:11px;color:#5a5e6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">years ago</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">Had you started</span><span style="font-size:12px;color:#8a8ea3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">years ago</span></div>
 <div style="display:flex;padding:3px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="6"><button onClick="{{ y.pick }}" style="{{ y.style }}">{{ y.n }}</button></sc-for><button onClick="{{ pickYearsCustom }}" style="{{ yearsCustomChip }}">{{ yearsCustomLabel }}</button></div>
 <sc-if value="{{ isYearsCustom }}" hint-placeholder-val="{{ false }}">
 <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px rgba(143,214,90,.4)">
 <button onClick="{{ yearsDec }}" aria-label="One year less" style="{{ yStepL }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><b style="font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ yearsShow }}</b><span style="font-size:11px;color:#5a5e6c;font-variant-numeric:tabular-nums">{{ yearsSpan }}</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><b style="font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ yearsShow }}</b><span style="font-size:12px;color:#8a8ea3;font-variant-numeric:tabular-nums">{{ yearsSpan }}</span></div>
 <button onClick="{{ yearsInc }}" aria-label="One year more" style="{{ yStepR }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
 </div>
 </sc-if>
@@ -132,34 +132,41 @@
 <sc-if value="{{ isRe }}" hint-placeholder-val="{{ false }}">
 <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:18px;padding:22px 22px 24px">
 <div style="display:flex;flex-direction:column;gap:8px">
-<span style="font-size:12px;color:#7a7c8c">Your flat · tap a row to edit it</span>
+<span style="font-size:13px;color:#a3a5b4">Your flat · tap a row to edit it</span>
 <sc-for list="{{ fields }}" as="f" hint-placeholder-count="4">
 <button onClick="{{ f.pick }}" style="{{ f.style }}">
-<span style="display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left"><span style="{{ f.lStyle }}">{{ f.label }}</span><span style="font-size:11.5px;color:#5a5e6c;white-space:nowrap">{{ f.hint }}</span></span>
+<span style="display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left"><span style="{{ f.lStyle }}">{{ f.label }}</span><span style="font-size:12px;color:#8a8ea3;white-space:nowrap">{{ f.hint }}</span></span>
 <b style="font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;color:#f4f4f7">{{ f.value }}</b>
 </button>
 </sc-for>
 </div>
 <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
-<div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:14px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><span style="font-size:11.5px;color:#7a7c8c">Price grew</span><b style="font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1;color:#f4f4f7">{{ flatGrowth }}<span style="font-size:13px;font-weight:400;color:#7a7c8c"> a year</span></b></div>
-<div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:14px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><span style="font-size:11.5px;color:#7a7c8c">Rent yield</span><b style="font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1;color:#f4f4f7">{{ flatYield }}<span style="font-size:13px;font-weight:400;color:#7a7c8c"> of value</span></b></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:14px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><span style="font-size:12px;color:#8a8ea3">Price grew</span><b style="font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1;color:#f4f4f7">{{ flatGrowth }}<span style="font-size:13px;font-weight:400;color:#8a8ea3"> a year</span></b></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:14px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><span style="font-size:12px;color:#8a8ea3">Rent yield</span><b style="font-size:22px;font-weight:500;letter-spacing:-.03em;line-height:1;color:#f4f4f7">{{ flatYield }}<span style="font-size:13px;font-weight:400;color:#8a8ea3"> of value</span></b></div>
 </div>
 </div>
 </sc-if>
-<div style="padding:0 22px 22px">
-<button onClick="{{ toggleIncome }}" style="{{ swpRow }}"><span style="display:flex;flex-direction:column;gap:4px;text-align:left"><span style="font-size:13.5px;font-weight:500;color:#e9e9ed">{{ swpTitle }}</span><span style="font-size:12px;color:#7a7c8c">{{ swpNote }}</span></span><span style="{{ swpTrack }}"><i style="{{ swpKnob }}"></i></span></button>
+<div style="display:flex;flex-direction:column;gap:8px;padding:0 22px 22px">
+<sc-if value="{{ isFd }}" hint-placeholder-val="{{ true }}"><button onClick="{{ toggleCompound }}" role="switch" aria-checked="{{ cmpOn }}" data-fdkind="1" style="{{ cmpRow }}"><span style="display:flex;flex-direction:column;gap:4px;text-align:left"><span style="font-size:13.5px;font-weight:500;color:#e9e9ed">FD that compounds</span><span style="font-size:12px;line-height:1.4;color:#a3a5b4">{{ cmpNote }}</span></span><span style="{{ cmpTrack }}"><i style="{{ cmpKnob }}"></i></span></button></sc-if>
+<button onClick="{{ toggleIncome }}" role="switch" aria-checked="{{ swpOn }}" data-swp="1" style="{{ swpRow }}"><span style="display:flex;flex-direction:column;gap:4px;text-align:left"><span style="font-size:13.5px;font-weight:500;color:#e9e9ed">{{ swpTitle }}</span><span style="font-size:12px;line-height:1.4;color:#a3a5b4">{{ swpNote }}</span></span><span style="{{ swpTrack }}"><i style="{{ swpKnob }}"></i></span></button>
 </div>
 </section>
 
 <section style="flex:1.5 1 480px;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:14px;padding:clamp(16px,2vw,24px);border-radius:26px;background:#0e1017;box-shadow:inset 0 0 0 1px #23263a">
 <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px">
-<span style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;letter-spacing:.18em;color:#5a5e6c">STARTING WITH</span><span style="font-size:15px;font-weight:500;color:#e9e9ed">{{ chartHead }}</span></span>
-<div style="display:flex;align-items:center;gap:8px"><sc-for list="{{ pfOpts }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.pick }}" aria-label="{{ p.name }}" style="{{ p.style }}"></button></sc-for></div>
+<span style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;letter-spacing:.16em;color:#8a8ea3">STARTING WITH</span><span style="font-size:15px;font-weight:500;color:#e9e9ed">{{ chartHead }}</span></span>
+<div role="radiogroup" aria-label="Villa" data-villas="1" style="display:flex;padding:3px;border-radius:999px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ pfOpts }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.pick }}" role="radio" aria-checked="{{ p.on }}" style="{{ p.style }}">{{ p.name }}</button></sc-for></div>
 </div>
 
 
 <div data-calcbox="1" style="position:relative;width:100%;flex:1;min-height:420px;overflow:hidden;border-radius:18px;background-image:linear-gradient(rgba(233,233,237,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.045) 1px,transparent 1px);background-size:24px 24px;background-position:0 100%">
 <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(260px 280px at 72% 55%,rgba(108,186,54,.18),transparent 70%)"></div>
+<sc-if value="{{ infoOpen }}" hint-placeholder-val="{{ false }}"><div role="dialog" aria-label="About this rate" data-info-pop="1" style="position:absolute;z-index:8;top:14px;right:14px;width:min(380px,calc(100% - 28px));display:flex;flex-direction:column;gap:10px;padding:16px 16px 14px 18px;border-radius:16px;background:#161826;box-shadow:inset 0 0 0 1px #2f3346,0 24px 50px -12px rgba(0,0,0,.7);animation:tdcpop .2s cubic-bezier(.2,.8,.2,1)">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b style="font-size:14px;font-weight:600;color:#e9e9ed">{{ infoTitle }}</b><button onClick="{{ closeInfo }}" aria-label="Close" style="flex:none;width:44px;height:44px;margin:-12px -10px -12px 0;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#a3a5b4;background:transparent" style-hover="color:#e9e9ed;background:#1f2233"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div>
+<span style="font-size:13px;line-height:1.55;color:#c9cad6">{{ infoNow }}</span>
+<span style="font-size:13px;line-height:1.55;color:#c9cad6">{{ infoLong }}</span>
+<span style="font-size:12px;line-height:1.5;color:#8a8ea3">{{ infoWhy }}</span>
+</div></sc-if>
 <div style="{{ stageS }}">
 <div style="position:absolute;left:0;right:0;bottom:30px;height:1px;background:linear-gradient(90deg,transparent,#3a3d4a 20%,#3a3d4a 80%,transparent)"></div>
 <svg viewBox="{{ svgVB }}" width="560" height="{{ sh }}" style="position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:3">
@@ -173,7 +180,7 @@
 <b style="{{ lTotS }}">{{ lTotal }}</b>
 <div style="{{ lBarS }}">
 <div style="position:absolute;inset:0;display:flex;flex-direction:column;box-shadow:inset 0 0 0 1px rgba(233,233,237,.08)">
-<sc-for list="{{ lSegs }}" as="s" hint-placeholder-count="2"><div style="{{ s.st }}"><span style="{{ s.ks }}">{{ s.label }}</span><b style="{{ s.cs }}">{{ s.value }}</b></div></sc-for>
+<sc-for list="{{ lSegs }}" as="s" hint-placeholder-count="2"><div data-seg="l" style="{{ s.st }}"><span style="{{ s.ks }}">{{ s.label }}</span><b style="{{ s.cs }}">{{ s.value }}</b></div></sc-for>
 </div>
 <div style="{{ lSide }}"></div><div style="{{ lTop }}"></div>
 </div>
@@ -183,11 +190,11 @@
 <span style="position:relative;display:flex;align-items:flex-end"><img src="assets/art/villa.svg" alt="" style="height:96px;filter:drop-shadow(0 14px 16px rgba(0,0,0,.55))"><img src="assets/art/coin.svg" alt="" style="{{ coinS }}"></span>
 <button onClick="{{ pfNext }}" aria-label="Next villa" style="{{ pfNextS }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
 </div>
-<span style="{{ rRateS }}"><b style="font-weight:600;color:#8fd65a">{{ pfName }}</b><span style="color:#5a5e6c">·</span><span>{{ rateLine }}</span></span>
+<span style="{{ rRateS }}" data-rate="1"><b style="font-weight:600;color:#8fd65a">{{ pfName }}</b><span style="color:#8a8ea3">·</span><span data-rate-line="1">{{ rateLine }}</span><button onClick="{{ toggleInfo }}" aria-label="{{ infoAria }}" aria-expanded="{{ infoOpen }}" data-info="1" style="{{ infoBtnS }}"><i style="{{ infoDotS }}">i</i></button></span>
 <b style="{{ rTotS }}">{{ rTotal }}</b>
 <div style="{{ rBarS }}">
 <div style="position:absolute;inset:0;display:flex;flex-direction:column;box-shadow:inset 0 0 0 1px rgba(143,214,90,.3),0 0 40px -8px rgba(108,186,54,.5)">
-<sc-for list="{{ rSegs }}" as="s" hint-placeholder-count="2"><div style="{{ s.st }}"><span style="{{ s.ks }}">{{ s.label }}</span><b style="{{ s.cs }}">{{ s.value }}</b></div></sc-for>
+<sc-for list="{{ rSegs }}" as="s" hint-placeholder-count="2"><div data-seg="r" style="{{ s.st }}"><span style="{{ s.ks }}">{{ s.label }}</span><b style="{{ s.cs }}">{{ s.value }}</b></div></sc-for>
 </div>
 <div style="{{ rSide }}"></div><div style="{{ rTop }}"></div>
 </div>
@@ -195,15 +202,15 @@
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;row-gap:6px;text-align:center">
-<span style="font-size:12px;font-variant-numeric:tabular-nums;color:#a3a5b4">{{ lCap }}</span>
-<span style="font-size:12px;font-variant-numeric:tabular-nums;color:#a3a5b4">{{ rCap }}</span>
-<span style="font-size:10.5px;letter-spacing:.14em;color:#a3a5b4">{{ lName }}</span>
-<span style="font-size:10.5px;letter-spacing:.14em;color:#8fd65a">{{ rName }}</span>
+<span style="font-size:13px;font-variant-numeric:tabular-nums;color:#a3a5b4">{{ lCap }}</span>
+<span style="font-size:13px;font-variant-numeric:tabular-nums;color:#a3a5b4">{{ rCap }}</span>
+<span style="font-size:12px;letter-spacing:.12em;color:#a3a5b4">{{ lName }}</span>
+<span style="font-size:12px;letter-spacing:.12em;color:#8fd65a">{{ rName }}</span>
 </div>
-<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:rgba(143,214,90,.08);box-shadow:inset 0 0 0 1px rgba(143,214,90,.3);text-align:center"><span style="font-size:15px;line-height:1.4;color:#e9e9ed;text-wrap:balance">{{ verdict }}</span></div>
+<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:rgba(143,214,90,.08);box-shadow:inset 0 0 0 1px rgba(143,214,90,.3);text-align:center"><span data-verdict="1" style="font-size:15px;line-height:1.4;color:#e9e9ed;text-wrap:balance">{{ verdict }}</span></div>
 </section>
 </div>
-<p style="margin:0;font-size:11px;color:#5a5e6c;line-height:1.5;text-align:center;max-width:900px;align-self:center">{{ foot }} Information, not advice. DigiVilla is a mutual-fund portfolio: these figures come from real benchmark-index history, not an assumed rate, and past returns are no promise of future ones.</p>
+<p style="margin:0;font-size:12px;color:#8a8ea3;line-height:1.55;text-align:center;max-width:900px;align-self:center">{{ foot }} Information, not advice. DigiVilla is a mutual-fund portfolio: these figures come from real benchmark-index history, not an assumed rate, and past returns are no promise of future ones.</p>
 </sc-if>
 </main>
 <sc-if value="{{ standalone }}" hint-placeholder-val="{{ false }}"><dc-import name="part-footer" hint-size="100%,280px"></dc-import></sc-if>
@@ -220,7 +227,7 @@ const RATES = [6, 6.5, 7, 7.5, 8], SLABS = [0, 5, 10, 15, 20, 25, 30];
 const MIN_TICKET = 10000, SWP_MIN = 100000;   // the smallest amount: ₹10,000 — and ₹1 L when it pays a monthly income (SWP)
 class Component extends DCLogic {
   state = { mode: 'fd', villa: null, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price', data: null, failed: false,
-    exact: {}, edit: null, yearsCustom: false };
+    exact: {}, edit: null, yearsCustom: false, fdCompound: false, link: null, info: false };
   boxRef = React.createRef(); stageRef = React.createRef(); rulerRef = React.createRef(); editRef = React.createRef();
   /** the fields the tape can edit (FD: the amount; Flat: price / value / year / rent) */
   fieldsFor(S) {
@@ -243,14 +250,22 @@ class Component extends DCLogic {
   // ── typing an exact figure ──
   startEdit() { const a = this.activeField(), v = this.snap(this.state, a); this.setState({ swpRaised: false, edit: { key: a.key, text: a.year ? String(v) : this.digits(v), bad: '' } }); }
   /** "Use ₹50,000 with no monthly income": SWP off, the typed amount applied */
-  useWithoutSwp(e) { e && e.preventDefault && e.preventDefault(); const E0 = this.state.edit; if (!E0 || !E0.offer) return; this.setState(s => ({ income: false, [E0.key]: E0.offer, exact: { ...s.exact, [E0.key]: true }, edit: null, swpRaised: false })); }
+  useWithoutSwp(e) { e && e.preventDefault && e.preventDefault(); const E0 = this.state.edit; if (!E0 || !E0.offer) return; this.setState(s => ({ income: false, [E0.key]: E0.offer, exact: { ...s.exact, [E0.key]: true }, edit: null, swpRaised: false, link: null })); }
   /** SWP on with less than ₹1 L invested: the amount rises to ₹1 L, and the SWP row says so */
   toggleIncome() {
     this.setState(s => {
-      if (s.income) return { income: false, swpRaised: false };
+      if (s.income) return { income: false, swpRaised: false, link: null };
       const k = s.mode === 'fd' ? 'amount' : 'price';
-      return s[k] < SWP_MIN ? { income: true, [k]: SWP_MIN, exact: { ...s.exact, [k]: true }, swpRaised: true } : { income: true, swpRaised: false };
+      // a monthly income from the villa ↔ a payout FD: turning SWP on turns the compounding FD off, and says so
+      const back = s.fdCompound ? { fdCompound: false, link: 'fdOff' } : { link: null };
+      return s[k] < SWP_MIN ? { income: true, [k]: SWP_MIN, exact: { ...s.exact, [k]: true }, swpRaised: true, ...back } : { income: true, swpRaised: false, ...back };
     });
+  }
+  /** "FD that compounds": a cumulative FD vs a villa that reinvests everything (SWP off) — a fair match; off again restores SWP as it was */
+  toggleCompound() {
+    this.setState(s => s.fdCompound
+      ? { fdCompound: false, income: s.swpBefore == null ? s.income : s.swpBefore && s.amount >= SWP_MIN, swpBefore: null, link: null, swpRaised: false }
+      : { fdCompound: true, swpBefore: s.income, income: false, link: s.income ? 'swpOff' : null, swpRaised: false });
   }
   digits(n) { return Math.round(n).toLocaleString('en-IN'); }
   /** keep only digits, re-grouped the Indian way as you type (12,34,567) */
@@ -286,7 +301,7 @@ class Component extends DCLogic {
   /** ₹ in words for the hint beside the box: 1,17,00,000 → "₹1.17 Cr" */
   /** a field's figure for the screen: exactly as typed (₹63,45,000), else its compact tape form (₹63.5 L) */
   show(S, a, v) { return S.exact[a.key] && !a.year ? this.inr(v) : a.f(v); }
-  stepBtn(on) { return `width:32px;height:32px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .35};color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a`; }
+  stepBtn(on) { return `width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .35};color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a`; }
   words(n) { return n >= 1e7 ? '₹' + (+(n / 1e7).toFixed(2)) + ' Cr' : n >= 1e5 ? '₹' + (+(n / 1e5).toFixed(2)) + ' L' : this.inr(n); }
   /** The tape measure: drag moves the tape under the needle (10 px a tick), a flick keeps it rolling and it settles on a tick.
    *  A finger moving up/down still scrolls the page (touch-action: pan-y); keyboard users have the hidden range input. */
@@ -322,6 +337,9 @@ class Component extends DCLogic {
     const poll = () => { if (this.dead) return; const ok = this.fit(); if (!ok || ++tries < 20) this.poll = setTimeout(poll, ok ? 150 : 60); };
     poll();
     this.onResize = () => this.fit();
+    this.onKey = e => { if (e.key === 'Escape' && this.state.info) this.setState({ info: false }); };
+    this.onDown = e => { if (this.state.info && e.target.closest && !e.target.closest('[data-info-pop],[data-info]')) this.setState({ info: false }); };
+    window.addEventListener('keydown', this.onKey); window.addEventListener('pointerdown', this.onDown);
     window.addEventListener('resize', this.onResize); window.addEventListener('load', this.onResize);
     this.load();
   }
@@ -343,7 +361,7 @@ class Component extends DCLogic {
     if (el && this.state.edit && !this.focused) { this.focused = true; el.focus(); el.select(); }
     if (!this.state.edit) this.focused = false;
   }
-  componentWillUnmount() { this.dead = true; clearTimeout(this.poll); if (this.fling) cancelAnimationFrame(this.fling); window.removeEventListener('resize', this.onResize); window.removeEventListener('load', this.onResize); this.ro && this.ro.disconnect(); }
+  componentWillUnmount() { this.dead = true; clearTimeout(this.poll); if (this.fling) cancelAnimationFrame(this.fling); window.removeEventListener('resize', this.onResize); window.removeEventListener('load', this.onResize); window.removeEventListener('keydown', this.onKey); window.removeEventListener('pointerdown', this.onDown); this.ro && this.ro.disconnect(); }
   yearsAvailable(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
   maxYears(vf) { return Math.floor((vf.months.length - 1) / 12); }
   endYear(vf) { return +vf.end.slice(0, 4); }
@@ -357,13 +375,14 @@ class Component extends DCLogic {
   sim(S) {
     const F = this.fieldsFor(S), sn = k => { const q = F.find(x => x.key === k); return q ? this.snap(S, q) : S[k]; };
     const amount = sn('amount'), price = sn('price'), value = sn('value'), bought = sn('bought'), rent = sn('rent');
-    const key = JSON.stringify([S.mode, S.villa, amount, S.years, S.fdRate, S.tax, S.income, price, value, bought, rent]);
+    const cmp = S.mode === 'fd' && !!S.fdCompound;
+    const key = JSON.stringify([S.mode, S.villa, amount, S.years, S.fdRate, S.tax, S.income, price, value, bought, rent, cmp]);
     if (this.memo && this.memo.key === key) return this.memo.out;
     const { cfg, vf } = S.data, villa = E.villaOf(cfg, S.villa), d = E.withVilla(vf, villa);
     let out;
     if (S.mode === 'fd') {
       const w = E.windowFor(d, S.years);
-      out = { villa, w, r: E.simulatePayout(w, { amount, fdRate: S.fdRate, slabPct: S.tax, swp: S.income }, cfg) };
+      out = { villa, w, r: E.simulatePayout(w, { amount, fdRate: S.fdRate, slabPct: S.tax, swp: S.income && !cmp, fdMode: cmp ? 'cumulative' : 'payout' }, cfg) };
     } else {
       const held = Math.max(1, this.endYear(vf) - bought), w = E.windowFor(d, held);
       const f = E.simulateFlat(w, { price, value, rent, slabPct: S.tax, swp: S.income }, cfg);
@@ -374,7 +393,7 @@ class Component extends DCLogic {
   }
   renderVals() {
     const S = this.state, isFd = S.mode === 'fd';
-    const seg = on => `display:flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;color:${on ? '#0b0c12' : '#a3a5b4'};background:${on ? '#e9e9ed' : 'transparent'};transition:all .25s`;
+    const seg = on => `display:flex;align-items:center;gap:8px;height:44px;padding:0 18px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;color:${on ? '#0b0c12' : '#a3a5b4'};background:${on ? '#e9e9ed' : 'transparent'};transition:all .25s`;
     const base_ = {
       standalone: !this.props.embedded, kicker: this.props.kicker || 'THE CALCULATOR',
       isFd, isRe: !isFd, pickFd: () => this.setState({ mode: 'fd' }), pickRe: () => this.setState({ mode: 're' }), tFd: seg(isFd), tRe: seg(!isFd),
@@ -383,6 +402,7 @@ class Component extends DCLogic {
     };
     if (!S.data) return base_;
     const { cfg, vf } = S.data, { villa, w, r, f } = this.sim(S), villas = cfg.villas, vi = villas.indexOf(villa);
+    const cmp = isFd && !!S.fdCompound;                       // "FD that compounds" (the villa's SWP is off with it)
     const T = cfg.tax, F = cfg.flat, swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2), cessPct = +(T.cess * 100).toFixed(1);
     const first = this.ym(w.months[0]), last = this.ym(w.months[w.months.length - 1]), span = `${first} → ${last}`;
     const endYear = this.endYear(vf), maxYears = this.maxYears(vf);
@@ -393,9 +413,12 @@ class Component extends DCLogic {
     let L, R, years, start, lName, lCap, rCap, lArt;
     if (isFd) {
       years = r.years; start = snapped('amount');
-      L = { a: r.fdPaid, b: r.fdValue, la: 'Paid out', lb: 'Value' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Paid out', lb: 'Value', solo: !S.income };
-      lName = 'FIXED DEPOSIT · ' + S.fdRate + '%'; lCap = this.fmt(r.fdPaid) + ' paid + ' + this.fmt(r.fdValue) + ' value';
-      rCap = S.income ? this.fmt(r.dvPaid) + ' paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ' value, nothing drawn'; lArt = 'assets/art/bank.svg';
+      // the FD bar: interest paid out + the principal handed back — or, compounding, interest added (after tax) on top of the principal
+      L = cmp ? { a: r.fdValue - start, b: start, la: 'Interest added', lb: 'Principal' } : { a: r.fdPaid, b: r.fdValue, la: 'Interest paid out', lb: 'Principal back' };
+      R = { a: r.dvPaid, b: r.dvValue, la: 'Paid out', lb: 'Value', solo: !r.swp };
+      lName = 'FIXED DEPOSIT · ' + S.fdRate + '%' + (cmp ? ' · COMPOUNDING' : '');
+      lCap = cmp ? this.fmt(r.fdValue - start) + ' interest added, after tax' : this.fmt(r.fdPaid) + ' interest paid out, after tax';
+      rCap = r.swp ? this.fmt(r.dvPaid) + ' paid out + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ' value, nothing drawn'; lArt = 'assets/art/bank.svg';
     } else {
       years = f.years; start = f.outlay;
       L = { a: f.rentKept, b: snapped('value'), la: 'Rent kept', lb: 'Worth today' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Rent paid', lb: 'Value', solo: !S.income };
@@ -411,11 +434,11 @@ class Component extends DCLogic {
       return { h: tot, side: `linear-gradient(180deg,${stops})`, top: defs[0].top,
         segs: defs.map((d, i) => ({ label: d.label, value: this.fmt(d.val),
           st: `display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;height:${hs[i]}px;background:${d.bg};transition:height .8s cubic-bezier(.2,.8,.2,1)`,
-          ks: `font-size:11px;font-weight:500;white-space:nowrap;color:${d.k}`, cs: `font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;color:${d.c}` })) };
+          ks: `font-size:12px;font-weight:500;white-space:nowrap;color:${d.k}`, cs: `font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;color:${d.c}` })) };
     };
     const lc = col([{ val: L.a, label: L.la, bg: 'linear-gradient(180deg,#6d7184,#585c6e)', side: '#454858', top: '#8b8fa3', k: '#d9dbe6', c: '#f2f2f6' }, { val: L.b, label: L.lb, bg: 'linear-gradient(180deg,#3a3d4a,#2b2e3a)', side: '#20222d', top: '#4a4e5c', k: '#a3a5b4', c: '#d9dbe6' }]);
-    const rc = col(R.solo ? [{ val: R.b, label: 'Value', bg: 'linear-gradient(180deg,#9ad471 0%,#4f9528 55%,#2a5e18)', side: '#1f4a13', top: '#d3f0bd', k: '#d8f2c4', c: '#f2fbe9' }]
-      : [{ val: R.a, label: R.la, bg: 'linear-gradient(180deg,#b9e69a,#9ad471)', side: '#7fb85a', top: '#d3f0bd', k: '#2b4d18', c: '#10240a' }, { val: R.b, label: R.lb, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#d8f2c4', c: '#f2fbe9' }]);
+    const rc = col(R.solo ? [{ val: R.b, label: 'Value', bg: 'linear-gradient(180deg,#9ad471 0%,#4f9528 18%,#2a5e18)', side: '#1f4a13', top: '#d3f0bd', k: '#ffffff', c: '#ffffff' }]
+      : [{ val: R.a, label: R.la, bg: 'linear-gradient(180deg,#b9e69a,#9ad471)', side: '#7fb85a', top: '#d3f0bd', k: '#2b4d18', c: '#10240a' }, { val: R.b, label: R.lb, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#f2fbe9', c: '#f2fbe9' }]);
     const tr = 'transition:height .8s cubic-bezier(.2,.8,.2,1),bottom .8s cubic-bezier(.2,.8,.2,1)';
     const bar = (x, c) => `position:absolute;left:${x}px;bottom:${base}px;width:${W}px;height:${c.h}px;${tr}`;
     const side = c => `position:absolute;left:100%;top:0;bottom:0;width:${D}px;transform-origin:0 0;transform:skewY(-45deg);background:${c.side}`;
@@ -426,17 +449,20 @@ class Component extends DCLogic {
     const lTxt = this.fmt(lTot), rTxt = this.fmt(rTot);
     const y0 = SH - lTopB - 14, y1 = SH - rTopB - 30, x0 = Math.min(lcx + lTxt.length * 7.5 + 8, 250), x1 = Math.max(rcx - rTxt.length * 7.5 - 8, 300);
     const cy = Math.min(y0, y1) - 40;
-    const chip = on => `flex:1;min-width:0;height:42px;padding:0 4px;border:0;border-radius:9px;font:inherit;font-size:14px;font-weight:${on ? 600 : 500};font-variant-numeric:tabular-nums;cursor:pointer;color:${on ? '#0b0c12' : '#8a8ea3'};background:${on ? '#e9e9ed' : 'transparent'};box-shadow:${on ? '0 2px 8px rgba(0,0,0,.35)' : 'none'};transition:all .25s cubic-bezier(.16,1,.3,1)`;
-    const arw = on => `flex:none;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;align-self:center;color:#e9e9ed;background:rgba(18,20,29,.92);box-shadow:inset 0 0 0 1px #2b2e3a,0 6px 14px rgba(0,0,0,.4);cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .28};pointer-events:${on ? 'auto' : 'none'};transition:opacity .25s`;
+    const chip = on => `flex:1;min-width:0;height:44px;padding:0 4px;border:0;border-radius:9px;font:inherit;font-size:14px;font-weight:${on ? 600 : 500};font-variant-numeric:tabular-nums;cursor:pointer;color:${on ? '#0b0c12' : '#8a8ea3'};background:${on ? '#e9e9ed' : 'transparent'};box-shadow:${on ? '0 2px 8px rgba(0,0,0,.35)' : 'none'};transition:all .25s cubic-bezier(.16,1,.3,1)`;
+    const arw = on => `flex:none;width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;align-self:center;color:#e9e9ed;background:rgba(18,20,29,.92);box-shadow:inset 0 0 0 1px #2b2e3a,0 6px 14px rgba(0,0,0,.4);cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .28};pointer-events:${on ? 'auto' : 'none'};transition:opacity .25s`;
     const cnt = Math.round((act.max - act.min) / act.step) + 1, idx = Math.min(cnt - 1, Math.max(0, (S[act.key] - act.min) / act.step));
     const i0 = Math.max(0, Math.floor(idx) - 40), i1 = Math.min(cnt - 1, Math.floor(idx) + 40);
     const ticks = Array.from({ length: i1 - i0 + 1 }, (_, j) => { const i = i0 + j, p = act.min + i * act.step, M = p % act.major === 0, m = p % act.mid === 0; return { s: `flex:none;width:1px;margin-right:9px;height:${M ? 22 : m ? 14 : 8}px;background:${M ? 'rgba(233,233,237,.7)' : m ? 'rgba(233,233,237,.35)' : 'rgba(233,233,237,.16)'}` }; });
-    const diff = rTot - lTot, pfName = villa.name, rateTxt = (irr == null ? vRate : irr).toFixed(1) + '%';
+    const diff = rTot - lTot, pfName = villa.name, rateTxt = irr == null ? '—' : irr.toFixed(1) + '%';
+    const nYrs = Math.round(years), yrsWord = nYrs === 1 ? 'this year' : `these ${nYrs} years`;
     const yearOpts = this.yearsAvailable(vf);
     const exempt = T.equity_exempt >= 1e5 ? '₹' + (+(T.equity_exempt / 1e5).toFixed(2)) + ' L' : this.inr(T.equity_exempt);
     const taxLine = `gains taxed at ${+(T.equity_lt_rate * 100).toFixed(1)}% long-term beyond ${exempt} a year and ${+(T.equity_st_rate * 100).toFixed(1)}% short-term (+ ${cessPct}% cess), parts rebalanced every 1 January`;
     const foot = isFd
-      ? `FD: ${S.fdRate}% interest paid monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${S.income ? `; ${swpPct}% a year paid monthly (${this.inr(start * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`
+      ? (cmp
+        ? `FD that compounds: ${S.fdRate}% a year, interest added every quarter and nothing paid out; each year's interest is taxed at your ${S.tax}% slab + ${cessPct}% cess as it is earned, and that tax is taken from the deposit. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}, nothing withdrawn so it compounds too; ${taxLine}. The villa's value is before tax on gains not yet sold. Indices are before any fund's expense ratio.`
+        : `FD: ${S.fdRate}% interest paid out monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back at the end. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${r.swp ? `; ${swpPct}% a year paid monthly (${this.inr(start * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`)
       : `Flat: price + ${F.stamp_pct}% stamp duty + ${F.registration_pct}% registration all-in; rent grew ${F.rent_rise_pct}% a year, ${12 - F.vacant_months} months let, taxed at ${S.tax}% after a ${Math.round(F.std_deduction * 100)}% deduction, ${F.upkeep_pct}% upkeep a year. DigiVilla: the same all-in amount in the ${pfName} villa on real benchmark indices, ${span}, ${S.income ? `paying ${swpPct}% a year as rent (SWP) from the arbitrage part first` : 'nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`;
     return {
       ...base_,
@@ -467,12 +493,21 @@ class Component extends DCLogic {
       editAria: 'Type ' + act.label.toLowerCase(),
       editHint: S.edit && S.edit.bad ? S.edit.bad + (S.edit.offer ? '' : ' · Esc to cancel') : 'Enter to apply · Esc to cancel · ' + (act.year ? act.lo + '–' + act.hi : this.words(act.lo) + ' to ' + this.words(act.hi) + (act.swp && S.income ? ` · from ${this.words(MIN_TICKET)} without a monthly income` : '')),
       hasOffer: !!(S.edit && S.edit.offer), offerText: S.edit && S.edit.offer ? `Use ${this.inr(S.edit.offer)} without a monthly income` : '', useWithoutSwp: e => this.useWithoutSwp(e),
-      editHintS: `font-size:11.5px;color:${S.edit && S.edit.bad ? '#e58a6b' : '#5a5e6c'}`,
+      editHintS: `font-size:12px;color:${S.edit && S.edit.bad ? '#e58a6b' : '#8a8ea3'}`,
       editBox: `display:flex;align-items:center;gap:8px;padding:6px 12px;margin:-6px -12px;border-radius:12px;background:rgba(143,214,90,.06);box-shadow:inset 0 0 0 1.5px ${S.edit && S.edit.bad ? '#e58a6b' : '#8fd65a'},0 0 0 4px ${S.edit && S.edit.bad ? 'rgba(229,138,107,.12)' : 'rgba(143,214,90,.1)'};cursor:text`,
       toggleIncome: () => this.toggleIncome(), swpTitle: isFd ? 'Take a monthly income (SWP)' : 'Take the rent as a monthly SWP',
-      swpNote: S.swpRaised && S.income ? `Raised to ${this.words(SWP_MIN)} — the smallest amount that pays a monthly income`
-        : S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' : 'Off · everything stays invested and compounds',
-      swpRow: `display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.income ? 'rgba(143,214,90,.4)' : '#22253a'};transition:box-shadow .25s`,
+      swpNote: S.swpRaised && S.income ? `Raised to ${this.words(SWP_MIN)} — the smallest amount that pays a monthly income` + (S.link === 'fdOff' && isFd ? ' · the FD pays out monthly again' : '')
+        : S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' + (S.link === 'fdOff' && isFd ? ' · the FD pays out monthly again, to match' : '')
+        : isFd && S.fdCompound ? 'Off while the FD compounds — the villa reinvests everything too, so both sides grow the same way'
+        : 'Off · everything stays invested and compounds',
+      toggleCompound: () => this.toggleCompound(), cmpOn: S.fdCompound ? 'true' : 'false', swpOn: S.income ? 'true' : 'false',
+      cmpNote: S.fdCompound ? `On · interest added every quarter, taxed each year at your slab · the villa's monthly income (SWP) is off so both reinvest`
+        : S.link === 'fdOff' ? 'Off · turned off because the villa now pays you monthly — the FD pays its interest out too'
+        : 'Off · the FD pays its interest out every month and gives the principal back',
+      cmpRow: `color:#e9e9ed;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.fdCompound ? 'rgba(201,198,218,.55)' : '#22253a'};transition:box-shadow .25s`,
+      cmpTrack: `flex:none;position:relative;width:40px;height:22px;border-radius:11px;background:${S.fdCompound ? '#c9c6da' : '#2b2e3a'};transition:background .25s`,
+      cmpKnob: `position:absolute;top:3px;left:${S.fdCompound ? 21 : 3}px;width:16px;height:16px;border-radius:50%;background:${S.fdCompound ? '#0b0c12' : '#7a7c8c'};transition:left .25s cubic-bezier(.16,1,.3,1)`,
+      swpRow: `color:#e9e9ed;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.income ? 'rgba(143,214,90,.4)' : '#22253a'};transition:box-shadow .25s`,
       swpTrack: `flex:none;position:relative;width:40px;height:22px;border-radius:11px;background:${S.income ? '#8fd65a' : '#2b2e3a'};transition:background .25s`,
       swpKnob: `position:absolute;top:3px;left:${S.income ? 21 : 3}px;width:16px;height:16px;border-radius:50%;background:${S.income ? '#0b0c12' : '#7a7c8c'};transition:left .25s cubic-bezier(.16,1,.3,1)`,
       fields: isFd ? [] : Fs.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: this.show(S, q, snapped(q.key)), pick: () => this.setState({ active: q.key, edit: null }),
@@ -480,7 +515,7 @@ class Component extends DCLogic {
         lStyle: `font-size:14px;font-weight:500;color:${on ? '#8fd65a' : '#e9e9ed'}` }; }),
       flatGrowth: isFd ? '' : f.appPct.toFixed(1) + '%', flatYield: isFd ? '' : f.yieldPct.toFixed(1) + '%',
       rulerLabel: act.label, rLo: act.f(act.min), rHi: act.f(act.max),
-      reset: () => this.setState({ custom: false, taxCustom: false, yearsCustom: false, exact: {}, edit: null, swpRaised: false, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
+      reset: () => this.setState({ fdCompound: false, swpBefore: null, link: null, info: false, custom: false, taxCustom: false, yearsCustom: false, exact: {}, edit: null, swpRaised: false, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
       rulerValue: this.show(S, act, snapped(act.key)), rulerRef: this.rulerRef,
       rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:${this.dragging || this.fling ? 'none' : 'transform .12s ease-out'};transform:translateX(${-(idx - i0) * 10}px)`, ticks,
       rMin: act.min, rMax: act.max, rStep: act.step, rVal: snapped(act.key), onRange: e => setA(+e.target.value), inc: () => setA(snapped(act.key) + act.big), dec: () => setA(snapped(act.key) - act.big),
@@ -488,17 +523,30 @@ class Component extends DCLogic {
       pfPos: (vi + 1) + ' / ' + villas.length,
       pfPrev: () => this.setState({ villa: villas[Math.max(0, vi - 1)].key }), pfNext: () => this.setState({ villa: villas[Math.min(villas.length - 1, vi + 1)].key }),
       pfPrevS: arw(vi > 0), pfNextS: arw(vi < villas.length - 1),
-      pfOpts: villas.map((v, i) => ({ name: v.name, pick: () => this.setState({ villa: v.key }), style: `width:${vi === i ? 22 : 7}px;height:7px;border:0;padding:0;border-radius:4px;cursor:pointer;background:${vi === i ? '#8fd65a' : '#2b2e3a'};transition:all .35s cubic-bezier(.16,1,.3,1)` })),
+      pfOpts: villas.map((v, i) => ({ name: v.name, on: vi === i ? 'true' : 'false', pick: () => this.setState({ villa: v.key }),
+        style: `height:44px;padding:0 16px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:${vi === i ? 600 : 500};white-space:nowrap;cursor:pointer;color:${vi === i ? '#0b0c12' : '#a3a5b4'};background:${vi === i ? '#8fd65a' : 'transparent'};transition:background .25s,color .25s` })),
       lArt, lArtS: `position:absolute;left:${lcx - 60}px;width:120px;height:88px;object-fit:contain;bottom:${lTopB + 44}px;filter:drop-shadow(0 14px 16px rgba(0,0,0,.55));${tr}`,
       lTotal: lTxt, lTotS: totS(lcx, lTopB, '#d9dbe6'), lBarS: bar(lx, lc), lSegs: lc.segs, lSide: side(lc), lTop: top(lc),
-      rArtS: `position:absolute;left:${rcx - 110}px;width:220px;bottom:${rTopB + 62}px;height:120px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;z-index:4;${tr}`,
+      rArtS: `position:absolute;left:${rcx - 110}px;width:220px;bottom:${rTopB + 72}px;height:120px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;z-index:4;${tr}`,
       rTotal: rTxt, rTotS: totS(rcx, rTopB, '#8fd65a'), rBarS: bar(rx, rc), rSegs: rc.segs, rSide: side(rc), rTop: top(rc),
-      rRateS: `position:absolute;left:${rcx - 120}px;width:240px;display:flex;justify-content:center;gap:6px;bottom:${rTopB + 40}px;font-size:12.5px;white-space:nowrap;color:#a3a5b4;${tr}`,
+      rRateS: `position:absolute;left:${rcx - 170}px;width:340px;height:44px;display:flex;justify-content:center;align-items:center;gap:6px;bottom:${rTopB + 30}px;font-size:13px;white-space:nowrap;color:#c9cad6;z-index:5;${tr}`,
       coinS: `position:absolute;left:50%;top:4px;width:24px;animation:bobc 4.5s ease-in-out infinite;opacity:${S.income ? 1 : 0};transition:opacity .3s`,
       arrowD: `M${x0} ${y0} Q${(x0 + x1) / 2} ${cy} ${x1} ${y1}`, arrowOp: diff > 0 ? 1 : 0,
-      pfName, years, rateLine: rateTxt + ' a yr, realised', lCap, rCap, lName,
-      rName: `${pfName.toUpperCase()} · ${vRate.toFixed(1)}% A YR OVER ${cfg.display.rate_years} YRS`,
-      verdict: diff > 0 ? `The ${pfName} villa leaves you ${this.fmt(diff)} richer than your ${isFd ? 'FD' : 'flat'}.` : `Your ${isFd ? 'FD' : 'flat'} is ahead by ${this.fmt(-diff)}.`,
+      // ONE rate per villa on screen: what this window realised (the engine's IRR for exactly these figures);
+      // the villa's long-run rate lives behind the (i)
+      pfName, years, rateLine: `${rateTxt} a year over ${yrsWord}`, lCap, rCap, lName,
+      rName: `${pfName.toUpperCase()} VILLA` + (r.swp ? (isFd ? ' · MONTHLY INCOME' : ' · RENT AS SWP') : ' · NOTHING DRAWN'),
+      verdict: isFd && cmp
+        ? (diff > 0 ? `With both compounding, the ${pfName} villa ends ${this.fmt(diff)} ahead of your FD.` : `With both compounding, your FD is ahead by ${this.fmt(-diff)}.`)
+        : diff > 0 ? `The ${pfName} villa leaves you ${this.fmt(diff)} richer than your ${isFd ? 'FD' : 'flat'}.` : `Your ${isFd ? 'FD' : 'flat'} is ahead by ${this.fmt(-diff)}.`,
+      infoOpen: !!S.info, toggleInfo: () => this.setState(s => ({ info: !s.info })), closeInfo: () => this.setState({ info: false }),
+      infoAria: `About the ${rateTxt} rate`,
+      infoBtnS: `flex:none;width:44px;height:44px;margin:0 -12px 0 -8px;border:0;padding:0;display:grid;place-items:center;background:transparent;cursor:pointer;color:${S.info ? '#0b0c12' : '#c9cad6'}`,
+      infoDotS: `width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:Georgia,serif;font-size:12px;font-weight:700;line-height:1;background:${S.info ? '#8fd65a' : 'transparent'};box-shadow:inset 0 0 0 1.5px ${S.info ? '#8fd65a' : '#8a8ea3'};transition:all .2s`,
+      infoTitle: `${pfName} villa · ${rateTxt} a year`,
+      infoNow: `${rateTxt} a year is what the ${pfName} villa actually earned over ${yrsWord} (${span})` + (r.swp ? `, counting the monthly income it paid out and what is still invested.` : ', with nothing withdrawn.') + ' It is the rate behind the figures on this screen.',
+      infoLong: `Over the long run, the ${pfName} villa's rate is ${vRate.toFixed(1)}% a year over the last ${cfg.display.rate_years} years (nothing withdrawn). This window realised ${rateTxt}.`,
+      infoWhy: 'Different start dates give different rates — markets don\'t rise in a straight line. Past returns are no promise of future ones.',
       foot
     };
   }
