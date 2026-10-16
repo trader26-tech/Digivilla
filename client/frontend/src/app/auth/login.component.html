@@ -3,10 +3,10 @@
   <div class="lg-aura" aria-hidden="true"></div>
 
   <!-- STEP 1 · phone entry -->
-  <form *ngIf="step() === 'phone'" class="lg-flow" (ngSubmit)="sendCode()" novalidate>
+  <form *ngIf="step() === 'phone'" class="lg-flow" (submit)="$event.preventDefault(); sendCode()" novalidate>
     <!-- brand -->
     <div class="lg-brand">
-      <span class="lg-logo" aria-hidden="true"><img src="icons/tdc2/icon-96.png" alt="" width="32" height="32" /></span>
+      <span class="lg-logo" aria-hidden="true"><img src="icons/tdc2/mark-96.webp" alt="" width="32" height="32" /></span>
       <span class="lg-brandname">TheDigiCiti</span>
     </div>
 
@@ -24,7 +24,7 @@
           <span class="lg-cc">🇮🇳 +91</span>
           <input class="lg-input bare" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10"
                  placeholder="98765 43210"
-                 [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" />
+                 [value]="phone()" (input)="phone.set($any($event.target).value)" name="phone" />
         </div>
         <p class="lg-err" *ngIf="error()">{{ error() }}</p>
       </label>
@@ -52,9 +52,9 @@
   </form>
 
   <!-- STEP 2 · OTP -->
-  <form *ngIf="step() === 'otp'" class="lg-flow" (ngSubmit)="verify()" novalidate>
+  <form *ngIf="step() === 'otp'" class="lg-flow" (submit)="$event.preventDefault(); verify()" novalidate>
     <div class="lg-brand">
-      <span class="lg-logo" aria-hidden="true"><img src="icons/tdc2/icon-96.png" alt="" width="32" height="32" /></span>
+      <span class="lg-logo" aria-hidden="true"><img src="icons/tdc2/mark-96.webp" alt="" width="32" height="32" /></span>
       <span class="lg-brandname">TheDigiCiti</span>
     </div>
 
@@ -70,7 +70,7 @@
       </header>
 
       <input class="lg-otp" type="tel" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
-             placeholder="––––––" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+             placeholder="––––––" [value]="code()" (input)="code.set($any($event.target).value)" name="code" />
       <p class="lg-err" *ngIf="error()">{{ error() }}</p>
     </div>
 

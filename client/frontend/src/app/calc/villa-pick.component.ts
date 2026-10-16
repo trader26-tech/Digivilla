@@ -18,7 +18,7 @@ import { CalcDataService } from './calc-data.service';
     <div class="vp" [class.hero]="size === 'hero'" [attr.data-r]="pf().risk">
       <button class="swp" type="button" role="switch" [attr.aria-checked]="store.swp()" [class.on]="store.swp()"
               (click)="toggleSwp()" aria-label="Monthly SWP">
-        <span class="trk"><i></i></span><span class="t">SWP</span>
+        <span class="pill"><span class="trk"><i></i></span><span class="t">SWP</span></span>
       </button>
       <div class="row">
         <span class="slot">
@@ -56,26 +56,31 @@ import { CalcDataService } from './calc-data.service';
     .vp[data-r="1"] { --rc: #8fd65a; } .vp[data-r="3"] { --rc: #e0796b; }
     button { font: inherit; -webkit-tap-highlight-color: transparent; }
 
-    /* SWP pill */
+    /* SWP pill — a 22 px pill to see inside a 44 px button to tap (negative margins keep the layout as it was) */
     .swp {
-      margin-bottom: 8px;
-      display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 4px; border: 0; border-radius: 11px; cursor: pointer; white-space: nowrap;
-      color: #b2b6ca; background: rgba(43, 46, 58, .7); box-shadow: inset 0 0 0 1px #595d6c;
-      transition: background .25s, box-shadow .25s, color .25s;
+      margin: -11px 0 -3px; height: 44px; min-width: 64px; padding: 0 2px; border: 0; background: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      .pill {
+        display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 4px; border-radius: 11px; white-space: nowrap;
+        color: #b2b6ca; background: rgba(43, 46, 58, .7); box-shadow: inset 0 0 0 1px #595d6c;
+        transition: background .25s, box-shadow .25s, color .25s;
+      }
       .trk { position: relative; width: 22px; height: 12px; border-radius: 6px; background: #595d6c; transition: background .25s; }
       .trk i { position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: #b2b6ca; transition: left .25s cubic-bezier(.2, .8, .2, 1), background .25s; }
       .t { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
     }
     .swp.on {
-      color: #f3dfa8; background: rgba(233, 193, 92, .14); box-shadow: inset 0 0 0 1px rgba(233, 193, 92, .45), 0 0 16px -4px rgba(233, 193, 92, .5);
+      .pill { color: #f3dfa8; background: rgba(233, 193, 92, .14); box-shadow: inset 0 0 0 1px rgba(233, 193, 92, .45), 0 0 16px -4px rgba(233, 193, 92, .5); }
       .trk { background: #e9c15c; } .trk i { left: 12px; background: #1a1406; }
     }
-    .swp:focus-visible, .arr:focus-visible { outline: 2px solid #9184d9; outline-offset: 2px; }
+    .swp:focus-visible, .arr:focus-visible { outline: none; }
+    .swp:focus-visible .pill, .arr:focus-visible svg { outline: 2px solid #9184d9; outline-offset: 2px; border-radius: 11px; }
 
     .row { display: flex; align-items: flex-end; gap: 4px; }
     .slot { flex: none; width: 22px; display: flex; justify-content: center; }
+    /* the arrows: a 14 px glyph, a 44 px target centred where the 22 px button used to be */
     .arr {
-      width: 22px; height: 22px; margin-bottom: 18px; border: 0; border-radius: 6px; padding: 0; cursor: pointer; display: grid; place-items: center;
+      position: relative; z-index: 3; flex: none; width: 44px; height: 44px; margin: 0 -11px 7px; border: 0; border-radius: 0; padding: 0; cursor: pointer; display: grid; place-items: center;
       color: #b2b6ca; background: transparent; transition: color .2s, transform .2s; animation: arrIn .35s ease both;
     }
     .arr.l:hover { color: #f3dfa8; transform: translateX(-2px); }
@@ -109,7 +114,7 @@ import { CalcDataService } from './calc-data.service';
     @keyframes nmR { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
     @keyframes nmL { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 
-    .vp.hero { .stage { width: 104px; height: 84px; } .villa { height: 76px; } .halo { width: 112px; height: 40px; margin-left: -56px; } .coin { width: 20px; top: 0; } .arr { margin-bottom: 26px; } .slot { width: 18px; } }
+    .vp.hero { .stage { width: 104px; height: 84px; } .villa { height: 76px; } .halo { width: 112px; height: 40px; margin-left: -56px; } .coin { width: 20px; top: 0; } .arr { margin-bottom: 15px; margin-left: -13px; margin-right: -13px; } .slot { width: 18px; } }
 
     @media (max-height: 760px) {
       .stage { height: 54px; } .villa { height: 48px; }

@@ -5,7 +5,6 @@ import { BookingSheetComponent } from '../booking-sheet.component';
 import { CalcDataService } from '../calc/calc-data.service';
 import { ORDER, estateOf } from '../estate-home.component';
 import { EstateService } from '../estate.service';
-import { CountUpDirective } from '../shared/count-up.directive';
 import { compact, inr } from '../shared/format.util';
 import { MfDisclaimerComponent } from '../shared/mf-disclaimer.component';
 import { loadTileSprite } from '../shared/tile-sprite';
@@ -36,7 +35,7 @@ interface Rung { n: number; need: number; income: number; owned: boolean; reache
 @Component({
   selector: 'app-next-villa',
   standalone: true,
-  imports: [CommonModule, CountUpDirective, BookingSheetComponent, MfDisclaimerComponent],
+  imports: [CommonModule, BookingSheetComponent, MfDisclaimerComponent],
   templateUrl: './next-villa.component.html',
   styleUrl: './next-villa.component.scss',
 })

@@ -38,7 +38,7 @@
     <!-- 2 · the amount -->
     <section class="nv-amt nv-in" style="--i:1">
       <span class="k">If you add</span>
-      <b class="v" [appCountUp]="add()" [countDuration]="350"></b>
+      <b class="v">{{ inr(add()) }}</b>
       <p class="say">{{ headline() }}</p>
 
       <div class="nv-slide" [style.--fill.%]="fill()">
@@ -66,7 +66,7 @@
         <svg class="arr" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <div class="c r">
           <span>Would pay you</span>
-          <b class="now"><i [appCountUp]="incomeAfter()" [countDuration]="450"></i><em>/mo</em></b>
+          <b class="now"><i>{{ inr(incomeAfter()) }}</i><em>/mo</em></b>
         </div>
       </div>
       <div class="sub" *ngIf="newVillas() > 0">

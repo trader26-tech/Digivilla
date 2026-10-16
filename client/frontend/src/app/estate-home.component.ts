@@ -19,7 +19,6 @@ import { AuthService } from './auth/auth.service';
 import { Booking, BookingService } from './booking.service';
 import { CallScheduleComponent } from './shared/call-schedule.component';
 import { DataFreshnessComponent } from './shared/data-freshness.component';
-import { CountUpDirective } from './shared/count-up.directive';
 import { PlotUnlockComponent } from './build/plot-unlock.component';
 import { FundMovesSheetComponent } from './home/fund-moves-sheet.component';
 import { CallsService } from './shared/calls.service';
@@ -74,6 +73,11 @@ interface LegendCol { key: string; label: string; color: string; pct: string; }
 // stages are SETTINGS (CalcDataService.config().estate) — see estateOf() below.
 // Only the board's geometry (ORDER, the tile art) is fixed here.
 /** The board has art for 9 parcels and 5 build stages. */
+// This screen is its own (hashed) chunk. Remember where it lives so the next
+// signed-in open can modulepreload it straight from index.html, in parallel
+// with the app's own scripts — the home stays the first frame.
+try { localStorage.setItem('dv_home_chunk', import.meta.url); } catch { /* private mode */ }
+
 export const MAX_PLOTS = 9;
 /** House h (1-based) occupies ORDER[h-1] (col,row): centre, front corner, … */
 const SWIPE_HINT_KEY = 'dv-swipe-hint-v1';
@@ -130,7 +134,7 @@ const PLOT_TICKET = 10_00_000;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, CountUpDirective, PlotUnlockComponent, FundMovesSheetComponent],
+  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, PlotUnlockComponent, FundMovesSheetComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })

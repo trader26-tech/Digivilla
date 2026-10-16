@@ -3,7 +3,6 @@ import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signa
 
 import { BuildingDetail, BuildingFund, DrainPt, EstateService } from '../estate.service';
 import { AmcLogoComponent } from '../shared/amc-logo.component';
-import { CountUpDirective } from '../shared/count-up.directive';
 import { compact, inr } from '../shared/format.util';
 
 /** The three drained-value windows the backend can return, in tab order. */
@@ -85,7 +84,7 @@ function monotonePath(xs: number[], ys: number[]): string {
 @Component({
   selector: 'app-construction-detail',
   standalone: true,
-  imports: [CommonModule, AmcLogoComponent, CountUpDirective],
+  imports: [CommonModule, AmcLogoComponent],
   templateUrl: './construction-detail.component.html',
   styleUrl: './construction-detail.component.scss',
 })

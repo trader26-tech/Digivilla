@@ -52,3 +52,13 @@ mirrors the engine in Python), and `research/portfolio_sim.py`.
   5/8/10/15 yrs) matched on 1,416 figures (largest gap ₹0.005, rounding).
 - After changing engine code, re-run that sweep with today's settings: results
   must not move unless the change was meant to move them.
+
+## The FD's two kinds (`simulatePayout`, `fdMode`)
+
+- `'payout'` (the default — leave it out): interest paid out monthly after slab tax, the principal handed back.
+  Every result on this path is byte-identical to the engine before `fdMode` existed (8,835 scenarios checked).
+- `'cumulative'` ("FD that compounds"): interest compounded quarterly, each deposit year's interest taxed at
+  the slab + cess as it is earned (accrual) and that tax taken from the deposit; nothing paid out.
+  `fdCumulative()` = amount × (1 + (1 − t)((1 + r/400)^4 − 1))^years for whole years. The result then also
+  carries `fdMode`, `fdInterest` (before tax) and `fdTax`. Screens pair it with SWP off on the villa side.
+  Spec: `engine/fd-cumulative.spec.ts` (`ng test --include=src/app/calc/engine/fd-cumulative.spec.ts`).

@@ -101,9 +101,8 @@ interface LevelVM {
   bannerBottom: string;
   pillBorder: string;
   // credit panel (villa only)
-  /** Monthly income for this rung (₹); `incomeAnim` = counts up on open. */
+  /** Monthly income for this rung (₹). */
   incomeAmt: number;
-  incomeAnim: boolean;
   payLocked: boolean;
   housePct: string;
   paidLabel: string;
@@ -268,15 +267,11 @@ export class EstateLevelsComponent implements AfterViewInit {
   private readonly RB = this.SEC - 300;      // 454
   private readonly SPAN = this.RB - this.RT; // 414
 
-  // --- villa count-up (0→1 over 1400ms, cubic ease-out) feeding income figures ---
-  private readonly count = signal(1);
-  /** Income text for a rung. Reads the count-up signal HERE (not inside
-   *  `levels`), so the 1.4s count-up re-renders these few labels instead of
-   *  rebuilding all 45 levels every frame. */
+  /** Income text for a rung — the settled figure from the first frame (no
+   *  count-up: a ticking number reads as a wrong one correcting itself). */
   incomeLabel(lv: LevelVM): string {
-    return '+' + this.inr(Math.round(lv.incomeAmt * (lv.incomeAnim ? this.count() : 1)));
+    return '+' + this.inr(Math.round(lv.incomeAmt));
   }
-  private cuRaf = 0;
 
   // --- viewLevel from scroll (drives HUD earn button + back arrow) ---
   // null until the first scroll (then falls back to the current level, like the
@@ -378,7 +373,7 @@ export class EstateLevelsComponent implements AfterViewInit {
         sheenAnim: houseDone ? 'sheen 3.2s ease-in-out infinite' : 'none',
         ringAnim: houseDone ? 'ringOut 2.4s ease-out infinite' : 'none',
         ringAnim2: houseDone ? 'ringOut 2.4s ease-out 1.2s infinite' : 'none',
-        incomeAmt: INCOME * h, incomeAnim: houseDone,
+        incomeAmt: INCOME * h,
         payLocked: !houseDone, housePct: Math.round(Math.max(0, Math.min(1, worth / (5 * h * L))) * 100) + '%',
         paidLabel: lakh(Math.min(worth, 5 * h * L)) + ' in', goalLabel: lakh(5 * h * L),
         payBg: houseDone ? 'linear-gradient(120deg,#4a3b12 0%,#2e2308 55%,#1d1605 100%)' : 'linear-gradient(120deg,#26221a 0%,#1e1b16 60%,#1b1e2c 100%)',
@@ -572,7 +567,6 @@ export class EstateLevelsComponent implements AfterViewInit {
     // toCurrent() just laid the page out, so measuring now is cheap and the rail
     // paints aligned in the very first frame (no extra forced layout later).
     this._measure();
-    this.countUp();
     // measure banner positions after layout settles (rAF + a couple of delayed
     // passes, matching the reference) so the rail marks align to each banner.
     requestAnimationFrame(this._measure);
@@ -715,17 +709,6 @@ export class EstateLevelsComponent implements AfterViewInit {
       };
       this.revealRaf = requestAnimationFrame(step);
     });
-  }
-
-  private countUp(): void {
-    cancelAnimationFrame(this.cuRaf);
-    const t0 = performance.now();
-    const step = (t: number) => {
-      const p = Math.min(1, (t - t0) / 1400);
-      this.count.set(1 - Math.pow(1 - p, 3));
-      if (p < 1) this.cuRaf = requestAnimationFrame(step);
-    };
-    this.cuRaf = requestAnimationFrame(step);
   }
 
   /** HUD "Earn" tap → smooth-scroll to that villa card. */

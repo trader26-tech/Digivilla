@@ -17,7 +17,11 @@ export interface PayoutInput {
   fdRate: number;          // % a year (0 when there's no FD side)
   slabPct: number;         // income-tax slab (FD interest; gold short-term)
   swp: boolean;            // pay the monthly income?
+  /** the FD's kind: 'payout' (default — interest paid monthly, principal back) or 'cumulative'
+   *  (interest added every quarter, the tax on each year's interest taken from the deposit) */
+  fdMode?: FdMode;
 }
+export type FdMode = 'payout' | 'cumulative';
 
 export interface FundRow {
   name: string; sleeve: string; weight: number;
@@ -52,6 +56,30 @@ export interface PayoutResult {
   rebalances: Rebalance[];
   fdReal: number; dvReal: number;
   worstYearPct: number | null;
+  /** only with fdMode 'cumulative' (absent on the payout FD, so those results are unchanged):
+   *  fdValue = the deposit at the end, fdInterest = interest added before tax, fdTax = tax taken from it */
+  fdMode?: 'cumulative';
+  fdInterest?: number;
+  fdTax?: number;
+}
+
+/**
+ * A CUMULATIVE bank FD (interest reinvested, nothing paid out), the way Indian banks run one:
+ * interest is compounded every quarter at ratePct/4; the interest of each deposit year is taxed
+ * at the slab (accrual taxation — taxed as it is earned, not when the FD ends) and that tax is
+ * taken from the deposit, as TDS would be. A last part-year (or part-quarter) is credited pro rata
+ * and taxed at the end. With whole years Y this is exactly
+ *     amount × (1 + (1 − t) × ((1 + ratePct/400)^4 − 1))^Y,   t = slab × (1 + cess).
+ */
+export function fdCumulative(amount: number, ratePct: number, taxRate: number, months: number): { value: number; interest: number; tax: number } {
+  let bal = amount, yearInt = 0, interest = 0, tax = 0;
+  for (let m = 1; m <= months; m++) {
+    const q = m % 3;
+    if (q === 0) { const it = bal * ratePct / 400; bal += it; yearInt += it; }
+    else if (m === months) { const it = bal * ratePct / 1200 * q; bal += it; yearInt += it; }
+    if (m % 12 === 0 || m === months) { const tx = yearInt * taxRate; bal -= tx; tax += tx; interest += yearInt; yearInt = 0; }
+  }
+  return { value: bal, interest, tax };
 }
 
 export function simulatePayout(w: Window, inp: PayoutInput, cfg: CalcConfig): PayoutResult {
@@ -60,9 +88,12 @@ export function simulatePayout(w: Window, inp: PayoutInput, cfg: CalcConfig): Pa
   const t = (inp.slabPct / 100) * cess;
   const { amount } = inp;
 
-  // FD: interest paid monthly, taxed as income; the principal never moves
-  const fdMonthly = (amount * inp.fdRate / 1200) * (1 - t);
+  // FD: interest paid monthly, taxed as income; the principal never moves —
+  // or (fdMode 'cumulative') nothing paid, interest compounded quarterly and taxed yearly
+  const cum = inp.fdMode === 'cumulative' ? fdCumulative(amount, inp.fdRate, t, n) : null;
+  const fdMonthly = cum ? 0 : (amount * inp.fdRate / 1200) * (1 - t);
   const fdPaid = fdMonthly * n;
+  const fdValue = cum ? cum.value : amount;
 
   // DigiVilla
   const funds = w.funds;
@@ -101,11 +132,11 @@ export function simulatePayout(w: Window, inp: PayoutInput, cfg: CalcConfig): Pa
   flows[n] += dvValue;
   const deflate = Math.pow(1 + cfg.display.inflation_pct / 100, n / 12);
   const dvPaid = paidGross - payTax;
-  const fdTotal = amount + fdPaid, dvTotal = dvPaid + dvValue;
+  const fdTotal = fdValue + fdPaid, dvTotal = dvPaid + dvValue;
 
-  return {
+  const out: PayoutResult = {
     months: w.months, years: n / 12, swp: inp.swp,
-    fdMonthly, fdPaid, fdValue: amount, fdTotal, fdTaxRate: t * 100,
+    fdMonthly, fdPaid, fdValue, fdTotal, fdTaxRate: t * 100,
     dvMonthly: W, dvPaidGross: paidGross, dvPayoutTax: payTax, dvPaid, dvRebalanceTax: rebalTax,
     dvArbValue, dvGrowthValue: dvValue - dvArbValue, dvValue, dvTotal,
     dvIrr: irrPct(flows),
@@ -121,6 +152,8 @@ export function simulatePayout(w: Window, inp: PayoutInput, cfg: CalcConfig): Pa
     fdReal: fdTotal / deflate, dvReal: dvTotal / deflate,
     worstYearPct: worstYearPct(w),
   };
+  if (cum) { out.fdMode = 'cumulative'; out.fdInterest = cum.interest; out.fdTax = cum.tax; }
+  return out;
 }
 
 /** Years behind the "% a yr" on each villa (Types of villas): the calculators' longest window. */

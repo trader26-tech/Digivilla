@@ -19,9 +19,12 @@ export interface FdViewInput {
 /** FD vs DigiVilla, ready to draw: the two columns, side-by-side rows, the walk-through. */
 export function fdView(x: FdViewInput) {
   const { r, amount, fdRate } = x;
+  const cum = r.fdMode === 'cumulative';
+  // the FD column: interest paid out + the principal handed back — or, for an FD that compounds,
+  // the interest added (after tax) on top of the principal
   const fdCol: Col3d = { art: 'bank', segs: [
-    { label: 'Paid out', val: r.fdPaid, bg: 'linear-gradient(180deg,#6d7184,#585c6e)', side: '#454858', top: '#8b8fa3', k: '#d9dbe6', c: '#f2f2f6' },
-    { label: 'Value', val: r.fdValue, bg: 'linear-gradient(180deg,#3a3d4a,#2b2e3a)', side: '#20222d', k: '#b2b6ca', c: '#e4e7f5' },
+    { label: cum ? 'Interest added' : 'Interest paid out', short: 'interest', val: cum ? r.fdValue - amount : r.fdPaid, bg: 'linear-gradient(180deg,#6d7184,#585c6e)', side: '#454858', top: '#8b8fa3', k: '#ffffff', c: '#f2f2f6' },
+    { label: cum ? 'Principal' : 'Principal back', short: 'principal', val: cum ? amount : r.fdValue, bg: 'linear-gradient(180deg,#3a3d4a,#2b2e3a)', side: '#20222d', k: '#b2b6ca', c: '#e4e7f5' },
   ] };
   const dvCol: Col3d = dvColumn(r.swp, r.dvPaid, r.dvValue, 'Paid out');
 
@@ -37,14 +40,17 @@ export function fdView(x: FdViewInput) {
         x.worst === null ? 'can fall' : `worst 12 months since ${x.historyYear}: ${pct(x.worst, 0)}`, R, 'fd'),
       gauge: true, aDeg: -72, bDeg: 72 },
     row('Real value', 'M3 12h4l3-8 4 16 3-8h4', fmtInr(r.fdReal), 'in today’s money', r.fdReal < amount ? R : N, fmtInr(r.dvReal), 'in today’s money', G, 'dv'),
-    row('Compounding', 'M4 20 20 4M4 20v-6M4 20h6M20 4h-6M20 4v6', 'None', 'interest is paid out', N,
+    row('Compounding', 'M4 20 20 4M4 20v-6M4 20h6M20 4h-6M20 4v6',
+      cum ? '+' + fmtInr(r.fdValue - amount) : 'None', cum ? `every quarter, after ${r.fdTaxRate.toFixed(1)}% tax a year` : 'interest is paid out', N,
       (r.dvValue >= amount ? '+' : '') + fmtInr(r.dvValue - amount), `${fmtInr(amount)} is now ${fmtInr(r.dvValue)}`, G, 'dv'),
-    r.swp
+    cum
+      ? row('Income', INCOME_ICON, 'None', 'the interest stays in', N, 'None', 'SWP off — it all compounds', N, 'fd')
+    : r.swp
       ? row('Income', INCOME_ICON, inr(r.fdMonthly), 'a month after tax, never grows', N, inr(r.dvMonthly), 'a month, every month', G, 'dv')
       : row('Income', INCOME_ICON, inr(r.fdMonthly), 'a month after tax, never grows', N, 'None', 'SWP off — it all compounds', N, 'fd'),
-    r.swp
+    ...(cum ? [] : [r.swp
       ? row('Paid from', DROP_ICON, 'Interest', 'principal untouched', N, 'Arbitrage', arbLine, G, 'dv')
-      : row('Paid from', DROP_ICON, 'Interest', 'principal untouched', N, 'Nothing', 'turn SWP on for a monthly income', N, 'fd'),
+      : row('Paid from', DROP_ICON, 'Interest', 'principal untouched', N, 'Nothing', 'turn SWP on for a monthly income', N, 'fd')]),
   ];
 
   const explain = {
@@ -53,6 +59,9 @@ export function fdView(x: FdViewInput) {
     fdGross: amount * fdRate / 1200,
     taxTiny: r.dvPayoutTax < r.dvPaidGross * 0.01,
     gap: r.dvTotal - r.fdTotal,
+    cum,
+    fdInterest: r.fdInterest ?? 0,
+    fdTax: r.fdTax ?? 0,
   };
   return { fdCol, dvCol, vs, explain };
 }
@@ -61,9 +70,9 @@ export function fdView(x: FdViewInput) {
 export function dvColumn(swp: boolean, paid: number, value: number, paidLabel: string): Col3d {
   return { art: 'villa', pick: true, green: true, segs: swp ? [
     { label: paidLabel, val: paid, bg: 'linear-gradient(180deg,#b9e69a,#9ad471)', side: '#7fb85a', top: '#d3f0bd', k: '#2b4d18', c: '#10240a' },
-    { label: 'Value', val: value, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#d8f2c4', c: '#f2fbe9' },
+    { label: 'Value', val: value, bg: 'linear-gradient(180deg,#4f9528,#2a5e18)', side: '#1f4a13', top: '#6cba36', k: '#f2fbe9', c: '#f2fbe9' },
   ] : [
-    { label: 'Value', val: value, bg: 'linear-gradient(180deg,#9ad471 0%,#4f9528 55%,#2a5e18)', side: '#1f4a13', top: '#d3f0bd', k: '#d8f2c4', c: '#f2fbe9' },
+    { label: 'Value', val: value, bg: 'linear-gradient(180deg,#9ad471 0%,#4f9528 18%,#2a5e18)', side: '#1f4a13', top: '#d3f0bd', k: '#ffffff', c: '#ffffff' },
   ] };
 }
 

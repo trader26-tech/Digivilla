@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
 import { AccountComponent } from './account/account.component';
@@ -73,6 +73,15 @@ export class AppComponent {
   get introReady(): boolean {
     return !this.auth.signedIn() || (this.est.portfolioLoaded() && this.est.allocLoaded());
   }
+  /** The home's code is its own chunk (so a first-time visitor's login arrives
+   *  sooner); a signed-in open fetches it at once, and the welcome never fades
+   *  out over a home that isn't there yet. */
+  private readonly homeLoaded = signal(false);
+  get introHold(): boolean { return this.auth.signedIn() && !this.homeLoaded(); }
+  private loadHome(): void {
+    const done = () => this.homeLoaded.set(true);
+    import('./estate-home.component').then(done, done);
+  }
 
   /** True only on the login→app transition we just made, so the onboarding
    *  screen plays its "verified" tick once (not on every returning visit). */
@@ -92,7 +101,10 @@ export class AppComponent {
     // restored this NAV day's snapshot) skips the splash — the home is the
     // first frame. Otherwise the quick splash waits for the data as before.
     if (this.intro && !this.introFull && this.auth.signedIn() && this.introReady) this.intro = false;
-    if (!this.intro) this.showWhatsNew();
+    if (!this.intro) { this.endBootIntro(); this.showWhatsNew(); }
+    // The home's code: now for a signed-in open, else quietly once the login is up.
+    if (this.auth.signedIn()) this.loadHome();
+    else setTimeout(() => this.loadHome(), 2500);
     // Never leave a user stuck on a stale cached build: as soon as the service
     // worker fetches a newer version, activate it and reload so the latest app
     // (and the presentation deck) is what they see.
@@ -114,6 +126,12 @@ export class AppComponent {
     });
   }
   private warmed = false;
+
+  /** No splash this open: drop index.html's welcome (it normally decided the
+   *  same and is already hidden). */
+  private endBootIntro(): void {
+    (window as { __boot?: { leave(): void } }).__boot?.leave();
+  }
 
   private watchForUpdates(): void {
     const sw = this.swUpdate;
@@ -143,6 +161,7 @@ export class AppComponent {
    *  before login, so just reveal the app. */
   onLoggedIn(): void {
     this.justVerified = true;
+    this.loadHome();
     // a fresh sign-in sees the current app — no release notes to catch up on
     this.whatsNew.markSeen();
     this.syncProfileFromAuth();

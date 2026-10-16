@@ -15,6 +15,9 @@
         <span>{{ nri() ? 'with' : 'taxed at' }}</span>
         <button class="pick" [class.on]="picker() === 'tax'" (click)="togglePicker('tax')" aria-label="Change tax on FD interest" [attr.aria-expanded]="picker() === 'tax'">{{ tax() }}%<i></i></button>
         <span>{{ nri() ? 'TDS.' : 'as income.' }}</span>
+        <button class="cmp" type="button" role="switch" [class.on]="compound()" [attr.aria-checked]="compound()" (click)="toggleCompound()">
+          <span class="trk"><i></i></span><span>FD that compounds</span>
+        </button>
       </p>
     </div>
 
@@ -43,9 +46,20 @@
       <app-bars-3d [left]="fdCol()!" [right]="dvCol()!"></app-bars-3d>
     </div>
     <div class="legend">
-      <span>Fixed deposit · {{ fdRate() }}%</span>
-      <span class="g">{{ villa().name }} · {{ rate(res.dvIrr) }} a yr</span>
+      <span>{{ compound() ? 'FD' : 'Fixed deposit' }} · {{ fdRate() }}%{{ compound() ? ' · compounds' : '' }}</span>
+      <span class="g">{{ villa().name }} villa{{ res.swp ? ' · SWP' : '' }}<button class="info" type="button" [class.on]="rateNote()" (click)="toggleNote()" [attr.aria-expanded]="rateNote()" [attr.aria-label]="'About the ' + rate(res.dvIrr) + ' rate'"><i>i</i></button></span>
     </div>
+    <!-- the (i) beside the villa's rate: the one rate on screen is this window's; the long-run rate lives here -->
+    @if (rateNote()) {
+      <div class="scrim" (click)="closeNote()" aria-hidden="true"></div>
+      <div class="rate-note" role="dialog" aria-label="About this rate">
+        <div class="rn-h"><b>{{ villa().name }} villa · {{ rate(res.dvIrr) }} a year</b>
+          <button type="button" class="rn-x" (click)="closeNote()" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <p>{{ rate(res.dvIrr) }} a year is what the {{ villa().name }} villa actually earned over {{ years() === 1 ? 'this year' : 'these ' + years() + ' years' }} ({{ span() }}){{ res.swp ? ', counting the monthly income it paid out and what is still invested.' : ', with nothing withdrawn.' }}</p>
+        @if (longRun(); as lr) { <p>Over the long run, its rate is {{ lr.toFixed(1) }}% a year over the last {{ rateYears() }} years (nothing withdrawn). This window realised {{ rate(res.dvIrr) }}.</p> }
+        <p class="why">Different start dates give different rates. Past returns are no promise of future ones.</p>
+      </div>
+    }
   } @else if (failed()) {
     <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
   } @else {
@@ -67,7 +81,7 @@
                    [min]="1000000" [max]="20000000" [step]="100000" [nudgeBy]="500000" [major]="1000000" [mid]="500000"></app-amount-dial>
 
   <p class="fine">
-    {{ swp() ? 'Payouts after tax.' : 'SWP off: nothing withdrawn.' }} The {{ villa().name }} villa on real index history — the past isn't a promise.
+    @if (note(); as n) { <span class="note">{{ n }}</span> } @else { {{ compound() ? 'FD that compounds: interest added every quarter, taxed each year — the villa\'s SWP is off, so both reinvest.' : swp() ? 'Payouts after tax.' : 'SWP off: nothing withdrawn.' }} } The {{ villa().name }} villa on real index history — the past isn't a promise.
     <span class="links">
       <button class="how" (click)="go('vs')" aria-label="See FD and DigiVilla side by side">Side by side</button>
       <i aria-hidden="true">·</i>
@@ -93,7 +107,7 @@
   </div>
 
   <div class="vs-head">
-    <div class="who"><img src="assets/calc/bank.svg" alt="" /><b>Bank FD</b><span>{{ fdRate() }}% a yr</span></div>
+    <div class="who"><img src="assets/calc/bank.svg" alt="" /><b>Bank FD</b><span>{{ fdRate() }}% a yr{{ compound() ? ' · compounds' : '' }}</span></div>
     <div class="vs-badge"><b>VS</b></div>
     <div class="who dv"><img src="assets/calc/villa.svg" alt="" /><b>DigiVilla</b><span>{{ rate(res.dvIrr) }} a yr</span></div>
   </div>
@@ -160,7 +174,17 @@
       </div>
     </li>
 
-    <!-- 2 · paid every month, from arbitrage -->
+    <!-- 2 · paid every month, from arbitrage (or, SWP off, nothing paid) -->
+    @if (!res.swp) {
+    <li class="step">
+      <span class="dot">2</span>
+      <div class="step-card">
+        <span class="step-k">Every month</span>
+        <h3>Nothing was paid out</h3>
+        <p>{{ compound() ? 'The FD compounds here, so the villa\'s monthly income (SWP) is off too —' : 'SWP is off, so' }} every rupee stayed invested and kept growing.</p>
+      </div>
+    </li>
+    } @else {
     <li class="step">
       <span class="dot">2</span>
       <div class="step-card">
@@ -176,6 +200,7 @@
         }
       </div>
     </li>
+    }
 
     <!-- 3 · the rest grew -->
     <li class="step">
@@ -215,8 +240,13 @@
       <span class="dot">5</span>
       <div class="step-card">
         <span class="step-k">The bank FD</span>
-        <h3>The FD paid <em class="n">{{ inr(res.fdMonthly) }}</em> a month</h3>
-        <p>{{ fmt(amount()) }} at {{ fdRate() }}% = {{ inr(x.fdGross) }} a month. After {{ res.fdTaxRate | number: '1.0-1' }}% tax you keep {{ inr(res.fdMonthly) }}. Your {{ fmt(amount()) }} stays {{ fmt(amount()) }} — it never grows.</p>
+        @if (x.cum) {
+          <h3>The FD grew to <em class="n">{{ fmt(res.fdValue) }}</em></h3>
+          <p>{{ fmt(amount()) }} at {{ fdRate() }}%, with the interest added every quarter and nothing paid out. Each year's interest is taxed at {{ res.fdTaxRate | number: '1.0-1' }}% as it is earned, and that tax comes out of the deposit: {{ fmt(x.fdInterest) }} interest − {{ fmt(x.fdTax) }} tax.</p>
+        } @else {
+          <h3>The FD paid <em class="n">{{ inr(res.fdMonthly) }}</em> a month</h3>
+          <p>{{ fmt(amount()) }} at {{ fdRate() }}% = {{ inr(x.fdGross) }} a month. After {{ res.fdTaxRate | number: '1.0-1' }}% tax you keep {{ inr(res.fdMonthly) }}. At the end you get your {{ fmt(amount()) }} back — it never grows.</p>
+        }
       </div>
     </li>
 
@@ -228,8 +258,8 @@
       <div class="step-card">
         <span class="step-k">So, after {{ years() }} years</span>
         <div class="result">
-          <div><span>Bank FD</span><b>{{ fmt(res.fdTotal) }}</b><small>{{ fmt(res.fdPaid) }} paid + {{ fmt(res.fdValue) }}</small></div>
-          <div class="dv"><span>DigiVilla</span><b>{{ fmt(res.dvTotal) }}</b><small>{{ fmt(res.dvPaid) }} paid + {{ fmt(res.dvValue) }}</small></div>
+          <div><span>Bank FD</span><b>{{ fmt(res.fdTotal) }}</b><small>@if (x.cum) { {{ fmt(res.fdValue - amount()) }} interest added + {{ fmt(amount()) }} } @else { {{ fmt(res.fdPaid) }} interest paid + {{ fmt(res.fdValue) }} back}</small></div>
+          <div class="dv"><span>DigiVilla</span><b>{{ fmt(res.dvTotal) }}</b><small>@if (res.swp) { {{ fmt(res.dvPaid) }} paid + {{ fmt(res.dvValue) }} } @else { {{ fmt(res.dvValue) }}, nothing drawn}</small></div>
         </div>
         @if (x.gap > 0) { <p class="verdict"><b>{{ fmt(x.gap) }} more</b> with DigiVilla</p> }
         @else { <p class="verdict down">The FD did better by <b>{{ fmt(-x.gap) }}</b></p> }
@@ -250,6 +280,9 @@
       <li><b>Rebalanced every {{ t().rebalanceMonth }}.</b> The {{ t().payFirst }} part is left alone; {{ t().rebalanceParts }} go back to the split they started with. The tax on what that sells is paid from the proceeds.</li>
       <li><b>Today's tax rules</b> are used for every year, though the rules were different earlier. Surcharge isn't included.</li>
       <li><b>The FD rate stays {{ fdRate() }}%</b> the whole time. Real FD rates went up and down.</li>
+      @if (x.cum) {
+        <li><b>FD that compounds.</b> Interest is added every quarter; each year's interest is taxed at your slab (+ cess) as it is earned, and the tax comes out of the deposit. The villa's SWP is off so both sides reinvest; its value is before tax on gains not yet sold.</li>
+      }
       @for (p of proxies(); track p.fund + p.until) {
         <li><b>{{ p.fund }}</b> started in {{ ym(p.until) }} — before that, we use {{ p.name }}'s prices.</li>
       }

@@ -1,5 +1,6 @@
-<!-- Opening animation, plays first — before login. -->
-<app-intro *ngIf="intro" [full]="introFull" [ready]="introReady" (done)="onIntroDone()"></app-intro>
+<!-- Opening animation: painted by index.html before any script, this decides
+     when it ends (and fades it out over login / home). -->
+<app-intro *ngIf="intro" [full]="introFull" [ready]="introReady" [hold]="introHold" (done)="onIntroDone()"></app-intro>
 
 <!-- GATE: after the intro, nothing renders until the phone is verified. Profile
      details are no longer collected here — the advisor sets that up on the
@@ -7,9 +8,12 @@
 <app-login *ngIf="!intro && !auth.signedIn()" (done)="onLoggedIn()"></app-login>
 
 <ng-container *ngIf="!intro && auth.signedIn()">
-<!-- HOME: the ONE estate map — "[Name]'s City" — kept for every state. When the
+<!-- HOME: its code is a separate chunk (AppComponent.loadHome fetches it at
+     once for a signed-in open) so a first visit's login needs less to download.
+     The ONE estate map — "[Name]'s City" — kept for every state. When the
      user has no villa yet it shows a dummy house + the upcoming setup call; as
      they progress the same map fills with their real villas. -->
+@defer (when detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'home'; prefetch on idle) {
 <app-estate-home
   *ngIf="detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'home'"
   class="has-nav"
@@ -22,6 +26,7 @@
   (progress)="openLevels()"
   (refresh)="onEstateRefresh()"
 ></app-estate-home>
+}
 
 <!-- EXPLORE (reachable from Home's build flow, not the nav). -->
 @defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && view === 'explore'; prefetch on idle) {

@@ -12,7 +12,8 @@
           "/index.html",
           "/manifest.webmanifest",
           "/*.css",
-          "/*.js"
+          "/*.js",
+          "/fonts/*.woff2"
         ]
       }
     },
@@ -33,17 +34,6 @@
       "resources": {
         "files": [
           "/deck/**"
-        ]
-      }
-    },
-    {
-      "name": "fonts",
-      "installMode": "lazy",
-      "updateMode": "prefetch",
-      "resources": {
-        "urls": [
-          "https://fonts.googleapis.com/**",
-          "https://fonts.gstatic.com/**"
         ]
       }
     }

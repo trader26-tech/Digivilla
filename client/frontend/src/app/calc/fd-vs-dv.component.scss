@@ -1,0 +1,36 @@
+/* FD vs DigiVilla only (the shared look is calc-screen.scss) */
+
+/* "FD that compounds" — a switch at the end of the question line */
+.cmp {
+  height: 44px; margin: -7px 0; padding: 0 2px; border: 0; background: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--n-300);
+  .trk { position: relative; flex: none; width: 34px; height: 20px; border-radius: 10px; background: var(--n-800); box-shadow: inset 0 0 0 1px var(--n-700); transition: background .25s; }
+  .trk i { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--n-500); transition: left .25s cubic-bezier(.2, .8, .2, 1), background .25s; }
+  &.on { color: var(--n-100); .trk { background: #c9c6da; box-shadow: none; } .trk i { left: 17px; background: #14131c; } }
+}
+
+/* what the switches just changed — in the fine print, briefly */
+.fine .note { color: var(--n-300); }
+
+/* the (i) note on the villa's rate */
+.rate-note {
+  position: absolute; z-index: 10; left: 18px; right: 18px; top: 120px;
+  display: flex; flex-direction: column; gap: 8px; padding: 14px 14px 13px 16px; border-radius: 16px;
+  background: #1a1c27; box-shadow: 0 0 0 1px var(--n-800), 0 18px 40px rgba(0, 0, 0, .6);
+  animation: pop .18s cubic-bezier(.2, .8, .2, 1);
+  p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--n-300); }
+  p.why { font-size: 12px; color: var(--n-500); }
+}
+.rn-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; b { font-size: 14px; font-weight: 600; color: var(--text); } }
+.rn-x { flex: none; width: 44px; height: 44px; margin: -12px -10px -12px 0; border: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; cursor: pointer; color: var(--n-400); background: none; }
+/* the (i) in the legend (a 44 px target around an 18 px dot) */
+.legend span { display: inline-flex; align-items: center; justify-content: center; }
+.info {
+  flex: none; width: 44px; height: 44px; margin: -14px -16px -14px -6px; padding: 0; border: 0; background: none; cursor: pointer;
+  display: grid; place-items: center; color: var(--n-300);
+  i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-family: Georgia, serif; font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 1; box-shadow: inset 0 0 0 1.5px var(--n-500); transition: background .2s, color .2s; }
+  &.on i { background: var(--green); color: #0b0c12; box-shadow: none; }
+}
+/* room for the (i) on a 375 px phone: the legend spans the chart's own width */
+.legend { padding-left: 26px; padding-right: 26px; column-gap: 20px; }

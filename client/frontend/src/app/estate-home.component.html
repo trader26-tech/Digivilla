@@ -31,7 +31,7 @@
           <span class="flow-arrow" aria-hidden="true">↓</span>
           <span class="flow-lbl">WITHDRAWALS</span>
         </div>
-        <div class="flow-fig gold"><span [appCountUp]="withdrawAmt" [countInstant]="entered"></span><span class="unit">/mo</span></div>
+        <div class="flow-fig gold"><span>{{ inr(withdrawAmt) }}</span><span class="unit">/mo</span></div>
         <div class="flow-sub">{{ withdrawSub }}</div>
       </div>
       <div class="flow-div" aria-hidden="true"></div>
@@ -40,7 +40,7 @@
           <span class="flow-lbl">INVESTED</span>
           <span class="flow-arrow" aria-hidden="true">↑</span>
         </div>
-        <div class="flow-fig violet"><span [appCountUp]="investedAmt" [countInstant]="entered"></span></div>
+        <div class="flow-fig violet"><span>{{ inr(investedAmt) }}</span></div>
         <div class="flow-sub">{{ investedSub }}</div>
       </div>
     </div>
@@ -393,7 +393,7 @@
       <!-- tap the figure for the live NAVs behind it -->
       <button type="button" class="port-v" (click)="fresh.show()"
               aria-label="See the live NAVs behind this value">
-        <span [appCountUp]="est.estateValue" [countDuration]="800" [countInstant]="entered"></span><i class="port-live" aria-hidden="true"></i>
+        <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
       </button>
       <!-- how much the money has grown overall, in one line — tap for the graph,
            today's move fund by fund, and each fund against its index -->

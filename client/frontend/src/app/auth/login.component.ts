@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { AuthService } from './auth.service';
 import { VillaArtComponent } from '../shared/villa-art.component';
@@ -13,7 +12,9 @@ import { VillaArtComponent } from '../shared/villa-art.component';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, VillaArtComponent],
+  // plain [value]/(input) bindings, not FormsModule: keeps @angular/forms out of
+  // the first download (the login is the first screen a new visitor waits for)
+  imports: [CommonModule, VillaArtComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })

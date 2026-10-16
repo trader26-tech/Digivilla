@@ -12,14 +12,221 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TheDigiCiti">
   <meta name="application-name" content="TheDigiCiti">
-  <script src="assets/env.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <!-- deferred: runs after parsing, still before the app's own (module) scripts -->
+  <script defer src="assets/env.js"></script>
+  <!-- Inter, self-hosted: ONE variable file (latin, wght 400–800) for all the
+       app's text. ₹ is not in Google's latin subset, so its glyph is a tiny
+       inline face — the rupee sign never waits for a request or swaps. -->
+  <link rel="preload" href="fonts/inter-latin-wght-v20.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- the login's brand mark (a 2 kB webp), so it is there as the login fades in -->
+  <link rel="preload" href="icons/tdc2/mark-96.webp" as="image" type="image/webp">
   <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    @font-face {
+      font-family: 'Inter'; font-style: normal; font-weight: 400 800; font-display: swap;
+      src: url(fonts/inter-latin-wght-v20.woff2) format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'Inter'; font-style: normal; font-weight: 400 800; font-display: swap;
+      src: url(data:font/woff2;base64,d09GMgABAAAAAAVYABQAAAAACkgAAATrAAQAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGoFXGyAcbj9IVkFSPT9NVkFSVAZgP1NUQVSBFiciADwvTBEICoJIgjUwgQIBNgIkAxALCgAEIAWFTgcgG8wIERWkdRN8kcAbpv5hhffmmqmUaDNW/8M9eL5/p3bu05OjVXAyRFCVkF1AJ0voJWIXAb7qn1/nbUvlxRkJQP7gEQHgHENTzII7t87+/+eY8aJpb4DbXyb4kKLThmuqwpmNK6zt+N5ZtZ/ggcE5oS3zZ+NEzLpUQDAAnmo4AoShgDjgQwQBBwc8gMDDr334xXe//PbnfytXbdi0eff+g4eOnTx15uz5CxcvXb5y9dr1G5R5ZPXsvShDm66AN4zhXWP46/ikqWnpGZlZ2Tm5efkFhUUlpWXlFZXVNbV19Q2NTU7rdh27dO3eo2ev3n369R88dMyUGbPnLicEQcDPL3mMJ3iXj/icL/mDv1nFNnZLFQLYJJCEtOvQrR8WGsAfADRqFg6qMmTaaPcMQuQNChDUrBnzphPiBpEIQACNcAAu4hBAsBBcCB+EkfxRhpWeUJWSAAIEDUZtNdq4qpkBCFqUgABgYVIx1z1npj+jRtG5gMybMW4mAq2dWThpolvrZBC0Oii9A9rwiBcTzHK9BXgLWdQWnlXv/3eYBqDQH4AHsAEA+vTt3hcfKSl/BvgehIN1RL0C8j6AHmHuBFIIQhAsDCCCAKAANXPW3MVSAwsmTnKLIJPdo6eJgyKEOPKoog09GIIASmoJAQwEhRIvqH8AQUDK5bYFFWoQDFaq5CojxWr0ItoaAIHbBxBcPnwAhBGakyJJvUooXOTgACjAACIwECACTQ7gQiOoHcj5Ay71nzrWCQGA16dQiMDEWm/YC3krsypERMqARcphNRmpgJVEpZKVeqWqjda/h/6EAqABsIBgYDLwAgCgAbAxALStdZDL1q4gHasXhSwJXUiw2AMliMAhKtjoZwuGbALDDLYMkDwMMDV13RiahukFPb1qSb+wgYvmDwh+Zt8+adlrBw0MfGbPHpp377btyekNzRjYquWDH7CO/5D8JI7j7Nu7vLXj7N/nwaHV/75mn/9/B1RHKivka+XxUsedD/yB1/dBVc2oFGeU42l1vCz8wf8eEvaO8sKLnDWK1rtnl33zQ+k3yRmzw54wllkTnq/rOm/QI++88kl02VenfzrtnrGxZf7YVQfcP5ln+wcFt99Z9s0Fs/QzABBAECAJDUAKAHnkUerQLFh0AaJbN0bE3ExItW+s+TojdMKOSLUjCpou7teG5/if3wKWLWvTePM+fi3mxVWrLvL7wy51c+93Xmfnw5Zl3rpw8/zKf1SL7NnyaN8I866baW55BAE0bbKO73l2ZGjDHcuwADg5/wkvwNn72WXUPRilEwMcwEABIPC4XKYj4akZZ+H/Adp0pJPuT53KAuUAAmg6YQMgOPvCOYqB6IcAL1gg2HhBEcJbYFDCF6CJYz+YVHETXMRJDi2EKmnDI0KQLBwo69st5RzzKFQQJl6oxJIPoIpw+QJqiJG/oBZLdoJDkBx8X62x5SxtRa6XB0rICPrd3hg+ksHRiVgAj8DVjESwjCPpBiFUZRR54bzTEUqcHuM2ce1Oq0o77KhRBmsjhl+sB9HYQsHQ2p3fTxev9/W9cEa12hkFZWD90Umhch0YQT/jaGucEx1OSBd3NmLrVWv2VZQ53HXyliLEHIK1vV9h8bcMO2++WqJUxfYbYVeuXIti/TaLAkTId08zxnZkwVsVrDcUKMdII1pfe/9ryKkAPPjk2QwA) format('woff2');
+      unicode-range: U+20B9;
+    }
+    /* The intro's few words, inline, so the welcome is set in Inter from its
+       very first frame (no waiting on the font file, no swap mid-animation). */
+    @font-face {
+      font-family: 'TDC Intro'; font-weight: 500; font-display: block;
+      src: url(data:font/woff2;base64,d09GMgABAAAAAATcAA8AAAAACLAAAASDAAQAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgj4cKgZgP1NUQVRaAHQRCAqGWIVnATYCJAMwCxoABCAFgTYHIBsaB0Aeg+NuK2WKxRTjbtxjHfV4+For3+/p2d3DAKMk0AQkw8JEpuKAjEt5QNA5efPDe9rL5qTQRHVyu30dM0A4ivl/ADBxTf7aplEgkTTleYetLSJsNPubaTdIg1YIDWSztlYWBGLGILNXLgb9YhNoBbAnITT/eqDZLGtxLWK6+YHojtS4CFDcE4eHg+LBfQlRoChD9V+IVkw6gMdFAamzMxBASeJrTRoMaGivRdZ8yw6g6iCcatF7hyJVi2mHydD76lNhJNWxoGr2nJXOeJoDhyqHrYUeS65J6mRe0qRQymwyX20cxtoOCI42Vlo/LWnNsMJGmJ/zh/iipJyRzwJXGVt6oDN1JysLIMWiA05o+Qp3X9gBaevqO5000PiQGoCAvJn7EjBUqxAaCvRUYKJ0JCY+DTHmzJ6QBASB+EHorxFr4FDT3WCBFCbaEYKYEV9QSFLYALxTxbO1wYjZ1k26KmRDLeTAnScf/tgCK+ghN9jvO6t/tmxatmTBvDmzIZAcoqILF2wFfUnqAHEdSDJjvBtjktY2upVHsytFmItPcDQltezRLST33WOs/AXw/ui1GLTs+RXI6SKl6hXwbOxKMpZOhfZEriLJgqV2KzG1M8gqg/b7qaVkN8qbGxEjnoKmdV2DlYX1eqGAZ56cLzch5/UDVrkvGsmdzJpOLr9UOcWDEhCiWUW4Y8Ow0HSEjg9A0yPLHl1DeDGe3KQt6fkDYhqWmrtk9sp0yZZCSMuh9MpzvxQydxoRt41jBxNTuHT0vK+1NMl69348Ba3l3aRzdn25Yau0xKdEJjMCd81UYOacyon/sbCQ+ONkVjYzQzHIhRlJdHhGiQxe6i2+4ASDuJ/eO3Jso/5w/ekzRxSh78Dd3i+MXcrwZV+VjVcolsk/or0rk3fGyyVfZXCyfazH+iariWRzVKVatt3oTppt6tXKSdfodNnDdF/Zp4oJGlVabUJuDHGfcSlvmixMG8rY1V6aYr17P8ZoL+/uai4z0/t3pZ3m0s757BNZCT8WljZRoWXnnMymLS4kfJdmcae9J54mxV4uLYs79zR2svZwelSRpVWir59VarFttDCUXcJDev5G9QD3zfYjl4+cB+72p7jboUNwHiu98qHj0pNtPKC9PzA2pi+Q3Y5vP73UUfcBLXVcxOHSB2I8i+4hMyo9SWLJklkyk3KjDA/i5dW/iPOrm0j0yU6SWfJDnNSk/CjVw/tDP4ngl3hJl0+IBmt87lOrL1yu/FYynnT4BAQsk/XNRYXearozqxVCnRXCmTVqLoxb/LIzcr0BcPYzIMgWXForPLWHbP6/wckH8DWpuAaAnz+UPplRvfxy+QwoJBB8FFQ1O86Mag3AuNbSGnHivic2XzaYiyqu7m6qyWpwpRZLaWJ9+UYSz1bW0UuyQLhbTZ6jDObVrccpMj8k7Uh8CAKt2gE9pD/dWF+j6SYa5tCtgWDJqdgAajkfuGCJIuwThw0XKliIBO5wB4VKFMlTjAShDtgngrQVQqXB6ZhpIzpLkPh8mY9okfaJwgl0TkAnAAA=) format('woff2');
+    }
+    @font-face {
+      font-family: 'TDC Intro'; font-weight: 800; font-display: block;
+      src: url(data:font/woff2;base64,d09GMgABAAAAAAVoAA8AAAAACXwAAAUNAAQAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGhwbghQcKgZgP1NUQVRaAFwRCAqIUIcsATYCJAM8CyAABCAFgTwHIBu1B1GUUc4cFF8c2MbCw6ZGYRAmTYrKjr3y4HSKu+rSd6nwOR6+n+s99yXZzYcyKAAg2akwVXW2GhAk0Q7/nvbKCUpn1kq6TkB66ACc9Akg8//dJ9X/AO0G8xh1vSi8frhf8v//2gokk+SM/72LLIwowCM80Gi/XgBvQtPRxKYj0SnILuJoV9avKtAISJJQEUqNQqDeOKsQp82Yt4z91tNH9vHeeWT7Xt77Nh87wFsOtVohJP2kvduPHGCci1siwBLUTyclQMoT2xBxzKiKKqLh1s7vXmO/UqEv1B7bifa1VofSAj0EPZGnkIVQN0FeJ5ZJNFFRzBtCR74z3B56STbj3SDZTjqn86Jj1l1BMTS/issglq66lZZiimxfsHyS/OFLls5f6pbujlRv/TenfJrGEZBvKN6gu0YhlDK0lqGfdPDQ0TMRzcmdu44FTuw+tnlfJMOraKmrQIrRmiIEMSLrjkySYjJwWsb+bQH03KxYU2Wfy7rbrECxSjUrBymSi5Z9hVu2ZMG82QIJhzDz1czFmiFd1zcn5gPxBY0cgpWE4Z45QrqD6NWyx8NsTH2JZkSiP1xjammoRnd3cd17e3uSvb2XOFz3nV19FLvlmJOHDTQ75HFANMTpX8QwiWZvD4cbv3rvnuc97Bbouv24HN09xHUfGVeJshd3bzzpIIyBLhmeVD19u+eixoijfBSoW6AYkIyaO0UVye7d3XbTWQsAzXFmwjr6bn17bz2ZVrwxoVlvv5dw84E++groGugZ6bY2G7aCX6Y/fYcIYBU+Und3U2guDaHFTMPJuSx0ALr2MflczQZNacAgd98LvxmFAbE1xD1w/qcCXdgZi9JNKjxaASd31nIm/IRkRKfWXORO9IlIc4AgusOX0ThfK1WX9hX3WNFVaBBhoPIf1AW9AyWrxdfhXRwSEiWIKn3/XC7t9c5yE3l78X+DZhf+aAfwZ88N4P9oL5Reiuov4I8aylMiWl3TPrz3ToOpEJqdDWlgeprPPnDNLEsJM4T54/3Fl6NA1aTtaVfj/xv32v4/OVMva4/nwqm64UpAeiO9Zsjjy1qiXU1SETplUAFTBhBqapqSHjKgkIcMKemg1YV/6ADuytkBwg/tdsM9mlbLfquRPnjquhrCDq5UxKWnw/FQGW1UHF2TH50ewrTLxSJDHVRDJ16xAHQVIfwgGNxDZrtUp84Iqug91vtR/8OlDom6lAVQG0aAE+kNIL2BAekNqJ1i4WZrV1bQP5TAbBqd8TnvY19XOzKXIixeliu2Gz8r10RSSQaFGuDFjlzibLNE8kyIGuDLjZsGL9s7YIRKtjPx7Tu/Ol5/rlB1veMR3IeoSsTRYihEsYtaCbsff+5s/47z+mkKVrAGhoNRBSNNQmcEo2aN5h1BbcEzQ6cKtERpmyGChrgsuq6Tto+K2Tp1C4tLL+m7t0yfsXvznLm7N82Ez4ncQxUVTT9IsB+IexXK+d8CuSkXpZD1xmbx38qsBK9OXNTCu58+n7WuvR+VwcgkEPxi6epeloDXmVciu5oVk4KaXzMuv2JWYR9T8hdqWRbLNE05WkupllIKK0/+tcaPKNXGLXBBoJkxkuaSQPRS9ao1CCKvizdFIhehUVP+CC115I/SXj/+aKVp/EkMzftYk+lbhS9foXpl1GpI5CtWqEidDE3q1FBLValMHo4qdYrlUivjaqliLfJRDNMzaeqg3jfjq1ROrQIB+M8tBAAAAA==) format('woff2');
+    }
+
+    html, body { margin: 0; background: #0E1116; }
+
+    /* ================= THE INTRO (plays while the app downloads) =================
+       Painted by the HTML itself, so it covers the download instead of following
+       it. The app takes it over when it boots (IntroComponent → window.__boot)
+       and fades it out over the screen it has already drawn underneath. */
+    #boot {
+      position: fixed; inset: 0; z-index: 9999;
+      display: grid; place-items: center; overflow: hidden;
+      font-family: 'TDC Intro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-feature-settings: 'tnum' 1;
+      background: radial-gradient(110% 80% at 50% 118%, #5a4a1e 0%, #33301c 30%, #191a17 58%, #0E1116 100%);
+      transition: opacity 0.6s ease, filter 0.6s ease;
+    }
+    #boot.leave { opacity: 0; filter: blur(6px); pointer-events: none; }
+    /* quick (returning-user) flash: a snappier exit */
+    #boot.quick { transition-duration: 0.26s, 0.26s; }
+    /* shown only once the script below has picked full / quick — a returning
+       open whose home figures are already on the device gets no splash */
+    #boot:not(.full):not(.quick) { display: none; }
+    #boot, #boot * { box-sizing: border-box; }
+
+    #boot .scene { position: absolute; inset: 0; overflow: hidden; }
+    /* the rising sun — the app's gold coin */
+    #boot .sun {
+      position: absolute; left: 50%; bottom: 30%;
+      width: min(46vw, 340px); aspect-ratio: 1; border-radius: 50%;
+      transform: translate(-50%, 60%) scale(0.6);
+      background: radial-gradient(circle at 35% 30%, #F6DE97 0%, #E9C15C 55%, #C79A34 100%);
+      animation: bootSun 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes bootSun {
+      0% { transform: translate(-50%, 75%) scale(0.6); opacity: 0; }
+      40% { opacity: 1; }
+      100% { transform: translate(-50%, 34%) scale(1); opacity: 1; }
+    }
+    #boot .glow {
+      position: absolute; left: 50%; bottom: 30%;
+      width: 120vw; aspect-ratio: 1; transform: translate(-50%, 50%);
+      background: radial-gradient(circle, rgba(233, 193, 92, 0.16) 0%, rgba(233, 193, 92, 0) 45%);
+      /* after sunrise it keeps breathing, so a slow network never looks frozen */
+      animation: bootFade 2s ease forwards, bootBreathe 2.4s ease-in-out 2.4s infinite alternate;
+    }
+    /* layered silhouetted hills */
+    #boot .hills { position: absolute; inset: auto 0 0 0; height: 42%; }
+    #boot .hill {
+      position: absolute; bottom: 0; left: -10%; right: -10%;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+      transform: translateY(100%);
+      animation: bootHill 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    #boot .h1 { height: 70%; background: linear-gradient(#2f5f1e, #16360f); animation-delay: 0.6s; }
+    #boot .h2 { height: 52%; left: -20%; right: 30%; background: linear-gradient(#3f7a20, #244d13); animation-delay: 0.8s; }
+    #boot .h3 { height: 44%; left: 35%; right: -20%; background: linear-gradient(#59a52e, #3a7a1e); animation-delay: 0.95s; }
+    @keyframes bootHill { to { transform: translateY(30%); } }
+    /* subtle film grain */
+    #boot .grain {
+      position: absolute; inset: 0; opacity: 0.03; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* the wordmark, lifted above the horizon so the sun rises below it */
+    #boot .mark { position: relative; z-index: 2; text-align: center; color: #EEF1F5; padding: 0 1.5rem; transform: translateY(-16vh); }
+    #boot .mark::before {
+      content: ""; position: absolute; left: 50%; top: 50%; z-index: -1;
+      transform: translate(-50%, -50%); width: 150%; height: 260%; pointer-events: none;
+      background: radial-gradient(60% 55% at 50% 50%, rgba(14, 17, 22, 0.72) 0%, rgba(14, 17, 22, 0.4) 45%, transparent 72%);
+    }
+    #boot .kicker {
+      display: block; font-size: clamp(0.85rem, 3vw, 1.05rem); font-weight: 500;
+      letter-spacing: 0.28em; text-transform: uppercase; color: rgba(238, 241, 245, 0.7);
+      opacity: 0; animation: bootUp 0.7s ease 0.15s forwards;
+    }
+    #boot .freedom {
+      margin: 0.5rem 0 0; font-weight: 800; letter-spacing: -0.02em; line-height: 0.98;
+      font-size: clamp(2.6rem, 12vw, 6rem); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+    }
+    #boot .w {
+      display: block; opacity: 0; transform: translateY(0.5em); filter: blur(10px);
+      animation: bootWord 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+    }
+    #boot .w.em {
+      background: linear-gradient(100deg, #F6DE97, #E9C15C 55%, #C79A34);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation-delay: 0.5s;
+    }
+    #boot .rule {
+      display: block; width: 0; height: 2px; margin: 1.3rem auto 0;
+      background: linear-gradient(90deg, transparent, rgba(233, 193, 92, 0.9), transparent);
+      animation: bootRule 1s ease 0.9s forwards;
+    }
+    @keyframes bootWord { to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+    @keyframes bootUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bootFade { to { opacity: 1; } }
+    @keyframes bootRule { to { width: min(220px, 60vw); } }
+    @keyframes bootBreathe { from { opacity: 1; } to { opacity: 0.55; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      #boot .sun, #boot .glow, #boot .hill, #boot .kicker, #boot .w, #boot .rule {
+        animation-duration: 0.01s !important; animation-delay: 0s !important;
+        opacity: 1 !important; transform: none !important; filter: none !important;
+      }
+      #boot .sun { transform: translate(-50%, 8%) !important; }
+      #boot .hill { transform: translateY(30%) !important; }
+      #boot .rule { width: min(220px, 60vw) !important; }
+    }
+  </style>
 </head>
 <body>
   <app-root></app-root>
+
+  <div id="boot" aria-hidden="true">
+    <div class="scene">
+      <span class="sun"></span>
+      <span class="glow"></span>
+      <div class="hills"><span class="hill h1"></span><span class="hill h2"></span><span class="hill h3"></span></div>
+      <span class="grain"></span>
+    </div>
+    <div class="mark">
+      <span class="kicker">Welcome to your</span>
+      <h1 class="freedom"><span class="w">financial</span><span class="w em">freedom</span></h1>
+      <span class="rule"></span>
+    </div>
+  </div>
+  <script>
+    /* Decide the opening BEFORE the first frame, with the same rules the app
+       applies once it boots (AppComponent / EstateService.restoreSnapshot):
+         full  — first launch on this device: the cinematic welcome
+         quick — returning: a brief brand flash until the home has its data
+         none  — returning with this NAV day's home figures saved: no splash */
+    (function () {
+      var el = document.getElementById('boot');
+      var get = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+      // a NAV "epoch" in IST — must match navEpoch() in estate.service.ts
+      var epoch = function (ms) {
+        var ist = new Date(ms + 330 * 60000), mins = ist.getUTCHours() * 60 + ist.getUTCMinutes(), day = ist.getUTCDay();
+        var wk = function (d) { return d >= 1 && d <= 5; };
+        if (wk(day) && mins >= 20 * 60 + 30) return null;
+        if (wk((day + 6) % 7) && mins < 90) return null;
+        var d = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()));
+        do { d.setUTCDate(d.getUTCDate() - 1); } while (!wk(d.getUTCDay()));
+        return d.toISOString().slice(0, 10);
+      };
+      var snapIsCurrent = function () {
+        try {
+          var t = get('auth_token_v1'), raw = get('dv_home_snap_v1');
+          if (!t || !raw) return false;
+          var s = JSON.parse(raw), h = 0, now = Date.now(), e = epoch(now);
+          for (var i = 0; i < t.length; i++) h = (Math.imul(31, h) + t.charCodeAt(i)) | 0;
+          return s.tok === t.length + ':' + (h >>> 0) && !!e && epoch(s.at) === e && now - s.at <= 12 * 3600000 && now >= s.at;
+        } catch (e) { return false; }
+      };
+      var deepLink = /^(explore|home|calls|funds|calc)$/.test(new URLSearchParams(location.search).get('view') || '');
+      // signed in: start fetching the home's code now (its hashed name was saved by
+      // estate-home.component.ts on the last open), alongside the app's scripts
+      var homeChunk = get('dv_home_chunk');
+      if (get('auth_token_v1') && homeChunk && /^\/chunk-[A-Z0-9]+\.js$/.test(homeChunk.replace(location.origin, ''))) {
+        var pre = document.createElement('link');
+        pre.rel = 'modulepreload'; pre.href = homeChunk;
+        document.head.appendChild(pre);
+      }
+      var mode = !get('intro_seen_v1') ? (deepLink ? 'none' : 'full') : (deepLink || snapIsCurrent()) ? 'none' : 'quick';
+      el.className = mode;
+      var gone = false;
+      window.__boot = {
+        mode: mode,
+        /** when the welcome started painting (performance.now() clock) */
+        t0: performance.now(),
+        /** the app wants a splash the HTML did not show (its own checks differ) */
+        show: function () {
+          if (gone || mode !== 'none') return;
+          mode = this.mode = 'quick'; this.t0 = performance.now(); el.className = mode;
+        },
+        /** fade the welcome out over the screen the app has drawn beneath it */
+        leave: function () {
+          if (gone) return;
+          gone = true;
+          if (mode === 'none') { el.remove(); return; }
+          el.classList.add('leave');
+          setTimeout(function () { el.remove(); }, mode === 'full' ? 700 : 320);
+        }
+      };
+    })();
+  </script>
   <noscript>Please enable JavaScript to continue using this application.</noscript>
 </body>
 </html>

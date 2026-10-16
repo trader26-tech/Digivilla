@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, EventEmitter, HostListener, Output, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, HostListener, Output, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { AmountDialComponent } from './amount-dial.component';
 import { fmtInr, simulatePayout, windowFor, worstYearPct, ymLabel } from './engine';
@@ -30,7 +30,7 @@ export function yearsAvailable(months: number | null): number[] {
   standalone: true,
   imports: [CommonModule, Bars3dComponent, AmountDialComponent],
   templateUrl: './fd-vs-dv.component.html',
-  styleUrls: ['./calc-screen.scss'],
+  styleUrls: ['./calc-screen.scss', './fd-vs-dv.component.scss'],
 })
 export class FdVsDvComponent {
   @Output() back = new EventEmitter<void>();
@@ -49,7 +49,7 @@ export class FdVsDvComponent {
 
   // ── answers ──
   readonly amount = signal(1_00_00_000);
-  readonly years = signal(5);
+  readonly years = signal(8);                          // the website's default too
   readonly fdRate = signal(6.5);
   readonly slab = signal<number | null>(null);          // null = the settings' default slab
   readonly nri = signal(false);
@@ -60,13 +60,23 @@ export class FdVsDvComponent {
   readonly page = signal<'calc' | 'vs' | 'notes'>('calc');
   readonly swp = this.store.swp;
   readonly villa = this.store.villa;
+  /** "FD that compounds": a cumulative FD (interest added every quarter, taxed each year) against a
+   *  villa that reinvests everything — so the SWP is off while it's on; SWP back on = payout FD again */
+  readonly compound = signal(false);
+  private swpBefore: boolean | null = null;
+  /** a one-line note on what the switch just changed (in the fine print) */
+  readonly note = signal<string | null>(null);
+  private noteT?: ReturnType<typeof setTimeout>;
+  /** the (i) beside the villa in the legend: the long-run rate lives there */
+  readonly rateNote = signal(false);
 
   // ── data → result → what the screen shows ──
   readonly failed = this.store.failed;
   readonly win = computed(() => { const d = this.store.villaData(); return d ? windowFor(d, this.years()) : null; });
   readonly r = computed(() => {
     const w = this.win();
-    return w ? simulatePayout(w, { amount: this.amount(), fdRate: this.fdRate(), slabPct: this.tax(), swp: this.swp() }, this.store.config()) : null;
+    const cmp = this.compound();
+    return w ? simulatePayout(w, { amount: this.amount(), fdRate: this.fdRate(), slabPct: this.tax(), swp: this.swp() && !cmp, fdMode: cmp ? 'cumulative' : 'payout' }, this.store.config()) : null;
   });
   /** Risk is a property of the villa, so it's measured over all the history there is. */
   readonly worstEver = computed(() => { const d = this.store.villaData(); return d ? worstYearPct(windowFor(d, 100)) : null; });
@@ -89,8 +99,35 @@ export class FdVsDvComponent {
     this.store.load();
     // the villa picker shows this screen's figure, so the two can't disagree
     effect(() => { const r = this.r(); this.store.shown.set(r ? { rate: r.dvIrr ?? null, years: this.years() } : null); }, { allowSignalWrites: true });
-    inject(DestroyRef).onDestroy(() => this.store.shown.set(null));
+    // SWP turned on (in the villa picker) while the FD compounds → back to a payout FD, and say so
+    effect(() => {
+      if (this.swp() && untracked(this.compound)) { this.compound.set(false); this.swpBefore = null; this.say('SWP on — so the FD pays its interest out monthly again.'); }
+    }, { allowSignalWrites: true });
+    inject(DestroyRef).onDestroy(() => {
+      this.store.shown.set(null); clearTimeout(this.noteT);
+      if (this.compound() && this.swpBefore !== null) this.store.setSwp(this.swpBefore);   // other calculators keep the SWP you had
+    });
   }
+  toggleCompound(): void {
+    if (this.compound()) {
+      this.compound.set(false);
+      if (this.swpBefore !== null) this.store.setSwp(this.swpBefore);
+      this.swpBefore = null;
+      this.say('Payout FD: interest paid out monthly, principal back at the end.');
+    } else {
+      this.swpBefore = this.swp();
+      this.compound.set(true);
+      this.store.setSwp(false);
+      this.say(null);
+    }
+  }
+  private say(t: string | null): void { clearTimeout(this.noteT); this.note.set(t); if (t) this.noteT = setTimeout(() => this.note.set(null), 6000); }
+  closeNote(): void { this.rateNote.set(false); }
+  toggleNote(): void { this.rateNote.set(!this.rateNote()); }
+  /** the villa's long-run rate (the settings' window, nothing withdrawn) — only in the (i) note */
+  readonly longRun = computed(() => this.store.rates()?.[this.villa().key] ?? null);
+  readonly rateYears = computed(() => this.store.config().display?.rate_years ?? 15);
+  readonly span = computed(() => { const r = this.r(); return r ? `${ymLabel(r.months[0])} → ${ymLabel(r.months[r.months.length - 1])}` : ''; });
   retry(): void { this.store.load(); }
 
   togglePicker(p: 'rate' | 'tax'): void { this.picker.set(this.picker() === p ? null : p); }
@@ -105,7 +142,8 @@ export class FdVsDvComponent {
 
   @HostListener('document:keydown.escape')
   onEsc(): void {
-    if (this.picker()) this.picker.set(null);
+    if (this.rateNote()) this.closeNote();
+    else if (this.picker()) this.picker.set(null);
     else if (this.page() !== 'calc') this.go('calc');
   }
 }

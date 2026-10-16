@@ -123,7 +123,8 @@ export class Bars3dComponent implements OnDestroy {
   }
   readonly cols = computed(() => {
     const pick = !!(this.l()?.pick || this.r()?.pick);
-    const maxBar = Math.max(90, this.H() - (this.short ? 172 : 200) - (pick ? (this.short ? 16 : 24) : 0));
+    // short screens: room for the villa picker (its 44 px targets overlap the art) and the breakdown under the floor
+    const maxBar = Math.max(this.short ? 70 : 90, this.H() - (this.short ? 172 : 200) - (pick ? (this.short ? 30 : 24) : 0));
     const scale = maxBar / Math.max(this.lTotal(), this.rTotal(), 1);
     return { l: this.build(this.l(), scale), r: this.build(this.r(), scale) };
   });

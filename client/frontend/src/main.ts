@@ -7,5 +7,9 @@ for (const ev of ['gesturestart', 'gesturechange']) {
   document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
 }
 
+// The home is its own chunk (so a first visit's login downloads less). A signed-in
+// open goes straight to it, so start fetching it now, alongside the bootstrap.
+try { if (localStorage.getItem('auth_token_v1')) import('./app/estate-home.component'); } catch {}
+
 bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));

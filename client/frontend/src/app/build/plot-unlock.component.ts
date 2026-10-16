@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 
 import { CalcDataService } from '../calc/calc-data.service';
-import { CountUpDirective } from '../shared/count-up.directive';
 import { compact, inr } from '../shared/format.util';
 
 /**
@@ -19,7 +18,7 @@ import { compact, inr } from '../shared/format.util';
 @Component({
   selector: 'app-plot-unlock',
   standalone: true,
-  imports: [CommonModule, CountUpDirective],
+  imports: [CommonModule],
   template: `
     <div class="pu-back" (click)="close.emit()"></div>
     <div class="pu" role="dialog" aria-modal="true" [attr.aria-label]="'Plot ' + pad(house)">
@@ -43,7 +42,7 @@ import { compact, inr } from '../shared/format.util';
       <span class="k rise" style="--d:.30s">Plot {{ pad(house) }}</span>
       <h2 class="rise" style="--d:.38s" *ngIf="!ready">Unlocks at <em>Level {{ unlockLevel }}</em></h2>
       <h2 class="rise" style="--d:.38s" *ngIf="ready"><em>Ready to build</em></h2>
-      <p class="sub rise" style="--d:.46s" *ngIf="!ready"><b [appCountUp]="toGo" [countDuration]="900"></b> to go</p>
+      <p class="sub rise" style="--d:.46s" *ngIf="!ready"><b>{{ inr(toGo) }}</b> to go</p>
 
       <!-- where you are → where it unlocks -->
       <div class="prog rise" style="--d:.56s" *ngIf="!ready">

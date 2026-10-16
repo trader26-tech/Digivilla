@@ -407,7 +407,7 @@ export class EstateService {
   readonly reloads = signal(0);
   /** True once the Home has played its entrance for this app open. Home is
    *  re-mounted on every tab switch (it's *ngIf'd), so without this the rise /
-   *  pop / count-up would replay each time you came back to it. */
+   *  pop would replay each time you came back to it. */
   readonly homeEntered = signal(false);
   /** Whose town this is, and where. Used for the home greeting. */
   readonly profile = signal<Profile>(this.loadProfile());
