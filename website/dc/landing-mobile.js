@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=f96e05a4';
-import C_part_stage_foundation from './part-stage-foundation.js?v=f96e05a4';
-import C_part_stage_grading from './part-stage-grading.js?v=f96e05a4';
-import C_part_stage_plot from './part-stage-plot.js?v=f96e05a4';
-import C_part_stage_steel from './part-stage-steel.js?v=f96e05a4';
-import C_part_stage_villa from './part-stage-villa.js?v=f96e05a4';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=311e4500';
+import C_part_stage_foundation from './part-stage-foundation.js?v=311e4500';
+import C_part_stage_grading from './part-stage-grading.js?v=311e4500';
+import C_part_stage_plot from './part-stage-plot.js?v=311e4500';
+import C_part_stage_steel from './part-stage-steel.js?v=311e4500';
+import C_part_stage_villa from './part-stage-villa.js?v=311e4500';
 /* ── logic, verbatim from the design file ── */
-import * as _explore from './explore-mobile.js?v=f96e05a4';   // the Explore page's module, warmed with the landing
+import * as _explore from './explore-mobile.js?v=311e4500';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
@@ -62,7 +62,7 @@ class Component extends DCLogic {
     this.startExplore = () => { if (this.leaving || this.cascading) return; this.cascading = true; this.prefetchExplore && this.prefetchExplore(); try { navigator.vibrate && navigator.vibrate(8); } catch (_) {} };
     this.atColumn = () => {   // (kept for tests / callers; scrolling no longer explores)
       const sc = this.scroller(); if (!sc) return false; const tr = sc.querySelector('[data-hero-track]'); const R = tr ? tr.clientHeight - sc.clientHeight : 0; return Math.abs(sc.scrollTop - R) < 6 && (this.p || 0) > .96; };
-    const SCRUB_VH = 1.6, CX = .5, CY = .37;
+    const SCRUB_VH = 1.6, CX = .5, CY = .37, COOLDOWN = 320;   // COOLDOWN: ms after a page arrives before the next swipe counts
     const SLOT = [[.22, .15], [.22, .31], [.22, .47], [.22, .63], [.22, .79]];
     // The finger drives the page. On the cover it scrubs the hero → column morph directly (half a screen of
     // finger = the whole morph, so one comfortable swipe crosses it); below, it moves the pages 1:1. When the
@@ -130,7 +130,9 @@ class Component extends DCLogic {
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
           if (this.state.menuOpen || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-ystep') || c('.mcl-sheet') || c('select') || c('input') || c('textarea')) return;   // the calculator's ruler, years stepper, sheet and typing keep their own touches
           const now = performance.now(), wasSettling = this.settling;
-          if (wasSettling) { this.settling = false; cancelAnimationFrame(this.settleRaf); }   // a new touch takes over at once
+          // ONE swipe = ONE page, however hard or fast: a flick that lands while the page is still gliding to its state
+          // (or within a beat of arriving) is absorbed — the glide finishes where it was going and nothing is added
+          if (wasSettling || now - (this.restAt || -1e9) < COOLDOWN) { g = { lock: true }; this.touchOn = true; return; }
           if (this.cascading && this.hold < 1) this.cascading = false;                       // …the explore cascade too
           const P = pages(), top = sc0.scrollTop, R = rangeOf();
           const ai = nearestIdx(P, wasSettling ? this.settleTarget : top);                 // the state this touch starts from
@@ -142,6 +144,7 @@ class Component extends DCLogic {
         };
         this.onTM2 = e => {
           if (!g) return;
+          if (g.lock) { if (e.cancelable) e.preventDefault(); return; }
           const t = e.touches[0], now = performance.now(), dy = g.y0 - t.clientY, dx = g.x0 - t.clientX;   // dy > 0: finger moved up = towards the next page
           if (!g.mode) {
             if (!dy && !dx) { if (e.cancelable) e.preventDefault(); return; }
@@ -176,6 +179,7 @@ class Component extends DCLogic {
         this.onTE2 = () => {
           this.touchOn = false; this.lastUp = performance.now();
           const gg = g; g = null; if (!gg) { if (!this.settling && !this.leaving) this.goPage(0); return; }
+          if (gg.lock) { if (!this.settling && !this.leaving) this.goPage(0); return; }
           const P = gg.P, i = gg.ai, top = sc0.scrollTop;
           const lo = i > 0 ? P[i - 1] : P[0], hi = P[Math.min(P.length - 1, i + 1)];
           const span = P.filter(v => v >= lo - .5 && v <= hi + .5);
@@ -195,6 +199,43 @@ class Component extends DCLogic {
         sc0.addEventListener('touchstart', this.onTS2, { passive: true });
         sc0.addEventListener('touchmove', this.onTM2, { passive: false });
         sc0.addEventListener('touchend', this.onTE2, { passive: true }); sc0.addEventListener('touchcancel', this.onTE2, { passive: true });
+        // one step forward or back: on the app showcase its phones step first, then the page
+        this.advance = dir => {
+          if (this.leaving || this.state.menuOpen) return;
+          const show = document.querySelector('.msh');
+          if (show && show.__step && Math.abs(sc0.scrollTop - offs(show)) < 4 && show.__step(dir)) { this.restAt = performance.now(); return; }
+          this.goPage(dir);
+        };
+        // Wheel and trackpad: a GESTURE moves one step. A trackpad swipe arrives as a burst of deltas plus a long
+        // momentum tail that decays; the tail is swallowed. A new gesture = a pause (> 180 ms), or a delta that jumps
+        // well above a decaying tail. Gestures that land while the page is gliding (or just after) are swallowed too.
+        let wg = { t: -1e9, abs: 0, acc: 0, used: false };
+        this.onWheel2 = e => {
+          const tg = e.target, c = sel => tg.closest ? tg.closest(sel) : null;
+          if (c('.mcl-sheet') || c('.mfp-menu') || c('select')) return;                 // the calculator's walk-through scrolls itself
+          let dy = e.deltaY, dx = e.deltaX;
+          if (e.deltaMode === 1) { dy *= 16; dx *= 16; } else if (e.deltaMode === 2) { dy *= sc0.clientHeight; dx *= sc0.clientHeight; }
+          if (Math.abs(dx) > Math.abs(dy)) return;                                       // sideways: the phone rail / the ruler
+          e.preventDefault();
+          const now = performance.now(), ts = e.timeStamp || now, abs = Math.abs(dy), gap = ts - wg.t;   // input time, not handling time: a busy frame must not split one swipe in two
+          const fresh = gap > 220 || (wg.used && abs > 14 && abs > wg.abs * 1.8);
+          wg.t = ts; wg.abs = abs;
+          if (fresh) { wg.acc = 0; wg.used = false; }
+          if (wg.used || !dy) return;
+          if (this.settling || now - (this.restAt || -1e9) < COOLDOWN) { wg.used = true; return; }
+          wg.acc += dy;
+          if (Math.abs(wg.acc) >= 24) { wg.used = true; this.advance(wg.acc > 0 ? 1 : -1); }
+        };
+        sc0.addEventListener('wheel', this.onWheel2, { passive: false });
+        this.onKey2 = e => {
+          const a = document.activeElement; if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+          if (e.altKey || e.ctrlKey || e.metaKey) return;
+          const dir = { ArrowDown: 1, PageDown: 1, ' ': e.shiftKey ? -1 : 1, ArrowUp: -1, PageUp: -1 }[e.key];
+          if (!dir) return; e.preventDefault();
+          if (e.repeat || this.settling) return;                                      // a key has no momentum: it only waits for the glide
+          this.advance(dir);
+        };
+        addEventListener('keydown', this.onKey2);
         this.onVV = () => { this.setVH(); if (!g && !this.settling) this.goPage(0, true); };   // Safari's toolbars: re-measure, keep the page in place
         addEventListener('resize', this.onVV); if (window.visualViewport) visualViewport.addEventListener('resize', this.onVV);
       }
@@ -270,7 +311,7 @@ class Component extends DCLogic {
     };
     this.raf = requestAnimationFrame(tick);
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.settleRaf); this.settling = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('resize', this.onDim); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { clearTimeout(this.scT); sc.removeEventListener('scroll', this.onSc2); sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
+  componentWillUnmount() { if (this.onKey2) removeEventListener('keydown', this.onKey2); cancelAnimationFrame(this.raf); cancelAnimationFrame(this.settleRaf); this.settling = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('resize', this.onDim); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { clearTimeout(this.scT); sc.removeEventListener('scroll', this.onSc2); sc.removeEventListener('touchstart', this.onTS2); if (this.onWheel2) sc.removeEventListener('wheel', this.onWheel2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;
