@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=84057f3f';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=f650efd5';
 
 export { h, render, Fragment };
 
@@ -534,4 +534,34 @@ async function settle() {
 export function mount(Root) {
   render(h(Root, {}), document.getElementById('dc-root'));
   requestAnimationFrame(() => settle());
+}
+
+/** Page-by-page wheel/trackpad gestures. ONE physical gesture = ONE call of onStep(dir):
+ *  - a trackpad swipe = a ramp-up plus a momentum tail that decays for 1–2 s: all one gesture;
+ *  - a NEW gesture is (a) a reversal of direction, (b) a pause of > 250 ms, (c) the momentum cut short by a
+ *    fresh finger (a short gap while the tail had decayed), or (d) deltas that climb again after decaying —
+ *    a new swipe ramps UP, a tail only ever goes down;
+ *  - a candidate commits only while its deltas are still rising (or big), so a hiccup in a tail never steps.
+ *  Times come from the event (input time); `e.__ts` lets a test replay a trace on its own clock. */
+export function pageGestures(onStep) {
+  let lastT = -1e9, lastSign = 0, lastAbs = 0, peak = 0, acc = 0, used = true, prev = 0, rise = 0, frame = 16;
+  return (e, dy) => {
+    const ts = e.__ts != null ? e.__ts : (e.timeStamp || performance.now()), abs = Math.abs(dy), sign = Math.sign(dy);
+    if (!sign) return;
+    const gap = ts - lastT;
+    rise = abs > lastAbs * 1.25 && abs > 2 ? rise + 1 : 0;                   // a momentum tail never climbs; a new swipe does
+    // a busy frame merges queued tail events into one: its delta ≈ the last one × the frames it swallowed
+    const k = gap / frame, merged = k > 1.5 && abs > lastAbs * .45 * k && abs < lastAbs * 1.6 * k;
+    const fresh = (sign !== lastSign && abs > 1)
+      || gap > 250
+      || (gap > frame * 1.5 && lastAbs < peak * .5 && !merged)                // silence inside a tail = the momentum was cut by a finger
+      || (lastAbs < peak * .35 && ((abs > Math.max(12, lastAbs * 2.2) && !merged) || rise >= 2));
+    if (fresh) { used = false; acc = 0; peak = 0; prev = 0; rise = 0; }
+    if (gap > 2 && gap < 40) frame = frame * .8 + gap * .2;                  // the device's event interval (8 ms on 120 Hz trackpads)
+    lastT = ts; lastSign = sign; lastAbs = abs; peak = Math.max(peak, abs);
+    if (used) { prev = abs; return; }
+    acc += dy;
+    if (Math.abs(acc) >= 18 && (abs >= prev || abs >= 30)) { used = true; onStep(sign); }
+    prev = abs;
+  };
 }

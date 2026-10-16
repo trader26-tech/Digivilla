@@ -1,14 +1,14 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=84057f3f';
-import C_calc_mobile from './calc-mobile.js?v=84057f3f';
-import C_calculator from './calculator.js?v=84057f3f';
-import C_landing_mobile from './landing-mobile.js?v=84057f3f';
-import C_part_footer from './part-footer.js?v=84057f3f';
-import C_part_stage_foundation from './part-stage-foundation.js?v=84057f3f';
-import C_part_stage_grading from './part-stage-grading.js?v=84057f3f';
-import C_part_stage_plot from './part-stage-plot.js?v=84057f3f';
-import C_part_stage_steel from './part-stage-steel.js?v=84057f3f';
-import C_part_stage_villa from './part-stage-villa.js?v=84057f3f';
-import C_showcase_mobile from './showcase-mobile.js?v=84057f3f';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=f650efd5';
+import C_calc_mobile from './calc-mobile.js?v=f650efd5';
+import C_calculator from './calculator.js?v=f650efd5';
+import C_landing_mobile from './landing-mobile.js?v=f650efd5';
+import C_part_footer from './part-footer.js?v=f650efd5';
+import C_part_stage_foundation from './part-stage-foundation.js?v=f650efd5';
+import C_part_stage_grading from './part-stage-grading.js?v=f650efd5';
+import C_part_stage_plot from './part-stage-plot.js?v=f650efd5';
+import C_part_stage_steel from './part-stage-steel.js?v=f650efd5';
+import C_part_stage_villa from './part-stage-villa.js?v=f650efd5';
+import C_showcase_mobile from './showcase-mobile.js?v=f650efd5';
 addCSS(".p-thedigicitiwebsite-1:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-2:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-3:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-4:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-5:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-6:hover{gap:clamp(24px,2.6vw,48px) !important;color:#fff !important}");
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
@@ -71,12 +71,12 @@ class Component extends DCLogic {
     // ── Laptop paging: ONE scroll gesture = ONE page, however hard — cover → the Explore arc → the app showcase →
     // the calculator → (its last part + the footer). A trackpad swipe is a burst of deltas plus a momentum tail that
     // decays; the whole thing is one gesture. A new gesture = a pause (> 220 ms, input time) or a delta that jumps
-    // well above a tail that has decayed. Gestures during a glide (or a beat after it) are swallowed, so a hard
-    // swipe can never carry the page past the next stop. Anything that scrolls on its own (a panel, the ruler)
+    //     // (rt.pageGestures). A swipe the other way during a glide turns back at once; one more the same way waits
+    // for the glide to land — a single swipe, however hard, never moves more than one stop. Anything that scrolls on its own (a panel, the ruler)
     // keeps its wheel. No CSS scroll-snap (it trapped mouse wheels — see the note in the helmet). Phones have their
     // own pager in landing-mobile.
     {
-      const sc0 = this.scrollRef.current, COOLDOWN = 280;
+      const sc0 = this.scrollRef.current;
       const offs = el => { let t = 0; for (let n = el; n && n !== sc0; n = n.offsetParent) t += n.offsetTop; return t; };
       const stops = () => {
         const tr = sc0.querySelector('[data-hero-track]'), R = tr ? tr.clientHeight - sc0.clientHeight : sc0.clientHeight;
@@ -85,18 +85,25 @@ class Component extends DCLogic {
         L.push(max);
         return { R, L: L.filter((v, i, a) => i === 0 || v > a[i - 1] + 8) };
       };
-      const easeIO = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      const easeOut = u => 1 - Math.pow(1 - u, 3), easeIO = u => u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
       this.pageGlide = to => {
         cancelAnimationFrame(this.pgRaf);
         const from = sc0.scrollTop, { R } = stops(), dist = Math.abs(to - from);
-        if (dist < 1 || reducedMotion) { sc0.scrollTop = to; this.pgAt = performance.now(); return; }
-        const D = Math.max(from, to) <= R + 1 ? 1100 : 800, t0 = performance.now();   // the hero morph plays a little slower than a page turn
+        this.pgDir = to > from ? 1 : -1; this.pgTo = to;
+        if (dist < 1 || reducedMotion) { sc0.scrollTop = to; this.pgOn = false; this.pgAt = performance.now(); this.runQueued(); return; }
+        const hero = Math.max(from, to) <= R + 1, D = hero ? 900 : 650, ease = hero ? easeIO : easeOut, t0 = performance.now();   // the hero morph a touch slower than a page turn
         this.pgOn = true;
-        const step = now => { const u = Math.min(1, (now - t0) / D); sc0.scrollTop = from + (to - from) * easeIO(u); if (u < 1) this.pgRaf = requestAnimationFrame(step); else { this.pgOn = false; this.pgAt = performance.now(); } };
+        const step = now => { const u = Math.min(1, (now - t0) / D); sc0.scrollTop = from + (to - from) * ease(u); if (u < 1) this.pgRaf = requestAnimationFrame(step); else { this.pgOn = false; this.pgAt = performance.now(); this.runQueued(); } };
         this.pgRaf = requestAnimationFrame(step);
       };
+      // a step asked for while a glide runs: the other way = turn back now; the same way = once, when it lands
+      this.request = dir => {
+        if (this.pgOn) { if (dir !== this.pgDir) { this.pgQueue = 0; this.pageStep(dir); } else if (!this.pgQueue) this.pgQueue = dir; return; }
+        this.pageStep(dir);
+      };
+      this.runQueued = () => { const q = this.pgQueue; this.pgQueue = 0; if (q) this.pageStep(q); };
       this.pageStep = dir => {
-        const { L } = stops(), top = sc0.scrollTop;
+        const { L } = stops(), top = this.pgOn && dir === this.pgDir ? this.pgTo : sc0.scrollTop;
         let to;
         if (dir > 0) { to = L.find(v => v > top + 4); if (to == null) return; }
         else { to = null; L.forEach(v => { if (v < top - 4) to = v; }); if (to == null) return; }
@@ -110,7 +117,7 @@ class Component extends DCLogic {
         }
         return false;
       };
-      const wg = { t: -1e9, abs: 0, peak: 0, acc: 0, used: false };
+      const gesture = pageGestures(dir => this.request(dir));
       this.onPageWheel = e => {
         if (this.state.mobile || !sc0 || e.ctrlKey) return;                          // phones: landing-mobile pages; ctrl+wheel = zoom
         if (e.defaultPrevented) return;                                                // the calculator's ruler took it
@@ -119,18 +126,7 @@ class Component extends DCLogic {
         if (Math.abs(dx) > Math.abs(dy) || !dy) return;
         if (ownScroll(e.target, dy)) return;
         e.preventDefault();
-        const now = performance.now(), ts = e.timeStamp || now, abs = Math.abs(dy), gap = ts - wg.t;
-        // a pause starts a new gesture only once the last one had died down (a real new swipe always follows a
-        // faded tail; a stalled frame in the middle of a strong swipe must not split it), and a jump must be big and
-        // come after a real decay (merged tail events can add up, never to this)
-        const fresh = (gap > 220 && (wg.abs < 40 || gap > 900)) || (wg.used && abs > Math.max(60, wg.peak * .7) && wg.abs < wg.peak * .35);
-        wg.t = ts;
-        if (fresh) { wg.acc = 0; wg.used = false; wg.peak = 0; }
-        wg.abs = abs; wg.peak = Math.max(wg.peak, abs);
-        if (wg.used) return;
-        if (this.pgOn || now - (this.pgAt || -1e9) < COOLDOWN) { wg.used = true; return; }
-        wg.acc += dy;
-        if (Math.abs(wg.acc) >= 24) { wg.used = true; this.pageStep(wg.acc > 0 ? 1 : -1); }
+        gesture(e, dy);
       };
       this.onPageKey = e => {
         if (this.state.mobile) return;
@@ -139,8 +135,8 @@ class Component extends DCLogic {
         if (e.altKey || e.ctrlKey || e.metaKey) return;
         const dir = { ArrowDown: 1, PageDown: 1, ' ': e.shiftKey ? -1 : 1, ArrowUp: -1, PageUp: -1 }[e.key];
         if (!dir) return; e.preventDefault();
-        if (e.repeat || this.pgOn) return;
-        this.pageStep(dir);
+        if (e.repeat) return;
+        this.request(dir);
       };
       if (sc0) { sc0.addEventListener('wheel', this.onPageWheel, { passive: false }); addEventListener('keydown', this.onPageKey); }
     }
