@@ -70,7 +70,8 @@
 <input ref="{{ editRef }}" inputmode="numeric" autocomplete="off" spellcheck="false" value="{{ editText }}" onInput="{{ onEditInput }}" onKeyDown="{{ onEditKey }}" onBlur="{{ commitEdit }}" aria-label="{{ editAria }}" style="flex:1;min-width:0;width:100%;border:0;outline:0;background:transparent;padding:0;font:inherit;font-size:clamp(30px,2.8vw,40px);font-weight:500;letter-spacing:-.035em;line-height:1.1;font-variant-numeric:tabular-nums;color:#f4f4f7;caret-color:#8fd65a">
 <span style="font-size:13px;color:#8fd65a;white-space:nowrap">{{ editWords }}</span>
 </label>
-<span style="{{ editHintS }}">{{ editHint }}</span>
+<span style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px"><span style="{{ editHintS }}">{{ editHint }}</span>
+<sc-if value="{{ hasOffer }}" hint-placeholder-val="{{ false }}"><button onMouseDown="{{ useWithoutSwp }}" style="height:28px;padding:0 12px;border:0;border-radius:999px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;color:#0b0c12;background:#8fd65a;box-shadow:0 4px 14px -4px rgba(143,214,90,.6)">{{ offerText }}</button></sc-if></span>
 </div>
 </sc-if>
 </div>
@@ -216,16 +217,17 @@ import { loadCalc } from './calc-data.js';
    (GET /calc/config) — no rate is assumed or typed in this file. */
 const YEAR_OPTS = [5, 8, 10, 15, 20];
 const RATES = [6, 6.5, 7, 7.5, 8], SLABS = [0, 5, 10, 15, 20, 25, 30];
+const MIN_TICKET = 10000, SWP_MIN = 100000;   // the smallest amount: ₹10,000 — and ₹1 L when it pays a monthly income (SWP)
 class Component extends DCLogic {
   state = { mode: 'fd', villa: null, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price', data: null, failed: false,
     exact: {}, edit: null, yearsCustom: false };
   boxRef = React.createRef(); stageRef = React.createRef(); rulerRef = React.createRef(); editRef = React.createRef();
   /** the fields the tape can edit (FD: the amount; Flat: price / value / year / rent) */
   fieldsFor(S) {
-    if (S.mode === 'fd') return [{ key: 'amount', label: 'You invest', min: 100000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, lo: 100000, hi: 500000000, f: n => this.inr(n) }];
+    if (S.mode === 'fd') return [{ key: 'amount', label: 'You invest', min: 100000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, lo: S.income ? SWP_MIN : MIN_TICKET, hi: 500000000, swp: true, f: n => this.inr(n) }];
     const vf = S.data && S.data.vf, endYear = vf ? this.endYear(vf) : new Date().getFullYear(), maxYears = vf ? this.maxYears(vf) : 15;
-    return [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, lo: 500000, hi: 1000000000, f: n => this.fmt(n) },
-      { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, lo: 500000, hi: 2000000000, f: n => this.fmt(n) },
+    return [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, lo: S.income ? SWP_MIN : MIN_TICKET, hi: 1000000000, swp: true, f: n => this.fmt(n) },
+      { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, lo: MIN_TICKET, hi: 2000000000, f: n => this.fmt(n) },
       { key: 'bought', hint: vf ? `History from ${this.ym(vf.months[0])}` : '', label: 'Bought in', min: endYear - maxYears, max: endYear - 1, step: 1, big: 1, major: 10, mid: 5, lo: endYear - maxYears, hi: endYear - 1, year: true, f: n => String(n) },
       { key: 'rent', hint: 'Before tax', label: 'Rent a month', min: 0, max: 300000, step: 1000, big: 5000, major: 50000, mid: 10000, lo: 0, hi: 2000000, f: n => this.inr(n) }];
   }
@@ -234,18 +236,28 @@ class Component extends DCLogic {
   setField(a, v, raw) {
     v = Math.min(a.max, Math.max(a.min, v)); if (!raw) v = Math.round(v / a.step) * a.step;
     const ex = this.state.exact[a.key];
-    if (v !== this.state[a.key] || ex) this.setState(s => ({ [a.key]: v, exact: ex ? { ...s.exact, [a.key]: false } : s.exact }));
+    if (v !== this.state[a.key] || ex) this.setState(s => ({ [a.key]: v, exact: ex ? { ...s.exact, [a.key]: false } : s.exact, swpRaised: false }));
   }
   /** a field's figure as used by the maths: exactly as typed, else on its tape step */
   snap(S, a) { return S.exact[a.key] ? S[a.key] : Math.round(S[a.key] / a.step) * a.step; }
   // ── typing an exact figure ──
-  startEdit() { const a = this.activeField(), v = this.snap(this.state, a); this.setState({ edit: { key: a.key, text: a.year ? String(v) : this.digits(v), bad: '' } }); }
+  startEdit() { const a = this.activeField(), v = this.snap(this.state, a); this.setState({ swpRaised: false, edit: { key: a.key, text: a.year ? String(v) : this.digits(v), bad: '' } }); }
+  /** "Use ₹50,000 with no monthly income": SWP off, the typed amount applied */
+  useWithoutSwp(e) { e && e.preventDefault && e.preventDefault(); const E0 = this.state.edit; if (!E0 || !E0.offer) return; this.setState(s => ({ income: false, [E0.key]: E0.offer, exact: { ...s.exact, [E0.key]: true }, edit: null, swpRaised: false })); }
+  /** SWP on with less than ₹1 L invested: the amount rises to ₹1 L, and the SWP row says so */
+  toggleIncome() {
+    this.setState(s => {
+      if (s.income) return { income: false, swpRaised: false };
+      const k = s.mode === 'fd' ? 'amount' : 'price';
+      return s[k] < SWP_MIN ? { income: true, [k]: SWP_MIN, exact: { ...s.exact, [k]: true }, swpRaised: true } : { income: true, swpRaised: false };
+    });
+  }
   digits(n) { return Math.round(n).toLocaleString('en-IN'); }
   /** keep only digits, re-grouped the Indian way as you type (12,34,567) */
   editInput(e) {
     const a = this.activeField(), raw = (e.target.value || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '').slice(0, a.year ? 4 : 11);
     const text = a.year || !raw ? raw : this.digits(+raw);
-    this.setState(s => ({ edit: { ...s.edit, text, bad: '' } }));
+    this.setState(s => ({ edit: { ...s.edit, text, bad: '', offer: 0 } }));
     if (text !== e.target.value) { const el = e.target; requestAnimationFrame(() => { try { el.setSelectionRange(el.value.length, el.value.length); } catch (_) {} }); }
   }
   /** apply the typed figure (Enter / leaving the box); out of range → kept open with the reason */
@@ -255,6 +267,13 @@ class Component extends DCLogic {
     const raw = (E0.text || '').replace(/[^0-9]/g, '');
     if (!raw) { this.setState({ edit: null }); return; }
     const v = +raw;
+    if (a.swp && this.state.income && v >= MIN_TICKET && v < SWP_MIN) {
+      // a monthly income needs ₹1 L; the amount itself is fine without one — offer that, one tap
+      if (keepOpenOnBad && E0.offer === v) { this.useWithoutSwp(); return; }      // Enter again = take the offer
+      if (keepOpenOnBad) { this.setState(s => ({ edit: { ...s.edit, bad: `A monthly income (SWP) needs ${this.words(SWP_MIN)} or more · Enter again to use it without`, offer: v } })); return; }
+      this.setState({ edit: null });                                                  // clicking away: nothing changes behind your back
+      return;
+    }
     if (v < a.lo || v > a.hi) {
       const bad = `Between ${a.year ? a.lo : this.words(a.lo)} and ${a.year ? a.hi : this.words(a.hi)}`;
       if (keepOpenOnBad) { this.setState(s => ({ edit: { ...s.edit, bad } })); return; }
@@ -446,11 +465,13 @@ class Component extends DCLogic {
       editText: S.edit ? S.edit.text : '', editPrefix: act.year ? '' : '₹',
       editWords: S.edit && !act.year && S.edit.text ? this.words(+S.edit.text.replace(/[^0-9]/g, '')) : '',
       editAria: 'Type ' + act.label.toLowerCase(),
-      editHint: S.edit && S.edit.bad ? S.edit.bad + ' · Esc to cancel' : 'Enter to apply · Esc to cancel · ' + (act.year ? act.lo + '–' + act.hi : this.words(act.lo) + ' to ' + this.words(act.hi)),
+      editHint: S.edit && S.edit.bad ? S.edit.bad + (S.edit.offer ? '' : ' · Esc to cancel') : 'Enter to apply · Esc to cancel · ' + (act.year ? act.lo + '–' + act.hi : this.words(act.lo) + ' to ' + this.words(act.hi) + (act.swp && S.income ? ` · from ${this.words(MIN_TICKET)} without a monthly income` : '')),
+      hasOffer: !!(S.edit && S.edit.offer), offerText: S.edit && S.edit.offer ? `Use ${this.inr(S.edit.offer)} without a monthly income` : '', useWithoutSwp: e => this.useWithoutSwp(e),
       editHintS: `font-size:11.5px;color:${S.edit && S.edit.bad ? '#e58a6b' : '#5a5e6c'}`,
       editBox: `display:flex;align-items:center;gap:8px;padding:6px 12px;margin:-6px -12px;border-radius:12px;background:rgba(143,214,90,.06);box-shadow:inset 0 0 0 1.5px ${S.edit && S.edit.bad ? '#e58a6b' : '#8fd65a'},0 0 0 4px ${S.edit && S.edit.bad ? 'rgba(229,138,107,.12)' : 'rgba(143,214,90,.1)'};cursor:text`,
-      toggleIncome: () => this.setState(s => ({ income: !s.income })), swpTitle: isFd ? 'Take a monthly income (SWP)' : 'Take the rent as a monthly SWP',
-      swpNote: S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' : 'Off · everything stays invested and compounds',
+      toggleIncome: () => this.toggleIncome(), swpTitle: isFd ? 'Take a monthly income (SWP)' : 'Take the rent as a monthly SWP',
+      swpNote: S.swpRaised && S.income ? `Raised to ${this.words(SWP_MIN)} — the smallest amount that pays a monthly income`
+        : S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' : 'Off · everything stays invested and compounds',
       swpRow: `display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.income ? 'rgba(143,214,90,.4)' : '#22253a'};transition:box-shadow .25s`,
       swpTrack: `flex:none;position:relative;width:40px;height:22px;border-radius:11px;background:${S.income ? '#8fd65a' : '#2b2e3a'};transition:background .25s`,
       swpKnob: `position:absolute;top:3px;left:${S.income ? 21 : 3}px;width:16px;height:16px;border-radius:50%;background:${S.income ? '#0b0c12' : '#7a7c8c'};transition:left .25s cubic-bezier(.16,1,.3,1)`,
@@ -459,7 +480,7 @@ class Component extends DCLogic {
         lStyle: `font-size:14px;font-weight:500;color:${on ? '#8fd65a' : '#e9e9ed'}` }; }),
       flatGrowth: isFd ? '' : f.appPct.toFixed(1) + '%', flatYield: isFd ? '' : f.yieldPct.toFixed(1) + '%',
       rulerLabel: act.label, rLo: act.f(act.min), rHi: act.f(act.max),
-      reset: () => this.setState({ custom: false, taxCustom: false, yearsCustom: false, exact: {}, edit: null, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
+      reset: () => this.setState({ custom: false, taxCustom: false, yearsCustom: false, exact: {}, edit: null, swpRaised: false, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
       rulerValue: this.show(S, act, snapped(act.key)), rulerRef: this.rulerRef,
       rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:${this.dragging || this.fling ? 'none' : 'transform .12s ease-out'};transform:translateX(${-(idx - i0) * 10}px)`, ticks,
       rMin: act.min, rMax: act.max, rStep: act.step, rVal: snapped(act.key), onRange: e => setA(+e.target.value), inc: () => setA(snapped(act.key) + act.big), dec: () => setA(snapped(act.key) - act.big),

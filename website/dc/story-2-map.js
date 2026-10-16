@@ -1,4 +1,4 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=e4cd43cd';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=d6435bb4';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   sc = React.createRef();
