@@ -128,7 +128,7 @@
 <div class="mfp-menu" role="dialog" aria-label="Menu">
 <header><span>Menu</span><button onClick="{{ closeMenu }}" aria-label="Close menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></header>
 <div class="links">
-<a href="story.dc.html" onClick="{{ goStory }}">Our story</a>
+<a href="explore.dc.html" onClick="{{ goStory }}">Our story</a>
 <a href="#showcase" onClick="{{ goApp }}">The app</a>
 <a href="#calculator" onClick="{{ goCalc }}">Calculator</a>
 <a href="#contact" class="dim" onClick="{{ goContact }}">Contact</a>
@@ -146,12 +146,12 @@
 </div>
 
 <div ref="{{ copyBRef }}" class="mfp-copyB">
-<a ref="{{ capRef }}" class="mfp-capsule" href="story.dc.html" onClick="{{ capClick }}" aria-label="Swipe up to explore the NRI story">
+<a ref="{{ capRef }}" class="mfp-capsule" href="explore.dc.html" onClick="{{ capClick }}" aria-label="Explore: return and risk, then the calculator">
 <span ref="{{ pulseRef }}" class="mfp-pulse"></span>
 <span class="top"><span class="dot"></span><span class="kicker vert">The NRI story</span></span>
 <span ref="{{ shineRef }}" class="mfp-shine vert">Explore</span>
 <span class="bottom">
-<span ref="{{ holdLblRef }}" class="mfp-holdLbl">Swipe up</span>
+<span ref="{{ holdLblRef }}" class="mfp-holdLbl">Tap</span>
 <span ref="{{ knobRef }}" class="mfp-knob">
 <svg class="ring" viewBox="0 0 76 76" width="76" height="76"><circle cx="38" cy="38" r="35" fill="none" stroke="rgba(255,236,205,.22)" stroke-width="2"></circle><circle ref="{{ ringRef }}" cx="38" cy="38" r="35" fill="none" stroke="#fbdb81" stroke-width="3" stroke-linecap="round" stroke-dasharray="219.9" stroke-dashoffset="219.9"></circle></svg>
 <span class="btn"><svg ref="{{ arrowRef }}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span>
@@ -167,6 +167,7 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+import * as _explore from './explore-mobile.js';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
@@ -304,7 +305,7 @@ class Component extends DCLogic {
     const setO = (el, v) => { v = +(+v).toFixed(3); if (el && el.__o !== v) { el.style.opacity = v; el.__o = v; } };
     const tick = t => {
       const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; const k = t / 1000;
-      this.hold = this.cascading ? Math.min(1, this.hold + dt / .9) : Math.max(0, this.hold - dt * 1.6);
+      this.hold = this.cascading ? Math.min(1, this.hold + dt / .55) : Math.max(0, this.hold - dt * 1.6);
       sm.x += ((Math.sin(k * .23) * .12 + tx) - sm.x) * .05; sm.y += ((Math.cos(k * .19) * .08 + ty) - sm.y) * .05;
       const sc = this.scroller(), frame = this.frameRef.current;
       if (!frame) { this.raf = requestAnimationFrame(tick); return; }
@@ -355,7 +356,7 @@ class Component extends DCLogic {
       if (this.ringRef.current) this.ringRef.current.setAttribute('stroke-dashoffset', (219.9 * (1 - this.hold)).toFixed(1));
       setT(this.fillRef.current, 'scaleY(' + this.hold.toFixed(4) + ')');
       setT(this.knobRef.current, 'scale(' + (this.cascading ? .92 : 1) + ')');
-      const hl = this.holdLblRef.current, txt = this.hold > .02 && this.hold < 1 ? Math.round(this.hold * 5) + ' / 5' : 'Swipe up';
+      const hl = this.holdLblRef.current, txt = this.hold > .02 && this.hold < 1 ? Math.round(this.hold * 5) + ' / 5' : 'Tap';
       if (hl && hl.textContent !== txt) hl.textContent = txt;
       if (!this.cascading) { const ph = (k % 2.4) / 2.4, q = ph < .5 ? ph * 2 : 1; setT(this.arrowRef.current, 'translateY(' + (q < 1 ? -Math.sin(q * Math.PI) * 6 : 0).toFixed(1) + 'px)'); }
       if (this.hold >= 1 && !this.leaving) this.explore();
@@ -370,7 +371,7 @@ class Component extends DCLogic {
     if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(30vh) scale(1.06)'; }
     const b = this.copyBRef.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; }
     try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {}
-    if (window.tdcVeil) window.tdcVeil.go('story.dc.html', { style: 'sky' }); else setTimeout(() => { location.href = 'story.dc.html'; }, 600);
+    if (window.tdcVeil) window.tdcVeil.go('explore.dc.html', { style: 'sky' }); else setTimeout(() => { location.href = 'explore.dc.html'; }, 600);
   }
   glideTo(find) {
     return e => {

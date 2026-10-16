@@ -60,6 +60,7 @@ The prototype's look and timing are kept; what changed is how it runs:
 | `story-2-map.html` | Chapter 2 on its own — the pen-drawn return / risk map |
 | `story-3-numbers.html` | Chapter 3 on its own — the calculator in story form |
 | `calculator.html` | Calculator, standalone |
+| `explore.html` | **Explore (phones).** The "Return & risk" lesson — nine pen-drawn steps on one return/risk graph (tap or swipe up), then the phone calculator slides up full-screen (every control on one screen, the app's engine on real history). The landing's Explore capsule and the menu's "Our story" open it under 700 px. Pen strokes are pre-jittered once at mount (no SVG filters), glows are gradients, nothing uses backdrop-filter — it stays at frame rate on slow phones. |
 
 The zip's `story.dc.html` only mounted chapter 2; the shell in `_source/design/story.dc.html`
 was completed to what the handoff README describes (three chapters, pills, wipe, hand-off

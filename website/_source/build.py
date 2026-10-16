@@ -31,6 +31,7 @@ PAGES = {
     'story-2-map.html': 'story-2-map',
     'story-3-numbers.html': 'story-3-numbers',
     'calculator.html': 'calculator',
+    'explore.html': 'explore-mobile',
 }
 TITLES = {
     'thedigiciti_website': 'TheDigiCiti — a villa in India that pays you rent',
@@ -39,6 +40,7 @@ TITLES = {
     'story-2-map': 'TheDigiCiti · Reading the map',
     'story-3-numbers': 'TheDigiCiti · Your numbers',
     'calculator': 'TheDigiCiti · Calculator',
+    'explore-mobile': 'TheDigiCiti · Return & risk',
 }
 VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
 EVENT_MAP = {'onclick': 'onClick', 'onchange': 'onChange', 'oninput': 'onInput', 'onsubmit': 'onSubmit',
@@ -455,6 +457,7 @@ def main():
         'thedigiciti_website': ['Almarai-400-normal-latin.woff2', 'InstrumentSerif-400-italic-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2'] + RUPEE,
         'story': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
         'story-2-map': ['Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-500-normal-latin.woff2'],
+        'explore-mobile': ['Inter-400-normal-latin.woff2', 'Inter-500-normal-latin.woff2', 'Inter-600-normal-latin.woff2', 'Caveat-700-normal-latin.woff2'] + RUPEE,
     }
     HERO = {}
     for page, root in PAGES.items():

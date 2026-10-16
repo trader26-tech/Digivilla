@@ -7,3 +7,4 @@ Inter-600-normal-latin.woff2
 Inter-400-normal-rupee.woff2
 Inter-500-normal-rupee.woff2
 Inter-600-normal-rupee.woff2
+Caveat-700-normal-latin.woff2
