@@ -244,16 +244,19 @@ class Component extends DCLogic {
       try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
       return true;
     };
-    // the scroll drives the steps: a mouse notch = one step, a trackpad steps every 160 px it travels (so a fast
-    // flick passes several); a swipe steps as soon as it has moved 40 px and again every 170 px after that,
-    // and bringing the finger back undoes them — reversing works mid-gesture
-    let acc = 0, wLast = -1e9, ty = null, tx = null, done = 0, side = null;
+    // ONE gesture = ONE step (user, 2026-10-17: "1 scroll on phone is becoming too many scrolls"): a swipe steps once
+    // it has moved 40 px and never again in the same touch (bringing the finger back before lifting undoes it);
+    // a mouse notch or a trackpad swipe — including its momentum tail — is one step, like the story chapters
+    let acc = 0, wLast = -1e9, wDone = false, wPeak = 0, wLow = 1e9, ty = null, tx = null, done = 0, side = null;
     this.onWheel = e => {
       e.preventDefault(); if (e.ctrlKey) return;
-      const now = e.timeStamp || performance.now(), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
-      if (now - wLast > 300 || Math.sign(dy) !== Math.sign(acc)) acc = 0; wLast = now;
-      if (Math.abs(dy) >= 50) { this.go(dy > 0 ? 1 : -1); acc = 0; return; }
-      acc += dy; while (Math.abs(acc) >= 160) { this.go(acc > 0 ? 1 : -1); acc -= 160 * Math.sign(acc); }
+      const now = e.timeStamp || performance.now(), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY, a = Math.abs(dy);
+      if (a > wPeak) { wPeak = a; wLow = a; } else wLow = Math.min(wLow, a);
+      const fresh = now - wLast > 260 || (acc && Math.sign(dy) !== Math.sign(acc)) || (wDone && wLow < wPeak * .35 && a > 24 && a > wLow * 3);
+      wLast = now;
+      if (fresh) { acc = 0; wDone = false; wPeak = a; wLow = a; }
+      acc += dy;
+      if (!wDone && Math.abs(acc) >= 26) { wDone = true; this.go(acc > 0 ? 1 : -1); }
     };
     this.onTS = e => { ty = e.touches[0].clientY; tx = e.touches[0].clientX; done = 0; side = null; };
     this.onTM = e => {
@@ -261,9 +264,8 @@ class Component extends DCLogic {
       const t = e.touches[0], dy = ty - t.clientY, dx = t.clientX - tx;
       if (side == null && Math.max(Math.abs(dx), Math.abs(dy)) > 8) side = Math.abs(dx) > Math.abs(dy);
       if (side !== false) return;
-      const n = Math.sign(dy) * (Math.abs(dy) >= 40 ? 1 + Math.floor((Math.abs(dy) - 40) / 170) : 0);
-      while (done < n && this.go(1)) done++;
-      while (done > n && this.go(-1)) done--;
+      const n = Math.abs(dy) >= 40 ? Math.sign(dy) : 0;      // one step per swipe, whatever its length
+      if (n !== done) { if (done) this.go(-done); if (n && this.go(n)) done = n; else done = 0; }
     };
     this.onTE = () => { ty = null; };
     this.onKey = e => {
