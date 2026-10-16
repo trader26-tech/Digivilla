@@ -26,7 +26,7 @@
 <sc-if value="{{ isFlight }}" hint-placeholder-val="{{ true }}">
 <div style="position:absolute;inset:0"><dc-import name="story-1-journey" on-next="{{ next0 }}" start-at-end="{{ flightFromEnd }}" hint-size="100%,100%"></dc-import></div>
 </sc-if>
-<sc-if value="{{ isLesson }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ showLesson }}" hint-placeholder-val="{{ false }}">
 <div style="position:absolute;inset:0"><dc-import name="story-2-map" on-next="{{ next1 }}" on-prev="{{ prev1 }}" start-at-end="{{ lessonFromEnd }}" hint-size="100%,100%"></dc-import></div>
 </sc-if>
 <sc-if value="{{ isCalc }}" hint-placeholder-val="{{ false }}">
@@ -40,9 +40,9 @@
 <span data-sh="label" style="margin-left:4px;height:22px;min-width:30px;padding:0 6px;border-radius:6px;display:grid;place-items:center;font-size:10px;font-weight:600;letter-spacing:.04em;color:rgba(225,224,204,.55);box-shadow:inset 0 0 0 1px rgba(225,224,204,.2), inset 0 -2px 0 rgba(225,224,204,.08)">esc</span>
 </a>
 <nav aria-label="Chapters" data-sh="pills" style="pointer-events:auto;display:flex;gap:2px;padding:4px;border-radius:999px;background:linear-gradient(180deg,rgba(255,244,222,.08),rgba(255,226,186,.02)),rgba(11,12,18,.5);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(255,236,200,.16), inset 0 1px 0 rgba(255,255,255,.1), 0 10px 30px -12px rgba(0,0,0,.7)">
-<button onClick="{{ go0 }}" aria-current="{{ cur0 }}" style="{{ ch0 }}"><i style="{{ dot0 }}"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">01</b>The journey</span></button>
-<button onClick="{{ go1 }}" aria-current="{{ cur1 }}" style="{{ ch1 }}"><i style="{{ dot1 }}"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">02</b>Reading the map</span></button>
-<button onClick="{{ go2 }}" aria-current="{{ cur2 }}" style="{{ ch2 }}"><i style="{{ dot2 }}"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">03</b>Your numbers</span></button>
+<sc-if value="{{ hasFlight }}" hint-placeholder-val="{{ true }}"><button onClick="{{ go0 }}" aria-current="{{ cur0 }}" style="{{ ch0 }}"><i style="{{ dot0 }}"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">01</b>The journey</span></button></sc-if>
+<button onClick="{{ go1 }}" aria-current="{{ cur1 }}" style="{{ ch1 }}"><i style="{{ dot1 }}"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">{{ num1 }}</b>Reading the map</span></button>
+<button onClick="{{ go2 }}" aria-current="{{ cur2 }}" style="{{ ch2 }}"><i style="{{ dot2 }}"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">{{ num2 }}</b>Your numbers</span></button>
 </nav>
 <span style="width:44px;flex:none"></span>
 </div>
@@ -62,12 +62,25 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+// Laptops start the story at "Reading the map" — the flight (chapter 0) is a phone-only opening.
+// Chapters keep their indices (0 flight · 1 map · 2 numbers); FIRST is where this screen's story begins.
+const FIRST = typeof innerWidth === 'number' && innerWidth > 700 ? 1 : 0;
 class Component extends DCLogic {
   // Explore sets localStorage['thedigiciti.chapter'] = '0'; a nav link can ask for a chapter with #1 / #2 / #3.
-  state = { ch: (() => { const h = parseInt((location.hash || '').replace('#', ''), 10); if (h >= 1 && h <= 3) return h - 1; try { const v = parseInt(localStorage.getItem('thedigiciti.chapter'), 10); if (v >= 0 && v <= 2) return v; } catch (e) {} return 0; })(), from: -1, wipe: false, phase: 0, nxt: 0 };
+  state = { intro: FIRST === 1, ch: Math.max(FIRST, (() => { const h = parseInt((location.hash || '').replace('#', ''), 10); if (h >= 1 && h <= 3) return h - 1; try { const v = parseInt(localStorage.getItem('thedigiciti.chapter'), 10); if (v >= 0 && v <= 2) return v; } catch (e) {} return 0; })()), from: -1, wipe: FIRST === 1, phase: FIRST === 1 ? 2 : 0, nxt: 0 };
   calcRef = React.createRef();
   componentDidMount() {
     try { localStorage.setItem('thedigiciti.chapter', this.state.ch); } catch (e) {}
+    // laptops: the story opens on its chapter card (the coin, "Chapter 01 · Reading the map"), which irises open onto
+    // the chapter — the same card every chapter change shows, so the first screen is never a half-drawn map
+    if (this.state.intro) {
+      this.busy = true;
+      const hold = reducedMotion ? 300 : 1150;
+      this.setState({ nxt: this.state.ch });
+      setTimeout(() => this.setState({ intro: false }), hold - 250);                     // mount the chapter under the card
+      setTimeout(() => this.setState({ phase: 3 }), hold);                               // the iris opens
+      setTimeout(() => { this.setState({ wipe: false, phase: 0 }); this.busy = false; }, hold + 900);
+    }
     this.atEnd = () => { const c = this.calcRef.current; return this.state.ch === 2 && c && c.scrollTop + c.clientHeight >= c.scrollHeight - 4; };
     this.pushes = 0;
     // chapter 3 scrolls like a page; pushing past its end returns to the app showcase
@@ -99,7 +112,7 @@ class Component extends DCLogic {
     window.tdcVeil && window.tdcVeil.go('index.dc.html#showcase', { style: 'sky' });
   }
   goTo(n) {
-    n = Math.max(0, Math.min(2, n));
+    n = Math.max(FIRST, Math.min(2, n));
     if (n === this.state.ch || this.busy) return;
     this.busy = true;
     this.setState({ wipe: true, phase: 0, nxt: n });
@@ -115,19 +128,21 @@ class Component extends DCLogic {
     const btn = i => `display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border:0;border-radius:999px;font:inherit;font-size:11.5px;letter-spacing:.04em;white-space:nowrap;cursor:pointer;color:${ch === i ? '#fff6ea' : '#8a8ea3'};background:${ch === i ? 'rgba(246,196,69,.14)' : 'transparent'};transition:all .3s`;
     const dot = i => `width:7px;height:7px;border-radius:50%;flex:none;background:${ch === i ? '#f6c445' : 'rgba(255,255,255,.22)'};box-shadow:${ch === i ? '0 0 10px rgba(246,196,69,.8)' : 'none'};transition:all .3s`;
     const pv = e => { e && e.preventDefault && e.preventDefault(); };
+    const no = i => '0' + (i - FIRST + 1);      // the chapter number as this screen counts it
     return {
       calcRef: this.calcRef,
       goHome: e => { pv(e); if (this.leaving) return; this.leaving = true; window.tdcVeil && window.tdcVeil.go('index.dc.html', { style: 'sky', fast: true }); },
-      isFlight: ch === 0, isLesson: ch === 1, isCalc: ch === 2,
+      isFlight: ch === 0, isLesson: ch === 1, isCalc: ch === 2 && !this.state.intro, showLesson: ch === 1 && !this.state.intro,
       flightFromEnd: ch === 0 && from === 1, lessonFromEnd: ch === 1 && from === 2,
       next0: () => this.goTo(1), next1: () => this.goTo(2), prev1: () => this.goTo(0),
       go0: e => { pv(e); this.goTo(0); }, go1: e => { pv(e); this.goTo(1); }, go2: e => { pv(e); this.goTo(2); },
+      hasFlight: FIRST === 0, num1: no(1), num2: no(2),
       cur0: ch === 0 ? 'step' : null, cur1: ch === 1 ? 'step' : null, cur2: ch === 2 ? 'step' : null,
       ch0: btn(0), ch1: btn(1), ch2: btn(2), dot0: dot(0), dot1: dot(1), dot2: dot(2),
       wipeOn: wipe,
       wipeStyle: `position:absolute;inset:0;pointer-events:auto;display:grid;place-items:center;background:radial-gradient(ellipse 45% 50% at 50% 45%,rgba(246,196,69,.16),transparent 70%),radial-gradient(ellipse 50% 30% at 50% 100%,rgba(42,43,107,.6),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16);transition:clip-path .85s cubic-bezier(.7,0,.3,1);clip-path:circle(${open ? '125%' : '0%'} at 50% 50%)`,
       labelStyle: `position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;opacity:${open ? 1 : 0};transform:scale(${open ? 1 : .8});transition:opacity .45s ease ${phase === 1 ? '.35s' : '0s'},transform .6s cubic-bezier(.2,.8,.2,1)`,
-      nextNum: '0' + (nxt + 1), nextTitle: T[nxt]
+      nextNum: no(nxt), nextTitle: T[nxt]
     };
   }
 }
