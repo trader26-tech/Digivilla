@@ -55,9 +55,24 @@
 
 <div style="display:flex;flex-direction:column;gap:14px;padding:22px 22px 20px;border-bottom:1px solid #1f2233">
 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px">
-<div style="display:flex;flex-direction:column;gap:8px;min-width:0">
-<span style="font-size:12px;color:#7a7c8c">{{ rulerLabel }}</span>
-<b style="font-size:clamp(30px,2.8vw,40px);font-weight:500;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;color:#f4f4f7">{{ rulerValue }}</b>
+<div style="display:flex;flex-direction:column;gap:8px;min-width:0;flex:1">
+<span style="display:flex;align-items:center;gap:8px;font-size:12px;color:#7a7c8c">{{ rulerLabel }}<sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:#5a5e6c">· tap the figure to type it</span></sc-if></span>
+<sc-if value="{{ notEditing }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ startEdit }}" aria-label="{{ editAria }}" title="Type an exact figure" style="align-self:flex-start;display:flex;align-items:center;gap:10px;max-width:100%;margin:-6px -10px;padding:6px 10px;border:0;border-radius:12px;background:transparent;font:inherit;color:#f4f4f7;cursor:text;transition:background .2s,box-shadow .2s" style-hover="background:rgba(143,214,90,.06);box-shadow:inset 0 0 0 1px rgba(143,214,90,.35)">
+<b style="font-size:clamp(30px,2.8vw,40px);font-weight:500;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap">{{ rulerValue }}</b>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a5e6c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+</button>
+</sc-if>
+<sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:7px">
+<label style="{{ editBox }}">
+<span style="font-size:clamp(26px,2.4vw,34px);font-weight:500;color:#7a7c8c;line-height:1">{{ editPrefix }}</span>
+<input ref="{{ editRef }}" inputmode="numeric" autocomplete="off" spellcheck="false" value="{{ editText }}" onInput="{{ onEditInput }}" onKeyDown="{{ onEditKey }}" onBlur="{{ commitEdit }}" aria-label="{{ editAria }}" style="flex:1;min-width:0;width:100%;border:0;outline:0;background:transparent;padding:0;font:inherit;font-size:clamp(30px,2.8vw,40px);font-weight:500;letter-spacing:-.035em;line-height:1.1;font-variant-numeric:tabular-nums;color:#f4f4f7;caret-color:#8fd65a">
+<span style="font-size:13px;color:#8fd65a;white-space:nowrap">{{ editWords }}</span>
+</label>
+<span style="{{ editHintS }}">{{ editHint }}</span>
+</div>
+</sc-if>
 </div>
 <div style="display:flex;gap:6px;flex:none">
 <button onClick="{{ dec }}" aria-label="Less" style="width:36px;height:36px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a" style-hover="box-shadow:inset 0 0 0 1px #8fd65a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
@@ -101,7 +116,14 @@
 </div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span style="font-size:13px;color:#c9c6da;white-space:nowrap">Had you started</span><span style="font-size:11px;color:#5a5e6c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">years ago</span></div>
-<div style="display:flex;padding:3px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="6"><button onClick="{{ y.pick }}" style="{{ y.style }}">{{ y.n }}</button></sc-for></div>
+<div style="display:flex;padding:3px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px #22253a"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="6"><button onClick="{{ y.pick }}" style="{{ y.style }}">{{ y.n }}</button></sc-for><button onClick="{{ pickYearsCustom }}" style="{{ yearsCustomChip }}">{{ yearsCustomLabel }}</button></div>
+<sc-if value="{{ isYearsCustom }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:#0b0c12;box-shadow:inset 0 0 0 1px rgba(143,214,90,.4)">
+<button onClick="{{ yearsDec }}" aria-label="One year less" style="{{ yStepL }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><b style="font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#f4f4f7">{{ yearsShow }}</b><span style="font-size:11px;color:#5a5e6c;font-variant-numeric:tabular-nums">{{ yearsSpan }}</span></div>
+<button onClick="{{ yearsInc }}" aria-label="One year more" style="{{ yStepR }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+</div>
+</sc-if>
 </div>
 </div>
 </sc-if>
@@ -195,20 +217,58 @@ import { loadCalc } from './calc-data.js';
 const YEAR_OPTS = [5, 8, 10, 15, 20];
 const RATES = [6, 6.5, 7, 7.5, 8], SLABS = [0, 5, 10, 15, 20, 25, 30];
 class Component extends DCLogic {
-  state = { mode: 'fd', villa: null, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price', data: null, failed: false };
-  boxRef = React.createRef(); stageRef = React.createRef(); rulerRef = React.createRef();
+  state = { mode: 'fd', villa: null, amount: 10000000, years: 8, fdRate: 6.5, tax: 30, income: true, price: 6000000, value: 9000000, bought: 2018, rent: 20000, active: 'price', data: null, failed: false,
+    exact: {}, edit: null, yearsCustom: false };
+  boxRef = React.createRef(); stageRef = React.createRef(); rulerRef = React.createRef(); editRef = React.createRef();
   /** the fields the tape can edit (FD: the amount; Flat: price / value / year / rent) */
   fieldsFor(S) {
-    if (S.mode === 'fd') return [{ key: 'amount', label: 'You invest', min: 1000000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, f: n => this.inr(n) }];
+    if (S.mode === 'fd') return [{ key: 'amount', label: 'You invest', min: 100000, max: 50000000, step: 100000, big: 500000, major: 1000000, mid: 500000, lo: 100000, hi: 500000000, f: n => this.inr(n) }];
     const vf = S.data && S.data.vf, endYear = vf ? this.endYear(vf) : new Date().getFullYear(), maxYears = vf ? this.maxYears(vf) : 15;
-    return [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
-      { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, f: n => this.fmt(n) },
-      { key: 'bought', hint: vf ? `History from ${this.ym(vf.months[0])}` : '', label: 'Bought in', min: endYear - maxYears, max: endYear - 1, step: 1, big: 1, major: 10, mid: 5, f: n => String(n) },
-      { key: 'rent', hint: 'Before tax', label: 'Rent a month', min: 0, max: 300000, step: 1000, big: 5000, major: 50000, mid: 10000, f: n => this.inr(n) }];
+    return [{ key: 'price', hint: 'What you paid', label: 'Bought it for', min: 2000000, max: 50000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, lo: 500000, hi: 1000000000, f: n => this.fmt(n) },
+      { key: 'value', hint: 'Market price now', label: 'Worth today', min: 2000000, max: 100000000, step: 250000, big: 1000000, major: 10000000, mid: 2500000, lo: 500000, hi: 2000000000, f: n => this.fmt(n) },
+      { key: 'bought', hint: vf ? `History from ${this.ym(vf.months[0])}` : '', label: 'Bought in', min: endYear - maxYears, max: endYear - 1, step: 1, big: 1, major: 10, mid: 5, lo: endYear - maxYears, hi: endYear - 1, year: true, f: n => String(n) },
+      { key: 'rent', hint: 'Before tax', label: 'Rent a month', min: 0, max: 300000, step: 1000, big: 5000, major: 50000, mid: 10000, lo: 0, hi: 2000000, f: n => this.inr(n) }];
   }
   activeField(S = this.state) { const F = this.fieldsFor(S); return S.mode === 'fd' ? F[0] : (F.find(q => q.key === S.active) || F[0]); }
   /** set a field from the tape; `raw` keeps sub-step values while a drag or fling is in flight */
-  setField(a, v, raw) { v = Math.min(a.max, Math.max(a.min, v)); if (!raw) v = Math.round(v / a.step) * a.step; if (v !== this.state[a.key]) this.setState({ [a.key]: v }); }
+  setField(a, v, raw) {
+    v = Math.min(a.max, Math.max(a.min, v)); if (!raw) v = Math.round(v / a.step) * a.step;
+    const ex = this.state.exact[a.key];
+    if (v !== this.state[a.key] || ex) this.setState(s => ({ [a.key]: v, exact: ex ? { ...s.exact, [a.key]: false } : s.exact }));
+  }
+  /** a field's figure as used by the maths: exactly as typed, else on its tape step */
+  snap(S, a) { return S.exact[a.key] ? S[a.key] : Math.round(S[a.key] / a.step) * a.step; }
+  // ── typing an exact figure ──
+  startEdit() { const a = this.activeField(), v = this.snap(this.state, a); this.setState({ edit: { key: a.key, text: a.year ? String(v) : this.digits(v), bad: '' } }); }
+  digits(n) { return Math.round(n).toLocaleString('en-IN'); }
+  /** keep only digits, re-grouped the Indian way as you type (12,34,567) */
+  editInput(e) {
+    const a = this.activeField(), raw = (e.target.value || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '').slice(0, a.year ? 4 : 11);
+    const text = a.year || !raw ? raw : this.digits(+raw);
+    this.setState(s => ({ edit: { ...s.edit, text, bad: '' } }));
+    if (text !== e.target.value) { const el = e.target; requestAnimationFrame(() => { try { el.setSelectionRange(el.value.length, el.value.length); } catch (_) {} }); }
+  }
+  /** apply the typed figure (Enter / leaving the box); out of range → kept open with the reason */
+  commitEdit(keepOpenOnBad) {
+    const E0 = this.state.edit; if (!E0) return;
+    const a = this.fieldsFor(this.state).find(q => q.key === E0.key); if (!a) { this.setState({ edit: null }); return; }
+    const raw = (E0.text || '').replace(/[^0-9]/g, '');
+    if (!raw) { this.setState({ edit: null }); return; }
+    const v = +raw;
+    if (v < a.lo || v > a.hi) {
+      const bad = `Between ${a.year ? a.lo : this.words(a.lo)} and ${a.year ? a.hi : this.words(a.hi)}`;
+      if (keepOpenOnBad) { this.setState(s => ({ edit: { ...s.edit, bad } })); return; }
+      const c = Math.min(a.hi, Math.max(a.lo, v));
+      this.setState(s => ({ [a.key]: c, exact: { ...s.exact, [a.key]: true }, edit: null }));
+      return;
+    }
+    this.setState(s => ({ [a.key]: v, exact: { ...s.exact, [a.key]: true }, edit: null }));
+  }
+  /** ₹ in words for the hint beside the box: 1,17,00,000 → "₹1.17 Cr" */
+  /** a field's figure for the screen: exactly as typed (₹63,45,000), else its compact tape form (₹63.5 L) */
+  show(S, a, v) { return S.exact[a.key] && !a.year ? this.inr(v) : a.f(v); }
+  stepBtn(on) { return `width:32px;height:32px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .35};color:#e9e9ed;background:#1a1c28;box-shadow:inset 0 0 0 1px #2b2e3a`; }
+  words(n) { return n >= 1e7 ? '₹' + (+(n / 1e7).toFixed(2)) + ' Cr' : n >= 1e5 ? '₹' + (+(n / 1e5).toFixed(2)) + ' L' : this.inr(n); }
   /** The tape measure: drag moves the tape under the needle (10 px a tick), a flick keeps it rolling and it settles on a tick.
    *  A finger moving up/down still scrolls the page (touch-action: pan-y); keyboard users have the hidden range input. */
   mountRuler() {
@@ -253,12 +313,17 @@ class Component extends DCLogic {
       const cfg = d.cfg, yrs = this.yearsAvailable(d.vf), end = this.endYear(d.vf);
       this.rates = {};
       this.setState(s => ({ data: d, villa: cfg.default_villa, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default,
-        years: yrs.includes(s.years) ? s.years : (yrs[1] || yrs[0] || 5),
+        years: (s.yearsCustom && s.years <= this.maxYears(d.vf)) || yrs.includes(s.years) ? s.years : (yrs[1] || yrs[0] || 5),
         bought: Math.min(end - 1, Math.max(end - this.maxYears(d.vf), s.bought)) }));
       setTimeout(() => { if (!this.dead && this.fit) this.fit(); }, 0);
     }, err => { console.warn('calculator data', err); if (!this.dead) this.setState({ failed: true }); });
   }
-  componentDidUpdate() { this.mountRuler(); }
+  componentDidUpdate() {
+    this.mountRuler();
+    const el = this.editRef.current;                       // the box opens focused, its figure selected
+    if (el && this.state.edit && !this.focused) { this.focused = true; el.focus(); el.select(); }
+    if (!this.state.edit) this.focused = false;
+  }
   componentWillUnmount() { this.dead = true; clearTimeout(this.poll); if (this.fling) cancelAnimationFrame(this.fling); window.removeEventListener('resize', this.onResize); window.removeEventListener('load', this.onResize); this.ro && this.ro.disconnect(); }
   yearsAvailable(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
   maxYears(vf) { return Math.floor((vf.months.length - 1) / 12); }
@@ -271,7 +336,7 @@ class Component extends DCLogic {
   villaRate(key) { const { cfg, vf } = this.state.data; if (!(key in this.rates)) this.rates[key] = E.villaRate(vf, cfg, key); return this.rates[key]; }
   /** one simulation per distinct set of inputs; renders in between reuse it */
   sim(S) {
-    const F = this.fieldsFor(S), sn = k => { const q = F.find(x => x.key === k); return q ? Math.round(S[k] / q.step) * q.step : S[k]; };
+    const F = this.fieldsFor(S), sn = k => { const q = F.find(x => x.key === k); return q ? this.snap(S, q) : S[k]; };
     const amount = sn('amount'), price = sn('price'), value = sn('value'), bought = sn('bought'), rent = sn('rent');
     const key = JSON.stringify([S.mode, S.villa, amount, S.years, S.fdRate, S.tax, S.income, price, value, bought, rent]);
     if (this.memo && this.memo.key === key) return this.memo.out;
@@ -304,7 +369,7 @@ class Component extends DCLogic {
     const endYear = this.endYear(vf), maxYears = this.maxYears(vf);
     const vRate = this.villaRate(villa.key), irr = r.dvIrr;
     const Fs = this.fieldsFor(S), act = this.activeField(S);
-    const snapped = k => Math.round(S[k] / (Fs.find(q => q.key === k) || act).step) * (Fs.find(q => q.key === k) || act).step;
+    const snapped = k => this.snap(S, Fs.find(q => q.key === k) || act);
     const setA = n => { if (this.fling) { cancelAnimationFrame(this.fling); this.fling = 0; } this.setField(act, n); };
     let L, R, years, start, lName, lCap, rCap, lArt;
     if (isFd) {
@@ -344,7 +409,7 @@ class Component extends DCLogic {
     const cy = Math.min(y0, y1) - 40;
     const chip = on => `flex:1;min-width:0;height:42px;padding:0 4px;border:0;border-radius:9px;font:inherit;font-size:14px;font-weight:${on ? 600 : 500};font-variant-numeric:tabular-nums;cursor:pointer;color:${on ? '#0b0c12' : '#8a8ea3'};background:${on ? '#e9e9ed' : 'transparent'};box-shadow:${on ? '0 2px 8px rgba(0,0,0,.35)' : 'none'};transition:all .25s cubic-bezier(.16,1,.3,1)`;
     const arw = on => `flex:none;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;align-self:center;color:#e9e9ed;background:rgba(18,20,29,.92);box-shadow:inset 0 0 0 1px #2b2e3a,0 6px 14px rgba(0,0,0,.4);cursor:${on ? 'pointer' : 'default'};opacity:${on ? 1 : .28};pointer-events:${on ? 'auto' : 'none'};transition:opacity .25s`;
-    const cnt = Math.round((act.max - act.min) / act.step) + 1, idx = (S[act.key] - act.min) / act.step;
+    const cnt = Math.round((act.max - act.min) / act.step) + 1, idx = Math.min(cnt - 1, Math.max(0, (S[act.key] - act.min) / act.step));
     const i0 = Math.max(0, Math.floor(idx) - 40), i1 = Math.min(cnt - 1, Math.floor(idx) + 40);
     const ticks = Array.from({ length: i1 - i0 + 1 }, (_, j) => { const i = i0 + j, p = act.min + i * act.step, M = p % act.major === 0, m = p % act.mid === 0; return { s: `flex:none;width:1px;margin-right:9px;height:${M ? 22 : m ? 14 : 8}px;background:${M ? 'rgba(233,233,237,.7)' : m ? 'rgba(233,233,237,.35)' : 'rgba(233,233,237,.16)'}` }; });
     const diff = rTot - lTot, pfName = villa.name, rateTxt = (irr == null ? vRate : irr).toFixed(1) + '%';
@@ -366,22 +431,39 @@ class Component extends DCLogic {
       isTaxCustom: !!S.taxCustom, pickTaxCustom: () => this.setState(s => ({ taxCustom: true, tax: SLABS.includes(s.tax) ? 31.2 : s.tax })),
       taxCustomChip: chip(!!S.taxCustom), taxCustomLabel: S.taxCustom ? (+S.tax.toFixed(1)) + '%' : 'Other', taxShow: (+S.tax.toFixed(1)) + '%',
       taxDec: () => this.setState(s => ({ tax: Math.max(0, +(s.tax - .5).toFixed(1)) })), taxInc: () => this.setState(s => ({ tax: Math.min(42.7, +(s.tax + .5).toFixed(1)) })),
-      yearOpts: yearOpts.map(y => ({ n: y + 'y', pick: () => this.setState({ years: y }), style: chip(S.years === y) })),
+      // a custom count that lands on a preset lights the preset (never two "15y" chips); the stepper stays open
+      yearOpts: yearOpts.map(y => ({ n: y + 'y', pick: () => this.setState({ years: y, yearsCustom: false }), style: chip(S.years === y) })),
+      isYearsCustom: !!S.yearsCustom, yearsCustomChip: chip(!!S.yearsCustom && !yearOpts.includes(S.years)),
+      yearsCustomLabel: S.yearsCustom && !yearOpts.includes(S.years) ? S.years + 'y' : 'Other',
+      pickYearsCustom: () => this.setState(s => ({ yearsCustom: true, years: yearOpts.includes(s.years) && !s.yearsCustom ? Math.min(maxYears, s.years + 1) : s.years })),
+      yearsShow: S.years + (S.years === 1 ? ' year' : ' years'), yearsSpan: isFd ? span : '',
+      yearsDec: () => this.setState(s => ({ years: Math.max(1, s.years - 1) })), yearsInc: () => this.setState(s => ({ years: Math.min(maxYears, s.years + 1) })),
+      yStepL: this.stepBtn(S.years > 1), yStepR: this.stepBtn(S.years < maxYears),
+      // typing an exact figure
+      editing: !!S.edit, notEditing: !S.edit, editRef: this.editRef,
+      startEdit: () => this.startEdit(), onEditInput: e => this.editInput(e), commitEdit: () => this.commitEdit(false),
+      onEditKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.commitEdit(true); } else if (e.key === 'Escape') { e.preventDefault(); this.setState({ edit: null }); } },
+      editText: S.edit ? S.edit.text : '', editPrefix: act.year ? '' : '₹',
+      editWords: S.edit && !act.year && S.edit.text ? this.words(+S.edit.text.replace(/[^0-9]/g, '')) : '',
+      editAria: 'Type ' + act.label.toLowerCase(),
+      editHint: S.edit && S.edit.bad ? S.edit.bad + ' · Esc to cancel' : 'Enter to apply · Esc to cancel · ' + (act.year ? act.lo + '–' + act.hi : this.words(act.lo) + ' to ' + this.words(act.hi)),
+      editHintS: `font-size:11.5px;color:${S.edit && S.edit.bad ? '#e58a6b' : '#5a5e6c'}`,
+      editBox: `display:flex;align-items:center;gap:8px;padding:6px 12px;margin:-6px -12px;border-radius:12px;background:rgba(143,214,90,.06);box-shadow:inset 0 0 0 1.5px ${S.edit && S.edit.bad ? '#e58a6b' : '#8fd65a'},0 0 0 4px ${S.edit && S.edit.bad ? 'rgba(229,138,107,.12)' : 'rgba(143,214,90,.1)'};cursor:text`,
       toggleIncome: () => this.setState(s => ({ income: !s.income })), swpTitle: isFd ? 'Take a monthly income (SWP)' : 'Take the rent as a monthly SWP',
       swpNote: S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' : 'Off · everything stays invested and compounds',
       swpRow: `display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:#0b0c12;box-shadow:inset 0 0 0 1px ${S.income ? 'rgba(143,214,90,.4)' : '#22253a'};transition:box-shadow .25s`,
       swpTrack: `flex:none;position:relative;width:40px;height:22px;border-radius:11px;background:${S.income ? '#8fd65a' : '#2b2e3a'};transition:background .25s`,
       swpKnob: `position:absolute;top:3px;left:${S.income ? 21 : 3}px;width:16px;height:16px;border-radius:50%;background:${S.income ? '#0b0c12' : '#7a7c8c'};transition:left .25s cubic-bezier(.16,1,.3,1)`,
-      fields: isFd ? [] : Fs.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: q.f(snapped(q.key)), pick: () => this.setState({ active: q.key }),
+      fields: isFd ? [] : Fs.map(q => { const on = q.key === act.key; return { label: q.label, hint: q.hint, value: this.show(S, q, snapped(q.key)), pick: () => this.setState({ active: q.key, edit: null }),
         style: `display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border:0;border-radius:14px;font:inherit;cursor:pointer;background:${on ? 'rgba(143,214,90,.06)' : '#0b0c12'};box-shadow:inset 0 0 0 1px ${on ? 'rgba(143,214,90,.6)' : '#22253a'};transition:all .25s`,
         lStyle: `font-size:14px;font-weight:500;color:${on ? '#8fd65a' : '#e9e9ed'}` }; }),
       flatGrowth: isFd ? '' : f.appPct.toFixed(1) + '%', flatYield: isFd ? '' : f.yieldPct.toFixed(1) + '%',
       rulerLabel: act.label, rLo: act.f(act.min), rHi: act.f(act.max),
-      reset: () => this.setState({ custom: false, taxCustom: false, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
-      rulerValue: act.f(snapped(act.key)), rulerRef: this.rulerRef,
+      reset: () => this.setState({ custom: false, taxCustom: false, yearsCustom: false, exact: {}, edit: null, amount: 10000000, years: yearOpts.includes(8) ? 8 : yearOpts[0], fdRate: 6.5, tax: cfg.tax.default_slab, income: cfg.withdrawals.swp_default, price: 6000000, value: 9000000, bought: Math.max(endYear - maxYears, 2018), rent: 20000, active: 'price' }),
+      rulerValue: this.show(S, act, snapped(act.key)), rulerRef: this.rulerRef,
       rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:${this.dragging || this.fling ? 'none' : 'transform .12s ease-out'};transform:translateX(${-(idx - i0) * 10}px)`, ticks,
       rMin: act.min, rMax: act.max, rStep: act.step, rVal: snapped(act.key), onRange: e => setA(+e.target.value), inc: () => setA(snapped(act.key) + act.big), dec: () => setA(snapped(act.key) - act.big),
-      chartHead: isFd ? `${this.fmt(start)} · ${span}` : `${this.fmt(start)} all-in · ${span}`,
+      chartHead: isFd ? `${this.inr(start)} · ${span}` : `${this.inr(start)} all-in · ${span}`,   // exact rupees — a typed ₹1,25,000 must not read ₹1.3 L
       pfPos: (vi + 1) + ' / ' + villas.length,
       pfPrev: () => this.setState({ villa: villas[Math.max(0, vi - 1)].key }), pfNext: () => this.setState({ villa: villas[Math.min(villas.length - 1, vi + 1)].key }),
       pfPrevS: arw(vi > 0), pfNextS: arw(vi < villas.length - 1),
