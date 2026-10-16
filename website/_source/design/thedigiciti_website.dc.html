@@ -300,6 +300,82 @@ class Component extends DCLogic {
       this.stageZ = z; ss.style.top = phone ? '60%' : '50%';
     };
     this.fitStage(); addEventListener('resize', this.fitStage);
+    // ── Laptop paging: ONE scroll gesture = ONE page, however hard — cover → the Explore arc → the app showcase →
+    // the calculator → (its last part + the footer). A trackpad swipe is a burst of deltas plus a momentum tail that
+    // decays; the whole thing is one gesture. A new gesture = a pause (> 220 ms, input time) or a delta that jumps
+    // well above a tail that has decayed. Gestures during a glide (or a beat after it) are swallowed, so a hard
+    // swipe can never carry the page past the next stop. Anything that scrolls on its own (a panel, the ruler)
+    // keeps its wheel. No CSS scroll-snap (it trapped mouse wheels — see the note in the helmet). Phones have their
+    // own pager in landing-mobile.
+    {
+      const sc0 = this.scrollRef.current, COOLDOWN = 280;
+      const offs = el => { let t = 0; for (let n = el; n && n !== sc0; n = n.offsetParent) t += n.offsetTop; return t; };
+      const stops = () => {
+        const tr = sc0.querySelector('[data-hero-track]'), R = tr ? tr.clientHeight - sc0.clientHeight : sc0.clientHeight;
+        const max = Math.max(0, sc0.scrollHeight - sc0.clientHeight), L = [0, R];
+        ['showcase', 'calculator'].forEach(id => { const el = document.getElementById(id); if (el) L.push(Math.min(max, offs(el))); });
+        L.push(max);
+        return { R, L: L.filter((v, i, a) => i === 0 || v > a[i - 1] + 8) };
+      };
+      const easeIO = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      this.pageGlide = to => {
+        cancelAnimationFrame(this.pgRaf);
+        const from = sc0.scrollTop, { R } = stops(), dist = Math.abs(to - from);
+        if (dist < 1 || reducedMotion) { sc0.scrollTop = to; this.pgAt = performance.now(); return; }
+        const D = Math.max(from, to) <= R + 1 ? 1100 : 800, t0 = performance.now();   // the hero morph plays a little slower than a page turn
+        this.pgOn = true;
+        const step = now => { const u = Math.min(1, (now - t0) / D); sc0.scrollTop = from + (to - from) * easeIO(u); if (u < 1) this.pgRaf = requestAnimationFrame(step); else { this.pgOn = false; this.pgAt = performance.now(); } };
+        this.pgRaf = requestAnimationFrame(step);
+      };
+      this.pageStep = dir => {
+        const { L } = stops(), top = sc0.scrollTop;
+        let to;
+        if (dir > 0) { to = L.find(v => v > top + 4); if (to == null) return; }
+        else { to = null; L.forEach(v => { if (v < top - 4) to = v; }); if (to == null) return; }
+        this.pageGlide(to);
+      };
+      // something inside that scrolls on its own in this direction keeps the wheel
+      const ownScroll = (el, dy) => {
+        for (let n = el; n && n !== sc0 && n.nodeType === 1; n = n.parentElement) {
+          const cs = getComputedStyle(n);
+          if (/auto|scroll/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 1) { if (dy > 0 ? n.scrollTop < n.scrollHeight - n.clientHeight - 1 : n.scrollTop > 0) return true; }
+        }
+        return false;
+      };
+      const wg = { t: -1e9, abs: 0, peak: 0, acc: 0, used: false };
+      this.onPageWheel = e => {
+        if (this.state.mobile || !sc0 || e.ctrlKey) return;                          // phones: landing-mobile pages; ctrl+wheel = zoom
+        if (e.defaultPrevented) return;                                                // the calculator's ruler took it
+        let dy = e.deltaY, dx = e.deltaX;
+        if (e.deltaMode === 1) { dy *= 16; dx *= 16; } else if (e.deltaMode === 2) { dy *= sc0.clientHeight; dx *= sc0.clientHeight; }
+        if (Math.abs(dx) > Math.abs(dy) || !dy) return;
+        if (ownScroll(e.target, dy)) return;
+        e.preventDefault();
+        const now = performance.now(), ts = e.timeStamp || now, abs = Math.abs(dy), gap = ts - wg.t;
+        // a pause starts a new gesture only once the last one had died down (a real new swipe always follows a
+        // faded tail; a stalled frame in the middle of a strong swipe must not split it), and a jump must be big and
+        // come after a real decay (merged tail events can add up, never to this)
+        const fresh = (gap > 220 && (wg.abs < 40 || gap > 900)) || (wg.used && abs > Math.max(60, wg.peak * .7) && wg.abs < wg.peak * .35);
+        wg.t = ts;
+        if (fresh) { wg.acc = 0; wg.used = false; wg.peak = 0; }
+        wg.abs = abs; wg.peak = Math.max(wg.peak, abs);
+        if (wg.used) return;
+        if (this.pgOn || now - (this.pgAt || -1e9) < COOLDOWN) { wg.used = true; return; }
+        wg.acc += dy;
+        if (Math.abs(wg.acc) >= 24) { wg.used = true; this.pageStep(wg.acc > 0 ? 1 : -1); }
+      };
+      this.onPageKey = e => {
+        if (this.state.mobile) return;
+        const a = document.activeElement; if (a && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(a.tagName) && e.key === ' ') return;
+        if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        const dir = { ArrowDown: 1, PageDown: 1, ' ': e.shiftKey ? -1 : 1, ArrowUp: -1, PageUp: -1 }[e.key];
+        if (!dir) return; e.preventDefault();
+        if (e.repeat || this.pgOn) return;
+        this.pageStep(dir);
+      };
+      if (sc0) { sc0.addEventListener('wheel', this.onPageWheel, { passive: false }); addEventListener('keydown', this.onPageKey); }
+    }
     this.onBreak = () => { const m = innerWidth <= 700; if (m !== this.state.mobile) this.setState({ mobile: m }); };
     addEventListener('resize', this.onBreak);
     this.showOn = false;
@@ -413,7 +489,7 @@ class Component extends DCLogic {
       setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, 60 + d);
     }));
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); window.cancelIdleCallback && this.prep && cancelIdleCallback(this.prep); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.onBreak); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
+  componentWillUnmount() { cancelAnimationFrame(this.pgRaf); if (this.onPageKey) removeEventListener('keydown', this.onPageKey); if (this.onPageWheel && this.scrollRef.current) this.scrollRef.current.removeEventListener('wheel', this.onPageWheel); cancelAnimationFrame(this.raf); window.cancelIdleCallback && this.prep && cancelIdleCallback(this.prep); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.onBreak); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
   renderVals() {
     const r = { mobile: this.state.mobile, desktop: !this.state.mobile }; ['veilRef','pulseRef','showStage','showRig','scrollRef','frameRef','farRef','nearRef','frontRef','villaRef','coinRef','glowRef','sunRef','sunDisc','copyA','copyB','t0','t1','t2','t3','t4'].forEach(n => r[n] = this[n]);
     r.goExplore = e => { e.preventDefault(); if (this.leaving) return; this.leaving = true; const fr = this.frameRef.current; if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(38vh) scale(1.08)'; } const b = this.copyB.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; } try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {} window.tdcVeil && window.tdcVeil.go('story.dc.html', { style: 'sky' }); };
