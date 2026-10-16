@@ -1,5 +1,5 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, DSButton } from './rt.js?v=e558e6dd';
-import C_part_stage_villa from './part-stage-villa.js?v=e558e6dd';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, DSButton } from './rt.js?v=e62fb661';
+import C_part_stage_villa from './part-stage-villa.js?v=e62fb661';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   componentDidMount() {
@@ -14,7 +14,7 @@ class Component extends DCLogic {
     // The scenes are scrubbed by scroll (with inertia, a cinematic speed cap and
     // a snap to the nearest scene when the scroll stops) — never locked.
     const paces = [this.props.duration ?? 3.5, 3.4, 3, 2.6, 2.6, 2.6, 2.6];
-    this.scrub = scrubber({ max: 7, start: this.props.startAtEnd ? 7 : 0, unit: 820,
+    this.scrub = scrubber({ max: 7, start: this.props.startAtEnd ? 7 : 0,   // rt.SCENE_PX per scene, like every chapter
       rateFor: seg => 1 / paces[Math.max(0, Math.min(6, seg))],   // the designed pace — never faster
       onEnd: d => { if (d > 0) this.props.onNext && this.props.onNext(); else this.props.onPrev && this.props.onPrev(); } });
     let u = this.scrub.pos;

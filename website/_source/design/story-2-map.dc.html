@@ -173,13 +173,12 @@ class Component extends DCLogic {
     this.durs = [0, 900, 3800, 3400, 1300, 3600, 3600, 1400, 3400, 4400];
     const LAST = this.stops.length - 1;
     this.step = 0; this.u = 0;
-    // Steps are scrubbed by scroll — the pen draws as you scroll, eases with
-    // inertia, is capped near the designed drawing pace, and settles on the
-    // nearest step when the scroll stops. The axes intro stays on its own clock;
-    // the first scroll during it just completes it.
-    this.scrub = scrubber({ max: LAST, start: this.props.startAtEnd ? LAST : 0, unit: 760,
-      rateFor: seg => (reducedMotion ? 50 : 1.0) * 1000 / this.durs[Math.min(LAST, seg + 1)],   // the designed pace — never faster
-      gate: () => (this.p || 0) >= 1,
+    // Steps are scrubbed by scroll — the scroll position IS the pen: it draws as you scroll, a fast scroll passes
+    // several steps, scrolling back undraws mid-step, and when the scroll stops the step in the direction of
+    // travel completes (at least at its designed pace, never longer than ~0.6 s). The axes intro is the chapter's
+    // own entrance on its own clock; the first scroll during it completes it AND keeps going — never swallowed.
+    this.scrub = scrubber({ max: LAST, start: this.props.startAtEnd ? LAST : 0,
+      rateFor: seg => (reducedMotion ? 50 : 1.0) * 1000 / this.durs[Math.min(LAST, seg + 1)],   // the settle's floor: the designed pace
       onInput: () => { if ((this.p || 0) < 1) { cancelAnimationFrame(this.raf); this.p = 1; this.frame(); } },
       onEnd: d => { if (d > 0) this.props.onNext && this.props.onNext(); else this.props.onPrev && this.props.onPrev(); } });
     this.replay = () => { cancelAnimationFrame(this.raf); this.scrub.set(0); this.u = 0; this.step = 0; this.p = 0; this.frame(); document.documentElement.dataset.step = 0; go(); };
@@ -202,7 +201,8 @@ class Component extends DCLogic {
       root.querySelectorAll('foreignObject[data-m]').forEach(fo => { if (!fo.dataset.ox) fo.dataset.ox = fo.getAttribute('x'); fo.setAttribute('x', ph ? -5000 : fo.dataset.ox); });
     };
     this.fit();
-    this.on = () => { this.fit(); requestAnimationFrame(() => this.frame()); };
+    this.on = () => { this.fit(); this._bb = null; requestAnimationFrame(() => this.frame()); };
+    if (document.fonts) document.fonts.ready.then(() => { this._bb = null; });          // text boxes measured before Caveat arrived are stale
     window.addEventListener('resize', this.on);
     const loop = now => {
       const sPos = this.scrub.tick(now);
@@ -219,7 +219,9 @@ class Component extends DCLogic {
   componentWillUnmount() { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.lp); this.scrub.detach(); window.removeEventListener('keydown', this.onKey); window.removeEventListener('resize', this.on); }
   frame() {
     const sc = this.sc.current, svg = this.svg.current; if (!sc || !svg || !this.paths) return;
-    const q = s => sc.querySelector(s);
+    // lookups, text boxes and pen points are cached: this runs every frame while the map scrubs
+    const qc = this._qc || (this._qc = new Map()), bb = this._bb || (this._bb = {}), pk = this._pk || (this._pk = {});
+    const q = s => { let el = qc.get(s); if (el === undefined || (el && !el.isConnected)) { el = sc.querySelector(s); qc.set(s, el); } return el; };
     const cl = v => Math.max(0, Math.min(1, v)), ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     const on = (this.p || 0) >= 1, u = on ? (this.u || 0) : 0;
     const T = on ? 1 + u : (this.p || 0);
@@ -236,13 +238,14 @@ class Component extends DCLogic {
     const pos = (id, k) => {
       if (id === 'park') return [1100, 720];
       if (/^t\d$/.test(id)) {
-        const i = +id[1], t = q(`[data-t="${i}"]`), b = t.getBBox(), w = b.width * k;
+        const i = +id[1], t = q(`[data-t="${i}"]`), b = bb[i] || (bb[i] = t.getBBox()), w = b.width * k;
         q(`[data-cr="${i}"]`).setAttribute('x', b.x - 2);
         q(`[data-cr="${i}"]`).setAttribute('width', w + 4);
         return [b.x + w, b.y + b.height * .72 + Math.sin(k * 46) * 5];
       }
       const P = this.paths[id]; P.el.style.strokeDashoffset = P.L * (1 - k); P.el.style.opacity = k > 0 ? 1 : 0;
-      const pt = P.el.getPointAtLength(P.L * k); return [pt.x, pt.y];
+      const m = pk[id]; if (m && m[0] === k) return m[1];
+      const pt = P.el.getPointAtLength(P.L * k), xy = [pt.x, pt.y]; pk[id] = [k, xy]; return xy;
     };
     let hand = null, prevEnd = [1100, 720], nextStart = null, gapA = 0, gapB = 0;
     S.forEach(([id, a, b]) => {

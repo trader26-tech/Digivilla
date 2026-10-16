@@ -34,8 +34,8 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-back i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#E1E0CC;color:#0b0c12}
 .xpl-skip{padding:0 16px;background:transparent;font-size:13px;font-weight:500;color:rgba(225,224,204,.8);box-shadow:inset 0 0 0 1px rgba(225,224,204,.18)}
 .xpl-prog{flex:none;display:flex;gap:5px;margin-top:14px}
-.xpl-prog span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s}
-.xpl-prog span.done{background:rgba(246,196,69,.45)}.xpl-prog span.on{background:#f6c445}
+.xpl-prog>span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s}
+.xpl-prog>span.done{background:rgba(246,196,69,.45)}.xpl-prog>span.on{background:#f6c445}
 .xpl-graph{flex:1;min-height:0;position:relative;cursor:pointer}
 .xpl-svg{position:absolute;left:0;top:10px;width:100%;height:calc(100% - 20px);overflow:visible}
 .xpl-svg [data-in]{opacity:0}
@@ -56,7 +56,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-cap .b{font-size:15px;line-height:1.45;color:rgba(255,246,234,.7)}
 .xpl-cap .list{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:rgba(255,246,234,.75)}
 .xpl-cap .list b{font-weight:600}.xpl-cap .g{color:#8fd65a}.xpl-cap .r{color:#e2725b}
-.xpl-cap .tick{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:#fff6ea}.xpl-cap .tick span{display:flex;gap:10px}.xpl-cap .tick b{font-weight:600}
+.xpl-cap .tick{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:#fff6ea}.xpl-cap .tick>span{display:flex;gap:10px}.xpl-cap .tick b{font-weight:600}
 .xpl-title{font-family:Caveat,cursive;font-size:34px;font-weight:700;color:#fbdb81}
 .xpl-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 20px;border-radius:999px;border:0;font:inherit;cursor:pointer;background:#E1E0CC;color:#0b0c12;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 0 30px rgba(255,214,150,.35);animation:xplGlow 2.4s ease-in-out infinite}
 .xpl-cta i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
@@ -68,7 +68,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-calc{position:fixed;inset:0;z-index:20;--pvh:100%;background:#0b0c12;transform:translate3d(0,100%,0);visibility:hidden;will-change:transform;transition:transform .55s cubic-bezier(.2,.8,.2,1),visibility 0s linear .55s}
 .xpl-calc.open{transform:none;visibility:visible;transition:transform .55s cubic-bezier(.2,.8,.2,1),visibility 0s}
 .xpl-calc>.sc-host{height:100%}
-@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog span{transition:none}.xpl-foot .sw svg,.xpl-cta{animation:none}}
+@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span{transition:none}.xpl-foot .sw svg,.xpl-cta{animation:none}}
 </style>
 </helmet>
 <div class="xpl">
@@ -198,7 +198,7 @@ class Component extends DCLogic {
   }
   componentDidMount() {
     const r = this.root.current; if (!r) return;
-    this.s = -1; this.lock = 0;
+    this.s = -1;
     const rm = reducedMotion, k = rm ? 0 : 1;
     try { this.wobble(this.svgRef.current); } catch (e) { console.warn('wobble', e); }
     // one step → what enters draws itself (pen) or pops; what leaves fades; captions slide in from the side they come from
@@ -233,21 +233,39 @@ class Component extends DCLogic {
       return maxT;
     };
     this.go = dir => {
-      if (this.state.calcOpen || this.leaving) return;
+      if (this.state.calcOpen || this.leaving) return false;
       const n = Math.max(0, Math.min(this.N - 1, this.s + dir));
-      if (n === this.s) return;
-      const now = performance.now();
-      if (dir > 0 && now < this.lock) return;                      // let the drawing land before the next step
+      if (n === this.s) return false;
+      // never gated: a step's drawing plays at its designed pace, but the next input steps at once (the
+      // drawing still under way simply carries on, or fades if that step leaves)
       const prev = this.s; this.s = n;
-      const t = this.apply(n, prev);
-      this.lock = now + Math.min(1400, t * 600);
+      this.apply(n, prev);
       document.documentElement.dataset.step = String(n);
       try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+      return true;
     };
-    let acc = 0, gate = 0, ty = null, tx = null;
-    this.onWheel = e => { e.preventDefault(); const now = performance.now(); acc += e.deltaY; if (now > gate && Math.abs(acc) > 40) { this.go(acc > 0 ? 1 : -1); gate = now + 750; acc = 0; } };
-    this.onTS = e => { ty = e.touches[0].clientY; tx = e.touches[0].clientX; };
-    this.onTE = e => { if (ty == null) return; const t = e.changedTouches[0], dy = t.clientY - ty, dx = t.clientX - tx; ty = null; if (Math.abs(dy) < 40 || Math.abs(dx) > Math.abs(dy)) return; this.go(dy < 0 ? 1 : -1); };
+    // the scroll drives the steps: a mouse notch = one step, a trackpad steps every 160 px it travels (so a fast
+    // flick passes several); a swipe steps as soon as it has moved 40 px and again every 170 px after that,
+    // and bringing the finger back undoes them — reversing works mid-gesture
+    let acc = 0, wLast = -1e9, ty = null, tx = null, done = 0, side = null;
+    this.onWheel = e => {
+      e.preventDefault(); if (e.ctrlKey) return;
+      const now = e.timeStamp || performance.now(), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
+      if (now - wLast > 300 || Math.sign(dy) !== Math.sign(acc)) acc = 0; wLast = now;
+      if (Math.abs(dy) >= 50) { this.go(dy > 0 ? 1 : -1); acc = 0; return; }
+      acc += dy; while (Math.abs(acc) >= 160) { this.go(acc > 0 ? 1 : -1); acc -= 160 * Math.sign(acc); }
+    };
+    this.onTS = e => { ty = e.touches[0].clientY; tx = e.touches[0].clientX; done = 0; side = null; };
+    this.onTM = e => {
+      if (ty == null) return;
+      const t = e.touches[0], dy = ty - t.clientY, dx = t.clientX - tx;
+      if (side == null && Math.max(Math.abs(dx), Math.abs(dy)) > 8) side = Math.abs(dx) > Math.abs(dy);
+      if (side !== false) return;
+      const n = Math.sign(dy) * (Math.abs(dy) >= 40 ? 1 + Math.floor((Math.abs(dy) - 40) / 170) : 0);
+      while (done < n && this.go(1)) done++;
+      while (done > n && this.go(-1)) done--;
+    };
+    this.onTE = () => { ty = null; };
     this.onKey = e => {
       if (e.key === 'Escape') { if (this.state.calcOpen) this.closeCalc(); else this.leave('index.dc.html'); return; }
       if (this.state.calcOpen) return;
@@ -256,7 +274,8 @@ class Component extends DCLogic {
     };
     r.addEventListener('wheel', this.onWheel, { passive: false });
     r.addEventListener('touchstart', this.onTS, { passive: true });
-    r.addEventListener('touchend', this.onTE, { passive: true });
+    r.addEventListener('touchmove', this.onTM, { passive: true });
+    r.addEventListener('touchend', this.onTE, { passive: true }); r.addEventListener('touchcancel', this.onTE, { passive: true });
     addEventListener('keydown', this.onKey);
     // the axes draw themselves as the veil lifts (fonts + first paint in)
     ready.then(() => setTimeout(() => { if (this.s < 0 && !this.dead) this.go(1); }, 150));
@@ -267,7 +286,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     this.dead = true;
     const r = this.root.current;
-    if (r) { r.removeEventListener('wheel', this.onWheel); r.removeEventListener('touchstart', this.onTS); r.removeEventListener('touchend', this.onTE); }
+    if (r) { r.removeEventListener('wheel', this.onWheel); r.removeEventListener('touchstart', this.onTS); r.removeEventListener('touchmove', this.onTM); r.removeEventListener('touchend', this.onTE); r.removeEventListener('touchcancel', this.onTE); }
     removeEventListener('keydown', this.onKey);
   }
   openCalc() {

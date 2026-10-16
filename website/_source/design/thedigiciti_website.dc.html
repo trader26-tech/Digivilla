@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/styles.css">
   <script src="_ds/digivilla-design-system-6b341fe6-8a81-4528-a299-1cfcf6fd6497/_ds_bundle.js"></script>
   <script src="part-transitions.js"></script>
-  <script>(function(){if(!window.tdcVeil||innerWidth<=700)return;var c=navigator.connection||{},slow=c.saveData||/2g|3g/.test(c.effectiveType||'');var go=function(){window.tdcVeil.prefetch(["story.dc.html","story-2-map.dc.html","story-3-numbers.dc.html"].concat(slow?[]:["assets/fonts/Caveat-700-latin.woff2"]));};('requestIdleCallback' in window)?requestIdleCallback(go,{timeout:4000}):setTimeout(go,3000);})();</script>
+  <script>/* laptops: the story's pages + its pen font are prefetched once the landing is idle, unless the visitor saves data (Save-Data / slow connection where the browser says so). Phones prefetch nothing here: the Explore page is fetched when the explore gesture begins (landing-mobile). */(function(){if(innerWidth<=700)return;var c=navigator.connection;if(c&&(c.saveData||/2g|3g/.test(c.effectiveType||'')))return;if(window.matchMedia&&matchMedia('(prefers-reduced-data: reduce)').matches)return;var run=function(){["story.dc.html","story-2-map.dc.html","story-3-numbers.dc.html"].forEach(function(u){var l=document.createElement('link');l.rel='prefetch';l.href=u;document.head.appendChild(l);});["Caveat-700-latin"].forEach(function(f){var l=document.createElement('link');l.rel='prefetch';l.as='font';l.type='font/woff2';l.crossOrigin='anonymous';l.href='assets/fonts/'+f+'.woff2';document.head.appendChild(l);});};var idle=function(){window.requestIdleCallback?requestIdleCallback(run,{timeout:4000}):setTimeout(run,1500);};if(document.readyState==='complete')idle();else addEventListener('load',idle);})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Instrument+Serif:ital@1&display=swap">
   <style>
@@ -21,6 +21,8 @@
     [data-rise]{opacity:0}
     @supports (height:100dvh){[data-screen-label="TheDigiCiti Landing"],#showcase{height:100dvh!important}}
     @media (max-width:700px){[data-scroller]{overscroll-behavior:none}}
+    /* laptops scroll natively, with NO scroll-snap: measured 2026-10-17, even `proximity` snap points at the hero end / showcase / footer
+       trapped mouse-wheel scrolling (each 100 px notch near a snap point was pulled back to it) and added 200–600 ms stalls */
     @media (max-width:700px){
       [data-m="head"],[data-m="caps"]{display:none!important}
       [data-m="mhead"]{display:flex!important}
@@ -282,8 +284,7 @@ class Component extends DCLogic {
     paint(this.frontRef, this.makeClouds(420, 180, 101, { persp: 1.2, fx: 2.6, fy: 1.3, th: .52, topFade: 4, sx: .95, sy: -.6, haze: .1 }));
     this.mx = 0; this.my = 0; this.sm = { x: 0, y: 0 }; this.sp = 0;
     const rm = reducedMotion;
-    // inertia on the page scroll (Lenis-style); touch and keys stay native
-    this.ss = rm || !this.scrollRef.current ? null : smoothScroll(this.scrollRef.current);
+    // the page scrolls natively (no inertia layer on top — it added latency and fought the trackpad's own momentum)
     // The hero is a pure scroll-scrub (the front-page handoff): the scroll position IS the timeline, nothing scrolls by itself.
     this.onMove = e => { if (rm) return; this.mx = e.clientX / innerWidth - .5; this.my = e.clientY / innerHeight - .5; };
     addEventListener('mousemove', this.onMove);
@@ -311,6 +312,12 @@ class Component extends DCLogic {
     ready.then(async () => {
       const show = el => { if (!el) return; el.style.transition = 'opacity .9s cubic-bezier(.16,1,.3,1)'; el.getBoundingClientRect(); el.style.opacity = '1'; };
       show(hero);
+      // prepare what is below before it is needed (laptops): fetch + decode the showcase's screens off the main
+      // thread once the landing is idle, so the sections never decode/raster for the first time mid-scroll
+      if (!this.state.mobile && 'requestIdleCallback' in window) this.prep = requestIdleCallback(() => {
+        document.querySelectorAll('#showcase img').forEach(i => { i.loading = 'eager'; if (i.decode) i.decode().catch(() => {}); });
+      }, { timeout: 2500 });
+      else if (!this.state.mobile) setTimeout(() => document.querySelectorAll('#showcase img').forEach(i => { i.loading = 'eager'; }), 1500);
     });
     const start = [[.13, .50, .78], [.31, .40, .86], [.50, .32, .94], [.69, .40, .86], [.87, .50, .78]];
     const clamp = v => Math.max(0, Math.min(1, v)), ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -318,9 +325,9 @@ class Component extends DCLogic {
     const tick = t => {
       // smoothing is time-based, so the feel is the same at 30, 60 or 120 Hz
       const dt = Math.min(.05, (t - prevT) / 1000); prevT = t;
+      if (this.state.mobile) { this.raf = requestAnimationFrame(tick); return; }   // phones: landing-mobile runs the page
       const k = rm ? 0 : t / 1000, sm = this.sm, sc = this.scrollRef.current, fr = this.frameRef.current;
-      if (this.ss) this.ss.tick(dt);
-      const aM = 1 - Math.exp(-dt * 3), aP = 1 - Math.exp(-dt * 7.7);
+      const aM = 1 - Math.exp(-dt * 3), aP = rm ? 1 : 1 - Math.exp(-dt * 12);   // the morph follows the native scroll with only a short ease
       sm.x += (this.mx - sm.x) * aM; sm.y += (this.my - sm.y) * aM;
       const track = sc && (this.trackEl || (this.trackEl = sc.querySelector('[data-hero-track]')));
       const range = sc ? Math.max(1, (track ? track.clientHeight : sc.clientHeight * 2.8) - sc.clientHeight) : 1;   // how far the hero scrolls before the showcase
@@ -361,9 +368,13 @@ class Component extends DCLogic {
       // where the four stages settle: a row on wide screens, two rows on a phone
       const end = phone ? [[.12, .42, 1.05], [.31, .33, 1.12], [.69, .33, 1.12], [.88, .42, 1.05]] : [[.12, .5, 1.05], [.29, .41, 1.12], [.71, .41, 1.12], [.88, .5, 1.05]];
       const e = ease(clamp((p - .14) / .6));
+      // element sizes are read once per frame-size change, not every frame (a layout read after style writes
+      // forces a synchronous style + layout pass — on a slow laptop that is the frame budget)
+      const dk = W + 'x' + H;
+      if (this.dimsKey !== dk || !this.dims || !(this.fr = ((this.fr || 0) + 1) % 90)) { this.dimsKey = dk; this.dims = tiles.map(r => r.current ? [r.current.offsetWidth, r.current.offsetHeight] : [0, 0]); const vv = this.villaRef.current; this.vDims = vv ? [vv.offsetWidth, vv.offsetHeight] : [0, 0]; }
       tiles.forEach((r, i) => {
         const el = r.current; if (!el) return;
-        const w = el.offsetWidth, hh = el.offsetHeight;
+        const [w, hh] = this.dims[i];
         let x, y, s, op;
         // stage 05 is the hero villa itself (below) — this tile only lends its size
         if (i === 4) { if (el.__o !== 0) { el.style.opacity = 0; el.__o = 0; el.style.pointerEvents = 'none'; } return; }
@@ -372,27 +383,26 @@ class Component extends DCLogic {
           x = cx + (ex - cx) * ei; y = cy + (ey - cy) * ei - Math.sin(ei * Math.PI) * .07; s = .5 + (es - .5) * ei; op = clamp(ei * 3);
         }
         const bob = Math.sin(k * .8 + i * 1.3) * 6 * e;
-        el.style.transform = 'translate(' + (x * W - w / 2 - sm.x * (18 + i * 4) * e) + 'px,' + (y * H - hh / 2 + bob - sm.y * 10 * e) + 'px) scale(' + s + ')';
-        el.style.opacity = op;
-        el.style.zIndex = i === 4 ? 3 : 2;
-        labels[i].forEach(l => { l.style.opacity = i === 4 ? 0 : clamp((p - .66) / .18); l.style.transform = 'translateX(-50%) scale(' + (1 / s) + ')'; l.style.transformOrigin = '50% 0'; });
+        setEl(el, 'translate(' + (x * W - w / 2 - sm.x * (18 + i * 4) * e).toFixed(1) + 'px,' + (y * H - hh / 2 + bob - sm.y * 10 * e).toFixed(1) + 'px) scale(' + s.toFixed(4) + ')', +op.toFixed(3));
+        if (!el.__z) { el.style.zIndex = 2; el.__z = 1; }
+        labels[i].forEach(l => { if (!l.__to) { l.style.transformOrigin = '50% 0'; l.__to = 1; } setEl(l, 'translateX(-50%) scale(' + (1 / s).toFixed(4) + ')', +clamp((p - .66) / .18).toFixed(3)); });
       });
       const v = this.villaRef.current;
       if (v) {
         // ONE villa: the hero shrinks and settles into the middle of the row as the
         // four stages fly out around it — no cross-fade, so it never reads as two.
-        const t4 = tiles[4].current, tileW = t4 && t4.offsetWidth ? t4.offsetWidth * (phone ? 1.4 : 1.5) : v.offsetWidth * .6;
-        const s = 1 + (tileW / v.offsetWidth - 1) * e;
+        const [vw, vh] = this.vDims, t4w = this.dims[4][0], tileW = t4w ? t4w * (phone ? 1.4 : 1.5) : vw * .6;
+        const s = 1 + (tileW / (vw || 1) - 1) * e;
         const bobV = Math.sin(k * .7) * 7 * (1 - e) + Math.sin(k * .8 + 5.2) * 6 * e;
-        v.style.transform = 'translate(' + (cx * W - v.offsetWidth / 2 - sm.x * (34 - 16 * e)) + 'px,' + ((cy - .02 * e) * H - v.offsetHeight / 2 + bobV - sm.y * (14 - 4 * e)) + 'px) scale(' + s + ')';
-        if (v.__o !== 1) { v.style.opacity = 1; v.__o = 1; }
+        setEl(v, 'translate(' + (cx * W - vw / 2 - sm.x * (34 - 16 * e)).toFixed(1) + 'px,' + ((cy - .02 * e) * H - vh / 2 + bobV - sm.y * (14 - 4 * e)).toFixed(1) + 'px) scale(' + s.toFixed(4) + ')', 1);
       }
       set(this.coinRef, 'translateY(' + (Math.sin(k * 1.4) * 8) + 'px) rotateY(' + (k * 70 % 360) + 'deg)', clamp((p - .7) / .2));
-      if (this.glowRef.current) this.glowRef.current.style.opacity = 1 - clamp(p / .5) * .6;
+      const gl = this.glowRef.current; if (gl) { const o = +(1 - clamp(p / .5) * .6).toFixed(3); if (gl.__o !== o) { gl.style.opacity = o; gl.__o = o; } }
       const a = this.copyA.current, b = this.copyB.current;
-      if (a) { const o = 1 - clamp(p / .2); a.style.opacity = o; a.style.transform = 'translateY(' + (-p * H * .12) + 'px)'; a.style.pointerEvents = o < .1 ? 'none' : 'auto'; }
-      const pr = this.pulseRef.current; if (pr) { const ph = (k % 2.6) / 2.6; pr.style.opacity = .55 + .45 * Math.sin(k * 1.6); }
-      if (b) { const o = clamp((p - .74) / .18); b.style.opacity = o; b.style.transform = 'translateY(' + ((1 - o) * 30) + 'px)'; b.style.pointerEvents = o > .5 ? 'auto' : 'none'; }
+      const pe = (el, v) => { if (el.__pe !== v) { el.style.pointerEvents = v; el.__pe = v; } };
+      if (a) { const o = +(1 - clamp(p / .2)).toFixed(3); setEl(a, 'translateY(' + (-p * H * .12).toFixed(1) + 'px)', o); pe(a, o < .1 ? 'none' : 'auto'); }
+      const pr = this.pulseRef.current; if (pr) pr.style.opacity = (.55 + .45 * Math.sin(k * 1.6)).toFixed(3);
+      if (b) { const o = +clamp((p - .74) / .18).toFixed(3); setEl(b, 'translateY(' + ((1 - o) * 30).toFixed(1) + 'px)', o); pe(b, o > .5 ? 'auto' : 'none'); }
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
@@ -403,11 +413,11 @@ class Component extends DCLogic {
       setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, 60 + d);
     }));
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ss && this.ss.destroy(); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.onBreak); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); window.cancelIdleCallback && this.prep && cancelIdleCallback(this.prep); removeEventListener('mousemove', this.onMove); removeEventListener('resize', this.onBreak); removeEventListener('resize', this.fitStage); this.io && this.io.disconnect(); }
   renderVals() {
     const r = { mobile: this.state.mobile, desktop: !this.state.mobile }; ['veilRef','pulseRef','showStage','showRig','scrollRef','frameRef','farRef','nearRef','frontRef','villaRef','coinRef','glowRef','sunRef','sunDisc','copyA','copyB','t0','t1','t2','t3','t4'].forEach(n => r[n] = this[n]);
     r.goExplore = e => { e.preventDefault(); if (this.leaving) return; this.leaving = true; const fr = this.frameRef.current; if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(38vh) scale(1.08)'; } const b = this.copyB.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; } try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {} window.tdcVeil && window.tdcVeil.go('story.dc.html', { style: 'sky' }); };
-    const glide = id => e => { e.preventDefault(); const a = document.getElementById(id), sc = this.scrollRef.current; if (!a || !sc) return; if (this.ss && !matchMedia('(pointer: coarse)').matches) this.ss.scrollTo(a.offsetTop); else sc.scrollTo({ top: a.offsetTop, behavior: 'smooth' }); };
+    const glide = id => e => { e.preventDefault(); const a = document.getElementById(id), sc = this.scrollRef.current; if (!a || !sc) return; sc.scrollTo({ top: a.offsetTop, behavior: reducedMotion ? 'auto' : 'smooth' }); };
     r.goCalc = glide('calculator'); r.goApp = glide('showcase');
     return r;
   }

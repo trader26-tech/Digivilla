@@ -12,9 +12,10 @@
    One pinned dusk-sky frame scrubbed by 160svh of scroll (p 0→1): the hero villa shrinks into the
    bottom slot of a vertical column of five build-stage tiles on the left, labels to their right,
    a gold spine joining them, and a tall glass capsule on the right — "THE NRI STORY · Explore ·
-   SWIPE UP". The page moves in complete states, one per swipe: cover → the column (the 1.9 s
-   play) → swipe up again (or tap the capsule) and the five stages light up villa-first, the
-   gold fill climbs the spine and the page leaves for the story. Art = the app's own stage tiles
+   TAP TO OPEN". The finger scrubs the morph directly and the page rests only in complete states,
+   one per swipe: cover → the column (settles in ≤ .6 s when the finger lifts) → the app → the
+   calculator → the footer, like any page. The capsule is a button: a tap lights the five stages
+   villa-first, the gold fill climbs the spine and the page leaves for the Explore lesson. Art = the app's own stage tiles
    (vector), glows are gradients (no CSS filters on anything that moves). */
 .mfp{position:relative;max-width:480px;margin:0 auto;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;color:#E1E0CC;-webkit-tap-highlight-color:transparent}
 .mfp a{color:#E1E0CC;text-decoration:none}
@@ -55,7 +56,7 @@
 .mfp-nav button{width:44px;height:44px;border:0;border-radius:14px;background:#14131a;color:#E1E0CC;display:grid;place-items:center;cursor:pointer;padding:0;font:inherit}
 .mfp-menu{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;padding:24px 24px 32px;background:rgba(6,6,14,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .mfp-menu header{display:flex;justify-content:space-between;align-items:center}
-.mfp-menu header span{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,226,170,.9)}
+.mfp-menu header>span{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,226,170,.9)}
 .mfp-menu header button{width:44px;height:44px;border:0;border-radius:50%;background:#E1E0CC;color:#000;display:grid;place-items:center;cursor:pointer;padding:0;font:inherit}
 .mfp-menu .links{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
 .mfp-menu .links a{font-size:44px;letter-spacing:-.05em;line-height:1.15;background:none;border:0;padding:0;text-align:left;font:inherit;font-size:44px;color:#E1E0CC;cursor:pointer}
@@ -79,12 +80,15 @@
 .mfp-capsule .kicker{font-size:11px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,226,170,.95)}
 .mfp-shine{font-size:clamp(50px,17vw,80px);font-size:clamp(50px,min(17vw,8.5svh),80px);font-weight:400;line-height:.9;letter-spacing:-.05em;padding:.08em 0;color:transparent;background:linear-gradient(90deg,#cdb894 0%,#E1E0CC 35%,#fffaf0 50%,#E1E0CC 65%,#cdb894 100%);background-size:100% 300%;-webkit-background-clip:text;background-clip:text}
 .mfp-capsule .bottom{display:flex;flex-direction:column;align-items:center;gap:8px}
-.mfp-holdLbl{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,226,170,.95)}
+.mfp-holdLbl{max-width:80px;font-size:11px;font-weight:700;line-height:1.45;letter-spacing:.24em;text-align:center;text-transform:uppercase;color:rgba(255,226,170,.95)}
 .mfp-knob{position:relative;flex:none;width:76px;height:76px;display:grid;place-items:center;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .mfp-knob svg.ring{position:absolute;inset:0;transform:rotate(-90deg);overflow:visible}
 .mfp-knob .btn{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:#E1E0CC;color:#000;box-shadow:0 0 0 1px rgba(255,236,200,.8),0 0 36px rgba(255,214,150,.6),0 14px 26px -10px rgba(0,0,0,.6)}
-.mfp-caption{position:absolute;left:6.5%;right:34%;bottom:3.5%;font-size:13px;line-height:1.4;color:rgba(225,224,204,.75)}.mfp-caption .serif{font-size:1.15em;color:#E1E0CC}
+.mfp-caption{position:absolute;left:6.5%;right:34%;bottom:3.5%;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.4;color:rgba(225,224,204,.75)}
+.mfp-caption .more{display:flex;white-space:nowrap;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(225,224,204,.6)}.mfp-caption .serif{font-size:1.15em;color:#E1E0CC}
 @media (prefers-reduced-motion:reduce){.mfp [data-rise],.mfp-knob{transition:none}}
+/* short phones (SE, small Androids, Safari with its bars): a smaller knob and word so the capsule holds them, and the column's caption gives way to the scroll hint */
+@media (max-height:700px){.mfp-knob,.mfp-knob svg.ring{width:58px;height:58px}.mfp-knob .btn{width:46px;height:46px}.mfp-shine{font-size:clamp(42px,min(15vw,6.8svh),70px)}.mfp-capsule .top{gap:8px}.mfp-caption>span:first-child{display:none}}
 </style>
 </helmet>
 <div class="mfp">
@@ -151,14 +155,14 @@
 <span class="top"><span class="dot"></span><span class="kicker vert">The NRI story</span></span>
 <span ref="{{ shineRef }}" class="mfp-shine vert">Explore</span>
 <span class="bottom">
-<span ref="{{ holdLblRef }}" class="mfp-holdLbl">Tap</span>
+<span ref="{{ holdLblRef }}" class="mfp-holdLbl">Tap to open</span>
 <span ref="{{ knobRef }}" class="mfp-knob">
 <svg class="ring" viewBox="0 0 76 76" width="76" height="76"><circle cx="38" cy="38" r="35" fill="none" stroke="rgba(255,236,205,.22)" stroke-width="2"></circle><circle ref="{{ ringRef }}" cx="38" cy="38" r="35" fill="none" stroke="#fbdb81" stroke-width="3" stroke-linecap="round" stroke-dasharray="219.9" stroke-dashoffset="219.9"></circle></svg>
-<span class="btn"><svg ref="{{ arrowRef }}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span>
+<span class="btn"><svg ref="{{ arrowRef }}" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
 </span>
 </span>
 </a>
-<span class="mfp-caption">Every villa, <span class="serif">five stages</span> in the making.</span>
+<span class="mfp-caption"><span>Every villa, <span class="serif">five stages</span> in the making.</span><span class="more" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>Swipe up for the app</span></span>
 </div>
 </div>
 </div>
@@ -209,7 +213,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this.setVH = () => { const sc = this.scroller(); if (sc && sc.clientHeight) { const v = sc.clientHeight + 'px'; if (sc.__vh !== v) { sc.style.setProperty('--pvh', v); sc.__vh = v; } } };
-    this.setVH(); addEventListener('resize', this.setVH); addEventListener('orientationchange', this.setVH);
+    this.setVH(); this.onDim = () => { this.dm = null; }; addEventListener('resize', this.onDim); addEventListener('resize', this.setVH); addEventListener('orientationchange', this.setVH);
     const paint = (ref, tex) => { const c = ref.current; if (!c) return; c.width = tex.width; c.height = tex.height; c.getContext('2d').drawImage(tex, 0, 0); };
     paint(this.farRef, this.makeClouds(240, 90, 7, { persp: 3, fx: 3.2, fy: 1.6, th: .5, topFade: 6, sx: .86, sy: 0, haze: .55 }));
     paint(this.nearRef, this.makeClouds(280, 150, 31, { persp: 1.6, fx: 2.8, fy: 1.5, th: .46, topFade: 5, sx: .9, sy: -.3, haze: .25 }));
@@ -221,19 +225,22 @@ class Component extends DCLogic {
     addEventListener('deviceorientation', this.onTilt);
     // swipe-up-to-explore: `hold` is the cascade (0 → 1 in .9 s) that lights the stages villa-first and fills the spine
     this.hold = 0; this.cascading = false; let litMin = 5, last = 0;
-    this.startExplore = () => { if (this.leaving || this.cascading) return; this.cascading = true; try { navigator.vibrate && navigator.vibrate(8); } catch (_) {} };
-    this.atColumn = () => { const sc = this.scroller(); if (!sc) return false; const tr = sc.querySelector('[data-hero-track]'); const R = tr ? tr.clientHeight - sc.clientHeight : 0; return Math.abs(sc.scrollTop - R) < 6 && (this.p || 0) > .96; };
+    this.startExplore = () => { if (this.leaving || this.cascading) return; this.cascading = true; this.prefetchExplore && this.prefetchExplore(); try { navigator.vibrate && navigator.vibrate(8); } catch (_) {} };
+    this.atColumn = () => {   // (kept for tests / callers; scrolling no longer explores)
+      const sc = this.scroller(); if (!sc) return false; const tr = sc.querySelector('[data-hero-track]'); const R = tr ? tr.clientHeight - sc.clientHeight : 0; return Math.abs(sc.scrollTop - R) < 6 && (this.p || 0) > .96; };
     const SCRUB_VH = 1.6, CX = .5, CY = .37;
     const SLOT = [[.22, .15], [.22, .31], [.22, .47], [.22, .63], [.22, .79]];
-    // ONE swipe = one complete state. cover → the column (the hero → column play, 1.9 s) → swipe up again = the
-    // stages light up and the page leaves for the story. The app showcase, the calculator and the footer sit
-    // below as pages (reached from the menu and from the end of the story); any deliberate swipe (12 px) moves
-    // one page with an eased scroll; nothing is ever left part-way and a short swipe never bounces back. Inner
-    // scrollers keep their own native gestures: the phone rail sideways, the calculator's content until an end.
+    // The finger drives the page. On the cover it scrubs the hero → column morph directly (half a screen of
+    // finger = the whole morph, so one comfortable swipe crosses it); below, it moves the pages 1:1. When the
+    // finger lifts, the page settles on the complete state in the direction it was last moving (any deliberate
+    // move commits — a short swipe never bounces back), in at most 600 ms, and a new touch takes it over at
+    // once. One touch moves at most one state: cover → column → the app showcase (its phones step first) →
+    // the calculator → the footer, and back. Scrolling never leaves the page: the Explore lesson opens only
+    // from a tap on the capsule (or the menu). Inner controls keep their own touches.
     {
       const sc0 = this.scroller();
       const rangeOf = () => { const tr = sc0 && sc0.querySelector('[data-hero-track]'); return tr ? tr.clientHeight - sc0.clientHeight : (sc0 ? sc0.clientHeight * SCRUB_VH : 1); };
-      const easeIO = t => -(Math.cos(Math.PI * t) - 1) / 2;
+      const easeOut = t => 1 - Math.pow(1 - t, 3);
       const offs = el => { let t = 0; for (let n = el; n && n !== sc0; n = n.offsetParent) t += n.offsetTop; return t; };
       const pages = () => {
         const R = rangeOf(), max = Math.max(0, sc0.scrollHeight - sc0.clientHeight);
@@ -242,59 +249,119 @@ class Component extends DCLogic {
         if (app) list.push(offs(app)); if (calc) list.push(offs(calc)); if (foot) list.push(Math.min(max, offs(foot)));
         return list.filter((v, i, a) => i === 0 || v > a[i - 1] + 4);
       };
+      const nearestIdx = (P, y) => { let k = 0; P.forEach((v, i) => { if (Math.abs(v - y) < Math.abs(P[k] - y)) k = i; }); return k; };
+      this.restAt = 0; this.settling = false;
+      // glide to a complete state: ease-out (it carries the finger's speed), ≤ 600 ms, cancelled by any touch
+      this.settleTo = (to, dir) => {
+        const sc = this.scroller(); if (!sc) return;
+        cancelAnimationFrame(this.settleRaf);
+        const from = sc.scrollTop, R = rangeOf(), dist = Math.abs(to - from);
+        const show = document.querySelector('.msh');
+        if (show && show.__enter && Math.abs(to - offs(show)) < 2 && Math.abs(from - to) > sc.clientHeight * .5) show.__enter(dir || (to > from ? 1 : -1));
+        this.settleTarget = to;
+        const done = () => { sc.scrollTop = to; this.settling = false; this.restAt = performance.now(); if (Math.abs(to - R) < 2) this.prefetchExplore(); };
+        if (dist < 1 || reducedMotion) { done(); return; }
+        const seg = Math.max(from, to) <= R + 1 ? R : sc.clientHeight;
+        const D = Math.min(600, 200 + 400 * dist / Math.max(1, seg)), t0 = performance.now();
+        this.settling = true;
+        const step = now => {
+          if (!this.settling) return;
+          const u = Math.min(1, (now - t0) / D); sc.scrollTop = from + (to - from) * easeOut(u);
+          if (u < 1) this.settleRaf = requestAnimationFrame(step); else done();
+        };
+        this.settleRaf = requestAnimationFrame(step);
+      };
       this.goPage = (dir, quick) => {                                              // dir 0 = settle on the nearest page
         const sc = this.scroller(); if (!sc) return;
-        const P = pages(), top = sc.scrollTop, R = rangeOf();
-        let cur = 0; P.forEach((v, i) => { if (Math.abs(v - top) < Math.abs(P[cur] - top)) cur = i; });
-        // forward goes to the first page below the current position, back to the last page above it (so a page
-        // left part-way is completed first); 0 settles on the nearest
-        let nxt = cur;
+        const P = pages(), top = sc.scrollTop;
+        let nxt = nearestIdx(P, top);
         if (dir > 0) { nxt = P.findIndex(v => v > top + 4); if (nxt < 0) nxt = P.length - 1; }
         else if (dir < 0) { nxt = -1; P.forEach((v, i) => { if (v < top - 4) nxt = i; }); if (nxt < 0) nxt = 0; }
-        const to = P[nxt], from = top; if (Math.abs(to - from) < 1) return;
-        if (quick) { sc.scrollTop = to; return; }
-        this.animating = true;
-        const coverPlay = Math.max(from, to) <= R + 1;                              // within the cover: the designed play; between pages: a glide
-        const D = dir === 0 ? 450 : coverPlay ? 400 + 1500 * Math.abs(to - from) / R : 850, t0 = performance.now();
-        const show = document.querySelector('.msh'); if (show && show.__enter && Math.abs(to - offs(show)) < 2) show.__enter(dir);
-        const step = now => {
-          const u = Math.min(1, (now - t0) / D); sc.scrollTop = from + (to - from) * easeIO(u);
-          if (u < 1 && this.animating) requestAnimationFrame(step); else { sc.scrollTop = to; this.animating = false; }
-        };
-        requestAnimationFrame(step);
+        if (quick) { cancelAnimationFrame(this.settleRaf); this.settling = false; sc.scrollTop = P[nxt]; return; }
+        this.settleTo(P[nxt], dir);
+      };
+      // the Explore page (and its pen font) is fetched only once the visitor heads for it
+      this.prefetchExplore = () => {
+        if (this.pf) return; this.pf = true;
+        [['explore.dc.html'], ['assets/fonts/Caveat-700-latin.woff2', 'font']].forEach(([href, as]) => {
+          const l = document.createElement('link'); l.rel = 'prefetch'; l.href = href;
+          if (as) { l.as = as; l.type = 'font/woff2'; l.crossOrigin = 'anonymous'; }
+          document.head.appendChild(l);
+        });
       };
       if (sc0) {
-        let y0 = 0, x0 = 0, armed = false, rail = null, inner = null, inShow = null;
+        let g = null;
         this.onTS2 = e => {
-          armed = false; rail = null; inner = null; inShow = null;
+          g = null;
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
-          if (this.state.menuOpen || this.cascading || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-ystep') || c('.mcl-sheet') || c('select') || c('input')) return;   // the calculator's ruler, sheet and typing keep their own touches
-          inner = c('.mcl'); inShow = c('.msh');
-          if (inner && Math.abs(sc0.scrollTop - offs(inner)) > 4) inner = null;     // its own scrolling only once the page is in place
-          armed = true; y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+          if (this.state.menuOpen || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-ystep') || c('.mcl-sheet') || c('select') || c('input') || c('textarea')) return;   // the calculator's ruler, years stepper, sheet and typing keep their own touches
+          const now = performance.now(), wasSettling = this.settling;
+          if (wasSettling) { this.settling = false; cancelAnimationFrame(this.settleRaf); }   // a new touch takes over at once
+          if (this.cascading && this.hold < 1) this.cascading = false;                       // …the explore cascade too
+          const P = pages(), top = sc0.scrollTop, R = rangeOf();
+          const ai = nearestIdx(P, wasSettling ? this.settleTarget : top);                 // the state this touch starts from
+          let inner = c('.mcl'); if (inner && (Math.abs(top - offs(inner)) > 4 || !/auto|scroll/.test(getComputedStyle(inner).overflowY))) inner = null;   // only a page that really scrolls inside keeps the swipe
+          const show = c('.msh'), t = e.touches[0];
+          this.touchOn = true;
+          g = { y0: t.clientY, x0: t.clientX, y: t.clientY, t: now, v: 0, dir: 0, P, R, ai, vh: sc0.clientHeight, inner, show, mode: null, moved: 0 };
+          if (c('.mfp-capsule')) this.prefetchExplore();                                  // a finger on the capsule: the lesson is probably next
         };
-        this.onTE2 = () => { if (this.animating) return; setTimeout(() => { if (!this.animating) this.goPage(0); }, 60); };   // never rest between pages
         this.onTM2 = e => {
-          if (!armed) return;
-          if (this.animating) { if (e.cancelable) e.preventDefault(); return; }
-          const t = e.touches[0], dy = y0 - t.clientY, dx = x0 - t.clientX;      // dy > 0: finger moved up = towards the next page
-          if (rail && Math.abs(dx) > Math.abs(dy)) { armed = false; return; }       // the phone rail scrolls sideways natively
-          if (inner) {                                                            // the calculator scrolls its own content until an end
-            const canDown = inner.scrollTop < inner.scrollHeight - inner.clientHeight - 8, canUp = inner.scrollTop > 8;
-            if ((dy > 0 && canDown) || (dy < 0 && canUp)) { armed = false; return; }
+          if (!g) return;
+          const t = e.touches[0], now = performance.now(), dy = g.y0 - t.clientY, dx = g.x0 - t.clientX;   // dy > 0: finger moved up = towards the next page
+          if (!g.mode) {
+            if (!dy && !dx) { if (e.cancelable) e.preventDefault(); return; }
+            if (g.inner) {                                                              // the calculator scrolls its own content until an end
+              const inr = g.inner, canDown = inr.scrollTop < inr.scrollHeight - inr.clientHeight - 8, canUp = inr.scrollTop > 8;
+              if ((dy > 0 && canDown) || (dy < 0 && canUp)) { g = null; return; }
+            }
+            if (Math.abs(dx) > Math.abs(dy)) g.mode = 'side';                          // sideways: the phone rail steps itself; the page stays put
+            else if (g.show && Math.abs(g.P[g.ai] - offs(g.show)) < 4 && Math.abs(sc0.scrollTop - offs(g.show)) < 4) g.mode = 'step';
+            else g.mode = 'drag';
           }
           if (e.cancelable) e.preventDefault();
-          if (Math.abs(dy) > 12) {
-            armed = false;
-            const show = inShow || null;
-            if (show && show.__step && show.__step(dy > 0 ? 1 : -1)) return;      // the showcase steps to its next phone first
-            this.goPage(dy > 0 ? 1 : -1);
+          const d = g.y - t.clientY, dtm = now - g.t;
+          if (dtm > 0) g.v = g.v * .4 + .6 * (d / dtm);
+          if (Math.abs(d) >= 1) g.dir = Math.sign(d);
+          g.y = t.clientY; g.t = now; g.moved = Math.max(g.moved, Math.abs(dy));
+          if (g.mode === 'side') return;
+          if (g.mode === 'step') {                                                      // the showcase steps to its next phone first
+            if (Math.abs(dy) > 36) {
+              if (g.show.__step && g.show.__step(dy > 0 ? 1 : -1)) { g.mode = 'side'; return; }
+              g.mode = 'drag'; g.y0 = t.clientY + (dy > 0 ? 36 : -36);                  // at an end: the page moves from here
+            }
+            return;
           }
+          // drag: between the state this touch started from and its neighbours; the cover's morph is geared (half a
+          // screen of finger = the whole morph), the pages below move 1:1
+          const P = g.P, i = g.ai, R = g.R, cur = sc0.scrollTop;
+          const lo = i > 0 ? P[i - 1] : P[0], hi = P[Math.min(P.length - 1, i + 1)];
+          const gain = cur < R - .5 || (cur <= R + .5 && d < 0) ? R / (g.vh * .5) : 1;
+          sc0.scrollTop = Math.max(lo, Math.min(hi, cur + d * gain));
         };
+        this.onTE2 = () => {
+          this.touchOn = false; this.lastUp = performance.now();
+          const gg = g; g = null; if (!gg) { if (!this.settling && !this.leaving) this.goPage(0); return; }
+          const P = gg.P, i = gg.ai, top = sc0.scrollTop;
+          const lo = i > 0 ? P[i - 1] : P[0], hi = P[Math.min(P.length - 1, i + 1)];
+          const span = P.filter(v => v >= lo - .5 && v <= hi + .5);
+          let to;
+          if (gg.mode !== 'drag' || gg.moved < 10 || !gg.dir) to = P[i];                 // a tap (or a sideways swipe) keeps the state it started from
+          else if (gg.dir > 0) { to = span.find(v => v >= top - .5); if (to == null) to = span[span.length - 1]; }
+          else { to = span[0]; span.forEach(v => { if (v <= top + .5) to = v; }); }
+          this.settleTo(to, gg.dir);
+        };
+        // safety net: if a touch the pager did not own (an inner control) still scrolled the page natively, land
+        // on the nearest complete state once that scroll stops — the page never rests between states
+        this.onSc2 = () => {
+          if (this.touchOn || this.settling || this.leaving || performance.now() - (this.lastUp || -1e9) > 1500) return;
+          clearTimeout(this.scT); this.scT = setTimeout(() => { if (!this.touchOn && !this.settling) this.goPage(0); }, 120);
+        };
+        sc0.addEventListener('scroll', this.onSc2, { passive: true });
         sc0.addEventListener('touchstart', this.onTS2, { passive: true });
         sc0.addEventListener('touchmove', this.onTM2, { passive: false });
         sc0.addEventListener('touchend', this.onTE2, { passive: true }); sc0.addEventListener('touchcancel', this.onTE2, { passive: true });
-        this.onVV = () => { this.setVH(); if (!this.animating) this.goPage(0, true); };   // Safari's toolbars: re-measure, keep the page in place
+        this.onVV = () => { this.setVH(); if (!g && !this.settling) this.goPage(0, true); };   // Safari's toolbars: re-measure, keep the page in place
         addEventListener('resize', this.onVV); if (window.visualViewport) visualViewport.addEventListener('resize', this.onVV);
       }
     }
@@ -304,15 +371,21 @@ class Component extends DCLogic {
     const setO = (el, v) => { v = +(+v).toFixed(3); if (el && el.__o !== v) { el.style.opacity = v; el.__o = v; } };
     const tick = t => {
       const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; const k = t / 1000;
-      this.hold = this.cascading ? Math.min(1, this.hold + dt / .55) : Math.max(0, this.hold - dt * 1.6);
+      this.hold = this.cascading ? Math.min(1, this.hold + dt / .55) : Math.max(0, this.hold - dt * (reducedMotion ? 99 : 1.6));
       sm.x += ((Math.sin(k * .23) * .12 + tx) - sm.x) * .05; sm.y += ((Math.cos(k * .19) * .08 + ty) - sm.y) * .05;
       const sc = this.scroller(), frame = this.frameRef.current;
       if (!frame) { this.raf = requestAnimationFrame(tick); return; }
-      if (((this.fr = (this.fr || 0) + 1) & 31) === 0) this.setVH();
-      const raw = sc ? clamp(sc.scrollTop / Math.max(1, sc.clientHeight * SCRUB_VH)) : 0;
-      this.p = (this.p || 0) + (raw - (this.p || 0)) * (this.animating ? .2 : .075); const p = this.p;   // the play is timed by playCover; only a touch of lag on top
-      const W = frame.clientWidth, H = frame.clientHeight;
-      const onScreen = !sc || sc.scrollTop < sc.clientHeight * 2.8;
+      // sizes are read at the top of the frame and only every 32 frames (or after a resize) — a size read after
+      // this frame's style writes would force a synchronous style + layout pass on every frame
+      const fr = this.fr = (this.fr || 0) + 1;
+      if ((fr & 31) === 0) { this.setVH(); this.dm = null; }
+      if (!this.dm) { const hr = this.heroRef.current; this.dm = { W: frame.clientWidth, H: frame.clientHeight, ch: sc ? sc.clientHeight : 0, tw: tiles.map(el => el ? [el.offsetWidth, el.offsetHeight] : [0, 0]), hw: hr ? [hr.offsetWidth, hr.offsetHeight] : [0, 0] }; }
+      const dm = this.dm;
+      const raw = sc ? clamp(sc.scrollTop / Math.max(1, dm.ch * SCRUB_VH)) : 0;
+      // the finger (or its settle) drives p directly — the morph is exactly where the finger is; other scrolling (wheel, keys, the menu's glide) gets a short time-based ease
+      this.p = this.settling || reducedMotion || this.touchOn ? raw : (this.p || 0) + (raw - (this.p || 0)) * (1 - Math.exp(-dt * 14)); const p = this.p;
+      const W = dm.W, H = dm.H;
+      const onScreen = !sc || sc.scrollTop < dm.ch * 2.8;
       if (!onScreen) { this.raf = requestAnimationFrame(tick); return; }           // nothing to move once the frame has scrolled away
       setT(this.farRef.current, 'translate(' + (Math.sin(k * .05) * 10 - sm.x * 8).toFixed(1) + 'px,' + (p * 16).toFixed(1) + 'px)');
       setT(this.nearRef.current, 'translate(' + (Math.sin(k * .07 + 1) * 16 - sm.x * 18).toFixed(1) + 'px,' + (p * 30).toFixed(1) + 'px)');
@@ -321,14 +394,14 @@ class Component extends DCLogic {
       if (this.hold < .01) litMin = 5;
       tiles.forEach((el, i) => {
         if (!el) return;
-        const w = el.offsetWidth, hh = el.offsetHeight, [ex, ey] = SLOT[i];
+        const [w, hh] = dm.tw[i], [ex, ey] = SLOT[i];
         const ei = ease(clamp((p - .1 - (4 - i) * .04) / .56));          // 05 leaves first, 01 last
         let x, y, s, op;
-        if (i === 4) { const s0 = (hero0 && w) ? hero0.offsetWidth / w : 2.1; x = CX + (ex - CX) * ei; y = CY + (ey - CY) * ei; s = s0 + (1 - s0) * ei; op = p > .05 ? 1 : 0; }
+        if (i === 4) { const s0 = (hero0 && w) ? dm.hw[0] / w : 2.1; x = CX + (ex - CX) * ei; y = CY + (ey - CY) * ei; s = s0 + (1 - s0) * ei; op = p > .05 ? 1 : 0; }
         else { x = CX + (ex - CX) * ei + Math.sin(ei * Math.PI) * .08; y = CY + (ey - CY) * ei; s = .55 + .45 * ei; op = clamp(ei * 2.2); }
         const bob = Math.sin(k * .8 + i * 1.3) * 4 * e + (i === 4 ? Math.sin(k * .7) * 5 * (1 - ei) : 0);
         setT(el, 'translate3d(' + (x * W - w / 2 - sm.x * (10 + i * 3) * e - (i === 4 ? sm.x * 20 * (1 - ei) : 0)).toFixed(1) + 'px,' + (y * H - hh / 2 + bob - sm.y * 6 * e - (i === 4 ? sm.y * 10 * (1 - ei) : 0)).toFixed(1) + 'px,0) scale(' + s.toFixed(4) + ')');
-        setO(el, op); el.style.zIndex = i === 4 ? 3 : 2;
+        setO(el, op); if (!el.__z) { el.style.zIndex = i === 4 ? 3 : 2; el.__z = 1; }
         const on = this.hold > (4 - i) / 5 + .02;
         if (el.classList.contains('lit') !== on) el.classList.toggle('lit', on);
         if (on && i < litMin) { litMin = i; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} }
@@ -339,7 +412,7 @@ class Component extends DCLogic {
       if (hero) {
         // the hero is the villa until p = .05, then tile 05 (same art, same size, same spot) carries on — never two villas
         const vo = p > .05 ? 0 : 1;
-        setT(hero, 'translate(' + (CX * W - hero.offsetWidth / 2 - sm.x * 20).toFixed(1) + 'px,' + (CY * H - hero.offsetHeight / 2 + (p > .05 ? 0 : Math.sin(k * .7) * 5) - sm.y * 10).toFixed(1) + 'px)');
+        setT(hero, 'translate(' + (CX * W - dm.hw[0] / 2 - sm.x * 20).toFixed(1) + 'px,' + (CY * H - dm.hw[1] / 2 + (p > .05 ? 0 : Math.sin(k * .7) * 5) - sm.y * 10).toFixed(1) + 'px)');
         setO(hero, vo);
       }
       setT(this.coinRef.current, 'translateY(' + (Math.sin(k * 1.4) * 6).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)');
@@ -355,15 +428,15 @@ class Component extends DCLogic {
       if (this.ringRef.current) this.ringRef.current.setAttribute('stroke-dashoffset', (219.9 * (1 - this.hold)).toFixed(1));
       setT(this.fillRef.current, 'scaleY(' + this.hold.toFixed(4) + ')');
       setT(this.knobRef.current, 'scale(' + (this.cascading ? .92 : 1) + ')');
-      const hl = this.holdLblRef.current, txt = this.hold > .02 && this.hold < 1 ? Math.round(this.hold * 5) + ' / 5' : 'Tap';
+      const hl = this.holdLblRef.current, txt = this.hold > .02 && this.hold < 1 ? Math.round(this.hold * 5) + ' / 5' : 'Tap to open';
       if (hl && hl.textContent !== txt) hl.textContent = txt;
-      if (!this.cascading) { const ph = (k % 2.4) / 2.4, q = ph < .5 ? ph * 2 : 1; setT(this.arrowRef.current, 'translateY(' + (q < 1 ? -Math.sin(q * Math.PI) * 6 : 0).toFixed(1) + 'px)'); }
+      if (!this.cascading && !reducedMotion) { const ph = (k % 2.4) / 2.4, q = ph < .5 ? ph * 2 : 1; setT(this.arrowRef.current, 'translateX(' + (q < 1 ? Math.sin(q * Math.PI) * 5 : 0).toFixed(1) + 'px)'); }   // the arrow nudges INTO the capsule: it opens something
       if (this.hold >= 1 && !this.leaving) this.explore();
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
   }
-  componentWillUnmount() { cancelAnimationFrame(this.raf); this.animating = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); cancelAnimationFrame(this.settleRaf); this.settling = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('resize', this.onDim); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { clearTimeout(this.scT); sc.removeEventListener('scroll', this.onSc2); sc.removeEventListener('touchstart', this.onTS2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;

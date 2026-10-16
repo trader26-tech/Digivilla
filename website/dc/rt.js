@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=e558e6dd';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=e62fb661';
 
 export { h, render, Fragment };
 
@@ -249,7 +249,8 @@ export class DSButton extends Component {
 /** True when the visitor asked the OS for less motion. */
 export const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-/** One step per wheel GESTURE — not per event. A trackpad flick fires dozens
+/** (Unused — it locked input while a scene played; kept for API compatibility.)
+ *  One step per wheel GESTURE — not per event. A trackpad flick fires dozens
  *  of wheel events over ~1s with momentum; the prototype stepped on the first
  *  one, ignored the rest while tweening, then stepped AGAIN on the tail. This
  *  arms once per gesture (a gap of `quiet` ms starts a new one) and fires when
@@ -281,7 +282,8 @@ export function wheelStepper(step, opts = {}) {
   return handler;
 }
 
-/** Lenis-style smooth scrolling for an overflow container: wheel input moves
+/** (Unused since 2026-10-17 — the landing and chapter 3 scroll natively; kept for API compatibility.)
+ *  Lenis-style smooth scrolling for an overflow container: wheel input moves
  *  a target and the scroll position eases toward it every frame (time-based),
  *  so a flick has weight and settles instead of stopping dead. Touch, keyboard
  *  and programmatic scrolls stay native and simply re-sync the target. */
@@ -315,69 +317,122 @@ export function smoothScroll(el, opts = {}) {
   };
 }
 
-/** Scroll-scrubbed scenes. Wheel / touch move a target in scene units, the
- *  position eases toward it (with a per-scene speed cap so a flick still
- *  plays the scene at a cinematic pace) and snaps to the nearest scene once
- *  the input goes quiet. It never locks: scrolling mid-scene pulls the scene
- *  along. Pushing past either end calls onEnd(±1). */
+/** Scroll-scrubbed scenes — the story as one scroll.
+ *  ONE scale, the same in every chapter: a mouse-wheel notch = one scene; a trackpad's (or any pixel-precise
+ *  wheel's) SCENE_PX of travel = one scene; a finger's TOUCH_PX = one scene. The scroll position IS the
+ *  timeline: the scenes follow it closely (a short time-based ease, no gate, no lock), so a slow scroll draws
+ *  slowly, a fast one passes several scenes, and scrolling back plays the story backwards mid-scene.
+ *  When a trackpad or a finger stops part-way, the story lands on a complete scene: forward if it had gone at
+ *  least a third of the way (COMMIT), else back — never slower than the scene's designed pace (`rateFor`),
+ *  never longer than ~0.6 s, and any new input takes over at once. Nothing rests half-drawn.
+ *  Pushing on past either end builds a hand-off (OVER px; the shell shows it filling) and then calls onEnd(±1) —
+ *  only for a push that STARTED at that end (a scroll that runs into the end stops there).
+ *  The shell, if any, hears window.tdcStory.progress(pos / max) and window.tdcStory.over(f 0…1, dir).
+ *  API: onWheel/onTS/onTM/onTE, step(d), set(v), pos, target, settling, tick(now), attach(), detach(). */
+export const SCENE_PX = 800, TOUCH_PX = 300;
 export function scrubber(opts) {
-  const max = opts.max, unit = opts.unit ?? 900, QUIET = 220, OVER = opts.overscroll ?? 420, DEAD = .035;
-  let target = opts.start ?? 0, pos = target, dir = 1, lastIn = 0, over = 0, snapped = true, ty = null, lastT = 0;
-  // a GESTURE = wheel events less than GAP apart (a trackpad swipe and its momentum tail), or one touch.
-  // It can move at most one scene from where it started, and a chapter hand-off needs a fresh gesture at the end.
-  const GAP = 450; let gStart = target, gLast = -1e9, gAtEnd = false;
+  const max = opts.max, OVER = opts.overscroll ?? 480, DEAD = .04, COMMIT = 1 / 3;
+  const QUIET = 160, GAP = 300, GAIN = SCENE_PX / TOUCH_PX;   // trackpad quiet before the landing; a pause this long starts a new gesture
+  const SETTLE = 2.2, LIVE = 4;                         // scenes per second: the landing's floor, the live speed limit
+  let target = opts.start ?? 0, pos = target, dir = 1, lastIn = -1e9, over = 0, snapped = true, lastT = 0, base = Math.round(target);
+  let ty = null, tv = 0, tt = 0, touching = false, settleNow = false, wLast = -1e9, notched = false;
+  let gLast = -1e9, gFwd = false, gBack = false, overT = 0, overDir = 1, shown = -1;
+  const hook = (k, a, b) => { const st = window.tdcStory; if (st && st[k]) { try { st[k](a, b); } catch (e) { /* the shell's problem */ } } };
   const clamp = (v) => Math.max(0, Math.min(max, v));
-  const beginGesture = (now) => { gStart = snapped ? Math.round(target) : Math.round(pos); gAtEnd = (gStart >= max && pos >= max - .02) || (gStart <= 0 && pos <= .02); gLast = now; };   // anchored on the scene already committed, so a flick during a play adds exactly one more
-  const input = (dpx, now) => {
+  const atEnd = (d) => (d > 0 ? target >= max - 1e-6 && pos >= max - .02 : target <= 1e-6 && pos <= .02);
+  const beginGesture = (now) => { gFwd = atEnd(1); gBack = atEnd(-1); gLast = now; base = Math.round(snapped ? target : pos); };
+  /** `ds` scenes of input (fractional for trackpad / touch, whole for notches); returns false at an end */
+  const input = (ds, now, whole) => {
     if (opts.onInput) opts.onInput();
     if (opts.gate && !opts.gate()) return;
     if (now - gLast > GAP) beginGesture(now);
     gLast = now;
-    dir = dpx > 0 ? 1 : -1;
-    const atEnd = dir > 0 ? (target >= max - 1e-6 && pos >= max - .02) : (target <= 1e-6 && pos <= .02);
-    if (atEnd) { if (!gAtEnd) return; over += Math.abs(dpx); if (over > OVER) { over = -1e9; opts.onEnd && opts.onEnd(dir); } return; }
-    over = 0;
-    target = clamp(Math.max(gStart - 1, Math.min(gStart + 1, target + dpx / unit))); lastIn = now; snapped = false;
+    if (!ds) return;
+    const d = ds > 0 ? 1 : -1;
+    if (atEnd(d)) {
+      if (!(d > 0 ? gFwd : gBack)) return;               // ran into the end mid-gesture: stop there
+      if (over < 0) return;                               // already handed over
+      over += whole ? Math.abs(ds) * OVER / 3 : Math.abs(ds) * SCENE_PX; overT = now; overDir = d; hook('over', Math.min(1, over / OVER), d);   // three notches, or OVER px of travel
+      if (over >= OVER) { over = -1e9; opts.onEnd && opts.onEnd(d); }
+      return;
+    }
+    if (over > 0) hook('over', 0, d);
+    over = 0; dir = d;
+    if (whole) { target = clamp(Math.round(target) + ds); snapped = true; lastIn = 0; notched = true; }   // a notch: exactly the next scene(s)
+    else { target = clamp(target + ds); lastIn = now; snapped = false; }
   };
   const now = (e) => e.timeStamp || performance.now();
   const api = {
-    onWheel: (e) => { if (e.ctrlKey) return; e.preventDefault(); input(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY, now(e)); },
-    onTS: (e) => { ty = e.touches[0].clientY; beginGesture(now(e)); },
-    onTM: (e) => { if (ty == null) return; e.preventDefault(); const y = e.touches[0].clientY; input((ty - y) * 1.25, now(e)); ty = y; },
-    onTE: () => { ty = null; },
+    beginGesture,
+    onWheel: (e) => {
+      if (e.ctrlKey) return; e.preventDefault();
+      const t = now(e), gap = t - wLast; wLast = t;
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
+      // a mouse-wheel notch (line mode, a whole multiple of the classic 120 wheelDelta, or a lone big step) = one scene
+      const wd = e.wheelDeltaY || 0;
+      const notches = e.deltaMode === 1 ? Math.max(1, Math.round(Math.abs(e.deltaY) / 3)) : (wd && Math.abs(wd) >= 120 && wd % 120 === 0) ? Math.abs(wd) / 120 : (gap > 140 && Math.abs(dy) >= 50) ? 1 : 0;
+      if (notches) input(Math.sign(dy) * Math.min(3, notches), t, true);
+      else input(dy / SCENE_PX, t, false);
+    },
+    onTS: (e) => {
+      // a new touch takes over at once: whatever was landing stops where it is, the finger drives from here
+      ty = e.touches[0].clientY; tv = 0; tt = now(e); touching = true; settleNow = false;
+      if (Math.abs(target - pos) > .0005) { target = pos; snapped = false; }
+      beginGesture(now(e));
+    },
+    onTM: (e) => {
+      if (ty == null) return; e.preventDefault();
+      const y = e.touches[0].clientY, t = now(e), dpx = (ty - y) * GAIN;
+      if (t > tt) tv = tv * .5 + .5 * (dpx / (t - tt)); tt = t; ty = y;
+      input(dpx / SCENE_PX, t, false);
+    },
+    onTE: (e) => {
+      if (ty == null) return; ty = null; touching = false;
+      // a flick carries on (velocity × 120 ms, at most two scenes), then it lands on a complete scene
+      const t = e ? now(e) : performance.now();
+      if (!snapped && t - tt < 90 && Math.abs(tv) > .3) {
+        const d = tv > 0 ? 1 : -1;
+        if (!atEnd(d)) { target = clamp(target + Math.max(-2, Math.min(2, tv * 120 / SCENE_PX))); dir = d; }
+      }
+      settleNow = true;
+    },
     /** one whole scene (keys) */
     step(d) {
       if (opts.onInput) opts.onInput();
       if (opts.gate && !opts.gate()) return;
       dir = d;
       if ((d > 0 && target >= max - 1e-6) || (d < 0 && target <= 1e-6)) { opts.onEnd && opts.onEnd(d); return; }
-      target = clamp(Math.round(target) + d); snapped = true; lastIn = 0;
+      target = clamp((d > 0 ? Math.floor(target + 1e-6) : Math.ceil(target - 1e-6)) + d); snapped = true; lastIn = 0;
     },
-    set(v) { target = pos = clamp(v); snapped = true; over = 0; },
+    set(v) { target = pos = clamp(v); snapped = true; over = 0; shown = -1; base = Math.round(target); },
     get pos() { return pos; },
     get target() { return target; },
+    get settling() { return snapped && Math.abs(target - pos) > .0005; },
     tick(t) {
       const dt = Math.min(.05, lastT ? (t - lastT) / 1000 : 0); lastT = t;
-      if (!snapped && t - lastIn > QUIET) {
-        // settle: a gesture is a commitment — once the user has moved past a small dead zone, the scene
-        // they were heading for plays in full (a short flick on a phone or one wheel notch is enough)
-        const r = Math.round(target), f = target - r;
-        target = clamp(Math.abs(f) < DEAD ? r : (dir > 0 ? Math.ceil(target) : Math.floor(target)));
-        snapped = true;
+      if (!snapped && !touching && (settleNow || t - lastIn > QUIET)) {
+        // the input stopped part-way: land on the next scene if it got a third of the way there, else go back
+        const from = dir > 0 ? Math.floor(target + DEAD) : Math.ceil(target - DEAD), f = Math.abs(target - from);
+        target = clamp(f >= COMMIT ? from + dir : from);
+        snapped = true; settleNow = false; notched = false;
       }
+      // a push past the end that stopped short of the hand-off drains back (slowly, so notch-by-notch pushes add up)
+      if (over > 0 && t - overT > 500) { over = Math.max(0, over - OVER * 1.5 * dt); hook('over', over / OVER, overDir); }
       const d = target - pos;
-      if (Math.abs(d) < .0005) pos = target;
+      if (Math.abs(d) < .0005 || reducedMotion) { pos = target; notched = false; }      // reduced motion: the scene simply is where the scroll is
       else {
         const seg = Math.max(0, Math.min(max - 1, Math.floor(Math.min(pos, target) + 1e-6)));
-        const boost = 1 + Math.max(0, Math.abs(d) - 1.3) * 1.2;       // only when several gestures have queued up does the scene hurry
-        const cap = (opts.rateFor ? opts.rateFor(seg) : 1.2) * boost * dt;
-        const ease = Math.abs(d) * (1 - Math.exp(-dt * (opts.ease ?? 6)));
-        pos += Math.sign(d) * Math.min(Math.abs(d), Math.min(ease, cap) + dt * .02);
+        const designed = opts.rateFor ? opts.rateFor(seg) : 1.2;
+        const far = 1 + Math.max(0, Math.abs(d) - 1);          // several notches queued: catch up, don't crawl
+        const cap = Math.max(designed, (snapped && !notched ? SETTLE : LIVE) * far) * dt;   // a notch is live input: it moves at the live pace
+        const ease = Math.abs(d) * (1 - Math.exp(-dt * (snapped && !notched ? 12 : 16)));
+        pos += Math.sign(d) * Math.min(Math.abs(d), Math.max(Math.min(ease, cap), dt * .4));
       }
+      if (pos !== shown) { shown = pos; hook('progress', max ? pos / max : 1); }
       return pos;
     },
-    attach() { addEventListener('wheel', api.onWheel, { passive: false }); addEventListener('touchstart', api.onTS, { passive: true }); addEventListener('touchmove', api.onTM, { passive: false }); addEventListener('touchend', api.onTE, { passive: true }); },
-    detach() { removeEventListener('wheel', api.onWheel); removeEventListener('touchstart', api.onTS); removeEventListener('touchmove', api.onTM); removeEventListener('touchend', api.onTE); },
+    attach() { addEventListener('wheel', api.onWheel, { passive: false }); addEventListener('touchstart', api.onTS, { passive: true }); addEventListener('touchmove', api.onTM, { passive: false }); addEventListener('touchend', api.onTE, { passive: true }); addEventListener('touchcancel', api.onTE, { passive: true }); },
+    detach() { removeEventListener('wheel', api.onWheel); removeEventListener('touchstart', api.onTS); removeEventListener('touchmove', api.onTM); removeEventListener('touchend', api.onTE); removeEventListener('touchcancel', api.onTE); },
   };
   return api;
 }

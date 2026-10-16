@@ -37,8 +37,8 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-back i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#E1E0CC;color:#0b0c12}
 .xpl-skip{padding:0 16px;background:transparent;font-size:13px;font-weight:500;color:rgba(225,224,204,.8);box-shadow:inset 0 0 0 1px rgba(225,224,204,.18)}
 .xpl-prog{flex:none;display:flex;gap:5px;margin-top:14px}
-.xpl-prog span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s}
-.xpl-prog span.done{background:rgba(246,196,69,.45)}.xpl-prog span.on{background:#f6c445}
+.xpl-prog>span{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s}
+.xpl-prog>span.done{background:rgba(246,196,69,.45)}.xpl-prog>span.on{background:#f6c445}
 .xpl-graph{flex:1;min-height:0;position:relative;cursor:pointer}
 .xpl-svg{position:absolute;left:0;top:10px;width:100%;height:calc(100% - 20px);overflow:visible}
 .xpl-svg [data-in]{opacity:0}
@@ -59,7 +59,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-cap .b{font-size:15px;line-height:1.45;color:rgba(255,246,234,.7)}
 .xpl-cap .list{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:rgba(255,246,234,.75)}
 .xpl-cap .list b{font-weight:600}.xpl-cap .g{color:#8fd65a}.xpl-cap .r{color:#e2725b}
-.xpl-cap .tick{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:#fff6ea}.xpl-cap .tick span{display:flex;gap:10px}.xpl-cap .tick b{font-weight:600}
+.xpl-cap .tick{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:#fff6ea}.xpl-cap .tick>span{display:flex;gap:10px}.xpl-cap .tick b{font-weight:600}
 .xpl-title{font-family:Caveat,cursive;font-size:34px;font-weight:700;color:#fbdb81}
 .xpl-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 20px;border-radius:999px;border:0;font:inherit;cursor:pointer;background:#E1E0CC;color:#0b0c12;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 0 30px rgba(255,214,150,.35);animation:xplGlow 2.4s ease-in-out infinite}
 .xpl-cta i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
@@ -71,24 +71,24 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-calc{position:fixed;inset:0;z-index:20;--pvh:100%;background:#0b0c12;transform:translate3d(0,100%,0);visibility:hidden;will-change:transform;transition:transform .55s cubic-bezier(.2,.8,.2,1),visibility 0s linear .55s}
 .xpl-calc.open{transform:none;visibility:visible;transition:transform .55s cubic-bezier(.2,.8,.2,1),visibility 0s}
 .xpl-calc>.sc-host{height:100%}
-@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog span{transition:none}.xpl-foot .sw svg,.xpl-cta{animation:none}}
+@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span{transition:none}.xpl-foot .sw svg,.xpl-cta{animation:none}}
 </style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=e558e6dd">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=e558e6dd">
-<link rel="modulepreload" href="dc/explore-mobile.js?v=e558e6dd">
-<link rel="modulepreload" href="dc/calc-mobile.js?v=e558e6dd">
-<link rel="modulepreload" href="dc/part-stage-villa.js?v=e558e6dd">
-<link rel="modulepreload" href="dc/engine.js?v=e558e6dd">
-<link rel="modulepreload" href="dc/calc-data.js?v=e558e6dd">
+<link rel="modulepreload" href="dc/rt.js?v=e62fb661">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=e62fb661">
+<link rel="modulepreload" href="dc/explore-mobile.js?v=e62fb661">
+<link rel="modulepreload" href="dc/calc-mobile.js?v=e62fb661">
+<link rel="modulepreload" href="dc/part-stage-villa.js?v=e62fb661">
+<link rel="modulepreload" href="dc/engine.js?v=e62fb661">
+<link rel="modulepreload" href="dc/calc-data.js?v=e62fb661">
 <link rel="preconnect" href="https://client-digivilla-production.up.railway.app" crossorigin>
 <script>(function(){try{var c=JSON.parse(localStorage.getItem("tdc.calc.v1")||"null");if(c&&c.at&&Date.now()-c.at<864e5)return}catch(e){}var A=window.__TDC_API||"https://client-digivilla-production.up.railway.app",j=function(r){if(!r.ok)throw new Error(r.status);return r.json()},q=function(p){var f=fetch(A+p,{priority:"high"}).then(j);f.catch(function(){});return f};window.__tdcCalc={cfg:q("/calc/config"),vf:q("/calc/villa-funds")}})();</script>
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=e558e6dd';
-import Root from './dc/explore-mobile.js?v=e558e6dd';
+import { mount } from './dc/rt.js?v=e62fb661';
+import Root from './dc/explore-mobile.js?v=e62fb661';
 mount(Root);
 </script>
 <script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){var u=performance.getEntriesByType("resource").map(function(e){return e.name});if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>
