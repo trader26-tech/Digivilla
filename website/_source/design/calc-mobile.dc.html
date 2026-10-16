@@ -8,12 +8,16 @@
 <x-dc>
 <helmet>
 <style>
-/* ── PAGE 3 · CALCULATOR (phones) — the layout of mobile-site.html, the maths of the app ─────
-   FD | Real estate pill, a sentence with dropdown chips, two 3-D bars (FD/flat grey vs
-   DigiVilla green) with the bank/flat icon and the villa + coin over them, a curved arrow from
-   one total to the other, summaries, years-ago picker, YOU INVEST stepper and a ruler.
-   Every figure comes from the app's engine on real benchmark history and the live settings —
-   never an assumed rate. */
+/* ── PAGE 3 · CALCULATOR (phones) — the app's calculators, on one screen ───────────────────────
+   FD | Real estate pill, two 3-D bars (FD/flat grey vs DigiVilla green) with the bank/flat icon
+   and the villa + coin over them, a curved arrow from one total to the other, summaries, then:
+   · FD: "Your FD pays [6.5%] taxed at [30%]", years-ago tabs, YOU INVEST band + ruler.
+   · Real estate: the app's Flat screen — "Had the same money gone into DigiVilla in 2018, 8 years
+     ago", four cards (Bought it for · Worth today · Bought in · Rent a month) sharing one ruler:
+     tap a card, slide to change it, tap it again to type the exact figure.
+   Every ₹ figure on this screen can be typed. "How this is worked out" slides up the app's
+   step-by-step and side-by-side. Every number comes from the app's engine on real benchmark
+   history and the live settings — never an assumed rate. Nothing here scrolls: it fits. */
 .mcl{position:relative;box-sizing:border-box;width:100%;max-width:100%;height:100vh;height:100svh;height:var(--pvh,100svh);background:#0b0c12;color:#ececf1;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom));overflow:hidden;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
 .mcl::-webkit-scrollbar{display:none}
 .mcl *{box-sizing:border-box}
@@ -25,11 +29,12 @@
 .mcl-seg svg{width:22px;height:22px}
 .mcl-sentence{flex:none;display:flex;align-items:flex-start;gap:10px;margin-top:10px}
 .mcl-back{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:#161826;color:#ececf1;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #22253a}
-.mcl-sentence p{margin:0;font-size:clamp(16px,4.3vw,19px);line-height:1.45;color:#ececf1}
+.mcl-sentence p{margin:0;padding-top:2px;font-size:clamp(16px,4.3vw,19px);line-height:1.45;color:#ececf1}
+.mcl-sentence p.q{color:#c9cad6}.mcl-sentence p.q b{color:#ececf1;font-weight:700;white-space:nowrap}.mcl-sentence p.q .dim{color:#7a7c8c;white-space:nowrap}
 .mcl-chip{display:inline-flex;align-items:center;gap:6px;height:1.55em;padding:0 .45em 0 .55em;margin:0 .1em;border-radius:.4em;background:#2a2548;box-shadow:inset 0 0 0 1px rgba(127,114,224,.55);color:#fff;font:inherit;vertical-align:-.3em;position:relative}
 .mcl-chip::after{content:"";width:0;height:0;border:5px solid transparent;border-top:6px solid #7f72e0;border-bottom:0;margin-top:1px}
 .mcl-chip select{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px}
-.mcl-stage{position:relative;flex:1 1 auto;min-height:230px;margin-top:8px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-stage{position:relative;flex:1 1 auto;min-height:230px;margin-top:8px;border-radius:14px;overflow:hidden;background-image:linear-gradient(rgba(233,233,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(233,233,237,.04) 1px,transparent 1px);background-size:28px 28px}
 .mcl-floor{position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(233,233,237,.18)}
 .mcl-bar{position:absolute;bottom:1px;width:30%;display:flex;flex-direction:column;align-items:center}
 .mcl-barL{left:8%}.mcl-barR{left:54%}
@@ -47,9 +52,9 @@
 .mcl-boxR .side{background:linear-gradient(180deg,#2e6b20,#245418)}
 .mcl-total{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:38px;font-size:clamp(26px,7.6vw,34px);font-weight:700;letter-spacing:-.035em;line-height:1;white-space:nowrap}
 .mcl-totL{color:#f4f4f7}.mcl-totR{color:#8fd65a}
-.mcl-tag{position:absolute;left:68%;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:#a3a5b4;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}.mcl-tag b{color:#8fd65a;font-weight:400}
+.mcl-tag{z-index:2;position:absolute;left:68%;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:#a3a5b4;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}.mcl-tag b{color:#8fd65a;font-weight:400}
 .mcl-icon{position:absolute;left:23%;transform:translateX(-50%);width:22%;pointer-events:none;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
-.mcl-rig{position:absolute;left:68%;transform:translateX(-50%);width:38%;display:flex;flex-direction:column;align-items:center;gap:2px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
+.mcl-rig{z-index:2;position:absolute;left:68%;transform:translateX(-50%);width:38%;display:flex;flex-direction:column;align-items:center;gap:2px;transition:bottom .45s cubic-bezier(.2,.8,.2,1)}
 .mcl-swp{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 4px;font-size:11px;border:0;border-radius:999px;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.7);color:#f6c445;font-size:12px;letter-spacing:.26em;text-transform:uppercase}
 .mcl-swp .tog{width:38px;height:22px;border-radius:999px;background:#f6c445;position:relative;transition:background .3s}
 .mcl-swp .tog::after{content:"";position:absolute;top:3px;left:19px;width:16px;height:16px;border-radius:50%;background:#1a1407;transition:left .3s}
@@ -68,17 +73,66 @@
 .mcl-years button b{font-size:22px;font-weight:400;line-height:1;letter-spacing:-.02em}.mcl-years button span{font-size:10px;letter-spacing:.2em;text-transform:uppercase}
 .mcl-years button.on{color:#ececf1}.mcl-years button.on::after{content:"";position:absolute;left:50%;bottom:-3px;width:36px;height:3px;border-radius:2px;background:#8fd65a;transform:translateX(-50%)}
 .mcl-invest{flex:none;display:flex;align-items:center;gap:8px;margin-top:10px}
-.mcl-invest .st{flex:none;width:40px;height:40px;border:0;background:transparent;color:#f6c445;font-size:18px}
-.mcl-invest .card{flex:1;display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px;padding:8px 14px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a}
+.mcl-st{flex:none;width:40px;height:40px;border:0;background:transparent;color:#f6c445;font-size:18px}
+.mcl-invest .card{flex:1;min-width:0;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;height:48px;padding:0 14px;border-radius:22px;background:#161826;box-shadow:inset 0 0 0 1px #22253a;transition:box-shadow .2s}
+.mcl-invest .card.typing{box-shadow:inset 0 0 0 1px rgba(143,214,90,.7)}
 .mcl-invest .card span{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#a3a5b4;white-space:nowrap}
-.mcl-invest .card b{font-size:clamp(22px,6.4vw,28px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.mcl-invest .card .val{display:flex;align-items:center;gap:6px;min-width:0;border:0;background:transparent;padding:0;color:#ececf1}
+.mcl-invest .card b{font-size:clamp(22px,6.4vw,28px);font-weight:700;letter-spacing:-.03em;line-height:1;white-space:nowrap}
+.mcl-invest .card input{min-width:0;width:100%;border:0;outline:0;background:transparent;padding:0;font:inherit;font-size:clamp(22px,6.4vw,28px);font-weight:700;letter-spacing:-.03em;line-height:1;text-align:right;color:#fff;caret-color:#8fd65a;font-variant-numeric:tabular-nums}
+.mcl-pen{flex:none;color:#5a5e6c}
+.mcl-cards{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mcl-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;height:52px;padding:8px 12px;border:0;border-radius:12px;text-align:left;background:#161826;box-shadow:inset 0 0 0 1px #22253a;color:#ececf1;transition:background .2s,box-shadow .2s,transform .12s;-webkit-user-select:none;user-select:none}
+.mcl-card:active{transform:scale(.985)}
+.mcl-card span{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#7a7c8c;white-space:nowrap;transition:color .2s}
+.mcl-card b{font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1;white-space:nowrap}.mcl-card b.long{font-size:15px;letter-spacing:-.03em}
+.mcl-card .pen{position:absolute;right:10px;top:9px;color:rgba(143,214,90,.7);opacity:0;transition:opacity .2s}
+.mcl-card.on{background:rgba(143,214,90,.1);box-shadow:inset 0 0 0 1px rgba(143,214,90,.55),0 0 24px -8px rgba(143,214,90,.5)}
+.mcl-card.on span{color:#8fd65a}.mcl-card.on .pen{opacity:1}
+.mcl-card.typing{box-shadow:inset 0 0 0 1px rgba(143,214,90,.9)}
+.mcl-card input::placeholder,.mcl-invest .card input::placeholder{color:rgba(236,236,241,.3)}.mcl-card input{width:100%;border:0;outline:0;background:transparent;padding:0;margin:0;font:inherit;font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1;color:#fff;caret-color:#8fd65a;font-variant-numeric:tabular-nums}
+.mcl-dial{flex:none;display:flex;align-items:center;gap:4px;margin-top:6px}
+.mcl-dial .mcl-ruler{flex:1;margin-top:0}
 .mcl-ruler{flex:none;position:relative;height:30px;margin-top:6px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .mcl-ruler canvas{position:absolute;inset:0;width:100%;height:100%}
 .mcl-ruler input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;pointer-events:none}
-.mcl-note{flex:none;margin:8px 0 0;font-size:10.5px;line-height:1.4;color:#5a5e6c;text-align:center}
+.mcl-foot{flex:none;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;min-height:18px;font-size:10.5px;line-height:1.3;color:#5a5e6c}
+.mcl-foot .hint{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mcl-foot .hint.bad{color:#f6c445;white-space:normal}
+.mcl-foot .how{flex:none;display:flex;align-items:center;gap:5px;height:24px;padding:0;border:0;background:transparent;color:#a3a5b4;font-size:11px;white-space:nowrap}
+.mcl-foot .how svg{flex:none}
 .mcl-wait{flex:1;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:#a3a5b4;font-size:14px}
 .mcl-wait i{width:30px;height:30px;border-radius:50%;border:2px solid #22253a;border-top-color:#8fd65a;animation:mclspin 1s linear infinite}
 @keyframes mclspin{to{transform:rotate(360deg)}}
+/* "How this is worked out" — the app's walk-through, as a sheet over the calculator */
+.mcl-sheet{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;background:#0b0c12;transform:translate3d(0,100%,0);visibility:hidden;transition:transform .5s cubic-bezier(.2,.8,.2,1),visibility 0s linear .5s;will-change:transform}
+.mcl-sheet.open{transform:none;visibility:visible;transition:transform .5s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.mcl-sheet .hd{flex:none;display:flex;align-items:center;gap:12px;padding:max(12px,env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid #1a1c28}
+.mcl-sheet .hd div{display:flex;flex-direction:column;gap:2px;min-width:0}.mcl-sheet .hd b{font-size:16px;font-weight:700;letter-spacing:-.01em}.mcl-sheet .hd span{font-size:12px;color:#7a7c8c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcl-sheet .bd{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px 16px max(24px,env(safe-area-inset-bottom));scrollbar-width:none}
+.mcl-sheet .bd::-webkit-scrollbar{display:none}
+.mcl-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.mcl-step{display:flex;gap:12px}
+.mcl-step .dot{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:#161826;box-shadow:inset 0 0 0 1px #2b2e3a;color:#a3a5b4;margin-top:10px}
+.mcl-step .dot.ok{background:rgba(143,214,90,.15);color:#8fd65a;box-shadow:inset 0 0 0 1px rgba(143,214,90,.5)}
+.mcl-step .card{flex:1;min-width:0;padding:12px 14px;border-radius:14px;background:#12141d;box-shadow:inset 0 0 0 1px #1f2233;display:flex;flex-direction:column;gap:6px}
+.mcl-step .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#7a7c8c}
+.mcl-step h3{margin:0;font-size:15px;font-weight:700;line-height:1.3;letter-spacing:-.01em}.mcl-step h3 em{font-style:normal;color:#8fd65a}
+.mcl-step p{margin:0;font-size:12.5px;line-height:1.5;color:#a3a5b4}.mcl-step p b{color:#ececf1;font-weight:700}
+.mcl-rows{display:flex;flex-direction:column;gap:4px;margin-top:2px;padding-top:6px;border-top:1px solid #1f2233}
+.mcl-rows div{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#a3a5b4}.mcl-rows div b{font-weight:700;color:#ececf1;white-space:nowrap}.mcl-rows div b.neg{color:#e0a39a}.mcl-rows div.sum{padding-top:4px;border-top:1px solid #1f2233;color:#ececf1}
+.mcl-res{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.mcl-res div{padding:10px 12px;border-radius:12px;background:#161826;display:flex;flex-direction:column;gap:3px}.mcl-res div.dv{background:rgba(143,214,90,.1)}
+.mcl-res span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7a7c8c}.mcl-res b{font-size:20px;font-weight:700;letter-spacing:-.03em}.mcl-res div.dv b{color:#8fd65a}.mcl-res small{font-size:11px;color:#a3a5b4}
+.mcl-verdict{margin:6px 0 0;font-size:13px;color:#ececf1}.mcl-verdict b{color:#8fd65a}.mcl-verdict.down b{color:#e0a39a}
+.mcl-h4{margin:18px 0 8px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7a7c8c}
+.mcl-vs{display:flex;flex-direction:column;gap:6px}
+.mcl-vs div{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:9px 12px;border-radius:12px;background:#12141d;box-shadow:inset 0 0 0 1px #1f2233}
+.mcl-vs .a,.mcl-vs .b{display:flex;flex-direction:column;gap:2px;min-width:0}.mcl-vs .b{text-align:right}
+.mcl-vs b{font-size:14px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcl-vs small{font-size:10.5px;line-height:1.3;color:#7a7c8c}
+.mcl-vs .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#a3a5b4;text-align:center;white-space:nowrap}
+.mcl-know{margin:0;padding:0 0 0 16px;font-size:12px;line-height:1.5;color:#a3a5b4}.mcl-know li{margin-bottom:5px}.mcl-know b{color:#ececf1;font-weight:700}
+.mcl-fine{margin:16px 0 0;font-size:11px;line-height:1.5;color:#5a5e6c}
+@media (prefers-reduced-motion:reduce){.mcl-sheet,.mcl-box,.mcl-segm,.mcl-tag,.mcl-icon,.mcl-rig{transition:none}}
 </style>
 </helmet>
 <section id="calculator" class="mcl" data-screen-label="Calculator (phone)">
@@ -89,14 +143,14 @@
 <div class="mcl-sentence">
 <button class="mcl-back" onClick="{{ goBack }}" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
 <sc-if value="{{ isFd }}" hint-placeholder-val="{{ true }}"><p>Your FD pays <span class="mcl-chip"><span>{{ rateTxt }}</span><select onChange="{{ setRate }}" value="{{ rateVal }}" aria-label="FD rate"><sc-for list="{{ rateOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> taxed at <span class="mcl-chip"><span>{{ taxTxt }}</span><select onChange="{{ setTax }}" value="{{ taxVal }}" aria-label="Tax slab"><sc-for list="{{ taxOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> as income.</p></sc-if>
-<sc-if value="{{ isRe }}" hint-placeholder-val="{{ false }}"><p>Your flat grew <span class="mcl-chip"><span>{{ reTxt }}</span><select onChange="{{ setRe }}" value="{{ reVal }}" aria-label="Flat growth a year"><sc-for list="{{ reOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> a year and rents at <span class="mcl-chip"><span>{{ yieldTxt }}</span><select onChange="{{ setYield }}" value="{{ yieldVal }}" aria-label="Rent yield"><sc-for list="{{ yieldOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> of value.</p></sc-if>
+<sc-if value="{{ isRe }}" hint-placeholder-val="{{ false }}"><p class="q">Had the same money gone into DigiVilla in <b>{{ boughtYear }}</b>, <span class="dim">{{ heldTxt }}</span></p></sc-if>
 </div>
 
 <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><div class="mcl-wait" role="status"><i></i><span>Loading real market history…</span></div></sc-if>
 <sc-if value="{{ failed }}" hint-placeholder-val="{{ false }}"><div class="mcl-wait" role="alert"><span>The market history could not be loaded.</span><button onClick="{{ retry }}" style="height:40px;padding:0 18px;border:0;border-radius:999px;background:#ececf1;color:#0b0c12;font-weight:700">Try again</button></div></sc-if>
 
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
-<div ref="{{ stageRef }}" class="mcl-stage" style="{{ stageS }}">
+<div ref="{{ stageRef }}" class="mcl-stage">
 <svg class="mcl-arrow"><defs><marker id="mclah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" fill="#8fd65a"></path></marker></defs><path d="{{ arrowD }}" fill="none" stroke="#8fd65a" stroke-width="2" stroke-linecap="round" marker-end="url(#mclah)" opacity="{{ arrowOp }}"></path></svg>
 <div class="mcl-floor"></div>
 <img class="mcl-icon" src="{{ lArt }}" alt="" style="{{ iconS }}">
@@ -124,14 +178,61 @@
 <div><div class="s">{{ sumL }}</div><div class="l">{{ lblL }}</div></div>
 <div><div class="s">{{ sumR }}</div><div class="l g">{{ lblR }}</div></div>
 </div>
+
+<sc-if value="{{ isFd }}" hint-placeholder-val="{{ true }}">
 <div class="mcl-years" role="tablist"><sc-for list="{{ yearOpts }}" as="y" hint-placeholder-count="4"><button class="{{ y.cls }}" onClick="{{ y.pick }}"><b>{{ y.n }}</b><span>yrs</span></button></sc-for></div>
 <div class="mcl-invest">
-<button class="st" onClick="{{ dec }}" aria-label="Less">◀</button>
-<div class="card"><span>You invest</span><b class="mono">{{ amt }}</b></div>
-<button class="st" onClick="{{ inc }}" aria-label="More">▶</button>
+<button class="mcl-st" onClick="{{ dec }}" aria-label="Less">◀</button>
+<div class="{{ bandCls }}"><span>You invest</span>
+<sc-if value="{{ typingP }}" hint-placeholder-val="{{ false }}"><input ref="{{ editRef }}" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="done" value="{{ editText }}" placeholder="{{ editPh }}" onInput="{{ onEditInput }}" onKeyDown="{{ onEditKey }}" onBlur="{{ commitEdit }}" aria-label="You invest, exact rupees"></sc-if>
+<sc-if value="{{ notTypingP }}" hint-placeholder-val="{{ true }}"><button class="val" onClick="{{ editP }}" aria-label="Tap to type the amount"><b class="mono">{{ amt }}</b><svg class="mcl-pen" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button></sc-if>
 </div>
-<div ref="{{ rulerRef }}" class="mcl-ruler"><canvas ref="{{ cvRef }}"></canvas><input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="Amount"></div>
+<button class="mcl-st" onClick="{{ inc }}" aria-label="More">▶</button>
+</div>
+<div ref="{{ rulerRef }}" class="mcl-ruler"><canvas ref="{{ cvRef }}"></canvas><input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="{{ rLabel }}"></div>
 </sc-if>
+
+<sc-if value="{{ isRe }}" hint-placeholder-val="{{ false }}">
+<div class="mcl-cards" role="radiogroup" aria-label="Your flat">
+<sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+<div class="{{ c.cls }}" role="radio" aria-checked="{{ c.on }}" onClick="{{ c.pick }}"><span>{{ c.label }}</span>
+<sc-if value="{{ c.typing }}" hint-placeholder-val="{{ false }}"><input ref="{{ editRef }}" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="done" value="{{ editText }}" placeholder="{{ editPh }}" onInput="{{ onEditInput }}" onKeyDown="{{ onEditKey }}" onBlur="{{ commitEdit }}" aria-label="{{ c.aria }}"></sc-if>
+<sc-if value="{{ c.show }}" hint-placeholder-val="{{ true }}"><b class="{{ c.bcls }}">{{ c.value }}</b><svg class="pen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></sc-if>
+</div>
+</sc-for>
+</div>
+<div class="mcl-dial">
+<button class="mcl-st" onClick="{{ dec }}" aria-label="{{ lessAria }}">◀</button>
+<div ref="{{ rulerRef }}" class="mcl-ruler"><canvas ref="{{ cvRef }}"></canvas><input type="range" min="{{ rMin }}" max="{{ rMax }}" step="{{ rStep }}" value="{{ rVal }}" onInput="{{ onRange }}" aria-label="{{ rLabel }}"></div>
+<button class="mcl-st" onClick="{{ inc }}" aria-label="{{ moreAria }}">▶</button>
+</div>
+</sc-if>
+
+<div class="mcl-foot"><span class="{{ hintCls }}">{{ hint }}</span><button class="how" onClick="{{ openSheet }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 11v6M12 7.5h.01"></path></svg>How this is worked out</button></div>
+</sc-if>
+
+<div class="{{ sheetCls }}" aria-hidden="{{ sheetHidden }}">
+<sc-if value="{{ sheetOn }}" hint-placeholder-val="{{ false }}">
+<div class="hd"><button class="mcl-back" onClick="{{ closeSheet }}" aria-label="Back to the calculator"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button><div><b>How this is worked out</b><span>{{ sheetSub }}</span></div></div>
+<div class="bd">
+<ol class="mcl-steps">
+<sc-for list="{{ steps }}" as="st" hint-placeholder-count="5">
+<li class="mcl-step"><span class="{{ st.dotCls }}">{{ st.n }}</span><div class="card"><span class="k">{{ st.k }}</span><sc-if value="{{ st.hasH }}" hint-placeholder-val="{{ true }}"><h3>{{ st.h }} <em>{{ st.em }}</em>{{ st.h2 }}</h3><p>{{ st.p }}</p></sc-if>
+<sc-if value="{{ st.hasRows }}" hint-placeholder-val="{{ false }}"><div class="mcl-rows"><sc-for list="{{ st.rows }}" as="r"><div class="{{ r.cls }}"><span>{{ r.t }}</span><b class="{{ r.bcls }}">{{ r.v }}</b></div></sc-for></div></sc-if>
+<sc-if value="{{ st.hasRes }}" hint-placeholder-val="{{ false }}"><div class="mcl-res"><div><span>{{ st.res.aName }}</span><b class="mono">{{ st.res.a }}</b><small>{{ st.res.as }}</small></div><div class="dv"><span>DigiVilla</span><b class="mono">{{ st.res.b }}</b><small>{{ st.res.bs }}</small></div></div><p class="{{ st.res.vcls }}">{{ st.res.v1 }} <b>{{ st.res.v2 }}</b> {{ st.res.v3 }}</p></sc-if>
+</div></li>
+</sc-for>
+</ol>
+<sc-if value="{{ hasVs }}" hint-placeholder-val="{{ false }}">
+<h4 class="mcl-h4">Side by side</h4>
+<div class="mcl-vs"><sc-for list="{{ vs }}" as="m"><div><span class="a"><b style="{{ m.ac }}">{{ m.a }}</b><small>{{ m.as }}</small></span><span class="k">{{ m.k }}</span><span class="b"><b style="{{ m.bc }}">{{ m.b }}</b><small>{{ m.bs }}</small></span></div></sc-for></div>
+</sc-if>
+<h4 class="mcl-h4">Good to know</h4>
+<ul class="mcl-know"><sc-for list="{{ know }}" as="kn"><li><b>{{ kn.b }}</b> {{ kn.t }}</li></sc-for></ul>
+<p class="mcl-fine">Information, not advice. Mutual fund investments are subject to market risks; read all scheme-related documents carefully. Past returns are not a promise.</p>
+</div>
+</sc-if>
+</div>
 </section>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -140,13 +241,15 @@ import { loadCalc } from './calc-data.js';
 /* Every figure here is computed by the app's calculator engine (dc/engine.js) on real benchmark-index
    history with the live settings (GET /calc/config). Nothing in this file assumes a rate. */
 const YEAR_OPTS = [5, 8, 10, 15, 20];
-const AMT_MIN = 1e6, AMT_MAX = 5e7, AMT_STEP = 5e5, AMT_BIG = 25e5;
+const MIN_TICKET = 10000, SWP_MIN = 100000;      // the smallest amount: ₹10,000 — ₹1 L when it pays a monthly income (SWP)
+const NAMES = { arbitrage: 'arbitrage', gold: 'gold', large: 'large cap', mid: 'mid cap', small: 'small cap' };
+const list = xs => xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1];
 class Component extends DCLogic {
-  state = { mode: 'fd', fd: 6.5, tax: 30, re: 7, yield: 2.5, yrs: 8, P: 1e7, villa: null, swp: true, data: null, failed: false, rigH: 0 };
-  stageRef = React.createRef(); rigRef = React.createRef(); rulerRef = React.createRef(); cvRef = React.createRef();
+  state = { mode: 'fd', fd: 6.5, tax: 30, yrs: 8, P: 1e7, price: 6e6, value: 9e6, rent: 20000, bought: null, active: 'price', villa: null, swp: true, data: null, failed: false, rigH: 0, exact: {}, edit: null, hint: '', bad: false, sheet: false };
+  stageRef = React.createRef(); rigRef = React.createRef(); rulerRef = React.createRef(); cvRef = React.createRef(); editRef = React.createRef();
   componentDidMount() { this.load(); this.onResize = () => { this.measure(); this.drawRuler(); }; addEventListener('resize', this.onResize); }
-  componentDidUpdate() { this.measure(); this.drawRuler(); this.mountRuler(); }
-  componentWillUnmount() { this.dead = true; removeEventListener('resize', this.onResize); }
+  componentDidUpdate() { this.measure(); this.drawRuler(); this.mountRuler(); this.focusEdit(); }
+  componentWillUnmount() { this.dead = true; removeEventListener('resize', this.onResize); clearTimeout(this.hintT); }
   load() {
     if (this.state.failed) this.setState({ failed: false });
     loadCalc().then(d => {
@@ -156,6 +259,10 @@ class Component extends DCLogic {
     }, err => { console.warn('calculator data', err); if (!this.dead) this.setState({ failed: true }); });
   }
   years(vf) { return YEAR_OPTS.filter(y => 12 * y <= vf.months.length - 1); }
+  endYear(vf) { return +vf.months[vf.months.length - 1].slice(0, 4); }
+  maxYears(vf) { return Math.floor((vf.months.length - 1) / 12); }
+  /** the flat's purchase year, kept inside the years real history covers */
+  boughtYear(S = this.state) { const vf = S.data.vf, end = this.endYear(vf), lo = end - this.maxYears(vf), b = S.bought == null ? end - 8 : S.bought; return Math.min(end - 1, Math.max(lo, b)); }
   measure() {
     const r = this.rigRef.current, st = this.stageRef.current; const patch = {};
     if (r && r.offsetHeight && Math.abs(r.offsetHeight - this.state.rigH) > 2) patch.rigH = r.offsetHeight;
@@ -164,85 +271,183 @@ class Component extends DCLogic {
   }
   fmt(n) { return E.fmtInr(n); }
   inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  words(n) { return n >= 1e7 ? '₹' + (+(n / 1e7).toFixed(2)) + ' Cr' : n >= 1e5 ? '₹' + (+(n / 1e5).toFixed(2)) + ' L' : this.inr(n); }
   villaRate(key) { const { cfg, vf } = this.state.data; if (!(key in this.rates)) this.rates[key] = E.villaRate(vf, cfg, key); return this.rates[key]; }
+  /** the figures a finger can slide: FD's amount; the flat's four questions (the app's ranges) */
+  fields(S = this.state) {
+    if (S.mode === 'fd') return [{ key: 'P', label: 'You invest', min: 1e6, max: 5e7, step: 5e5, big: 25e5, major: 1e7, lo: S.swp ? SWP_MIN : MIN_TICKET, hi: 5e8, swp: true, f: n => this.inr(n) }];
+    const vf = S.data && S.data.vf, end = vf ? this.endYear(vf) : new Date().getFullYear(), span = vf ? this.maxYears(vf) : 15;
+    return [
+      { key: 'price', label: 'Bought it for', min: 2e6, max: 5e7, step: 25e4, big: 1e6, major: 1e7, lo: S.swp ? SWP_MIN : MIN_TICKET, hi: 1e9, swp: true, f: n => this.fmt(n) },
+      { key: 'value', label: 'Worth today', min: 2e6, max: 1e8, step: 25e4, big: 1e6, major: 1e7, lo: MIN_TICKET, hi: 2e9, f: n => this.fmt(n) },
+      { key: 'bought', label: 'Bought in', min: end - span, max: end - 1, step: 1, big: 1, major: 5, lo: end - span, hi: end - 1, year: true, f: n => String(n) },
+      { key: 'rent', label: 'Rent a month', min: 0, max: 3e5, step: 1000, big: 5000, major: 5e4, lo: 0, hi: 2e6, f: n => this.inr(n) },
+    ];
+  }
+  act(S = this.state) { const F = this.fields(S); return S.mode === 'fd' ? F[0] : (F.find(q => q.key === S.active) || F[0]); }
+  val(S, a) { return a.key === 'bought' ? this.boughtYear(S) : S[a.key]; }
+  /** the figure on screen: exactly as typed (₹63,45,000), else its compact form (₹63.5 L) */
+  show(S, a) { const v = this.val(S, a); return S.exact[a.key] && !a.year ? this.inr(v) : a.f(v); }
+  /** set from the ruler or the ◀ ▶ buttons: on the field's step, inside its slide range; a typed figure is let go */
+  setField(a, v) {
+    v = Math.round(Math.min(a.max, Math.max(a.min, v)) / a.step) * a.step;
+    const S = this.state; if (v === this.val(S, a) && !S.exact[a.key]) return;
+    this.setState(s => ({ [a.key]: v, exact: s.exact[a.key] ? { ...s.exact, [a.key]: false } : s.exact }));
+    if (a.key !== 'bought' && v % a.major === 0) { try { navigator.vibrate && navigator.vibrate(6); } catch (e) {} }
+  }
+  // ── typing an exact figure ──
+  startEdit(key) { const a = this.fields().find(q => q.key === key); if (!a) return; this.focused = false; this.setState({ edit: { key, text: '', ph: this.show(this.state, a) }, hint: '', bad: false }); }
+  focusEdit() { const el = this.editRef.current; if (el && this.state.edit && !this.focused) { this.focused = true; try { el.focus(); } catch (e) {} } }
+  /** digits only, re-grouped the Indian way as you type (12,34,567) */
+  editInput(e) {
+    const E0 = this.state.edit; if (!E0) return; const a = this.fields().find(q => q.key === E0.key);
+    const raw = (e.target.value || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '').slice(0, a && a.year ? 4 : 11);
+    const text = (a && a.year) || !raw ? raw : (+raw).toLocaleString('en-IN');
+    this.setState(s => ({ edit: { ...s.edit, text } }));
+    if (text !== e.target.value) { const el = e.target; requestAnimationFrame(() => { try { el.value = text; el.setSelectionRange(text.length, text.length); } catch (_) {} }); }
+  }
+  /** Enter / Done / tapping away applies the typed figure; outside its range it is brought to the nearest end and the hint says so */
+  commitEdit() {
+    const E0 = this.state.edit; if (!E0) return;
+    const a = this.fields().find(q => q.key === E0.key), raw = (E0.text || '').replace(/[^0-9]/g, '');
+    if (!a || !raw) { this.setState({ edit: null }); return; }
+    let v = +raw, hint = '', bad = false, patch = {};
+    if (a.swp && this.state.swp && v >= MIN_TICKET && v < SWP_MIN) { v = SWP_MIN; hint = `A monthly income (SWP) needs ${this.words(SWP_MIN)} or more — set to ${this.words(SWP_MIN)}`; bad = true; }
+    else if (v < a.lo || v > a.hi) { v = Math.min(a.hi, Math.max(a.lo, v)); hint = `Between ${a.year ? a.lo : this.words(a.lo)} and ${a.year ? a.hi : this.words(a.hi)} — set to ${a.year ? v : this.words(v)}`; bad = true; }
+    if (a.year) patch = { bought: v }; else patch = { [a.key]: v };
+    this.setState(s => ({ ...patch, exact: { ...s.exact, [a.key]: !a.year }, edit: null, hint, bad }));
+    clearTimeout(this.hintT); if (hint) this.hintT = setTimeout(() => { if (!this.dead) this.setState({ hint: '', bad: false }); }, 4000);
+  }
   /** one simulation per distinct set of inputs */
   sim(S) {
-    const key = JSON.stringify([S.mode, S.fd, S.tax, S.re, S.yield, S.yrs, S.P, S.villa, S.swp]);
+    const key = JSON.stringify([S.mode, S.fd, S.tax, S.yrs, S.P, S.price, S.value, S.rent, S.bought, S.villa, S.swp]);
     if (this.memo && this.memo.key === key) return this.memo.out;
-    const { cfg, vf } = S.data, villa = E.villaOf(cfg, S.villa), w = E.windowFor(E.withVilla(vf, villa), S.yrs);
+    const { cfg, vf } = S.data, villa = E.villaOf(cfg, S.villa);
     let out;
     if (S.mode === 'fd') {
+      const w = E.windowFor(E.withVilla(vf, villa), S.yrs);
       const r = E.simulatePayout(w, { amount: S.P, fdRate: S.fd, slabPct: S.tax, swp: S.swp }, cfg);
       out = { villa, w, r, L: { paid: r.fdPaid, val: r.fdValue, paidLabel: 'Paid out', valLabel: 'Value', lbl: 'Fixed deposit · ' + S.fd + '%' }, R: { paid: r.dvPaid, val: r.dvValue } };
     } else {
-      // the flat: bought for P, grew `re` a year to today's value, rents `yield` of value a year — the engine's flat rules (stamp duty,
-      // registration, vacancy, rent growth, upkeep, rent tax) and the villa side on the same window
-      const value = S.P * Math.pow(1 + S.re / 100, S.yrs), rent = value * S.yield / 100 / 12;
-      const f = E.simulateFlat(w, { price: S.P, value, rent, slabPct: S.tax, swp: S.swp }, cfg);
-      out = { villa, w, r: f.dv, f, L: { paid: f.rentKept, val: value, paidLabel: 'Rent kept', valLabel: 'Worth today', lbl: 'Flat · ' + S.re + '% + rent' }, R: { paid: f.dv.dvPaid, val: f.dv.dvValue } };
+      // the app's Flat screen: your numbers (bought for, worth today, rent) from the year you bought it; the same cash
+      // all-in (stamp duty + registration) in the villa from that month, on real index history
+      const held = this.endYear(vf) - this.boughtYear(S), w = E.windowFor(E.withVilla(vf, villa), held);
+      const f = E.simulateFlat(w, { price: S.price, value: S.value, rent: S.rent, slabPct: cfg.tax.default_slab, swp: S.swp }, cfg);
+      out = { villa, w, r: f.dv, f, held, L: { paid: f.rentKept, val: S.value, paidLabel: 'Rent kept', valLabel: 'Worth today', lbl: 'Flat · ' + f.appPct.toFixed(1) + '% a yr' }, R: { paid: f.dv.dvPaid, val: f.dv.dvValue } };
     }
     this.memo = { key, out }; return out;
   }
-  /** the ruler: a finger drag moves the needle 1:1 along the scale (no absolute jumps), snapping to ₹5 L */
+  /** the ruler: a finger drag moves the needle 1:1 along the active field's scale; the ◀ ▶ buttons nudge it */
   mountRuler() {
     const rl = this.rulerRef.current; if (!rl || rl.__tape) return; rl.__tape = true;
-    let sx = 0, sv = 0, drag = false;
-    rl.addEventListener('pointerdown', e => { if (e.button) return; drag = true; rl.setPointerCapture(e.pointerId); sx = e.clientX; sv = this.state.P; rl.style.cursor = 'grabbing'; e.preventDefault(); });
-    rl.addEventListener('pointermove', e => { if (!drag) return; const w = rl.clientWidth || 1; this.setP(sv + (e.clientX - sx) / w * (AMT_MAX - AMT_MIN)); });
+    let sx = 0, sv = 0, drag = false, a = null;
+    rl.addEventListener('pointerdown', e => { if (e.button) return; a = this.act(); drag = true; rl.setPointerCapture(e.pointerId); sx = e.clientX; sv = this.val(this.state, a); rl.style.cursor = 'grabbing'; e.preventDefault(); });
+    rl.addEventListener('pointermove', e => { if (!drag) return; const w = rl.clientWidth || 1; this.setField(a, sv + (e.clientX - sx) / w * (a.max - a.min)); });
     const end = () => { drag = false; rl.style.cursor = 'grab'; };
     rl.addEventListener('pointerup', end); rl.addEventListener('pointercancel', end);
   }
-  setP(v) { v = Math.round(Math.min(AMT_MAX, Math.max(AMT_MIN, v)) / AMT_STEP) * AMT_STEP; if (v !== this.state.P) this.setState({ P: v }); }
   drawRuler() {
-    const cv = this.cvRef.current; if (!cv) return;
+    const cv = this.cvRef.current; if (!cv || !this.state.data) return;
     const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const a = this.act(), v = Math.min(a.max, Math.max(a.min, this.val(this.state, a)));
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
-    const n = 98, px = (this.state.P - AMT_MIN) / (AMT_MAX - AMT_MIN) * w;
-    for (let i = 0; i <= n; i++) { const x = i / n * w, major = i % 20 === 0; c.fillStyle = major ? 'rgba(233,233,237,.55)' : 'rgba(233,233,237,.2)'; c.fillRect(x - .5, major ? 8 : 16, 1, major ? h - 16 : h - 32); }
+    const n = Math.round((a.max - a.min) / a.step), every = Math.max(1, Math.ceil(n / 120)), px = (v - a.min) / (a.max - a.min) * w;
+    for (let i = 0; i <= n; i += every) { const x = i / n * w, major = ((a.min + i * a.step) % a.major) === 0; c.fillStyle = major ? 'rgba(233,233,237,.55)' : 'rgba(233,233,237,.2)'; c.fillRect(x - .5, major ? 8 : 16, 1, major ? h - 16 : h - 32); }
     c.fillStyle = '#8fd65a'; c.fillRect(px - 1.5, 0, 3, h);
   }
+  // ── "How this is worked out": the app's walk-through, from the same result ──
+  sheet(S, out) {
+    const { cfg } = S.data, F = cfg.flat, T = cfg.tax, swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(1), villa = out.villa, r = out.r, m0 = E.ymLabel(r.months[0]), mN = E.ymLabel(r.months[r.months.length - 1]);
+    const fmt = n => this.fmt(n), inr = n => this.inr(n);
+    const step = (n, k, h, em, h2, p, extra = {}) => ({ n, k, h, em, h2, p, dotCls: 'dot' + (n === '✓' ? ' ok' : ''), hasH: !!h, hasRows: !!extra.rows, rows: extra.rows || [], hasRes: !!extra.res, res: extra.res || {} });
+    const dvStep = (amount, n) => step(n, 'The other path', 'The same', fmt(amount), ' in DigiVilla',
+      `Put into the ${villa.name} villa in ${m0}, on real index history. ` + (r.swp ? `It paid you ${inr(r.dvMonthly)} every month (${swpPct}% a year) by selling a little of the arbitrage part — ${fmt(r.dvPaid)} after tax. The rest kept growing to ${fmt(r.dvValue)}.` : `With SWP off nothing was withdrawn — it all kept growing to ${fmt(r.dvValue)}.`) + (r.arbEmptyMonth ? ` The arbitrage part ran out in ${E.ymLabel(r.arbEmptyMonth)}; since then a little of the other funds pays the rent.` : ''));
+    const result = (aName, aTot, aSmall, bSmall, years) => {
+      const gap = r.dvPaid + r.dvValue - aTot;
+      return step('✓', `So, after ${years} ${years === 1 ? 'year' : 'years'}`, '', '', '', '', { res: { aName, a: fmt(aTot), as: aSmall, b: fmt(r.dvPaid + r.dvValue), bs: bSmall,
+        vcls: 'mcl-verdict' + (gap > 0 ? '' : ' down'), v1: gap > 0 ? '' : `${aName} did better by`, v2: gap > 0 ? fmt(gap) + ' more' : fmt(-gap), v3: gap > 0 ? 'with DigiVilla' : '' } });
+    };
+    const know = [
+      { b: 'DigiVilla is the past, not a promise.', t: `Real index values from ${m0} to ${mN}. Funds can fall; the next ${r.years} years won't repeat.` },
+      { b: 'Indices, not funds.', t: 'Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager\'s picks are in these numbers.' },
+      { b: 'Rebalanced every year.', t: `The ${list(cfg.income.pay_first.map(p => NAMES[p] || p))} part is left alone; ${list(cfg.rebalance.parts.map(p => NAMES[p] || p))} go back to the split they started with. The tax on what that sells is paid from the proceeds.` },
+      { b: 'Tax:', t: `DigiVilla's payouts on today's fund-tax rules, ${(T.cess * 100).toFixed(0)}% cess, no surcharge.` },
+      { b: '"Today\'s money"', t: `assumes prices rise ${cfg.display.inflation_pct}% a year.` },
+    ];
+    if (S.mode === 'fd') {
+      const steps = [
+        step('1', `In ${m0}`, 'You put', fmt(S.P), ' in a fixed deposit', `At ${S.fd}% a year, taxed at ${S.tax}% as income: about ${inr(r.fdMonthly)} a month after tax, ${fmt(r.fdPaid)} over ${r.years} years. Your ${fmt(S.P)} itself stays ${fmt(r.fdValue)}.`),
+        dvStep(S.P, '2'),
+        result('Fixed deposit', r.fdPaid + r.fdValue, `${fmt(r.fdPaid)} interest + ${fmt(r.fdValue)}`, `${fmt(r.dvPaid)} paid + ${fmt(r.dvValue)}`, r.years),
+      ];
+      return { steps, vs: [], know, sub: `${fmt(S.P)} · ${m0} → ${mN}` };
+    }
+    const f = out.f, yrs = out.held, rentThen = S.rent / Math.pow(1 + F.rent_rise_pct / 100, Math.max(0, yrs - 1));
+    const steps = [
+      step('1', `In ${m0}`, 'You bought the flat:', fmt(f.outlay), ' all-in', `${fmt(S.price)} for the flat + ${fmt(f.stamp)} stamp duty (${F.stamp_pct}%) and registration (${F.registration_pct}%). That ${fmt(f.outlay)} is the money we compare.`),
+      step('2', 'Every year', 'It earned rent: you kept', fmt(f.rentKept), '', `Rent is ${inr(S.rent)} a month today; we assume it rose ${F.rent_rise_pct}% a year to get there (about ${inr(rentThen)} in year 1), with ${F.vacant_months} empty month${F.vacant_months === 1 ? '' : 's'} a year.`,
+        { rows: [{ t: 'Rent collected', v: fmt(f.rentGross), cls: '', bcls: '' }, { t: `Tax (${T.default_slab}% slab on ${Math.round(100 - F.std_deduction * 100)}% of it)`, v: '−' + fmt(f.rentTax), cls: '', bcls: 'neg' }, { t: `Upkeep (${F.upkeep_pct}% of value a year)`, v: '−' + fmt(f.upkeep), cls: '', bcls: 'neg' }, { t: 'Rent you kept', v: fmt(f.rentKept), cls: 'sum', bcls: '' }] }),
+      step('3', 'Today', 'The flat is worth', fmt(S.value), '', `From ${fmt(S.price)} — that's ${f.appPct.toFixed(1)}% a year. Selling it would also cost about ${F.sell_brokerage_pct}% in brokerage (not taken off here).`),
+      dvStep(f.outlay, '4'),
+      result('Flat', f.flTotal, `${fmt(f.rentKept)} rent + ${fmt(S.value)}`, `${fmt(r.dvPaid)} rent + ${fmt(r.dvValue)}`, yrs),
+    ];
+    const G = 'color:#8fd65a', N = '', A = 'color:#c9c6da', R = 'color:#e0796b', Y = 'color:#e9c15c';
+    const flWins = f.flTotal > f.dvTotal;
+    const vs = [
+      { k: 'Real value', a: fmt(f.flReal), as: 'in today\'s money', ac: flWins ? A : N, b: fmt(f.dvReal), bs: 'in today\'s money', bc: G },
+      { k: 'Rent', a: f.yieldPct.toFixed(1) + '%', as: `${inr(S.rent)} a month · ${F.vacant_months} month${F.vacant_months === 1 ? '' : 's'} empty`, ac: N, b: r.swp ? swpPct + '%' : 'None', bs: r.swp ? `${inr(r.dvMonthly)} a month · every month` : 'SWP off — it all compounds', bc: r.swp ? G : N },
+      { k: 'Risk', a: 'Medium', as: 'one building, one city', ac: Y, b: 'High', bs: r.worstYearPct == null ? 'can fall' : `worst 12 months: ${r.worstYearPct < 0 ? '−' : '+'}${Math.abs(r.worstYearPct).toFixed(0)}%`, bc: R },
+      { k: 'Liquidity', a: 'Months', as: 'find a buyer, register', ac: R, b: '3 days', bs: 'redeem any business day', bc: G },
+      { k: 'Entry & exit', a: fmt(f.flFriction), as: `${F.stamp_pct}% stamp duty, ${F.registration_pct}% + ${F.sell_brokerage_pct}% brokerage`, ac: R, b: fmt(f.dvFriction), bs: '0.005% stamp duty on units', bc: G },
+      { k: 'Effort', a: 'Yours', as: 'tenants, repairs, society', ac: N, b: 'None', bs: 'we look after it', bc: G },
+      { k: 'Live in it', a: 'Yes', as: 'a home if you need one', ac: A, b: 'No', bs: 'it only pays you', bc: N },
+    ];
+    know.splice(2, 0, { b: 'The flat uses your numbers.', t: `What it's worth today is your estimate; past rent is worked back from today's at ${F.rent_rise_pct}% a year. Not counted: home-loan interest, society fees, property tax, the cost of selling.` });
+    return { steps, vs, know, sub: `${fmt(S.price)} flat · ${m0} → today` };
+  }
   renderVals() {
-    const S = this.state, isFd = S.mode === 'fd';
+    const S = this.state, isFd = S.mode === 'fd', ed = S.edit;
     const base = {
-      stageRef: this.stageRef, rigRef: this.rigRef, rulerRef: this.rulerRef, cvRef: this.cvRef,
+      stageRef: this.stageRef, rigRef: this.rigRef, rulerRef: this.rulerRef, cvRef: this.cvRef, editRef: this.editRef,
       isFd, isRe: !isFd, segFd: isFd ? 'on' : '', segRe: isFd ? '' : 'on',
-      pickFd: () => this.setState({ mode: 'fd' }), pickRe: () => this.setState({ mode: 're' }),
-      goBack: e => { e.preventDefault(); if (this.props.onBack) { this.props.onBack(); return; } const a = document.getElementById('showcase'); if (a && a.parentElement) { let sc = a.parentElement; while (sc && getComputedStyle(sc).overflowY !== 'auto') sc = sc.parentElement; if (sc) { let top = 0; for (let n = a; n && n !== sc; n = n.offsetParent) top += n.offsetTop; sc.scrollTo({ top, behavior: 'smooth' }); } } },
+      pickFd: () => this.setState({ mode: 'fd', edit: null, hint: '', bad: false }), pickRe: () => this.setState({ mode: 're', edit: null, hint: '', bad: false }),
+      goBack: e => { e.preventDefault(); if (this.state.sheet) { this.setState({ sheet: false }); return; } if (this.props.onBack) { this.props.onBack(); return; } const a = document.getElementById('showcase'); if (a && a.parentElement) { let sc = a.parentElement; while (sc && getComputedStyle(sc).overflowY !== 'auto') sc = sc.parentElement; if (sc) { let top = 0; for (let n = a; n && n !== sc; n = n.offsetParent) top += n.offsetTop; sc.scrollTo({ top, behavior: 'smooth' }); } } },
       rateTxt: S.fd + '%', rateVal: String(S.fd), rateOpts: [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9].map(v => ({ v: String(v), t: v + '%' })), setRate: e => this.setState({ fd: +e.target.value }),
       taxTxt: S.tax + '%', taxVal: String(S.tax), taxOpts: [0, 5, 10, 20, 30].map(v => ({ v: String(v), t: v + '%' })), setTax: e => this.setState({ tax: +e.target.value }),
-      reTxt: S.re + '%', reVal: String(S.re), reOpts: [4, 5, 6, 7, 8, 9, 10].map(v => ({ v: String(v), t: v + '%' })), setRe: e => this.setState({ re: +e.target.value }),
-      yieldTxt: S.yield + '%', yieldVal: String(S.yield), yieldOpts: [1.5, 2, 2.5, 3, 3.5].map(v => ({ v: String(v), t: v + '%' })), setYield: e => this.setState({ yield: +e.target.value }),
       ready: !!S.data, loading: !S.data && !S.failed, failed: !S.data && !!S.failed, retry: () => this.load(),
+      boughtYear: '', heldTxt: '',
+      sheetCls: 'mcl-sheet' + (S.sheet ? ' open' : ''), sheetHidden: S.sheet ? 'false' : 'true', sheetOn: !!(S.sheet && S.data), closeSheet: () => this.setState({ sheet: false }), openSheet: () => this.setState({ sheet: true, edit: null }),
+      steps: [], vs: [], know: [], hasVs: false, sheetSub: '',
     };
     if (!S.data) return base;
-    const { cfg, vf } = S.data, { villa, w, r, L, R } = this.sim(S), villas = cfg.villas, vi = villas.indexOf(villa);
+    const { cfg, vf } = S.data, out = this.sim(S), { villa, w, r, L, R } = out, villas = cfg.villas, vi = villas.indexOf(villa);
     const tl = Math.max(0, L.paid) + L.val, tr = (S.swp ? R.paid : 0) + R.val, mx = Math.max(tl, tr);
     // on a short phone the villa rig scales down (bottom-anchored) so bars + totals + rig always fit inside the stage
     const rigH = S.rigH || 110, stageH0 = S.stageH || 300, CAP = 26, TOT = 38 + 30, MIN = 38;
     const fit = Math.min(1, Math.max(.45, (stageH0 - CAP - TOT - 20 - 14 - 2 * MIN - 6) / rigH)), rigE = rigH * fit;
     const headroom = CAP + TOT + 20 + rigE + 14, maxH = Math.max(2 * MIN, stageH0 - headroom);
-    // a bar never grows past its share of maxH: a tiny segment is held at MIN and the other segment gives way
     const heights = (t, parts) => { const h = maxH * (t / mx); if (!(parts[0] > 0)) return [0, Math.max(MIN, h)]; const a = Math.max(MIN, h * parts[0] / t); return [a, Math.max(MIN, h - a)]; };
     const [lp, lv] = heights(tl, [Math.max(0, L.paid), L.val]), [rp, rv] = heights(tr, [S.swp ? R.paid : 0, R.val]);
-    const stageH = stageH0;
-    const topL = lp + lv + CAP + TOT, topR = rp + rv + CAP + TOT;
+    const stageH = stageH0, topL = lp + lv + CAP + TOT, topR = rp + rv + CAP + TOT;
     const stageW = this.stageRef.current ? this.stageRef.current.clientWidth : 358;
     const x1 = stageW * .35, y1 = stageH - topL + 20, x2 = stageW * .49, y2 = stageH - topR + 26;
-    const span = E.ymLabel(w.months[0]) + ' → ' + E.ymLabel(w.months[w.months.length - 1]);
     const vRate = this.villaRate(villa.key), irr = r.dvIrr;
-    const yearOpts = this.years(vf);
-    const swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2);
+    const a = this.act(S), aVal = Math.min(a.max, Math.max(a.min, this.val(S, a)));
+    const typing = k => !!(ed && ed.key === k);
+    const bought = isFd ? 0 : this.boughtYear(S), held = isFd ? S.yrs : out.held;
+    const sh = S.sheet ? this.sheet(S, out) : null;
+    const hintDefault = isFd ? 'Tap the amount to type it · drag the ruler' : 'Tap a card, slide it · tap again to type';
     return {
       ...base,
-      stageS: '',
       arrowD: `M${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 + 6).toFixed(1)} ${(y2 + (y1 - y2) * .35).toFixed(1)}, ${(x2 - 24).toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`, arrowOp: tr > tl ? .9 : 0,
       lArt: isFd ? 'assets/art/bank.svg' : 'assets/art/flat.svg', iconS: `bottom:${(topL + 4).toFixed(0)}px`,
       rigS: `bottom:${(topR + 20).toFixed(0)}px;transform:translateX(-50%) scale(${fit.toFixed(3)});transform-origin:50% 100%`, tagS: `bottom:${(topR + 2).toFixed(0)}px`,
-      swpCls: 'mcl-swp' + (S.swp ? '' : ' off'), swpOn: S.swp, toggleSwp: () => this.setState(s => ({ swp: !s.swp })),
+      swpCls: 'mcl-swp' + (S.swp ? '' : ' off'), swpOn: S.swp,
+      toggleSwp: () => this.setState(s => { const on = !s.swp, k = s.mode === 'fd' ? 'P' : 'price'; return on && s[k] < SWP_MIN ? { swp: on, [k]: SWP_MIN, exact: { ...s.exact, [k]: true }, hint: `A monthly income needs ${this.words(SWP_MIN)} or more — set to ${this.words(SWP_MIN)}`, bad: true } : { swp: on }; }),
       prevV: () => this.setState({ villa: villas[(vi + villas.length - 1) % villas.length].key }), nextV: () => this.setState({ villa: villas[(vi + 1) % villas.length].key }),
       villaS: `transform:scale(${(.85 + vi * .12).toFixed(2)})`, coinS: `opacity:${S.swp ? 1 : .35};transition:opacity .3s`,
-      tagName: villa.name, tagRate: (irr == null ? vRate : irr).toFixed(1) + '% a yr', tagYrs: 'last ' + S.yrs + ' yrs',
+      tagName: villa.name, tagRate: (irr == null ? vRate : irr).toFixed(1) + '% a yr', tagYrs: isFd ? 'last ' + S.yrs + ' yrs' : 'since ' + bought,
       totL: this.fmt(tl), totR: this.fmt(tr),
       boxLS: `height:${(lp + lv).toFixed(1)}px`, segLpS: `height:${lp.toFixed(1)}px`, segLvS: `height:${lv.toFixed(1)}px`, hasPaidL: L.paid > 0,
       boxRS: `height:${(rp + rv).toFixed(1)}px`, segRpS: `height:${rp.toFixed(1)}px`, segRvS: `height:${rv.toFixed(1)}px`, hasPaidR: S.swp && R.paid > 0,
@@ -250,10 +455,22 @@ class Component extends DCLogic {
       paidLabelR: isFd ? 'Paid out' : 'Rent paid', paidR: this.fmt(R.paid), valR: this.fmt(R.val),
       sumL: (L.paid > 0 ? this.fmt(L.paid) + (isFd ? ' paid + ' : ' rent + ') : '') + this.fmt(L.val) + (isFd ? ' value' : ' worth'), lblL: L.lbl,
       sumR: (S.swp ? this.fmt(R.paid) + ' paid + ' : '') + this.fmt(R.val) + ' value', lblR: villa.name + ' villa' + (S.swp ? ' · SWP' : ''),
-      yearOpts: yearOpts.map(y => ({ n: y, cls: y === S.yrs ? 'on' : '', pick: () => this.setState({ yrs: y }) })),
-      amt: this.inr(S.P), dec: () => this.setP(S.P - AMT_BIG), inc: () => this.setP(S.P + AMT_BIG),
-      rMin: AMT_MIN, rMax: AMT_MAX, rStep: AMT_STEP, rVal: S.P, onRange: e => this.setP(+e.target.value),
-      note: `Real benchmark-index history, ${span}${S.swp ? ` · ${swpPct}% a year paid monthly` : ''} · not advice, no promise of future returns.`,
+      // FD: years ago + the amount band
+      yearOpts: this.years(vf).map(y => ({ n: y, cls: y === S.yrs ? 'on' : '', pick: () => this.setState({ yrs: y }) })),
+      amt: this.show(S, this.fields(S)[0]), bandCls: 'card' + (typing('P') ? ' typing' : ''), typingP: typing('P'), notTypingP: !typing('P'), editP: () => this.startEdit('P'),
+      // Real estate: the question line + the four cards
+      boughtYear: String(bought), heldTxt: `${held} ${held === 1 ? 'year' : 'years'} ago`,
+      cards: isFd ? [] : this.fields(S).map(q => ({ key: q.key, label: q.label, value: this.show(S, q), long: this.show(S, q).length > 11, on: S.active === q.key ? 'true' : 'false', typing: typing(q.key), show: !typing(q.key), aria: q.label + ', type it',
+        cls: 'mcl-card' + (S.active === q.key ? ' on' : '') + (typing(q.key) ? ' typing' : ''), bcls: 'mono' + (this.show(S, q).length > 11 ? ' long' : ''),
+        pick: () => { if (ed && ed.key === q.key) return; if (S.active === q.key && !ed) this.startEdit(q.key); else this.setState({ active: q.key, edit: null }); } })),
+      // the shared ruler and its buttons follow the active field
+      dec: () => this.setField(a, this.val(S, a) - a.big), inc: () => this.setField(a, this.val(S, a) + a.big), lessAria: 'Less: ' + a.label, moreAria: 'More: ' + a.label,
+      rMin: a.min, rMax: a.max, rStep: a.step, rVal: aVal, rLabel: a.label, onRange: e => this.setField(a, +e.target.value),
+      // typing
+      editText: ed ? ed.text : '', editPh: ed ? ed.ph : '', onEditInput: e => this.editInput(e), onEditKey: e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } else if (e.key === 'Escape') { this.setState({ edit: null }); } }, commitEdit: () => this.commitEdit(),
+      hint: S.hint || hintDefault, hintCls: 'hint' + (S.bad ? ' bad' : ''),
+      // the sheet
+      steps: sh ? sh.steps : [], vs: sh ? sh.vs : [], hasVs: !!(sh && sh.vs.length), know: sh ? sh.know : [], sheetSub: sh ? sh.sub : '',
     };
   }
 }

@@ -268,7 +268,7 @@ class Component extends DCLogic {
         this.onTS2 = e => {
           armed = false; rail = null; inner = null; inShow = null;
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
-          if (this.state.menuOpen || this.cascading || this.leaving || c('.mfp-ruler') || c('select')) return;
+          if (this.state.menuOpen || this.cascading || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-sheet') || c('select') || c('input')) return;   // the calculator's ruler, sheet and typing keep their own touches
           inner = c('.mcl'); inShow = c('.msh');
           if (inner && Math.abs(sc0.scrollTop - offs(inner)) > 4) inner = null;     // its own scrolling only once the page is in place
           armed = true; y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
