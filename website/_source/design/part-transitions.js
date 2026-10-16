@@ -33,8 +33,24 @@
     (document.body || document.documentElement).appendChild(v);
     return v;
   }
+  // 'night': Explore's own background — the landing dims straight into the lesson's colours, one scheme, ~0.3 s each way
+  var NIGHT = 'radial-gradient(ellipse 70% 40% at 50% 34%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 80% 30% at 50% 100%,rgba(42,43,107,.55),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16)';
+  function night(op) {
+    var v = document.createElement('div');
+    v.setAttribute('data-tdc-veil', '1');
+    v.style.cssText = 'position:fixed;inset:0;z-index:2147483000;pointer-events:auto;background:' + NIGHT + ';opacity:' + op + ';will-change:opacity;transition:opacity .28s cubic-bezier(.4,0,.2,1)';
+    (document.body || document.documentElement).appendChild(v);
+    return v;
+  }
   function go(url, o) {
     if (window.__tdcLeaving) return; window.__tdcLeaving = true;
+    if (o && o.style === 'night') {
+      var n = night(0); n.getBoundingClientRect();
+      requestAnimationFrame(function () { requestAnimationFrame(function () { n.style.opacity = '1'; }); });
+      try { sessionStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+      setTimeout(function () { location.href = url; }, 280);
+      return;
+    }
     if (o && o.style === 'sky') {
       var s = sky(0); if (o.fast) s.style.transition = 'opacity .18s ease-out'; s.getBoundingClientRect();
       requestAnimationFrame(function () { requestAnimationFrame(function () { s.style.opacity = '1'; }); });
@@ -55,6 +71,12 @@
     var raw = null; try { raw = sessionStorage.getItem(KEY); sessionStorage.removeItem(KEY); } catch (e) {}
     if (!raw) return;
     var o = {}; try { o = JSON.parse(raw); } catch (e) {}
+    if (o.style === 'night') {
+      // the page underneath has the same background: fade the veil the moment the first screen is ready
+      var nv = night(1), gone = false, out = function () { if (gone) return; gone = true; nv.style.pointerEvents = 'none'; nv.style.transition = 'opacity .35s cubic-bezier(.4,0,.2,1)'; nv.style.opacity = '0'; setTimeout(function () { nv.remove(); }, 450); };
+      Promise.race([window.__tdcReady, new Promise(function (r) { setTimeout(r, 1500); })]).then(out);
+      return;
+    }
     if (o.style === 'sky') {
       document.documentElement.setAttribute('data-tdc-arrive', 'sky');
       var s = sky(1), t1 = Date.now();

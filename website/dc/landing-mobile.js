@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=311e4500';
-import C_part_stage_foundation from './part-stage-foundation.js?v=311e4500';
-import C_part_stage_grading from './part-stage-grading.js?v=311e4500';
-import C_part_stage_plot from './part-stage-plot.js?v=311e4500';
-import C_part_stage_steel from './part-stage-steel.js?v=311e4500';
-import C_part_stage_villa from './part-stage-villa.js?v=311e4500';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber } from './rt.js?v=37f93f3b';
+import C_part_stage_foundation from './part-stage-foundation.js?v=37f93f3b';
+import C_part_stage_grading from './part-stage-grading.js?v=37f93f3b';
+import C_part_stage_plot from './part-stage-plot.js?v=37f93f3b';
+import C_part_stage_steel from './part-stage-steel.js?v=37f93f3b';
+import C_part_stage_villa from './part-stage-villa.js?v=37f93f3b';
 /* ── logic, verbatim from the design file ── */
-import * as _explore from './explore-mobile.js?v=311e4500';   // the Explore page's module, warmed with the landing
+import * as _explore from './explore-mobile.js?v=37f93f3b';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
@@ -246,7 +246,7 @@ class Component extends DCLogic {
     const setO = (el, v) => { v = +(+v).toFixed(3); if (el && el.__o !== v) { el.style.opacity = v; el.__o = v; } };
     const tick = t => {
       const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; const k = t / 1000;
-      this.hold = this.cascading ? Math.min(1, this.hold + dt / .55) : Math.max(0, this.hold - dt * (reducedMotion ? 99 : 1.6));
+      this.hold = this.cascading ? Math.min(1, this.hold + dt / .35) : Math.max(0, this.hold - dt * (reducedMotion ? 99 : 1.6));
       sm.x += ((Math.sin(k * .23) * .12 + tx) - sm.x) * .05; sm.y += ((Math.cos(k * .19) * .08 + ty) - sm.y) * .05;
       const sc = this.scroller(), frame = this.frameRef.current;
       if (!frame) { this.raf = requestAnimationFrame(tick); return; }
@@ -315,10 +315,10 @@ class Component extends DCLogic {
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;
-    if (fr) { fr.style.transition = 'transform .7s cubic-bezier(.55,0,.25,1)'; fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(30vh) scale(1.06)'; }
+    if (fr) { fr.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)'; fr.style.transformOrigin = '50% 60%'; fr.style.transform = 'scale(.97)'; }   // a small settle back as the night veil comes in
     const b = this.copyBRef.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; }
     try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {}
-    if (window.tdcVeil) window.tdcVeil.go('explore.html', { style: 'sky' }); else setTimeout(() => { location.href = 'explore.html'; }, 600);
+    if (window.tdcVeil) window.tdcVeil.go('explore.html', { style: 'night' }); else setTimeout(() => { location.href = 'explore.html'; }, 280);
   }
   glideTo(find) {
     return e => {
