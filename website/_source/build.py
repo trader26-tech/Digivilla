@@ -487,7 +487,7 @@ def main():
     INTER, RUPEE, CAVEAT = 'Inter-latin.woff2', 'Inter-rupee.woff2', 'Caveat-700-latin.woff2'
     FONTS = {
         # landing: Almarai + the Instrument Serif accent line (Inter only appears further down)
-        'thedigiciti_website': ['Almarai-400-latin.woff2', ('Almarai-700-latin.woff2', PHONE), 'InstrumentSerif-400-italic-latin.woff2'],
+        'thedigiciti_website': ['Almarai-400-latin.woff2', ('Almarai-700-latin.woff2', PHONE), 'InstrumentSerif-400-italic-latin.woff2', ('InstrumentSerif-400-latin.woff2', PHONE)],
         # the story opens on the flight on phones (Inter only), on the pen-drawn map on laptops
         'story': [INTER, (CAVEAT, DESK)],
         'story-1-journey': [INTER],

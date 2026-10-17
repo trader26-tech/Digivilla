@@ -4,3 +4,4 @@ Almarai-400-latin.woff2
 Almarai-700-latin.woff2
 InstrumentSerif-400-italic-latin.woff2
 Caveat-700-latin.woff2
+InstrumentSerif-400-latin.woff2

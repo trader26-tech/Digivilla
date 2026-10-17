@@ -9,7 +9,7 @@ The site is English + ₹, so every font is cut down to what it can draw here:
                    system turns on tnum). ₹ comes from a separate ~1 KB face (unicode-range U+20B9).
   Almarai          landing headings/copy: 400, 700, 800 only (500→400, 600→700 by CSS matching;
                    300 was never used). ASCII + typographic punctuation.
-  Instrument Serif the landing's italic accent line. ASCII + punctuation.
+  Instrument Serif the landing's italic accent line + the upright for the phone cover's title. ASCII + punctuation.
   Caveat           the pen-drawn labels (story map, Explore). Static 700 (the only weight used),
                    ASCII + ₹ + punctuation. Arrows / ≈ are not in Caveat — they fall back as before.
 
@@ -134,6 +134,9 @@ def main():
     serif = load(fetch(GH + 'instrumentserif/InstrumentSerif-Italic.ttf'))
     css.append(face('Instrument Serif', 400, 'InstrumentSerif-400-italic-latin.woff2',
                     cut(serif, ASCII + PUNCT, 'InstrumentSerif-400-italic-latin.woff2'), 'optional', style='italic'))
+    upright = load(fetch(GH + 'instrumentserif/InstrumentSerif-Regular.ttf'))      # the phone cover's title
+    css.append(face('Instrument Serif', 400, 'InstrumentSerif-400-latin.woff2',
+                    cut(upright, ASCII + PUNCT, 'InstrumentSerif-400-latin.woff2'), 'swap'))
     caveat = instancer.instantiateVariableFont(load(fetch(GH + 'caveat/Caveat%5Bwght%5D.ttf')), {'wght': 700})
     css.append(face('Caveat', 700, 'Caveat-700-latin.woff2', cut(caveat, ASCII + PUNCT, 'Caveat-700-latin.woff2'), 'swap'))
 
