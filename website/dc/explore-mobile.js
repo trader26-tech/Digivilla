@@ -1,5 +1,5 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=1bb3bce2';
-import C_calc_mobile from './calc-mobile.js?v=1bb3bce2';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=36b4ae47';
+import C_calc_mobile from './calc-mobile.js?v=36b4ae47';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   state = { calcMounted: false, calcOpen: false };
