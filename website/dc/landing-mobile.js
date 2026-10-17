@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=e4878d47';
-import C_part_stage_foundation from './part-stage-foundation.js?v=e4878d47';
-import C_part_stage_grading from './part-stage-grading.js?v=e4878d47';
-import C_part_stage_plot from './part-stage-plot.js?v=e4878d47';
-import C_part_stage_steel from './part-stage-steel.js?v=e4878d47';
-import C_part_stage_villa from './part-stage-villa.js?v=e4878d47';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=e53a1642';
+import C_part_stage_foundation from './part-stage-foundation.js?v=e53a1642';
+import C_part_stage_grading from './part-stage-grading.js?v=e53a1642';
+import C_part_stage_plot from './part-stage-plot.js?v=e53a1642';
+import C_part_stage_steel from './part-stage-steel.js?v=e53a1642';
+import C_part_stage_villa from './part-stage-villa.js?v=e53a1642';
 /* ── logic, verbatim from the design file ── */
-import * as _explore from './explore-mobile.js?v=e4878d47';   // the Explore page's module, warmed with the landing
+import * as _explore from './explore-mobile.js?v=e53a1642';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
@@ -81,6 +81,7 @@ class Component extends DCLogic {
         const list = [0, R];
         const app = document.getElementById('showcase'), calc = document.getElementById('calculator'), foot = document.querySelector('footer');
         if (app) list.push(offs(app)); if (calc) list.push(offs(calc)); if (foot) list.push(Math.min(max, offs(foot)));
+        list.sort((a, b) => a - b);                                                 // page order, whatever order the sections come in
         return list.filter((v, i, a) => i === 0 || v > a[i - 1] + 4);
       };
       const nearestIdx = (P, y) => { let k = 0; P.forEach((v, i) => { if (Math.abs(v - y) < Math.abs(P[k] - y)) k = i; }); return k; };

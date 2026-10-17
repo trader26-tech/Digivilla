@@ -42,8 +42,37 @@
     (document.body || document.documentElement).appendChild(v);
     return v;
   }
+  // 'ink': into the ONE calculator. The calculator's own ground (#0b0c12) grows as a circle from the control that was
+  // tapped (o.x, o.y in px), a quiet label settles in its middle, then the page changes underneath; on arrival the
+  // same ink — label and all — waits for the calculator to be ready and lifts. Only clip-path/opacity/transform move.
+  var INK = 'radial-gradient(ellipse 60% 45% at 50% 46%,rgba(143,214,90,.10),transparent 70%),#0b0c12';
+  function ink(o, open) {
+    var v = document.createElement('div');
+    v.setAttribute('data-tdc-veil', '1');
+    var cx = o.x != null ? o.x + 'px' : '50%', cy = o.y != null ? o.y + 'px' : '50%';
+    v.style.cssText = 'position:fixed;inset:0;z-index:2147483000;pointer-events:auto;display:grid;place-items:center;background:' + INK + ';will-change:clip-path,opacity;clip-path:circle(' + (open ? '150%' : '0px') + ' at ' + cx + ' ' + cy + ');font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased';
+    v.innerHTML = '<div data-l="1" style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;opacity:' + (open ? 1 : 0) + ';transform:translateY(' + (open ? 0 : 8) + 'px);transition:opacity .35s ease,transform .5s cubic-bezier(.2,.8,.2,1)">' +
+      '<span style="display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#8fd65a"><i style="width:6px;height:6px;border-radius:50%;background:#8fd65a;box-shadow:0 0 10px #8fd65a"></i>' + (o.kicker || 'The calculator') + '</span>' +
+      '<span style="font-size:clamp(24px,6.4vw,40px);font-weight:600;letter-spacing:-.035em;line-height:1.1;color:#f4f4f7">' + (o.title || 'See it with your money') + '</span></div>';
+    (document.body || document.documentElement).appendChild(v);
+    return v;
+  }
   function go(url, o) {
     if (window.__tdcLeaving) return; window.__tdcLeaving = true;
+    if (o && o.style === 'ink') {
+      var k = ink(o, false), l = k.querySelector('[data-l]'), rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      try { sessionStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+      if (rm) { k.style.clipPath = 'none'; l.style.opacity = '1'; l.style.transform = 'none'; setTimeout(function () { location.href = url; }, 120); return; }
+      k.getBoundingClientRect();
+      var cx = o.x != null ? o.x + 'px' : '50%', cy = o.y != null ? o.y + 'px' : '50%';
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        k.style.transition = 'clip-path .62s cubic-bezier(.7,0,.25,1)';
+        k.style.clipPath = 'circle(150% at ' + cx + ' ' + cy + ')';
+        setTimeout(function () { l.style.opacity = '1'; l.style.transform = 'none'; }, 260);
+      }); });
+      setTimeout(function () { location.href = url; }, 700);
+      return;
+    }
     if (o && o.style === 'night') {
       var n = night(0); n.getBoundingClientRect();
       requestAnimationFrame(function () { requestAnimationFrame(function () { n.style.opacity = '1'; }); });
@@ -71,6 +100,13 @@
     var raw = null; try { raw = sessionStorage.getItem(KEY); sessionStorage.removeItem(KEY); } catch (e) {}
     if (!raw) return;
     var o = {}; try { o = JSON.parse(raw); } catch (e) {}
+    if (o.style === 'ink') {
+      // the label stays a beat, then the ink lifts off the calculator (which the page has already scrolled to)
+      var iv = ink(o, true), il = iv.querySelector('[data-l]'), t2 = Date.now(), lifted = false;
+      var lift = function () { if (lifted) return; lifted = true; iv.style.pointerEvents = 'none'; il.style.opacity = '0'; il.style.transform = 'translateY(-8px)'; iv.style.transition = 'opacity .55s cubic-bezier(.4,0,.2,1) .12s'; iv.style.opacity = '0'; setTimeout(function () { iv.remove(); }, 800); };
+      Promise.race([window.__tdcReady, new Promise(function (r) { setTimeout(r, 2200); })]).then(function () { setTimeout(lift, Math.max(0, 420 - (Date.now() - t2))); });
+      return;
+    }
     if (o.style === 'night') {
       // the page underneath has the same background: fade the veil the moment the first screen is ready
       var nv = night(1), gone = false, out = function () { if (gone) return; gone = true; nv.style.pointerEvents = 'none'; nv.style.transition = 'opacity .35s cubic-bezier(.4,0,.2,1)'; nv.style.opacity = '0'; setTimeout(function () { nv.remove(); }, 450); };

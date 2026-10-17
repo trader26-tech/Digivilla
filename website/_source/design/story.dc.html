@@ -29,10 +29,6 @@
 <sc-if value="{{ showLesson }}" hint-placeholder-val="{{ false }}">
 <div style="position:absolute;inset:0"><dc-import name="story-2-map" on-next="{{ next1 }}" on-prev="{{ prev1 }}" start-at-end="{{ lessonFromEnd }}" hint-size="100%,100%"></dc-import></div>
 </sc-if>
-<sc-if value="{{ isCalc }}" hint-placeholder-val="{{ false }}">
-<div ref="{{ calcRef }}" style="position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none"><dc-import name="story-3-numbers" hint-size="100%,100%"></dc-import></div>
-</sc-if>
-
 <div style="position:absolute;left:0;right:0;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px clamp(16px,3vw,40px);pointer-events:none">
 <a href="index.dc.html" onClick="{{ goHome }}" aria-label="Back to TheDigiCiti home" style="pointer-events:auto;position:relative;display:flex;align-items:center;gap:12px;height:44px;padding:0 8px 0 5px;border-radius:999px;background:linear-gradient(180deg,rgba(255,244,222,.10),rgba(255,226,186,.03)),rgba(11,12,18,.5);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(255,236,200,.18), inset 0 1px 0 rgba(255,255,255,.12), 0 10px 30px -12px rgba(0,0,0,.7);color:#E1E0CC;transition:box-shadow .35s, gap .35s" style-hover="gap:16px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,236,200,.5), inset 0 1px 0 rgba(255,255,255,.2), 0 0 34px rgba(255,200,130,.25), 0 10px 30px -12px rgba(0,0,0,.7)">
 <span style="width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#E1E0CC;color:#0b0c12;box-shadow:0 0 18px rgba(255,214,150,.35)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></span>
@@ -42,7 +38,7 @@
 <nav aria-label="Chapters" data-sh="pills" style="pointer-events:auto;display:flex;gap:2px;padding:4px;border-radius:999px;background:linear-gradient(180deg,rgba(255,244,222,.08),rgba(255,226,186,.02)),rgba(11,12,18,.5);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(255,236,200,.16), inset 0 1px 0 rgba(255,255,255,.1), 0 10px 30px -12px rgba(0,0,0,.7)">
 <sc-if value="{{ hasFlight }}" hint-placeholder-val="{{ true }}"><button onClick="{{ go0 }}" aria-current="{{ cur0 }}" style="{{ ch0 }}"><i style="{{ dot0 }}"></i><i data-pbar="0" aria-hidden="true" style="position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,#d8961f,#f6c445);transform-origin:0 50%;transform:scaleX(0);pointer-events:none"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">01</b>The journey</span></button></sc-if>
 <button onClick="{{ go1 }}" aria-current="{{ cur1 }}" style="{{ ch1 }}"><i style="{{ dot1 }}"></i><i data-pbar="1" aria-hidden="true" style="position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,#d8961f,#f6c445);transform-origin:0 50%;transform:scaleX(0);pointer-events:none"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">{{ num1 }}</b>Reading the map</span></button>
-<button onClick="{{ go2 }}" aria-current="{{ cur2 }}" style="{{ ch2 }}"><i style="{{ dot2 }}"></i><i data-pbar="2" aria-hidden="true" style="position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,#d8961f,#f6c445);transform-origin:0 50%;transform:scaleX(0);pointer-events:none"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">{{ num2 }}</b>Your numbers</span></button>
+<button onClick="{{ go2 }}" aria-current="{{ cur2 }}" style="{{ ch2 }}"><i style="{{ dot2 }}"></i><i data-pbar="2" aria-hidden="true" style="position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,#d8961f,#f6c445);transform-origin:0 50%;transform:scaleX(0);pointer-events:none"></i><span data-sh="label"><b style="font-weight:600;margin-right:6px;opacity:.7">{{ num2 }}</b>The calculator</span></button>
 </nav>
 <span style="width:44px;flex:none"></span>
 </div>
@@ -75,9 +71,10 @@
 const FIRST = typeof innerWidth === 'number' && innerWidth > 700 ? 1 : 0;
 class Component extends DCLogic {
   // Explore sets localStorage['thedigiciti.chapter'] = '0'; a nav link can ask for a chapter with #1 / #2 / #3.
-  state = { intro: FIRST === 1, ch: Math.max(FIRST, (() => { const h = parseInt((location.hash || '').replace('#', ''), 10); if (h >= 1 && h <= 3) return h - 1; try { const v = parseInt(localStorage.getItem('thedigiciti.chapter'), 10); if (v >= 0 && v <= 2) return v; } catch (e) {} return 0; })()), from: -1, wipe: FIRST === 1, phase: FIRST === 1 ? 2 : 0, nxt: 0 };
+  state = { intro: FIRST === 1, ch: Math.max(FIRST, Math.min(1, (this.wantCalc = (() => { const h = parseInt((location.hash || '').replace('#', ''), 10); if (h >= 1 && h <= 3) return h - 1; try { const v = parseInt(localStorage.getItem('thedigiciti.chapter'), 10); if (v >= 0 && v <= 2) return v; } catch (e) {} return 0; })() === 2) ? 1 : (() => { const h = parseInt((location.hash || '').replace('#', ''), 10); if (h >= 1 && h <= 3) return h - 1; try { const v = parseInt(localStorage.getItem('thedigiciti.chapter'), 10); if (v >= 0 && v <= 2) return v; } catch (e) {} return 0; })())), from: -1, wipe: FIRST === 1, phase: FIRST === 1 ? 2 : 0, nxt: 0 };
   calcRef = React.createRef(); guideRef = React.createRef(); peekRef = React.createRef();
   componentDidMount() {
+    if (this.wantCalc) { this.toCalc(); return; }
     try { localStorage.setItem('thedigiciti.chapter', this.state.ch); } catch (e) {}
     // laptops: the story opens on its chapter card (the coin, "Chapter 01 · Reading the map"), which irises open onto
     // the chapter — the same card every chapter change shows, so the first screen is never a half-drawn map
@@ -93,7 +90,7 @@ class Component extends DCLogic {
     // Every chapter publishes how far through it the reader is (rt.scrubber → window.tdcStory.progress; chapter 3
     // from its own page scroll): the active pill's gold bar moves with the scroll, earlier chapters stay full.
     // Pushing on past a chapter's end (or back past its start) builds the hand-off visibly — "Keep scrolling ·
-    // Next: 02 Your numbers" with a ring that fills as you push — and the next chapter arrives through the coin card.
+    // Next: the calculator" with a ring that fills as you push — and the next chapter arrives through the coin card.
     this.prog = 0;
     this.paintProg = () => {
       const bars = document.querySelectorAll('[data-pbar]'), ch = this.state.ch;
@@ -103,7 +100,7 @@ class Component extends DCLogic {
       const el = this.peekRef.current; if (!el) return;
       const ch = this.state.ch, tgt = d > 0 ? (ch < 2 ? ch + 1 : 'app') : (ch - 1 >= FIRST ? ch - 1 : null);
       if (tgt == null || this.busy || this.leaving) f = 0;
-      const T = ['The journey', 'Reading the map', 'Your numbers'];
+      const T = ['The journey', 'Reading the map', 'The calculator'];
       if (f > 0 && el.__t !== String(tgt) + d) {
         el.__t = String(tgt) + d;
         el.querySelector('[data-peek-k]').textContent = d > 0 ? 'Keep scrolling · next' : 'Keep scrolling · back to';
@@ -127,7 +124,7 @@ class Component extends DCLogic {
       if (dots.__n !== n) { dots.__n = n; dots.innerHTML = Array.from({ length: n + 1 }, () => '<i style="display:block;width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.22);transition:width .35s,background .35s"></i>').join(''); }
       [...dots.children].forEach((d, k) => { d.style.width = k === i ? '18px' : '6px'; d.style.background = k < i ? 'rgba(246,196,69,.55)' : k === i ? '#f6c445' : 'rgba(255,255,255,.22)'; });
       el.querySelector('[data-guide-n]').textContent = 'Step ' + (i + 1) + ' of ' + (n + 1);
-      const T = ['The journey', 'Reading the map', 'Your numbers'], next = i >= n ? (ch < 2 ? '0' + (ch + 1 - FIRST + 1) + ' · ' + T[ch + 1] : 'The app') : 'the next step';
+      const T = ['The journey', 'Reading the map', 'The calculator'], next = i >= n ? (ch < 2 ? '0' + (ch + 1 - FIRST + 1) + ' · ' + T[ch + 1] : 'The app') : 'the next step';
       const arrow = touchy ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f6c445" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>' : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f6c445" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>';
       const t = el.querySelector('[data-guide-t]');
       t.innerHTML = playing ? '<span style="color:rgba(255,246,234,.55)">Playing…</span>' : arrow + (touchy ? 'Swipe up for ' : 'Scroll for ') + next;
@@ -185,8 +182,18 @@ class Component extends DCLogic {
     if (this.leaving) return; this.leaving = true;
     window.tdcVeil && window.tdcVeil.go('index.dc.html#showcase', { style: 'sky' });
   }
-  goTo(n) {
-    n = Math.max(FIRST, Math.min(2, n));
+  /** The story's last step is THE calculator (the landing's #calculator — there is only one): its ink grows from the
+   *  control that asked for it (or the middle), and the landing opens on the calculator as the ink lifts. */
+  toCalc(e) {
+    if (this.leaving) return; this.leaving = true;
+    const el = e && e.currentTarget, b = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+    try { localStorage.setItem('thedigiciti.chapter', String(FIRST)); } catch (_) {}
+    const o = { style: 'ink', x: b ? Math.round(b.left + b.width / 2) : Math.round(innerWidth / 2), y: b ? Math.round(b.top + b.height / 2) : Math.round(innerHeight / 2), kicker: 'The calculator', title: 'See it with your money' };
+    if (window.tdcVeil) window.tdcVeil.go('index.dc.html#calculator', o); else location.href = 'index.dc.html#calculator';
+  }
+  goTo(n, e) {
+    if (n >= 2) { this.toCalc(e); return; }
+    n = Math.max(FIRST, Math.min(1, n));
     const gEl = this.guideRef && this.guideRef.current; if (gEl && n !== this.state.ch) { gEl.style.opacity = '0'; gEl.style.transform = 'translate(-50%,10px)'; }
     if (n === this.state.ch || this.busy) return;
     this.busy = true;
@@ -202,7 +209,7 @@ class Component extends DCLogic {
   }
   renderVals() {
     const { ch, from, wipe, phase, nxt } = this.state;
-    const T = ['The journey', 'Reading the map', 'Your numbers'];
+    const T = ['The journey', 'Reading the map', 'The calculator'];
     const open = phase === 1 || phase === 2;
     const btn = i => `position:relative;display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border:0;border-radius:999px;font:inherit;font-size:11.5px;letter-spacing:.04em;white-space:nowrap;cursor:pointer;color:${ch === i ? '#fff6ea' : '#8a8ea3'};background:${ch === i ? 'rgba(246,196,69,.14)' : 'transparent'};transition:all .3s`;
     const dot = i => `width:7px;height:7px;border-radius:50%;flex:none;background:${ch === i ? '#f6c445' : 'rgba(255,255,255,.22)'};box-shadow:${ch === i ? '0 0 10px rgba(246,196,69,.8)' : 'none'};transition:all .3s`;
@@ -213,8 +220,8 @@ class Component extends DCLogic {
       goHome: e => { pv(e); if (this.leaving) return; this.leaving = true; window.tdcVeil && window.tdcVeil.go('index.dc.html', { style: 'sky', fast: true }); },
       isFlight: ch === 0, isLesson: ch === 1, isCalc: ch === 2 && !this.state.intro, showLesson: ch === 1 && !this.state.intro,
       flightFromEnd: ch === 0 && from === 1, lessonFromEnd: ch === 1 && from === 2,
-      next0: () => this.goTo(1), next1: () => this.goTo(2), prev1: () => this.goTo(0),
-      go0: e => { pv(e); this.goTo(0); }, go1: e => { pv(e); this.goTo(1); }, go2: e => { pv(e); this.goTo(2); },
+      next0: () => this.goTo(1), next1: () => this.toCalc(), prev1: () => this.goTo(0),
+      go0: e => { pv(e); this.goTo(0); }, go1: e => { pv(e); this.goTo(1); }, go2: e => { pv(e); this.goTo(2, e); },
       hasFlight: FIRST === 0, num1: no(1), num2: no(2),
       cur0: ch === 0 ? 'step' : null, cur1: ch === 1 ? 'step' : null, cur2: ch === 2 ? 'step' : null,
       ch0: btn(0), ch1: btn(1), ch2: btn(2), dot0: dot(0), dot1: dot(1), dot2: dot(2),

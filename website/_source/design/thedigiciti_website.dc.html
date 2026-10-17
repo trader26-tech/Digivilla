@@ -123,10 +123,13 @@
   </div>
   </sc-if>
 <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}">
-<dc-import name="showcase-mobile" hint-size="100%,100vh"></dc-import>
 <dc-import name="calc-mobile" hint-size="100%,100vh"></dc-import>
+<dc-import name="showcase-mobile" hint-size="100%,100vh"></dc-import>
 </sc-if>
 <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
+<section id="calculator" data-screen-label="Calculator" style="position:relative;background:#0b0c12;border-top:1px solid #1a1c28">
+<dc-import name="calculator" embedded="{{ true }}" hint-size="100%,100vh"></dc-import>
+</section>
 <section id="showcase" data-screen-label="Mobile showcase" style="position:relative;height:100vh;overflow:hidden;background:#000">
   <div data-m="mhead" style="display:none;position:absolute;left:0;right:0;top:0;z-index:6;flex-direction:column;gap:10px;padding:calc(22px + env(safe-area-inset-top)) 22px 0;pointer-events:none">
     <span style="font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#7a7c8c">DigiVilla · Digi City</span>
@@ -235,9 +238,6 @@
     </div>
   </div>
 </section>
-<section id="calculator" data-screen-label="Calculator" style="position:relative;background:#0b0c12;border-top:1px solid #1a1c28">
-<dc-import name="calculator" embedded="{{ true }}" hint-size="100%,100vh"></dc-import>
-</section>
 </sc-if>
 <dc-import name="part-footer" hint-size="100%,280px"></dc-import>
 </div>
@@ -276,7 +276,11 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
-    if (location.hash === '#showcase') { const jump = () => { const a = document.getElementById('showcase'), sc = this.scrollRef.current; if (a && sc) sc.scrollTop = a.offsetTop; }; jump(); requestAnimationFrame(jump); setTimeout(jump, 120); setTimeout(jump, 400); }
+    // #calculator / #showcase (the story's end, a shared link): open on that page — measured against the scroller, re-applied
+    // while the page settles (fonts, images, the phone layout mounting)
+    { const id = (location.hash || '').slice(1); if (id === 'calculator' || id === 'showcase') {
+      const jump = () => { const a = document.getElementById(id), sc = this.scrollRef.current; if (!a || !sc) return; let top = 0; for (let n = a; n && n !== sc; n = n.offsetParent) top += n.offsetTop; sc.scrollTop = top; };
+      jump(); requestAnimationFrame(jump); [60, 160, 400, 900].forEach(ms => setTimeout(jump, ms)); } }
     if (document.documentElement.getAttribute('data-tdc-arrive') === 'sky') { document.documentElement.removeAttribute('data-tdc-arrive'); const fr = this.frameRef.current; if (fr) { fr.style.transformOrigin = '50% 100%'; fr.style.transform = 'translateY(8vh) scale(1.02)'; fr.getBoundingClientRect(); requestAnimationFrame(() => { fr.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)'; fr.style.transform = 'none'; setTimeout(() => { fr.style.transition = ''; }, 500); }); } }
     const paint = (ref, tex) => { const c = ref.current; if (!c) return; c.width = tex.width; c.height = tex.height; c.getContext('2d').drawImage(tex, 0, 0); };
     paint(this.farRef, this.makeClouds(360, 120, 7, { persp: 3, fx: 3.6, fy: 1.6, th: .5, topFade: 6, sx: .86, sy: 0, haze: .55 }));
@@ -300,8 +304,8 @@ class Component extends DCLogic {
       this.stageZ = z; ss.style.top = phone ? '60%' : '50%';
     };
     this.fitStage(); addEventListener('resize', this.fitStage);
-    // ── Laptop paging: ONE scroll gesture = ONE page, however hard — cover → the Explore arc → the app showcase →
-    // the calculator → (its last part + the footer). A trackpad swipe is a burst of deltas plus a momentum tail that
+    // ── Laptop paging: ONE scroll gesture = ONE page, however hard — cover → the Explore arc → the calculator (and its
+    // last part) → the app showcase → the footer. A trackpad swipe is a burst of deltas plus a momentum tail that
     // decays; the whole thing is one gesture. A new gesture = a pause (> 220 ms, input time) or a delta that jumps
     //     // (rt.pageGestures). A swipe the other way during a glide turns back at once; one more the same way waits
     // for the glide to land — a single swipe, however hard, never moves more than one stop. Anything that scrolls on its own (a panel, the ruler)
@@ -313,8 +317,9 @@ class Component extends DCLogic {
       const stops = () => {
         const tr = sc0.querySelector('[data-hero-track]'), R = tr ? tr.clientHeight - sc0.clientHeight : sc0.clientHeight;
         const max = Math.max(0, sc0.scrollHeight - sc0.clientHeight), L = [0, R];
-        ['showcase', 'calculator'].forEach(id => { const el = document.getElementById(id); if (el) L.push(Math.min(max, offs(el))); });
-        L.push(max);
+        ['calculator', 'showcase'].forEach(id => { const el = document.getElementById(id); if (!el) return; const top = offs(el); L.push(Math.min(max, top));
+          if (el.offsetHeight > sc0.clientHeight + 40) L.push(Math.min(max, top + el.offsetHeight - sc0.clientHeight)); });   // a page taller than the screen: its end is a stop too
+        L.push(max); L.sort((a, b) => a - b);
         return { R, L: L.filter((v, i, a) => i === 0 || v > a[i - 1] + 8) };
       };
       const easeOut = u => 1 - Math.pow(1 - u, 3), easeIO = u => u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;

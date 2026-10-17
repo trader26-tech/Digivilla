@@ -248,6 +248,7 @@ class Component extends DCLogic {
         const list = [0, R];
         const app = document.getElementById('showcase'), calc = document.getElementById('calculator'), foot = document.querySelector('footer');
         if (app) list.push(offs(app)); if (calc) list.push(offs(calc)); if (foot) list.push(Math.min(max, offs(foot)));
+        list.sort((a, b) => a - b);                                                 // page order, whatever order the sections come in
         return list.filter((v, i, a) => i === 0 || v > a[i - 1] + 4);
       };
       const nearestIdx = (P, y) => { let k = 0; P.forEach((v, i) => { if (Math.abs(v - y) < Math.abs(P[k] - y)) k = i; }); return k; };

@@ -19,13 +19,13 @@
    displacement filter re-rendering while the pen draws), glows are radial gradients (no Gaussian
    blur, no drop-shadows), nothing uses backdrop-filter, every move is opacity/transform or a
    stroke-dashoffset draw. One tap or one swipe = one step; the card and the graph both advance.
-   Step 9's CTA (or Skip) slides the phone calculator up over the lesson, full screen — the app's
+   Step 9's CTA (or Skip) opens THE calculator (the landing's #calculator — there is only one): its ink grows from the tap; the app's
    engine on real history, every control on one screen, nothing to scroll. */
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#0b0c12}
 .xpl{position:fixed;inset:0;overflow:hidden;color:#fff6ea;font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:radial-gradient(ellipse 70% 40% at 50% 34%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 80% 30% at 50% 100%,rgba(42,43,107,.55),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16)}
 .xpl *{box-sizing:border-box}
 .xpl-lesson{position:absolute;inset:0;touch-action:none;transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .45s ease;will-change:transform}
-.xpl-lesson.away{transform:scale(.94);opacity:.35;pointer-events:none}
+.xpl-lesson.away{transform:scale(.96);opacity:.6;pointer-events:none}
 .xpl-grid{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,236,190,.14) 1px,transparent 1.2px);background-size:24px 24px;-webkit-mask-image:radial-gradient(ellipse 80% 55% at 50% 38%,#000 35%,transparent 95%);mask-image:radial-gradient(ellipse 80% 55% at 50% 38%,#000 35%,transparent 95%)}
 .xpl-col{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom))}
 .xpl-head{flex:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -146,7 +146,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 <div data-cap="5" class="xpl-cap"><span class="k grn">Option one</span><span class="h">All of it in arbitrage?</span><span class="tick"><span><b class="g">✓</b>Your capital stays safe.</span><span><b class="r">✕</b>≈5.5% a year. Barely beats inflation.</span></span></div>
 <div data-cap="6" class="xpl-cap"><span class="k red">Option two</span><span class="h">All of it in stocks?</span><span class="tick"><span><b class="g">✓</b>Strong growth over the long run.</span><span><b class="r">✕</b>Some years it falls 50%. Could you hold on?</span></span></div>
 <div data-cap="7" class="xpl-cap"><span class="k">How we solve it</span><span class="h">Not one or the other.</span><span class="b">The line between them.</span></div>
-<div data-cap="8" class="xpl-cap"><span class="k">Your villas</span><span class="h">Three villas on that line.</span><a href="calculator.dc.html" onClick="{{ goCalc }}" class="xpl-cta">See it with your money<i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></i></a></div>
+<div data-cap="8" class="xpl-cap"><span class="k">Your villas</span><span class="h">Three villas on that line.</span><a href="index.dc.html#calculator" onClick="{{ goCalc }}" class="xpl-cta">See it with your money<i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></i></a></div>
 </div>
 <div data-hint="1" class="xpl-foot"><span data-count="1">01 / 09</span><span class="sw">Tap or swipe up<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg></span></div>
 </div>
@@ -154,9 +154,6 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 </div>
 </div>
 
-<div class="{{ calcCls }}" aria-hidden="{{ calcHidden }}">
-<sc-if value="{{ calcMounted }}" hint-placeholder-val="{{ false }}"><dc-import name="calc-mobile" on-back="{{ closeCalc }}" hint-size="100%,100%"></dc-import></sc-if>
-</div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -281,9 +278,6 @@ class Component extends DCLogic {
     addEventListener('keydown', this.onKey);
     // the axes draw themselves as the veil lifts (fonts + first paint in)
     ready.then(() => setTimeout(() => { if (this.s < 0 && !this.dead) this.go(1); }, 150));
-    // the calculator mounts quietly once the lesson is under way, so step 9 opens it at once
-    const idle = cb => ('requestIdleCallback' in window ? requestIdleCallback(cb, { timeout: 3000 }) : setTimeout(cb, 1200));
-    setTimeout(() => idle(() => { if (!this.dead && !this.state.calcMounted) this.setState({ calcMounted: true }); }), 1500);
   }
   componentWillUnmount() {
     this.dead = true;
@@ -291,11 +285,15 @@ class Component extends DCLogic {
     if (r) { r.removeEventListener('wheel', this.onWheel); r.removeEventListener('touchstart', this.onTS); r.removeEventListener('touchmove', this.onTM); r.removeEventListener('touchend', this.onTE); r.removeEventListener('touchcancel', this.onTE); }
     removeEventListener('keydown', this.onKey);
   }
-  openCalc() {
-    if (this.state.calcOpen || this.leaving) return;
-    this.setState({ calcMounted: true, calcOpen: true });
-    document.documentElement.dataset.calc = '1';
-    try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+  /** Into the ONE calculator (the landing's #calculator): the calculator's ink grows as a circle from the control that was
+   *  tapped, the lesson eases back underneath, and the landing opens on the calculator as the ink lifts. */
+  openCalc(e) {
+    if (this.leaving) return; this.leaving = true;
+    const el = e && e.currentTarget, b = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+    const r = this.root.current; if (r) r.classList.add('away');
+    try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+    const o = { style: 'ink', x: b ? Math.round(b.right - Math.min(26, b.width / 2)) : innerWidth / 2, y: b ? Math.round(b.top + b.height / 2) : innerHeight / 2, kicker: 'The calculator', title: 'See it with your money' };
+    if (window.tdcVeil) window.tdcVeil.go('index.dc.html#calculator', o); else location.href = 'index.dc.html#calculator';
   }
   closeCalc() {
     if (!this.state.calcOpen) return;
@@ -314,7 +312,7 @@ class Component extends DCLogic {
       calcOpen: open, calcHidden: open ? 'false' : 'true', calcMounted: this.state.calcMounted,
       next: () => this.go && this.go(1),
       goHome: e => { e.preventDefault(); e.stopPropagation(); this.leave('index.dc.html'); },
-      goCalc: e => { e.preventDefault(); e.stopPropagation(); this.openCalc(); },
+      goCalc: e => { e.preventDefault(); e.stopPropagation(); this.openCalc(e); },
       closeCalc: () => this.closeCalc(),
     };
   }

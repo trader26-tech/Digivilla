@@ -67,16 +67,16 @@ body{margin:0;background:var(--bg-app);color:var(--text-primary);font-family:var
   [data-vc] [data-vdesc]{display:none}
 }</style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=e4878d47">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=e4878d47">
-<link rel="modulepreload" href="dc/story-1-journey.js?v=e4878d47">
-<link rel="modulepreload" href="dc/part-stage-villa.js?v=e4878d47">
+<link rel="modulepreload" href="dc/rt.js?v=e53a1642">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=e53a1642">
+<link rel="modulepreload" href="dc/story-1-journey.js?v=e53a1642">
+<link rel="modulepreload" href="dc/part-stage-villa.js?v=e53a1642">
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=e4878d47';
-import Root from './dc/story-1-journey.js?v=e4878d47';
+import { mount } from './dc/rt.js?v=e53a1642';
+import Root from './dc/story-1-journey.js?v=e53a1642';
 mount(Root);
 </script>
 <script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){var u=performance.getEntriesByType("resource").map(function(e){return e.name});if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>
