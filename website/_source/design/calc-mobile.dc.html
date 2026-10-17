@@ -218,7 +218,7 @@
 <button class="{{ segRe }}" onClick="{{ pickRe }}" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V5l5-2v18M9 21V8l6-2v15M15 21V11l5-2v12M4 21h16"></path></svg>Real estate</button>
 </div>
 <div class="mcl-sentence">
-<button class="mcl-back" onClick="{{ goBack }}" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<sc-if value="{{ hasBack }}" hint-placeholder-val="{{ false }}"><button class="mcl-back" onClick="{{ goBack }}" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button></sc-if>
 <sc-if value="{{ isFd }}" hint-placeholder-val="{{ true }}"><p class="fdq">Your FD pays <span class="mcl-chip"><span>{{ rateTxt }}</span><select onChange="{{ setRate }}" value="{{ rateVal }}" aria-label="FD rate"><sc-for list="{{ rateOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> taxed at <span class="mcl-chip"><span>{{ taxTxt }}</span><select onChange="{{ setTax }}" value="{{ taxVal }}" aria-label="Tax slab"><sc-for list="{{ taxOpts }}" as="o"><option value="{{ o.v }}">{{ o.t }}</option></sc-for></select></span> as income. <button class="{{ cmpCls }}" onClick="{{ toggleCmp }}" role="switch" aria-checked="{{ cmpOn }}" aria-label="FD that compounds" data-fdkind="1"><span class="pill"><span class="tog"></span>FD that compounds</span></button></p></sc-if>
 <sc-if value="{{ isRe }}" hint-placeholder-val="{{ false }}"><p class="q">Had the same money gone into DigiVilla in <b>{{ boughtYear }}</b>, <span class="dim">{{ heldTxt }}</span></p></sc-if>
 </div>
@@ -547,6 +547,8 @@ class Component extends DCLogic {
       rootRef: this.rootRef, stageRef: this.stageRef, rigRef: this.rigRef, rulerRef: this.rulerRef, cvRef: this.cvRef, editRef: this.editRef,
       isFd, isRe: !isFd, segFd: isFd ? 'on' : '', segRe: isFd ? '' : 'on',
       pickFd: () => this.setState({ mode: 'fd', edit: null, hint: '', bad: false }), pickRe: () => this.setState({ mode: 're', edit: null, hint: '', bad: false, yOpen: false }),
+      // the chevron only where a parent can take us back (onBack); on the landing the page just scrolls
+      hasBack: !!this.props.onBack,
       goBack: e => { e.preventDefault(); if (this.state.sheet) { this.setState({ sheet: false }); return; } if (this.props.onBack) { this.props.onBack(); return; } const a = document.getElementById('showcase'); if (a && a.parentElement) { let sc = a.parentElement; while (sc && getComputedStyle(sc).overflowY !== 'auto') sc = sc.parentElement; if (sc) { let top = 0; for (let n = a; n && n !== sc; n = n.offsetParent) top += n.offsetTop; sc.scrollTo({ top, behavior: 'smooth' }); } } },
       toggleCmp: () => this.toggleCmp(), cmpCls: 'mcl-cmp' + (S.fdCmp ? '' : ' off'), cmpOn: S.fdCmp ? 'true' : 'false',
       rateTxt: S.fd + '%', rateVal: String(S.fd), rateOpts: [5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9].map(v => ({ v: String(v), t: v + '%' })), setRate: e => this.setState({ fd: +e.target.value }),
