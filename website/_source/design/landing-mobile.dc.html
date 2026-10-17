@@ -63,9 +63,8 @@
 .mfp-menu .links a.dim{color:rgba(225,224,204,.55)}
 .mfp-menu p{margin:0;font-size:14px;line-height:1.5;color:rgba(222,219,200,.7)}.mfp-menu p .serif{font-size:1.15em;color:#E1E0CC}
 .mfp-copyA{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;gap:16px;padding:0 20px 24px}
-.mfp-copyA h1{margin:0;display:flex;align-items:baseline;white-space:nowrap;font-size:clamp(40px,20vw,112px);font-weight:400;line-height:.9;letter-spacing:-.065em}
+.mfp-copyA h1{margin:0;display:flex;flex-direction:column;font-size:clamp(52px,23vw,118px);font-size:clamp(52px,min(23vw,11svh),118px);font-weight:400;line-height:.84;letter-spacing:-.07em}
 .mfp-copyA h1 .row{display:flex}
-.mfp-copyA h1 .citi{color:#ffe2b0}
 .mfp-copyA .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
 .mfp-copyA p{margin:0;max-width:230px;font-size:15px;line-height:1.3;color:rgba(222,219,200,.75);text-wrap:pretty}.mfp-copyA p .serif{font-size:1.2em;color:#E1E0CC}
 .mfp-copyA .hint{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(225,224,204,.75)}
@@ -143,7 +142,7 @@
 </sc-if>
 
 <div ref="{{ copyARef }}" class="mfp-copyA">
-<h1 aria-label="TheDigiCiti"><span class="row"><span data-rise="0">The</span><span data-rise="1">Digi</span><span data-rise="2" class="citi">Citi</span></span></h1>
+<h1><span class="row"><span data-rise="0">The</span><span data-rise="1">Digi</span></span><span data-rise="2">Citi</span></h1>
 <div class="foot">
 <p data-rise="3">A villa in India that pays you rent. <span class="serif">Built by your SIP,</span> wherever you live.</p>
 <span class="hint" data-rise="4"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg><i></i>Swipe up</span>

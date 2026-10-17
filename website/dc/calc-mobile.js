@@ -1,8 +1,8 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2a6b3344';
-import C_part_stage_villa from './part-stage-villa.js?v=2a6b3344';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=1bb3bce2';
+import C_part_stage_villa from './part-stage-villa.js?v=1bb3bce2';
 /* ── logic, verbatim from the design file ── */
-import * as E from './engine.js?v=2a6b3344';
-import { loadCalc } from './calc-data.js?v=2a6b3344';
+import * as E from './engine.js?v=1bb3bce2';
+import { loadCalc } from './calc-data.js?v=1bb3bce2';
 /* Every figure here is computed by the app's calculator engine (dc/engine.js) on real benchmark-index
    history with the live settings (GET /calc/config). Nothing in this file assumes a rate. */
 const YEAR_OPTS = [5, 8, 10, 15, 20];
