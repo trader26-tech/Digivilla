@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=f650efd5';
-import C_part_stage_foundation from './part-stage-foundation.js?v=f650efd5';
-import C_part_stage_grading from './part-stage-grading.js?v=f650efd5';
-import C_part_stage_plot from './part-stage-plot.js?v=f650efd5';
-import C_part_stage_steel from './part-stage-steel.js?v=f650efd5';
-import C_part_stage_villa from './part-stage-villa.js?v=f650efd5';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=61559ef6';
+import C_part_stage_foundation from './part-stage-foundation.js?v=61559ef6';
+import C_part_stage_grading from './part-stage-grading.js?v=61559ef6';
+import C_part_stage_plot from './part-stage-plot.js?v=61559ef6';
+import C_part_stage_steel from './part-stage-steel.js?v=61559ef6';
+import C_part_stage_villa from './part-stage-villa.js?v=61559ef6';
 /* ── logic, verbatim from the design file ── */
-import * as _explore from './explore-mobile.js?v=f650efd5';   // the Explore page's module, warmed with the landing
+import * as _explore from './explore-mobile.js?v=61559ef6';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
@@ -97,7 +97,7 @@ class Component extends DCLogic {
         const done = () => { sc.scrollTop = to; this.settling = false; this.restAt = performance.now(); if (Math.abs(to - R) < 2) this.prefetchExplore(); const q = this.pgQueue; this.pgQueue = 0; if (q) setTimeout(() => this.advance && this.advance(q), 0); };
         if (dist < 1 || reducedMotion) { done(); return; }
         const seg = Math.max(from, to) <= R + 1 ? R : sc.clientHeight;
-        const D = Math.min(600, 200 + 400 * dist / Math.max(1, seg)), t0 = performance.now();
+        const D = seg === R ? Math.min(2300, 700 + 1600 * dist / Math.max(1, seg)) : Math.min(600, 200 + 400 * dist / Math.max(1, seg)), t0 = performance.now();   // the cover's build-up is a scene: unhurried
         this.settling = true;
         const step = now => {
           if (!this.settling) return;
@@ -274,7 +274,7 @@ class Component extends DCLogic {
       tiles.forEach((el, i) => {
         if (!el) return;
         const [w, hh] = dm.tw[i], [ex, ey] = SLOT[i];
-        const ei = ease(clamp((p - .1 - (4 - i) * .04) / .56));          // 05 leaves first, 01 last
+        const ei = ease(clamp((p - .04 - (4 - i) * .07) / .38));          // staggered: 05 lands first (p≈.42), 01 last (p≈.70)
         let x, y, s, op;
         if (i === 4) { const s0 = (hero0 && w) ? dm.hw[0] / w : 2.1; x = CX + (ex - CX) * ei; y = CY + (ey - CY) * ei; s = s0 + (1 - s0) * ei; op = p > .05 ? 1 : 0; }
         else { x = CX + (ex - CX) * ei + Math.sin(ei * Math.PI) * .08; y = CY + (ey - CY) * ei; s = .55 + .45 * ei; op = clamp(ei * 2.2); }
@@ -285,7 +285,7 @@ class Component extends DCLogic {
         if (el.classList.contains('lit') !== on) el.classList.toggle('lit', on);
         if (on && i < litMin) { litMin = i; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} }
         const l = lbls[i];
-        if (l) { setO(l, clamp((p - .64 - i * .02) / .16)); setT(l, 'translateY(-50%) translateX(' + ((1 - clamp((p - .64) / .18)) * -10).toFixed(1) + 'px) scale(' + (1 / s).toFixed(4) + ')'); }
+        if (l) { const lp = clamp((p - (.40 + (4 - i) * .07)) / .1); setO(l, lp); setT(l, 'translateY(-50%) translateX(' + ((1 - ease(lp)) * -12).toFixed(1) + 'px) scale(' + (1 / s).toFixed(4) + ')'); }
       });
       const hero = this.heroRef.current;
       if (hero) {
@@ -295,13 +295,18 @@ class Component extends DCLogic {
         setO(hero, vo);
       }
       setT(this.coinRef.current, 'translateY(' + (Math.sin(k * 1.4) * 6).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)');
-      setT(this.coin2Ref.current, 'translateY(' + (Math.sin(k * 1.4) * 4).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)'); setO(this.coin2Ref.current, clamp((p - .7) / .2));
+      setT(this.coin2Ref.current, 'translateY(' + (Math.sin(k * 1.4) * 4).toFixed(1) + 'px) rotateY(' + ((k * 70) % 360).toFixed(1) + 'deg)'); setO(this.coin2Ref.current, clamp((p - .52) / .1));
       setO(this.glowRef.current, 1 - clamp(p / .5) * .6);
       const a = this.copyARef.current, oa = 1 - clamp(p / .18);
       if (a) { setO(a, oa); setT(a, 'translateY(' + (-p * 50).toFixed(1) + 'px)'); a.style.pointerEvents = oa < .1 ? 'none' : 'auto'; }
-      const so = clamp((p - .55) / .3); setO(this.spineRef.current, so); setT(this.spineRef.current, 'scaleY(' + so.toFixed(4) + ')');
-      const b = this.copyBRef.current, ob = clamp((p - .7) / .22);
-      if (b) { setO(b, ob); setT(b, 'translate3d(' + ((1 - ease(ob)) * 36).toFixed(1) + 'px,0,0)'); b.style.pointerEvents = ob > .5 ? 'auto' : 'none'; }
+      const so = clamp((p - .45) / .32); setO(this.spineRef.current, so); setT(this.spineRef.current, 'scaleY(' + so.toFixed(4) + ')');
+      const b = this.copyBRef.current, ob = clamp((p - .80) / .16), oc = clamp((p - .90) / .1);   // capsule last, then the caption
+      if (b) {
+        setO(b, p > .79 ? 1 : 0); b.style.pointerEvents = ob > .5 ? 'auto' : 'none';
+        const capEl = this.capRef.current, cap2 = this.__capt || (this.__capt = b.querySelector('.mfp-caption'));
+        if (capEl) { setO(capEl, ob); setT(capEl, 'translate3d(' + ((1 - ease(ob)) * 48).toFixed(1) + 'px,0,0)'); }
+        if (cap2) { setO(cap2, oc); setT(cap2, 'translate3d(0,' + ((1 - ease(oc)) * 10).toFixed(1) + 'px,0)'); }
+      }
       setO(this.pulseRef.current, .55 + .45 * Math.sin(k * 1.6));
       if (this.shineRef.current) this.shineRef.current.style.backgroundPosition = '0 ' + ((k * 18) % 150).toFixed(1) + '%';
       if (this.ringRef.current) this.ringRef.current.setAttribute('stroke-dashoffset', (219.9 * (1 - this.hold)).toFixed(1));
