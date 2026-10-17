@@ -1,11 +1,11 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=36b4ae47';
-import C_part_stage_foundation from './part-stage-foundation.js?v=36b4ae47';
-import C_part_stage_grading from './part-stage-grading.js?v=36b4ae47';
-import C_part_stage_plot from './part-stage-plot.js?v=36b4ae47';
-import C_part_stage_steel from './part-stage-steel.js?v=36b4ae47';
-import C_part_stage_villa from './part-stage-villa.js?v=36b4ae47';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2a2bb696';
+import C_part_stage_foundation from './part-stage-foundation.js?v=2a2bb696';
+import C_part_stage_grading from './part-stage-grading.js?v=2a2bb696';
+import C_part_stage_plot from './part-stage-plot.js?v=2a2bb696';
+import C_part_stage_steel from './part-stage-steel.js?v=2a2bb696';
+import C_part_stage_villa from './part-stage-villa.js?v=2a2bb696';
 /* ── logic, verbatim from the design file ── */
-import * as _explore from './explore-mobile.js?v=36b4ae47';   // the Explore page's module, warmed with the landing
+import * as _explore from './explore-mobile.js?v=2a2bb696';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
   state = { menuOpen: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
