@@ -1,134 +1,151 @@
 <div class="td" [class.busy]="busy()">
-  <!-- ═════════ title + the two controls ═════════ -->
-  <header class="td-head">
-    <div class="td-title">
+  <!-- ═════════ head ═════════ -->
+  <header class="land-head">
+    <div>
       <h1>Markets today</h1>
-      <p>
-        @if (sessionLabel()) { <b>{{ sessionLabel() }}</b> }
-        @if (nseState()) { <span class="td-state"><i class="td-dot" [class.live]="board()?.nse?.open"></i>{{ nseState() }}</span> }
-        @if (ago()) { <span class="td-ago">updated {{ ago() }}</span> }
-      </p>
+      <div class="upd-row">
+        @if (sessionLabel()) { <span class="upd-date">{{ sessionLabel() }}</span> }
+        @if (nseState()) { <span class="upd" [class.fresh]="board()?.nse?.open"><span class="upd-dot"></span>{{ nseState() }}</span> }
+        @if (ago()) { <span class="upd-src">updated {{ ago() }}</span> }
+      </div>
     </div>
-    <div class="td-tools" role="toolbar" aria-label="What the page shows">
-      <div class="td-seg" role="radiogroup" aria-label="Range">
+    <div class="actions" role="toolbar" aria-label="What the page shows">
+      <div class="seg" role="radiogroup" aria-label="Range">
         @for (r of RANGES; track r.k) {
           <button role="radio" [attr.aria-checked]="range() === r.k" [class.on]="range() === r.k" (click)="setRange(r.k)">{{ r.l }}</button>
         }
       </div>
-      <div class="td-seg gold" role="radiogroup" aria-label="How the villas are built">
+      <div class="seg" role="radiogroup" aria-label="How the villas are built">
         <button role="radio" [attr.aria-checked]="gold() === 'with'" [class.on]="gold() === 'with'" (click)="setGold('with')" title="Villas as configured: gold is a quarter of the growth engine">With gold</button>
         <button role="radio" [attr.aria-checked]="gold() === 'without'" [class.on]="gold() === 'without'" (click)="setGold('without')" title="Gold's share split equally into Nifty 50, mid cap and small cap">Without gold</button>
       </div>
     </div>
   </header>
 
-  @if (error()) { <div class="td-err" role="alert">{{ error() }} <button (click)="load()">Try again</button></div> }
+  @if (error()) { <div class="banner err" role="alert">{{ error() }} <button class="btn sm" (click)="load()">Try again</button></div> }
 
   @if (board(); as b) {
+    <!-- ═════════ KPI bar ═════════ -->
+    <section class="kbar" aria-label="Headline numbers">
+      @for (k of kpis(); track k.key) {
+        <div class="kb" [title]="k.about">
+          <span class="kb-k">{{ k.short }}@if (k.source === 'close') { <span class="kb-tag">close</span> }</span>
+          <span class="kb-v">{{ level(k) }}</span>
+          <span class="kb-c" [class.pos]="tone(k.pct) === 'up'" [class.neg]="tone(k.pct) === 'down'">{{ pct(k.pct, k.kind) }} {{ arrow(k.pct) }}</span>
+        </div>
+      }
+    </section>
+
     <!-- ═════════ the three villas ═════════ -->
-    <section class="td-villas" aria-label="The villas">
+    <section class="pcards" aria-label="The villas">
       @for (v of villas(); track v.key) {
-        <button class="td-villa" [class.on]="isOn('villa:' + v.key)" [style.background]="heat(basket(v).pct, 'villa')" [style.--c]="styleOf('villa:' + v.key).c"
-                (click)="toggle('villa:' + v.key)" [attr.aria-pressed]="isOn('villa:' + v.key)" [title]="isOn('villa:' + v.key) ? 'Take this villa off the chart' : 'Draw this villa on the chart'">
-          <span class="tv-top"><span class="tv-name">{{ v.name }}</span><span class="tv-risk">{{ v.risk_name }} risk</span></span>
-          <span class="tv-big" [class.up]="tone(basket(v).pct) === 'up'" [class.down]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}</span>
-          <span class="tv-when">{{ rangeMeta().long }} · {{ gold() === 'with' ? 'with gold' : 'without gold' }}</span>
-          <span class="tv-alt">{{ gold() === 'with' ? 'Without' : 'With' }} gold <b>{{ pct(other(v).pct, 'villa') }}</b></span>
-          <span class="tv-bar" aria-hidden="true">
-            @for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c"></i> }
+        <button type="button" class="pcard" [class.on]="isOn('villa:' + v.key)" (click)="toggle('villa:' + v.key)" [attr.aria-pressed]="isOn('villa:' + v.key)"
+                [title]="isOn('villa:' + v.key) ? 'Take this villa off the chart' : 'Draw this villa on the chart'">
+          <span class="pc-h">
+            <span class="pc-name"><i class="pc-sw" [class.dashed]="!!styleOf('villa:' + v.key).dash" [class.show]="isOn('villa:' + v.key)"></i>{{ v.name }}</span>
+            @if (!isIntraday()) { <span class="pc-day" [class.neg]="tone(basket(v).day_pct) === 'down'" [class.pos]="tone(basket(v).day_pct) !== 'down'" title="Today">{{ arrow(basket(v).day_pct) }} {{ pct(basket(v).day_pct, 'villa', 2) }} today</span> }
+            @else { <span class="pc-risk">{{ v.risk_name }} risk</span> }
           </span>
-          <span class="tv-legend">
-            @for (w of weights(v); track w.p) { <span><i [style.background]="w.c"></i>{{ w.name }} {{ w.w * 100 | number:'1.0-1' }}%</span> }
+          <span class="pc-val" [class.pos]="tone(basket(v).pct) === 'up'" [class.neg]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}</span>
+          <span class="pc-sub">{{ rangeMeta().long }} · {{ gold() === 'with' ? 'with gold' : 'without gold' }} · {{ v.risk_name }} risk</span>
+          <span class="pc-row">
+            <span class="pc-inv">{{ gold() === 'with' ? 'Without' : 'With' }} gold</span>
+            <span class="pc-pnl" [class.pos]="tone(other(v).pct) === 'up'" [class.neg]="tone(other(v).pct) === 'down'">{{ pct(other(v).pct, 'villa') }}</span>
           </span>
-          <span class="tv-ring" aria-hidden="true"></span>
+          <span class="pc-mix">
+            <span class="pcm-bar" aria-hidden="true">@for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c"></i> }</span>
+            <span class="pcm-leg">@for (w of weights(v); track w.p) { <span><i [style.background]="w.c"></i>{{ w.name }} {{ w.w * 100 | number:'1.0-1' }}%</span> }</span>
+          </span>
+          <span class="pc-more">{{ isOn('villa:' + v.key) ? 'On the chart ✓' : 'Show on chart →' }}</span>
         </button>
       }
     </section>
 
     <div class="td-main">
       <!-- ═════════ the chart ═════════ -->
-      <section class="td-chart" aria-label="Movement">
-        <div class="tc-head">
-          <div class="tc-chips" role="list" aria-label="Lines on the chart">
-            @for (l of lines(); track l.key) {
-              <span class="chip" role="listitem" [style.--c]="l.colour">
-                <i class="sw" [class.dash]="!!l.dash" [class.thick]="l.villa"></i>
-                <span class="chip-name">{{ l.name }}</span>
-                <b [class.up]="tone(chipRet()[l.key]) === 'up'" [class.down]="tone(chipRet()[l.key]) === 'down'">{{ pct(chipRet()[l.key], l.villa ? 'villa' : 'index') }}</b>
-                <button type="button" (click)="toggle(l.key)" [attr.aria-label]="'Take ' + l.name + ' off the chart'">×</button>
-              </span>
-            }
-            @if (!lines().length) { <span class="tc-empty">Tap a villa or a tile to draw its line.</span> }
+      <section class="pf-panel" aria-label="Movement">
+        <div class="pf-head">
+          <div class="pf-title">
+            <h3>Movement {{ rangeMeta().long }}</h3>
+            <div class="pf-ret" role="list" aria-label="Lines on the chart">
+              @for (l of lines(); track l.key) {
+                <button type="button" class="pf-leg" role="listitem" [style.--c]="l.colour" (click)="toggle(l.key)" [attr.aria-label]="'Take ' + l.name + ' off the chart'" [title]="'Take ' + l.name + ' off the chart'">
+                  <i class="lsw" [class.dashed]="!!l.dash"></i>{{ l.name }} {{ pct(chipRet()[l.key], l.villa ? 'villa' : 'index') }}<span class="x">×</span>
+                </button>
+              }
+              @if (!lines().length) { <span class="pf-empty">Tap a villa or a tile to draw its line.</span> }
+            </div>
           </div>
-          @if (spanLabel()) { <span class="tc-span">{{ spanLabel() }}</span> }
+          @if (spanLabel()) { <span class="pf-span">{{ spanLabel() }}</span> }
         </div>
 
-        <div class="td-plot" #plot (pointermove)="onMove($event, plot)" (pointerleave)="leave()">
-          <svg [attr.width]="box().w" [attr.height]="box().h" role="img" [attr.aria-label]="'Movement ' + rangeMeta().long + ', % from the start'">
+        @if (bar(); as tb) {
+          <div class="pf-tipbar">
+            <span class="pf-tip-d">{{ tb.when }}</span>
+            <span class="pf-tip-vals">
+              @for (r of tb.rows; track r.key) { <b [style.color]="r.colour" [class.villa]="r.villa">{{ r.name }} {{ pct(r.value, r.villa ? 'villa' : 'index') }}</b> }
+            </span>
+          </div>
+        }
+
+        <div class="pf-chart" #plot (pointermove)="onMove($event, plot)" (pointerleave)="leave()">
+          <svg class="pf-svg" [attr.width]="box().w" [attr.height]="box().h" role="img" [attr.aria-label]="'Movement ' + rangeMeta().long + ', % from the start'">
             <g [attr.transform]="'translate(' + padL + ',' + padT + ')'">
               @for (t of yTicks(); track t.label) {
-                <line class="grid" [class.zero]="t.zero" x1="0" [attr.x2]="cw()" [attr.y1]="t.y" [attr.y2]="t.y"/>
-                <text class="ylab" x="-8" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+                <line [class.pf-grid]="!t.zero" [class.pf-zero]="t.zero" x1="0" [attr.x2]="cw()" [attr.y1]="t.y" [attr.y2]="t.y"/>
+                <text class="pf-yl" x="-8" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
               }
               @for (t of xTicks(); track t.x) {
-                <text class="xlab" [attr.x]="t.x" [attr.y]="ch() + 19" text-anchor="middle">{{ t.label }}</text>
+                <text class="pf-xl" [attr.x]="t.x" [attr.y]="ch() + 19" text-anchor="middle">{{ t.label }}</text>
               }
               @for (p of paths(); track p.key) {
                 <path [attr.d]="p.d" fill="none" [attr.stroke]="p.colour" [attr.stroke-width]="p.width" [attr.stroke-dasharray]="p.dash" stroke-linejoin="round" stroke-linecap="round"/>
               }
               @for (e of ends(); track e.key) {
-                <line class="elead" [attr.x1]="e.x" [attr.y1]="e.y0" [attr.x2]="cw() + 10" [attr.y2]="e.y"/>
-                <circle [attr.cx]="e.x" [attr.cy]="e.y0" r="4" [attr.fill]="e.colour" stroke="var(--surface)" stroke-width="2"/>
-                <text class="elab" [attr.x]="cw() + 14" [attr.y]="e.y + 4"><tspan class="v" [class.up]="tone(e.value) === 'up'" [class.down]="tone(e.value) === 'down'">{{ pct(e.value, e.villa ? 'villa' : 'index') }}</tspan>@if (endNames()) { <tspan class="n" dx="5">{{ e.name }}</tspan> }</text>
+                <line class="pf-lead" [attr.x1]="e.x" [attr.y1]="e.y0" [attr.x2]="cw() + 10" [attr.y2]="e.y"/>
+                <circle [attr.cx]="e.x" [attr.cy]="e.y0" r="3.5" [attr.fill]="e.colour" stroke="#fff" stroke-width="2"/>
+                <text class="pf-el" [attr.x]="cw() + 14" [attr.y]="e.y + 4"><tspan class="v" [class.pos]="tone(e.value) === 'up'" [class.neg]="tone(e.value) === 'down'">{{ pct(e.value, e.villa ? 'villa' : 'index') }}</tspan>@if (endNames()) { <tspan class="n" dx="5">{{ e.name }}</tspan> }</text>
               }
               @if (tip(); as tp) {
-                <line class="cross" [attr.x1]="tp.x" [attr.x2]="tp.x" y1="0" [attr.y2]="ch()"/>
+                <line class="pf-cursor" [attr.x1]="tp.x" [attr.x2]="tp.x" y1="0" [attr.y2]="ch()"/>
                 @for (r of tp.rows; track r.key) {
-                  <circle [attr.cx]="tp.x" [attr.cy]="r.y" r="4.5" [attr.fill]="r.colour" stroke="var(--surface)" stroke-width="2"/>
+                  <circle [attr.cx]="tp.x" [attr.cy]="r.y" r="4" [attr.fill]="r.colour" stroke="#fff" stroke-width="2"/>
                 }
               }
             </g>
           </svg>
-          @if (tip(); as tp) {
-            <div class="tt" [class.flip]="tp.flip" [style.left.px]="tp.flip ? null : tp.x + padL + 16" [style.right.px]="tp.flip ? box().w - tp.x - padL + 16 : null">
-              <div class="tt-when">{{ tp.when }}</div>
-              @for (r of tp.rows; track r.key) {
-                <div class="tt-row" [class.villa]="r.villa"><i [style.background]="r.colour"></i><span>{{ r.name }}</span><b>{{ pct(r.value, r.villa ? 'villa' : 'index') }}</b></div>
-              }
-            </div>
-          }
-          @if (!lines().length) { <div class="tc-blank">Nothing drawn yet.</div> }
+          @if (!lines().length) { <div class="pf-state">Nothing drawn yet.</div> }
         </div>
 
-        <footer class="tc-foot">
-          <span>{{ arbNote() }}</span>
+        <p class="pf-note">
+          {{ arbNote() }}@if (arbNote()) { · }
           <span class="td-method">
-            <button type="button" class="link" (click)="methodOpen.set(!methodOpen())" [attr.aria-expanded]="methodOpen()">How the villa lines are worked out</button>
+            <button type="button" class="pf-link" (click)="methodOpen.set(!methodOpen())" [attr.aria-expanded]="methodOpen()">How the villa lines are worked out</button>
             @if (methodOpen()) {
-              <div class="td-pop" role="dialog" aria-label="How the villa lines are worked out">
-                <p>A villa line is its parts held at the villa's weights from the start of the window, no rebalancing inside it: <b>Nifty 50 Arbitrage</b> (income part), <b>Gold BeES</b>, <b>Nifty 50</b> (large), <b>Nifty Midcap 150</b> and <b>Nifty Smallcap 250</b>. Within a day that is exactly what the villa does.</p>
-                <p><b>Without gold</b> puts gold's share equally into Nifty 50, mid cap and small cap.</p>
-                <p>Indices are NSE's live price indices (a total-return index moves the same within a day). Gold BeES is the live ETF price. The arbitrage index is not quoted during the day, so it holds its last close. Nothing here is after tax or fund costs.</p>
-              </div>
+              <span class="td-pop" role="dialog" aria-label="How the villa lines are worked out">
+                <span>A villa line is its parts held at the villa's weights from the start of the window, no rebalancing inside it: <b>Nifty 50 Arbitrage</b> (income part), <b>Gold BeES</b>, <b>Nifty 50</b> (large), <b>Nifty Midcap 150</b> and <b>Nifty Smallcap 250</b>. Within a day that is exactly what the villa does.</span>
+                <span><b>Without gold</b> puts gold's share equally into Nifty 50, mid cap and small cap.</span>
+                <span>Indices are NSE's live price indices (a total-return index moves the same within a day). Gold BeES is the live ETF price. The arbitrage index is not quoted during the day, so it holds its last close. Nothing here is after tax or fund costs.</span>
+              </span>
             }
           </span>
-        </footer>
+        </p>
       </section>
 
       <!-- ═════════ the heat map ═════════ -->
-      <aside class="td-heat" aria-label="Heat map">
+      <aside class="card heat" aria-label="Heat map">
+        <div class="card-head"><h3>Heat map</h3><span class="card-sub">{{ rangeMeta().long }} · tap a tile to chart it</span></div>
         @for (g of groups(); track g.name) {
-          <h3>{{ g.name }}</h3>
+          <div class="card-title">{{ g.name }}</div>
           <div class="th-grid" [class.two]="g.tiles.length === 2" [class.three]="g.tiles.length === 3">
             @for (t of g.tiles; track t.key) {
               <button type="button" class="tile" [class.on]="isOn(t.key)" [class.static]="!t.chartable" [style.background]="heat(t.pct, t.kind)" [style.--c]="styleOf(t.key).c"
                       (click)="t.chartable && toggle(t.key)" [attr.aria-pressed]="t.chartable ? isOn(t.key) : null" [attr.aria-disabled]="!t.chartable"
                       [title]="t.about + (t.chartable ? '' : ' · shown here only')">
                 <span class="t-top"><span class="t-name">{{ t.short }}</span>@if (t.source === 'close') { <span class="t-tag">last close</span> }</span>
-                <span class="t-pct" [class.up]="tone(t.pct) === 'up'" [class.down]="tone(t.pct) === 'down'">{{ pct(t.pct, t.kind) }}</span>
+                <span class="t-pct" [class.pos]="tone(t.pct) === 'up'" [class.neg]="tone(t.pct) === 'down'">{{ pct(t.pct, t.kind) }}</span>
                 <span class="t-level">{{ level(t) }}</span>
                 <span class="t-sub">{{ sub(t) }}</span>
-                <span class="t-ring" aria-hidden="true"></span>
               </button>
             }
           </div>
@@ -137,8 +154,8 @@
       </aside>
     </div>
   } @else if (!error()) {
-    <!-- the same shapes, before the first answer: nothing jumps when the figures arrive -->
     <div class="td-skel" aria-busy="true" aria-label="Loading">
+      <i class="sk-kbar"></i>
       <div class="sk-villas"><i></i><i></i><i></i></div>
       <div class="sk-main"><i class="sk-chart"></i><i class="sk-heat"></i></div>
     </div>

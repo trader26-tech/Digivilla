@@ -24,12 +24,14 @@ const MAX_LINES = 8;
 /** one fixed style per entity — a line keeps its colour however many are drawn. The eight hues
  *  are the validated light categorical palette; entities that share a hue differ by dash. */
 const STYLE: Record<string, { c: string; dash?: string; w?: number }> = {
-  nifty50: { c: '#2a78d6' }, n100: { c: '#2a78d6', dash: '7 5' }, mid: { c: '#eb6834' }, small: { c: '#1baf7a' }, n500: { c: '#6250d6' },
-  gold: { c: '#eda100' }, arbitrage: { c: '#e87ba4', dash: '2 4' }, usdinr: { c: '#6250d6', dash: '7 5' }, sp500: { c: '#e34948' },
-  'villa:conservative': { c: '#008300', dash: '9 5', w: 3 }, 'villa:balanced': { c: '#008300', w: 3 }, 'villa:aggressive': { c: '#008300', dash: '2 4', w: 3 },
+  // the villas are the "you" lines: the accent blue, 2.4 px, told apart by dash
+  'villa:balanced': { c: '#387ed1', w: 2.4 }, 'villa:conservative': { c: '#387ed1', dash: '9 5', w: 2.4 }, 'villa:aggressive': { c: '#387ed1', dash: '2 4', w: 2.4 },
+  // Nifty 50 is the benchmark line (grey, dashed); the rest keep one fixed hue each
+  nifty50: { c: '#98a0b8', dash: '4 3', w: 1.8 }, n100: { c: '#5a5f78', w: 1.8 }, mid: { c: '#eb6834', w: 1.8 }, small: { c: '#1baf7a', w: 1.8 }, n500: { c: '#6250d6', w: 1.8 },
+  gold: { c: '#eda100', w: 1.8 }, arbitrage: { c: '#e87ba4', dash: '2 4', w: 1.8 }, usdinr: { c: '#6250d6', dash: '7 5', w: 1.8 }, sp500: { c: '#e34948', w: 1.8 },
 };
 /** the weights strip inside a villa card — each part in its line's colour */
-const PART_COLOUR: Record<string, string> = { arbitrage: '#8a948f', gold: '#eda100', large: '#2a78d6', mid: '#eb6834', small: '#1baf7a' };
+const PART_COLOUR: Record<string, string> = { arbitrage: '#98a0b8', gold: '#eda100', large: '#387ed1', mid: '#eb6834', small: '#1baf7a' };
 const PART_NAME: Record<string, string> = { arbitrage: 'Arbitrage', gold: 'Gold', large: 'Nifty 50', mid: 'Mid cap', small: 'Small cap' };
 const PARTS = ['arbitrage', 'gold', 'large', 'mid', 'small'];
 /** a heat colour reaches full strength at this move (%, or bp for the yield) — per kind, per range */
@@ -159,6 +161,23 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const w = this.gold() === 'with' ? v.weights : v.weights_no_gold;
     return PARTS.filter((p) => (w[p] ?? 0) > 0.0001).map((p) => ({ p, w: w[p], c: PART_COLOUR[p], name: PART_NAME[p] }));
   }
+  /** the KPI bar: the headline numbers, in this order */
+  readonly kpis = computed(() => ['nifty50', 'n500', 'gold', 'arbitrage', 'usdinr', 'us10y', 'sp500']
+    .map((k) => this.items().get(k)).filter((i): i is IItem => !!i && i.ok));
+  /** the tip bar under the chart: the hovered moment, or the latest values */
+  readonly bar = computed(() => {
+    const t = this.tip(); if (t) return { when: t.when, rows: t.rows };
+    const ls = this.lines(); if (!ls.length) return null;
+    const rows = ls.map((l) => ({ key: l.key, name: l.short, colour: l.colour, value: l.v[l.v.length - 1], villa: l.villa })).sort((a, b) => b.value - a.value);
+    const t1 = Math.max(...ls.map((l) => l.t[l.t.length - 1]));
+    const d = new Date(t1 * 1000);
+    const when = this.range() === '1d' || this.range() === '1w'
+      ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IST }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: IST }) + ' IST'
+      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' });
+    return { when, rows };
+  });
+  arrow(v: number | null): string { return v === null ? '' : v > 0.0005 ? '▲' : v < -0.0005 ? '▼' : '•'; }
+
   /** the heat tiles, in three groups */
   readonly groups = computed(() => {
     const b = this.board(); if (!b) return [];
@@ -180,9 +199,9 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     if (v === null || !isFinite(v)) return null;
     const x = kind === 'yield' ? v * 100 : v;
     const f = Math.min(1, Math.abs(x) / this.cap(kind));
-    if (f < 0.04) return 'var(--surface-2)';
-    const pct = Math.round(10 + f * 46);                     // 10 % → 56 % of the status colour over the inset surface
-    return `color-mix(in srgb, var(${x > 0 ? '--positive' : '--negative'}) ${pct}%, var(--surface-2))`;
+    if (f < 0.04) return 'var(--nw-card2)';
+    const pct = Math.round(7 + f * 29);                      // 7 % → 36 % of the move colour over the inset surface
+    return `color-mix(in srgb, var(${x > 0 ? '--nw-pos' : '--nw-neg'}) ${pct}%, #ffffff)`;
   }
   tone(v: number | null): 'up' | 'down' | 'flat' { return v === null ? 'flat' : v > 0.0005 ? 'up' : v < -0.0005 ? 'down' : 'flat'; }
 
@@ -340,7 +359,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const t = this.hover(); if (t === null || !this.span()) return null;
     const rows = this.lines().map((l) => {
       let i = -1; for (let k = 0; k < l.t.length && l.t[k] <= t; k++) i = k;
-      return i < 0 ? null : { key: l.key, name: l.name, colour: l.colour, value: l.v[i], y: this.y(l.v[i]), villa: l.villa };
+      return i < 0 ? null : { key: l.key, name: l.short, colour: l.colour, value: l.v[i], y: this.y(l.v[i]), villa: l.villa };
     }).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => b.value - a.value);
     const d = new Date(t * 1000);
     const when = this.range() === '1d' || this.range() === '1w'
