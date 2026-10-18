@@ -22,6 +22,16 @@
     </div>
   </header>
 
+  @if (range() === 'custom') {
+    <div class="custom-bar" role="group" aria-label="Custom dates">
+      <span class="cb-l">From</span>
+      <input type="date" aria-label="From" [min]="minDay()" [max]="customTo() || maxDay()" [value]="customFrom()" (change)="setCustom('from', $any($event.target).value)">
+      <span class="cb-l">to</span>
+      <input type="date" aria-label="To" [min]="customFrom() || minDay()" [max]="maxDay()" [value]="customTo()" (change)="setCustom('to', $any($event.target).value)">
+      <span class="cb-hint">any window within the last {{ board()?.max_years ?? 15 }} years</span>
+    </div>
+  }
+
   @if (error()) { <div class="banner err" role="alert">{{ error() }} <button class="btn sm" (click)="load()">Try again</button></div> }
 
   @if (board(); as b) {
@@ -47,7 +57,7 @@
             @else { <span class="pc-risk">{{ v.risk_name }} risk</span> }
           </span>
           <span class="pc-val" [class.pos]="tone(basket(v).pct) === 'up'" [class.neg]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}</span>
-          <span class="pc-sub">{{ rangeMeta().long }} · {{ gold() === 'with' ? 'with gold' : 'without gold' }} · {{ v.risk_name }} risk</span>
+          <span class="pc-sub">{{ rangeLong() }} · {{ gold() === 'with' ? 'with gold' : 'without gold' }} · {{ v.risk_name }} risk</span>
           <span class="pc-row">
             <span class="pc-inv">{{ gold() === 'with' ? 'Without' : 'With' }} gold</span>
             <span class="pc-pnl" [class.pos]="tone(other(v).pct) === 'up'" [class.neg]="tone(other(v).pct) === 'down'">{{ pct(other(v).pct, 'villa') }}</span>
@@ -66,7 +76,7 @@
       <section class="pf-panel" aria-label="Movement">
         <div class="pf-head">
           <div class="pf-title">
-            <h3>Movement {{ rangeMeta().long }}</h3>
+            <h3>Movement {{ rangeLong() }}</h3>
             <div class="pf-ret" role="list" aria-label="Lines on the chart">
               @for (l of lines(); track l.key) {
                 <button type="button" class="pf-leg" role="listitem" [style.--c]="l.colour" (click)="toggle(l.key)" [attr.aria-label]="'Take ' + l.name + ' off the chart'" [title]="'Take ' + l.name + ' off the chart'">
@@ -89,7 +99,7 @@
         }
 
         <div class="pf-chart" #plot (pointermove)="onMove($event, plot)" (pointerleave)="leave()">
-          <svg class="pf-svg" [attr.width]="box().w" [attr.height]="box().h" role="img" [attr.aria-label]="'Movement ' + rangeMeta().long + ', % from the start'">
+          <svg class="pf-svg" [attr.width]="box().w" [attr.height]="box().h" role="img" [attr.aria-label]="'Movement ' + rangeLong() + ', % from the start'">
             <g [attr.transform]="'translate(' + padL + ',' + padT + ')'">
               @for (t of yTicks(); track t.label) {
                 <line [class.pf-grid]="!t.zero" [class.pf-zero]="t.zero" x1="0" [attr.x2]="cw()" [attr.y1]="t.y" [attr.y2]="t.y"/>
@@ -118,14 +128,14 @@
         </div>
 
         <p class="pf-note">
-          {{ arbNote() }}@if (arbNote()) { · }
+          {{ sourceNote() }} ·
           <span class="td-method">
             <button type="button" class="pf-link" (click)="methodOpen.set(!methodOpen())" [attr.aria-expanded]="methodOpen()">How the villa lines are worked out</button>
             @if (methodOpen()) {
               <span class="td-pop" role="dialog" aria-label="How the villa lines are worked out">
                 <span>A villa line is its parts held at the villa's weights from the start of the window, no rebalancing inside it: <b>Nifty 50 Arbitrage</b> (income part), <b>Gold BeES</b>, <b>Nifty 50</b> (large), <b>Nifty Midcap 150</b> and <b>Nifty Smallcap 250</b>. Within a day that is exactly what the villa does.</span>
                 <span><b>Without gold</b> puts gold's share equally into Nifty 50, mid cap and small cap.</span>
-                <span>Indices are NSE's live price indices (a total-return index moves the same within a day). Gold BeES is the live ETF price. The arbitrage index is not quoted during the day, so it holds its last close. Nothing here is after tax or fund costs.</span>
+                <span><b>1D and 1W</b> use NSE's live price indices (a total-return index moves the same within a day) and the live Gold BeES price; the arbitrage index is not quoted during the day, so it holds its last close. <b>1M and longer</b> use the total-return indices and Gold BeES NAV from the daily index file (from April 2010), extended with today's live move, and the villa is replayed with its growth engine reset to its split at each year end — as the villas do. Nothing here is after tax or fund costs.</span>
               </span>
             }
           </span>
@@ -134,7 +144,7 @@
 
       <!-- ═════════ the heat map ═════════ -->
       <aside class="card heat" aria-label="Heat map">
-        <div class="card-head"><h3>Heat map</h3><span class="card-sub">{{ rangeMeta().long }} · tap a tile to chart it</span></div>
+        <div class="card-head"><h3>Heat map</h3><span class="card-sub">{{ rangeLong() }} · tap a tile to chart it</span></div>
         @for (g of groups(); track g.name) {
           <div class="card-title">{{ g.name }}</div>
           <div class="th-grid" [class.two]="g.tiles.length === 2" [class.three]="g.tiles.length === 3">

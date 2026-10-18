@@ -1046,11 +1046,13 @@ from app import india as india_svc  # noqa: E402
 
 
 @app.get("/admin/india/board")
-def admin_india_board(range: str = "1d", authorization: Optional[str] = Header(default=None)) -> dict:
+def admin_india_board(range: str = "1d", start: Optional[str] = None, end: Optional[str] = None,
+                      authorization: Optional[str] = Header(default=None)) -> dict:
     """Markets today: the Indian indices, gold, arbitrage, the rupee, the US 10-year and the
-    S&P 500 over one range, plus the three villas with and without gold (cached 45 s)."""
+    S&P 500 over one range (1d … 15y, or custom start/end within 15 years), plus the three
+    villas with and without gold (cached 45 s intraday, 5 min otherwise)."""
     _require_admin(authorization)
-    return india_svc.board(range)
+    return india_svc.board(range, start, end)
 
 
 from app import inflation as inflation_svc  # noqa: E402

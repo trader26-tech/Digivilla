@@ -11,13 +11,17 @@ type Gold = 'with' | 'without';
 interface Line { key: string; name: string; short: string; colour: string; dash: string | null; width: number; t: number[]; v: number[]; villa: boolean; }
 interface Tile {
   key: string; name: string; short: string; about: string; kind: IKind; pct: number | null; day_pct: number | null;
-  last: number | null; prev: number | null; high?: number | null; low?: number | null; source: 'live' | 'close'; chartable: boolean; item: IItem;
+  last: number | null; prev: number | null; high?: number | null; low?: number | null; source: 'live' | 'close' | 'tri'; chartable: boolean; item: IItem;
 }
 
 const RANGES: { k: IRange; l: string; long: string }[] = [
   { k: '1d', l: '1D', long: 'today' }, { k: '1w', l: '1W', long: 'this week' }, { k: '1m', l: '1M', long: 'over a month' },
   { k: '3m', l: '3M', long: 'over 3 months' }, { k: 'ytd', l: 'YTD', long: 'this year' }, { k: '1y', l: '1Y', long: 'over a year' },
+  { k: '3y', l: '3Y', long: 'over 3 years' }, { k: '5y', l: '5Y', long: 'over 5 years' }, { k: '10y', l: '10Y', long: 'over 10 years' },
+  { k: '15y', l: '15Y', long: 'over 15 years' }, { k: 'custom', l: 'Custom', long: 'over your dates' },
 ];
+/** the heat caps are keyed by these; a custom window picks the nearest by length (years) */
+const CAP_SPANS: [IRange, number][] = [['1m', 0.085], ['3m', 0.25], ['ytd', 0.6], ['1y', 1], ['3y', 3], ['5y', 5], ['10y', 10], ['15y', 15]];
 const IST = 'Asia/Kolkata';
 const STORE = 'dv_admin_today';
 const MAX_LINES = 8;
@@ -35,13 +39,15 @@ const PART_COLOUR: Record<string, string> = { arbitrage: '#98a0b8', gold: '#eda1
 const PART_NAME: Record<string, string> = { arbitrage: 'Arbitrage', gold: 'Gold', large: 'Nifty 50', mid: 'Mid cap', small: 'Small cap' };
 const PARTS = ['arbitrage', 'gold', 'large', 'mid', 'small'];
 /** a heat colour reaches full strength at this move (%, or bp for the yield) — per kind, per range */
-const CAPS: Record<string, Record<IRange, number>> = {
-  index: { '1d': 2, '1w': 4, '1m': 7, '3m': 10, 'ytd': 20, '1y': 25 },
-  arbitrage: { '1d': 0.1, '1w': 0.3, '1m': 0.8, '3m': 2, 'ytd': 6, '1y': 8 },
-  fx: { '1d': 0.6, '1w': 1.2, '1m': 2.5, '3m': 4, 'ytd': 8, '1y': 10 },
-  yield: { '1d': 10, '1w': 20, '1m': 35, '3m': 60, 'ytd': 100, '1y': 120 },
-  villa: { '1d': 1.2, '1w': 2.5, '1m': 5, '3m': 8, 'ytd': 15, '1y': 20 },
+const CAPS: Record<string, Partial<Record<IRange, number>>> = {
+  index: { '1d': 2, '1w': 4, '1m': 7, '3m': 10, 'ytd': 20, '1y': 25, '3y': 60, '5y': 100, '10y': 250, '15y': 500 },
+  arbitrage: { '1d': 0.1, '1w': 0.3, '1m': 0.8, '3m': 2, 'ytd': 6, '1y': 8, '3y': 22, '5y': 40, '10y': 90, '15y': 150 },
+  fx: { '1d': 0.6, '1w': 1.2, '1m': 2.5, '3m': 4, 'ytd': 8, '1y': 10, '3y': 20, '5y': 30, '10y': 60, '15y': 90 },
+  yield: { '1d': 10, '1w': 20, '1m': 35, '3m': 60, 'ytd': 100, '1y': 120, '3y': 250, '5y': 350, '10y': 400, '15y': 450 },
+  villa: { '1d': 1.2, '1w': 2.5, '1m': 5, '3m': 8, 'ytd': 15, '1y': 20, '3y': 50, '5y': 90, '10y': 220, '15y': 450 },
 };
+const DAY = 86400;
+const addYears = (iso: string, n: number) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCFullYear(d.getUTCFullYear() + n); return d.toISOString().slice(0, 10); };
 const PAD = { l: 46, r: 92, t: 12, b: 28 };
 const DEFAULT_LINES = ['nifty50', 'mid', 'small', 'gold', 'villa:balanced'];
 
@@ -63,6 +69,9 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   readonly range = signal<IRange>('1d');
   readonly gold = signal<Gold>('with');
   readonly lines$ = signal<string[]>(DEFAULT_LINES);
+  readonly customFrom = signal<string>('');
+  readonly customTo = signal<string>('');
+  private customT?: ReturnType<typeof setTimeout>;
   readonly busy = signal(false);
   readonly error = signal('');
   readonly now = signal(Date.now());
@@ -94,12 +103,14 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       if (RANGES.some((r) => r.k === s.range)) this.range.set(s.range);
       if (s.gold === 'with' || s.gold === 'without') this.gold.set(s.gold);
       if (Array.isArray(s.lines) && s.lines.length) this.lines$.set(s.lines.filter((k: unknown) => typeof k === 'string' && k in STYLE));
+      if (typeof s.from === 'string') this.customFrom.set(s.from);
+      if (typeof s.to === 'string') this.customTo.set(s.to);
     } catch { /* first visit */ }
     this.load();
     this.timer = setInterval(() => this.load(true), 60_000);
     this.clock = setInterval(() => this.now.set(Date.now()), 15_000);
   }
-  ngOnDestroy(): void { clearInterval(this.timer); clearInterval(this.clock); clearTimeout(this.noteT); this.ro?.disconnect(); }
+  ngOnDestroy(): void { clearInterval(this.timer); clearInterval(this.clock); clearTimeout(this.noteT); clearTimeout(this.customT); this.ro?.disconnect(); }
   @HostListener('document:visibilitychange')
   onVis(): void { if (document.visibilityState === 'visible') this.load(true); }
   @HostListener('document:keydown.escape')
@@ -111,12 +122,12 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   }
 
   private remember(): void {
-    try { localStorage.setItem(STORE, JSON.stringify({ range: this.range(), gold: this.gold(), lines: this.lines$() })); } catch { /* private mode */ }
+    try { localStorage.setItem(STORE, JSON.stringify({ range: this.range(), gold: this.gold(), lines: this.lines$(), from: this.customFrom(), to: this.customTo() })); } catch { /* private mode */ }
   }
   load(quiet = false): void {
     const rng = this.range(), id = ++this.seq;
     if (!quiet) this.busy.set(true);
-    this.api.indiaBoard(rng).subscribe({
+    this.api.indiaBoard(rng, this.customFrom() || undefined, this.customTo() || undefined).subscribe({
       next: (b) => {
         if (id !== this.seq) return;                          // an older request answering late
         this.board.set(b); this.busy.set(false); this.error.set(''); this.now.set(Date.now());
@@ -124,7 +135,25 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       error: () => { if (id !== this.seq) return; this.busy.set(false); if (!this.board()) this.error.set('Could not reach the markets feed.'); },
     });
   }
-  setRange(k: IRange): void { if (k === this.range()) return; this.range.set(k); this.hover.set(null); this.remember(); this.load(); }
+  setRange(k: IRange): void {
+    if (k === this.range()) return;
+    this.range.set(k); this.hover.set(null);
+    if (k === 'custom' && !this.customFrom()) {                 // first time: the last three years
+      const end = this.board()?.session || new Date().toISOString().slice(0, 10);
+      this.customTo.set(end); this.customFrom.set(addYears(end, -3));
+    }
+    this.remember(); this.load();
+  }
+  /** the custom window's date limits: fifteen years back, up to the latest session */
+  readonly maxDay = computed(() => this.board()?.session || new Date().toISOString().slice(0, 10));
+  readonly minDay = computed(() => addYears(this.maxDay(), -(this.board()?.max_years ?? 15)));
+  setCustom(which: 'from' | 'to', value: string): void {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    if (which === 'from') this.customFrom.set(value); else this.customTo.set(value);
+    this.remember();
+    clearTimeout(this.customT);
+    this.customT = setTimeout(() => this.load(), 350);
+  }
   setGold(g: Gold): void { this.gold.set(g); this.remember(); }
   toggle(key: string): void {
     const cur = this.lines$();
@@ -138,6 +167,26 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
 
   // ── what the page shows ────────────────────────────────────────────────────
   readonly rangeMeta = computed(() => RANGES.find((r) => r.k === this.range()) ?? RANGES[0]);
+  /** "today" · "over a year" · for a custom window, its dates */
+  readonly rangeLong = computed(() => {
+    const w = this.board()?.window;
+    if (this.range() !== 'custom' || !w) return this.rangeMeta().long;
+    const f = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    return `${f(w.start)} – ${f(w.end)}`;
+  });
+  /** which heat cap applies — a custom window takes the nearest span */
+  private capKey = computed<IRange>(() => {
+    const r = this.range(); if (r !== 'custom') return r;
+    const w = this.board()?.window; if (!w) return '1y';
+    const yrs = (new Date(w.end).getTime() - new Date(w.start).getTime()) / (365.25 * DAY * 1000);
+    let best: IRange = '1y', gap = Infinity;
+    for (const [k, y] of CAP_SPANS) { const g = Math.abs(Math.log(yrs / y)); if (g < gap) { gap = g; best = k; } }
+    return best;
+  });
+  readonly sourceNote = computed(() => {
+    const src = this.board()?.sources; if (!src) return '';
+    return this.range() === '1d' || this.range() === '1w' ? src.intraday : src.daily;
+  });
   readonly isIntraday = computed(() => this.range() === '1d');
   readonly items = computed(() => new Map((this.board()?.items ?? []).map((i) => [i.key, i])));
   readonly villas = computed(() => this.board()?.villas ?? []);
@@ -194,7 +243,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   });
 
   // ── heat ──────────────────────────────────────────────────────────────────
-  private cap(kind: string): number { return (CAPS[kind] ?? CAPS['index'])[this.range()]; }
+  private cap(kind: string): number { return (CAPS[kind] ?? CAPS['index'])[this.capKey()] ?? 25; }
   heat(v: number | null, kind: string): string | null {
     if (v === null || !isFinite(v)) return null;
     const x = kind === 'yield' ? v * 100 : v;
@@ -209,7 +258,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   pct(v: number | null, kind: IKind | 'villa' = 'index', digits?: number): string {
     if (v === null || !isFinite(v)) return '—';
     if (kind === 'yield') { const bp = v * 100; return (bp > 0 ? '+' : bp < 0 ? '−' : '') + Math.abs(bp).toFixed(Math.abs(bp) < 10 ? 1 : 0) + ' bp'; }
-    const d = digits ?? (this.range() === '1d' || this.range() === '1w' || kind === 'arbitrage' ? 2 : 1);
+    const d = digits ?? (Math.abs(v) >= 100 ? 0 : this.range() === '1d' || this.range() === '1w' || (kind === 'arbitrage' && this.range() !== 'custom' && !['3y', '5y', '10y', '15y'].includes(this.range())) ? 2 : 1);
     return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
   }
   level(t: Tile | IItem): string {
@@ -314,8 +363,17 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       return out;
     }
     const days = spanS / 86400;
-    const stepD = [1, 2, 3, 5, 7, 14, 30, 61, 91].find((d) => days / d <= maxN) ?? 182;
+    const stepD = [1, 2, 3, 5, 7, 14, 30, 61, 91, 182, 365, 730, 1095].find((d) => days / d <= maxN) ?? 1826;
     const d0 = new Date(s.t0 * 1000); d0.setUTCHours(12, 0, 0, 0);
+    if (stepD >= 365) {
+      const stepY = Math.round(stepD / 365);
+      const d = new Date(Date.UTC(d0.getUTCFullYear() + 1, 0, 1, 12));
+      while (d.getTime() / 1000 <= s.t1) {
+        if (d.getUTCFullYear() % stepY === 0) out.push({ x: this.x(d.getTime() / 1000), label: String(d.getUTCFullYear()) });
+        d.setUTCFullYear(d.getUTCFullYear() + 1);
+      }
+      return out;
+    }
     if (stepD >= 30) {
       const d = new Date(d0); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + 1);
       const stepM = Math.round(stepD / 30);

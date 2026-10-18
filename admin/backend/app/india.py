@@ -23,12 +23,12 @@ from __future__ import annotations
 
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from app import market as market_svc
 from app.calc_settings import calc_config
-from app.globalmkts import _at, _cached, _chart, _closes, _daykey, _spark, _tz
+from app.globalmkts import _at, _cached, _chart, _closes, _daykey, _day_map, _spark, _tz
 
 # key, Yahoo symbol, name, short name, group, kind
 ITEMS = [
@@ -55,7 +55,11 @@ ITEMS = [
 ]
 _BY_KEY = {i["key"]: i for i in ITEMS}
 PART_OF = {"arbitrage": "arbitrage", "gold": "gold", "large": "nifty50", "mid": "mid", "small": "small"}   # villa part → item
-RANGES = ["1d", "1w", "1m", "3m", "ytd", "1y"]
+RANGES = ["1d", "1w", "1m", "3m", "ytd", "1y", "3y", "5y", "10y", "15y", "custom"]
+MAX_YEARS = 15
+INTRADAY = ("1d", "1w")
+# item key → series key in the daily index store (app.market): TOTAL-RETURN indices, Gold BeES NAV
+STORE_KEY = {"nifty50": "large", "n100": "n100", "mid": "mid", "small": "small", "n500": "n500", "gold": "gold", "arbitrage": "arbitrage"}
 _NSE_KEY = {"large": "nifty50", "n100": "n100", "mid": "mid", "small": "small", "n500": "n500"}   # market.live() key → ours
 
 
@@ -127,10 +131,11 @@ def _range_start(session: str, rng: str) -> str:
         return (d - timedelta(days=91)).isoformat()
     if rng == "ytd":
         return f"{d.year - 1}-12-31"
+    n = {"1y": 1, "3y": 3, "5y": 5, "10y": 10, "15y": 15}.get(rng, 1)
     try:
-        return d.replace(year=d.year - 1).isoformat()
+        return d.replace(year=d.year - n).isoformat()
     except ValueError:
-        return d.replace(year=d.year - 1, day=28).isoformat()
+        return d.replace(year=d.year - n, day=28).isoformat()
 
 
 def _epoch(day: str) -> int:
@@ -212,6 +217,81 @@ def _item_arbitrage(i: dict, rng: str, india_session: Optional[str], span: tuple
     return row
 
 
+# ─────────────────────────────── daily ranges from the index store ───────────────────────────────
+def _store_pairs(key: str) -> list[tuple[str, float]]:
+    h = market_svc.history()
+    vals = ((h.get("series") or {}).get(key) or {}).get("values") or []
+    return [(d, v) for d, v in zip(h.get("days") or [], vals) if v is not None]
+
+
+def _pct_points(pairs: list[tuple[str, float]], start: str, end: str, yield_: bool = False):
+    """[(epoch, % from the close on/before start)] for the days in (start, end], the start itself
+    first; also the base and the window's real start (a series may begin after `start`)."""
+    pairs = [(d, v) for d, v in pairs if d <= end]
+    if len(pairs) < 2:
+        return None
+    ds, vs = [d for d, _ in pairs], [v for _, v in pairs]
+    if start < ds[0]:
+        start = ds[0]
+    base = _at(ds, vs, start)
+    if not base:
+        return None
+    f = (lambda v: v - base) if yield_ else (lambda v: (v / base - 1) * 100)
+    pts = [(_epoch(start), 0.0)] + [(_epoch(d), round(f(v), 4)) for d, v in pairs if d > start]
+    return {"pts": pts, "base": base, "start": start, "last_day": ds[-1]}
+
+
+def _item_store(i: dict, start: str, end: str, s_live: Optional[dict]) -> Optional[dict]:
+    """A store-backed item over (start, end]: total-return closes from the daily index store,
+    extended with the live price index's moves for the days after the store's last close."""
+    got = _pct_points(_store_pairs(STORE_KEY[i["key"]]), start, end)
+    if not got:
+        return None
+    pts, last_day = got["pts"], got["last_day"]
+    if s_live and s_live.get("days") and end > last_day:
+        y0 = _at(s_live["days"], s_live["vals"], last_day)
+        p_end = pts[-1][1]
+        if y0:
+            for d, v in zip(s_live["days"], s_live["vals"]):
+                if last_day < d <= end:
+                    pts.append((_epoch(d), round(((1 + p_end / 100) * (v / y0) - 1) * 100, 4)))
+    live_last = s_live["last"] if s_live and s_live.get("last") is not None else None
+    prev = _prev_close(s_live) if s_live else None
+    store_last = _store_pairs(STORE_KEY[i["key"]])[-1][1]
+    day_pct = ((live_last / prev - 1) * 100) if live_last is not None and prev else None
+    if day_pct is None and i["key"] == "arbitrage":
+        pr = _store_pairs("arbitrage")
+        if len(pr) >= 2:
+            day_pct = (pr[-1][1] / pr[-2][1] - 1) * 100
+    return {"key": i["key"], "name": i["name"], "short": i["short"], "group": i["group"], "kind": i["kind"], "about": i["about"], "ok": True,
+            "last": live_last if live_last is not None else store_last, "prev": prev, "base": got["base"],
+            "session": (s_live or {}).get("session") or last_day, "time": (s_live or {}).get("time") or _epoch(last_day),
+            "high": (s_live or {}).get("high"), "low": (s_live or {}).get("low"), "source": "close" if i["key"] == "arbitrage" else "tri",
+            "day_pct": day_pct, "pct": pts[-1][1], "from": got["start"], "t": [t for t, _ in pts], "v": [v for _, v in pts]}
+
+
+def _item_world_long(i: dict, start: str, end: str, s_live: Optional[dict]) -> Optional[dict]:
+    """A Yahoo item over a window older than the two-year daily pull: closes since 2000."""
+    h = _day_map(i["symbol"])
+    if not h:
+        return None
+    pairs = [((date(1970, 1, 1) + timedelta(days=k)).isoformat(), v) for k, v in sorted(h["map"].items())]
+    got = _pct_points(pairs, start, end, yield_=(i["kind"] == "yield"))
+    if not got:
+        return None
+    pts = got["pts"]
+    live_last = s_live["last"] if s_live and s_live.get("last") is not None else pairs[-1][1]
+    prev = _prev_close(s_live) if s_live else None
+    row = {"key": i["key"], "name": i["name"], "short": i["short"], "group": i["group"], "kind": i["kind"], "about": i["about"], "ok": True,
+           "last": live_last, "prev": prev, "base": got["base"], "session": (s_live or {}).get("session") or got["last_day"],
+           "time": (s_live or {}).get("time"), "high": (s_live or {}).get("high"), "low": (s_live or {}).get("low"), "source": "live",
+           "day_pct": None if live_last is None or not prev else (live_last - prev if i["kind"] == "yield" else (live_last / prev - 1) * 100),
+           "pct": pts[-1][1], "from": got["start"], "t": [t for t, _ in pts], "v": [v for _, v in pts]}
+    if i["kind"] == "yield":
+        row["unit"] = "pp"
+    return row
+
+
 # ─────────────────────────────── villas ───────────────────────────────
 def _weights(v: dict, gold: bool) -> dict[str, float]:
     w = {p: float(v["weights"].get(p, 0.0)) for p in PART_OF}
@@ -223,29 +303,65 @@ def _weights(v: dict, gold: bool) -> dict[str, float]:
     return w
 
 
-def _basket(weights: dict[str, float], items: dict[str, dict]) -> dict:
-    """Σ w_p × part % on the union of the parts' time stamps (each part carried forward;
-    0 before its first point)."""
+def _replay(weights: dict[str, float], items: dict[str, dict]) -> dict:
+    """The villa over the window: ₹1 split by the weights at the start, each part moving with its
+    % series (carried forward between its points), and at every year end inside the window the
+    growth engine (everything but arbitrage) reset to its target split — as the villas do.
+    Pre-tax. Within a day there is no reset, so it is exactly the weighted sum of the parts."""
     parts = {p: items.get(k) for p, k in PART_OF.items() if weights.get(p, 0) > 0}
-    if any(it is None or not it.get("ok") for it in parts.values()):
+    if any(it is None or not it.get("ok") or not it.get("t") for it in parts.values()):
         return {"ok": False, "pct": None, "day_pct": None, "t": [], "v": []}
     ts = sorted({t for it in parts.values() for t in it["t"]})
+    growth = [p for p in parts if p != "arbitrage"]
+    gw = sum(weights[p] for p in growth) or 1.0
     idx = {p: 0 for p in parts}
-    cur = {p: 0.0 for p in parts}
-    out = []
-    for t in ts:
+    lvl = {p: 1.0 for p in parts}
+    units: Optional[dict] = None
+    days = [datetime.fromtimestamp(t, tz=timezone.utc).date() for t in ts]
+    out, resets = [], 0
+    for k, t in enumerate(ts):
         for p, it in parts.items():
             while idx[p] < len(it["t"]) and it["t"][idx[p]] <= t:
-                cur[p] = it["v"][idx[p]]
+                lvl[p] = 1 + it["v"][idx[p]] / 100
                 idx[p] += 1
-        out.append(round(sum(weights[p] * cur[p] for p in parts), 4))
-    return {"ok": True, "pct": sum(weights[p] * it["pct"] for p, it in parts.items()),
+        if units is None:
+            units = {p: weights[p] for p in parts}          # every series is % from the window's base (level 1), not from its first bar
+        out.append(round((sum(units[p] * lvl[p] for p in parts) - 1) * 100, 4))
+        nxt = days[k + 1] if k + 1 < len(ts) else None
+        if k > 0 and days[k].month == 12 and nxt and nxt.year > days[k].year and growth:
+            gv = sum(units[p] * lvl[p] for p in growth)
+            for p in growth:
+                units[p] = gv * (weights[p] / gw) / lvl[p]
+            resets += 1
+    return {"ok": True, "pct": out[-1], "resets": resets,
             "day_pct": sum(weights[p] * (it["day_pct"] or 0.0) for p, it in parts.items()), "t": ts, "v": out}
 
 
 # ─────────────────────────────── the board ───────────────────────────────
-def board(rng: str = "1d") -> dict:
+def _window(rng: str, session: str, start: Optional[str], end: Optional[str]) -> tuple[str, str]:
+    """(start, end) for the range — custom dates clamped to the last 15 years and the session."""
+    if rng == "custom":
+        d = date.fromisoformat(session)
+        floor = d.replace(year=d.year - MAX_YEARS, day=min(d.day, 28)).isoformat()
+        try:
+            e = min(date.fromisoformat(end).isoformat(), session) if end else session
+        except ValueError:
+            e = session
+        try:
+            st = date.fromisoformat(start).isoformat() if start else _range_start(e, "1y")
+        except ValueError:
+            st = _range_start(e, "1y")
+        st = max(st, floor)
+        if st >= e:
+            st = _range_start(e, "1m")
+        return st, e
+    return _range_start(session, rng), session
+
+
+def board(rng: str = "1d", start: Optional[str] = None, end: Optional[str] = None) -> dict:
     rng = rng if rng in RANGES else "1d"
+    if rng != "custom":
+        start = end = None
 
     def load():
         syms = [i["symbol"] for i in ITEMS if i["symbol"]]
@@ -258,9 +374,27 @@ def board(rng: str = "1d") -> dict:
         elif rng == "1w":
             intra = _intraday(syms, "5d", "30m")
         items: dict[str, dict] = {}
+        S = {sym: _day_series(res) for sym, res in daily.items()}
+        n50s = S.get("^NSEI") or {}
+        session = n50s.get("session") or date.today().isoformat()
+        w_start, w_end = _window(rng, session, start, end)
+        two_years = _range_start(session, "1y")
+        two_years = (date.fromisoformat(two_years) - timedelta(days=360)).isoformat()
         for i in ITEMS:
-            if i["symbol"] and i["symbol"] in daily:
-                items[i["key"]] = _item_yahoo(i, rng, daily[i["symbol"]], intra.get(i["symbol"]))
+            if not i["symbol"]:
+                continue
+            s_live = S.get(i["symbol"])
+            if rng in INTRADAY:
+                if i["symbol"] in daily:
+                    items[i["key"]] = _item_yahoo(i, rng, daily[i["symbol"]], intra.get(i["symbol"]))
+            elif i["key"] in STORE_KEY:
+                items[i["key"]] = _item_store(i, w_start, w_end, s_live) or (_item_yahoo(i, "1y", daily[i["symbol"]], None) if i["symbol"] in daily else None)
+            elif w_start < two_years or rng == "custom":
+                items[i["key"]] = _item_world_long(i, w_start, w_end, s_live) or (_item_yahoo(i, "1y", daily[i["symbol"]], None) if i["symbol"] in daily else None)
+            else:
+                if i["symbol"] in daily:
+                    items[i["key"]] = _item_yahoo(i, rng, daily[i["symbol"]], None)
+        items = {k: v for k, v in items.items() if v}
         # NSE's own board: the official day numbers for the Indian indices on the same session
         live = market_svc.live()
         if live.get("quotes") and live.get("day"):
@@ -273,7 +407,7 @@ def board(rng: str = "1d") -> dict:
                         it["pct"] = it["day_pct"]
                         if it["v"]:
                             it["v"][-1] = round(it["pct"], 4)
-                    elif it.get("base"):
+                    elif rng == "1w" and it.get("base"):
                         it["pct"] = (q["last"] / it["base"] - 1) * 100
                         if it["v"]:
                             it["v"][-1] = round(it["pct"], 4)
@@ -282,20 +416,30 @@ def board(rng: str = "1d") -> dict:
                 max((it["t"][-1] for it in items.values() if it.get("t")), default=int(time.time())))
         if rng in ("1d", "1w") and n50.get("t"):
             span = (n50["t"][0], n50["t"][-1])              # the flat arbitrage line spans the Indian sessions only
-        items["arbitrage"] = _item_arbitrage(_BY_KEY["arbitrage"], rng, n50.get("session"), span)
+        if rng in INTRADAY:
+            items["arbitrage"] = _item_arbitrage(_BY_KEY["arbitrage"], rng, n50.get("session"), span)
+        else:
+            arb = _item_store(_BY_KEY["arbitrage"], w_start, w_end, None)
+            if arb:
+                items["arbitrage"] = arb
         cfg = calc_config.get()
         villas = []
         for v in cfg.get("villas") or []:
             villas.append({"key": v["key"], "name": v["name"], "risk": v.get("risk"), "risk_name": v.get("risk_name"),
                            "weights": _weights(v, True), "weights_no_gold": _weights(v, False),
-                           "with_gold": _basket(_weights(v, True), items), "no_gold": _basket(_weights(v, False), items)})
+                           "with_gold": _replay(_weights(v, True), items), "no_gold": _replay(_weights(v, False), items)})
         return {
             "as_of": int(time.time()), "range": rng, "ranges": RANGES,
             "nse": {"open": bool(live.get("open")), "status": live.get("status") or "", "day": live.get("day"), "time": live.get("time")},
-            "session": n50.get("session"), "items": [items[i["key"]] for i in ITEMS if i["key"] in items],
+            "session": n50.get("session"), "window": {"start": w_start, "end": w_end}, "max_years": MAX_YEARS,
+            "sources": {"intraday": "Live price indices from NSE / Yahoo (5-minute bars); Gold BeES live price; arbitrage holds its last close",
+                        "daily": "1M and longer: total-return indices and Gold BeES NAV from the daily index file (Apr 2010 →), extended with today's live move; "
+                                 "villas replayed with the growth engine reset to its split at each year end, before tax"},
+            "items": [items[i["key"]] for i in ITEMS if i["key"] in items],
             "villas": villas, "default_villa": cfg.get("default_villa"),
             "parts": {p: _BY_KEY[k]["name"] for p, k in PART_OF.items()},
         }
-    ttl = 45 if rng in ("1d", "1w") else 300
-    return _cached(f"in:board:{rng}", ttl, load) or {"as_of": None, "range": rng, "ranges": RANGES, "nse": {}, "session": None,
-                                                     "items": [], "villas": [], "default_villa": None, "parts": {}}
+    ttl = 45 if rng in INTRADAY else 300
+    return _cached(f"in:board:{rng}:{start or ''}:{end or ''}", ttl, load) or {
+        "as_of": None, "range": rng, "ranges": RANGES, "nse": {}, "session": None, "window": None, "max_years": MAX_YEARS,
+        "items": [], "villas": [], "default_villa": None, "parts": {}}
