@@ -1042,6 +1042,17 @@ def admin_global_history(key: str, authorization: Optional[str] = Header(default
     return h
 
 
+from app import india as india_svc  # noqa: E402
+
+
+@app.get("/admin/india/board")
+def admin_india_board(range: str = "1d", authorization: Optional[str] = Header(default=None)) -> dict:
+    """Markets today: the Indian indices, gold, arbitrage, the rupee, the US 10-year and the
+    S&P 500 over one range, plus the three villas with and without gold (cached 45 s)."""
+    _require_admin(authorization)
+    return india_svc.board(range)
+
+
 from app import inflation as inflation_svc  # noqa: E402
 
 

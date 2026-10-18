@@ -1,240 +1,148 @@
-<div class="gm">
-  <!-- ═════════ the one toolbar ═════════ -->
-  <header class="gm-head">
-    <div class="gm-title">
-      <h1>Global markets</h1>
-      <span>@if (acwi()?.session; as s) { closes of <b>{{ sessionLabel(s) }}</b> } @if (ago()) { · updated {{ ago() }} }</span>
+<div class="td" [class.busy]="busy()">
+  <!-- ═════════ title + the two controls ═════════ -->
+  <header class="td-head">
+    <div class="td-title">
+      <h1>Markets today</h1>
+      <p>
+        @if (sessionLabel()) { <b>{{ sessionLabel() }}</b> }
+        @if (nseState()) { <span class="td-state"><i class="td-dot" [class.live]="board()?.nse?.open"></i>{{ nseState() }}</span> }
+        @if (ago()) { <span class="td-ago">updated {{ ago() }}</span> }
+      </p>
     </div>
-    <div class="gm-tools" role="toolbar" aria-label="What the page shows">
-      <div class="gm-seg" role="radiogroup" aria-label="Period">
-        @for (p of PERIODS; track p.k) {
-          <button role="radio" [attr.aria-checked]="period() === p.k" [class.on]="period() === p.k" (click)="setPeriod(p.k)">{{ p.l }}</button>
+    <div class="td-tools" role="toolbar" aria-label="What the page shows">
+      <div class="td-seg" role="radiogroup" aria-label="Range">
+        @for (r of RANGES; track r.k) {
+          <button role="radio" [attr.aria-checked]="range() === r.k" [class.on]="range() === r.k" (click)="setRange(r.k)">{{ r.l }}</button>
         }
       </div>
-      <div class="gm-seg basis" role="radiogroup" aria-label="Measured in">
-        <button role="radio" [attr.aria-checked]="basis() === 'usd'" [class.on]="basis() === 'usd'" (click)="setBasis('usd')" title="Everything converted to US dollars">US$</button>
-        <button role="radio" [attr.aria-checked]="basis() === 'inr'" [class.on]="basis() === 'inr'" (click)="setBasis('inr')" title="Everything converted to rupees — what an Indian investor earned">₹</button>
-        <button role="radio" [attr.aria-checked]="basis() === 'local'" [class.on]="basis() === 'local'" (click)="setBasis('local')" title="Each market in its own currency">Local</button>
+      <div class="td-seg gold" role="radiogroup" aria-label="How the villas are built">
+        <button role="radio" [attr.aria-checked]="gold() === 'with'" [class.on]="gold() === 'with'" (click)="setGold('with')" title="Villas as configured: gold is a quarter of the growth engine">With gold</button>
+        <button role="radio" [attr.aria-checked]="gold() === 'without'" [class.on]="gold() === 'without'" (click)="setGold('without')" title="Gold's share split equally into Nifty 50, mid cap and small cap">Without gold</button>
       </div>
     </div>
   </header>
 
-  @if (error()) { <div class="gm-err" role="alert">{{ error() }} <button (click)="load()">Try again</button></div> }
+  @if (error()) { <div class="td-err" role="alert">{{ error() }} <button (click)="load()">Try again</button></div> }
 
-  @if (snap(); as s) {
-    <!-- ═════════ strip: MSCI + gauges, heat-tinted for the period ═════════ -->
-    <section class="gm-strip" aria-label="Headline">
-      @for (c of strip(); track c.key) {
-        <button class="gm-sc" [class.cmp]="isCompared(c.key)" [style.background]="c.v !== null ? heat(c.v, c.kind) : null" [style.color]="ink(c.v, c.kind)"
-                (mouseenter)="hoverStrip(c.key, $event)" (mouseleave)="tip.set(null)" (click)="toggleCompare(c.key)"
-                [attr.aria-label]="c.name + ' ' + c.level + ' ' + periodLabel() + ' ' + pct(c.v)">
-          <span class="gm-sc-n">{{ c.name }}</span>
-          <b class="gm-sc-l num">{{ c.level }}</b>
-          <span class="gm-sc-v num">
-            @if (c.bp) { {{ c.bp }} today }
-            @else if (c.v !== null) { {{ periodLabel() }} <b>{{ pct(c.v, 1) }}</b>@if (period() !== '1d' && c.d1 !== null) { <i> · 1D {{ pct(c.d1, 1) }}</i> } }
-            @else { 1D <b>{{ pct(c.d1, 1) }}</b> }
+  @if (board(); as b) {
+    <!-- ═════════ the three villas ═════════ -->
+    <section class="td-villas" aria-label="The villas">
+      @for (v of villas(); track v.key) {
+        <button class="td-villa" [class.on]="isOn('villa:' + v.key)" [style.background]="heat(basket(v).pct, 'villa')" [style.--c]="styleOf('villa:' + v.key).c"
+                (click)="toggle('villa:' + v.key)" [attr.aria-pressed]="isOn('villa:' + v.key)" [title]="isOn('villa:' + v.key) ? 'Take this villa off the chart' : 'Draw this villa on the chart'">
+          <span class="tv-top"><span class="tv-name">{{ v.name }}</span><span class="tv-risk">{{ v.risk_name }} risk</span></span>
+          <span class="tv-big" [class.up]="tone(basket(v).pct) === 'up'" [class.down]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}</span>
+          <span class="tv-when">{{ rangeMeta().long }} · {{ gold() === 'with' ? 'with gold' : 'without gold' }}</span>
+          <span class="tv-alt">{{ gold() === 'with' ? 'Without' : 'With' }} gold <b>{{ pct(other(v).pct, 'villa') }}</b></span>
+          <span class="tv-bar" aria-hidden="true">
+            @for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c"></i> }
           </span>
-          @if (c.note) { <em>{{ c.note }}</em> }
+          <span class="tv-legend">
+            @for (w of weights(v); track w.p) { <span><i [style.background]="w.c"></i>{{ w.name }} {{ w.w * 100 | number:'1.0-1' }}%</span> }
+          </span>
+          <span class="tv-ring" aria-hidden="true"></span>
         </button>
       }
     </section>
 
-    <div class="gm-grid">
-      <!-- ═════════ left: 47 countries ═════════ -->
-      <section class="gm-panel gm-countries" aria-labelledby="gm-c-h">
-        <div class="gm-ph">
-          <h2 id="gm-c-h">{{ countries().length }} MSCI countries <small>{{ periodLabel() }} in {{ basisLabel() }}</small></h2>
-          <div class="gm-ph-tools">
-            <div class="gm-seg xs" role="radiogroup" aria-label="Which markets">
-              <button role="radio" [attr.aria-checked]="cls() === 'all'" [class.on]="cls() === 'all'" (click)="setCls('all')">All</button>
-              <button role="radio" [attr.aria-checked]="cls() === 'DM'" [class.on]="cls() === 'DM'" (click)="setCls('DM')">Developed</button>
-              <button role="radio" [attr.aria-checked]="cls() === 'EM'" [class.on]="cls() === 'EM'" (click)="setCls('EM')">Emerging</button>
-            </div>
-            <div class="gm-seg xs" role="radiogroup" aria-label="View">
-              <button role="radio" [attr.aria-checked]="cview() === 'map'" [class.on]="cview() === 'map'" (click)="setCview('map')" title="One period, by region">Map</button>
-              <button role="radio" [attr.aria-checked]="cview() === 'matrix'" [class.on]="cview() === 'matrix'" (click)="setCview('matrix')" title="Every country × every period">All periods</button>
-            </div>
+    <div class="td-main">
+      <!-- ═════════ the chart ═════════ -->
+      <section class="td-chart" aria-label="Movement">
+        <div class="tc-head">
+          <div class="tc-chips" role="list" aria-label="Lines on the chart">
+            @for (l of lines(); track l.key) {
+              <span class="chip" role="listitem" [style.--c]="l.colour">
+                <i class="sw" [class.dash]="!!l.dash" [class.thick]="l.villa"></i>
+                <span class="chip-name">{{ l.name }}</span>
+                <b [class.up]="tone(chipRet()[l.key]) === 'up'" [class.down]="tone(chipRet()[l.key]) === 'down'">{{ pct(chipRet()[l.key], l.villa ? 'villa' : 'index') }}</b>
+                <button type="button" (click)="toggle(l.key)" [attr.aria-label]="'Take ' + l.name + ' off the chart'">×</button>
+              </span>
+            }
+            @if (!lines().length) { <span class="tc-empty">Tap a villa or a tile to draw its line.</span> }
           </div>
+          @if (spanLabel()) { <span class="tc-span">{{ spanLabel() }}</span> }
         </div>
-        @if (breadth(); as b) {
-          <div class="gm-br">
-            <span class="gm-br-acwi">MSCI ACWI <b class="num" [ngClass]="sign(mv(acwi()))">{{ pct(mv(acwi())) }}</b></span>
-            <span class="gm-br-bar" [attr.aria-label]="b.up + ' up, ' + b.down + ' down'"><i class="up" [style.flex-grow]="b.up"></i><i class="dn" [style.flex-grow]="b.down"></i></span>
-            <span class="num"><b class="pos">{{ b.up }}↑</b> <b class="neg">{{ b.down }}↓</b></span>
-            <span>DM <b class="num" [ngClass]="sign(b.dm)">{{ pct(b.dm, 1) }}</b></span>
-            <span>EM <b class="num" [ngClass]="sign(b.em)">{{ pct(b.em, 1) }}</b></span>
-          </div>
-        }
 
-        @if (cview() === 'map') {
-          <div class="gm-map">
-            @for (r of regions(); track r.name) {
-              <div class="gm-reg" [style.flex-grow]="r.lines + 0.35">
-                <div class="gm-reg-h"><b>{{ r.name }}</b><span class="num">{{ r.up }}/{{ r.n }} up · avg <b [ngClass]="sign(r.avg)">{{ pct(r.avg, 1) }}</b></span></div>
-                <div class="gm-tiles" [style.grid-template-columns]="'repeat(' + r.cols + ', minmax(0, 1fr))'">
-                  @for (c of r.rows; track c.iso) {
-                    @let v = cmv(c);
-                    <button class="gm-tile" [style.background]="heat(v)" [style.color]="ink(v)" [class.cmp]="isCompared(countryKey(c))"
-                            (mouseenter)="hoverCountry(c, $event)" (mouseleave)="tip.set(null)" (focus)="hoverCountry(c, $event)" (blur)="tip.set(null)" (click)="addCountry(c)"
-                            [attr.aria-label]="c.name + ' ' + pct(v)">
-                      <span class="gm-t-n"><span class="gm-flag">{{ c.flag }}</span>{{ short(c) }}</span>
-                      <b class="gm-t-v num">{{ cp(v) }}</b>
-                      @if (c.perf.src[period()] === 'etf') { <i class="gm-e" title="via the MSCI country ETF">e</i> }
-                    </button>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="gm-mx" role="table" aria-label="Every country, every period">
-            <div class="gm-mx-r gm-mx-h" role="row">
-              <span role="columnheader">Country</span>
-              @for (p of PERIODS; track p.k) { <span role="columnheader" [class.sel]="p.k === period()">{{ p.l }}</span> }
-            </div>
-            @for (c of matrix(); track c.iso) {
-              <div class="gm-mx-r" role="row" [class.cmp]="isCompared(countryKey(c))" (click)="addCountry(c)" (mouseenter)="hoverCountry(c, $event)" (mouseleave)="tip.set(null)">
-                <span class="gm-mx-n" role="rowheader"><span class="gm-flag">{{ c.flag }}</span>{{ c.name }}<small>{{ c.cls }}</small></span>
-                @for (p of PERIODS; track p.k) {
-                  @let v = cmv(c, p.k);
-                  <span role="cell" class="num" [class.sel]="p.k === period()" [style.background]="heat(v, 'equity', p.k)" [style.color]="ink(v, 'equity', p.k)">{{ cp(v) }}</span>
+        <div class="td-plot" #plot (pointermove)="onMove($event, plot)" (pointerleave)="leave()">
+          <svg [attr.width]="box().w" [attr.height]="box().h" role="img" [attr.aria-label]="'Movement ' + rangeMeta().long + ', % from the start'">
+            <g [attr.transform]="'translate(' + padL + ',' + padT + ')'">
+              @for (t of yTicks(); track t.label) {
+                <line class="grid" [class.zero]="t.zero" x1="0" [attr.x2]="cw()" [attr.y1]="t.y" [attr.y2]="t.y"/>
+                <text class="ylab" x="-8" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+              }
+              @for (t of xTicks(); track t.x) {
+                <text class="xlab" [attr.x]="t.x" [attr.y]="ch() + 19" text-anchor="middle">{{ t.label }}</text>
+              }
+              @for (p of paths(); track p.key) {
+                <path [attr.d]="p.d" fill="none" [attr.stroke]="p.colour" [attr.stroke-width]="p.width" [attr.stroke-dasharray]="p.dash" stroke-linejoin="round" stroke-linecap="round"/>
+              }
+              @for (e of ends(); track e.key) {
+                <line class="elead" [attr.x1]="e.x" [attr.y1]="e.y0" [attr.x2]="cw() + 10" [attr.y2]="e.y"/>
+                <circle [attr.cx]="e.x" [attr.cy]="e.y0" r="4" [attr.fill]="e.colour" stroke="var(--surface)" stroke-width="2"/>
+                <text class="elab" [attr.x]="cw() + 14" [attr.y]="e.y + 4"><tspan class="v" [class.up]="tone(e.value) === 'up'" [class.down]="tone(e.value) === 'down'">{{ pct(e.value, e.villa ? 'villa' : 'index') }}</tspan>@if (endNames()) { <tspan class="n" dx="5">{{ e.name }}</tspan> }</text>
+              }
+              @if (tip(); as tp) {
+                <line class="cross" [attr.x1]="tp.x" [attr.x2]="tp.x" y1="0" [attr.y2]="ch()"/>
+                @for (r of tp.rows; track r.key) {
+                  <circle [attr.cx]="tp.x" [attr.cy]="r.y" r="4.5" [attr.fill]="r.colour" stroke="var(--surface)" stroke-width="2"/>
                 }
-              </div>
-            }
-          </div>
-        }
-        <div class="gm-legend">
-          <span class="num neg">−{{ CAPS.equity[period()] }}%</span><i></i><span class="num pos">+{{ CAPS.equity[period()] }}%</span>
-          <small>hover for every period · click to put it on the chart · <i class="gm-e">e</i> = via the MSCI country ETF</small>
-        </div>
-      </section>
-
-      <!-- ═════════ right: the line chart ═════════ -->
-      <section class="gm-panel gm-chart" aria-labelledby="gm-x-h">
-        <div class="gm-ph">
-          <h2 id="gm-x-h">Returns compared <small>in {{ basisLabel() }}@if (crangeLabel()) { · {{ crangeLabel() }} }</small></h2>
-          <div class="gm-seg xs" role="radiogroup" aria-label="Time frame">
-            @for (r of CRANGES; track r.k) {
-              <button role="radio" [attr.aria-checked]="crange() === r.k" [class.on]="crange() === r.k" (click)="setCrange(r.k)">{{ r.l }}</button>
-            }
-          </div>
-        </div>
-        <div class="gm-chips">
-          @for (k of compare(); track k) {
-            <span class="gm-chipx" [style.--c]="colour(k)">
-              <i aria-hidden="true"></i>{{ flagOf(k) }} {{ nameOf(k) }}
-              @if (lineRet()[k] !== undefined) { <b class="num" [ngClass]="sign(lineRet()[k])">{{ pct(lineRet()[k], 1) }}</b> }
-              @if (compare().length > 1) { <button (click)="toggleCompare(k)" [attr.aria-label]="'Remove ' + nameOf(k)">×</button> }
-            </span>
-          }
-          <div class="gm-pick">
-            <button class="gm-add" (click)="pickerOpen.set(!pickerOpen())" [disabled]="full()" [attr.aria-expanded]="pickerOpen()">{{ full() ? '8 max' : '+ Add' }}</button>
-            @if (pickerOpen()) {
-              <div class="gm-pop" role="dialog" aria-label="Add to the chart">
-                <input #q type="search" placeholder="Search — Japan, copper, yen, MSCI…" [value]="query()" (input)="query.set(q.value)" autofocus />
-                <div class="gm-pop-list">
-                  @for (g of pickerGroups(); track g.name) {
-                    <div class="gm-pop-g">{{ g.name }}</div>
-                    @for (i of g.items; track i.key) {
-                      <button [class.on]="isCompared(i.key)" (click)="toggleCompare(i.key)" [disabled]="!isCompared(i.key) && full()"><span>{{ i.label }}</span>@if (isCompared(i.key)) { <b>✓</b> }</button>
-                    }
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="gm-plot" #plotEl>
-          @if (paths().length) {
-            <svg class="gm-svg" [attr.width]="box().w" [attr.height]="box().h" role="img" [attr.aria-label]="'Returns compared, ' + crangeLabel()">
-              <g [attr.transform]="'translate(' + PAD.l + ',' + PAD.t + ')'">
-                @for (t of yTicks(); track t.v) {
-                  <line class="gm-grid" [class.zero]="t.zero" x1="0" [attr.x2]="cw()" [attr.y1]="t.y" [attr.y2]="t.y"/>
-                  <text class="gm-ylab" x="-8" [attr.y]="t.y" dy="0.32em" text-anchor="end">{{ t.label }}</text>
-                }
-                @for (t of xTicks(); track t.x) { <text class="gm-xlab" [attr.x]="t.x" [attr.y]="ch() + 16" text-anchor="middle">{{ t.label }}</text> }
-                @for (p of paths(); track p.key) { <path class="gm-line" [class.fx]="p.fx" [attr.d]="p.d" [attr.stroke]="p.colour"/> }
-                @for (e of ends(); track e.key) {
-                  <circle [attr.cx]="cw()" [attr.cy]="e.y0" r="3.5" [attr.fill]="e.colour" class="gm-end"/>
-                  @if (e.y !== e.y0) { <path class="gm-leader" [attr.d]="'M' + (cw() + 5) + ' ' + e.y0 + ' L' + (cw() + 11) + ' ' + e.y"/> }
-                  <text class="gm-elab" [attr.x]="cw() + 13" [attr.y]="e.y" dy="0.32em"><tspan class="v">{{ pct(e.value, 1) }}</tspan><tspan class="n" dx="5">{{ e.name.length > 13 ? e.name.slice(0, 12) + '…' : e.name }}</tspan></text>
-                }
-                @if (ctip(); as t) {
-                  <line class="gm-cross" [attr.x1]="t.x" [attr.x2]="t.x" y1="0" [attr.y2]="ch()"/>
-                  @for (r of t.rows; track r.key) { <circle [attr.cx]="t.x" [attr.cy]="r.y" r="4" [attr.fill]="r.colour" class="gm-dot"/> }
-                }
-                <rect class="gm-hit" x="0" y="0" [attr.width]="cw()" [attr.height]="ch()"
-                      (pointermove)="onMove($event, $any($event.currentTarget))" (pointerdown)="onMove($event, $any($event.currentTarget))" (pointerleave)="$event.pointerType !== 'touch' && hover.set(null)"/>
-              </g>
-            </svg>
-            @if (ctip(); as t) {
-              <div class="gm-ctip" [class.flip]="t.flip" [style.left.px]="PAD.l + t.x">
-                <div class="gm-ctip-d">{{ t.date }}</div>
-                @for (r of t.rows; track r.key) {
-                  <div class="gm-ctip-r"><i [style.background]="r.colour"></i><b class="num" [ngClass]="sign(r.value)">{{ pct(r.value, 1) }}</b><span>{{ r.name }}</span></div>
-                }
-              </div>
-            }
-          } @else {
-            <div class="gm-sk"><i></i>@if (!histLoading()) { <span>No history for this window</span> }</div>
-          }
-        </div>
-        @if (missing().length) { <p class="gm-foot">No daily history for: {{ missing().join(', ') }}</p> }
-      </section>
-
-      <!-- ═════════ right, below: commodities + currencies heat maps ═════════ -->
-      <section class="gm-panel gm-cmd" aria-labelledby="gm-k-h">
-        <div class="gm-ph"><h2 id="gm-k-h">Commodities <small>{{ periodLabel() }} · {{ basis() === 'inr' ? '₹' : 'US$' }}</small></h2></div>
-        <div class="gm-cg">
-          @for (g of commodityGroups(); track g.name) {
-            <span class="gm-cg-h">{{ g.name }}</span>
-            <div class="gm-ctiles">
-              @for (c of g.rows; track c.key) {
-                @let v = mv(c);
-                <button class="gm-ct" [style.background]="heat(v, 'commodity')" [style.color]="ink(v, 'commodity')" [class.cmp]="isCompared('cmd:' + c.key)"
-                        (mouseenter)="hoverCommodity(c, $event)" (mouseleave)="tip.set(null)" (click)="toggleCompare('cmd:' + c.key)" [attr.aria-label]="c.name + ' ' + pct(v)">
-                  <span>{{ cshort(c) }}</span><b class="num">{{ cp(v) }}</b>
-                </button>
+              }
+            </g>
+          </svg>
+          @if (tip(); as tp) {
+            <div class="tt" [class.flip]="tp.flip" [style.left.px]="tp.flip ? null : tp.x + padL + 16" [style.right.px]="tp.flip ? box().w - tp.x - padL + 16 : null">
+              <div class="tt-when">{{ tp.when }}</div>
+              @for (r of tp.rows; track r.key) {
+                <div class="tt-row" [class.villa]="r.villa"><i [style.background]="r.colour"></i><span>{{ r.name }}</span><b>{{ pct(r.value, r.villa ? 'villa' : 'index') }}</b></div>
               }
             </div>
           }
+          @if (!lines().length) { <div class="tc-blank">Nothing drawn yet.</div> }
         </div>
+
+        <footer class="tc-foot">
+          <span>{{ arbNote() }}</span>
+          <span class="td-method">
+            <button type="button" class="link" (click)="methodOpen.set(!methodOpen())" [attr.aria-expanded]="methodOpen()">How the villa lines are worked out</button>
+            @if (methodOpen()) {
+              <div class="td-pop" role="dialog" aria-label="How the villa lines are worked out">
+                <p>A villa line is its parts held at the villa's weights from the start of the window, no rebalancing inside it: <b>Nifty 50 Arbitrage</b> (income part), <b>Gold BeES</b>, <b>Nifty 50</b> (large), <b>Nifty Midcap 150</b> and <b>Nifty Smallcap 250</b>. Within a day that is exactly what the villa does.</p>
+                <p><b>Without gold</b> puts gold's share equally into Nifty 50, mid cap and small cap.</p>
+                <p>Indices are NSE's live price indices (a total-return index moves the same within a day). Gold BeES is the live ETF price. The arbitrage index is not quoted during the day, so it holds its last close. Nothing here is after tax or fund costs.</p>
+              </div>
+            }
+          </span>
+        </footer>
       </section>
 
-      <section class="gm-panel gm-fx" aria-labelledby="gm-f-h">
-        <div class="gm-ph">
-          <h2 id="gm-f-h">Currencies vs {{ fxBase() === '₹' ? 'the rupee' : 'the US$' }} <small>{{ periodLabel() }} · <span class="pos">{{ fxUpDown().up }} stronger</span> · <span class="neg">{{ fxUpDown().down }} weaker</span></small></h2>
-        </div>
-        <div class="gm-fxt">
-          @for (c of currencies(); track c.ccy) {
-            @let v = fxmv(c);
-            <button class="gm-xt" [style.background]="heat(v, 'fx')" [style.color]="ink(v, 'fx')" [class.cmp]="isCompared('fx:' + c.ccy)" [class.me]="c.ccy === 'INR'"
-                    (mouseenter)="hoverCurrency(c, $event)" (mouseleave)="tip.set(null)" (click)="toggleCompare('fx:' + c.ccy)" [attr.aria-label]="c.name + ' ' + pct(v)">
-              <span><span class="gm-flag">{{ c.flag }}</span>{{ c.ccy }}</span><b class="num">{{ cp(v) }}</b>
-            </button>
-          }
-        </div>
-      </section>
+      <!-- ═════════ the heat map ═════════ -->
+      <aside class="td-heat" aria-label="Heat map">
+        @for (g of groups(); track g.name) {
+          <h3>{{ g.name }}</h3>
+          <div class="th-grid" [class.two]="g.tiles.length === 2" [class.three]="g.tiles.length === 3">
+            @for (t of g.tiles; track t.key) {
+              <button type="button" class="tile" [class.on]="isOn(t.key)" [class.static]="!t.chartable" [style.background]="heat(t.pct, t.kind)" [style.--c]="styleOf(t.key).c"
+                      (click)="t.chartable && toggle(t.key)" [attr.aria-pressed]="t.chartable ? isOn(t.key) : null" [attr.aria-disabled]="!t.chartable"
+                      [title]="t.about + (t.chartable ? '' : ' · shown here only')">
+                <span class="t-top"><span class="t-name">{{ t.short }}</span>@if (t.source === 'close') { <span class="t-tag">last close</span> }</span>
+                <span class="t-pct" [class.up]="tone(t.pct) === 'up'" [class.down]="tone(t.pct) === 'down'">{{ pct(t.pct, t.kind) }}</span>
+                <span class="t-level">{{ level(t) }}</span>
+                <span class="t-sub">{{ sub(t) }}</span>
+                <span class="t-ring" aria-hidden="true"></span>
+              </button>
+            }
+          </div>
+        }
+        <p class="th-scale" aria-hidden="true"><span>falls</span><i></i><span>rises</span></p>
+      </aside>
     </div>
-
-    <!-- one hover card for every heat cell -->
-    @if (tip(); as t) {
-      <div class="gm-hc" [style.left.px]="t.x" [style.top.px]="t.y" role="tooltip">
-        <div class="gm-hc-h">{{ t.title }}</div>
-        <div class="gm-hc-sub">{{ t.sub }}</div>
-        <div class="gm-hc-l num">{{ t.level }}</div>
-        <div class="gm-hc-p">
-          @for (r of t.rows; track r.label) {
-            <span [class.sel]="r.label === periodLabel()" [style.background]="heat(r.v, r.kind, PERIODS[$index].k)" [style.color]="ink(r.v, r.kind, PERIODS[$index].k)">
-              <small>{{ r.label }}</small><b class="num">{{ cp(r.v) }}</b>
-            </span>
-          }
-        </div>
-        @if (t.note) { <div class="gm-hc-note">{{ t.note }}</div> }
-      </div>
-    }
   } @else if (!error()) {
-    <div class="gm-skel" aria-hidden="true"><i></i><i></i><i></i></div>
+    <!-- the same shapes, before the first answer: nothing jumps when the figures arrive -->
+    <div class="td-skel" aria-busy="true" aria-label="Loading">
+      <div class="sk-villas"><i></i><i></i><i></i></div>
+      <div class="sk-main"><i class="sk-chart"></i><i class="sk-heat"></i></div>
+    </div>
   }
+
+  @if (note()) { <div class="td-toast" role="status">{{ note() }}</div> }
 </div>

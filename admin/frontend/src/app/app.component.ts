@@ -59,7 +59,7 @@ type View = 'commission' | 'clients' | 'global' | 'market' | 'villas' | 'buckets
 const NAV: { view: View; label: string; short: string; tab: boolean; group?: 'data' }[] = [
   { view: 'commission', label: 'Commission', short: 'Commission', tab: true },
   { view: 'clients', label: 'Clients', short: 'Home', tab: true },
-  { view: 'global', label: 'Global markets', short: 'Global', tab: true },
+  { view: 'global', label: 'Markets today', short: 'Today', tab: true },
   { view: 'market', label: 'Villas vs market', short: 'Markets', tab: true },
   { view: 'villas', label: 'Live NAVs', short: 'NAVs', tab: false, group: 'data' },
   { view: 'buckets', label: 'Villa buckets', short: 'Buckets', tab: false, group: 'data' },

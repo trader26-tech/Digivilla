@@ -519,6 +519,10 @@ export class AdminService {
   setVillaType(villaId: string, type: VillaType | null): Observable<{ ok: boolean }> {
     return this.http.put<{ ok: boolean }>(`${this.base}/admin/villas/${villaId}/type`, { type }, this.opts);
   }
+  // ── markets today (India board: indices, gold, arbitrage, rupee, US 10-yr, S&P 500, villas) ──
+  indiaBoard(range: IRange): Observable<IndiaBoard> {
+    return this.http.get<IndiaBoard>(`${this.base}/admin/india/board`, { ...this.opts, params: { range } });
+  }
   // ── global markets (MSCI world, 47 countries, commodities, currencies) ─────────
   globalSnapshot(): Observable<GlobalSnapshot> {
     return this.http.get<GlobalSnapshot>(`${this.base}/admin/global/snapshot`, this.opts);
@@ -752,3 +756,28 @@ export interface GlobalSnapshot {
 }
 /** d = day numbers since 1970; v = own currency, u = US$, r = ₹ (a currency: its value, US$ / ₹ per unit) */
 export interface GlobalHistory { key: string; name: string; type: string; currency: string; d: number[]; v: number[]; u: (number | null)[]; r: (number | null)[] | null; }
+
+// ── markets today (India board) ───────────────────────────────────────────────
+export type IRange = '1d' | '1w' | '1m' | '3m' | 'ytd' | '1y';
+export type IKind = 'index' | 'gold' | 'arbitrage' | 'fx' | 'yield' | 'us';
+export interface IItem {
+  key: string; name: string; short: string; group: string; kind: IKind; about: string; ok: boolean;
+  last: number | null; prev: number | null; base: number | null; session: string | null; time: number | null;
+  high?: number | null; low?: number | null; adv?: number | null; dec?: number | null;
+  /** move over the range (% — or percentage points for a yield) and today's move */
+  pct: number | null; day_pct: number | null; unit?: 'pp';
+  source: 'live' | 'close';
+  /** the series over the range: unix seconds, % from the range's base */
+  t: number[]; v: number[];
+}
+export interface IBasket { ok: boolean; pct: number | null; day_pct: number | null; t: number[]; v: number[]; }
+export interface IVilla {
+  key: string; name: string; risk: number; risk_name: string;
+  weights: Record<string, number>; weights_no_gold: Record<string, number>;
+  with_gold: IBasket; no_gold: IBasket;
+}
+export interface IndiaBoard {
+  as_of: number | null; range: IRange; ranges: IRange[];
+  nse: { open?: boolean; status?: string; day?: string | null; time?: string | null };
+  session: string | null; items: IItem[]; villas: IVilla[]; default_villa: string | null; parts: Record<string, string>;
+}
