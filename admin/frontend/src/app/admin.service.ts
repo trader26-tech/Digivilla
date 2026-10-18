@@ -519,6 +519,13 @@ export class AdminService {
   setVillaType(villaId: string, type: VillaType | null): Observable<{ ok: boolean }> {
     return this.http.put<{ ok: boolean }>(`${this.base}/admin/villas/${villaId}/type`, { type }, this.opts);
   }
+  // ── global markets (MSCI world, 47 countries, commodities, currencies) ─────────
+  globalSnapshot(): Observable<GlobalSnapshot> {
+    return this.http.get<GlobalSnapshot>(`${this.base}/admin/global/snapshot`, this.opts);
+  }
+  globalHistory(key: string): Observable<GlobalHistory> {
+    return this.http.get<GlobalHistory>(`${this.base}/admin/global/history`, { ...this.opts, params: { key } });
+  }
   // ── world markets ───────────────────────────────────────────────────────────
   worldQuotes(): Observable<WorldQuotes> {
     return this.http.get<WorldQuotes>(`${this.base}/admin/world/quotes`, this.opts);
@@ -715,3 +722,33 @@ export interface MarketLive {
   quotes: Record<string, { last: number; prev: number; pct: number; adv: number | null; dec: number | null; high: number; low: number }>;
   stale?: boolean;
 }
+
+// ── global markets ───────────────────────────────────────────────────────────
+export type GPeriod = '1d' | '1w' | '1m' | '3m' | 'ytd' | '1y' | '3y' | '5y';
+export type GMoves = Record<GPeriod, number | null>;
+/** one instrument's quote: moves in its own currency, in US$ and in ₹ */
+export interface GQuote {
+  key: string; ok: boolean; last?: number | null; prev?: number | null; session?: string | null; time?: number | null;
+  high?: number | null; low?: number | null; hi52?: number | null; lo52?: number | null;
+  local?: GMoves; usd?: GMoves; inr?: GMoves | null; spark?: number[]; bp?: number;
+}
+export interface GMsci extends GQuote { name: string; about: string; etf: string; symbol: string; src: Partial<Record<GPeriod, 'index' | 'etf' | null>>; q_etf: GQuote; }
+export interface GCountry {
+  iso: string; name: string; flag: string; cls: 'DM' | 'EM'; region: string; ccy: string;
+  index: string | null; index_name: string | null; etf: string | null;
+  q_index: GQuote | null; q_etf: GQuote | null; fx: GMoves;
+  perf: { local: GMoves; usd: GMoves; inr: GMoves; src: Record<GPeriod, 'index' | 'etf' | null> };
+}
+export interface GCommodity extends GQuote { name: string; group: string; unit: string; symbol: string; }
+export interface GCurrency {
+  ccy: string; name: string; flag: string; pegged: boolean; suspect?: boolean; per_usd: number; per_inr: number | null; inr_per: number | null;
+  vs_usd: GMoves; vs_inr: GMoves; session: string; spark: number[];
+}
+export interface GGauge extends GQuote { name: string; about: string; kind: 'level' | 'yield'; symbol: string; }
+export interface GInstrument { key: string; type: string; name: string; ccy: string; country?: string; group?: string; unit?: string; }
+export interface GlobalSnapshot {
+  as_of: number | null; periods: GPeriod[]; msci: GMsci[]; countries: GCountry[]; commodities: GCommodity[];
+  currencies: GCurrency[]; gauges: GGauge[]; instruments: GInstrument[];
+}
+/** d = day numbers since 1970; v = own currency, u = US$, r = ₹ (a currency: its value, US$ / ₹ per unit) */
+export interface GlobalHistory { key: string; name: string; type: string; currency: string; d: number[]; v: number[]; u: (number | null)[]; r: (number | null)[] | null; }

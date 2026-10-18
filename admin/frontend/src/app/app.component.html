@@ -137,6 +137,7 @@
     <ng-container [ngSwitch]="v">
       <svg *ngSwitchCase="'commission'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5h4a1.7 1.7 0 0 1 0 3.4h-3a1.7 1.7 0 0 0 0 3.4h4M12 7.5V9M12 16.5V18"/></svg>
       <svg *ngSwitchCase="'clients'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.7.7 2.8 2.3 3 4.7"/></svg>
+      <svg *ngSwitchCase="'global'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.5 3.9 5.5 3.9 9s-1.3 6.5-3.9 9c-2.6-2.5-3.9-5.5-3.9-9s1.3-6.5 3.9-9z"/></svg>
       <svg *ngSwitchCase="'market'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg>
       <svg *ngSwitchCase="'villas'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>
       <svg *ngSwitchCase="'buckets'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>
@@ -257,6 +258,9 @@
       </ul>
     </section>
   </div>
+
+  <!-- ─────────── GLOBAL MARKETS (MSCI world, every ACWI country, commodities, currencies) ─────────── -->
+  <app-global-markets *ngIf="view() === 'global'"></app-global-markets>
 
   <!-- ─────────── VILLAS VS MARKET (today's world markets + the villa replay) ─────────── -->
   <app-markets-page *ngIf="view() === 'market'"></app-markets-page>

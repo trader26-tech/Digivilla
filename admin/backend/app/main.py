@@ -1021,6 +1021,27 @@ def admin_world_history(key: str, authorization: Optional[str] = Header(default=
     return h
 
 
+from app import globalmkts as global_svc  # noqa: E402
+
+
+@app.get("/admin/global/snapshot")
+def admin_global_snapshot(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Global markets: MSCI headline indices, all 47 ACWI countries, commodities, currencies,
+    yields — every period's move in own currency, US$ and ₹ (cached 90 s)."""
+    _require_admin(authorization)
+    return global_svc.snapshot()
+
+
+@app.get("/admin/global/history")
+def admin_global_history(key: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """One instrument's daily closes since 2000 — own currency, US$ and ₹ (cached 6 h)."""
+    _require_admin(authorization)
+    h = global_svc.history(key)
+    if not h:
+        raise HTTPException(status_code=404, detail="No history for that instrument right now.")
+    return h
+
+
 from app import inflation as inflation_svc  # noqa: E402
 
 

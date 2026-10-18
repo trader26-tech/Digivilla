@@ -22,6 +22,7 @@ import {
 } from './admin.service';
 import { AuditComponent } from './audit/audit.component';
 import { MarketsPageComponent } from './market/markets-page.component';
+import { GlobalMarketsComponent } from './global/global-markets.component';
 import { VillaSalesComponent } from './home/villa-sales.component';
 import { UnmappedTxnsComponent } from './home/unmapped-txns.component';
 import { CommissionCardComponent } from './home/commission-card.component';
@@ -52,12 +53,13 @@ const VILLA_FULL = 500_000;
 type Phase = 'loading' | 'email' | 'otp' | 'setpin' | 'pin' | 'unlocked';
 
 /** The one workspace has a small set of views, all about clients & money. */
-type View = 'commission' | 'clients' | 'market' | 'villas' | 'buckets' | 'uploads' | 'audit';
+type View = 'commission' | 'clients' | 'global' | 'market' | 'villas' | 'buckets' | 'uploads' | 'audit';
 
 /** Every section, in sidebar order. `tab` = on the phone's bottom bar; the rest sit under "More". */
 const NAV: { view: View; label: string; short: string; tab: boolean; group?: 'data' }[] = [
   { view: 'commission', label: 'Commission', short: 'Commission', tab: true },
   { view: 'clients', label: 'Clients', short: 'Home', tab: true },
+  { view: 'global', label: 'Global markets', short: 'Global', tab: true },
   { view: 'market', label: 'Villas vs market', short: 'Markets', tab: true },
   { view: 'villas', label: 'Live NAVs', short: 'NAVs', tab: false, group: 'data' },
   { view: 'buckets', label: 'Villa buckets', short: 'Buckets', tab: false, group: 'data' },
@@ -85,7 +87,7 @@ const PROFILE_FIELDS: [string, string][] = [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, AuditComponent, CommissionComponent, MarketsPageComponent, VillaSalesComponent, MeetRoomComponent, CommissionCardComponent, MeetCardComponent, TodayUpdateComponent, UnmappedTxnsComponent],
+  imports: [CommonModule, FormsModule, AuditComponent, CommissionComponent, MarketsPageComponent, GlobalMarketsComponent, VillaSalesComponent, MeetRoomComponent, CommissionCardComponent, MeetCardComponent, TodayUpdateComponent, UnmappedTxnsComponent],
   templateUrl: './app.component.html',
   // the phone layout lives in its own sheet (app.component.scss is near its 60 kB budget)
   styleUrls: ['./app.component.scss', './app.component.phone.scss'],

@@ -1,0 +1,394 @@
+<div class="gm">
+  <!-- ═════════ header + the one toolbar that drives the page ═════════ -->
+  <header class="gm-head">
+    <div class="gm-title">
+      <h1>Global markets</h1>
+      <p>
+        All 47 MSCI ACWI countries, the MSCI indices, commodities and currencies
+        @if (acwi()?.session; as s) { · closes of <b>{{ sessionLabel(s) }}</b> }
+        @if (ago()) { <span class="gm-ago">· updated {{ ago() }}</span> }
+      </p>
+    </div>
+    <div class="gm-tools" role="toolbar" aria-label="What the page shows">
+      <div class="gm-seg" role="radiogroup" aria-label="Period">
+        @for (p of PERIODS; track p.k) {
+          <button role="radio" [attr.aria-checked]="period() === p.k" [class.on]="period() === p.k" (click)="setPeriod(p.k)">{{ p.l }}</button>
+        }
+      </div>
+      <div class="gm-seg basis" role="radiogroup" aria-label="Measured in">
+        <button role="radio" [attr.aria-checked]="basis() === 'local'" [class.on]="basis() === 'local'" (click)="setBasis('local')" title="Each market in its own currency">Own currency</button>
+        <button role="radio" [attr.aria-checked]="basis() === 'usd'" [class.on]="basis() === 'usd'" (click)="setBasis('usd')" title="Everything converted to US dollars — what a global investor earned">US$</button>
+        <button role="radio" [attr.aria-checked]="basis() === 'inr'" [class.on]="basis() === 'inr'" (click)="setBasis('inr')" title="Everything converted to rupees — what an Indian investor earned">₹</button>
+      </div>
+    </div>
+  </header>
+
+  @if (error()) { <div class="gm-err" role="alert">{{ error() }} <button (click)="load()">Try again</button></div> }
+
+  @if (snap(); as s) {
+    <!-- ═════════ the headline: MSCI + the gauges ═════════ -->
+    <section class="gm-hero" aria-label="Headline">
+      @for (m of msci(); track m.key) {
+        <button class="gm-idx" [class.lead]="m.key === 'msci_acwi'" [class.cmp]="isCompared(m.key)" (click)="toggleCompare(m.key)"
+                [attr.title]="m.about + (isCompared(m.key) ? ' · on the compare chart' : ' · click to compare')">
+          <div class="gm-idx-top"><span class="gm-idx-n">{{ m.name }}</span><span class="gm-idx-about">{{ m.about }}</span></div>
+          <div class="gm-idx-mid">
+            <b class="num">{{ num(m.last, 2) }}</b>
+            <span class="gm-chip num" [ngClass]="sign(mv(m, '1d'))">{{ pct(mv(m, '1d')) }}</span>
+          </div>
+          <svg class="gm-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path [attr.d]="spark(m.spark)" [class.down]="!sparkUp(m.spark)"/></svg>
+          <div class="gm-idx-foot">
+            @if (period() !== '1d') { <span>{{ periodLabel() }} <b class="num" [ngClass]="sign(mv(m))">{{ pct(mv(m)) }}</b></span> }
+            <span>YTD <b class="num" [ngClass]="sign(mv(m, 'ytd'))">{{ pct(mv(m, 'ytd')) }}</b></span>
+            <span>1Y <b class="num" [ngClass]="sign(mv(m, '1y'))">{{ pct(mv(m, '1y')) }}</b></span>
+            @if (m.src[period()] === 'etf') { <em title="Yahoo has no history for MSCI's own series here — taken from the iShares ETF that tracks it">via {{ m.etf }}</em> }
+          </div>
+        </button>
+      }
+      <div class="gm-gauges">
+        @if (inr(); as r) {
+          <button class="gm-g" (click)="toggleCompare('fx:INR')" [class.cmp]="isCompared('fx:INR')" title="Rupees per US dollar — up means the rupee weakened">
+            <span>₹ per US$</span><b class="num">{{ num(r.per_usd, 2) }}</b>
+            <small class="num" [ngClass]="sign(r.vs_usd['1d'])">₹ {{ pct(r.vs_usd['1d']) }} today@if (period() !== '1d') { · {{ periodLabel() }} {{ pct(r.vs_usd[period()]) }} }</small>
+          </button>
+        }
+        @if (gauge('dxy'); as g) {
+          <button class="gm-g" (click)="toggleCompare('dxy')" [class.cmp]="isCompared('dxy')" [attr.title]="g.about">
+            <span>US$ index</span><b class="num">{{ num(g.last, 2) }}</b>
+            <small class="num" [ngClass]="sign(g.local?.['1d'])">{{ pct(g.local?.['1d']) }} today@if (period() !== '1d') { · {{ periodLabel() }} {{ pct(g.local?.[period()]) }} }</small>
+          </button>
+        }
+        @if (brent(); as b) {
+          <button class="gm-g" (click)="toggleCompare('cmd:brent')" [class.cmp]="isCompared('cmd:brent')" title="Brent crude, US$ a barrel">
+            <span>Brent crude</span><b class="num">${{ num(b.last, 2) }}</b>
+            <small class="num" [ngClass]="sign(mv(b, '1d'))">{{ pct(mv(b, '1d')) }} today@if (period() !== '1d') { · {{ periodLabel() }} {{ pct(mv(b)) }} }</small>
+          </button>
+        }
+        @if (gold(); as g) {
+          <button class="gm-g" (click)="toggleCompare('cmd:gold')" [class.cmp]="isCompared('cmd:gold')" title="Gold, US$ an ounce">
+            <span>Gold</span><b class="num">${{ num(g.last, 0) }}</b>
+            <small class="num" [ngClass]="sign(mv(g, '1d'))">{{ pct(mv(g, '1d')) }} today@if (period() !== '1d') { · {{ periodLabel() }} {{ pct(mv(g)) }} }</small>
+          </button>
+        }
+        @if (gauge('us10y'); as g) {
+          <div class="gm-g" [attr.title]="g.about">
+            <span>US 10-year</span><b class="num">{{ num(g.last, 2) }}%</b>
+            <small class="num" [ngClass]="sign(g.bp)">{{ bp(g.bp) }} today</small>
+          </div>
+        }
+        @if (gauge('vix'); as g) {
+          <div class="gm-g" [attr.title]="g.about">
+            <span>VIX</span><b class="num">{{ num(g.last, 2) }}</b>
+            <small class="num" [ngClass]="sign(g.local?.['1d'])">{{ pct(g.local?.['1d']) }} today</small>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ═════════ countries ═════════ -->
+    <section class="gm-card" aria-labelledby="gm-c-h">
+      <div class="gm-card-h">
+        <div>
+          <h2 id="gm-c-h">The MSCI world, country by country</h2>
+          <p>{{ periodLabel() }} move in {{ basisLabel() }} · {{ s.countries.length }} countries · 23 developed, 24 emerging</p>
+        </div>
+        <div class="gm-card-tools">
+          <div class="gm-seg sm" role="radiogroup" aria-label="Which markets">
+            <button role="radio" [attr.aria-checked]="cls() === 'all'" [class.on]="cls() === 'all'" (click)="setCls('all')">All</button>
+            <button role="radio" [attr.aria-checked]="cls() === 'DM'" [class.on]="cls() === 'DM'" (click)="setCls('DM')">Developed</button>
+            <button role="radio" [attr.aria-checked]="cls() === 'EM'" [class.on]="cls() === 'EM'" (click)="setCls('EM')">Emerging</button>
+          </div>
+          <div class="gm-seg sm" role="radiogroup" aria-label="View">
+            <button role="radio" [attr.aria-checked]="cview() === 'map'" [class.on]="cview() === 'map'" (click)="setCview('map')">Heat map</button>
+            <button role="radio" [attr.aria-checked]="cview() === 'table'" [class.on]="cview() === 'table'" (click)="setCview('table')">Table</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- breadth: how the world did, in one line -->
+      @if (breadth(); as b) {
+        <div class="gm-breadth">
+          <div class="gm-br-anchor">
+            <span>MSCI ACWI</span>
+            <b class="num" [ngClass]="sign(mv(acwi()))">{{ pct(mv(acwi())) }}</b>
+            <small>{{ basis() === 'local' ? 'US$' : basisLabel() }}</small>
+          </div>
+          <div class="gm-br-bar" [attr.aria-label]="b.up + ' countries up, ' + b.down + ' down'">
+            <div class="gm-br-track"><i class="up" [style.flex-grow]="b.up"></i><i class="dn" [style.flex-grow]="b.down"></i></div>
+            <div class="gm-br-lab num"><span class="pos">▲ {{ b.up }} up</span><span class="neg">{{ b.down }} down ▼</span></div>
+          </div>
+          <div class="gm-br-avg">
+            <span>Developed <b class="num" [ngClass]="sign(b.dm)">{{ pct(b.dm) }}</b></span>
+            <span>Emerging <b class="num" [ngClass]="sign(b.em)">{{ pct(b.em) }}</b></span>
+            <small>simple average of countries</small>
+          </div>
+          <div class="gm-br-lead">
+            <span class="k">Best</span>
+            @for (x of b.best; track x.c.iso) { <button (click)="addCountry(x.c)">{{ x.c.flag }} {{ x.c.name }} <b class="num pos">{{ pct(x.v, 1) }}</b></button> }
+            <span class="k">Worst</span>
+            @for (x of b.worst; track x.c.iso) { <button (click)="addCountry(x.c)">{{ x.c.flag }} {{ x.c.name }} <b class="num neg">{{ pct(x.v, 1) }}</b></button> }
+          </div>
+        </div>
+      }
+
+      @if (cview() === 'map') {
+        <div class="gm-map">
+          @for (r of regions(); track r.name) {
+            <div class="gm-reg">
+              <div class="gm-reg-h">
+                <b>{{ r.name }}</b>
+                <span class="num">{{ r.up }}/{{ r.n }} up · avg <b [ngClass]="sign(r.avg)">{{ pct(r.avg, 1) }}</b></span>
+              </div>
+              <div class="gm-tiles">
+                @for (c of r.rows; track c.iso) {
+                  @let v = cmv(c);
+                  <button class="gm-tile" [style.background]="heat(v)" [style.color]="heatInk(v)" [class.cmp]="isCompared(countryKey(c))"
+                          (mouseenter)="onTileEnter(c, $event)" (mouseleave)="hoverIso.set(null)" (focus)="onTileEnter(c, $any($event))" (blur)="hoverIso.set(null)"
+                          (click)="addCountry(c)"
+                          [attr.aria-label]="c.name + ' ' + pct(v) + ' ' + periodLabel() + (isCompared(countryKey(c)) ? ', on the compare chart' : ', click to compare')">
+                    <span class="gm-t-top"><span class="gm-flag">{{ c.flag }}</span><span class="gm-cls">{{ c.cls }}</span></span>
+                    <span class="gm-t-n">{{ c.name }}</span>
+                    <b class="gm-t-v num">{{ pct(v, 1) }}</b>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="gm-scale" aria-hidden="true">
+          <span class="num neg">−{{ CAP[period()] }}%</span><i></i><span class="num pos">+{{ CAP[period()] }}%</span>
+          <small>colour reaches full strength at ±{{ CAP[period()] }}% · hover for detail · click a country to add it to the chart</small>
+        </div>
+
+        <!-- hover card -->
+        @if (hoverCountry(); as c) {
+          <div class="gm-hc" [style.left.px]="hoverPos().x" [style.top.px]="hoverPos().y" role="tooltip">
+            <div class="gm-hc-h">{{ c.flag }} <b>{{ c.name }}</b> <span class="gm-cls">{{ c.cls === 'DM' ? 'Developed' : 'Emerging' }}</span></div>
+            <div class="gm-hc-sub">{{ c.index_name || ('MSCI ' + c.name + ' ETF') }}@if (c.q_index?.last) { · <span class="num">{{ num(c.q_index?.last) }}</span> }</div>
+            <div class="gm-hc-grid num">
+              <span>Index, {{ c.ccy }}</span><b [ngClass]="sign(c.perf.local[period()])">{{ pct(c.perf.local[period()]) }}</b>
+              <span>{{ c.ccy }} vs {{ fxBase() }}</span><b [ngClass]="sign(ccyMove(c))">{{ c.ccy === 'USD' && basis() !== 'inr' ? '—' : pct(ccyMove(c)) }}</b>
+              <span>In US$</span><b [ngClass]="sign(c.perf.usd[period()])">{{ pct(c.perf.usd[period()]) }}</b>
+              <span>In ₹</span><b [ngClass]="sign(c.perf.inr[period()])">{{ pct(c.perf.inr[period()]) }}</b>
+            </div>
+            @if (c.perf.src[period()] === 'etf') { <div class="gm-hc-note">From the MSCI country ETF ({{ c.etf }}) — Yahoo has no history for the local index</div> }
+            @if (!c.perf.src[period()]) { <div class="gm-hc-note">No history for this period — only today’s move is published</div> }
+          </div>
+        }
+      } @else {
+        <div class="gm-tw">
+          <table class="gm-table">
+            <thead>
+              <tr>
+                <th scope="col" class="l"><button (click)="sortBy('name')">Country {{ sort().k === 'name' ? (sort().dir === 1 ? '↑' : '↓') : '' }}</button></th>
+                <th scope="col" class="l">Index</th>
+                <th scope="col" class="r">Level</th>
+                <th scope="col" class="r"><button (click)="sortBy('day')" title="The index's move today in its own currency">Today, own {{ sort().k === 'day' ? (sort().dir === 1 ? '↑' : '↓') : '' }}</button></th>
+                <th scope="col" class="r"><button (click)="sortBy('fx')" [attr.title]="'The currency against the ' + fxBase() + ' over ' + periodLabel()">Currency {{ periodLabel() }} {{ sort().k === 'fx' ? (sort().dir === 1 ? '↑' : '↓') : '' }}</button></th>
+                @for (p of PERIODS; track p.k) {
+                  <th scope="col" class="r" [class.sel]="p.k === period()"><button (click)="sortBy(p.k)">{{ p.l }} {{ sort().k === p.k ? (sort().dir === 1 ? '↑' : '↓') : '' }}</button></th>
+                }
+                <th scope="col" class="r">1M</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of tableRows(); track c.iso) {
+                <tr [class.cmp]="isCompared(countryKey(c))" (click)="addCountry(c)" [attr.title]="isCompared(countryKey(c)) ? 'On the compare chart — click to remove' : 'Click to add to the compare chart'">
+                  <th scope="row" class="l"><span class="gm-cn"><span class="gm-flag">{{ c.flag }}</span>{{ c.name }}<span class="gm-cls">{{ c.cls }}</span></span></th>
+                  <td class="l gm-ixn">{{ c.index_name || ('MSCI ETF ' + c.etf) }}<small>{{ c.ccy }}</small></td>
+                  <td class="r num">{{ c.q_index?.last != null ? num(c.q_index?.last) : (c.q_etf?.last != null ? '$' + num(c.q_etf?.last) : '—') }}</td>
+                  <td class="r num" [ngClass]="sign(c.perf.local['1d'])">{{ pct(c.perf.local['1d']) }}</td>
+                  <td class="r num" [ngClass]="sign(ccyMove(c))">{{ c.ccy === 'USD' && basis() !== 'inr' ? '—' : pct(ccyMove(c)) }}</td>
+                  @for (p of PERIODS; track p.k) {
+                    @let v = cmv(c, p.k);
+                    <td class="r num" [class.sel]="p.k === period()" [ngClass]="sign(v)">
+                      {{ pct(v, p.k === '3y' || p.k === '5y' ? 0 : 1) }}@if (c.perf.src[p.k] === 'etf') {<sup title="From the MSCI country ETF">e</sup>}
+                    </td>
+                  }
+                  <td class="r"><svg class="gm-spark sm" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path [attr.d]="spark((c.q_index?.ok && (c.q_index?.spark?.length ?? 0) > 2 ? c.q_index : c.q_etf)?.spark)" [class.down]="!sparkUp((c.q_index?.ok && (c.q_index?.spark?.length ?? 0) > 2 ? c.q_index : c.q_etf)?.spark)"/></svg></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="gm-note">Periods are in {{ basisLabel() }}. <sup>e</sup> = from the MSCI country ETF (US$, then converted) where Yahoo has no history for the local index. Colombia, Egypt, Hungary and the Czech Republic publish today’s move only. Click a row to add it to the chart.</p>
+      }
+    </section>
+
+    <!-- ═════════ compare ═════════ -->
+    <section class="gm-card" aria-labelledby="gm-x-h">
+      <div class="gm-card-h">
+        <div>
+          <h2 id="gm-x-h">Compare</h2>
+          <p>Growth from the start of the window, in {{ basisLabel() }}@if (crangeLabel()) { · {{ crangeLabel() }} } · currencies show their value, so a falling line is a weakening currency</p>
+        </div>
+        <div class="gm-seg sm" role="radiogroup" aria-label="Time frame">
+          @for (r of CRANGES; track r.k) {
+            <button role="radio" [attr.aria-checked]="crange() === r.k" [class.on]="crange() === r.k" (click)="setCrange(r.k)">{{ r.l }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="gm-chips">
+        @for (k of compare(); track k) {
+          <span class="gm-chipx" [style.--c]="colour(k)">
+            <i aria-hidden="true"></i>{{ flagOf(k) }} {{ nameOf(k) }}
+            @if (compare().length > 1) { <button (click)="toggleCompare(k)" [attr.aria-label]="'Remove ' + nameOf(k)">×</button> }
+          </span>
+        }
+        <div class="gm-pick">
+          <button class="gm-add" (click)="pickerOpen.set(!pickerOpen())" [disabled]="full()" [attr.aria-expanded]="pickerOpen()">
+            {{ full() ? '8 lines max' : '+ Add a market, commodity or currency' }}
+          </button>
+          @if (pickerOpen()) {
+            <div class="gm-pop" role="dialog" aria-label="Add to the chart">
+              <input #q type="search" placeholder="Search — e.g. Japan, copper, yen, MSCI…" [value]="query()" (input)="query.set(q.value)" autofocus />
+              <div class="gm-pop-list">
+                @for (g of pickerGroups(); track g.name) {
+                  <div class="gm-pop-g">{{ g.name }}</div>
+                  @for (i of g.items; track i.key) {
+                    <button [class.on]="isCompared(i.key)" (click)="toggleCompare(i.key)" [disabled]="!isCompared(i.key) && full()">
+                      <span>{{ i.label }}</span>@if (isCompared(i.key)) { <b>✓</b> }
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="gm-plot" #plot>
+        @if (paths().length) {
+          <svg class="gm-svg" [attr.viewBox]="'-56 -10 ' + (W + 230) + ' ' + (H + 36)" role="img" [attr.aria-label]="'Compare chart, ' + crangeLabel()">
+            @for (t of yTicks(); track t.v) {
+              <line class="gm-grid" [class.zero]="t.zero" x1="0" [attr.x2]="W" [attr.y1]="t.y" [attr.y2]="t.y"/>
+              <text class="gm-ylab" x="-10" [attr.y]="t.y" dy="0.32em" text-anchor="end">{{ t.label }}</text>
+            }
+            @for (t of xTicks(); track t.x) {
+              <text class="gm-xlab" [attr.x]="t.x" [attr.y]="H + 22" text-anchor="middle">{{ t.label }}</text>
+            }
+            @for (p of paths(); track p.key) {
+              <path class="gm-line" [class.fx]="p.fx" [attr.d]="p.d" [attr.stroke]="p.colour"/>
+            }
+            @for (e of ends(); track e.key) {
+              <circle [attr.cx]="W" [attr.cy]="e.y0" r="4" [attr.fill]="e.colour" class="gm-end"/>
+              @if (e.y !== e.y0) { <path class="gm-leader" [attr.d]="'M' + (W + 5) + ' ' + e.y0 + ' L' + (W + 12) + ' ' + e.y"/> }
+              <text class="gm-elab v" [attr.x]="W + 14" [attr.y]="e.y - 2">{{ pct(e.value, 1) }}</text>
+              <text class="gm-elab n" [attr.x]="W + 14" [attr.y]="e.y + 12">{{ e.name.length > 26 ? e.name.slice(0, 25) + '…' : e.name }}</text>
+            }
+            @if (tip(); as t) {
+              <line class="gm-cross" [attr.x1]="t.x" [attr.x2]="t.x" y1="0" [attr.y2]="H"/>
+              @for (r of t.rows; track r.key) { <circle [attr.cx]="t.x" [attr.cy]="r.y" r="4.5" [attr.fill]="r.colour" class="gm-dot"/> }
+            }
+            <rect class="gm-hit" x="0" y="-10" [attr.width]="W" [attr.height]="H + 20"
+                  (pointermove)="onMove($event, $any($event.currentTarget))" (pointerdown)="onMove($event, $any($event.currentTarget))" (pointerleave)="$event.pointerType !== 'touch' && hover.set(null)"/>
+          </svg>
+          @if (tip(); as t) {
+            <div class="gm-tip" [class.flip]="t.flip" [style.left.%]="(56 + t.x) / (W + 230) * 100">
+              <div class="gm-tip-d">{{ t.date }}</div>
+              @for (r of t.rows; track r.key) {
+                <div class="gm-tip-r"><i [style.background]="r.colour"></i><b class="num" [ngClass]="sign(r.value)">{{ pct(r.value, 1) }}</b><span>{{ r.name }}</span></div>
+              }
+            </div>
+          }
+        } @else {
+          <div class="gm-sk"><i></i>@if (!histLoading() && !lines().length) { <span>No history for this window</span> }</div>
+        }
+      </div>
+      @if (missing().length) { <p class="gm-note">No daily history from Yahoo for: {{ missing().join(', ') }}.</p> }
+
+      @if (stats().length) {
+        <div class="gm-tw">
+          <table class="gm-table stats">
+            <thead><tr><th scope="col" class="l">In the window ({{ basisLabel() }})</th><th class="r">Return</th><th class="r" title="Compound yearly return — shown for windows of a year or more">A year</th><th class="r" title="Annualised volatility of daily moves">Volatility</th><th class="r" title="Largest fall from a previous high">Worst fall</th></tr></thead>
+            <tbody>
+              @for (r of stats(); track r.key) {
+                <tr>
+                  <th scope="row" class="l"><span class="gm-cn"><i class="gm-key" [style.background]="r.colour"></i>{{ r.name }}</span></th>
+                  <td class="r num strong" [ngClass]="sign(r.ret)">{{ pct(r.ret, 1) }}</td>
+                  <td class="r num" [ngClass]="sign(r.cagr)">{{ r.cagr === null ? '—' : pct(r.cagr, 1) }}</td>
+                  <td class="r num">{{ r.vol.toFixed(1) }}%</td>
+                  <td class="r num neg">{{ pct(r.dd, 1) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- ═════════ commodities + currencies ═════════ -->
+    <div class="gm-two">
+      <section class="gm-card" aria-labelledby="gm-k-h">
+        <div class="gm-card-h">
+          <div><h2 id="gm-k-h">Commodities</h2><p>Front-month futures · priced in {{ basis() === 'inr' ? '₹ (US$ price × ₹ per US$)' : 'US$' }} · {{ periodLabel() }} move</p></div>
+        </div>
+        <div class="gm-tw">
+          <table class="gm-table kt">
+            <thead><tr><th class="l">Commodity</th><th class="r">Price</th><th class="r">Today</th><th class="r sel">{{ period() === '1d' ? '1M' : periodLabel() }}</th><th class="r">1Y</th><th class="r">1M</th></tr></thead>
+            @for (g of commodityGroups(); track g.name) {
+              <tbody>
+                <tr class="gm-grp"><th colspan="6" class="l">{{ g.name }}</th></tr>
+                @for (c of g.rows; track c.key) {
+                  <tr [class.cmp]="isCompared('cmd:' + c.key)" (click)="toggleCompare('cmd:' + c.key)" title="Click to add to the compare chart">
+                    <th scope="row" class="l">{{ c.name }}</th>
+                    <td class="r num">{{ price(c) }}<small>{{ c.unit }}</small></td>
+                    <td class="r num" [ngClass]="sign(mv(c, '1d'))">{{ pct(mv(c, '1d')) }}</td>
+                    <td class="r num sel" [ngClass]="sign(mv(c, period() === '1d' ? '1m' : period()))">{{ pct(mv(c, period() === '1d' ? '1m' : period()), 1) }}</td>
+                    <td class="r num" [ngClass]="sign(mv(c, '1y'))">{{ pct(mv(c, '1y'), 1) }}</td>
+                    <td class="r"><svg class="gm-spark sm" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path [attr.d]="spark(c.spark)" [class.down]="!sparkUp(c.spark)"/></svg></td>
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+      </section>
+
+      <section class="gm-card" aria-labelledby="gm-f-h">
+        <div class="gm-card-h">
+          <div><h2 id="gm-f-h">Currencies vs the {{ fxBase() === '₹' ? 'rupee' : 'US dollar' }}</h2>
+            <p>{{ periodLabel() }} move of each currency against the {{ fxBase() }} — <span class="pos">right = it strengthened</span>, <span class="neg">left = it lost value</span></p></div>
+        </div>
+        <div class="gm-tw">
+          <table class="gm-table fx">
+            <thead><tr><th class="l">Currency</th><th class="r">{{ fxBase() === '₹' ? '₹ per unit' : 'Per US$' }}</th><th class="c">{{ periodLabel() }}</th><th class="r">YTD</th><th class="r">1Y</th><th class="r">5Y</th></tr></thead>
+            <tbody>
+              @for (c of currencies(); track c.ccy) {
+                @let v = fxmv(c);
+                <tr [class.cmp]="isCompared('fx:' + c.ccy)" [class.me]="c.ccy === 'INR'" (click)="toggleCompare('fx:' + c.ccy)" title="Click to add to the compare chart">
+                  <th scope="row" class="l"><span class="gm-cn"><span class="gm-flag">{{ c.flag }}</span><b>{{ c.ccy }}</b><small>{{ c.name }}</small>@if (c.pegged) { <span class="gm-cls" [attr.title]="c.suspect ? 'Held to the US dollar — today’s print from the feed was a bad tick, left out' : 'Held to the US dollar by its central bank'">peg</span> }</span></th>
+                  <td class="r num">{{ fxBase() === '₹' ? num(c.inr_per) : num(c.per_usd) }}</td>
+                  <td class="c">
+                    <div class="gm-div" [attr.aria-label]="pct(v)">
+                      <i class="bar" [class.l]="(v ?? 0) < 0" [style.width.%]="Math.abs(v ?? 0) / fxScale() * 50"></i>
+                      <b class="num" [ngClass]="sign(v)" [class.l]="(v ?? 0) < 0">{{ pct(v, 1) }}</b>
+                    </div>
+                  </td>
+                  <td class="r num" [ngClass]="sign(fxmv(c, 'ytd'))">{{ pct(fxmv(c, 'ytd'), 1) }}</td>
+                  <td class="r num" [ngClass]="sign(fxmv(c, '1y'))">{{ pct(fxmv(c, '1y'), 1) }}</td>
+                  <td class="r num" [ngClass]="sign(fxmv(c, '5y'))">{{ pct(fxmv(c, '5y'), 0) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="gm-note">Rates from Yahoo’s FX feed. A currency’s move = how much more or less one unit of it buys of the {{ fxBase() }}.</p>
+      </section>
+    </div>
+
+    <!-- yields -->
+    <section class="gm-card gm-ylds" aria-label="US Treasury yields">
+      @for (g of gauges(); track g.key) {
+        @if (g.kind === 'yield') {
+          <div class="gm-yl"><span>{{ g.name }}</span><b class="num">{{ num(g.last, 2) }}%</b><small class="num" [ngClass]="sign(g.bp)">{{ bp(g.bp) }} today</small>
+            <svg class="gm-spark sm" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path [attr.d]="spark(g.spark)" [class.down]="!sparkUp(g.spark)"/></svg></div>
+        }
+      }
+      <p class="gm-note">Data: Yahoo Finance (index levels, futures, FX, MSCI’s official ACWI / World levels; MSCI country views via the iShares MSCI country ETFs). Delayed; not investment advice.</p>
+    </section>
+  } @else if (!error()) {
+    <div class="gm-skel" aria-hidden="true"><i></i><i></i><i></i></div>
+  }
+</div>
