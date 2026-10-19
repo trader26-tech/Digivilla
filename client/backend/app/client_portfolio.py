@@ -374,8 +374,20 @@ def _mapped_houses_load(client_code: str):
     if not txns:
         return None
     from app import villa_alloc
+    # the admin's placement decisions (which bucket each purchase builds) — same rule, same houses
+    set_bucket, villa_bucket = {}, {}
+    try:
+        for row in _sb().table("admin_config").select("key,value").in_("key", ["placement_map", "villa_buckets_map"]).execute().data or []:
+            if isinstance(row.get("value"), dict):
+                if row["key"] == "placement_map":
+                    set_bucket = row["value"]
+                else:
+                    villa_bucket = row["value"]
+    except Exception:
+        pass
     r = villa_alloc.allocate(txns, villas, unit=_villa_unit(), max_houses=_houses_max(),
-                             villa_codes=_villa_scheme_codes(), client_code=client_code)
+                             villa_codes=_villa_scheme_codes(), client_code=client_code,
+                             set_bucket=set_bucket, villa_bucket=villa_bucket)
     if not r["houses"]:
         return None
     return {"houses": r["houses"], "loose": [], "outside": r["outside"], "placements": r["placements"]}

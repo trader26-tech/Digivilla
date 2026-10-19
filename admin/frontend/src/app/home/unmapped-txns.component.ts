@@ -26,6 +26,8 @@ export class UnmappedTxnsComponent {
   readonly data = signal<MappingOverview | null>(null);
   readonly rebuilding = signal(false);
   readonly rebuildMsg = signal('');
+  /** the (i) popover: which section is explaining itself */
+  readonly help = signal<'tie' | 'um' | null>(null);
 
   /** Repair: holdings := the roll-up of every transaction (idempotent). */
   rebuild(): void {

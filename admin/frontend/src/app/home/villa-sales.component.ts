@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 
 import { AdminService, MappingOverview, VillaSummary, VillaType } from '../admin.service';
-import { VillaMapperComponent } from './villa-mapper.component';
 
 /**
  * Home: how many villas of each type clients hold, what they're worth today and
@@ -11,7 +10,7 @@ import { VillaMapperComponent } from './villa-mapper.component';
 @Component({
   selector: 'app-villa-sales',
   standalone: true,
-  imports: [CommonModule, VillaMapperComponent],
+  imports: [CommonModule],
   templateUrl: './villa-sales.component.html',
   styleUrl: './villa-sales.component.scss',
 })

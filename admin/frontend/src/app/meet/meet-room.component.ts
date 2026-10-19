@@ -51,6 +51,8 @@ export class MeetRoomComponent implements OnInit {
   readonly editingRoom = signal(false);
   readonly roomDraft = signal('');
   readonly roomError = signal('');
+  /** the (i) popover next to the Meet-link field */
+  readonly linkInfo = signal(false);
   readonly historyQuery = signal('');
   private toastTimer: any = null;
 
@@ -64,7 +66,7 @@ export class MeetRoomComponent implements OnInit {
 
   start(): void { window.open(this.roomUrl(), '_blank', 'noopener'); }
 
-  copyRoom(): void { this.copy(this.roomUrl(), 'Meeting link copied'); }
+  copyRoom(): void { this.copy(this.roomUrl(), 'Link copied'); }
 
   roomInvite(): string {
     return `Join me on Google Meet:\n${this.roomUrl()}\n\n— TheDigiCiti`;
@@ -90,6 +92,7 @@ export class MeetRoomComponent implements OnInit {
   editRoom(): void {
     this.roomDraft.set(this.store.data()?.room.is_default ? '' : this.roomUrl());
     this.roomError.set('');
+    this.linkInfo.set(false);
     this.editingRoom.set(true);
   }
 
@@ -101,7 +104,7 @@ export class MeetRoomComponent implements OnInit {
         this.store.patch((d) => ({ ...d, room }));
         this.editingRoom.set(false);
         this.saving.set(false);
-        this.flash(reset ? 'Back to the default room' : 'Meeting link saved');
+        this.flash(reset ? 'Default room' : 'Link saved');
       },
       error: (e) => { this.roomError.set(e?.error?.detail || 'Could not save the link.'); this.saving.set(false); },
     });
@@ -176,7 +179,7 @@ export class MeetRoomComponent implements OnInit {
     return `${hi}’s the link for our call${what}, ${when} (${a.minutes} min):\n${this.roomUrl()}\n\n— TheDigiCiti`;
   }
 
-  copyInvite(a: AgendaItem): void { this.menuFor.set(null); this.copy(this.invite(a), 'Invite copied — paste it anywhere'); }
+  copyInvite(a: AgendaItem): void { this.menuFor.set(null); this.copy(this.invite(a), 'Invite copied'); }
 
   calendarUrl(a: AgendaItem): string {
     const z = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
@@ -249,7 +252,7 @@ export class MeetRoomComponent implements OnInit {
     if (isNaN(s.getTime())) return '';
     const e = new Date(s.getTime() + d.minutes * 60_000);
     const past = s.getTime() < this.store.now() - 60_000;
-    return `${this.dayLabel(s)} · ${this.time(s)} – ${this.time(e)}${past ? ' · this time has passed' : ''}`;
+    return `${this.dayLabel(s)} · ${this.time(s)} – ${this.time(e)}${past ? ' · in the past' : ''}`;
   });
 
   save(): void {
@@ -271,7 +274,7 @@ export class MeetRoomComponent implements OnInit {
         this.store.patch((o) => ({ ...o, meetings: d.id ? o.meetings.map((x) => (x.id === m.id ? m : x)) : [...o.meetings, m] }));
         this.saving.set(false);
         this.draft.set(null);
-        this.flash(d.id ? 'Meeting updated' : 'Meeting scheduled — copy the invite from its row');
+        this.flash(d.id ? 'Updated' : 'Scheduled');
       },
       error: (e) => { this.formError.set(e?.error?.detail || 'Could not save the meeting.'); this.saving.set(false); },
     });
@@ -284,7 +287,7 @@ export class MeetRoomComponent implements OnInit {
     this.api.updateMeeting(m.id, { status }).subscribe({
       next: (u) => {
         this.store.patch((o) => ({ ...o, meetings: o.meetings.map((x) => (x.id === u.id ? u : x)) }));
-        this.flash(status === 'done' ? 'Marked as done' : status === 'cancelled' ? 'Meeting cancelled' : 'Meeting restored');
+        this.flash(status === 'done' ? 'Done' : status === 'cancelled' ? 'Cancelled' : 'Restored');
       },
       error: () => this.flash('Could not update the meeting'),
     });
@@ -298,7 +301,7 @@ export class MeetRoomComponent implements OnInit {
     this.confirmDelete.set(null);
     this.menuFor.set(null);
     this.api.deleteMeeting(m.id).subscribe({
-      next: () => { this.store.patch((o) => ({ ...o, meetings: o.meetings.filter((x) => x.id !== m.id) })); this.flash('Meeting deleted'); },
+      next: () => { this.store.patch((o) => ({ ...o, meetings: o.meetings.filter((x) => x.id !== m.id) })); this.flash('Deleted'); },
       error: () => this.flash('Could not delete the meeting'),
     });
   }

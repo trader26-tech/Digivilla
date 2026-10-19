@@ -9,8 +9,8 @@
 
     <!-- email -->
     <ng-container *ngIf="phase() === 'email'">
-      <h1>Client desk</h1>
-      <p class="sub">We’ll email a one-time sign-in code to<br><b>{{ signinEmail() || 'your admin email' }}</b>.</p>
+      <h1>Sign in</h1>
+      <p class="sub"><b>{{ signinEmail() || 'your admin email' }}</b></p>
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="sendCode()">
         {{ busy() ? 'Sending…' : 'Email me a code' }}
@@ -20,59 +20,59 @@
     <!-- otp -->
     <ng-container *ngIf="phase() === 'otp'">
       <h1>Enter the code</h1>
-      <p class="sub" *ngIf="!devCode()">Sent to <b>{{ maskedEmail() }}</b>. It expires in 5 minutes.</p>
-      <p class="sub" *ngIf="devCode()">Local dev — enter <b>1234</b>.</p>
+      <p class="sub" *ngIf="!devCode()">Sent to <b>{{ maskedEmail() }}</b> · 5 min</p>
+      <p class="sub" *ngIf="devCode()">Dev · <b>1234</b></p>
       <input class="code-input" inputmode="numeric" maxlength="6" placeholder="000000"
         [ngModel]="otpCode()" (ngModelChange)="otpCode.set($event)" (keydown.enter)="verifyCode()" autofocus />
       <p class="note" *ngIf="notice()">{{ notice() }}</p>
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="verifyCode()">
-        {{ busy() ? 'Checking…' : 'Verify & continue' }}
+        {{ busy() ? 'Checking…' : 'Continue' }}
       </button>
-      <button class="link" (click)="sendCode()" [disabled]="busy()">{{ devCode() ? 'Email me a real code instead' : 'Resend code' }}</button>
+      <button class="link" (click)="sendCode()" [disabled]="busy()">{{ devCode() ? 'Email a real code' : 'Resend' }}</button>
     </ng-container>
 
     <!-- set pin -->
     <ng-container *ngIf="phase() === 'setpin'">
-      <h1>Set a 4-digit PIN</h1>
-      <p class="sub">You’ll use this PIN to unlock on this device for the next 30 days.</p>
+      <h1>Set a PIN</h1>
+      <p class="sub">4 digits · this device · 30 days</p>
 
       <label class="field-label" for="pin1">PIN</label>
       <input id="pin1" class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" autofocus />
 
-      <label class="field-label" for="pin2">Repeat PIN</label>
+      <label class="field-label" for="pin2">Repeat</label>
       <input id="pin2" class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
         [ngModel]="pin2Input()" (ngModelChange)="pin2Input.set($event)" (keydown.enter)="createPin()" />
 
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="createPin()">
-        {{ busy() ? 'Saving…' : 'Save PIN & continue' }}
+        {{ busy() ? 'Saving…' : 'Save PIN' }}
       </button>
     </ng-container>
 
     <!-- pin unlock -->
     <ng-container *ngIf="phase() === 'pin'">
       <h1>Welcome back</h1>
-      <p class="sub" *ngIf="!devCode()">Enter your 4-digit PIN to unlock.</p>
-      <p class="sub" *ngIf="devCode()">Enter your PIN — or <b>1234</b> (local dev).</p>
+      <p class="sub" *ngIf="!devCode()">Your PIN</p>
+      <p class="sub" *ngIf="devCode()">Your PIN · or <b>1234</b></p>
       <input class="code-input pin" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •"
         [ngModel]="pinInput()" (ngModelChange)="pinInput.set($event)" (keydown.enter)="doUnlock()" autofocus />
       <p class="err" *ngIf="authError()">{{ authError() }}</p>
       <button class="cta" [disabled]="busy()" (click)="doUnlock()">
         {{ busy() ? 'Unlocking…' : 'Unlock' }}
       </button>
-      <button class="link" (click)="useEmailInstead()">Sign in with email instead</button>
+      <button class="link" (click)="useEmailInstead()">Use email instead</button>
     </ng-container>
   </div>
 
-  <p class="lock-foot" *ngIf="phase() !== 'loading'">Digivilla · Secure admin access</p>
+  <p class="lock-foot" *ngIf="phase() !== 'loading'">Secure access</p>
 </div>
 
 <!-- ═══════════════════════ WORKSPACE ═══════════════════════ -->
 <div class="dash" *ngIf="phase() === 'unlocked'">
-  <div class="upd" *ngIf="updateReady()" role="status">A newer version of the admin is ready.<button (click)="reloadNow()">Reload now</button></div>
-  <!-- ═══ SIDEBAR: the admin's navigation (replaces the old top tabs) ═══ -->
+  <div class="upd" *ngIf="updateReady()" role="status">New version ready<button (click)="reloadNow()">Reload</button></div>
+  <!-- ═══ SIDEBAR ═══ -->
   <aside class="side">
     <div class="brand">
       <span class="logo">◆</span>
@@ -125,9 +125,9 @@
     <button class="more-item install" *ngIf="canInstall()" (click)="install()">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/></svg><span>Install on this phone</span><b aria-hidden="true">›</b>
     </button>
-    <p class="install-steps" *ngIf="installSteps()">In Safari, tap <b>Share</b> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="the Share icon"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 11v9h14v-9"/></svg> then <b>Add to Home Screen</b>. The admin then opens full-screen, like an app.</p>
+    <p class="install-steps" *ngIf="installSteps()">Safari: <b>Share</b> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="the Share icon"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 11v9h14v-9"/></svg> → <b>Add to Home Screen</b></p>
     <div class="more-foot">
-      <span class="timer" *ngIf="lockCountdown()">🔒 Locks in {{ lockCountdown() }}</span>
+      <span class="timer" *ngIf="lockCountdown()">🔒 {{ lockCountdown() }}</span>
       <button class="ghost" (click)="closeSheet(); signOut()">Sign out</button>
     </div>
   </section>
@@ -148,11 +148,10 @@
 
   <!-- ─────────── HOME ─────────── -->
   <div class="wrap wrap-home" *ngIf="view() === 'clients'">
-    <!-- header: who / when / refresh -->
     <div class="hero ov-hero">
       <div class="hero-text">
         <h1 class="hero-title">{{ greeting() }}, {{ adminName() }}</h1>
-        <p class="hero-sub">{{ todayLong() }}<ng-container *ngIf="refreshedLabel()"> · figures as of {{ refreshedLabel() }}</ng-container></p>
+        <p class="hero-sub">{{ todayLong() }}<ng-container *ngIf="refreshedLabel()"> · {{ refreshedLabel() }}</ng-container></p>
       </div>
       <button class="refresh-btn" [class.spinning]="refreshing()" [disabled]="refreshing()" (click)="refreshAll()"
               title="Pull the latest clients, net worth and mapping">
@@ -164,30 +163,32 @@
     <!-- the four numbers that matter -->
     <section class="kpis ov-kpis" aria-label="Key figures">
       <div class="kpi hero-kpi">
-        <small>Net worth · live</small>
+        <small>Net worth</small>
         <b class="figure">{{ money(nwTotal()) }}</b>
-        <span class="kpi-foot">{{ nwTotalCount() }} client{{ nwTotalCount() === 1 ? '' : 's' }} · at today’s NAV</span>
+        <span class="kpi-foot">{{ nwTotalCount() }} client{{ nwTotalCount() === 1 ? '' : 's' }}</span>
       </div>
       <div class="kpi">
         <small>Invested</small>
         <b class="figure">{{ money(nwTotalInvested()) }}</b>
-        <span class="kpi-foot">money put in</span>
       </div>
       <div class="kpi">
         <small>Gain</small>
         <b class="figure" [class.pos]="nwTotalGain() >= 0" [class.neg]="nwTotalGain() < 0">{{ money(nwTotalGain()) }}</b>
-        <span class="kpi-foot" [class.pos]="nwTotalGain() >= 0" [class.neg]="nwTotalGain() < 0">{{ nwGainPct() >= 0 ? '+' : '' }}{{ nwGainPct() | number:'1.1-1' }}% overall</span>
+        <span class="pill" [class.neg]="nwTotalGain() < 0">{{ nwGainPct() >= 0 ? '▲' : '▼' }} {{ nwGainPct() | number:'1.1-1' }}%</span>
       </div>
       <div class="kpi">
-        <small>Mapped<span class="wide"> to villas</span></small>
-        <ng-container *ngIf="mapOverview() as mo; else mapSk">
-          <b class="figure">{{ mo.mapped }}<span class="kpi-of"> / {{ mo.total }}</span></b>
-          <a class="kpi-foot kpi-link" href="#unmapped" *ngIf="mo.unmapped > 0">{{ mo.unmapped }} not mapped · {{ money(mo.unmapped_amount) }} →</a>
-          <span class="kpi-foot pos" *ngIf="mo.unmapped === 0">Everything is mapped</span>
+        <small>To place</small>
+        <ng-container *ngIf="toPlace() as tp; else mapSk">
+          <b class="figure" [class.neg]="tp.count > 0" [class.pos]="tp.count === 0">{{ tp.count }}</b>
+          <span class="kpi-foot" *ngIf="tp.count > 0">{{ money(tp.amount) }}</span>
+          <span class="kpi-foot pos" *ngIf="tp.count === 0">All placed</span>
         </ng-container>
-        <ng-template #mapSk><b class="figure">—</b><span class="kpi-foot">loading…</span></ng-template>
+        <ng-template #mapSk><b class="figure">—</b></ng-template>
       </div>
     </section>
+
+    <!-- purchases waiting for a placement decision (everything that matched a recipe is already placed) -->
+    <app-placements (counts)="toPlace.set($event)" (changed)="loadNetWorth(); loadMappingOverview()"></app-placements>
 
     <!-- villas sold + today's work -->
     <div class="home">
@@ -199,18 +200,15 @@
       </aside>
     </div>
 
-    <!-- every transaction still to be mapped — the full list, nothing hidden -->
-    <app-unmapped-txns [overview]="mapOverview()" (map)="openNwClient($event, 'mapping')" (rebuilt)="onTodayUpdated()"></app-unmapped-txns>
 
     <!-- client directory -->
     <section class="directory card">
       <div class="dir-head">
         <div class="dir-search">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input placeholder="Search by name, phone or code…" [ngModel]="nwSearch()" (ngModelChange)="nwSearch.set($event)" />
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input placeholder="Search" aria-label="Search clients by name, phone or code" [ngModel]="nwSearch()" (ngModelChange)="nwSearch.set($event)" />
         </div>
-        <div class="dir-sort">
-          <span class="sort-lbl">Sort</span>
+        <div class="dir-sort seg" role="group" aria-label="Sort">
           <button [class.on]="nwSort() === 'net_worth'" (click)="setSort('net_worth')">Net worth</button>
           <button [class.on]="nwSort() === 'invested'" (click)="setSort('invested')">Invested</button>
           <button [class.on]="nwSort() === 'gain_pct'" (click)="setSort('gain_pct')">Gain %</button>
@@ -220,17 +218,15 @@
 
       <div class="dir-count">{{ nwFiltered().length }} client{{ nwFiltered().length === 1 ? '' : 's' }}</div>
 
-      <div class="loading" *ngIf="nwLoading()">Loading clients…</div>
+      <div class="loading" *ngIf="nwLoading()">Loading…</div>
 
       <div class="empty" *ngIf="!nwLoading() && !nwClients().length">
-        <div class="empty-icon">📄</div>
-        <p>No clients yet.</p>
-        <span>Upload today’s User &amp; Transaction reports to build the client database.</span>
-        <button class="empty-cta" (click)="setView('uploads')">Go to Uploads</button>
+        <p>No clients yet</p>
+        <button class="empty-cta" (click)="setView('uploads')">Uploads</button>
       </div>
 
       <div class="empty" *ngIf="!nwLoading() && nwClients().length && !nwFiltered().length">
-        <p>No clients match “{{ nwSearch() }}”.</p>
+        <p>No match</p>
       </div>
 
       <ul class="client-rows" *ngIf="nwFiltered().length">
@@ -249,7 +245,7 @@
             <b class="strong">{{ money(c.net_worth) }}</b>
           </span>
           <span class="cr-gain" [class.pos]="c.gain >= 0" [class.neg]="c.gain < 0">
-            <b>{{ c.gain_pct >= 0 ? '+' : '' }}{{ c.gain_pct }}%</b>
+            <b class="pill" [class.neg]="c.gain < 0">{{ c.gain_pct >= 0 ? '▲' : '▼' }} {{ c.gain_pct }}%</b>
             <small>{{ money(c.gain) }}</small>
           </span>
           <span class="cr-funds">{{ c.holdings_count }} <em>funds</em></span>
@@ -259,37 +255,38 @@
     </section>
   </div>
 
-  <!-- ─────────── MARKETS TODAY (India board: indices, gold, arbitrage, villas, rupee, US) ─────────── -->
+  <!-- ─────────── MARKETS TODAY ─────────── -->
   <app-global-markets *ngIf="view() === 'global'"></app-global-markets>
 
-  <!-- ─────────── VILLAS VS MARKET (today's world markets + the villa replay) ─────────── -->
+  <!-- ─────────── VILLAS VS MARKET ─────────── -->
   <app-markets-page *ngIf="view() === 'market'"></app-markets-page>
 
   <!-- ─────────── LIVE NAVs VIEW ─────────── -->
   <div class="wrap" *ngIf="view() === 'villas'">
     <div class="section-head">
-      <h1>Villa live NAVs</h1>
-      <p>Today’s NAV for every fund inside each villa bucket, pulled live from the market.</p>
+      <div>
+        <h1>Live NAVs</h1>
+        <p *ngIf="nwVillas().length">{{ nwVillas().length }} villa{{ nwVillas().length === 1 ? '' : 's' }} · today's NAV</p>
+      </div>
     </div>
     <div class="empty card" *ngIf="!nwVillas().length">
-      <div class="empty-icon">💹</div>
-      <p>No villa buckets defined yet.</p>
-      <span>Create one under “Villa buckets”, then live prices appear here.</span>
+      <p>No buckets yet</p>
       <button class="empty-cta" (click)="setView('buckets')">Create a bucket</button>
     </div>
     <div class="villa-grid">
       <div class="villa-card card" *ngFor="let v of nwVillas()">
         <div class="villa-card-head">
-          <div><b>{{ v.name }}</b><span class="tier" *ngIf="v.tier">{{ v.tier }}</span></div>
-          <div class="villa-nav">
-            <small>Live NAV sum</small>
-            <b>₹{{ v.nav_sum | number:'1.2-4' }}</b>
-          </div>
+          <b>{{ v.name }}</b>
+          <span class="tier" *ngIf="v.tier">{{ v.tier }}</span>
+        </div>
+        <div class="villa-nav">
+          <small>NAV sum</small>
+          <b>₹{{ v.nav_sum | number:'1.2-4' }}</b>
         </div>
         <div class="villa-fund" *ngFor="let f of v.funds">
           <span class="vf-name">{{ f.scheme_name }}</span>
           <span class="vf-nav" *ngIf="f.nav">₹{{ f.nav | number:'1.2-4' }}<small *ngIf="f.nav_date"> · {{ f.nav_date }}</small></span>
-          <span class="vf-nav muted" *ngIf="!f.nav">no NAV</span>
+          <span class="vf-nav muted" *ngIf="!f.nav">—</span>
         </div>
       </div>
     </div>
@@ -298,26 +295,28 @@
   <!-- ─────────── VILLA BUCKETS VIEW ─────────── -->
   <div class="wrap" *ngIf="view() === 'buckets'">
     <div class="section-head">
-      <h1>Villa buckets</h1>
-      <p>A villa is a named set of fund schemes. Client holdings are matched into it — only these count toward villa value.</p>
-      <button class="primary-btn" (click)="showBuilder.set(!showBuilder())">{{ showBuilder() ? 'Close builder' : '+ New villa bucket' }}</button>
+      <div>
+        <h1>Villa buckets</h1>
+        <p>{{ nwBuckets().length }} bucket{{ nwBuckets().length === 1 ? '' : 's' }}</p>
+      </div>
+      <button class="primary-btn" (click)="showBuilder.set(!showBuilder())">{{ showBuilder() ? 'Close' : '+ New bucket' }}</button>
     </div>
 
     <!-- builder -->
     <section class="builder card" *ngIf="showBuilder()">
-      <h3>New villa bucket</h3>
+      <h3>New bucket</h3>
       <div class="builder-top">
-        <input class="inp" placeholder="Villa name (e.g. Balanced Villa)" [ngModel]="newBucketName()" (ngModelChange)="newBucketName.set($event)" />
-        <input class="inp" placeholder="Tier (optional — 10L / 50L / 1Cr)" [ngModel]="newBucketTier()" (ngModelChange)="newBucketTier.set($event)" />
-        <div class="kind-seg" role="group" aria-label="Investment type">
+        <input class="inp" placeholder="Name" aria-label="Villa name" [ngModel]="newBucketName()" (ngModelChange)="newBucketName.set($event)" />
+        <input class="inp" placeholder="Tier (10L / 50L / 1Cr)" aria-label="Tier" [ngModel]="newBucketTier()" (ngModelChange)="newBucketTier.set($event)" />
+        <div class="kind-seg seg" role="group" aria-label="Investment type">
           <button type="button" [class.on]="newBucketKind() === 'sip'" (click)="newBucketKind.set('sip')">SIP</button>
           <button type="button" [class.on]="newBucketKind() === 'lumpsum'" (click)="newBucketKind.set('lumpsum')">Lumpsum</button>
         </div>
-        <input class="inp" placeholder="Subtitle (e.g. medium risk portfolio)" [ngModel]="newBucketSubtitle()" (ngModelChange)="newBucketSubtitle.set($event)" />
+        <input class="inp" placeholder="Subtitle" aria-label="Subtitle" [ngModel]="newBucketSubtitle()" (ngModelChange)="newBucketSubtitle.set($event)" />
       </div>
       <div class="fund-add">
-        <input class="inp" placeholder="Add a fund scheme name…" [ngModel]="newFundName()" (ngModelChange)="newFundName.set($event)" (keyup.enter)="addFundToBucket()" />
-        <button class="add-btn" (click)="addFundToBucket()">+ Add fund</button>
+        <input class="inp" placeholder="Fund scheme name" aria-label="Fund scheme name" [ngModel]="newFundName()" (ngModelChange)="newFundName.set($event)" (keyup.enter)="addFundToBucket()" />
+        <button class="add-btn" (click)="addFundToBucket()">+ Add</button>
       </div>
       <div class="draft-funds">
         <div class="draft-fund" *ngFor="let f of newBucketFunds(); let i = index">
@@ -353,24 +352,22 @@
       </div>
       <div class="alloc-bar" *ngIf="newBucketFunds().length" [class.ok]="draftAllocTotal() === 100">
         <span>Allocation</span><b>{{ draftAllocTotal() }}%</b>
-        <small class="alloc-hint" *ngIf="draftAllocTotal() !== 100">should total 100%</small>
+        <small class="alloc-hint" *ngIf="draftAllocTotal() !== 100">of 100</small>
       </div>
       <button class="primary-btn" [disabled]="!newBucketName().trim() || !newBucketFunds().length || bucketSaving()" (click)="saveBucket()">
-        {{ bucketSaving() ? 'Saving…' : 'Create villa bucket' }}
+        {{ bucketSaving() ? 'Saving…' : 'Create' }}
       </button>
     </section>
 
     <!-- existing buckets -->
     <div class="empty card" *ngIf="!nwBuckets().length && !showBuilder()">
-      <div class="empty-icon">🏗️</div>
-      <p>No buckets yet.</p>
-      <span>Create your first villa bucket to start matching client holdings.</span>
+      <p>No buckets yet</p>
     </div>
     <div class="bucket card" *ngFor="let b of nwBuckets()">
       <div class="bucket-head">
         <div>
           <b>{{ b.name }}</b>
-          <span class="kind-badge" [class.lumpsum]="b.kind === 'lumpsum'" *ngIf="b.kind">{{ b.kind === 'lumpsum' ? 'LUMPSUM' : 'SIP' }}</span>
+          <span class="kind-badge" [class.lumpsum]="b.kind === 'lumpsum'" *ngIf="b.kind">{{ b.kind === 'lumpsum' ? 'Lumpsum' : 'SIP' }}</span>
           <span class="tier" *ngIf="b.tier">{{ b.tier }}</span>
           <small class="bucket-sub" *ngIf="b.subtitle">{{ b.subtitle }}</small>
         </div>
@@ -396,50 +393,55 @@
     </div>
   </div>
 
-  <!-- ─────────── UPLOADS VIEW ─────────── -->
+  <!-- ─────────── CHECK THE MATHS ─────────── -->
   <app-audit *ngIf="view() === 'audit'" [clients]="nwClients()"></app-audit>
   <!-- ─────────── COMMISSION VIEW ─────────── -->
   <app-commission *ngIf="view() === 'commission'"></app-commission>
-  <!-- ─────────── CLIENT CARE VIEW ─────────── -->
 
+  <!-- ─────────── UPLOADS VIEW ─────────── -->
   <div class="wrap" *ngIf="view() === 'uploads'">
     <div class="section-head">
-      <h1>Daily reports</h1>
-      <p>Upload the User Report + Transaction Report each day. Re-uploading a day replaces it — no duplicates.</p>
+      <div>
+        <h1>Daily reports</h1>
+        <p>{{ nwToday()?.report_date || '—' }}</p>
+      </div>
+      <details class="info">
+        <summary aria-label="About the daily reports">i</summary>
+        <div>User Report (.xlsx) + Transaction Report (.csv), once a day. Re-uploading a day replaces it.</div>
+      </details>
     </div>
 
     <!-- today's upload -->
     <section class="upload card">
       <div class="upload-head">
-        <h3>Today’s reports</h3>
+        <h3>Today</h3>
         <span class="date-chip">{{ nwToday()?.report_date || '—' }}</span>
       </div>
-      <p class="upload-hint">Drag a file onto a slot, or click to browse.</p>
       <div class="upload-slots">
         <label class="slot" [class.done]="nwToday()?.user" [class.uploading]="nwUploadingUser()" [class.dragover]="dragOver() === 'user'"
           (dragover)="onDragOver('user', $event)" (dragleave)="onDragLeave('user', $event)" (drop)="onDrop('user', $event)">
           <input type="file" accept=".xlsx,.csv" hidden (change)="onReportFile('user', $event)" [disabled]="nwUploadingUser()" />
-          <span class="slot-ic">👤</span>
+          <span class="slot-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.6 3.5-5.5 7-5.5s6.3 1.9 7 5.5"/></svg></span>
           <div class="slot-body">
             <b>User Report</b>
             <span *ngIf="nwUploadingUser()" class="slot-up">Uploading…</span>
             <span *ngIf="!nwUploadingUser() && nwToday()?.user as u" class="slot-ok">✓ {{ u.filename }} · {{ u.row_count }} clients</span>
-            <span *ngIf="!nwUploadingUser() && !nwToday()?.user" class="slot-empty">.xlsx — client master (PAN, contact…)</span>
+            <span *ngIf="!nwUploadingUser() && !nwToday()?.user" class="slot-empty">.xlsx</span>
           </div>
-          <span class="slot-cta" *ngIf="!nwUploadingUser()">{{ dragOver() === 'user' ? 'Drop to upload' : (nwToday()?.user ? 'Replace' : 'Upload') }}</span>
+          <span class="slot-cta" *ngIf="!nwUploadingUser()">{{ dragOver() === 'user' ? 'Drop' : (nwToday()?.user ? 'Replace' : 'Upload') }}</span>
           <span class="spin" *ngIf="nwUploadingUser()"></span>
         </label>
         <label class="slot" [class.done]="nwToday()?.transaction" [class.uploading]="nwUploadingTxn()" [class.dragover]="dragOver() === 'transaction'"
           (dragover)="onDragOver('transaction', $event)" (dragleave)="onDragLeave('transaction', $event)" (drop)="onDrop('transaction', $event)">
           <input type="file" accept=".csv" hidden (change)="onReportFile('transaction', $event)" [disabled]="nwUploadingTxn()" />
-          <span class="slot-ic">📈</span>
+          <span class="slot-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
           <div class="slot-body">
             <b>Transaction Report</b>
             <span *ngIf="nwUploadingTxn()" class="slot-up">Uploading…</span>
             <span *ngIf="!nwUploadingTxn() && nwToday()?.transaction as t" class="slot-ok">✓ {{ t.filename }} · {{ t.row_count }} holdings</span>
-            <span *ngIf="!nwUploadingTxn() && !nwToday()?.transaction" class="slot-empty">.csv — units, NAV, amount per scheme</span>
+            <span *ngIf="!nwUploadingTxn() && !nwToday()?.transaction" class="slot-empty">.csv</span>
           </div>
-          <span class="slot-cta" *ngIf="!nwUploadingTxn()">{{ dragOver() === 'transaction' ? 'Drop to upload' : (nwToday()?.transaction ? 'Replace' : 'Upload') }}</span>
+          <span class="slot-cta" *ngIf="!nwUploadingTxn()">{{ dragOver() === 'transaction' ? 'Drop' : (nwToday()?.transaction ? 'Replace' : 'Upload') }}</span>
           <span class="spin" *ngIf="nwUploadingTxn()"></span>
         </label>
       </div>
@@ -452,7 +454,7 @@
         <button class="cal-nav" (click)="calPrevMonth()" aria-label="Previous month">‹</button>
         <div class="cal-title">
           <b>{{ calMonthLabel() }}</b>
-          <span class="cal-stat">{{ calComplete().done }}/{{ calComplete().total }} days complete</span>
+          <span class="cal-stat">{{ calComplete().done }}/{{ calComplete().total }} days</span>
         </div>
         <button class="cal-nav" (click)="calNextMonth()" aria-label="Next month">›</button>
       </div>
@@ -483,22 +485,22 @@
       </div>
 
       <div class="cal-legend">
-        <span><i class="sw both"></i> Both reports</span>
-        <span><i class="sw partial"></i> One only</span>
-        <span><i class="sw missing"></i> Missing</span>
+        <span><i class="cal-sw both"></i> Both</span>
+        <span><i class="cal-sw partial"></i> One</span>
+        <span><i class="cal-sw missing"></i> Missing</span>
       </div>
 
       <div class="cal-detail" *ngIf="nwCalSelected() as d">
         <div class="cal-detail-head"><b>{{ d.date }}</b></div>
         <div class="cal-detail-row">
-          <span class="cal-rt">User report</span>
+          <span class="cal-rt">User</span>
           <span class="cal-rv" *ngIf="d.user; else noUser">{{ d.user.filename }} <small>· {{ d.user.row_count }} rows</small></span>
-          <ng-template #noUser><span class="cal-rv muted">Not uploaded</span></ng-template>
+          <ng-template #noUser><span class="cal-rv muted">—</span></ng-template>
         </div>
         <div class="cal-detail-row">
-          <span class="cal-rt">Transaction report</span>
+          <span class="cal-rt">Transaction</span>
           <span class="cal-rv" *ngIf="d.transaction; else noTxn">{{ d.transaction.filename }} <small>· {{ d.transaction.row_count }} rows</small></span>
-          <ng-template #noTxn><span class="cal-rv muted">Not uploaded</span></ng-template>
+          <ng-template #noTxn><span class="cal-rv muted">—</span></ng-template>
         </div>
       </div>
     </section>
@@ -507,7 +509,7 @@
   <!-- ═══════════ CLIENT DETAIL DRAWER ═══════════ -->
   <div class="drawer-scrim" *ngIf="nwDetail() || nwDetailLoading()" (click)="closeNwClient()"></div>
   <aside class="drawer" *ngIf="nwDetail() || nwDetailLoading()">
-    <div class="dr-loading" *ngIf="nwDetailLoading()">Loading client…</div>
+    <div class="dr-loading" *ngIf="nwDetailLoading()">Loading…</div>
     <ng-container *ngIf="nwDetail() as d">
       <header class="dr-head">
         <button class="dr-close" (click)="closeNwClient()" aria-label="Close">←</button>
@@ -528,25 +530,25 @@
         <div><small>Gain</small><b [class.pos]="d.gain >= 0" [class.neg]="d.gain < 0">{{ money(d.gain) }} · {{ d.gain_pct >= 0 ? '+' : '' }}{{ d.gain_pct }}%</b></div>
       </div>
 
-      <nav class="dr-tabs">
+      <nav class="dr-tabs seg">
         <button [class.active]="drawerTab()==='overview'" (click)="drawerTab.set('overview')">Holdings</button>
         <button [class.active]="drawerTab()==='transactions'" (click)="drawerTab.set('transactions')">Transactions <em *ngIf="mapTxns().length">{{ mapTxns().length }}</em></button>
-        <button [class.active]="drawerTab()==='mapping'" (click)="drawerTab.set('mapping')">Villas &amp; purchases <em class="warn" *ngIf="unpinnedPurchases().length" title="Purchases not in a villa">{{ unpinnedPurchases().length }}</em></button>
+        <button [class.active]="drawerTab()==='mapping'" (click)="drawerTab.set('mapping')">Villas <em class="warn" *ngIf="unpinnedPurchases().length" title="Purchases not in a villa">{{ unpinnedPurchases().length }}</em></button>
         <button [class.active]="drawerTab()==='profile'" (click)="drawerTab.set('profile')">Profile</button>
         <button [class.active]="drawerTab()==='documents'" (click)="drawerTab.set('documents')">Docs <em *ngIf="drawerDocs().length">{{ drawerDocs().length }}</em></button>
       </nav>
 
       <div class="dr-alert" *ngIf="unpinnedPurchases().length && drawerTab() !== 'mapping'" role="alert">
         <span class="ma-ic sm" aria-hidden="true">!</span>
-        <span><b>{{ unpinnedPurchases().length }} purchase{{ unpinnedPurchases().length === 1 ? '' : 's' }} not in a villa</b> · {{ money(unpinnedAmount()) }}</span>
-        <button (click)="drawerTab.set('mapping')">Pin now →</button>
+        <span><b>{{ unpinnedPurchases().length }} unpinned</b> · {{ money(unpinnedAmount()) }}</span>
+        <button (click)="drawerTab.set('mapping')">Pin →</button>
       </div>
 
       <!-- ═══ HOLDINGS / OVERVIEW ═══ -->
       <ng-container *ngIf="drawerTab()==='overview'">
         <!-- where each fund's money goes: one bar per fund, one segment per villa -->
         <section class="dr-block" *ngIf="fundFlow().length">
-          <h3 class="dr-h">Which villa each fund goes to <small>(by the villa rule)</small></h3>
+          <h3 class="dr-h">Fund → villa</h3>
           <div class="flow-legend">
             <span *ngFor="let v of mapVillas()"><i [style.background]="villaColour(v.id)"></i>{{ v.name }}</span>
             <span *ngIf="mapUnmapped().length"><i class="hatch"></i>Outside the mix</span>
@@ -570,7 +572,7 @@
           </div>
         </section>
         <section class="dr-block" *ngIf="d.villas.length">
-          <h3 class="dr-h">Matching villa buckets · {{ d.villa_count }} <small>(by fund name — not the transaction mapping)</small></h3>
+          <h3 class="dr-h">Bucket match <small>{{ d.villa_count }}</small></h3>
           <div class="dr-villa" *ngFor="let v of d.villas">
             <div class="dr-villa-top">
               <b>{{ v.name }}</b>
@@ -586,7 +588,7 @@
         </section>
 
         <section class="dr-block" *ngIf="d.extra.length">
-          <h3 class="dr-h">Other holdings <small>(not in a villa bucket)</small></h3>
+          <h3 class="dr-h">Other holdings</h3>
           <div class="dr-fund" *ngFor="let f of d.extra">
             <span class="dr-fund-name">{{ f.scheme_name }}</span>
             <span class="num">{{ f.units | number:'1.0-2' }} u × ₹{{ f.nav | number:'1.2-2' }}</span>
@@ -595,7 +597,7 @@
         </section>
 
         <section class="dr-block" *ngIf="d.holdings?.length">
-          <h3 class="dr-h">All holdings <small>({{ d.holdings.length }})</small></h3>
+          <h3 class="dr-h">All holdings <small>{{ d.holdings.length }}</small></h3>
           <div class="hold-table">
             <div class="hold-tr hold-head"><span>Scheme</span><span class="num">Units</span><span class="num">Invested</span><span class="num">Value</span><span class="num">Gain</span></div>
             <div class="hold-tr" *ngFor="let f of d.holdings">
@@ -609,23 +611,23 @@
         </section>
 
         <div class="dr-empty" *ngIf="!d.villas.length && !d.extra.length && !d.holdings?.length">
-          No holdings for this client yet.
+          No holdings yet
         </div>
       </ng-container>
 
       <!-- ═══ TRANSACTIONS ═══ -->
       <ng-container *ngIf="drawerTab()==='transactions'">
         <section class="dr-block">
-          <h3 class="dr-h">Transaction report <small>({{ mapTxns().length }} lines)</small></h3>
-          <div class="dr-empty" *ngIf="!mapTxns().length">No transactions yet — upload a Transaction Report.</div>
+          <h3 class="dr-h">Transactions <small>{{ mapTxns().length }}</small></h3>
+          <div class="dr-empty" *ngIf="!mapTxns().length">No transactions yet</div>
           <div class="txn-filters" *ngIf="mapTxns().length">
             <button [class.on]="txnFilter()==='all'" (click)="txnFilter.set('all')">All <em>{{ mapTxns().length }}</em></button>
-            <button class="un" [class.on]="txnFilter()==='unmapped'" (click)="txnFilter.set('unmapped')">Not mapped <em>{{ mapUnmapped().length }}</em></button>
+            <button class="un" [class.on]="txnFilter()==='unmapped'" (click)="txnFilter.set('unmapped')">Unmapped <em>{{ mapUnmapped().length }}</em></button>
             <button *ngFor="let v of mapVillas()" [class.on]="txnFilter()===v.id" (click)="txnFilter.set(v.id)">
               <i [style.background]="villaColour(v.id)"></i>{{ v.name }} <em>{{ v.txn_count }}</em>
             </button>
           </div>
-          <div class="dr-empty" *ngIf="mapTxns().length && !txnsShown().length">{{ txnFilter()==='unmapped' ? 'Nothing unmapped — every transaction has a villa.' : 'No transactions here.' }}</div>
+          <div class="dr-empty" *ngIf="mapTxns().length && !txnsShown().length">{{ txnFilter()==='unmapped' ? 'Nothing unmapped' : 'Nothing here' }}</div>
           <div class="txn-table" *ngIf="txnsShown().length">
             <div class="txn-tr txn-head"><span>Scheme</span><span>Date</span><span>Type</span><span class="num">Amount</span><span class="num">NAV</span><span>Villa</span></div>
             <div class="txn-tr" *ngFor="let t of txnsShown()" [class.is-unmapped]="!villaFor(t)">
@@ -635,7 +637,7 @@
               <span class="num strong">{{ money(t.amount) }}</span>
               <span class="num" data-l="NAV">₹{{ t.nav | number:'1.2-2' }}</span>
               <span class="txn-villa" *ngIf="villaFor(t) as v; else unmapped"><i [style.background]="villaColour(v.id)"></i>{{ v.name }}</span>
-              <ng-template #unmapped><span class="txn-villa un">Not mapped</span></ng-template>
+              <ng-template #unmapped><span class="txn-villa un">Unmapped</span></ng-template>
             </div>
           </div>
         </section>
@@ -646,23 +648,27 @@
         <!-- the villas, as the client sees them -->
         <section>
           <div class="vp-h">
-            <h3>Villas <small>as the client sees them · live value · placed by the villa rule, oldest first</small></h3>
+            <h3>Villas <small>{{ mapVillas().length }}</small></h3>
+            <details class="info">
+              <summary aria-label="How villas are placed">i</summary>
+              <div>Live value, as the client sees it. Purchases are placed by the villa rule, oldest villa first; a pin overrides it.</div>
+            </details>
           </div>
-          <div class="vp-empty" *ngIf="!mapVillas().length">No villas yet — they appear by themselves once a Transaction Report has this client’s purchases.</div>
+          <div class="vp-empty" *ngIf="!mapVillas().length">No villas yet</div>
           <div class="vp-villas" *ngIf="mapVillas().length">
             <article class="vv" *ngFor="let v of mapVillas()" [style.--vc]="villaColour(v.id)" [class.empty]="!v.txn_count">
               <header>
                 <i class="vv-dot" aria-hidden="true"></i>
                 <b>{{ villaLabel(v) }}</b>
                 <span class="vv-chip" [class.build]="!v.finished">{{ v.finished ? 'Villa' : (v.hint.progress | number:'1.0-0') + '% built' }}</span>
-                <span class="vv-chip auto" *ngIf="v.auto" title="Placed by the villa rule — no admin row yet">by the rule</span>
+                <span class="vv-chip auto" *ngIf="v.auto" title="Placed by the villa rule — no admin row yet">auto</span>
                 <button class="vv-x" *ngIf="!v.auto" (click)="removeVilla(v)" title="Delete villa" aria-label="Delete villa">×</button>
               </header>
               <div class="vv-val">{{ money(v.value) }}</div>
               <div class="vv-gain" [class.pos]="v.gain >= 0" [class.neg]="v.gain < 0" *ngIf="v.txn_count">{{ v.gain >= 0 ? '+' : '' }}{{ money(v.gain) }}</div>
               <div class="vv-meta">
-                <ng-container *ngIf="v.txn_count; else nothing">{{ money(v.mapped_total) }} in · bought {{ v.since | date:'d MMM yyyy' }}</ng-container>
-                <ng-template #nothing>Nothing in it yet</ng-template>
+                <ng-container *ngIf="v.txn_count; else nothing">{{ money(v.mapped_total) }} in · {{ v.since | date:'d MMM yyyy' }}</ng-container>
+                <ng-template #nothing>Empty</ng-template>
               </div>
               <div class="progress" *ngIf="!v.finished && v.txn_count"><span [style.width.%]="v.hint.progress"></span></div>
               <ng-container *ngIf="!v.auto; else adopt">
@@ -677,7 +683,7 @@
               </ng-container>
               <ng-template #adopt>
                 <footer>
-                  <button class="vv-btn" (click)="adoptVilla(v)" [disabled]="!!pinning()">Name it &amp; set its type</button>
+                  <button class="vv-btn" (click)="adoptVilla(v)" [disabled]="!!pinning()">Name &amp; type</button>
                 </footer>
               </ng-template>
             </article>
@@ -688,7 +694,7 @@
         <section>
           <div class="vp-h">
             <h3>Purchases <small>{{ purchases().length }}</small></h3>
-            <button class="vp-add" *ngIf="!addOpen()" (click)="openAdd()">+ Add purchase</button>
+            <button class="vp-add" *ngIf="!addOpen()" (click)="openAdd()">+ Add</button>
           </div>
 
           <!-- add one by hand -->
@@ -712,8 +718,8 @@
             </div>
             <label class="ap-f"><span>Funds</span>
               <select [ngModel]="addFund()" (ngModelChange)="addFund.set($event); previewSoon()">
-                <option value="mix">DigiVilla mix — split by weight</option>
-                <option *ngFor="let f of addMix()" [value]="'' + f.scheme_code">{{ f.scheme_name }} only</option>
+                <option value="mix">DigiVilla mix</option>
+                <option *ngFor="let f of addMix()" [value]="'' + f.scheme_code">{{ f.scheme_name }}</option>
               </select>
             </label>
             <div class="ap-f"><span>Pin to</span>
@@ -732,7 +738,10 @@
                 <span class="num">{{ l.nav ? '₹' + (l.nav | number:'1.2-4') : '—' }}<small *ngIf="l.nav_date && l.nav_date !== addDate()">{{ l.nav_date | date:'d MMM' }}</small></span>
                 <span class="num">{{ l.units ? (l.units | number:'1.0-3') : '—' }}</span>
               </div>
-              <p class="ap-note">Units are worked out at each fund's NAV for that date (the last one before it, on a holiday). When the AMC's report includes this purchase, it replaces these lines and keeps the villa.</p>
+              <details class="info left ap-note">
+                <summary aria-label="How units are worked out">i</summary>
+                <div>Units use each fund's NAV on that date (the last one before it, on a holiday). When the AMC's report includes this purchase, it replaces these lines and keeps the villa.</div>
+              </details>
             </div>
             <p class="err" *ngIf="addErr()">{{ addErr() }}</p>
 
@@ -744,14 +753,14 @@
             </div>
           </div>
 
-          <div class="vp-empty" *ngIf="!purchases().length && !addOpen()">No purchases yet — upload a Transaction Report, or add one by hand.</div>
+          <div class="vp-empty" *ngIf="!purchases().length && !addOpen()">No purchases yet</div>
           <div class="vp-banner" *ngIf="unpinnedPurchases().length">
             <span class="ma-ic sm" aria-hidden="true">!</span>
-            <span><b>{{ unpinnedPurchases().length }} purchase{{ unpinnedPurchases().length === 1 ? '' : 's' }} in funds outside every villa bucket</b> · {{ money(unpinnedAmount()) }} · pin to a villa, or add the fund to a bucket</span>
-            <button (click)="pinAllSuggested()" [disabled]="!!pinning()">Pin all as suggested</button>
+            <span><b>{{ unpinnedPurchases().length }} unpinned</b> · {{ money(unpinnedAmount()) }}</span>
+            <button (click)="pinAllSuggested()" [disabled]="!!pinning()">Pin all</button>
           </div>
           <div class="vp-banner ok" *ngIf="purchases().length && !unpinnedPurchases().length">
-            <span class="ok-ic sm" aria-hidden="true">✓</span><span><b>Every purchase sits in a villa</b> · placed by the rule, oldest villa first; a pin here overrides it</span>
+            <span class="ok-ic sm" aria-hidden="true">✓</span><span><b>All pinned</b></span>
           </div>
 
           <div class="vp-list">
@@ -760,7 +769,7 @@
               <button class="pp-top" (click)="togglePurchase(p.key)" [attr.aria-expanded]="openPurchase() === p.key">
                 <span class="pp-when">
                   <b>{{ p.date | date:'d MMM yyyy' }}</b>
-                  <small>{{ p.kind }} · {{ p.txns.length }} fund{{ p.txns.length === 1 ? '' : 's' }}<ng-container *ngIf="p.manual"> · added by hand</ng-container></small>
+                  <small>{{ p.kind }} · {{ p.txns.length }} fund{{ p.txns.length === 1 ? '' : 's' }}<ng-container *ngIf="p.manual"> · manual</ng-container></small>
                 </span>
                 <b class="pp-amt">{{ money(p.total) }}</b>
                 <svg class="pp-car" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -778,7 +787,7 @@
               </div>
               <div class="pp-lines" *ngIf="openPurchase() === p.key">
                 <div class="pl" *ngFor="let t of p.txns">
-                  <span class="pl-name">{{ t.scheme_name }}<small>{{ t.units | number:'1.0-3' }} units &#64; ₹{{ t.nav | number:'1.2-4' }}</small></span>
+                  <span class="pl-name">{{ t.scheme_name }}<small>{{ t.units | number:'1.0-3' }} u &#64; ₹{{ t.nav | number:'1.2-4' }}</small></span>
                   <b>{{ money(t.amount) }}</b>
                   <button class="pl-del" *ngIf="isManual(t)" (click)="deleteManual(t)" title="Remove this hand-added line">Remove</button>
                 </div>
@@ -792,7 +801,7 @@
       <!-- ═══ PROFILE — everything the User Report holds about this client ═══ -->
       <ng-container *ngIf="drawerTab()==='profile'">
         <section class="dr-block">
-          <h3 class="dr-h">Client details <small>(from the User Report you upload)</small></h3>
+          <h3 class="dr-h">Details</h3>
           <dl class="profile">
             <div *ngFor="let r of profileRows()" [class.blank]="!r.value">
               <dt>{{ r.label }}</dt>
@@ -809,16 +818,16 @@
             <h3 class="dr-h">Documents</h3>
             <label class="upload-btn" [class.busy]="uploading()">
               <input type="file" (change)="onDrawerFilePicked($event)" hidden [disabled]="uploading()" />
-              {{ uploading() ? 'Uploading…' : '+ Attach (PAN, KYC…)' }}
+              {{ uploading() ? 'Uploading…' : '+ Attach' }}
             </label>
           </div>
           <p class="err" *ngIf="docError()">{{ docError() }}</p>
-          <div class="dr-empty" *ngIf="docsLoading()">Loading documents…</div>
-          <div class="dr-empty" *ngIf="!docsLoading() && !drawerDocs().length">No documents yet — attach their PAN, agreement or KYC.</div>
+          <div class="dr-empty" *ngIf="docsLoading()">Loading…</div>
+          <div class="dr-empty" *ngIf="!docsLoading() && !drawerDocs().length">No documents yet</div>
           <ul class="doc-list" *ngIf="drawerDocs().length">
             <li class="doc" *ngFor="let dc of drawerDocs()">
               <button class="doc-open" (click)="openDoc(dc)">
-                <span class="doc-name">📄 {{ dc.filename }}</span>
+                <span class="doc-name">{{ dc.filename }}</span>
                 <span class="doc-meta">{{ fileSize(dc.size) }}</span>
               </button>
               <button class="doc-del" (click)="removeDoc(dc)" title="Delete">✕</button>
@@ -834,7 +843,7 @@
     <span class="toast-check">✓</span>
     <div class="toast-body">
       <b>{{ t.type === 'user' ? 'User Report' : 'Transaction Report' }} uploaded</b>
-      <span>{{ t.rows }} {{ t.type === 'user' ? 'clients' : 'holdings' }} processed · net worth refreshed</span>
+      <span>{{ t.rows }} {{ t.type === 'user' ? 'clients' : 'holdings' }}</span>
     </div>
     <button class="toast-x" (click)="dismissToast()" aria-label="Dismiss">✕</button>
   </div>

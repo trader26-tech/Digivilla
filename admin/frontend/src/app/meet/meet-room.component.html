@@ -1,60 +1,67 @@
 <section class="mr" aria-label="Meeting room">
   <!-- ═══ the room: one fixed Meet link ═══ -->
-  <div class="mr-room">
+  <div class="mr-head">
     <div class="mr-id">
       <span class="mr-cam" [class.live]="store.liveOrSoon()" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22"><rect x="2.5" y="6" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 10.5l5-3v9l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20"><rect x="2.5" y="6" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 10.5l5-3v9l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
       </span>
       <div class="mr-id-text">
-        <small>Your meeting room · Google Meet</small>
+        <small>Google Meet</small>
         <button class="mr-link" (click)="copyRoom()" title="Copy the link">
           <span>{{ roomShort() }}</span>
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         </button>
         <span class="mr-next" *ngIf="store.next() as n; else nothingNext">
           <i class="dot" [class.live]="store.liveOrSoon()"></i>
-          <b>{{ nextLabel() }}</b>
-          <span>· {{ n.who || n.title }}<ng-container *ngIf="n.who && n.title !== 'Meeting'"> — {{ n.title }}</ng-container> · {{ time(n.start) }}</span>
+          <b [class.pos]="store.liveOrSoon()">{{ nextLabel() }}</b>
+          <span class="mr-next-who">{{ n.who || n.title }}<ng-container *ngIf="n.who && n.title !== 'Meeting'"> — {{ n.title }}</ng-container> · {{ time(n.start) }}</span>
         </span>
         <ng-template #nothingNext>
-          <span class="mr-next quiet">Nothing scheduled — the room is always open</span>
+          <span class="mr-next quiet"><i class="dot"></i>Nothing scheduled</span>
         </ng-template>
       </div>
     </div>
 
     <div class="mr-actions">
-      <button class="mr-start" [class.soon]="store.liveOrSoon()" (click)="start()">
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
-        {{ store.liveOrSoon() ? 'Join now' : 'Start meeting' }}
+      <button class="btn primary big" [class.soon]="store.liveOrSoon()" (click)="start()">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+        {{ store.liveOrSoon() ? 'Join' : 'Start' }}
       </button>
-      <button class="mr-btn" (click)="copyRoom()">Copy link</button>
+      <button class="btn" (click)="copyRoom()">Copy</button>
       <div class="pop-wrap">
-        <button class="mr-btn" (click)="shareOpen.set(!shareOpen())" [attr.aria-expanded]="shareOpen()">
+        <button class="btn" (click)="shareOpen.set(!shareOpen())" [attr.aria-expanded]="shareOpen()">
           Share
-          <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="pop" *ngIf="shareOpen()" (click)="shareOpen.set(false)">
           <a [href]="whatsapp(roomInvite())" target="_blank" rel="noopener"><span class="pi wa">W</span>WhatsApp</a>
           <a [href]="mailto(roomInvite())"><span class="pi">&#64;</span>Email</a>
-          <button (click)="copy(roomInvite(), 'Invite text copied')"><span class="pi">“</span>Copy invite text</button>
+          <button (click)="copy(roomInvite(), 'Invite copied')"><span class="pi">“</span>Copy text</button>
           <button *ngIf="canNativeShare" (click)="nativeShare(roomInvite())"><span class="pi">↗</span>More…</button>
         </div>
         <div class="scrim" *ngIf="shareOpen()" (click)="shareOpen.set(false)"></div>
       </div>
-      <button class="mr-icon" (click)="editRoom()" title="Change the meeting link" aria-label="Change the meeting link">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <button class="btn ic" (click)="editRoom()" [attr.aria-expanded]="editingRoom()" title="Change the meeting link" aria-label="Change the meeting link">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
       </button>
     </div>
 
     <form class="mr-edit" *ngIf="editingRoom()" (ngSubmit)="saveRoom()">
-      <label>
-        <span>Meet link</span>
+      <label class="f">
+        <span>Meet link
+          <span class="pop-wrap info">
+            <button type="button" class="mr-i" (click)="linkInfo.set(!linkInfo())" [attr.aria-expanded]="linkInfo()" aria-label="About the link">i</button>
+            <div class="mr-pop" *ngIf="linkInfo()">A recurring Google Calendar event’s Meet link never expires — paste that here and it stays the same for every client.</div>
+            <div class="scrim" *ngIf="linkInfo()" (click)="linkInfo.set(false)"></div>
+          </span>
+        </span>
         <input name="room" [ngModel]="roomDraft()" (ngModelChange)="roomDraft.set($event)" placeholder="https://meet.google.com/abc-defg-hij" autofocus />
       </label>
-      <button class="mr-start sm" type="submit" [disabled]="saving() || !roomDraft().trim()">Save</button>
-      <button class="mr-btn" type="button" (click)="editingRoom.set(false)">Cancel</button>
-      <button class="mr-txt" type="button" *ngIf="!store.data()?.room?.is_default" (click)="saveRoom(true)">Use default</button>
-      <p class="mr-hint">Tip: in Google Calendar, a recurring event’s Meet link never expires — paste that here and it stays the same for every client.</p>
+      <div class="mr-edit-acts">
+        <button class="btn primary" type="submit" [disabled]="saving() || !roomDraft().trim()">Save</button>
+        <button class="btn" type="button" (click)="editingRoom.set(false)">Cancel</button>
+        <button class="btn ghost" type="button" *ngIf="!store.data()?.room?.is_default" (click)="saveRoom(true)">Default</button>
+      </div>
       <p class="mr-err" *ngIf="roomError()">{{ roomError() }}</p>
     </form>
   </div>
@@ -67,44 +74,46 @@
           Upcoming <em *ngIf="store.upcoming().length">{{ store.upcoming().length }}</em>
         </button>
         <button role="tab" [class.on]="tab() === 'history'" (click)="tab.set('history'); draft.set(null)">
-          History <em *ngIf="store.history().length" class="soft">{{ store.history().length }}</em>
+          History <em *ngIf="store.history().length">{{ store.history().length }}</em>
         </button>
       </div>
       <span class="mr-today" *ngIf="todayCount()">{{ todayCount() }} today</span>
-      <button class="mr-add" (click)="newMeeting()" *ngIf="!draft()">
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        Schedule meeting
+      <button class="btn add" (click)="newMeeting()" *ngIf="!draft()">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+        Schedule
       </button>
     </div>
 
     <!-- schedule / edit form -->
     <form class="mf" *ngIf="draft() as d" (ngSubmit)="save()">
       <div class="mf-head">
-        <b>{{ d.id ? 'Edit meeting' : 'Schedule a meeting' }}</b>
-        <span class="mf-when" *ngIf="draftWhen()" [class.warn]="draftWhen().includes('passed')">{{ draftWhen() }}</span>
+        <b>{{ d.id ? 'Edit' : 'Schedule' }}</b>
+        <span class="mf-when" *ngIf="draftWhen()" [class.warn]="draftWhen().includes('past')">{{ draftWhen() }}</span>
       </div>
       <div class="mf-grid">
         <label class="f who">
           <span>With</span>
-          <input name="who" list="mr-clients" [ngModel]="d.who" (ngModelChange)="onWho($event)" placeholder="Client name — or anyone" autocomplete="off" />
+          <input name="who" list="mr-clients" [ngModel]="d.who" (ngModelChange)="onWho($event)" placeholder="Name" autocomplete="off" />
           <datalist id="mr-clients">
             <option *ngFor="let c of clientList()" [value]="c.name">{{ c.client_code }}{{ c.city ? ' · ' + c.city : '' }}</option>
           </datalist>
-          <small class="f-tag" *ngIf="d.client_code">Client · {{ d.client_code }}</small>
+          <small class="f-tag" *ngIf="d.client_code">{{ d.client_code }}</small>
         </label>
         <label class="f">
-          <span>Phone <i>optional</i></span>
-          <input name="phone" inputmode="tel" [ngModel]="d.phone" (ngModelChange)="setDraft({ phone: $event })" placeholder="For the WhatsApp invite" />
+          <span>Phone</span>
+          <input name="phone" inputmode="tel" [ngModel]="d.phone" (ngModelChange)="setDraft({ phone: $event })" placeholder="For WhatsApp" />
         </label>
         <label class="f wide">
-          <span>Title <i>optional</i></span>
-          <input name="title" [ngModel]="d.title" (ngModelChange)="setDraft({ title: $event })" placeholder="Portfolio review, first villa, SIP set-up…" />
+          <span>Title</span>
+          <input name="title" [ngModel]="d.title" (ngModelChange)="setDraft({ title: $event })" placeholder="Portfolio review" />
         </label>
         <div class="f">
           <span>Date</span>
           <div class="chips">
-            <button type="button" [class.on]="isQuickDate(0)" (click)="quickDate(0)">Today</button>
-            <button type="button" [class.on]="isQuickDate(1)" (click)="quickDate(1)">Tomorrow</button>
+            <div class="seg sm">
+              <button type="button" [class.on]="isQuickDate(0)" (click)="quickDate(0)">Today</button>
+              <button type="button" [class.on]="isQuickDate(1)" (click)="quickDate(1)">Tomorrow</button>
+            </div>
             <input type="date" name="date" [ngModel]="d.date" (ngModelChange)="setDraft({ date: $event })" required />
           </div>
         </div>
@@ -114,31 +123,28 @@
         </label>
         <div class="f wide">
           <span>Length</span>
-          <div class="chips">
+          <div class="seg sm">
             <button type="button" *ngFor="let m of durations" [class.on]="d.minutes === m" (click)="setDraft({ minutes: m })">{{ m < 60 ? m + ' min' : (m / 60) + ' h' }}</button>
           </div>
         </div>
         <label class="f wide">
-          <span>Note <i>optional · only you see this</i></span>
-          <textarea name="note" rows="2" [ngModel]="d.note" (ngModelChange)="setDraft({ note: $event })" placeholder="What to cover, what they asked for…"></textarea>
+          <span>Note</span>
+          <textarea name="note" rows="2" [ngModel]="d.note" (ngModelChange)="setDraft({ note: $event })" placeholder="Only you see this"></textarea>
         </label>
       </div>
       <p class="mr-err" *ngIf="formError()">{{ formError() }}</p>
       <div class="mf-foot">
-        <button class="mr-btn" type="button" (click)="draft.set(null)">Cancel</button>
-        <button class="mr-start sm" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : d.id ? 'Save changes' : 'Schedule' }}</button>
+        <button class="btn" type="button" (click)="draft.set(null)">Cancel</button>
+        <button class="btn primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : d.id ? 'Save' : 'Schedule' }}</button>
       </div>
     </form>
 
-    <div class="mr-state" *ngIf="store.loading() && !store.data()">Loading meetings…</div>
-    <div class="mr-state err" *ngIf="store.error()">{{ store.error() }} <button class="mr-txt" (click)="store.load()">Try again</button></div>
+    <div class="mr-state" *ngIf="store.loading() && !store.data()">Loading…</div>
+    <div class="mr-state err" *ngIf="store.error()">{{ store.error() }} <button class="btn ghost" (click)="store.load()">Try again</button></div>
 
     <!-- UPCOMING -->
     <ng-container *ngIf="tab() === 'upcoming' && store.data()">
-      <div class="empty" *ngIf="!groups().length && !draft()">
-        <b>No meetings coming up</b>
-        <span>Schedule one and it’s saved here — with the invite ready to send.</span>
-      </div>
+      <div class="empty" *ngIf="!groups().length && !draft()">Nothing coming up</div>
       <div class="day" *ngFor="let g of groups()">
         <h4>{{ g.label }}</h4>
         <div class="row" *ngFor="let a of g.items; trackBy: trackKey" [class.live]="isLive(a)">
@@ -151,14 +157,14 @@
             <b>{{ a.who || a.title }}</b>
             <span>
               <ng-container *ngIf="a.who">{{ a.title }}</ng-container>
-              <em class="tag booked" *ngIf="a.source === 'client'">Booked in app · {{ a.status === 'confirmed' ? 'confirmed' : 'awaiting confirmation' }}</em>
-              <em class="tag live" *ngIf="isLive(a)">Live now</em>
+              <em class="tag booked" *ngIf="a.source === 'client'">App · {{ a.status === 'confirmed' ? 'confirmed' : 'awaiting' }}</em>
+              <em class="tag live" *ngIf="isLive(a)">Live</em>
             </span>
             <small class="note" *ngIf="a.note">{{ a.note }}</small>
           </div>
           <div class="acts">
             <button class="act primary" *ngIf="isLive(a) || a === store.next()" (click)="start()" title="Open the meeting room">Join</button>
-            <button class="act" (click)="copyInvite(a)" title="Copy an invite with the date, time and link">Copy invite</button>
+            <button class="act" (click)="copyInvite(a)" title="Copy an invite with the date, time and link">Invite</button>
             <a class="act ic" *ngIf="a.phone" [href]="whatsapp(invite(a), a.phone)" target="_blank" rel="noopener" title="Send the invite on WhatsApp" aria-label="WhatsApp invite">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
             </a>
@@ -167,14 +173,13 @@
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>
               </button>
               <div class="pop right" *ngIf="menuFor() === a.key">
-                <a [href]="calendarUrl(a)" target="_blank" rel="noopener" (click)="menuFor.set(null)"><span class="pi">＋</span>Add to Google Calendar</a>
+                <a [href]="calendarUrl(a)" target="_blank" rel="noopener" (click)="menuFor.set(null)"><span class="pi">＋</span>Google Calendar</a>
                 <ng-container *ngIf="a.meeting">
                   <button (click)="edit(a)"><span class="pi">✎</span>Edit</button>
-                  <button (click)="setStatus(a, 'done')"><span class="pi ok">✓</span>Mark as done</button>
-                  <button (click)="setStatus(a, 'cancelled')"><span class="pi">✕</span>Cancel meeting</button>
+                  <button (click)="setStatus(a, 'done')"><span class="pi ok">✓</span>Done</button>
+                  <button (click)="setStatus(a, 'cancelled')"><span class="pi">✕</span>Cancel</button>
                   <button class="danger" (click)="remove(a)"><span class="pi">🗑</span>{{ confirmDelete() === a.meeting.id ? 'Tap again to delete' : 'Delete' }}</button>
                 </ng-container>
-                <p class="pop-note" *ngIf="!a.meeting">Confirm or decline app bookings from the bookings list.</p>
               </div>
               <div class="scrim" *ngIf="menuFor() === a.key" (click)="menuFor.set(null)"></div>
             </div>
@@ -186,13 +191,10 @@
     <!-- HISTORY — every meeting is kept -->
     <ng-container *ngIf="tab() === 'history' && store.data()">
       <div class="h-search" *ngIf="store.history().length > 4">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input placeholder="Search past meetings…" [ngModel]="historyQuery()" (ngModelChange)="historyQuery.set($event)" />
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input placeholder="Search" [ngModel]="historyQuery()" (ngModelChange)="historyQuery.set($event)" />
       </div>
-      <div class="empty" *ngIf="!historyItems().length">
-        <b>{{ historyQuery() ? 'No past meetings match' : 'No past meetings yet' }}</b>
-        <span *ngIf="!historyQuery()">Once a meeting is over it moves here, so you always have the record.</span>
-      </div>
+      <div class="empty" *ngIf="!historyItems().length">{{ historyQuery() ? 'No matches' : 'No past meetings' }}</div>
       <div class="row past" *ngFor="let a of historyItems(); trackBy: trackKey" [class.cancelled]="a.status === 'cancelled'">
         <div class="when">
           <b>{{ dayLabel(a.start) }}</b>
@@ -204,7 +206,7 @@
           <span>
             <ng-container *ngIf="a.who">{{ a.title }}</ng-container>
             <em class="tag" [class.done]="a.status === 'done'" [class.cx]="a.status === 'cancelled'">{{ historyStatus(a) }}</em>
-            <em class="tag booked" *ngIf="a.source === 'client'">Booked in app</em>
+            <em class="tag booked" *ngIf="a.source === 'client'">App</em>
           </span>
           <small class="note" *ngIf="a.note">{{ a.note }}</small>
         </div>
@@ -215,8 +217,8 @@
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>
             </button>
             <div class="pop right" *ngIf="menuFor() === a.key">
-              <button *ngIf="a.status !== 'done'" (click)="setStatus(a, 'done')"><span class="pi ok">✓</span>Mark as done</button>
-              <button *ngIf="a.status !== 'scheduled' && a.end.getTime() > store.now()" (click)="setStatus(a, 'scheduled')"><span class="pi">↺</span>Restore to upcoming</button>
+              <button *ngIf="a.status !== 'done'" (click)="setStatus(a, 'done')"><span class="pi ok">✓</span>Done</button>
+              <button *ngIf="a.status !== 'scheduled' && a.end.getTime() > store.now()" (click)="setStatus(a, 'scheduled')"><span class="pi">↺</span>Restore</button>
               <button (click)="edit(a); tab.set('upcoming')"><span class="pi">✎</span>Edit</button>
               <button class="danger" (click)="remove(a)"><span class="pi">🗑</span>{{ confirmDelete() === a.meeting.id ? 'Tap again to delete' : 'Delete' }}</button>
             </div>
@@ -227,7 +229,5 @@
     </ng-container>
   </div>
 
-  <div class="toast" *ngIf="toast()" role="status">
-    <span class="ok-dot">✓</span>{{ toast() }}
-  </div>
+  <div class="toast" *ngIf="toast()" role="status">{{ toast() }}</div>
 </section>

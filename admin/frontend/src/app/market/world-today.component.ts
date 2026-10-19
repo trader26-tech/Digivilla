@@ -7,7 +7,7 @@ import { AdminService, MarketData, WorldChart, WorldCpi, WorldHistory, WorldQuot
 import { isVillaKey, villaHistories, villaQuote } from './villa-series';
 import { Ccy, Daily, bp, cagr, change, cpiDaily, daily, dayOf, deflate, idxAt, isoOf, line, startOf, stats, today, yieldStats, years } from './world-compare';
 
-const COLOURS = ['#16302B', '#A67C2E', '#2B8A9E', '#8C4A32', '#4C6EF5', '#B04FB8', '#2E6B4F', '#6B7280'];
+const COLOURS = ['#387ed1', '#eb6834', '#1baf7a', '#eda100', '#6250d6', '#e87ba4', '#e34948', '#5a5f78'];
 const RANGES = [{ k: '1d', l: '1D' }, { k: '5d', l: '5D' }, { k: '1m', l: '1M' }, { k: '3m', l: '3M' }, { k: '6m', l: '6M' }, { k: 'ytd', l: 'YTD' },
   { k: '1y', l: '1Y' }, { k: '3y', l: '3Y' }, { k: '5y', l: '5Y' }, { k: '10y', l: '10Y' }, { k: 'max', l: 'Max' }];
 /** the returns table: total for short periods, a year (CAGR) from 3 years on */
@@ -15,8 +15,8 @@ const PERIODS = [{ k: '1m', l: '1M' }, { k: '3m', l: '3M' }, { k: '6m', l: '6M' 
   { k: '3y', l: '3Y', ann: true }, { k: '5y', l: '5Y', ann: true }, { k: '10y', l: '10Y', ann: true }];
 const INTRADAY = new Set(['1d', '5d']);
 const LS = 'dv_admin_world';
-const CPI_COLOUR: Record<string, string> = { 'cpi:IN': '#9A3B3B', 'cpi:US': '#6B7280' };
-const W0 = 900, H0 = 300, PAD = { l: 8, r: 64, t: 14, b: 26 };
+const CPI_COLOUR: Record<string, string> = { 'cpi:IN': '#98a0b8', 'cpi:US': '#c9a0a0' };
+const W0 = 900, H0 = 300, PAD = { l: 40, r: 72, t: 14, b: 26 };
 
 /**
  * World markets: Indian and global indices, compared like-for-like.
@@ -286,7 +286,9 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   quote(key: string): WorldQuote | undefined { return this.quotes().find((q) => q.key === key); }
 
   readonly shown = computed(() => (this.region() === 'All' ? this.quotes() : this.quotes().filter((q) => q.region === this.region())));
-  readonly REGION_NAME: Record<string, string> = { India: 'India', US: 'United States', Asia: 'Asia', Europe: 'Europe', Global: 'Global & currencies', Bonds: 'US Treasury yields', Commodities: 'Crude oil', DigiVilla: 'Our villas · ₹100 in Apr 2010, replayed on the indices, before tax and fund costs' };
+  readonly REGION_NAME: Record<string, string> = { India: 'India', US: 'United States', Asia: 'Asia', Europe: 'Europe', Global: 'Global & currencies', Bonds: 'US Treasury yields', Commodities: 'Crude oil', DigiVilla: 'Our villas' };
+  readonly VILLA_ABOUT = '₹100 in Apr 2010, replayed on the indices, before tax and fund costs';
+  readonly PAD = PAD;
   /** the table, one block per region */
   readonly groups = computed(() => {
     const rs = this.region() === 'All' ? this.regions() : [this.region()];
@@ -423,6 +425,21 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   /** double-click: back out of a zoom */
   reset(): void { if (this.range() === 'custom') this.setRange('1y'); }
+  /** value pills at the line ends, nudged apart so they never overlap */
+  readonly ends = computed(() => {
+    const p = this.plot(); if (!p) return [];
+    const top = PAD.t, bottom = this.H - PAD.b;
+    const ls = p.lines.map((l) => {
+      const label = this.pct(l.last);
+      return { key: l.key, colour: l.colour, label, y0: l.ly, y: l.ly, w: label.length * 6.6 + 12 };
+    }).sort((a, b) => a.y - b.y);
+    const gap = Math.min(22, (bottom - top) / Math.max(1, ls.length));
+    for (let i = 1; i < ls.length; i++) if (ls[i].y - ls[i - 1].y < gap) ls[i].y = ls[i - 1].y + gap;
+    const over = ls.length ? ls[ls.length - 1].y - bottom : 0;
+    if (over > 0) for (const l of ls) l.y -= over;
+    for (let i = ls.length - 2; i >= 0; i--) if (ls[i + 1].y - ls[i].y < gap) ls[i].y = ls[i + 1].y - gap;
+    return ls;
+  });
   readonly dragBox = computed(() => { const d = this.drag(); return d && Math.abs(d.b - d.a) > 2 ? { x: Math.min(d.a, d.b), w: Math.abs(d.b - d.a) } : null; });
   readonly hoverRows = computed(() => {
     const p = this.plot(), t = this.hover();

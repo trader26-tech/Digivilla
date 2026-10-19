@@ -1,35 +1,28 @@
 <section class="vs">
   <header class="vs-head">
-    <div><h2>Villas sold</h2><p>By type, at today's value</p></div>
-    <div class="vs-sum" *ngIf="data() as d">
-      <span><b>{{ d.totals.count }}</b> villa{{ d.totals.count === 1 ? '' : 's' }}</span>
-      <span><b>{{ money(d.totals.value) }}</b> value</span>
-      <span><b>{{ money(d.totals.commission) }}</b> commission / yr</span>
-    </div>
+    <h2>Villas sold</h2>
+    <span class="vs-meta" *ngIf="data() as d">{{ d.totals.count }} villas · {{ money(d.totals.value) }}</span>
   </header>
 
   <div class="vs-grid" *ngIf="data() as d; else sk">
     <article class="vs-tile" *ngFor="let t of d.types" [attr.data-t]="t.key" [class.zero]="!t.count">
-      <div class="vs-k"><span class="vs-dot"></span><b>{{ t.name }}</b><small>{{ t.risk }} risk</small></div>
-      <div class="vs-n">{{ t.count }}</div>
-      <div class="vs-f" *ngIf="t.count; else none">
+      <div class="vs-k"><span class="vs-dot"></span><b>{{ t.name }}</b><small>{{ t.risk }}</small></div>
+      <div class="vs-n num">{{ t.count }}</div>
+      <div class="vs-f num" *ngIf="t.count; else none">
         <span>{{ money(t.value) }}<ng-container *ngIf="t.constructed"> · {{ t.constructed }} complete</ng-container></span>
-        <span class="vs-c">{{ t.commission ? money(t.commission) + ' a year' : 'Set fund rates in Commission' }}</span>
+        <b class="vs-c" [class.none]="!t.commission">{{ t.commission ? money(t.commission) + ' / yr' : 'No rate' }}</b>
       </div>
-      <ng-template #none><div class="vs-f"><span>None yet</span></div></ng-template>
+      <ng-template #none><div class="vs-f"><span>—</span></div></ng-template>
     </article>
     <article class="vs-tile total">
-      <div class="vs-k"><b>All villas</b></div>
-      <div class="vs-n">{{ d.totals.count }}</div>
-      <div class="vs-f">
-        <span>{{ money(d.totals.value) }} today</span>
-        <span class="vs-c">{{ money(d.totals.commission) }} commission a year</span>
+      <div class="vs-k"><b>All villas</b><small>Total</small></div>
+      <div class="vs-n num">{{ d.totals.count }}</div>
+      <div class="vs-f num">
+        <span>{{ money(d.totals.value) }}</span>
+        <b class="vs-c">{{ money(d.totals.commission) }} / yr</b>
       </div>
     </article>
   </div>
   <ng-template #sk><div class="vs-grid"><div class="vs-tile sk" *ngFor="let i of [1,2,3,4]"></div></div></ng-template>
-
-  <!-- map clients and their purchases to villas (types included) -->
-  <app-villa-mapper [overviewIn]="overview" (changed)="load(); mapped.emit()" (openClient)="openClient.emit($event)"></app-villa-mapper>
   <p class="vs-err" *ngIf="error()">{{ error() }}</p>
 </section>

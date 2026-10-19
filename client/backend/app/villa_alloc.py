@@ -47,10 +47,11 @@ def txn_sign(kind) -> float:
 
 
 class _House:
-    __slots__ = ("id", "name", "status", "coin", "lines", "dates", "auto", "order", "placements")
+    __slots__ = ("id", "name", "status", "coin", "lines", "dates", "auto", "order", "placements", "bucket")
 
-    def __init__(self, hid: str, name: str, status: str, coin: bool, auto: bool, order: int):
+    def __init__(self, hid: str, name: str, status: str, coin: bool, auto: bool, order: int, bucket=None):
         self.id, self.name, self.status, self.coin, self.auto, self.order = hid, name, status, coin, auto, order
+        self.bucket = bucket                    # the villa bucket (recipe) this house is built from; None = any
         self.lines: dict[int, dict] = {}       # scheme_code → {units, invested, scheme_name}
         self.dates: list[str] = []
         self.placements: list[dict] = []       # [{order_id, amount, units, fraction}]
@@ -79,12 +80,18 @@ def is_finished(invested: float, status, unit: float) -> bool:
 
 
 def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_houses: int,
-             villa_codes: set, client_code: str = "") -> dict:
+             villa_codes: set, client_code: str = "", set_bucket: Optional[dict] = None,
+             villa_bucket: Optional[dict] = None, exclude: Optional[set] = None) -> dict:
     """Place a client's transactions into villas.
 
     txns   : rows of client_transactions (order_id, scheme_code, scheme_name,
              units, amount, kind, txn_date, villa_id)
     villas : rows of client_villas (id, name, status, coin, sort_order, created_at)
+    set_bucket   : {order_id: bucket_id | "outside"} — the placement decisions (auto
+                   or the admin's): a purchase builds villas of ITS bucket only, so two
+                   recipes never share a villa; "outside" keeps a line out of the villas.
+    villa_bucket : {villa_id: bucket_id} for the admin rows.
+    exclude      : order ids to treat as outside.
     Returns {houses: [...], outside: [...], placements: {order_id: [...]}, unit}.
     `houses` are in display order (finished first, then oldest first), each with
     villa_id, name, status, coin, auto, building, since, invested, pct, holdings.
@@ -93,25 +100,29 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
     max_houses = int(max_houses) if max_houses and max_houses > 0 else 9
 
     rows = sorted(villas or [], key=lambda v: (int(v.get("sort_order") or 0), str(v.get("created_at") or ""), str(v.get("id"))))
+    set_bucket = set_bucket or {}
+    villa_bucket = villa_bucket or {}
+    exclude = exclude or set()
     houses: list[_House] = [
-        _House(str(v["id"]), v.get("name") or "Villa", v.get("status") or "building", bool(v.get("coin")), False, i)
+        _House(str(v["id"]), v.get("name") or "Villa", v.get("status") or "building", bool(v.get("coin")), False, i,
+               villa_bucket.get(str(v["id"])))
         for i, v in enumerate(rows)]
     by_id = {h.id: h for h in houses}
 
-    def new_house() -> _House:
+    def new_house(bucket=None) -> _House:
         if len(houses) >= max_houses:
             return houses[-1]                                 # the estate is full: fold into the last villa
-        h = _House(f"auto:{client_code}:{len(houses) + 1}", "Villa", "building", False, True, len(houses))
+        h = _House(f"auto:{client_code}:{len(houses) + 1}", "Villa", "building", False, True, len(houses), bucket)
         houses.append(h)
         by_id[h.id] = h
         return h
 
-    def open_house() -> _House:
-        """The oldest villa that still has room (admin rows first, in order)."""
+    def open_house(bucket=None) -> _House:
+        """The oldest villa of this bucket that still has room (admin rows first, in order)."""
         for h in houses:
-            if not is_finished(h.invested(), h.status, unit):
+            if h.bucket == bucket and not is_finished(h.invested(), h.status, unit):
                 return h
-        return new_house()
+        return new_house(bucket)
 
     # ── 1 · normalise, split pinned / automatic / outside ──────────────────
     pinned: list[dict] = []
@@ -129,10 +140,18 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
             "day": (str(t.get("txn_date") or "")[:10] or None), "kind": t.get("kind") or "",
         }
         vid = t.get("villa_id")
+        decided = set_bucket.get(rec["order_id"])
         if vid and str(vid) in by_id:
             rec["villa_id"] = str(vid)
             pinned.append(rec)
-        elif rec["code"] in villa_codes:
+        elif rec["order_id"] in exclude or decided == "outside":
+            o = outside.setdefault(rec["code"], {"scheme_code": rec["code"], "scheme_name": rec["name"],
+                                                 "units": 0.0, "invested": 0.0, "count": 0})
+            o["units"] += rec["units"]
+            o["invested"] += rec["amount"]
+            o["count"] += 1
+        elif decided or rec["code"] in villa_codes:
+            rec["bucket"] = decided
             (auto_in if sign > 0 else auto_out).append(rec)
         else:
             o = outside.setdefault(rec["code"], {"scheme_code": rec["code"], "scheme_name": rec["name"],
@@ -148,7 +167,7 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
     # ── 3 · everything else, in date order: purchases fill villas; money out
     #        comes off the newest villa holding that fund ──────────────────
     def pkey(r: dict):
-        return (r["day"] or "9999-99-99", r["kind"].lower())
+        return (r["day"] or "9999-99-99", r["kind"].lower(), r.get("bucket") or "")
 
     groups: dict[tuple, list[dict]] = {}
     for r in auto_in:
@@ -164,9 +183,10 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
                 continue
             left = total
             guard = 0
+            bucket = lines[0].get("bucket")
             while left > 1e-6 and guard < 1000:
                 guard += 1
-                h = open_house()
+                h = open_house(bucket)
                 room = unit - h.invested() if len(houses) < max_houses or h is not houses[-1] else float("inf")
                 if h is houses[-1] and len(houses) >= max_houses:
                     room = float("inf")
@@ -209,7 +229,7 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
         finished = is_finished(inv, h.status, unit)
         out.append({
             "villa_id": h.id, "name": h.name, "status": "constructed" if finished else "building",
-            "coin": h.coin or finished, "auto": h.auto, "order": h.order,
+            "coin": h.coin or finished, "auto": h.auto, "order": h.order, "bucket": h.bucket,
             "building": not finished, "since": min(h.dates) if h.dates else "",
             "invested": round(inv, 2),
             "pct": 100.0 if finished else round(min(99.0, inv / unit * 100), 1),

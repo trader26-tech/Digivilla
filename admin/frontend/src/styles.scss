@@ -103,8 +103,8 @@ $side-w: 232px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mbar-meet {
     display: inline-flex; align-items: center; gap: 0.4rem; height: 36px; padding: 0 0.85rem; border: 0; border-radius: 999px;
-    background: var(--ink); color: var(--paper); font: inherit; font-size: 0.82rem; font-weight: 800; cursor: pointer;
-    &.soon { background: var(--brass); }
+    background: var(--nw-accent); color: #fff; font: inherit; font-size: 0.82rem; font-weight: 800; cursor: pointer;
+    &.soon { background: var(--nw-pos); }
     &:active { transform: scale(0.96); }
   }
 
@@ -120,7 +120,7 @@ $side-w: 232px;
     font: inherit; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.01em;
     svg { width: 22px; height: 22px; transition: transform 0.15s; }
     span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    &.on { color: var(--ink); svg { color: var(--brass); } }
+    &.on { color: var(--nw-accent); svg { color: var(--nw-accent); } }
     &:active svg { transform: scale(0.88); }
   }
 
@@ -128,7 +128,7 @@ $side-w: 232px;
   .more-sheet {
     display: flex; flex-direction: column; position: fixed; z-index: 37; left: 0; right: 0; bottom: 0;
     padding: 0.5rem 0.75rem calc(var(--tabbar-h) + 0.5rem); border-radius: 22px 22px 0 0;
-    background: var(--surface); box-shadow: 0 -20px 50px -20px rgba(22, 48, 43, 0.4);
+    background: var(--surface); box-shadow: 0 -20px 50px -20px rgba(26, 28, 46, 0.35);
     animation: m-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
     .grab { align-self: center; width: 38px; height: 5px; border-radius: 3px; background: var(--border); margin: 0.1rem 0 0.6rem; }
   }
@@ -168,7 +168,7 @@ button, a, label, select, input, [role='button'] { touch-action: manipulation; }
 /* client drawer: a villa's type (Conservative / Balanced / Aggressive) — global to spare app.component.scss's budget */
 .vv-type { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 8px 0 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); }
 .vv-type button { --t: var(--brass); border: 0; background: none; cursor: pointer; padding: 5px 4px; border-radius: 7px;
-  font: 700 0.7rem var(--font-body); color: var(--muted); transition: background .15s, color .15s; }
+  font: 700 10.5px var(--font-body); color: var(--muted); transition: background .15s, color .15s; }
 .vv-type button[data-t='conservative'] { --t: var(--positive); }
 .vv-type button[data-t='aggressive'] { --t: var(--terracotta); }
 .vv-type button:hover { color: var(--ink); }

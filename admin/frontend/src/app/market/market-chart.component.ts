@@ -33,7 +33,7 @@ interface Line {
 }
 /** the sleeve colours of the client app, for the actual-fund lines */
 const SLEEVE_COLOURS: Record<string, string> = {
-  arbitrage: '#6f8f82', gold: '#d4a017', large: '#3a8a3a', mid: '#4ea84e', small: '#7cc27a', other: '#8a9a92',
+  arbitrage: '#98a0b8', gold: '#eda100', large: '#6250d6', mid: '#b04fb8', small: '#2b8a9e', other: '#5a5f78',
 };
 const SLEEVE_NAMES: Record<string, string> = { arbitrage: 'arbitrage', gold: 'gold', large: 'large cap', mid: 'mid cap', small: 'small cap', other: 'other' };
 interface Stats {
@@ -45,9 +45,26 @@ interface Stats {
 
 /** Fixed categorical order — the colour follows the villa, never its rank. */
 const VILLA_COLOURS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
-const BENCH_COLOUR = '#16302B';
+const BENCH_COLOUR = '#5a5f78';
 const LS_KEY = 'dv_admin_market_view';
 const DAY = 86_400_000;
+
+/** a smooth monotone path through the points (no overshoot), or straight segments for long series */
+function pathOf(xs: number[], ys: number[]): string {
+  const n = xs.length; if (!n) return '';
+  if (n > 400 || n < 3) { let p = ''; for (let i = 0; i < n; i++) p += (i ? 'L' : 'M') + xs[i].toFixed(1) + ',' + ys[i].toFixed(1); return p; }
+  const d: number[] = [], m: number[] = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) { const dx = xs[i + 1] - xs[i] || 1e-6; d.push((ys[i + 1] - ys[i]) / dx); }
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) { if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; } const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b; if (s > 9) { const tt = 3 / Math.sqrt(s); m[i] = tt * a * d[i]; m[i + 1] = tt * b * d[i]; } }
+  let p = 'M' + xs[0].toFixed(1) + ',' + ys[0].toFixed(1);
+  for (let i = 0; i < n - 1; i++) {
+    const dx = (xs[i + 1] - xs[i]) / 3;
+    p += `C${(xs[i] + dx).toFixed(1)},${(ys[i] + m[i] * dx).toFixed(1)} ${(xs[i + 1] - dx).toFixed(1)},${(ys[i + 1] - m[i + 1] * dx).toFixed(1)} ${xs[i + 1].toFixed(1)},${ys[i + 1].toFixed(1)}`;
+  }
+  return p;
+}
 
 const PERIODS: { key: Period; label: string }[] = [
   { key: '1m', label: '1M' }, { key: '3m', label: '3M' }, { key: '6m', label: '6M' }, { key: 'ytd', label: 'YTD' },
@@ -429,7 +446,7 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ───────────────────────────── geometry ─────────────────────────────
   narrow = computed(() => this.width() < 560);
-  margins = computed(() => (this.narrow() ? { t: 12, r: 14, b: 26, l: 44 } : { t: 12, r: 118, b: 26, l: 50 }));
+  margins = computed(() => (this.narrow() ? { t: 12, r: 14, b: 26, l: 44 } : { t: 12, r: 150, b: 26, l: 50 }));
   height = computed(() => Math.max(this.narrow() ? 220 : 240, this.boxH()));
   innerW = computed(() => Math.max(50, this.width() - this.margins().l - this.margins().r));
   innerH = computed(() => this.height() - this.margins().t - this.margins().b);
@@ -470,10 +487,10 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
     const step = Math.max(1, Math.floor(n / (this.innerW() * 1.5)));     // ~1.5 points per pixel is plenty
     return this.visible().map((l) => {
       const v = sh[l.key];
-      let p = '';
-      for (let i = 0; i < n; i += step) p += (p ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v[i]).toFixed(1);
-      if ((n - 1) % step) p += 'L' + x(n - 1).toFixed(1) + ',' + y(v[n - 1]).toFixed(1);
-      return { key: l.key, colour: l.colour, bench: l.bench, fund: l.kind === 'fund', d: p };
+      const xs: number[] = [], ys: number[] = [];
+      for (let i = 0; i < n; i += step) { xs.push(x(i)); ys.push(y(v[i])); }
+      if ((n - 1) % step) { xs.push(x(n - 1)); ys.push(y(v[n - 1])); }
+      return { key: l.key, colour: l.colour, bench: l.bench, fund: l.kind === 'fund', d: pathOf(xs, ys) };
     });
   });
 
@@ -532,10 +549,10 @@ export class MarketChartComponent implements OnInit, AfterViewInit, OnDestroy {
     const y = this.yScale().y, sh = this.shown(), st = this.stats();
     const ls = this.visible().map((l) => {
       const v = sh[l.key].at(-1)!;
-      return { key: l.key, name: l.name, colour: l.colour, bench: l.bench, y0: y(v),
-               y: y(v), value: this.mode() === 'growth' ? this.pct(st[l.key].ret) : this.pct(v / 100) };
+      const value = this.mode() === 'growth' ? this.pct(st[l.key].ret) : this.pct(v / 100);
+      return { key: l.key, name: l.name, colour: l.colour, bench: l.bench, y0: y(v), y: y(v), value, w: value.length * 7.2 + 14 };
     }).sort((a, b) => a.y - b.y);
-    const gap = 30;
+    const gap = 26;
     for (let i = 1; i < ls.length; i++) if (ls[i].y - ls[i - 1].y < gap) ls[i].y = ls[i - 1].y + gap;
     const over = ls.length ? ls.at(-1)!.y - (this.innerH() + 6) : 0;
     if (over > 0) for (const l of ls) l.y -= over;

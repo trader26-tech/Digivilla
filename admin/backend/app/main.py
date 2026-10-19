@@ -974,6 +974,47 @@ def admin_meeting_delete(meeting_id: str, authorization: Optional[str] = Header(
 
 
 # --- Villas sold by type + world markets (registered BEFORE mount_spa) -------
+from pydantic import BaseModel  # noqa: E402
+from app import placement as placement_svc  # noqa: E402
+
+
+class PlacementDecision(BaseModel):
+    order_ids: list[str]
+    action: str                      # category | bucket | outside
+    category: Optional[str] = None
+    bucket_id: Optional[str] = None
+    name: Optional[str] = None
+
+
+@app.get("/admin/placement/pending")
+def admin_placement_pending(client: Optional[str] = None, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Every purchase set that still needs a decision, with the nearest recipes."""
+    _require_admin(authorization)
+    return placement_svc.pending([client] if client else None)
+
+
+@app.post("/admin/placement/run")
+def admin_placement_run(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Auto-place everything that matches a recipe; list the rest."""
+    _require_admin(authorization)
+    return placement_svc.run()
+
+
+@app.post("/admin/placement/decide")
+def admin_placement_decide(body: PlacementDecision, authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    try:
+        return placement_svc.decide(body.order_ids, body.action, category=body.category, bucket_id=body.bucket_id, name=body.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/admin/placement/undo")
+def admin_placement_undo(body: PlacementDecision, authorization: Optional[str] = Header(default=None)) -> dict:
+    _require_admin(authorization)
+    return placement_svc.undo(body.order_ids)
+
+
 from app import villa_sales as villa_sales_svc  # noqa: E402
 from app import world as world_svc  # noqa: E402
 

@@ -7,12 +7,18 @@
           <div class="um-title">
             <span class="um-ic" aria-hidden="true">≠</span>
             <div>
-              <h2 id="tie-title">Holdings don’t match the transactions for {{ c.off.length }} client{{ c.off.length === 1 ? '' : 's' }}</h2>
-              <p>The client app’s totals come from holdings, and holdings must equal every transaction added up. Rebuild puts them back in step — nothing is lost, nothing doubles.</p>
+              <h2 id="tie-title">Holdings off</h2>
+              <p class="num">{{ c.off.length }} client{{ c.off.length === 1 ? '' : 's' }}</p>
             </div>
+            <span class="um-info">
+              <button type="button" class="info-i" (click)="help.set(help() === 'tie' ? null : 'tie')" [attr.aria-expanded]="help() === 'tie'" aria-label="What this means">i</button>
+              @if (help() === 'tie') {
+                <div class="info-pop" role="dialog"><p>The client app’s totals come from holdings, and holdings must equal every transaction added up. Rebuild puts them back in step — nothing is lost, nothing doubles.</p></div>
+              }
+            </span>
           </div>
           <div class="um-act tie-act">
-            <button class="um-map" (click)="rebuild()" [disabled]="rebuilding()">{{ rebuilding() ? 'Rebuilding…' : 'Rebuild holdings →' }}</button>
+            <button class="um-map" (click)="rebuild()" [disabled]="rebuilding()">{{ rebuilding() ? 'Rebuilding…' : 'Rebuild →' }}</button>
           </div>
         </header>
         <div class="um-table" role="table" aria-label="Clients whose holdings differ">
@@ -40,19 +46,25 @@
         <div class="um-title">
           <span class="um-ic" aria-hidden="true">!</span>
           <div>
-            <h2 id="um-title">{{ d.unmapped }} transaction{{ d.unmapped === 1 ? '' : 's' }} in funds outside every villa bucket</h2>
-            <p>{{ money(d.unmapped_amount) }} across {{ d.clients_affected }} client{{ d.clients_affected === 1 ? '' : 's' }} · villas place themselves from the transactions; only a fund that is in no DigiVilla bucket waits for you — add the fund to a bucket, or pin the line to a villa</p>
+            <h2 id="um-title"><span class="num">{{ d.unmapped }}</span> unmapped</h2>
+            <p class="num">{{ money(d.unmapped_amount) }} · {{ d.clients_affected }} client{{ d.clients_affected === 1 ? '' : 's' }}</p>
           </div>
+          <span class="um-info">
+            <button type="button" class="info-i" (click)="help.set(help() === 'um' ? null : 'um')" [attr.aria-expanded]="help() === 'um'" aria-label="What this means">i</button>
+            @if (help() === 'um') {
+              <div class="info-pop" role="dialog"><p>Villas place themselves from the transactions. Only a fund that is in no DigiVilla bucket waits for you — add the fund to a bucket, or pin the line to a villa.</p></div>
+            }
+          </span>
         </div>
         <div class="um-meter" [attr.title]="d.mapped + ' of ' + d.total + ' transactions mapped'">
-          <div class="um-meter-top"><span>Placed in villas</span><b class="num">{{ d.mapped }} / {{ d.total }}</b></div>
+          <div class="um-meter-top"><span>Mapped</span><b class="num">{{ d.mapped }} / {{ d.total }}</b></div>
           <div class="um-bar"><i [style.width.%]="mappedPct()"></i></div>
         </div>
       </header>
 
       <div class="um-table" role="table" aria-label="Unmapped transactions">
         <div class="um-cols" role="row">
-          <span role="columnheader">Client · scheme</span>
+          <span role="columnheader">Client · fund</span>
           <span role="columnheader">Date</span>
           <span role="columnheader">Type</span>
           <span role="columnheader" class="num">Amount</span>
@@ -66,13 +78,13 @@
                 <span class="um-av" aria-hidden="true">{{ initials(c.name) }}</span>
                 <span class="um-name">
                   <b>{{ title(c.name) }}</b>
-                  <small class="num">{{ c.client_code }} · {{ c.unmapped }} of {{ c.total }} unmapped@if (!c.villa_count) { · <em>no villa created yet</em> }</small>
+                  <small class="num">{{ c.client_code }} · {{ c.unmapped }} / {{ c.total }}@if (!c.villa_count) { · <em>no villa</em> }</small>
                 </span>
               </span>
               <span role="cell"></span>
               <span role="cell"></span>
               <b class="num um-sum" role="cell">{{ money(c.unmapped_amount) }}</b>
-              <span role="cell" class="um-act"><button class="um-map" (click)="map.emit(c.client_code)">Map now <span aria-hidden="true">→</span></button></span>
+              <span role="cell" class="um-act"><button class="um-map" (click)="map.emit(c.client_code)">Map <span aria-hidden="true">→</span></button></span>
             </div>
 
             @for (t of c.txns; track (t.order_id || t.scheme_name + t.txn_date)) {
@@ -81,7 +93,7 @@
                 <span class="um-date num" role="cell">{{ day(t.txn_date) }}</span>
                 <span role="cell"><span class="um-kind">{{ t.kind || '—' }}</span></span>
                 <b class="num" role="cell">{{ money(t.amount) }}</b>
-                <span role="cell"><span class="um-tag">Outside the mix</span></span>
+                <span role="cell"><span class="um-tag">Unmapped</span></span>
               </div>
             }
           </div>
@@ -91,10 +103,10 @@
   } @else if (d.total > 0) {
     <section class="um-ok" role="status">
       <span class="um-ok-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="12" height="12"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
-      <b>Every transaction sits in a villa</b>
-      <span class="num">{{ d.total }} of {{ d.total }}@if (d.consistency?.ok) { · holdings tie out }</span>
+      <b>All mapped</b>
+      <span class="num">{{ d.total }} / {{ d.total }}@if (d.consistency?.ok) { · holdings tie out }</span>
     </section>
   }
 }

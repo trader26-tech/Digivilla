@@ -43,6 +43,8 @@ export class CommissionComponent implements OnInit {
   readonly villaCost = signal(DEFAULT_VILLA_COST);
   /** buckets whose fund list is folded away (all open by default) */
   readonly closed = signal<Set<string>>(new Set());
+  /** the (i) popovers */
+  readonly help = signal<'villa' | 'funds' | null>(null);
 
   ngOnInit(): void { this.load(); }
 

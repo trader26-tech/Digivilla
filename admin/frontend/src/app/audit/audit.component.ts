@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Input, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AdminService, NetWorthRow } from '../admin.service';
@@ -44,6 +44,15 @@ export class AuditComponent implements OnInit {
   private api = inject(AdminService);
 
   readonly tab = signal<Tab>('calc');
+
+  /** which (i) popover is open — the prose lives behind these, not on the page */
+  readonly info = signal<string | null>(null);
+  toggleInfo(k: string, ev?: Event): void { ev?.stopPropagation(); this.info.set(this.info() === k ? null : k); }
+  @HostListener('document:keydown.escape') onEsc(): void { this.info.set(null); }
+  @HostListener('document:pointerdown', ['$event']) onDocDown(ev: PointerEvent): void {
+    const t = ev.target as HTMLElement | null;
+    if (this.info() && !t?.closest?.('.au-info')) this.info.set(null);
+  }
 
   // ── data used ──
   readonly data = signal<any>(null);
@@ -138,6 +147,7 @@ export class AuditComponent implements OnInit {
     });
   }
   allOk = computed(() => (this.client()?.checks ?? []).every((c: any) => c.ok));
+  okCount(checks: any[]): number { return (checks ?? []).filter((c) => c.ok).length; }
   toggleVilla(id: string): void { this.openVilla.set(this.openVilla() === id ? null : id); }
 
   // ── data used ──
@@ -188,6 +198,7 @@ export class AuditComponent implements OnInit {
     });
   }
   navOk = computed(() => (this.navs()?.funds ?? []).filter((f: any) => f.match).length);
+  navBehind = computed(() => (this.navs()?.funds ?? []).filter((f: any) => !f.match && f.behind).length);
 
   // ── calculators ──
   pickKind(k: Kind): void { if (this.kind() === k && this.check()) return; this.kind.set(k); this.run(); }
@@ -295,6 +306,7 @@ export class AuditComponent implements OnInit {
     return Math.abs(d) < (r.pct ? 0.01 : 1);
   }
   calcOk = computed(() => this.rows().length > 0 && this.rows().every((r) => this.same(r)));
+  okRows = computed(() => this.rows().filter((r) => this.same(r)).length);
 
   ledgerRows = computed(() => {
     const l = this.check()?.ledger ?? [];
@@ -348,6 +360,7 @@ export class AuditComponent implements OnInit {
   });
   yearsAllOk = computed(() => this.yearRows().length > 0 && this.yearRows().every((r) =>
     r.worth.ok && r.before.ok && r.payout.ok && (!r.income || r.income.ok) && (!r.invested || r.invested.ok)));
+  okYears = computed(() => this.yearRows().filter((r) => this.rowOk(r)).length);
   rowOk(r: any): boolean { return r.worth.ok && r.before.ok && r.payout.ok && (!r.income || r.income.ok) && (!r.invested || r.invested.ok); }
   isSip = computed(() => this.kind() === 'sip');
   startAmount = computed(() => this.kind() === 'flat' ? (this.check()?.headline?.outlay ?? 0) : this.amount());

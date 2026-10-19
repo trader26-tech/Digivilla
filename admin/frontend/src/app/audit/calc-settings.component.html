@@ -1,22 +1,20 @@
 @if (loading()) { <div class="cs-sk"><i></i><i></i><i></i></div> }
-@if (err()) { <p class="cs-err">{{ err() }}</p> }
+@if (err()) { <div class="banner err">{{ err() }}</div> }
 
 @if (draft; as d) {
 <div class="cs" [class.dirty]="dirty()">
   <div class="cs-main">
     <header class="cs-head">
-      <div>
-        <h2>Calculator settings</h2>
-        <p>Every number the calculators, the Home estate and this page’s checks use comes from here. Published: <b>v{{ published()?.version }}</b> · {{ published()?.updated_at | date:'d MMM y, h:mm a' }} · {{ published()?.updated_by }}</p>
-      </div>
+      <h2>Settings</h2>
+      <div class="cs-meta"><span class="m-k">v{{ published()?.version }}</span><span>{{ published()?.updated_at | date:'d MMM y, h:mm a' }}</span><span>{{ published()?.updated_by }}</span></div>
     </header>
 
     <!-- ── villas ── -->
     <section class="cs-card">
-      <h3>Villas <small>each villa’s mix — must add up to 100%</small></h3>
+      <div class="card-head"><h3>Villas</h3><span class="card-sub">mix = 100%</span></div>
       <div class="vt">
         <div class="vt-r vt-h">
-          <span>Villa · risk</span>
+          <span>Villa</span>
           @for (s of series(); track s) { <span class="n">{{ SERIES_LABEL[s] || s }}</span> }
           <span class="n">Total</span><span>Default</span><span></span>
         </div>
@@ -28,7 +26,7 @@
                 <select [(ngModel)]="v.risk" (ngModelChange)="riskName(v)" aria-label="Risk">
                   <option [ngValue]="1">Low risk</option><option [ngValue]="2">Medium risk</option><option [ngValue]="3">High risk</option>
                 </select>
-                key <input class="k" [(ngModel)]="v.key" (ngModelChange)="touch()" aria-label="Villa key" />
+                <input class="k" [(ngModel)]="v.key" (ngModelChange)="touch()" aria-label="Villa key" placeholder="key" />
               </small>
             </span>
             @for (s of series(); track s) {
@@ -44,24 +42,24 @@
           </div>
         }
       </div>
-      <button class="ghost add" (click)="addVilla()">+ Add a villa</button>
+      <button class="btn add" (click)="addVilla()">+ Villa</button>
     </section>
 
     <!-- ── rebalancing + income ── -->
     <section class="cs-card two">
       <div>
-        <h3>Yearly rebalance <small>these parts go back to their starting split</small></h3>
+        <div class="card-head"><h3>Rebalance</h3><span class="card-sub">yearly, back to the split</span></div>
         <div class="chips">
           @for (s of series(); track s) { <button [class.on]="has(d.rebalance.parts, s)" (click)="toggle(d.rebalance.parts, s)">{{ SERIES_LABEL[s] || s }}</button> }
         </div>
-        <label class="fld">At the close of
+        <label class="fld"><span class="lbl">At the close of</span>
           <select [(ngModel)]="d.rebalance.month" (ngModelChange)="touch()">
             @for (m of MONTHS; track m; let i = $index) { <option [ngValue]="i + 1">{{ m }} (= 1 {{ MONTHS[(i + 1) % 12] }})</option> }
           </select>
         </label>
       </div>
       <div>
-        <h3>Income comes from <small>first, in this order — then the rest pro-rata</small></h3>
+        <div class="card-head"><h3>Income from</h3><span class="card-sub">in order, then pro-rata</span></div>
         <div class="chips">
           @for (s of series(); track s) { <button [class.on]="has(d.income.pay_first, s)" (click)="toggle(d.income.pay_first, s)">{{ SERIES_LABEL[s] || s }}</button> }
         </div>
@@ -70,35 +68,35 @@
 
     <!-- ── withdrawals ── -->
     <section class="cs-card">
-      <h3>Withdrawals (SWP)</h3>
+      <div class="card-head"><h3>Withdrawals</h3><span class="card-sub">SWP</span></div>
       <div class="grid">
-        <label class="fld">SWP on by default
-          <span class="sw"><input type="checkbox" [(ngModel)]="d.withdrawals.swp_default" (ngModelChange)="touch()" /><i></i></span>
+        <label class="fld"><span class="lbl">On by default</span>
+          <span class="tgl"><input type="checkbox" [(ngModel)]="d.withdrawals.swp_default" (ngModelChange)="touch()" /><i></i></span>
         </label>
-        <label class="fld">Lumpsum / FD / Flat — % of the amount a month
-          <span class="in"><input type="number" step="0.01" [ngModel]="getPct(d.withdrawals, 'lumpsum_monthly_rate')" (ngModelChange)="setPctField(d.withdrawals, 'lumpsum_monthly_rate', $event)" /><i>%</i></span>
-          <small>= {{ inr(1e7 * d.withdrawals.lumpsum_monthly_rate) }} a month per ₹1 Cr · {{ (d.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2) }}% a year</small>
+        <label class="fld"><span class="lbl">Lumpsum · a month</span>
+          <span class="in"><input type="number" step="0.01" [ngModel]="getPct(d.withdrawals, 'lumpsum_monthly_rate')" (ngModelChange)="setPctField(d.withdrawals, 'lumpsum_monthly_rate', $event)" /><i>% of amount</i></span>
+          <small>{{ inr(1e7 * d.withdrawals.lumpsum_monthly_rate) }} /mo per ₹1 Cr · {{ (d.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2) }}% a year</small>
         </label>
-        <label class="fld">SIP — income a year, % of the value
-          <span class="in"><input type="number" step="0.1" [ngModel]="getPct(d.withdrawals, 'sip_yearly_rate')" (ngModelChange)="setPctField(d.withdrawals, 'sip_yearly_rate', $event)" /><i>%</i></span>
+        <label class="fld"><span class="lbl">SIP · a year</span>
+          <span class="in"><input type="number" step="0.1" [ngModel]="getPct(d.withdrawals, 'sip_yearly_rate')" (ngModelChange)="setPctField(d.withdrawals, 'sip_yearly_rate', $event)" /><i>% of value</i></span>
         </label>
       </div>
     </section>
 
     <!-- ── tax ── -->
     <section class="cs-card">
-      <h3>Tax <small>today’s rules, used for every year</small></h3>
+      <div class="card-head"><h3>Tax</h3><span class="card-sub">today’s rules, every year</span></div>
       <div class="grid">
-        <label class="fld">Equity short-term rate<span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'equity_st_rate')" (ngModelChange)="setPctField(d.tax, 'equity_st_rate', $event)" /><i>%</i></span></label>
-        <label class="fld">Equity long-term rate<span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'equity_lt_rate')" (ngModelChange)="setPctField(d.tax, 'equity_lt_rate', $event)" /><i>%</i></span></label>
-        <label class="fld">Equity long-term after<span class="in"><input type="number" [(ngModel)]="d.tax.equity_lt_months" (ngModelChange)="touch()" /><i>months</i></span></label>
-        <label class="fld">Long-term gains free a year<span class="in"><i class="pre">₹</i><input type="number" step="5000" [(ngModel)]="d.tax.equity_exempt" (ngModelChange)="touch()" /></span></label>
-        <label class="fld">Gold long-term rate<span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'gold_lt_rate')" (ngModelChange)="setPctField(d.tax, 'gold_lt_rate', $event)" /><i>%</i></span></label>
-        <label class="fld">Gold long-term after<span class="in"><input type="number" [(ngModel)]="d.tax.gold_lt_months" (ngModelChange)="touch()" /><i>months</i></span></label>
-        <label class="fld">Cess<span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'cess')" (ngModelChange)="setPctField(d.tax, 'cess', $event)" /><i>%</i></span></label>
-        <label class="fld">Default income-tax slab<span class="in"><input type="number" step="5" [(ngModel)]="d.tax.default_slab" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Equity short-term</span><span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'equity_st_rate')" (ngModelChange)="setPctField(d.tax, 'equity_st_rate', $event)" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Equity long-term</span><span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'equity_lt_rate')" (ngModelChange)="setPctField(d.tax, 'equity_lt_rate', $event)" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Long-term after</span><span class="in"><input type="number" [(ngModel)]="d.tax.equity_lt_months" (ngModelChange)="touch()" /><i>months</i></span></label>
+        <label class="fld"><span class="lbl">LT gains free a year</span><span class="in"><i class="pre">₹</i><input type="number" step="5000" [(ngModel)]="d.tax.equity_exempt" (ngModelChange)="touch()" /></span></label>
+        <label class="fld"><span class="lbl">Gold long-term</span><span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'gold_lt_rate')" (ngModelChange)="setPctField(d.tax, 'gold_lt_rate', $event)" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Gold long-term after</span><span class="in"><input type="number" [(ngModel)]="d.tax.gold_lt_months" (ngModelChange)="touch()" /><i>months</i></span></label>
+        <label class="fld"><span class="lbl">Cess</span><span class="in"><input type="number" step="0.5" [ngModel]="getPct(d.tax, 'cess')" (ngModelChange)="setPctField(d.tax, 'cess', $event)" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Default slab</span><span class="in"><input type="number" step="5" [(ngModel)]="d.tax.default_slab" (ngModelChange)="touch()" /><i>%</i></span></label>
       </div>
-      <div class="fld">Taxed like gold (slab short-term)
+      <div class="fld"><span class="lbl">Taxed like gold</span>
         <div class="chips">
           @for (s of series(); track s) { <button [class.on]="has(d.tax.gold_parts, s)" (click)="toggle(d.tax.gold_parts, s)">{{ SERIES_LABEL[s] || s }}</button> }
         </div>
@@ -107,15 +105,15 @@
 
     <!-- ── estate ── -->
     <section class="cs-card">
-      <h3>Home estate <small>the board, the Next villa sheet, the withdrawals header</small></h3>
+      <div class="card-head"><h3>Estate</h3><span class="card-sub">board · next villa · withdrawals</span></div>
       <div class="grid">
-        <label class="fld">A finished villa costs<span class="in"><i class="pre">₹</i><input type="number" step="50000" [(ngModel)]="d.estate.villa_cost" (ngModelChange)="touch()" /></span></label>
-        <label class="fld">A finished villa pays a month<span class="in"><i class="pre">₹</i><input type="number" step="100" [(ngModel)]="d.estate.villa_income_monthly" (ngModelChange)="touch()" /></span></label>
-        <label class="fld">Plots on the board<span class="in"><input type="number" min="1" max="9" [(ngModel)]="d.estate.plots" (ngModelChange)="touch()" /><i>of 9</i></span></label>
+        <label class="fld"><span class="lbl">Villa costs</span><span class="in"><i class="pre">₹</i><input type="number" step="50000" [(ngModel)]="d.estate.villa_cost" (ngModelChange)="touch()" /></span></label>
+        <label class="fld"><span class="lbl">Villa pays a month</span><span class="in"><i class="pre">₹</i><input type="number" step="100" [(ngModel)]="d.estate.villa_income_monthly" (ngModelChange)="touch()" /></span></label>
+        <label class="fld"><span class="lbl">Plots</span><span class="in"><input type="number" min="1" max="9" [(ngModel)]="d.estate.plots" (ngModelChange)="touch()" /><i>of 9</i></span></label>
       </div>
       <div class="stages">
         @for (st of d.estate.stages; track $index; let i = $index) {
-          <label class="fld">Stage {{ i + 1 }}
+          <label class="fld"><span class="lbl">Stage {{ i + 1 }}</span>
             <input [(ngModel)]="st.name" (ngModelChange)="touch()" />
             <span class="in"><i class="pre">at ₹</i><input type="number" step="10000" [(ngModel)]="st.at" (ngModelChange)="touch()" /></span>
           </label>
@@ -125,29 +123,39 @@
 
     <!-- ── flat / fd / display ── -->
     <section class="cs-card">
-      <h3>Flat, FD &amp; display</h3>
+      <div class="card-head"><h3>Flat · FD · display</h3></div>
       <div class="grid">
-        <label class="fld">Flat stamp duty<span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.stamp_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
-        <label class="fld">Registration<span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.registration_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
-        <label class="fld">Brokerage when selling<span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.sell_brokerage_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
-        <label class="fld">Rent rises a year<span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.rent_rise_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
-        <label class="fld">Upkeep a year<span class="in"><input type="number" step="0.1" [(ngModel)]="d.flat.upkeep_pct" (ngModelChange)="touch()" /><i>% of value</i></span></label>
-        <label class="fld">Empty months a year<span class="in"><input type="number" [(ngModel)]="d.flat.vacant_months" (ngModelChange)="touch()" /><i>months</i></span></label>
-        <label class="fld">Standard deduction on rent<span class="in"><input type="number" step="5" [ngModel]="getPct(d.flat, 'std_deduction')" (ngModelChange)="setPctField(d.flat, 'std_deduction', $event)" /><i>%</i></span></label>
-        <label class="fld">NRI TDS on FD interest<span class="in"><input type="number" step="1" [(ngModel)]="d.fd.nri_tds_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
-        <label class="fld">Inflation (“today’s money”)<span class="in"><input type="number" step="0.5" [(ngModel)]="d.display.inflation_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
-        <label class="fld">Each villa’s “% a yr” uses the last<span class="in"><input type="number" min="1" max="40" [(ngModel)]="d.display.rate_years" (ngModelChange)="touch()" /><i>years</i></span></label>
+        <label class="fld"><span class="lbl">Stamp duty</span><span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.stamp_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Registration</span><span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.registration_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Sell brokerage</span><span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.sell_brokerage_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Rent rises a year</span><span class="in"><input type="number" step="0.5" [(ngModel)]="d.flat.rent_rise_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Upkeep a year</span><span class="in"><input type="number" step="0.1" [(ngModel)]="d.flat.upkeep_pct" (ngModelChange)="touch()" /><i>% of value</i></span></label>
+        <label class="fld"><span class="lbl">Empty a year</span><span class="in"><input type="number" [(ngModel)]="d.flat.vacant_months" (ngModelChange)="touch()" /><i>months</i></span></label>
+        <label class="fld"><span class="lbl">Rent deduction</span><span class="in"><input type="number" step="5" [ngModel]="getPct(d.flat, 'std_deduction')" (ngModelChange)="setPctField(d.flat, 'std_deduction', $event)" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">NRI TDS on FD</span><span class="in"><input type="number" step="1" [(ngModel)]="d.fd.nri_tds_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">Inflation</span><span class="in"><input type="number" step="0.5" [(ngModel)]="d.display.inflation_pct" (ngModelChange)="touch()" /><i>%</i></span></label>
+        <label class="fld"><span class="lbl">“% a yr” window</span><span class="in"><input type="number" min="1" max="40" [(ngModel)]="d.display.rate_years" (ngModelChange)="touch()" /><i>years</i></span></label>
       </div>
     </section>
   </div>
 
   <!-- ── the side: preview, problems, publish, history ── -->
-  <aside class="cs-side">
+  <aside class="cs-aside">
     <div class="cs-card sticky">
-      <h3>What changes <small>the app’s own engine, on the same history</small></h3>
+      <div class="card-head"><h3>Preview</h3>
+        <span class="au-info">
+          <button type="button" class="pf-i" (click)="infoOpen.set(!infoOpen()); $event.stopPropagation()" [attr.aria-expanded]="infoOpen()" aria-label="About the preview">i</button>
+          @if (infoOpen()) {
+            <div class="td-pop" role="dialog">
+              <p>The app’s own engine, run on the same history with the draft settings — what every villa and calculator will show once published.</p>
+              <p>Or ask Claude in chat: it runs <code>scripts/calc_config.py</code> on the same settings.</p>
+            </div>
+          }
+        </span>
+      </div>
       @if (preview(); as p) {
         <div class="pv">
-          <div class="pv-h"><span>Villa · % a yr (last {{ d.display.rate_years }} yrs, nothing withdrawn)</span><span>Now</span><span>Draft</span></div>
+          <div class="pv-h"><span>% a yr · {{ d.display.rate_years }} yrs</span><span>Now</span><span>Draft</span></div>
           @for (v of p.villas; track v.key) {
             <div class="pv-r"><span>{{ v.name }}</span><span>{{ pctf(v.was) }}</span><b [class.chg]="delta(v.was, v.now, false) && delta(v.was, v.now, false) !== 'same'">{{ pctf(v.now) }}</b></div>
           }
@@ -157,7 +165,7 @@
           }
         </div>
       } @else {
-        <p class="dim">{{ localErrors().length ? 'Fix the problems below to see the effect.' : 'Loading the history…' }}</p>
+        <p class="dim">{{ localErrors().length ? 'Fix the problems below.' : 'Loading…' }}</p>
       }
 
       @if (errors().length) {
@@ -165,16 +173,15 @@
       }
       @if (notice()) { <p class="ok">{{ notice() }}</p> }
       <div class="btns" [class.float]="dirty()">
-        <button class="ghost" (click)="discard()" [disabled]="!dirty() || saving()">Discard changes</button>
-        <button class="go" (click)="save()" [disabled]="!dirty() || errors().length > 0 || saving()">{{ saving() ? 'Publishing…' : 'Save & publish' }}</button>
+        <button class="btn" (click)="discard()" [disabled]="!dirty() || saving()">Discard</button>
+        <button class="btn primary" (click)="save()" [disabled]="!dirty() || errors().length > 0 || saving()">{{ saving() ? 'Publishing…' : 'Save & publish' }}</button>
       </div>
-      <p class="dim small">Or ask Claude in chat — it runs <code>scripts/calc_config.py</code> on the same settings.</p>
 
-      <h3 class="hist-h">Versions</h3>
+      <div class="card-head hist-h"><h3>Versions</h3></div>
       <ul class="hist">
-        <li class="cur"><b>v{{ published()?.version }}</b> in force <small>{{ published()?.updated_at | date:'d MMM, h:mm a' }} · {{ published()?.updated_by }}</small></li>
+        <li class="cur"><b>v{{ published()?.version }}</b><small>{{ published()?.updated_at | date:'d MMM, h:mm a' }} · {{ published()?.updated_by }}</small><em class="pill ok">Live</em></li>
         @for (h of history(); track h.version) {
-          <li><b>v{{ h.version }}</b> <small>replaced {{ h.saved_at | date:'d MMM, h:mm a' }}</small> <button class="ghost xs" (click)="loadVersion(h.version)">Load</button></li>
+          <li><b>v{{ h.version }}</b><small>{{ h.saved_at | date:'d MMM, h:mm a' }}</small><button class="btn xs" (click)="loadVersion(h.version)">Load</button></li>
         }
       </ul>
     </div>

@@ -49,6 +49,8 @@ export class TodayUpdateComponent implements OnInit, OnDestroy {
   readonly celebrating = signal(false);
   /** done bar → open the slots again to replace a file */
   readonly reopened = signal(false);
+  /** the (i) popover */
+  readonly help = signal(false);
   private timers: any[] = [];
   private dayTimer: any = null;
 

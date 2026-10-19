@@ -222,8 +222,15 @@ export interface MeetOverview { room: MeetRoom; meetings: Meeting[]; client_call
 /** Villas sold, by type. */
 export type VillaType = 'conservative' | 'balanced' | 'aggressive';
 export interface VillaTypeRow { key: VillaType; name: string; risk: string; count: number; constructed: number; value: number; invested: number; commission: number; }
+export interface VillaBucketRow {
+  bucket_id: string; name: string; tier?: VillaType; kind?: string; count: number; constructed: number; value: number; invested: number;
+  commission: number; rate_pct: number; per_villa_month: number; per_villa_year: number; rates_missing: string[];
+  funds: { scheme_code: number; scheme_name: string; sleeve?: string | null; share: number; rate_pct: number | null }[];
+}
 export interface VillaSummary {
   types: VillaTypeRow[];
+  buckets: VillaBucketRow[];
+  unit: number;
   unset: { count: number; value: number; villas: { villa_id: string; client_code: string; client_name: string; name: string; value: number }[] };
   totals: { count: number; value: number; commission: number };
 }
@@ -513,6 +520,17 @@ export class AdminService {
   // ── villas vs the market (home chart) ─────────────────────────────────────
   /** Daily index levels + the villa mixes; the chart replays each villa from any start day. */
   // ── villas sold by type ─────────────────────────────────────────────────────
+  // ── placement: which bucket each purchase builds ─────────────────────────
+  placementPending(client?: string): Observable<PlacementPending> {
+    return this.http.get<PlacementPending>(`${this.base}/admin/placement/pending`, { ...this.opts, params: client ? { client } : {} });
+  }
+  /** auto-place everything that matches a recipe, then list what is left */
+  placementRun(): Observable<PlacementPending & { auto: PlacementSet[]; auto_count: number }> {
+    return this.http.post<PlacementPending & { auto: PlacementSet[]; auto_count: number }>(`${this.base}/admin/placement/run`, {}, this.opts);
+  }
+  placementDecide(body: { order_ids: string[]; action: 'category' | 'bucket' | 'outside'; category?: VillaType; bucket_id?: string; name?: string }): Observable<PlacementPending> {
+    return this.http.post<PlacementPending>(`${this.base}/admin/placement/decide`, body, this.opts);
+  }
   villasSummary(): Observable<VillaSummary> {
     return this.http.get<VillaSummary>(`${this.base}/admin/villas/summary`, this.opts);
   }
@@ -616,6 +634,23 @@ export interface ReportUpload {
    *  purchases the report confirmed · the holdings rebuild that followed */
   added?: number; updated?: number; absorbed?: number; clients?: string[];
   holdings?: { clients: number; rows: number; removed: number; no_transactions: string[] };
+  /** placement that ran right after a transaction upload */
+  placement?: { auto: PlacementSet[]; pending: PlacementSet[]; pending_count: number; auto_count: number; error?: string };
+}
+/** Placement: one purchase set (a client's money-in lines of one day and kind) and where it can go. */
+export interface PlacementLine { order_id: string; scheme_code: number | null; scheme_name: string; amount: number; share: number; }
+export interface PlacementCandidate { bucket_id: string; name: string; tier?: VillaType; kind?: string; similarity: number; exact: boolean; }
+export interface PlacementSet {
+  key: string; client_code: string; client_name: string; day: string; kind: string; total: number;
+  order_ids: string[]; lines: PlacementLine[];
+  candidates?: PlacementCandidate[]; suggested?: { bucket_id: string; name: string; tier?: VillaType; similarity: number } | null;
+  exact?: boolean; bucket?: PlacementBucket;
+}
+export interface PlacementBucket { id: string; name: string; tier?: VillaType; kind?: string; funds: { scheme_code: number; scheme_name: string; sleeve?: string | null; share: number }[]; }
+export interface PlacementPending {
+  pending: PlacementSet[]; count: number; amount: number; buckets: PlacementBucket[];
+  categories: { key: VillaType; name: string; risk: string }[];
+  ok?: boolean; client_code?: string; bucket?: PlacementBucket | null;
 }
 /** The system's own tie-out: every client's holdings vs their transactions. */
 export interface ConsistencyRow {

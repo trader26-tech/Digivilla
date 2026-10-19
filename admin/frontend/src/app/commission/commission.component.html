@@ -1,93 +1,103 @@
 <div class="wrap cm">
-  <div class="section-head">
-    <h1>Commission</h1>
-    <p>Enter each fund's trail commission — the % a year the AMC pays you on money held in it. Everything else is worked out.</p>
-  </div>
+  <header class="land-head">
+    <div>
+      <h1>Commission</h1>
+      <div class="upd-row" *ngIf="data() as d">
+        <span class="num">{{ rows().length }} funds</span>
+        <span class="upd-src num" *ngIf="d.updated_at">saved {{ when(d.updated_at) }}</span>
+      </div>
+    </div>
+  </header>
 
   <!-- loading / error -->
   <div class="cm-skel" *ngIf="loading() && !data()" aria-busy="true">
-    <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+    <div class="sk kbar"></div>
     <div class="sk tall"></div>
   </div>
-  <div class="empty card cm-err" *ngIf="error() && !data()">
-    {{ error() }} <button class="ghost" (click)="load()">Try again</button>
+  <div class="banner err" *ngIf="error() && !data()">
+    {{ error() }} <button class="btn" (click)="load()">Try again</button>
   </div>
 
   <ng-container *ngIf="data() as d">
     <!-- 1 · what you earn -->
-    <div class="cm-kpis">
-      <div class="card cm-kpi hero">
-        <small>Commission a year</small>
-        <b class="num">{{ inr(totals().yearly) }}</b>
-        <span>{{ inr(totals().monthly) }} a month</span>
-      </div>
-      <div class="card cm-kpi">
-        <small>Money held</small>
-        <b class="num">{{ compact(totals().aum) }}</b>
-        <span>{{ d.totals.clients }} clients · {{ rows().length }} funds</span>
-      </div>
-      <div class="card cm-kpi">
-        <small>Blended rate</small>
-        <b class="num">{{ pct(totals().avg) }}</b>
-        <span>a year, on money with a rate</span>
-      </div>
-    </div>
+    <section class="kbar" aria-label="Headline figures">
+      <div class="kb"><span class="kb-k">A year</span><span class="kb-v num">{{ inr(totals().yearly) }}</span></div>
+      <div class="kb"><span class="kb-k">A month</span><span class="kb-v num">{{ inr(totals().monthly) }}</span></div>
+      <div class="kb"><span class="kb-k">Money held</span><span class="kb-v num">{{ compact(totals().aum) }}</span><span class="kb-c num">{{ d.totals.clients }} clients</span></div>
+      <div class="kb"><span class="kb-k">Blended rate</span><span class="kb-v num">{{ pct(totals().avg) }}</span><span class="kb-c">a year</span></div>
+    </section>
 
     <!-- 2 · funds still without a rate -->
-    <div class="cm-alert" *ngIf="totals().missing.length">
-      <b>{{ totals().missing.length }} {{ totals().missing.length === 1 ? 'fund has' : 'funds have' }} money but no rate</b>
-      <span>— they count as ₹0 until you add one below.</span>
+    <div class="banner warn" *ngIf="totals().missing.length">
+      <b class="num">{{ totals().missing.length }}</b> {{ totals().missing.length === 1 ? 'fund' : 'funds' }} · no rate · counted as ₹0
     </div>
 
     <!-- 3 · per villa: one villa of each bucket — what it earns, and the funds it is made of -->
     <section class="cv" aria-label="Commission per villa" *ngIf="villaRows().length || bucketsLoading()">
       <div class="cv-head">
-        <div>
-          <h2>Per villa</h2>
-          <p *ngIf="villaRows().length">One villa is {{ compact(villaCost()) }} put into a bucket, split by its weights, at the rates in the table. Every bucket you create shows here.</p>
-          <p *ngIf="!villaRows().length">Loading the villa buckets…</p>
-        </div>
+        <h2>Per villa</h2>
+        <span class="cv-meta num" *ngIf="villaRows().length">1 villa = {{ compact(villaCost()) }}</span>
+        <span class="cv-meta" *ngIf="!villaRows().length">Loading…</span>
+        <span class="pf-info">
+          <button type="button" class="pf-i" (click)="help.set(help() === 'villa' ? null : 'villa')" [attr.aria-expanded]="help() === 'villa'" aria-label="How a villa is costed">i</button>
+          <div class="td-pop" role="dialog" *ngIf="help() === 'villa'">
+            <p>One villa is {{ compact(villaCost()) }} put into a bucket, split by its weights, at the rates in the fund table. Every bucket you create shows here.</p>
+            <p>A fund with no rate counts as ₹0 until you set one below.</p>
+          </div>
+        </span>
       </div>
 
-      <article class="card cv-villa" *ngFor="let v of villaRows(); trackBy: trackVilla" [attr.data-t]="typeKey(v.tier)" [class.closed]="isClosed(v.id)">
-        <button class="cv-top" (click)="toggleVilla(v.id)" [attr.aria-expanded]="!isClosed(v.id)">
-          <span class="cv-id">
-            <b>{{ v.name }}</b>
-            <small>
-              <span class="cv-chip kind">{{ v.kind === 'lumpsum' ? 'Lumpsum' : 'SIP' }}</span>
-              <span class="cv-chip" *ngIf="v.tier">{{ v.tier }}</span>
-              <span *ngIf="v.subtitle">{{ v.subtitle }}</span>
-            </small>
-          </span>
-          <span class="cv-sum num">
-            <b>{{ inr(v.monthly) }}<em>/mo</em></b>
-            <small>{{ inr(v.yearly) }} a year · {{ pct(v.rate) }}</small>
-          </span>
-          <svg class="cv-car" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-
-        <div class="cv-funds" *ngIf="!isClosed(v.id)">
-          <div class="cv-fr cv-fh"><span>What's in it</span><span class="r">Of {{ compact(villaCost()) }}</span><span class="r">Rate</span><span class="r">A year</span></div>
-          <div class="cv-fr" *ngFor="let f of v.funds; trackBy: trackFund" [class.no-rate]="f.rate === null">
-            <span class="cv-fn">
-              <b>{{ f.name }}</b>
-              <small class="num">{{ pctShare(f.share) }} of the villa</small>
+      <div class="cv-grid">
+        <article class="card cv-villa" *ngFor="let v of villaRows(); trackBy: trackVilla" [attr.data-t]="typeKey(v.tier)" [class.closed]="isClosed(v.id)">
+          <button class="cv-top" (click)="toggleVilla(v.id)" [attr.aria-expanded]="!isClosed(v.id)">
+            <span class="cv-id">
+              <b><i class="cv-dot" aria-hidden="true"></i>{{ v.name }}</b>
+              <small>
+                <span class="cv-chip">{{ v.kind === 'lumpsum' ? 'Lumpsum' : 'SIP' }}</span>
+                <span class="cv-chip" *ngIf="v.tier">{{ v.tier }}</span>
+                <span *ngIf="v.subtitle">{{ v.subtitle }}</span>
+              </small>
             </span>
-            <span class="r num">{{ compact(f.amount) }}</span>
-            <span class="r num cv-rate">{{ f.rate === null ? 'no rate' : rateFmt(f.rate) }}</span>
-            <span class="r num strong">{{ f.rate === null ? '—' : inr(f.yearly) }}</span>
+            <span class="cv-sum num">
+              <b>{{ inr(v.monthly) }}<em>/mo</em></b>
+              <small>{{ inr(v.yearly) }} / yr · {{ pct(v.rate) }}</small>
+            </span>
+            <svg class="cv-car" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+
+          <div class="cv-funds" *ngIf="!isClosed(v.id)">
+            <div class="cv-fr cv-fh"><span>Fund</span><span class="r">Of {{ compact(villaCost()) }}</span><span class="r">Rate</span><span class="r">A year</span></div>
+            <div class="cv-fr" *ngFor="let f of v.funds; trackBy: trackFund" [class.no-rate]="f.rate === null">
+              <span class="cv-fn">
+                <b>{{ f.name }}</b>
+                <small class="num">{{ pctShare(f.share) }}</small>
+              </span>
+              <span class="r num">{{ compact(f.amount) }}</span>
+              <span class="r num cv-rate">{{ f.rate === null ? 'no rate' : rateFmt(f.rate) }}</span>
+              <span class="r num strong">{{ f.rate === null ? '—' : inr(f.yearly) }}</span>
+            </div>
+            <p class="cv-miss num" *ngIf="v.missing">{{ v.missing }} without a rate · ₹0</p>
           </div>
-          <p class="cv-miss" *ngIf="v.missing">{{ v.missing }} {{ v.missing === 1 ? 'fund has' : 'funds have' }} no rate yet — counted as ₹0 until you set it in the fund table below.</p>
-        </div>
-      </article>
+        </article>
+      </div>
     </section>
 
     <!-- 4 · per fund -->
+    <div class="cv-head">
+      <h2>Funds</h2>
+      <span class="pf-info">
+        <button type="button" class="pf-i" (click)="help.set(help() === 'funds' ? null : 'funds')" [attr.aria-expanded]="help() === 'funds'" aria-label="How this is worked out">i</button>
+        <div class="td-pop" role="dialog" *ngIf="help() === 'funds'">
+          <p>Type each fund's trail commission — the % a year the AMC pays you on money held in it. Figures update as you type; <b>Save rates</b> stores them.</p>
+          <p>Commission = money held × rate. Money held is today's value of every client's units at live NAV (the demo client is left out). An estimate — what you're paid follows each AMC's statement.</p>
+        </div>
+      </span>
+    </div>
     <div class="card cm-table">
       <div class="cm-tr cm-head">
         <span>Fund</span>
         <span class="r">Money held</span>
-        <span class="r">Rate, a year</span>
+        <span class="r">Rate / yr</span>
         <span class="r">A year</span>
         <span class="r">A month</span>
       </div>
@@ -95,10 +105,10 @@
       <div class="cm-tr" *ngFor="let r of rows(); trackBy: trackKey" [class.no-rate]="r.rate === null && r.aum > 0" [class.edited]="r.changed">
         <span class="cm-fund">
           <b>{{ r.scheme_name }}</b>
-          <small>
+          <small class="num">
             <ng-container *ngIf="r.scheme_code">{{ r.scheme_code }} · </ng-container>
-            {{ r.clients ? r.clients + (r.clients === 1 ? ' client' : ' clients') : 'not held yet' }}
-            <em *ngIf="r.in_villa">in a villa</em>
+            {{ r.clients ? r.clients + (r.clients === 1 ? ' client' : ' clients') : 'not held' }}
+            <em *ngIf="r.in_villa">Villa</em>
           </small>
         </span>
         <span class="r num">{{ compact(r.aum) }}</span>
@@ -108,7 +118,7 @@
                    (input)="type(r.key, $event)" (keyup.enter)="save()" [attr.aria-label]="'Commission rate for ' + r.scheme_name" />
             <i>%</i>
           </label>
-          <small class="cm-bad" *ngIf="r.bad">0 – {{ max() }}%</small>
+          <small class="cm-bad num" *ngIf="r.bad">0 – {{ max() }}%</small>
         </span>
         <span class="r num cm-year">
           {{ r.rate === null ? '—' : inr(r.yearly) }}
@@ -126,20 +136,14 @@
       </div>
     </div>
 
-    <p class="cm-note">
-      Commission = money held × rate. Money held is today's value of every client's units at live NAV (the demo client is left out).
-      An estimate — what you're paid follows each AMC's statement.
-      <ng-container *ngIf="d.updated_at"> Rates last saved {{ when(d.updated_at) }}.</ng-container>
-    </p>
-
     <!-- save bar: only while there are unsaved rates -->
     <div class="cm-save" *ngIf="changedCount() || savedAt()" [class.ok]="!changedCount() && savedAt()">
       <ng-container *ngIf="changedCount(); else saved">
-        <span>{{ changedCount() }} {{ changedCount() === 1 ? 'rate' : 'rates' }} changed</span>
-        <button class="ghost" (click)="discard()" [disabled]="saving()">Discard</button>
-        <button class="primary-btn" (click)="save()" [disabled]="saving() || hasBad()">{{ saving() ? 'Saving…' : 'Save rates' }}</button>
+        <span class="num">{{ changedCount() }} {{ changedCount() === 1 ? 'rate' : 'rates' }} changed</span>
+        <button class="btn ghost" (click)="discard()" [disabled]="saving()">Discard</button>
+        <button class="btn primary" (click)="save()" [disabled]="saving() || hasBad()">{{ saving() ? 'Saving…' : 'Save rates' }}</button>
       </ng-container>
-      <ng-template #saved><span>✓ Rates saved</span></ng-template>
+      <ng-template #saved><span>✓ Saved</span></ng-template>
     </div>
     <p class="cm-err-inline" *ngIf="error() && data()">{{ error() }}</p>
   </ng-container>

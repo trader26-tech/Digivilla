@@ -1,13 +1,13 @@
 <!-- ═══ DONE BAR — today is complete ═══ -->
 <section class="done-bar" *ngIf="loaded() && collapsed()" aria-label="Today’s update">
   <span class="db-tick" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </span>
   <div class="db-text">
-    <b>Updated for today</b>
-    <span>{{ dateShort() }} · {{ summary() }}<ng-container *ngIf="lastAt()"> · last added {{ lastAt() }}</ng-container></span>
+    <b>Updated</b>
+    <span class="num">{{ dateShort() }} · {{ summary() }}<ng-container *ngIf="lastAt()"> · {{ lastAt() }}</ng-container></span>
   </div>
-  <button class="db-btn" (click)="reopened.set(true)">Replace a file</button>
+  <button class="db-btn" (click)="reopened.set(true)">Replace</button>
 </section>
 
 <!-- ═══ PORTAL — add today's client details + transactions ═══ -->
@@ -17,11 +17,19 @@
 
   <div class="tu-head">
     <div class="tu-title">
-      <small>Today’s update · <span class="d-long">{{ dateLong() }}</span><span class="d-short">{{ dateShort() }}</span></small>
-      <h3>{{ complete() ? 'Replace today’s files' : 'Add today’s client details & transactions' }}</h3>
+      <small><span class="d-long">{{ dateLong() }}</span><span class="d-short">{{ dateShort() }}</span></small>
+      <h3>{{ complete() ? 'Replace today’s files' : 'Today’s files' }}</h3>
     </div>
+    <span class="tu-info">
+      <button type="button" class="info-i" (click)="help.set(!help())" [attr.aria-expanded]="help()" aria-label="How uploads work">i</button>
+      <div class="info-pop" role="dialog" *ngIf="help()">
+        <p class="hint-drag">Drop both files anywhere on this card — they are sorted by content.</p>
+        <p class="hint-touch">Tap a box to pick its report from Files, iCloud Drive or Downloads.</p>
+        <p>Every line is kept by its AMC order number — a file added twice, or a line that was in yesterday’s file too, is never counted twice. Holdings are rebuilt from the whole history after each upload.</p>
+      </div>
+    </span>
     <div class="tu-progress" [attr.aria-label]="count() + ' of 2 added'">
-      <svg viewBox="0 0 36 36" width="40" height="40" aria-hidden="true">
+      <svg viewBox="0 0 36 36" width="38" height="38" aria-hidden="true">
         <circle cx="18" cy="18" r="15" class="trk"/>
         <circle cx="18" cy="18" r="15" class="val" [style.stroke-dashoffset]="94.25 - 94.25 * count() / 2"/>
       </svg>
@@ -43,58 +51,52 @@
 
         <span class="s-ic" aria-hidden="true">
           <ng-container *ngIf="!(upload($any(k)) && slot($any(k)).state !== 'uploading'); else tick">
-            <svg *ngIf="k === 'user'" viewBox="0 0 24 24" width="22" height="22"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 19.5c.8-3.4 3.4-5 6.5-5s5.7 1.6 6.5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 5.5a3.3 3.3 0 0 1 0 6.2M18.5 14.6c1.6.7 2.6 2.3 3 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <svg *ngIf="k === 'transaction'" viewBox="0 0 24 24" width="22" height="22"><path d="M3 17l5-5 4 4 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 8h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg *ngIf="k === 'user'" viewBox="0 0 24 24" width="20" height="20"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 19.5c.8-3.4 3.4-5 6.5-5s5.7 1.6 6.5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 5.5a3.3 3.3 0 0 1 0 6.2M18.5 14.6c1.6.7 2.6 2.3 3 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg *ngIf="k === 'transaction'" viewBox="0 0 24 24" width="20" height="20"><path d="M3 17l5-5 4 4 8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 8h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </ng-container>
           <ng-template #tick>
-            <svg viewBox="0 0 24 24" width="22" height="22"><path class="tick-path" d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20"><path class="tick-path" d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </ng-template>
         </span>
 
         <span class="s-body">
-          <b>{{ k === 'user' ? 'Client details' : 'Transactions' }}</b>
+          <b>{{ k === 'user' ? 'Clients' : 'Transactions' }}</b>
           <ng-container [ngSwitch]="slot($any(k)).state">
             <span *ngSwitchCase="'uploading'" class="s-sub">Reading {{ slot($any(k)).file }}…</span>
             <span *ngSwitchCase="'error'" class="s-sub bad">{{ slot($any(k)).error }}</span>
             <ng-container *ngSwitchDefault>
-              <span class="s-sub ok" *ngIf="upload($any(k)) as u; else hint">
+              <span class="s-sub ok num" *ngIf="upload($any(k)) as u; else hint">
                 <ng-container *ngIf="k === 'transaction' && u.added != null; else plain">
-                  <b>{{ u.added | number }} new</b> · {{ u.updated | number }} already on record<ng-container *ngIf="u.absorbed"> · {{ u.absorbed }} hand-added confirmed</ng-container> · holdings rebuilt for {{ u.holdings?.clients || u.clients?.length || 0 }} client{{ (u.holdings?.clients || u.clients?.length || 0) === 1 ? '' : 's' }}
+                  <b>{{ u.added | number }} new</b> · {{ u.updated | number }} known<ng-container *ngIf="u.absorbed"> · {{ u.absorbed }} confirmed</ng-container> · {{ u.holdings?.clients || u.clients?.length || 0 }} client{{ (u.holdings?.clients || u.clients?.length || 0) === 1 ? '' : 's' }} rebuilt
                 </ng-container>
                 <ng-template #plain>{{ u.row_count | number }} {{ k === 'user' ? 'clients' : 'transactions' }} · {{ u.filename }}</ng-template>
               </span>
               <ng-template #hint>
-                <span class="s-sub">{{ k === 'user' ? 'User Report — .xlsx or .csv' : 'Transaction Report — .csv' }}</span>
+                <span class="s-sub">{{ k === 'user' ? 'User Report · .xlsx .csv' : 'Transaction Report · .csv' }}</span>
               </ng-template>
             </ng-container>
           </ng-container>
         </span>
 
         <span class="s-cta" *ngIf="slot($any(k)).state !== 'uploading'">
-          {{ dragKind() === k ? 'Drop here' : slot($any(k)).state === 'error' ? 'Try again' : upload($any(k)) ? 'Replace' : 'Add file' }}
+          {{ dragKind() === k ? 'Drop' : slot($any(k)).state === 'error' ? 'Retry' : upload($any(k)) ? 'Replace' : 'Add' }}
         </span>
         <span class="s-bar" *ngIf="slot($any(k)).state === 'uploading'"><i></i></span>
       </label>
     </ng-container>
   </div>
 
-  <p class="tu-foot">
-    <span class="hint-drag">Drop both files anywhere on this card — we’ll sort out which is which.</span>
-    <span class="hint-touch">Tap a box to pick its report from Files, iCloud Drive or Downloads.</span>
-    <span>Every line is kept by its AMC order number — a file added twice, or a line that was in yesterday’s file too, is never counted twice. Holdings are rebuilt from the whole history after each upload.</span>
-  </p>
-
   <!-- ═══ the moment: both files in ═══ -->
   <div class="moment" *ngIf="celebrating()" (click)="skipCelebration()" role="status" aria-live="polite">
     <div class="m-burst" *ngIf="!reduceMotion" aria-hidden="true">
       <i *ngFor="let b of bits" [style.--a]="b.a + 'deg'" [style.--d]="b.d + 'px'" [style.background]="b.c" [style.animation-delay]="b.t + 'ms'"></i>
     </div>
-    <svg class="m-ring" viewBox="0 0 80 80" width="88" height="88" aria-hidden="true">
+    <svg class="m-ring" viewBox="0 0 80 80" width="80" height="80" aria-hidden="true">
       <circle cx="40" cy="40" r="34" class="m-circ"/>
       <path d="M25 41l10 10 20-21" class="m-tick"/>
     </svg>
-    <h3>Updated for today</h3>
-    <p>{{ dateLong() }} · {{ summary() }} now live</p>
+    <h3>Updated</h3>
+    <p class="num">{{ dateShort() }} · {{ summary() }}</p>
   </div>
 </section>
 

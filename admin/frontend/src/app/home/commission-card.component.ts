@@ -61,9 +61,15 @@ export class CommissionCardComponent implements OnInit {
   }
 
   /** one villa of each type */
+  /** one row per RECIPE (villa bucket): what a ₹5 L villa of it earns, how many are held */
   readonly rows = computed<VillaComm[]>(() => {
-    const d = this.data();
-    return d ? villaComm(this.villaCost(), d, this.buckets(), this.villas(), this.sold()?.types ?? []) : [];
+    const d = this.data(); const sold = this.sold();
+    if (!d) return [];
+    if (sold?.buckets?.length) {
+      return sold.buckets.map((b) => ({ key: b.bucket_id, name: b.name, perYear: b.per_villa_year, rate: b.rate_pct,
+        missing: b.rates_missing || [], held: b.count, heldYear: b.commission }));
+    }
+    return villaComm(this.villaCost(), d, this.buckets(), this.villas(), sold?.types ?? []);
   });
   /** fund names with no rate, across the villa buckets */
   readonly missing = computed(() => [...new Set(this.rows().flatMap((r) => r.missing))]);

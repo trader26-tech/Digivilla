@@ -10,7 +10,7 @@
     <!-- the current basket: what it earns now -->
     <div class="cc-hero">
       <div>
-        <small>Current basket · a month</small>
+        <small>A month</small>
         <b class="num">{{ inr(nowYear() / 12) }}</b>
       </div>
       <div class="cc-year">
@@ -19,33 +19,30 @@
       </div>
     </div>
     <div class="cc-meta num">
-      @if (heldVillas() !== null) { <span>from <b>{{ plural(heldVillas()!, 'villa') }}</b></span> }
-      <span><b>{{ compact(d.totals.aum) }}</b> invested</span>
-      <span><b>{{ d.totals.clients }}</b> clients</span>
+      @if (heldVillas() !== null) { <span><small>Villas</small><b>{{ heldVillas()!.toLocaleString('en-IN') }}</b></span> }
+      <span><small>Invested</small><b>{{ compact(d.totals.aum) }}</b></span>
+      <span><small>Clients</small><b>{{ d.totals.clients }}</b></span>
     </div>
 
     <!-- brokerage by bucket: each villa type's blended trail rate -->
     <div class="cb">
-      <div class="cb-h"><span>Brokerage by bucket</span><span>% a year</span></div>
+      <div class="cb-h"><span>By recipe</span><span>% / yr</span></div>
       @for (r of rows(); track r.key) {
         <div class="cb-row" [attr.data-t]="r.key">
           <span class="cb-name"><i></i><b>{{ r.name }}</b>
-            <small class="num">{{ inr(r.perYear / 12) }}/mo per {{ compact(villaCost()) }} villa · {{ plural(r.held, 'villa') }} now@if (r.held) { · {{ inr(r.heldYear / 12) }}/mo}</small>
-            @if (r.missing.length) { <small class="cb-miss">{{ r.missing.join(', ') }} not counted — no rate yet</small> }
+            <small class="num">{{ inr(r.perYear / 12) }}/mo each · {{ r.held.toLocaleString('en-IN') }} held@if (r.held) { · {{ inr(r.heldYear / 12) }}/mo}</small>
+            @if (r.missing.length) { <small class="cb-miss">{{ r.missing.join(', ') }} · no rate</small> }
           </span>
           <b class="cb-pct num">{{ r.rate.toFixed(2) }}%</b>
         </div>
       }
     </div>
 
-    <button class="cc-whatif" (click)="whatIf.set(true)">
-      <span><b>What if I sell more villas?</b><small>See the commission — and the investment it takes</small></span>
-      <i aria-hidden="true">→</i>
-    </button>
+    <button class="cc-whatif" (click)="whatIf.set(true)">Sell more villas <i aria-hidden="true">→</i></button>
 
     @if (missing().length) {
       <button class="hc-warn" (click)="open.emit()">
-        <span aria-hidden="true">!</span>No rate yet for {{ missing().join(', ') }} — counted as ₹0
+        <span aria-hidden="true">!</span>No rate · {{ missing().join(', ') }}
       </button>
     }
   } @else if (error()) {
@@ -58,23 +55,22 @@
 <!-- ═══ popup: if you sell more villas ═══ -->
 @if (whatIf() && data()) {
   <div class="hc-scrim" (click)="whatIf.set(false)"></div>
-  <div class="hc-sheet cw" role="dialog" aria-modal="true" aria-label="If you sell more villas">
+  <div class="hc-sheet cw" role="dialog" aria-modal="true" aria-label="Sell more villas">
     <button class="hc-x" (click)="whatIf.set(false)" aria-label="Close">×</button>
-    <h3 class="cw-t">If you sell more villas</h3>
-    <p class="cw-s">Pick how many of each type. One villa is {{ compact(villaCost()) }} invested by the client.</p>
+    <h3 class="cw-t">Sell more villas</h3>
+    <p class="cw-s num">1 villa = {{ compact(villaCost()) }}</p>
 
     <div class="cv-picks cw-picks">
-      <span>Quick:</span>
       @for (p of picks; track p) { <button (click)="each(p)">{{ p }} each</button> }
       @if (plan().villas) { <button class="cv-clear" (click)="clear()">Clear</button> }
     </div>
 
     <ul class="cv-rows">
       @for (r of rows(); track r.key) {
-        <li [class.on]="count(r.key) > 0">
+        <li [class.on]="count(r.key) > 0" [attr.data-t]="r.key">
           <span class="cv-type">
-            <b>{{ r.name }}</b>
-            <small class="num">{{ inr(r.perYear / 12) }}/mo commission each</small>
+            <b><i aria-hidden="true"></i>{{ r.name }}</b>
+            <small class="num">{{ inr(r.perYear / 12) }}/mo each</small>
           </span>
           <span class="cv-step" role="group" [attr.aria-label]="r.name + ' villas to sell'">
             <button (click)="step(r.key, -1)" [disabled]="!count(r.key)" aria-label="One fewer">−</button>
@@ -84,7 +80,7 @@
           </span>
           <span class="cw-row-sum num">
             <b>{{ count(r.key) ? '+' + compact(count(r.key) * r.perYear / 12) + '/mo' : '—' }}</b>
-            <small>{{ count(r.key) ? compact(count(r.key) * villaCost()) + ' to invest' : '' }}</small>
+            <small>{{ count(r.key) ? compact(count(r.key) * villaCost()) : '' }}</small>
           </span>
         </li>
       }
@@ -93,24 +89,23 @@
     <div class="cw-sum" [class.zero]="!plan().villas">
       @if (plan().villas) {
         <div class="cw-cell cost">
-          <small>Investment needed</small>
+          <small>To invest</small>
           <b class="num">{{ compact(plan().money) }}</b>
-          <span>{{ plural(plan().villas, 'villa') }} × {{ compact(villaCost()) }}</span>
+          <span class="num">{{ plural(plan().villas, 'villa') }}</span>
         </div>
         <div class="cw-cell gain">
-          <small>Extra commission</small>
+          <small>Extra</small>
           <b class="num">+{{ inr(plan().yearly / 12) }}<em>/mo</em></b>
-          <span class="num">+{{ compact(plan().yearly) }} a year</span>
+          <span class="num">+{{ compact(plan().yearly) }} / yr</span>
         </div>
         <div class="cw-cell">
-          <small>Total, with today's</small>
+          <small>Total</small>
           <b class="num">{{ inr((nowYear() + plan().yearly) / 12) }}<em>/mo</em></b>
-          <span class="num">{{ compact(nowYear() + plan().yearly) }} a year</span>
+          <span class="num">{{ compact(nowYear() + plan().yearly) }} / yr</span>
         </div>
       } @else {
-        <p>Add villas above to see what they'd pay you and how much money it takes.</p>
+        <p>Pick a number above</p>
       }
     </div>
-    <p class="cw-note">Trail commission at your saved fund rates, for as long as clients stay invested.</p>
   </div>
 }

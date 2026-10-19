@@ -577,6 +577,14 @@ def upload_report(report_type: str, filename: str, content: bytes,
         touched = sorted({r["client_code"] for r in raw_txns})
         stats["holdings"] = rebuild_holdings(touched)
         stats["clients"] = touched
+        # 3 · place every new purchase into its villa bucket — or list it for a decision
+        try:
+            from app import placement
+            pl = placement.run(touched)
+            stats["placement"] = {"auto": pl["auto"], "pending": pl["pending"],
+                                  "pending_count": len(pl["pending"]), "auto_count": len(pl["auto"])}
+        except Exception as e:                                   # never lose an upload over placement
+            stats["placement"] = {"error": str(e), "auto": [], "pending": [], "pending_count": 0, "auto_count": 0}
 
     meta = {
         "report_date": report_date, "report_type": report_type,
@@ -1159,8 +1167,10 @@ def allocate_client(client_code: str, *, villas: list[dict] | None = None, txns:
             else [v for v in _load_local().get("client_villas", []) if v.get("client_code") == client_code]
     if txns is None:
         txns = list_transactions(client_code)
+    from app import placement
     return villa_alloc.allocate(txns, villas, unit=_villa_unit(), max_houses=_houses_max(),
-                                villa_codes=_villa_codes(), client_code=client_code)
+                                villa_codes=_villa_codes(), client_code=client_code,
+                                set_bucket=placement.placement_map(), villa_bucket=placement.villa_bucket_map())
 # The public demo account (client app → "Explore the demo", phone 9999999999).
 # Its sample portfolio is seeded by client/backend/scripts/seed_demo.py; uploads
 # never touch it and it is left out of the admin's totals and alerts.
@@ -1263,7 +1273,8 @@ def list_client_villas(client_code: str, *, villas: list[dict] | None = None,
             "status": v.get("status") or h["status"], "coin": bool(v.get("coin")) or h["coin"],
             "sort_order": v.get("sort_order", h["order"]), "created_at": v.get("created_at"), "updated_at": v.get("updated_at"),
             "auto": h["auto"],                              # made by the rule, not an admin row
-            "villa_type": vtypes.get(h["villa_id"]),        # conservative / balanced / aggressive (admin-set)
+            "bucket_id": h.get("bucket"),                    # the recipe it is built from
+            "villa_type": vtypes.get(h["villa_id"]),        # conservative / balanced / aggressive
             "mapped_total": mapped,
             "pinned_count": pinned_count.get(h["villa_id"], 0),
             "txn_count": len(h["holdings"]),

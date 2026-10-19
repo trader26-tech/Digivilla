@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, HostListener, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AdminService } from '../admin.service';
@@ -39,6 +39,13 @@ export class CalcSettingsComponent implements OnInit {
   readonly err = signal('');
   readonly saving = signal(false);
   readonly notice = signal('');
+  /** the one (i) popover on the preview card */
+  readonly infoOpen = signal(false);
+  @HostListener('document:keydown.escape') onEsc(): void { this.infoOpen.set(false); }
+  @HostListener('document:pointerdown', ['$event']) onDocDown(ev: PointerEvent): void {
+    const t = ev.target as HTMLElement | null;
+    if (this.infoOpen() && !t?.closest?.('.au-info')) this.infoOpen.set(false);
+  }
   readonly serverErrors = signal<string[]>([]);
   private vf: VillaFunds | null = null;
   readonly vfReady = signal(false);

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
 import {
@@ -24,7 +24,7 @@ import { AuditComponent } from './audit/audit.component';
 import { MarketsPageComponent } from './market/markets-page.component';
 import { GlobalMarketsComponent } from './global/global-markets.component';
 import { VillaSalesComponent } from './home/villa-sales.component';
-import { UnmappedTxnsComponent } from './home/unmapped-txns.component';
+import { PlacementsComponent } from './home/placements.component';
 import { CommissionCardComponent } from './home/commission-card.component';
 import { MeetCardComponent } from './home/meet-card.component';
 import { CommissionComponent } from './commission/commission.component';
@@ -87,7 +87,7 @@ const PROFILE_FIELDS: [string, string][] = [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, AuditComponent, CommissionComponent, MarketsPageComponent, GlobalMarketsComponent, VillaSalesComponent, MeetRoomComponent, CommissionCardComponent, MeetCardComponent, TodayUpdateComponent, UnmappedTxnsComponent],
+  imports: [CommonModule, FormsModule, AuditComponent, CommissionComponent, MarketsPageComponent, GlobalMarketsComponent, VillaSalesComponent, MeetRoomComponent, CommissionCardComponent, MeetCardComponent, TodayUpdateComponent, PlacementsComponent],
   templateUrl: './app.component.html',
   // the phone layout lives in its own sheet (app.component.scss is near its 60 kB budget)
   styleUrls: ['./app.component.scss', './app.component.phone.scss'],
@@ -151,7 +151,10 @@ export class AppComponent implements OnInit {
   readonly meet = inject(MeetStore);
   openMeet(): void { window.open(this.meet.roomUrl(), '_blank', 'noopener'); }
   /** a report was added from the home portal — re-pull the figures it feeds */
-  onTodayUpdated(): void { this.loadNetWorth(); this.loadMappingOverview(); }
+  @ViewChild(PlacementsComponent) placements?: PlacementsComponent;
+  /** purchases still waiting for a placement decision (from the placements card) */
+  readonly toPlace = signal<{ count: number; amount: number } | null>(null);
+  onTodayUpdated(): void { this.loadNetWorth(); this.loadMappingOverview(); this.placements?.refresh(); }
 
   view = signal<View>('clients');
   readonly NAV = NAV;
