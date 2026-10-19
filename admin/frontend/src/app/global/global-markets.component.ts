@@ -3,53 +3,93 @@ import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, comp
 
 import { AdminService, IBasket, IItem, IKind, IRange, IVilla, IndiaBoard } from '../admin.service';
 
-/** Markets today — the India board: the three villas (with / without gold), a heat map of the
- *  Indian indices · gold · arbitrage · rupee · US 10-year · S&P 500, and one chart of their
- *  movement over the chosen range (live 5-minute bars for 1D). */
+/** Markets today — the India board: the three villas (editable mix, with / without gold), a heat
+ *  map of the Indian indices · gold · arbitrage · rupee · US 10-year · S&P 500, and one chart of
+ *  their movement over the chosen range (live 5-minute bars for 1D). Villas are replayed here in
+ *  the browser from the parts' series, so a mix change redraws at once. */
 
 type Gold = 'with' | 'without';
+type Weights = Record<string, number>;
 interface Line { key: string; name: string; short: string; colour: string; dash: string | null; width: number; t: number[]; v: number[]; villa: boolean; }
-interface Tile {
-  key: string; name: string; short: string; about: string; kind: IKind; pct: number | null; day_pct: number | null;
-  last: number | null; prev: number | null; high?: number | null; low?: number | null; source: 'live' | 'close' | 'tri'; chartable: boolean; item: IItem;
-}
+interface Tile { key: string; name: string; short: string; about: string; kind: IKind; pct: number | null; last: number | null; chartable: boolean; }
 
 const RANGES: { k: IRange; l: string; long: string }[] = [
-  { k: '1d', l: '1D', long: 'today' }, { k: '1w', l: '1W', long: 'this week' }, { k: '1m', l: '1M', long: 'over a month' },
-  { k: '3m', l: '3M', long: 'over 3 months' }, { k: 'ytd', l: 'YTD', long: 'this year' }, { k: '1y', l: '1Y', long: 'over a year' },
-  { k: '3y', l: '3Y', long: 'over 3 years' }, { k: '5y', l: '5Y', long: 'over 5 years' }, { k: '10y', l: '10Y', long: 'over 10 years' },
-  { k: '15y', l: '15Y', long: 'over 15 years' }, { k: 'custom', l: 'Custom', long: 'over your dates' },
+  { k: '1d', l: '1D', long: 'today' }, { k: '1w', l: '1W', long: 'this week' }, { k: '1m', l: '1M', long: '1 month' },
+  { k: '3m', l: '3M', long: '3 months' }, { k: 'ytd', l: 'YTD', long: 'this year' }, { k: '1y', l: '1Y', long: '1 year' },
+  { k: '3y', l: '3Y', long: '3 years' }, { k: '5y', l: '5Y', long: '5 years' }, { k: '10y', l: '10Y', long: '10 years' },
+  { k: '15y', l: '15Y', long: '15 years' }, { k: 'custom', l: 'Custom', long: 'your dates' },
 ];
-/** the heat caps are keyed by these; a custom window picks the nearest by length (years) */
 const CAP_SPANS: [IRange, number][] = [['1m', 0.085], ['3m', 0.25], ['ytd', 0.6], ['1y', 1], ['3y', 3], ['5y', 5], ['10y', 10], ['15y', 15]];
 const IST = 'Asia/Kolkata';
 const STORE = 'dv_admin_today';
 const MAX_LINES = 8;
-/** one fixed style per entity — a line keeps its colour however many are drawn. The eight hues
- *  are the validated light categorical palette; entities that share a hue differ by dash. */
+/** one fixed style per entity — a line keeps its colour however many are drawn */
 const STYLE: Record<string, { c: string; dash?: string; w?: number }> = {
-  // the villas are the "you" lines: the accent blue, 2.4 px, told apart by dash
-  'villa:balanced': { c: '#387ed1', w: 2.4 }, 'villa:conservative': { c: '#387ed1', dash: '9 5', w: 2.4 }, 'villa:aggressive': { c: '#387ed1', dash: '2 4', w: 2.4 },
-  // Nifty 50 is the benchmark line (grey, dashed); the rest keep one fixed hue each
+  'villa:balanced': { c: '#387ed1', w: 2.6 }, 'villa:conservative': { c: '#387ed1', dash: '9 5', w: 2.6 }, 'villa:aggressive': { c: '#387ed1', dash: '2 4', w: 2.6 },
   nifty50: { c: '#98a0b8', dash: '4 3', w: 1.8 }, n100: { c: '#5a5f78', w: 1.8 }, mid: { c: '#eb6834', w: 1.8 }, small: { c: '#1baf7a', w: 1.8 }, n500: { c: '#6250d6', w: 1.8 },
-  gold: { c: '#eda100', w: 1.8 }, arbitrage: { c: '#e87ba4', dash: '2 4', w: 1.8 }, usdinr: { c: '#6250d6', dash: '7 5', w: 1.8 }, sp500: { c: '#e34948', w: 1.8 },
+  gold: { c: '#eda100', w: 1.8 }, arbitrage: { c: '#e87ba4', dash: '2 4', w: 1.8 }, rupee: { c: '#6250d6', dash: '7 5', w: 1.8 }, sp500: { c: '#e34948', w: 1.8 },
 };
-/** the weights strip inside a villa card — each part in its line's colour */
 const PART_COLOUR: Record<string, string> = { arbitrage: '#98a0b8', gold: '#eda100', large: '#387ed1', mid: '#eb6834', small: '#1baf7a' };
 const PART_NAME: Record<string, string> = { arbitrage: 'Arbitrage', gold: 'Gold', large: 'Nifty 50', mid: 'Mid cap', small: 'Small cap' };
 const PARTS = ['arbitrage', 'gold', 'large', 'mid', 'small'];
+const GROWTH = ['gold', 'large', 'mid', 'small'];
+/** villa part → the item whose series moves it */
+const PART_OF: Record<string, string> = { arbitrage: 'arbitrage', gold: 'gold', large: 'nifty50', mid: 'mid', small: 'small' };
 /** a heat colour reaches full strength at this move (%, or bp for the yield) — per kind, per range */
 const CAPS: Record<string, Partial<Record<IRange, number>>> = {
-  index: { '1d': 2, '1w': 4, '1m': 7, '3m': 10, 'ytd': 20, '1y': 25, '3y': 60, '5y': 100, '10y': 250, '15y': 500 },
+  index: { '1d': 1.5, '1w': 3.5, '1m': 6, '3m': 10, 'ytd': 20, '1y': 25, '3y': 60, '5y': 100, '10y': 250, '15y': 500 },
   arbitrage: { '1d': 0.1, '1w': 0.3, '1m': 0.8, '3m': 2, 'ytd': 6, '1y': 8, '3y': 22, '5y': 40, '10y': 90, '15y': 150 },
-  fx: { '1d': 0.6, '1w': 1.2, '1m': 2.5, '3m': 4, 'ytd': 8, '1y': 10, '3y': 20, '5y': 30, '10y': 60, '15y': 90 },
-  yield: { '1d': 10, '1w': 20, '1m': 35, '3m': 60, 'ytd': 100, '1y': 120, '3y': 250, '5y': 350, '10y': 400, '15y': 450 },
-  villa: { '1d': 1.2, '1w': 2.5, '1m': 5, '3m': 8, 'ytd': 15, '1y': 20, '3y': 50, '5y': 90, '10y': 220, '15y': 450 },
+  fx: { '1d': 0.5, '1w': 1, '1m': 2, '3m': 4, 'ytd': 8, '1y': 10, '3y': 20, '5y': 30, '10y': 60, '15y': 90 },
+  yield: { '1d': 8, '1w': 18, '1m': 35, '3m': 60, 'ytd': 100, '1y': 120, '3y': 250, '5y': 350, '10y': 400, '15y': 450 },
+  villa: { '1d': 1, '1w': 2.5, '1m': 5, '3m': 8, 'ytd': 15, '1y': 20, '3y': 50, '5y': 90, '10y': 220, '15y': 450 },
 };
 const DAY = 86400;
 const addYears = (iso: string, n: number) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCFullYear(d.getUTCFullYear() + n); return d.toISOString().slice(0, 10); };
-const PAD = { l: 46, r: 92, t: 12, b: 28 };
-const DEFAULT_LINES = ['nifty50', 'mid', 'small', 'gold', 'villa:balanced'];
+const PAD = { l: 44, t: 14, b: 26 };
+const DEFAULT_LINES = ['villa:balanced', 'nifty50', 'gold'];
+
+/** The villa over the window: ₹1 split by the weights at the start, each part moving with its %
+ *  series (carried between its points), the growth engine reset to its split at every year end
+ *  inside the window — as the villas do. Pre-tax. Within a day it is the weighted sum of the parts. */
+function replay(weights: Weights, parts: Record<string, IItem | undefined>): IBasket {
+  const used = PARTS.filter((p) => (weights[p] ?? 0) > 0);
+  if (used.some((p) => !parts[p]?.ok || !parts[p]!.t.length)) return { ok: false, pct: null, day_pct: null, t: [], v: [] };
+  const ts = [...new Set(used.flatMap((p) => parts[p]!.t))].sort((a, b) => a - b);
+  const growth = used.filter((p) => p !== 'arbitrage');
+  const gw = growth.reduce((a, p) => a + weights[p], 0) || 1;
+  const idx: Record<string, number> = {}, lvl: Record<string, number> = {}, units: Record<string, number> = {};
+  for (const p of used) { idx[p] = 0; lvl[p] = 1; units[p] = weights[p]; }
+  const out: number[] = [];
+  let resets = 0;
+  const ym = (t: number) => { const d = new Date(t * 1000); return [d.getUTCFullYear(), d.getUTCMonth()]; };
+  for (let k = 0; k < ts.length; k++) {
+    const t = ts[k];
+    for (const p of used) { const it = parts[p]!; while (idx[p] < it.t.length && it.t[idx[p]] <= t) { lvl[p] = 1 + it.v[idx[p]] / 100; idx[p]++; } }
+    out.push(+((used.reduce((a, p) => a + units[p] * lvl[p], 0) - 1) * 100).toFixed(4));
+    if (k > 0 && k + 1 < ts.length && growth.length) {
+      const [y, m] = ym(t), [ny] = ym(ts[k + 1]);
+      if (m === 11 && ny > y) { const gv = growth.reduce((a, p) => a + units[p] * lvl[p], 0); for (const p of growth) units[p] = gv * (weights[p] / gw) / lvl[p]; resets++; }
+    }
+  }
+  return { ok: true, pct: out[out.length - 1], resets, day_pct: used.reduce((a, p) => a + weights[p] * (parts[p]!.day_pct ?? 0), 0), t: ts, v: out };
+}
+
+/** a smooth monotone path through the points (no overshoot), or straight segments for long series */
+function pathOf(xs: number[], ys: number[]): string {
+  const n = xs.length; if (!n) return '';
+  if (n > 400 || n < 3) { let p = ''; for (let i = 0; i < n; i++) p += (i ? 'L' : 'M') + xs[i].toFixed(1) + ' ' + ys[i].toFixed(1); return p; }
+  const d: number[] = [], m: number[] = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) { const dx = xs[i + 1] - xs[i] || 1e-6; d.push((ys[i + 1] - ys[i]) / dx); }
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) { if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; } const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b; if (s > 9) { const tt = 3 / Math.sqrt(s); m[i] = tt * a * d[i]; m[i + 1] = tt * b * d[i]; } }
+  let p = 'M' + xs[0].toFixed(1) + ' ' + ys[0].toFixed(1);
+  for (let i = 0; i < n - 1; i++) {
+    const dx = (xs[i + 1] - xs[i]) / 3;
+    p += `C${(xs[i] + dx).toFixed(1)} ${(ys[i] + m[i] * dx).toFixed(1)} ${(xs[i + 1] - dx).toFixed(1)} ${(ys[i + 1] - m[i + 1] * dx).toFixed(1)} ${xs[i + 1].toFixed(1)} ${ys[i + 1].toFixed(1)}`;
+  }
+  return p;
+}
 
 @Component({
   selector: 'app-global-markets',
@@ -61,7 +101,7 @@ const DEFAULT_LINES = ['nifty50', 'mid', 'small', 'gold', 'villa:balanced'];
 export class GlobalMarketsComponent implements OnInit, OnDestroy {
   private api = inject(AdminService);
   readonly RANGES = RANGES;
-  readonly PARTS = PARTS;
+  readonly GROWTH = GROWTH;
   readonly PART_COLOUR = PART_COLOUR;
   readonly PART_NAME = PART_NAME;
 
@@ -71,13 +111,15 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   readonly lines$ = signal<string[]>(DEFAULT_LINES);
   readonly customFrom = signal<string>('');
   readonly customTo = signal<string>('');
-  private customT?: ReturnType<typeof setTimeout>;
+  /** the admin's own mixes, by villa key — absent = the configured villa */
+  readonly mixes = signal<Record<string, Weights>>({});
+  readonly editing = signal<string | null>(null);
   readonly busy = signal(false);
   readonly error = signal('');
   readonly now = signal(Date.now());
   readonly hover = signal<number | null>(null);
   readonly note = signal('');
-  readonly methodOpen = signal(false);
+  readonly infoOpen = signal(false);
   readonly box = signal({ w: 720, h: 360 });
 
   @ViewChild('plot') set plotEl(el: ElementRef<HTMLElement> | undefined) {
@@ -95,6 +137,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private clock?: ReturnType<typeof setInterval>;
   private noteT?: ReturnType<typeof setTimeout>;
+  private customT?: ReturnType<typeof setTimeout>;
   private seq = 0;
 
   ngOnInit(): void {
@@ -105,6 +148,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       if (Array.isArray(s.lines) && s.lines.length) this.lines$.set(s.lines.filter((k: unknown) => typeof k === 'string' && k in STYLE));
       if (typeof s.from === 'string') this.customFrom.set(s.from);
       if (typeof s.to === 'string') this.customTo.set(s.to);
+      if (s.mixes && typeof s.mixes === 'object') this.mixes.set(s.mixes);
     } catch { /* first visit */ }
     this.load();
     this.timer = setInterval(() => this.load(true), 60_000);
@@ -114,37 +158,36 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   @HostListener('document:visibilitychange')
   onVis(): void { if (document.visibilityState === 'visible') this.load(true); }
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.hover.set(null); this.methodOpen.set(false); }
+  onEsc(): void { this.hover.set(null); this.infoOpen.set(false); this.editing.set(null); }
   @HostListener('document:pointerdown', ['$event'])
   onDoc(e: PointerEvent): void {
     const t = e.target as HTMLElement;
-    if (this.methodOpen() && !t?.closest?.('.td-method')) this.methodOpen.set(false);
+    if (this.infoOpen() && !t?.closest?.('.pf-info')) this.infoOpen.set(false);
+    if (this.editing() && !t?.closest?.('.mix-pop, .pc-edit')) this.editing.set(null);
   }
 
   private remember(): void {
-    try { localStorage.setItem(STORE, JSON.stringify({ range: this.range(), gold: this.gold(), lines: this.lines$(), from: this.customFrom(), to: this.customTo() })); } catch { /* private mode */ }
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ range: this.range(), gold: this.gold(), lines: this.lines$(), from: this.customFrom(), to: this.customTo(), mixes: this.mixes() }));
+    } catch { /* private mode */ }
   }
   load(quiet = false): void {
     const rng = this.range(), id = ++this.seq;
     if (!quiet) this.busy.set(true);
     this.api.indiaBoard(rng, this.customFrom() || undefined, this.customTo() || undefined).subscribe({
-      next: (b) => {
-        if (id !== this.seq) return;                          // an older request answering late
-        this.board.set(b); this.busy.set(false); this.error.set(''); this.now.set(Date.now());
-      },
+      next: (b) => { if (id !== this.seq) return; this.board.set(b); this.busy.set(false); this.error.set(''); this.now.set(Date.now()); },
       error: () => { if (id !== this.seq) return; this.busy.set(false); if (!this.board()) this.error.set('Could not reach the markets feed.'); },
     });
   }
   setRange(k: IRange): void {
     if (k === this.range()) return;
     this.range.set(k); this.hover.set(null);
-    if (k === 'custom' && !this.customFrom()) {                 // first time: the last three years
+    if (k === 'custom' && !this.customFrom()) {
       const end = this.board()?.session || new Date().toISOString().slice(0, 10);
       this.customTo.set(end); this.customFrom.set(addYears(end, -3));
     }
     this.remember(); this.load();
   }
-  /** the custom window's date limits: fifteen years back, up to the latest session */
   readonly maxDay = computed(() => this.board()?.session || new Date().toISOString().slice(0, 10));
   readonly minDay = computed(() => addYears(this.maxDay(), -(this.board()?.max_years ?? 15)));
   setCustom(which: 'from' | 'to', value: string): void {
@@ -157,8 +200,8 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   setGold(g: Gold): void { this.gold.set(g); this.remember(); }
   toggle(key: string): void {
     const cur = this.lines$();
-    if (cur.includes(key)) { this.lines$.set(cur.filter((k) => k !== key)); }
-    else if (cur.length >= MAX_LINES) { this.say(`Up to ${MAX_LINES} lines at once — take one off first`); return; }
+    if (cur.includes(key)) this.lines$.set(cur.filter((k) => k !== key));
+    else if (cur.length >= MAX_LINES) { this.say(`Up to ${MAX_LINES} lines — take one off first`); return; }
     else this.lines$.set([...cur, key]);
     this.remember();
   }
@@ -167,14 +210,12 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
 
   // ── what the page shows ────────────────────────────────────────────────────
   readonly rangeMeta = computed(() => RANGES.find((r) => r.k === this.range()) ?? RANGES[0]);
-  /** "today" · "over a year" · for a custom window, its dates */
   readonly rangeLong = computed(() => {
     const w = this.board()?.window;
     if (this.range() !== 'custom' || !w) return this.rangeMeta().long;
-    const f = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    const f = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' });
     return `${f(w.start)} – ${f(w.end)}`;
   });
-  /** which heat cap applies — a custom window takes the nearest span */
   private capKey = computed<IRange>(() => {
     const r = this.range(); if (r !== 'custom') return r;
     const w = this.board()?.window; if (!w) return '1y';
@@ -183,10 +224,6 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     for (const [k, y] of CAP_SPANS) { const g = Math.abs(Math.log(yrs / y)); if (g < gap) { gap = g; best = k; } }
     return best;
   });
-  readonly sourceNote = computed(() => {
-    const src = this.board()?.sources; if (!src) return '';
-    return this.range() === '1d' || this.range() === '1w' ? src.intraday : src.daily;
-  });
   readonly isIntraday = computed(() => this.range() === '1d');
   readonly items = computed(() => new Map((this.board()?.items ?? []).map((i) => [i.key, i])));
   readonly villas = computed(() => this.board()?.villas ?? []);
@@ -194,95 +231,110 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const s = this.board()?.session; if (!s) return '';
     return new Date(s + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   });
+  readonly nseOpen = computed(() => !!this.board()?.nse?.open);
   readonly nseState = computed(() => {
     const n = this.board()?.nse; if (!n) return '';
-    if (n.open) return `NSE open · ${n.time ?? ''}`.trim();
-    return n.day && this.board()?.session && n.day === this.board()!.session ? 'NSE closed' : (n.status ? `NSE ${n.status.toLowerCase()}` : '');
+    return n.open ? `Live · ${n.time ?? ''}`.trim() : 'Closed';
   });
   readonly ago = computed(() => {
     const t = this.board()?.as_of; if (!t) return '';
     const s = Math.max(0, Math.round(this.now() / 1000 - t));
     return s < 45 ? 'just now' : s < 90 ? '1 min ago' : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`;
   });
-  basket(v: IVilla): IBasket { return this.gold() === 'with' ? v.with_gold : v.no_gold; }
-  other(v: IVilla): IBasket { return this.gold() === 'with' ? v.no_gold : v.with_gold; }
-  weights(v: IVilla): { p: string; w: number; c: string; name: string }[] {
-    const w = this.gold() === 'with' ? v.weights : v.weights_no_gold;
-    return PARTS.filter((p) => (w[p] ?? 0) > 0.0001).map((p) => ({ p, w: w[p], c: PART_COLOUR[p], name: PART_NAME[p] }));
-  }
-  /** the KPI bar: the headline numbers, in this order */
-  readonly kpis = computed(() => ['nifty50', 'n500', 'gold', 'arbitrage', 'usdinr', 'us10y', 'sp500']
+  readonly kpis = computed(() => ['nifty50', 'n500', 'gold', 'arbitrage', 'rupee', 'us10y', 'sp500']
     .map((k) => this.items().get(k)).filter((i): i is IItem => !!i && i.ok));
-  /** the tip bar under the chart: the hovered moment, or the latest values */
-  readonly bar = computed(() => {
-    const t = this.tip(); if (t) return { when: t.when, rows: t.rows };
-    const ls = this.lines(); if (!ls.length) return null;
-    const rows = ls.map((l) => ({ key: l.key, name: l.short, colour: l.colour, value: l.v[l.v.length - 1], villa: l.villa })).sort((a, b) => b.value - a.value);
-    const t1 = Math.max(...ls.map((l) => l.t[l.t.length - 1]));
-    const d = new Date(t1 * 1000);
-    const when = this.range() === '1d' || this.range() === '1w'
-      ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IST }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: IST }) + ' IST'
-      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' });
-    return { when, rows };
+  readonly infoText = computed(() => {
+    const b = this.board(); if (!b?.sources) return '';
+    return this.range() === '1d' || this.range() === '1w' ? b.sources.intraday : b.sources.daily;
   });
   arrow(v: number | null): string { return v === null ? '' : v > 0.0005 ? '▲' : v < -0.0005 ? '▼' : '•'; }
 
-  /** the heat tiles, in three groups */
-  readonly groups = computed(() => {
-    const b = this.board(); if (!b) return [];
-    const tile = (i: IItem): Tile => ({
-      key: i.key, name: i.name, short: i.short, about: i.about, kind: i.kind, pct: i.pct, day_pct: i.day_pct, last: i.last, prev: i.prev,
-      high: i.high, low: i.low, source: i.source, chartable: i.kind !== 'yield' && i.ok, item: i,
-    });
-    const by = (keys: string[]) => keys.map((k) => b.items.find((i) => i.key === k)).filter((i): i is IItem => !!i).map(tile);
-    return [
-      { name: 'Indian equity', tiles: by(['nifty50', 'n100', 'mid', 'small', 'n500']) },
-      { name: 'Gold & arbitrage', tiles: by(['gold', 'arbitrage']) },
-      { name: 'Rupee & the US', tiles: by(['usdinr', 'us10y', 'sp500']) },
-    ];
+  // ── villas: mix, gold, replay ─────────────────────────────────────────────
+  mixOf(v: IVilla): Weights { return this.mixes()[v.key] ?? v.weights; }
+  isCustom(v: IVilla): boolean { return !!this.mixes()[v.key]; }
+  private withGold(w: Weights, gold: boolean): Weights {
+    if (gold) return w;
+    const g = w['gold'] ?? 0;
+    return { ...w, gold: 0, large: (w['large'] ?? 0) + g / 3, mid: (w['mid'] ?? 0) + g / 3, small: (w['small'] ?? 0) + g / 3 };
+  }
+  /** every villa replayed from the parts, both ways, for the current mix */
+  private villaSeries = computed(() => {
+    const items = this.items();
+    const parts: Record<string, IItem | undefined> = {};
+    for (const p of PARTS) parts[p] = items.get(PART_OF[p]);
+    const out: Record<string, { with: IBasket; without: IBasket }> = {};
+    for (const v of this.villas()) {
+      const w = this.mixOf(v);
+      out[v.key] = { with: replay(this.withGold(w, true), parts), without: replay(this.withGold(w, false), parts) };
+    }
+    return out;
   });
+  basket(v: IVilla): IBasket { const s = this.villaSeries()[v.key]; return (this.gold() === 'with' ? s?.with : s?.without) ?? v.with_gold; }
+  other(v: IVilla): IBasket { const s = this.villaSeries()[v.key]; return (this.gold() === 'with' ? s?.without : s?.with) ?? v.no_gold; }
+  weights(v: IVilla): { p: string; w: number; c: string; name: string }[] {
+    const w = this.withGold(this.mixOf(v), this.gold() === 'with');
+    return PARTS.filter((p) => (w[p] ?? 0) > 0.0001).map((p) => ({ p, w: w[p], c: PART_COLOUR[p], name: PART_NAME[p] }));
+  }
+  /** the editor: growth parts on sliders, arbitrage is what is left */
+  openEdit(v: IVilla, ev: Event): void { ev.stopPropagation(); this.editing.set(this.editing() === v.key ? null : v.key); }
+  partPct(v: IVilla, p: string): number { return Math.round((this.mixOf(v)[p] ?? 0) * 1000) / 10; }
+  setPart(v: IVilla, p: string, raw: string | number): void {
+    const cur = { ...this.mixOf(v) };
+    let val = Math.max(0, Math.min(100, Number(raw) || 0)) / 100;
+    const others = GROWTH.filter((q) => q !== p).reduce((a, q) => a + (cur[q] ?? 0), 0);
+    if (others + val > 1) val = 1 - others;                 // the growth engine can't exceed the whole
+    cur[p] = Math.round(val * 1000) / 1000;
+    cur['arbitrage'] = Math.round((1 - GROWTH.reduce((a, q) => a + (cur[q] ?? 0), 0)) * 1000) / 1000;
+    this.mixes.set({ ...this.mixes(), [v.key]: cur });
+    this.remember();
+  }
+  resetMix(v: IVilla, ev: Event): void { ev.stopPropagation(); const m = { ...this.mixes() }; delete m[v.key]; this.mixes.set(m); this.remember(); }
+  closeEdit(ev: Event): void { ev.stopPropagation(); this.editing.set(null); }
 
   // ── heat ──────────────────────────────────────────────────────────────────
+  readonly groups = computed(() => {
+    const b = this.board(); if (!b) return [];
+    const tile = (i: IItem): Tile => ({ key: i.key, name: i.name, short: i.short, about: i.about, kind: i.kind, pct: i.pct, last: i.last, chartable: i.kind !== 'yield' && i.ok });
+    const by = (keys: string[]) => keys.map((k) => b.items.find((i) => i.key === k)).filter((i): i is IItem => !!i).map(tile);
+    return [
+      { name: 'India', tiles: by(['nifty50', 'n100', 'mid', 'small', 'n500']) },
+      { name: 'Gold · arbitrage', tiles: by(['gold', 'arbitrage']) },
+      { name: 'World', tiles: by(['rupee', 'us10y', 'sp500']) },
+    ];
+  });
   private cap(kind: string): number { return (CAPS[kind] ?? CAPS['index'])[this.capKey()] ?? 25; }
-  heat(v: number | null, kind: string): string | null {
-    if (v === null || !isFinite(v)) return null;
+  private strength(v: number | null, kind: string): number {
+    if (v === null || !isFinite(v)) return 0;
     const x = kind === 'yield' ? v * 100 : v;
-    const f = Math.min(1, Math.abs(x) / this.cap(kind));
-    if (f < 0.04) return 'var(--nw-card2)';
-    const pct = Math.round(7 + f * 29);                      // 7 % → 36 % of the move colour over the inset surface
-    return `color-mix(in srgb, var(${x > 0 ? '--nw-pos' : '--nw-neg'}) ${pct}%, #ffffff)`;
+    return Math.min(1, Math.abs(x) / this.cap(kind));
   }
+  heat(v: number | null, kind: string): string {
+    const f = this.strength(v, kind);
+    if (f < 0.03) return 'var(--nw-card2)';
+    return `color-mix(in srgb, var(${v! > 0 ? '--nw-pos' : '--nw-neg'}) ${Math.round(10 + f * 82)}%, #fff)`;
+  }
+  /** white text once the tile is deep enough */
+  deep(v: number | null, kind: string): boolean { return this.strength(v, kind) > 0.48; }
   tone(v: number | null): 'up' | 'down' | 'flat' { return v === null ? 'flat' : v > 0.0005 ? 'up' : v < -0.0005 ? 'down' : 'flat'; }
 
   // ── formatting ────────────────────────────────────────────────────────────
   pct(v: number | null, kind: IKind | 'villa' = 'index', digits?: number): string {
     if (v === null || !isFinite(v)) return '—';
     if (kind === 'yield') { const bp = v * 100; return (bp > 0 ? '+' : bp < 0 ? '−' : '') + Math.abs(bp).toFixed(Math.abs(bp) < 10 ? 1 : 0) + ' bp'; }
-    const d = digits ?? (Math.abs(v) >= 100 ? 0 : this.range() === '1d' || this.range() === '1w' || (kind === 'arbitrage' && this.range() !== 'custom' && !['3y', '5y', '10y', '15y'].includes(this.range())) ? 2 : 1);
+    const short = this.range() === '1d' || this.range() === '1w';
+    const d = digits ?? (Math.abs(v) >= 100 ? 0 : short ? 2 : 1);
     return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
   }
   level(t: Tile | IItem): string {
     const v = t.last; if (v === null || v === undefined) return '—';
     switch (t.kind) {
-      case 'gold': return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      case 'fx': return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case 'gold': case 'fx': return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       case 'yield': return v.toFixed(2) + '%';
       case 'arbitrage': return v.toLocaleString('en-IN', { maximumFractionDigits: 1 });
       default: return v.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     }
   }
-  /** the "vs" line under a tile: for 1D the previous close, otherwise today's move */
-  sub(t: Tile): string {
-    if (this.range() === '1d') {
-      if (t.source === 'close') return `close of ${this.day(t.item.session)}`;
-      return t.kind === 'index' || t.kind === 'us' ? `prev ${t.prev?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}` : `prev ${t.prev === null ? '—' : t.kind === 'yield' ? t.prev.toFixed(2) + '%' : '₹' + t.prev.toFixed(2)}`;
-    }
-    return `today ${this.pct(t.day_pct, t.kind)}`;
-  }
-  day(s: string | null | undefined): string {
-    return s ? new Date(s + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '—';
-  }
-  styleOf(key: string) { return STYLE[key] ?? { c: 'var(--muted)' }; }
+  styleOf(key: string) { return STYLE[key] ?? { c: 'var(--nw-muted)' }; }
 
   // ── the chart ─────────────────────────────────────────────────────────────
   readonly lines = computed<Line[]>(() => {
@@ -301,9 +353,8 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     }
     return out;
   });
-  /** names next to the end values only when the plot is wide enough for them */
-  readonly endNames = computed(() => this.box().w >= 680);
-  readonly padR = computed(() => this.endNames() ? 132 : 70);
+  readonly endNames = computed(() => this.box().w >= 720);
+  readonly padR = computed(() => this.endNames() ? 160 : 78);
   readonly cw = computed(() => Math.max(120, this.box().w - PAD.l - this.padR()));
   readonly ch = computed(() => Math.max(80, this.box().h - PAD.t - PAD.b));
   readonly padL = PAD.l; readonly padT = PAD.t;
@@ -312,7 +363,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const t0 = Math.min(...ls.map((l) => l.t[0])), t1 = Math.max(...ls.map((l) => l.t[l.t.length - 1]));
     let lo = 0, hi = 0;
     for (const l of ls) for (const v of l.v) { if (v < lo) lo = v; if (v > hi) hi = v; }
-    const pad = (hi - lo) * 0.08 || 0.1;
+    const pad = (hi - lo) * 0.1 || 0.1;
     return { t0, t1: t1 > t0 ? t1 : t0 + 60, lo: lo - pad, hi: hi + pad };
   });
   x(t: number): number { const s = this.span()!; return ((t - s.t0) / (s.t1 - s.t0)) * this.cw(); }
@@ -322,16 +373,16 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const w = this.cw();
     return this.lines().map((l) => {
       const step = Math.max(1, Math.floor(l.t.length / (w * 1.5)));
-      let p = '';
-      for (let i = 0; i < l.t.length; i += step) p += (p ? 'L' : 'M') + this.x(l.t[i]).toFixed(1) + ' ' + this.y(l.v[i]).toFixed(1);
+      const xs: number[] = [], ys: number[] = [];
+      for (let i = 0; i < l.t.length; i += step) { xs.push(this.x(l.t[i])); ys.push(this.y(l.v[i])); }
       const n = l.t.length - 1;
-      if (n % step) p += 'L' + this.x(l.t[n]).toFixed(1) + ' ' + this.y(l.v[n]).toFixed(1);
-      return { key: l.key, colour: l.colour, dash: l.dash, width: l.width, d: p, villa: l.villa };
+      if (n % step) { xs.push(this.x(l.t[n])); ys.push(this.y(l.v[n])); }
+      return { key: l.key, colour: l.colour, dash: l.dash, width: l.width, d: pathOf(xs, ys), villa: l.villa };
     });
   });
   readonly yTicks = computed(() => {
     const s = this.span(); if (!s) return [];
-    const n = Math.max(3, Math.floor(this.ch() / 44));
+    const n = Math.max(3, Math.floor(this.ch() / 70));
     const raw = (s.hi - s.lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
     const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((t) => (s.hi - s.lo) / t <= n + 1) ?? 10 * mag;
     const out: { y: number; label: string; zero: boolean }[] = [];
@@ -345,19 +396,18 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   readonly xTicks = computed(() => {
     const s = this.span(); if (!s) return [];
     const out: { x: number; label: string }[] = [];
-    const maxN = Math.max(3, Math.floor(this.cw() / (this.cw() < 420 ? 62 : 84)));
+    const maxN = Math.max(3, Math.floor(this.cw() / (this.cw() < 420 ? 70 : 96)));
     const spanS = s.t1 - s.t0;
     if (this.range() === '1d' || this.range() === '1w') {
       const hours = spanS / 3600;
       const stepH = this.range() === '1d' ? ([1, 2, 3, 4, 6].find((h) => hours / h <= maxN) ?? 6) : ([6, 12, 24].find((h) => hours / h <= maxN) ?? 24);
-      // ticks on IST whole hours
       const off = 5.5 * 3600;
       let t = Math.ceil((s.t0 + off) / (stepH * 3600)) * stepH * 3600 - off;
       for (; t <= s.t1; t += stepH * 3600) {
         const d = new Date(t * 1000);
         const hm = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: IST });
-        const label = this.range() === '1w' ? (hm === '00:00' || stepH >= 24 ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: IST }) : hm) : hm;
         if (this.range() === '1w' && stepH >= 24 && hm !== '00:00') continue;
+        const label = this.range() === '1w' && (hm === '00:00' || stepH >= 24) ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: IST }) : hm;
         out.push({ x: this.x(t), label });
       }
       return out;
@@ -368,10 +418,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     if (stepD >= 365) {
       const stepY = Math.round(stepD / 365);
       const d = new Date(Date.UTC(d0.getUTCFullYear() + 1, 0, 1, 12));
-      while (d.getTime() / 1000 <= s.t1) {
-        if (d.getUTCFullYear() % stepY === 0) out.push({ x: this.x(d.getTime() / 1000), label: String(d.getUTCFullYear()) });
-        d.setUTCFullYear(d.getUTCFullYear() + 1);
-      }
+      while (d.getTime() / 1000 <= s.t1) { if (d.getUTCFullYear() % stepY === 0) out.push({ x: this.x(d.getTime() / 1000), label: String(d.getUTCFullYear()) }); d.setUTCFullYear(d.getUTCFullYear() + 1); }
       return out;
     }
     if (stepD >= 30) {
@@ -385,21 +432,18 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     }
     const d = new Date(d0); d.setUTCDate(d.getUTCDate() + 1);
     let k = 0;
-    while (d.getTime() / 1000 <= s.t1) {
-      if (k % stepD === 0) out.push({ x: this.x(d.getTime() / 1000), label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) });
-      d.setUTCDate(d.getUTCDate() + 1); k++;
-    }
+    while (d.getTime() / 1000 <= s.t1) { if (k % stepD === 0) out.push({ x: this.x(d.getTime() / 1000), label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) }); d.setUTCDate(d.getUTCDate() + 1); k++; }
     return out;
   });
-  /** end-of-line labels, nudged apart */
+  /** value pills at the line ends, nudged apart */
   readonly ends = computed(() => {
     if (!this.span()) return [];
     const H = this.ch();
     const ls = this.lines().map((l) => {
-      const v = l.v[l.v.length - 1];
-      return { key: l.key, colour: l.colour, name: l.short, value: v, y0: this.y(v), y: this.y(v), x: this.x(l.t[l.t.length - 1]), villa: l.villa };
+      const v = l.v[l.v.length - 1], label = this.pct(v, l.villa ? 'villa' : 'index');
+      return { key: l.key, colour: l.colour, name: l.short, label, value: v, y0: this.y(v), y: this.y(v), x: this.x(l.t[l.t.length - 1]), villa: l.villa, w: label.length * 7.2 + 14 };
     }).sort((a, b) => a.y - b.y);
-    const gap = Math.min(30, H / Math.max(1, ls.length));
+    const gap = Math.min(26, H / Math.max(1, ls.length));
     for (let i = 1; i < ls.length; i++) if (ls[i].y - ls[i - 1].y < gap) ls[i].y = ls[i - 1].y + gap;
     const over = ls.length ? ls[ls.length - 1].y - H : 0;
     if (over > 0) for (const l of ls) l.y -= over;
@@ -417,30 +461,27 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const t = this.hover(); if (t === null || !this.span()) return null;
     const rows = this.lines().map((l) => {
       let i = -1; for (let k = 0; k < l.t.length && l.t[k] <= t; k++) i = k;
-      return i < 0 ? null : { key: l.key, name: l.short, colour: l.colour, value: l.v[i], y: this.y(l.v[i]), villa: l.villa };
-    }).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => b.value - a.value);
+      return i < 0 ? null : { key: l.key, value: l.v[i], y: this.y(l.v[i]), colour: l.colour };
+    }).filter((r): r is NonNullable<typeof r> => !!r);
+    return { x: this.x(t), when: this.whenLabel(t), rows };
+  });
+  private whenLabel(t: number): string {
     const d = new Date(t * 1000);
-    const when = this.range() === '1d' || this.range() === '1w'
-      ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IST }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: IST }) + ' IST'
-      : d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-    const x = this.x(t);
-    return { x, flip: x > this.cw() * 0.58, when, rows };
-  });
-  readonly spanLabel = computed(() => {
-    const s = this.span(); if (!s) return '';
-    const f = (t: number, o: Intl.DateTimeFormatOptions) => new Date(t * 1000).toLocaleString('en-GB', o);
-    if (this.range() === '1d') return `${f(s.t0, { hour: '2-digit', minute: '2-digit', timeZone: IST })} – ${f(s.t1, { hour: '2-digit', minute: '2-digit', timeZone: IST })} IST`;
-    const o: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', timeZone: this.range() === '1w' ? IST : 'UTC', ...(this.range() === '1w' || this.range() === '1m' ? {} : { year: 'numeric' }) };
-    return `${f(s.t0, o)} – ${f(s.t1, o)}`;
-  });
-  readonly chipRet = computed(() => {
+    return this.range() === '1d' || this.range() === '1w'
+      ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IST }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: IST })
+      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+  /** the chips: the hovered moment's values, else the latest */
+  readonly chipVals = computed(() => {
     const m: Record<string, number> = {};
-    for (const l of this.lines()) m[l.key] = l.v[l.v.length - 1];
+    const t = this.tip();
+    if (t) for (const r of t.rows) m[r.key] = r.value;
+    else for (const l of this.lines()) m[l.key] = l.v[l.v.length - 1];
     return m;
   });
-  readonly arbNote = computed(() => {
-    const a = this.items().get('arbitrage');
-    return a?.ok ? `Arbitrage index: close of ${this.day(a.session)} (it is not quoted live)` : '';
+  readonly whenShown = computed(() => {
+    const t = this.tip(); if (t) return t.when;
+    const ls = this.lines(); if (!ls.length) return '';
+    return this.whenLabel(Math.max(...ls.map((l) => l.t[l.t.length - 1])));
   });
-  trackKey = (_: number, x: { key: string }) => x.key;
 }

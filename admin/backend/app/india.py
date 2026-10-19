@@ -46,8 +46,8 @@ ITEMS = [
      "about": "Nippon India ETF Gold BeES, ₹ per unit — the villas' gold part"},
     {"key": "arbitrage", "symbol": None, "name": "Nifty 50 Arbitrage", "short": "Arbitrage", "group": "Villa parts", "kind": "arbitrage",
      "about": "The arbitrage index — the villas' income part. Not quoted live: last close from the index file"},
-    {"key": "usdinr", "symbol": "INR=X", "name": "US$ in rupees", "short": "US$ / ₹", "group": "World", "kind": "fx",
-     "about": "Rupees per US dollar — up = the rupee weakened"},
+    {"key": "rupee", "symbol": "INR=X", "name": "Rupee vs US$", "short": "Rupee", "group": "World", "kind": "fx",
+     "about": "The rupee against the US dollar — up = the rupee strengthened (level = ₹ per US$)"},
     {"key": "us10y", "symbol": "^TNX", "name": "US 10-year yield", "short": "US 10-yr", "group": "World", "kind": "yield",
      "about": "US Treasury 10-year yield, % a year"},
     {"key": "sp500", "symbol": "^GSPC", "name": "S&P 500", "short": "S&P 500", "group": "World", "kind": "us",
@@ -411,6 +411,11 @@ def board(rng: str = "1d", start: Optional[str] = None, end: Optional[str] = Non
                         it["pct"] = (q["last"] / it["base"] - 1) * 100
                         if it["v"]:
                             it["v"][-1] = round(it["pct"], 4)
+        rp = items.get("rupee")
+        if rp and rp.get("ok"):
+            inv = lambda x: None if x is None else (1 / (1 + x / 100) - 1) * 100
+            rp["pct"], rp["day_pct"] = inv(rp["pct"]), inv(rp["day_pct"])
+            rp["v"] = [round(inv(x), 4) for x in rp["v"]]
         n50 = items.get("nifty50") or {}
         span = (min((it["t"][0] for it in items.values() if it.get("t")), default=int(time.time()) - 21600),
                 max((it["t"][-1] for it in items.values() if it.get("t")), default=int(time.time())))
@@ -432,9 +437,8 @@ def board(rng: str = "1d", start: Optional[str] = None, end: Optional[str] = Non
             "as_of": int(time.time()), "range": rng, "ranges": RANGES,
             "nse": {"open": bool(live.get("open")), "status": live.get("status") or "", "day": live.get("day"), "time": live.get("time")},
             "session": n50.get("session"), "window": {"start": w_start, "end": w_end}, "max_years": MAX_YEARS,
-            "sources": {"intraday": "Live price indices from NSE / Yahoo (5-minute bars); Gold BeES live price; arbitrage holds its last close",
-                        "daily": "1M and longer: total-return indices and Gold BeES NAV from the daily index file (Apr 2010 →), extended with today's live move; "
-                                 "villas replayed with the growth engine reset to its split at each year end, before tax"},
+            "sources": {"intraday": "Live price indices (5-minute bars) and the live Gold BeES price; the arbitrage index holds its last close.",
+                        "daily": "Total-return indices and Gold BeES NAV from the daily index file (April 2010 on), extended with today's live move."},
             "items": [items[i["key"]] for i in ITEMS if i["key"] in items],
             "villas": villas, "default_villa": cfg.get("default_villa"),
             "parts": {p: _BY_KEY[k]["name"] for p, k in PART_OF.items()},
