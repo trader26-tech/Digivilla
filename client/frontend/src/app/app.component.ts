@@ -13,6 +13,7 @@ import { LandBuyComponent } from './build/land-buy.component';
 import { VillaBuyComponent } from './build/villa-buy.component';
 import { NextVillaComponent } from './build/next-villa.component';
 import { CallsComponent } from './calls.component';
+import { GoalsComponent } from './goals/goals.component';
 import { CalculatorsComponent } from './calc/calculators.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
@@ -36,6 +37,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
   selector: 'app-root',
   standalone: true,
   imports: [
+    GoalsComponent,
     CommonModule,
     IntroComponent,
     EstateHomeComponent,
@@ -95,7 +97,7 @@ export class AppComponent {
     // Deep-link support: ?view=explore opens the Explore tab on load.
     try {
       const v = new URLSearchParams(location.search).get('view');
-      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc') { this.view = v; this.intro = false; }
+      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc' || v === 'goals') { this.view = v; this.intro = false; }
     } catch {}
     // A returning user whose home figures are already in hand (EstateService
     // restored this NAV day's snapshot) skips the splash — the home is the
@@ -194,7 +196,7 @@ export class AppComponent {
   }
 
   /** Which bottom-nav tab is active. */
-  view: 'home' | 'explore' | 'funds' | 'calls' | 'calc' | 'storefront' = 'home';
+  view: 'home' | 'explore' | 'funds' | 'calls' | 'calc' | 'goals' | 'storefront' = 'home';
 
   /** True when a top-level tab (home/funds/calls) is showing — the bottom nav
    *  is only visible then, not on detail / buy / account pages. */
@@ -207,7 +209,7 @@ export class AppComponent {
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.building === null && this.buildFlow === null && !this.accountOpen &&
       !this.levelsOpen && !(this.view === 'calc' && this.calcOpen) &&
-      (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc')
+      (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc' || this.view === 'goals')
     );
   }
 
@@ -227,6 +229,12 @@ export class AppComponent {
   }
   goFunds(): void {
     this.view = 'funds';
+    this.callsOpen = false;
+    window.scrollTo({ top: 0 });
+  }
+  /** The Goals tab: what the villas pay for. */
+  goGoals(): void {
+    this.view = 'goals';
     this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }

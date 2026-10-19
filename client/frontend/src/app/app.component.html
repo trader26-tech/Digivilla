@@ -83,7 +83,16 @@
 ></app-calculators>
 }
 
-<!-- BOTTOM NAV: a floating pill with three tabs — Settings, Home, Compare. -->
+<!-- GOALS tab: what the villas pay for — monthly payout, Homecoming, your own goals. -->
+@defer (when !intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'goals'; prefetch on idle) {
+<app-goals
+  *ngIf="!intro && detail === null && villa === null && land === null && construction === null && building === null && buildFlow === null && !accountOpen && !levelsOpen && view === 'goals'"
+  class="has-nav"
+  (home)="goHome()"
+></app-goals>
+}
+
+<!-- BOTTOM NAV: a floating pill with four tabs — Settings, Home, Goals, Compare. -->
 <nav class="tabbar" *ngIf="onTab">
   <div class="tabbar-pill">
     <!-- Settings (left) · Home (center) · Explore (right) -->
@@ -100,6 +109,12 @@
       <span class="tab-in">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 11l8-7 8 7M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>
         <span class="tab-lbl">Home</span>
+      </span>
+    </button>
+    <button class="tab" [class.active]="view === 'goals'" (click)="goGoals()" aria-label="Goals">
+      <span class="tab-in">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+        <span class="tab-lbl">Goals</span>
       </span>
     </button>
     <button class="tab" [class.active]="view === 'calc'" (click)="goCalc()" aria-label="Compare">

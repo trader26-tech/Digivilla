@@ -16,10 +16,16 @@ import { CalcDataService } from './calc-data.service';
   imports: [CommonModule],
   template: `
     <div class="vp" [class.hero]="size === 'hero'" [attr.data-r]="pf().risk">
-      <button class="swp" type="button" role="switch" [attr.aria-checked]="store.swp()" [class.on]="store.swp()"
-              (click)="toggleSwp()" aria-label="Monthly SWP">
-        <span class="pill"><span class="trk"><i></i></span><span class="t">SWP</span></span>
-      </button>
+      <span class="pills">
+        <button class="swp" type="button" role="switch" [attr.aria-checked]="store.swp()" [class.on]="store.swp()"
+                (click)="toggleSwp()" aria-label="Monthly SWP">
+          <span class="pill"><span class="trk"><i></i></span><span class="t">SWP</span></span>
+        </button>
+        <button class="swp gold" type="button" role="switch" [attr.aria-checked]="store.gold()" [class.on]="store.gold()"
+                (click)="store.setGold(!store.gold())" [attr.aria-label]="store.gold() ? 'Gold in the villa — tap to split it into large, mid and small' : 'No gold — its share is in large, mid and small — tap to add gold'">
+          <span class="pill"><span class="trk"><i></i></span><span class="t">Gold</span></span>
+        </button>
+      </span>
       <div class="row">
         <span class="slot">
           @if (idx() > 0) {
@@ -76,6 +82,7 @@ import { CalcDataService } from './calc-data.service';
     .swp:focus-visible, .arr:focus-visible { outline: none; }
     .swp:focus-visible .pill, .arr:focus-visible svg { outline: 2px solid #9184d9; outline-offset: 2px; border-radius: 11px; }
 
+    .pills { display: flex; align-items: center; justify-content: center; gap: 2px; }
     .row { display: flex; align-items: flex-end; gap: 4px; }
     .slot { flex: none; width: 22px; display: flex; justify-content: center; }
     /* the arrows: a 14 px glyph, a 44 px target centred where the 22 px button used to be */

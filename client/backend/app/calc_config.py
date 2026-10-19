@@ -137,6 +137,9 @@ def validate(cfg: dict) -> list[str]:
     num("fd.nri_tds_pct", (cfg.get("fd") or {}).get("nri_tds_pct"), 0, 50)
     num("display.inflation_pct", (cfg.get("display") or {}).get("inflation_pct"), 0, 30)
     num("display.rate_years", (cfg.get("display") or {}).get("rate_years"), 1, 40)
+    g = (cfg.get("display") or {}).get("gold_in_villas", False)
+    if not isinstance(g, bool):
+        errs.append("display.gold_in_villas must be true or false (false = gold's share goes equally to large / mid / small)")
     return errs
 
 

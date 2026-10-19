@@ -63,6 +63,8 @@ export interface CalcConfig {
     std_deduction: number;       // share of rent deducted before tax (0.3)
   };
   fd: { nri_tds_pct: number };
-  /** inflation for "today's money"; rate_years = the window behind each villa's "% a yr" */
-  display: { inflation_pct: number; rate_years: number };
+  /** inflation for "today's money"; rate_years = the window behind each villa's "% a yr";
+   *  gold_in_villas = false while no gold fund is on offer: every villa's gold share is split
+   *  equally into large / mid / small (a toggle on the calculators shows both; flip this to roll back) */
+  display: { inflation_pct: number; rate_years: number; gold_in_villas?: boolean };
 }

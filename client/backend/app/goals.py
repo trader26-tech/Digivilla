@@ -1,156 +1,159 @@
-"""Goal persistence + progress, for the Home monitoring screen.
+"""Goals — what the client's villas pay for, on real data.
 
-Goals are saved to Supabase (`goals` table) when configured, otherwise to a
-local JSON file so the feature works out-of-the-box in development. Progress is
-computed from the plan itself (target, monthly SIP, expected return, elapsed
-time) — no real brokerage holdings required.
+  overview(owner)  the villas the client owns (finished / building, each with its
+                   category), the payout they bring a month (villas × the estate's
+                   monthly income from the calculator settings), every payout
+                   actually received (money-out lines of the transaction report,
+                   by month) and the client's saved goals.
+  save_goals(...)  the Homecoming plan and custom goals, kept in admin_config under
+                   `goals:<client code>` (no migration). The demo account is never
+                   written to.
 """
 
 from __future__ import annotations
 
-import json
-import os
-import uuid
-from datetime import datetime, timezone
+from datetime import date, timedelta
 
-from app.schemas import Goal, GoalCreate, GoalProgress
+from app import client_portfolio as cp
 
-_LOCAL_PATH = os.path.join(os.path.dirname(__file__), "data", "goals.json")
+PAYDAY = 5
+TYPES = ("conservative", "balanced", "aggressive")
 
 
-# ---------------- storage ----------------
+def _sb():
+    return cp._sb()
 
-def _use_supabase() -> bool:
-    """True only when Supabase is actually configured and reachable."""
+
+def _cfg(key: str) -> dict:
     try:
-        from app.supabase_client import get_supabase
-
-        get_supabase()  # raises RuntimeError if not configured
-        return True
+        rows = _sb().table("admin_config").select("value").eq("key", key).limit(1).execute().data or []
+        v = rows[0]["value"] if rows else {}
+        return v if isinstance(v, dict) else {}
     except Exception:
-        return False
+        return {}
 
 
-def _read_local() -> list[dict]:
-    if os.path.exists(_LOCAL_PATH):
-        with open(_LOCAL_PATH, encoding="utf-8") as fh:
-            return json.load(fh)
-    return []
-
-
-def _write_local(rows: list[dict]) -> None:
-    os.makedirs(os.path.dirname(_LOCAL_PATH), exist_ok=True)
-    with open(_LOCAL_PATH, "w", encoding="utf-8") as fh:
-        json.dump(rows, fh, ensure_ascii=False)
-
-
-def list_goals(owner: str | None = None) -> list[Goal]:
-    rows: list[dict]
-    if _use_supabase():
-        from app.supabase_client import get_supabase
-
-        q = get_supabase().table("goals").select("*")
-        if owner:
-            q = q.eq("owner", owner)
-        rows = q.execute().data or []
-    else:
-        rows = _read_local()
-        if owner:
-            rows = [r for r in rows if r.get("owner") == owner]
-    rows.sort(key=lambda r: r.get("created_at", ""), reverse=True)
-    return [Goal(**_normalize(r)) for r in rows]
-
-
-def create_goal(payload: GoalCreate) -> Goal:
-    row = payload.model_dump()
-    row["id"] = uuid.uuid4().hex
-    row["created_at"] = datetime.now(timezone.utc).isoformat()
-
-    if _use_supabase():
-        from app.supabase_client import get_supabase
-
-        get_supabase().table("goals").insert(row).execute()
-    else:
-        rows = _read_local()
-        rows.append(row)
-        _write_local(rows)
-    return Goal(**_normalize(row))
-
-
-def delete_goal(goal_id: str, owner: str | None = None) -> bool:
-    if _use_supabase():
-        from app.supabase_client import get_supabase
-
-        q = get_supabase().table("goals").delete().eq("id", goal_id)
-        if owner:
-            q = q.eq("owner", owner)
-        q.execute()
-        return True
-    rows = _read_local()
-    new = [r for r in rows if not (r["id"] == goal_id and (owner is None or r.get("owner") == owner))]
-    _write_local(new)
-    return len(new) != len(rows)
-
-
-def _normalize(row: dict) -> dict:
-    row = dict(row)
-    row.setdefault("recommendations", [])
-    row.setdefault("owner", None)
-    return row
-
-
-# ---------------- progress ----------------
-
-def compute_progress(goal: Goal) -> GoalProgress:
-    created = _parse_iso(goal.created_at)
-    now = datetime.now(timezone.utc)
-    months_elapsed = max(
-        0,
-        (now.year - created.year) * 12 + (now.month - created.month),
-    )
-    months_total = max(1, round(goal.horizon_years * 12))
-    months_elapsed = min(months_elapsed, months_total)
-
-    monthly = goal.monthly_investment
-    invested = monthly * months_elapsed
-
-    # On-track (median) future value of a monthly SIP after `months_elapsed`
-    # months at the plan's expected return.
-    r_month = (1 + goal.expected_return) ** (1 / 12) - 1
-    if r_month > 0 and months_elapsed > 0:
-        on_track = monthly * (((1 + r_month) ** months_elapsed - 1) / r_month)
-    else:
-        on_track = invested
-
-    target = goal.target_amount
-    progress_pct = (invested / target * 100) if target > 0 else 0
-    on_track_pct = (on_track / target * 100) if target > 0 else 0
-
-    if months_elapsed == 0:
-        status = "new"
-    else:
-        # Compare actual plan progress to where it should be — since we don't
-        # have real holdings, "on_track" is the plan's own expectation, so a
-        # freshly-saved goal following its plan is by definition on track.
-        status = "on_track"
-
-    return GoalProgress(
-        months_elapsed=months_elapsed,
-        months_total=months_total,
-        invested_so_far=round(invested),
-        on_track_value=round(on_track),
-        target_amount=round(target),
-        progress_percent=round(progress_pct, 1),
-        on_track_percent=round(on_track_pct, 1),
-        status=status,
-    )
-
-
-def _parse_iso(s: str) -> datetime:
+def _estate() -> dict:
     try:
-        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except ValueError:
-        return datetime.now(timezone.utc)
+        from app import calc_config
+        e = calc_config.estate()
+        return {"villa_cost": float(e["villa_cost"]), "income": float(e["villa_income_monthly"])}
+    except Exception:
+        return {"villa_cost": 500000.0, "income": 1500.0}
+
+
+def _next_payday(today: date) -> date:
+    y, m = today.year, today.month
+    if today.day >= PAYDAY:
+        m += 1
+        if m > 12:
+            y, m = y + 1, 1
+    return date(y, m, PAYDAY)
+
+
+def overview(owner: str) -> dict:
+    code = cp.client_code_for_owner(owner)
+    est = _estate()
+    out = {"payday": PAYDAY, "villa_cost": est["villa_cost"], "income_per_villa": est["income"],
+           "next_payday": _next_payday(date.today()).isoformat(), "client_code": code,
+           "villas": [], "owned": 0, "building": 0, "by_type": {t: 0 for t in TYPES}, "untyped": 0,
+           "monthly": 0.0, "payouts": [], "received": 0.0, "payout_count": 0, "goals": {}}
+    if not code:
+        return out
+    m = cp._mapped_houses(code) or {"houses": []}
+    types = _cfg("villa_types")
+    villas = []
+    for h in m["houses"]:
+        t = types.get(str(h.get("villa_id"))) if h.get("villa_id") else None
+        villas.append({"id": h.get("villa_id"), "name": h.get("name"), "building": bool(h.get("building")),
+                       "invested": round(float(h.get("invested") or 0), 2), "since": h.get("since") or None,
+                       "type": t if t in TYPES else None})
+    finished = [v for v in villas if not v["building"]]
+    out["villas"] = villas
+    out["owned"] = len(finished)
+    out["building"] = len(villas) - len(finished)
+    for v in finished:
+        if v["type"]:
+            out["by_type"][v["type"]] += 1
+        else:
+            out["untyped"] += 1
+    out["monthly"] = round(len(finished) * est["income"], 2)
+    # every payout actually received: the report's money-out lines, by month
+    try:
+        rows = (_sb().table("client_transactions").select("txn_date,amount,kind,scheme_name")
+                .eq("client_code", code).execute().data or [])
+    except Exception:
+        rows = []
+    from app import villa_alloc
+    by_month: dict[str, dict] = {}
+    for r in rows:
+        if villa_alloc.txn_sign(r.get("kind")) > 0:
+            continue
+        d = str(r.get("txn_date") or "")[:10]
+        if not d:
+            continue
+        try:
+            amt = abs(float(r.get("amount") or 0))
+        except (TypeError, ValueError):
+            continue
+        k = d[:7]
+        row = by_month.setdefault(k, {"month": k, "date": d, "amount": 0.0, "lines": 0})
+        row["amount"] += amt
+        row["lines"] += 1
+        row["date"] = max(row["date"], d)
+    payouts = sorted(by_month.values(), key=lambda r: r["month"], reverse=True)
+    for p in payouts:
+        p["amount"] = round(p["amount"], 2)
+        # villas finished by then (first purchase on or before the payout)
+        p["villas"] = sum(1 for v in finished if (v["since"] or "9999") <= p["date"])
+    out["payouts"] = payouts
+    out["received"] = round(sum(p["amount"] for p in payouts), 2)
+    out["payout_count"] = len(payouts)
+    out["goals"] = _cfg(f"goals:{code}")
+    return out
+
+
+def _clean_goals(body: dict) -> dict:
+    """Only the shapes we know: homecoming {total, parts[4]} and custom goals."""
+    out: dict = {}
+    hc = body.get("homecoming") if isinstance(body, dict) else None
+    if isinstance(hc, dict):
+        parts = hc.get("parts")
+        clean = {}
+        if isinstance(parts, list) and len(parts) == 4 and all(isinstance(x, (int, float)) for x in parts):
+            clean["parts"] = [max(0, min(99_999_999, round(float(x)))) for x in parts]
+        if isinstance(hc.get("total"), (int, float)):
+            clean["total"] = max(0, min(99_999_999, round(float(hc["total"]))))
+        if hc.get("funded") is True:
+            clean["funded"] = True
+        if clean:
+            out["homecoming"] = clean
+    goals = body.get("custom") if isinstance(body, dict) else None
+    if isinstance(goals, list):
+        keep = []
+        for g in goals[:50]:
+            if not isinstance(g, dict):
+                continue
+            keep.append({
+                "id": str(g.get("id") or "")[:40], "kind": str(g.get("kind") or "other")[:20], "name": str(g.get("name") or "")[:40],
+                "amount": max(0, min(99_999_999, round(float(g.get("amount") or 0)))),
+                "type": int(g.get("type") or 0) if str(g.get("type")) in ("0", "1", "2") else 0,
+                "m": int(g.get("m") or 0), "villas": max(0, int(g.get("villas") or 0)),
+                "created": str(g.get("created") or "")[:32],
+            })
+        out["custom"] = keep
+    return out
+
+
+def save_goals(owner: str, body: dict) -> dict:
+    code = cp.client_code_for_owner(owner)
+    clean = _clean_goals(body or {})
+    if not code:
+        return clean
+    try:
+        cl = _sb()
+        cl.table("admin_config").delete().eq("key", f"goals:{code}").execute()
+        cl.table("admin_config").insert({"key": f"goals:{code}", "value": clean}).execute()
+    except Exception:
+        pass
+    return clean

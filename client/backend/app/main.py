@@ -511,6 +511,25 @@ def patch_my_profile(
     return client_portfolio.set_estate_profile(owner, name, city)
 
 
+@app.get("/me/goals")
+def get_my_goals(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Goals: the villas owned (with categories), the monthly payout they bring,
+    every payout received so far, and the saved goals."""
+    owner = _owner_or_401(authorization)
+    from app import goals as goals_svc
+    return goals_svc.overview(owner)
+
+
+@app.put("/me/goals")
+def put_my_goals(body: dict = Body(default={}), authorization: Optional[str] = Header(default=None)) -> dict:
+    """Save the Homecoming plan and custom goals (the demo account is read-only)."""
+    owner = _owner_or_401(authorization)
+    from app import goals as goals_svc
+    if _is_demo(owner):
+        return goals_svc._clean_goals(body or {})
+    return goals_svc.save_goals(owner, body or {})
+
+
 @app.get("/me/orders")
 def get_my_orders(authorization: Optional[str] = Header(default=None)) -> dict:
     """This user's REAL fund orders (from the parsed AssetPlus report,

@@ -123,6 +123,7 @@ export const DEFAULT_CONFIG: CalcConfig = {
   },
   "display": {
     "inflation_pct": 6,
-    "rate_years": 15
+    "rate_years": 15,
+    "gold_in_villas": false
   }
 } as CalcConfig;

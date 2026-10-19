@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { CalcConfig, DEFAULT_CONFIG, VillaFunds, villaOf, villaRate, withVilla } from './engine';
 
 const CFG_KEY = 'dv_calc_config';
+const GOLD_KEY = 'dv_calc_gold';
 
 /**
  * The calculators' STORE — one place that holds:
@@ -21,7 +22,15 @@ export class CalcDataService {
   private http = inject(HttpClient);
 
   // ── settings ──
-  readonly config = signal<CalcConfig>(readCached() ?? DEFAULT_CONFIG);
+  /** the settings as served */
+  readonly rawConfig = signal<CalcConfig>(readCached() ?? DEFAULT_CONFIG);
+  /** gold on or off in the villas (null = the settings' display.gold_in_villas) — a temporary
+   *  measure while no gold fund is on offer; the toggle on the calculators shows both */
+  private readonly goldPick = signal<boolean | null>(readGold());
+  readonly gold = computed(() => this.goldPick() ?? (this.rawConfig().display.gold_in_villas ?? true));
+  setGold(on: boolean): void { this.goldPick.set(on); try { localStorage.setItem(GOLD_KEY, on ? '1' : '0'); } catch { /* private mode */ } }
+  /** the settings every screen reads: with gold off, each villa's gold share is split equally into large / mid / small */
+  readonly config = computed<CalcConfig>(() => this.gold() ? this.rawConfig() : withoutGold(this.rawConfig()));
   private cfgLoaded = false;
 
   // ── data ──
@@ -73,7 +82,7 @@ export class CalcDataService {
     this.http.get<CalcConfig>(`${environment.apiUrl}/calc/config`).subscribe({
       next: (c) => {
         if (!c?.villas?.length) return;
-        if (c.version !== this.config().version || c.updated_at !== this.config().updated_at) this.config.set(c);
+        if (c.version !== this.config().version || c.updated_at !== this.config().updated_at) this.rawConfig.set(c);
         try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch { /* private mode */ }
       },
       error: () => { this.cfgLoaded = false; },
@@ -86,4 +95,23 @@ function readCached(): CalcConfig | null {
     const c = JSON.parse(localStorage.getItem(CFG_KEY) || 'null');
     return c?.villas?.length && c.tax && c.estate && c.withdrawals && c.flat ? c : null;
   } catch { return null; }
+}
+
+function readGold(): boolean | null {
+  try { const v = localStorage.getItem(GOLD_KEY); return v === '1' ? true : v === '0' ? false : null; } catch { return null; }
+}
+
+/** Every villa with its gold share moved equally into large / mid / small (weights still add up to 1). */
+export function withoutGold(cfg: CalcConfig): CalcConfig {
+  return {
+    ...cfg,
+    villas: cfg.villas.map((v) => {
+      const w = { ...v.weights } as Record<string, number>;
+      const g = w['gold'] ?? 0;
+      if (!g) return v;
+      delete w['gold'];
+      for (const k of ['large', 'mid', 'small']) w[k] = (w[k] ?? 0) + g / 3;
+      return { ...v, weights: w };
+    }),
+  };
 }
