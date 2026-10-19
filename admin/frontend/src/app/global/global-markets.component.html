@@ -46,7 +46,7 @@
     <!-- ═════════ the three villas ═════════ -->
     <section class="pcards" aria-label="The villas">
       @for (v of villas(); track v.key) {
-        <div class="pcard" [class.on]="isOn('villa:' + v.key)" role="button" tabindex="0" [attr.aria-pressed]="isOn('villa:' + v.key)"
+        <div class="pcard" [class.on]="isOn('villa:' + v.key)" [class.editing]="editing() === v.key" role="button" tabindex="0" [attr.aria-pressed]="isOn('villa:' + v.key)"
              (click)="toggle('villa:' + v.key)" (keydown.enter)="toggle('villa:' + v.key)" [title]="isOn('villa:' + v.key) ? 'Take off the chart' : 'Draw on the chart'">
           <span class="pc-h">
             <span class="pc-name"><i class="pc-sw" [class.dashed]="!!styleOf('villa:' + v.key).dash" [class.show]="isOn('villa:' + v.key)"></i>{{ v.name }}</span>

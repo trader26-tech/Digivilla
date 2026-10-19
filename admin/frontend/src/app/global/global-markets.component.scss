@@ -69,6 +69,7 @@
     span { display: inline-flex; align-items: center; gap: 4px; } i { width: 8px; height: 8px; border-radius: 2px; } }
   .pc-edit { margin-left: auto; background: none; border: 1px solid var(--nw-border); border-radius: 999px; padding: 1px 9px; font: inherit; font-size: 10.5px; font-weight: 800; color: var(--nw-accent); cursor: pointer;
     &:hover, &[aria-expanded="true"] { border-color: var(--nw-accent); background: #f3f8ff; } } }
+.pcard.editing { z-index: 30; transform: none; }
 .mix-pop { position: absolute; left: 10px; right: 10px; top: calc(100% - 6px); z-index: 20; cursor: default; background: var(--nw-card); border: 1px solid var(--nw-border); border-radius: 14px; padding: 12px 14px 10px;
   box-shadow: 0 18px 44px rgba(26,28,46,.18); display: flex; flex-direction: column; gap: 7px; animation: tdFade .12s ease; }
 .mx-row { display: grid; grid-template-columns: 10px 64px 1fr 56px; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
@@ -153,6 +154,10 @@
 @media (max-width: 760px) {
   .pcards { gap: 8px; }
   .pcard { padding: 11px 12px; .pc-val { font-size: 21px; } .pcm-leg span { display: none; } .pc-sub { font-size: 10.5px; } }
+  /* phones: the editor opens inside the card, nothing can cover it */
+  .mix-pop { position: static; margin-top: 6px; box-shadow: none; border-color: var(--nw-border); background: var(--nw-card2); padding: 10px 10px 8px; }
+  .mx-row { grid-template-columns: 10px 70px 1fr 58px; input[type=range] { height: 28px; } .mx-v { font-size: 16px; padding: 4px 6px; } }
+  .mx-acts .btn { padding: 7px 14px; font-size: 13px; }
   .th-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tile .t-pct { font-size: 17px; }
 }
