@@ -1,0 +1,106 @@
+<div class="page">
+  <div class="glow"></div>
+  <div class="scroll">
+
+    <div class="head">
+      <button type="button" class="back" (click)="back.emit()" aria-label="Back"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span class="title">Create a <i>goal</i></span>
+    </div>
+
+    <!-- 1 what -->
+    <div class="step s1">
+      <span class="q"><b>1</b>What is it for?</span>
+      <div class="kinds">
+        @for (k of kinds; track k.key; let i = $index) {
+          <button type="button" class="kind" [class.on]="kind() === i" (click)="pickKind(i)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="k.icon"/></svg>
+            <span>{{ k.t }}</span>
+          </button>
+        }
+      </div>
+      <label class="name">
+        <span>Name</span>
+        <input [value]="name()" (input)="onName($event)" maxlength="40" placeholder="e.g. Daughter's wedding" aria-label="Goal name">
+      </label>
+    </div>
+
+    <!-- 2 how much -->
+    <div class="step s2">
+      <span class="q"><b>2</b>How much will it cost?</span>
+      <label class="amount">
+        <span>₹</span>
+        <input [value]="amtTxt()" (input)="onAmt($event)" inputmode="numeric" placeholder="0" aria-label="Amount">
+      </label>
+    </div>
+
+    <!-- 3 how often -->
+    <div class="step s3">
+      <span class="q"><b>3</b>How often?</span>
+      <div class="seg">
+        @for (t of types; track t; let i = $index) {
+          <button type="button" [class.on]="type() === i" (click)="pickType($any(i))">{{ t }}</button>
+        }
+      </div>
+      <span class="help">{{ typeHelp() }}</span>
+    </div>
+
+    <!-- 4 when -->
+    <div class="step s4">
+      <span class="q"><b>4</b>{{ when().q }}</span>
+      <div class="stepper">
+        <button type="button" (click)="step(-1)" [class.off]="!when().prevOn" [disabled]="!when().prevOn" aria-label="Earlier"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <span class="mid"><span class="v">{{ when().txt }}</span><span class="sub">{{ when().sub }}</span></span>
+        <button type="button" (click)="step(1)" [class.off]="!when().nextOn" [disabled]="!when().nextOn" aria-label="Later"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- result -->
+    <div class="result">
+      <div class="hero">
+        <span class="kicker">To make this happen</span>
+        <span class="once">Invest once</span>
+        <span class="big">{{ investTxt() }}</span>
+        <span class="villas">
+          <span class="icons">
+            @for (v of villaIcons(); track v) { <img src="assets/goals/villa.svg" alt=""> }
+          </span>
+          <span class="lbl">{{ villaLbl() }}</span>
+        </span>
+      </div>
+      <div class="rows">
+        @for (r of when().rows; track r.k) {
+          <div class="row"><span class="k">{{ r.k }}</span><span class="v" [class.green]="r.green">{{ r.v }}</span></div>
+        }
+      </div>
+      <div class="note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8fd65a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+        <span>{{ when().note }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="cta">
+    <button type="button" class="gold" [class.dim]="!amt()" (click)="save()">{{ ctaTxt() }}</button>
+  </div>
+
+  @if (confirm()) {
+    <div class="sheet-wrap">
+      <div class="backdrop" (click)="closeConfirm()"></div>
+      <div class="sheet">
+        <i class="handle"></i>
+        <span class="stitle">Confirm <i>goal</i></span>
+        <div class="box">
+          <div class="row"><span class="k">Goal</span><span class="v">{{ nameShown() }}</span></div>
+          <div class="row"><span class="k">{{ villaRowK() }}</span><span class="v">{{ investTxt() }}</span></div>
+          <div class="row"><span class="k">{{ when().k }}</span><span class="v">{{ when().txt }}</span></div>
+        </div>
+        @if (err()) { <span class="err">{{ err() }}</span> }
+        <button type="button" class="gold" [class.dim]="paying()" (click)="pay()">{{ paying() ? 'Sending…' : 'Pay ' + investTxt() }}</button>
+      </div>
+    </div>
+  }
+  @if (toast()) {
+    <div class="toast">✓ Goal created</div>
+  }
+</div>

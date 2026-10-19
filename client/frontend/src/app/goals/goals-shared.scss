@@ -1,0 +1,85 @@
+/* Goals flow — the pieces every screen shares (design handoff "Shared patterns").
+   Phone first; on a laptop the page sits in a 430 px column on the dark ground. */
+
+:host {
+  display: block;
+  font-family: 'Almarai', system-ui, sans-serif;
+  color: #E1E0CC;
+  -webkit-font-smoothing: antialiased;
+  --serif: 'Instrument Serif', serif;
+  --gold: #fbdb81; --green: #8fd65a; --lav: #b4a8f7;
+}
+*, *::before, *::after { box-sizing: border-box; }
+button, input { font: inherit; border: 0; padding: 0; background: none; color: inherit; -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:focus-visible { outline: 2px solid rgba(251, 219, 129, .7); outline-offset: 2px; }
+input { outline: none; }
+
+/* the screen: full width on phones, a 430 px column on laptops */
+.scr {
+  position: relative; width: 100%; max-width: 430px; margin: 0 auto; min-height: 100dvh; white-space: nowrap;
+}
+.col { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 56px 20px 30px; }
+
+/* back button + serif title */
+.hdr { flex: none; display: flex; align-items: center; gap: 12px; padding: 0 4px 2px; animation: gUp .5s both; }
+.back {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); transition: background .15s;
+  &:hover { background: rgba(255, 255, 255, .1); }
+  &.lg { width: 44px; height: 44px; }
+}
+.ttl { font-family: var(--serif); font-size: 26px; line-height: 1; color: #fff; }
+.ttl i, .gold-i { color: transparent; background: linear-gradient(180deg, #fff3cf, #f3c77a 55%, #e0a24f); -webkit-background-clip: text; background-clip: text; }
+
+/* primary CTA */
+.cta {
+  width: 100%; height: 56px; border-radius: 28px; font-size: 15.5px; font-weight: 700; color: #0b0c14;
+  background: linear-gradient(180deg, #f8d58e, #f0b85e);
+  box-shadow: 0 14px 30px -12px rgba(243, 199, 122, .8), inset 0 1px 0 rgba(255, 255, 255, .5);
+  transition: opacity .2s, transform .12s;
+  &:active { transform: scale(.985); }
+  &[disabled] { opacity: .4; cursor: default; }
+  &.lg { height: 60px; border-radius: 30px; font-size: 17px; }
+}
+
+/* bottom sheet — a modal <dialog> so it lives in the top layer: the shell's tab
+   host is animated with a transform, which would pin position:fixed to it */
+.ovl {
+  position: fixed; inset: 0; z-index: 60; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+  background: transparent; color: inherit; overflow: visible; font: inherit; display: none;
+  &[open] { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  &::backdrop { background: transparent; }
+}
+.bd { position: absolute; inset: 0; background: rgba(2, 3, 8, .65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: gFade .25s both; }
+.sheet {
+  position: relative; width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 18px;
+  padding: 14px 22px 30px; padding-bottom: calc(30px + env(safe-area-inset-bottom));
+  border-radius: 30px 30px 0 0; background: linear-gradient(180deg, #151722, #0a0b12);
+  box-shadow: inset 0 1px 0 rgba(251, 219, 129, .25), 0 -20px 50px rgba(0, 0, 0, .6);
+  animation: gSheet .38s cubic-bezier(.2, .9, .25, 1) both; white-space: nowrap;
+}
+.handle { align-self: center; width: 38px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); }
+.sh-ttl { font-family: var(--serif); font-size: 28px; line-height: 1.05; color: #fff; i { color: var(--gold); } }
+.err { font-size: 13px; color: #f3a06a; white-space: normal; }
+
+/* toast — a manual popover (top layer, see above) */
+.toast {
+  position: fixed; inset: auto; left: 0; right: 0; top: 60px; z-index: 70; margin: 0 auto; border: 0; width: fit-content; max-width: calc(100% - 40px); height: 40px; overflow: hidden; text-overflow: ellipsis;
+  display: none; align-items: center; gap: 8px; padding: 0 18px; border-radius: 20px;
+  font-size: 14px; color: #0b1a06; background: linear-gradient(180deg, #c8f0a8, #8fd65a);
+  box-shadow: 0 12px 26px -10px rgba(143, 214, 90, .8); animation: gUp .35s both; white-space: nowrap;
+  &:popover-open { display: flex; }
+}
+
+/* quiet skeleton while the figures load — never a ₹0 that changes later */
+.sk { display: inline-block; border-radius: 6px; background: rgba(255, 255, 255, .1); color: transparent !important; animation: gSk 1.6s ease-in-out infinite; }
+
+@keyframes gUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes gSheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes gFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gSk { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hdr, .sheet, .bd, .toast, .sk { animation: none !important; }
+}

@@ -1,0 +1,64 @@
+<div class="card">
+  <i class="ring" aria-hidden="true"></i>
+  <div class="glow-bg"></div>
+  <div class="stars"></div>
+
+  <!-- wall calendar -->
+  <div class="cal">
+    <div class="cal-hd"><span>{{ monTxt() }}</span><span class="yr">{{ yearTxt() }}</span></div>
+    <div class="dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div class="grid">
+      @for (d of days(); track $index) {
+        <span class="day" [class]="'day ' + d.cls">{{ d.t }}</span>
+      }
+    </div>
+    <div class="pin" [style.left]="pinL()" [style.top]="pinT()">
+      <span class="pin-glow"></span>
+      <span class="pin-face"><span class="pin-n">{{ goals.payday() }}</span></span>
+      <span class="pin-lbl">PAYDAY</span>
+    </div>
+  </div>
+  <div class="rings">
+    @for (r of rings; track r) { <span></span> }
+  </div>
+  <span class="halo"></span>
+
+  <!-- coin stack -->
+  <div class="coins">
+    @for (c of coins; track $index) {
+      <span class="coin" [style.top]="c.y" [style.animation-delay]="c.d"></span>
+    }
+    <span class="coin top"><i>₹</i></span>
+  </div>
+
+  <div class="fade"></div>
+  <div class="rule"></div>
+
+  <div class="tag">
+    <span class="tag-n">00</span>
+    <span class="tag-l"></span>
+    <span class="tag-t">Default</span>
+  </div>
+
+  <div class="foot">
+    <div class="row">
+      <div class="lft">
+        <span class="h">Monthly <span class="h-i">payout</span></span>
+        @if (ready()) {
+          <span class="sub">{{ villasTxt() }} · {{ payDayTxt() }} of every month</span>
+        } @else {
+          <span class="sub"><span class="sk">6 villas · 5th of every month</span></span>
+        }
+      </div>
+      <div class="rgt">
+        @if (ready()) {
+          <b class="amt">{{ moTxt() }}</b>
+          <span class="nxt">next {{ nextTxt() }}</span>
+        } @else {
+          <b class="amt"><span class="sk">₹9,000</span></b>
+          <span class="nxt"><span class="sk">next 5 Nov</span></span>
+        }
+      </div>
+    </div>
+  </div>
+</div>

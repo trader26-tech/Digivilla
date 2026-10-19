@@ -1,0 +1,146 @@
+<div class="scr">
+  <div class="warm"></div>
+  <div class="col pay">
+    <div class="hdr">
+      <button class="back lg" type="button" aria-label="Back" (click)="back.emit()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>
+      </button>
+      <span class="ttl big">Grow your <i>payout</i></span>
+    </div>
+
+    <!-- tuner -->
+    <div class="tuner">
+      <svg viewBox="0 0 340 350" width="340" height="350" class="dial">
+        <defs>
+          <linearGradient id="gpMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3527"></stop><stop offset=".35" stop-color="#1b1a22"></stop><stop offset=".65" stop-color="#2b2820"></stop><stop offset="1" stop-color="#121119"></stop></linearGradient>
+          <radialGradient id="gpFace" cx="50%" cy="38%" r="62%"><stop offset="0" stop-color="#201d36"></stop><stop offset="1" stop-color="#0a0a13"></stop></radialGradient>
+          <linearGradient id="gpGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3cf"></stop><stop offset="1" stop-color="#e9ad3f"></stop></linearGradient>
+        </defs>
+        <ellipse cx="170" cy="338" rx="120" ry="10" fill="rgba(251,219,129,.18)" class="shadow"></ellipse>
+        <circle cx="170" cy="175" r="158" fill="url(#gpMetal)" stroke="rgba(251,219,129,.22)" stroke-width="1"></circle>
+        <g class="ringg" [style.transition]="ringTr()" [style.transform]="'rotate(' + rotC().toFixed(2) + 'deg)'">
+          @for (k of knurl(); track $index) {
+            <line [attr.x1]="k.x1" [attr.y1]="k.y1" [attr.x2]="k.x2" [attr.y2]="k.y2" [attr.stroke]="k.c" [attr.stroke-width]="k.w" stroke-linecap="round"></line>
+          }
+          <path [attr.d]="gainD()" fill="none" stroke="#8fd65a" stroke-width="5" stroke-linecap="round" class="gain"></path>
+          @for (l of labels(); track l.t) {
+            <text x="170" [attr.y]="l.y" text-anchor="middle" font-family="Almarai" font-size="13" font-weight="700" [attr.fill]="l.c" [attr.transform]="'rotate(' + l.a + ' 170 175)'">{{ l.t }}</text>
+          }
+        </g>
+        <circle cx="170" cy="175" r="108" fill="url(#gpFace)" stroke="rgba(255,255,255,.07)"></circle>
+        <circle cx="170" cy="175" r="100" fill="none" stroke="rgba(251,219,129,.12)" stroke-dasharray="1 5"></circle>
+        <path d="M170 4 L180 22 L160 22 Z" fill="url(#gpGold)" class="ptr"></path>
+      </svg>
+      <div class="pad" (pointerdown)="onDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp()" (pointercancel)="onUp()"></div>
+      <div class="centre">
+        <span class="kick">Every month</span>
+        @if (ready()) {
+          <span class="big-amt">{{ dispTxt() }}</span>
+          <span class="today"><i></i>Today {{ curTxt() }}</span>
+        } @else {
+          <span class="big-amt"><span class="sk">₹9,000</span></span>
+          <span class="today"><i></i><span class="sk">Today ₹9,000</span></span>
+        }
+        <span class="gain-chip" [style.opacity]="buy() ? 1 : 0">+{{ gainTxt() }}</span>
+      </div>
+      <button class="pm dec" type="button" aria-label="Less" [style.opacity]="decOn() ? 1 : .35" (click)="dec()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+      </button>
+      <button class="pm inc" type="button" aria-label="More" [style.opacity]="incOn() ? 1 : .35" (click)="inc()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </button>
+    </div>
+    <span class="hint">{{ hint() }}</span>
+
+    <!-- answer -->
+    <div class="answer">
+      <span class="res-k">{{ resK() }}</span>
+      <span class="cost">{{ costV() }}</span>
+      <span class="villas">
+        <span class="icons">
+          @for (v of newVillas(); track v) {
+            <img src="assets/goals/villa.svg" alt="">
+          }
+        </span>
+        @if (ready()) {
+          <span class="res-l" [class.on]="buy()">{{ resL() }}</span>
+        } @else {
+          <span class="res-l"><span class="sk">You own 6 villas</span></span>
+        }
+      </span>
+    </div>
+
+    <!-- history -->
+    <button class="hrow" type="button" (click)="openHist()">
+      <span class="tick">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
+      </span>
+      <span class="hmid">
+        <span class="hk">Received so far</span>
+        @if (ready()) {
+          <span class="hv">{{ recvTxt() }} <span class="hc">· {{ countTxt() }}</span></span>
+        } @else {
+          <span class="hv"><span class="sk">₹69,000 · 14 payouts</span></span>
+        }
+      </span>
+      <span class="hlink">History<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+    </button>
+  </div>
+
+</div>
+
+<!-- fixed CTA: a manual popover, so it pins to the viewport whatever the shell animates -->
+<div #ctaEl popover="manual" class="cta-bar">
+  <button class="cta lg" type="button" [style.opacity]="buy() ? 1 : .45" (click)="openConfirm()">{{ ctaTxt() }}</button>
+</div>
+
+<!-- confirm purchase -->
+<dialog #confirmEl class="ovl" aria-label="Confirm purchase" (cancel)="closeConfirm()">
+  @if (confirm()) {
+    <div class="bd" (click)="closeConfirm()"></div>
+    <div class="sheet tight">
+      <i class="handle"></i>
+      <span class="sh-ttl">Confirm <i>purchase</i></span>
+      <div class="rows">
+        <div class="r"><span class="k">{{ buy() }} {{ catName() }} villa{{ buy() > 1 ? 's' : '' }} × {{ villaL() }}</span><span class="v">{{ costV() }}</span></div>
+        <div class="r"><span class="k">Monthly payout</span><span class="v">{{ curTxt() }} → <b>{{ newTxt() }}</b></span></div>
+        <div class="r"><span class="k">First extra payout</span><span class="v">{{ firstNew() }}</span></div>
+      </div>
+      @if (err()) { <span class="err">{{ err() }}</span> }
+      <button class="cta lg" type="button" [disabled]="busy()" (click)="pay()">{{ busy() ? 'Sending…' : 'Pay ' + costV() }}</button>
+    </div>
+  }
+</dialog>
+
+<div #toastEl popover="manual" class="toast">✓ {{ toast() }}</div>
+
+<!-- every payout -->
+<dialog #histEl class="ovl" aria-label="Every payout" (cancel)="closeHist()">
+  @if (hist()) {
+    <div class="bd" (click)="closeHist()"></div>
+    <div class="sheet hist">
+      <div class="hhd">
+        <i class="handle"></i>
+        <div class="hhr">
+          <span class="hhl">
+            <span class="sh-ttl">Every <i>payout</i></span>
+            <span class="hhs">{{ count() ? countTxt() + ' credited' : 'No payouts yet' }}</span>
+          </span>
+          <span class="hht">{{ recvTxt() }}</span>
+        </div>
+      </div>
+      <div class="hlist">
+        @for (h of history(); track h.month) {
+          @if (h.yr) { <div class="yr">{{ h.yr }}</div> }
+          <div class="hr">
+            <span class="dtile"><b>{{ h.day }}</b><span>{{ h.mon }}</span></span>
+            <span class="hm"><span class="hm1">{{ h.month }}</span><span class="hm2">{{ h.n }} villa{{ h.n === 1 ? '' : 's' }} · credited</span></span>
+            <span class="ha">+{{ h.amt }}</span>
+          </div>
+        } @empty {
+          <div class="none">Nothing credited yet — each payout shows here as it lands on the {{ payDayTxt() }}.</div>
+        }
+      </div>
+    </div>
+  }
+</dialog>

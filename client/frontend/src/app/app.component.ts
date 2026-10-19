@@ -14,6 +14,7 @@ import { VillaBuyComponent } from './build/villa-buy.component';
 import { NextVillaComponent } from './build/next-villa.component';
 import { CallsComponent } from './calls.component';
 import { GoalsComponent } from './goals/goals.component';
+import { GoalsService } from './goals/goals.service';
 import { CalculatorsComponent } from './calc/calculators.component';
 import { IntroComponent } from './intro.component';
 import { LandDetailComponent as LandStorefrontComponent } from './land-detail.component';
@@ -62,6 +63,8 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
+  /** the Goals flow: its sub-pages hide the tab bar */
+  private readonly goalsSvc = inject(GoalsService);
   readonly auth = inject(AuthService);
   private readonly est = inject(EstateService);
   readonly whatsNew = inject(WhatsNewService);
@@ -208,7 +211,7 @@ export class AppComponent {
       !this.intro && this.auth.signedIn() &&
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.building === null && this.buildFlow === null && !this.accountOpen &&
-      !this.levelsOpen && !(this.view === 'calc' && this.calcOpen) &&
+      !this.levelsOpen && !(this.view === 'calc' && this.calcOpen) && !(this.view === 'goals' && this.goalsSvc.page() !== 'hub') &&
       (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc' || this.view === 'goals')
     );
   }

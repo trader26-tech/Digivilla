@@ -1,0 +1,55 @@
+<div class="card" [class.saved]="g()">
+  <i class="ring" aria-hidden="true"></i>
+  <div class="glow-bg"></div>
+  <div class="stars"></div>
+
+  @if (!g()) {
+    <!-- the "Create" card: dashed plus tile + four floating chips -->
+    <div class="plus">
+      <span class="dash"></span>
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#e4defd" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </div>
+    @for (c of chips; track c.t) {
+      <span class="chip" [style.left]="c.x" [style.top]="c.y" [style.--r]="c.r" [style.animation-delay]="c.d"><i [style.background]="c.c"></i>{{ c.t }}</span>
+    }
+  } @else {
+    <!-- a saved goal: what it costs, what pays for it -->
+    <div class="saved-mid">
+      <span class="s-amt">{{ amtTxt() }}</span>
+      <span class="s-when">{{ typeTxt() }} · {{ whenTxt() }}</span>
+    </div>
+    <button class="x" type="button" aria-label="Remove this goal" (click)="onRemove($event)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+  }
+
+  <div class="fade"></div>
+  <div class="rule"></div>
+
+  <div class="tag">
+    <span class="tag-n">{{ g() ? '03' : '02' }}</span>
+    <span class="tag-l"></span>
+    <span class="tag-t">{{ g() ? kindTxt() : 'New goal' }}</span>
+  </div>
+
+  <div class="foot">
+    <div class="row">
+      @if (!g()) {
+        <div class="lft">
+          <span class="h">Your <span class="h-i">own goal</span></span>
+          <span class="sub">Name it, price it, let villas pay</span>
+        </div>
+        <span class="pill">Create<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+      } @else {
+        <div class="lft">
+          <span class="h name">{{ g()!.name }}</span>
+          <span class="sub">{{ villasTxt() }} pay for it</span>
+        </div>
+        <div class="rgt">
+          <b class="amt">{{ costTxt() }}</b>
+          <span class="nxt">to invest</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>

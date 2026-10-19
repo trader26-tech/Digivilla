@@ -1,0 +1,81 @@
+<div class="glow"></div>
+<div class="scr">
+  <div class="top">
+    <div class="bar">
+      <button type="button" class="back" (click)="back.emit()" aria-label="Back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>
+      </button>
+      <span class="kicker">Checkout</span>
+      <span class="spacer"></span>
+    </div>
+
+    @if (ready()) {
+      <div class="hero">
+        <span>Put in <i class="gold">{{ heroAmt() }}</i> once.</span>
+        <span>Fly home <i class="green">every year.</i></span>
+      </div>
+
+      <!-- the receipt -->
+      <div class="receipt">
+        <div class="lines">
+          <div class="ln"><span class="m">A year back home</span><span class="d">{{ goals.inr(total()) }}</span></div>
+          <div class="ln"><span class="f">{{ need() }} villas × {{ goals.inr(goals.villaCost()) }}</span><span class="d">{{ goals.inr(need() * goals.villaCost()) }}</span></div>
+          <button type="button" class="ln own" (click)="ownOpen.set(!ownOpen())" [attr.aria-expanded]="ownOpen()">
+            <span class="m lbl">You already own {{ ownLbl() }}<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(21,22,28,.5)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" [class.open]="ownOpen()"><path d="M9 6l6 6-6 6"></path></svg></span>
+            <span class="g">−{{ goals.inr(used() * goals.villaCost()) }}</span>
+          </button>
+          @if (ownOpen()) {
+            <div class="wallet">
+              <span class="chips">
+                @for (w of wallet(); track w.abbr) {
+                  <span class="chip"><i [style.background]="w.c"></i>{{ w.own }} {{ w.abbr }}</span>
+                }
+              </span>
+              <span class="use">
+                <button type="button" (click)="dec()" [disabled]="used() <= 0" aria-label="Use fewer"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                <b>use {{ used() }}</b>
+                <button type="button" (click)="inc()" [disabled]="used() >= maxUse()" aria-label="Use more"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+              </span>
+            </div>
+          }
+          <div class="rule"></div>
+          <div class="total">
+            <span class="l">{{ covered() ? 'Covered' : 'You pay' }}</span>
+            <span class="r">{{ covered() ? '₹0' : goals.inr(pay()) }}</span>
+          </div>
+          <span class="note">{{ paySub() }}</span>
+        </div>
+        <div class="tail"></div>
+        <div class="perf"></div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile gr">
+          <span class="k">You get back</span>
+          <span class="v">{{ goals.inr(monthly()) }}<span class="u">/mo</span></span>
+          <span class="s">on the {{ paydayTxt() }}, from {{ firstTxt() }}</span>
+        </div>
+        <div class="tile">
+          <span class="k gold">Every year</span>
+          <span class="v w">{{ goals.inr(yearly()) }}</span>
+          <span class="s">covers the trip while you hold them</span>
+        </div>
+      </div>
+    } @else {
+      <!-- quiet skeleton until the account's villas are known: no figure paints then changes -->
+      <div class="hero sk"><span class="bone w1"></span><span class="bone w2"></span></div>
+      <div class="receipt sk"><div class="lines"><span class="bone"></span><span class="bone"></span><span class="bone"></span><div class="rule"></div><span class="bone tall"></span></div><div class="tail"></div><div class="perf"></div></div>
+      <div class="tiles"><div class="tile"><span class="bone"></span><span class="bone tall"></span></div><div class="tile"><span class="bone"></span><span class="bone tall"></span></div></div>
+    }
+  </div>
+</div>
+
+<div class="cta">
+  <button type="button" class="pay" (click)="confirm()" [disabled]="!ready() || busy()">{{ ready() ? ctaTxt() : ' ' }}</button>
+  @if (ready() && !covered()) {
+    <button type="button" class="split" (click)="confirm()" [disabled]="busy()">or pay over {{ splitN() }} months · <span>{{ goals.lakhShort(pay() / splitN()) }}</span> each</button>
+  }
+  @if (err()) { <span class="err">{{ err() }}</span> }
+</div>
+
+@if (toast()) { <div class="toast">✓ Trip fund confirmed</div> }

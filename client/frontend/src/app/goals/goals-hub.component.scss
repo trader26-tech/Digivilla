@@ -1,0 +1,73 @@
+/* Goals hub — the Goals Page design: three stacked cards + the Homecoming sheet */
+.scr { min-height: 0; }
+.warm { position: absolute; left: 0; right: 0; top: 0; height: 420px; pointer-events: none; background: radial-gradient(70% 50% at 50% 10%, rgba(243, 160, 106, .16), transparent 70%); }
+/* the shell's floating tab bar leaves 112 px; this makes the design's 130 */
+.hub { padding-bottom: 18px; }
+
+.slot { position: relative; flex: none; animation: gUp .5s both; }
+.a1 { animation-delay: .05s; } .a2 { animation-delay: .1s; } .a3 { animation-delay: .2s; }
+.hit { position: absolute; inset: 0; border-radius: 28px; z-index: 4; }
+
+/* ── Homecoming card ── */
+.hc {
+  position: relative; display: block; overflow: hidden; width: 100%; height: 240px; border-radius: 28px; color: #E1E0CC;
+  box-shadow: inset 0 0 0 1px rgba(251, 219, 129, .22);
+}
+.hc .ring {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: 28px; padding: 1px;
+  background: linear-gradient(160deg, rgba(255, 214, 160, .6), rgba(255, 255, 255, .08) 40%, rgba(255, 255, 255, .04) 70%, rgba(255, 214, 160, .25));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.sky { position: absolute; inset: 0; width: 100%; height: 100%; }
+.plane-sh { filter: drop-shadow(0 7px 6px rgba(40, 36, 90, .32)); }
+.plane { animation: hcFly 4.2s ease-in-out infinite; }
+.burj { position: absolute; left: 0; top: 0; height: 100%; width: auto; max-width: none; -webkit-mask-image: linear-gradient(90deg, #000 58%, transparent 100%); mask-image: linear-gradient(90deg, #000 58%, transparent 100%); }
+.gate { position: absolute; right: -4px; bottom: 74px; width: 160px; height: 141px; filter: drop-shadow(0 10px 18px rgba(60, 30, 10, .45)); img { display: block; width: 100%; height: 100%; object-fit: contain; } }
+.gate-lbl { position: absolute; left: 38.8%; top: 10.6%; width: 23.6%; height: 6.6%; display: grid; place-items: center; background: #d9a868; border-radius: 1px; font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 700; letter-spacing: .08em; line-height: 1; color: #3a1f08; }
+.hc .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(180deg, rgba(20, 17, 28, 0) 0, rgba(20, 17, 28, .75) 12px, #14111c 20px, #100e17 100%); }
+.hc .rule { position: absolute; left: 20px; right: 20px; bottom: 76px; height: 1px; background: linear-gradient(90deg, transparent, rgba(243, 223, 168, .28) 30%, rgba(243, 223, 168, .28) 70%, transparent); }
+.hc .tag { position: absolute; left: 104px; top: 16px; display: flex; align-items: center; gap: 8px; }
+.tag-n { font-family: var(--serif); font-style: italic; font-size: 17px; color: #fff; }
+.tag-l { width: 22px; height: 1px; background: rgba(255, 255, 255, .6); }
+.tag-t { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 6px rgba(30, 40, 90, .45); }
+.hc .foot { position: absolute; left: 18px; right: 18px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.lft { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.h { font-size: 28px; letter-spacing: -.035em; line-height: 1; color: #fff; }
+.h-i { font-family: var(--serif); font-style: italic; letter-spacing: -.01em; color: #fbdb81; }
+.sub { font-size: 13px; color: rgba(225, 224, 204, .78); white-space: nowrap; }
+.rgt { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.amt { font-size: 20px; font-weight: 500; letter-spacing: -.03em; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 1px 10px rgba(0, 0, 0, .6); }
+.nxt { font-size: 11px; color: rgba(225, 224, 204, .6); font-variant-numeric: tabular-nums; }
+
+/* ── the trip-cost sheet ── */
+.sh-hd { display: flex; flex-direction: column; gap: 6px; }
+.sh-ttl i { color: #f3c77a; }
+.sh-sub { font-size: 12px; color: rgba(225, 224, 204, .55); }
+.field {
+  display: flex; align-items: baseline; gap: 6px; padding: 16px 18px; border-radius: 18px; background: rgba(255, 255, 255, .04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); transition: box-shadow .2s;
+  &.on { box-shadow: inset 0 0 0 1.5px rgba(243, 199, 122, .6); }
+  .rs { font-size: 30px; color: rgba(225, 224, 204, .5); }
+  input { flex: 1; min-width: 0; width: 100%; font-size: 38px; letter-spacing: -.04em; color: #fff; font-variant-numeric: tabular-nums; &::placeholder { color: rgba(225, 224, 204, .25); } }
+  .per { font-size: 12px; color: rgba(225, 224, 204, .45); }
+}
+.chips { display: flex; gap: 8px; }
+.chip {
+  flex: 1; height: 34px; border-radius: 17px; font-size: 12.5px; color: #E1E0CC; background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); transition: background .2s, color .2s;
+  &.on { color: #0b0c14; background: #f3c77a; box-shadow: none; }
+}
+.or { display: flex; align-items: center; gap: 12px; font-size: 11px; color: rgba(225, 224, 204, .4); i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .12)); } i:last-child { background: linear-gradient(90deg, rgba(255, 255, 255, .12), transparent); } }
+.est {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; text-align: left; width: 100%;
+  background: rgba(255, 255, 255, .03); box-shadow: inset 0 0 0 1px rgba(243, 199, 122, .25); transition: background .15s;
+  &:hover { background: rgba(243, 199, 122, .06); }
+}
+.bars { flex: none; display: flex; gap: 3px; height: 34px; align-items: flex-end; i { width: 6px; border-radius: 2px; } .b1 { height: 60%; background: #7f72e0; } .b2 { height: 40%; background: #f3a06a; } .b3 { height: 100%; background: #f6c445; } .b4 { height: 75%; background: #8fd65a; } }
+.est-t { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.est-h { font-size: 14px; color: #fff; }
+.est-s { font-size: 11px; color: rgba(225, 224, 204, .5); }
+
+@keyframes hcFly { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(1.5px, -1.5px); } }
+@media (prefers-reduced-motion: reduce) { .slot, .plane { animation: none; } }

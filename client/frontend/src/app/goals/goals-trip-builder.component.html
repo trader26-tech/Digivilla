@@ -1,0 +1,180 @@
+<!-- the − / ₹ amount / + row every card shares (k = which part) -->
+<ng-template #row let-k let-c="c">
+  <div class="rowwrap">
+    <div class="amt" [style.--c]="c.color" [style.--rgb]="c.rgb">
+      <button type="button" class="step" (click)="dec(k)" aria-label="Less">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+      </button>
+      <label class="field">
+        <span class="money">
+          <span class="rs">₹</span>
+          <input [value]="typed(k)" (input)="onType(k, $event)" (blur)="onBlur(k)" [style.width]="width(k)" inputmode="numeric" placeholder="0" aria-label="Set amount">
+        </span>
+      </label>
+      <button type="button" class="step" (click)="inc(k)" aria-label="More">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<div class="scr">
+  <div class="head">
+    <button type="button" class="back" (click)="back.emit()" aria-label="Back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>
+    </button>
+    <div class="titles">
+      <span class="title">Home<i>coming</i></span>
+      <span class="sub">Type what each part will cost</span>
+    </div>
+  </div>
+
+  <!-- 01 Flights -->
+  <div class="card c0" [style.animation-delay]="cards[0].delay">
+    <div class="pic" aria-label="Set Flights budget">
+      <div class="art">
+        <div style="position:absolute;left:0;right:0;top:0;height:60%;background:radial-gradient(60% 50% at 78% 70%,rgba(255,226,170,.55),rgba(240,138,74,.18) 45%,transparent 70%)"></div>
+        <div style="position:absolute;left:-40px;top:52px;width:220px;height:50px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,240,230,.55),transparent 66%);filter:blur(8px)"></div>
+        <div style="position:absolute;right:-30px;top:30px;width:200px;height:44px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,240,230,.45),transparent 66%);filter:blur(8px)"></div>
+        <div style="position:absolute;left:60px;top:96px;width:200px;height:50px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,236,226,.5),transparent 66%);filter:blur(10px)"></div>
+        <div style="position:absolute;right:170px;top:84px;width:130px;height:3px;transform:rotate(-7deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.7))"></div>
+        <div style="position:absolute;right:170px;top:94px;width:100px;height:2px;transform:rotate(-7deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.45))"></div>
+        <div style="position:absolute;right:22px;top:46px;width:200px;height:66px;transform:rotate(-7deg);filter:drop-shadow(0 18px 20px rgba(10,8,30,.55))">
+          <svg viewBox="0 0 320 120" style="width:100%;height:100%;overflow:visible">
+            <defs>
+              <linearGradient id="gtbPF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"></stop><stop offset=".6" stop-color="#e6e8f2"></stop><stop offset="1" stop-color="#9ba0bb"></stop></linearGradient>
+              <linearGradient id="gtbPW" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f5fa"></stop><stop offset="1" stop-color="#aeb3cb"></stop></linearGradient>
+            </defs>
+            <path d="M170,48 L124,22 L144,22 L212,48 Z" fill="url(#gtbPW)" opacity=".8"></path>
+            <path d="M40,52 L18,8 L48,8 L88,52 Z" fill="#3b3f8a"></path>
+            <path d="M26,26 L38,26 L62,52 L52,52 Z" fill="#f6c445"></path>
+            <path d="M30,60 L2,54 L8,49 L56,56 Z" fill="#c3c7da"></path>
+            <path d="M22,58 Q20,46 46,44 L246,42 Q292,44 312,56 Q296,68 246,70 L46,70 Q22,70 22,58 Z" fill="url(#gtbPF)"></path>
+            <path d="M60,63 L250,61 Q284,62 302,64 Q284,68 246,69 L60,69 Z" fill="#2a2b6b" opacity=".92"></path>
+            <path d="M60,60 L250,58 L250,61 L60,63 Z" fill="#f6c445"></path>
+            <path d="M278,48 Q298,50 308,56 L284,56 Q278,53 278,48 Z" fill="#1b1d3a"></path>
+            <g fill="#2a2d4d"><rect x="92" y="50" width="5" height="6" rx="1.6"></rect><rect x="110" y="50" width="5" height="6" rx="1.6"></rect><rect x="128" y="50" width="5" height="6" rx="1.6"></rect><rect x="146" y="50" width="5" height="6" rx="1.6"></rect><rect x="164" y="50" width="5" height="6" rx="1.6"></rect><rect x="182" y="50" width="5" height="6" rx="1.6"></rect><rect x="200" y="50" width="5" height="6" rx="1.6"></rect><rect x="218" y="50" width="5" height="6" rx="1.6"></rect><rect x="236" y="50" width="5" height="6" rx="1.6"></rect></g>
+            <path d="M150,64 L206,64 L140,104 L110,104 Z" fill="url(#gtbPW)"></path>
+            <rect x="150" y="80" width="42" height="16" rx="8" fill="#c3c7da"></rect>
+            <rect x="150" y="80" width="9" height="16" rx="4.5" fill="#3a3d5c"></rect>
+          </svg>
+        </div>
+        <div style="position:absolute;left:18px;top:108px;display:flex;flex-direction:column;gap:3px;white-space:nowrap;padding:8px 10px;border-radius:9px;background:#f4efe0;color:#1a1626;transform:rotate(-4deg);box-shadow:0 12px 20px -8px rgba(0,0,0,.6)">
+          <span style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:800;letter-spacing:.04em"><span>DXB</span><span style="width:16px;height:1px;background:#1a1626"></span><span>COK</span></span>
+          <span style="font-size:9px;letter-spacing:.18em;color:#7a6f5c">06 DEC · 4 PAX · 31A</span>
+        </div>
+      </div>
+      <div class="fade"></div>
+      <div class="tag" [style.color]="cards[0].color"><span class="n">{{ cards[0].num }}</span><i [style.background]="cards[0].color"></i><span class="l">{{ cards[0].label }}</span></div>
+      <div class="cap"><span class="t">{{ cards[0].title }}</span><span class="s">{{ cards[0].sub }}</span></div>
+    </div>
+    <ng-container *ngTemplateOutlet="row; context: { $implicit: 0, c: cards[0] }"></ng-container>
+  </div>
+
+  <!-- 02 Movies & dinners -->
+  <div class="card c1" [style.animation-delay]="cards[1].delay">
+    <div class="pic" aria-label="Set Movies & dinners budget">
+      <div class="art">
+        <div style="position:absolute;left:0;right:0;top:0;bottom:0;background:radial-gradient(70% 60% at 50% 20%,#2a1a3a,transparent 70%)"></div>
+        <div style="position:absolute;left:50%;top:44px;width:180px;height:84px;margin-left:-20px;border-radius:6px;background:linear-gradient(160deg,#fff6e0,#f3bd7c 45%,#d9814f);box-shadow:0 0 70px rgba(255,190,120,.6),inset 0 0 0 4px #1a1430"><div style="position:absolute;inset:4px;background:radial-gradient(40% 50% at 40% 60%,rgba(115,70,124,.5),transparent),linear-gradient(180deg,transparent 55%,rgba(42,40,98,.7))"></div></div>
+        <div style="position:absolute;left:50%;top:128px;width:240px;height:56px;margin-left:-50px;clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);background:linear-gradient(180deg,rgba(255,226,170,.3),transparent)"></div>
+        <div class="seats a">
+          <span></span><span><span class="hd"></span></span><span></span><span></span><span><span class="hd"></span></span><span></span><span></span><span><span class="hd"></span></span><span></span>
+        </div>
+        <div class="seats b">
+          <span></span><span></span><span><span class="hd"></span></span><span></span><span></span><span></span><span><span class="hd"></span></span><span></span><span></span>
+        </div>
+        <div style="position:absolute;left:24px;top:60px;width:44px;height:58px;transform:rotate(-8deg)"><div style="position:absolute;left:-3px;right:-3px;top:-10px;height:20px;border-radius:50%;background:radial-gradient(circle at 25% 60%,#fff3cf 30%,transparent 32%),radial-gradient(circle at 55% 40%,#fbdb81 30%,transparent 32%),radial-gradient(circle at 80% 65%,#fff3cf 30%,transparent 32%),radial-gradient(circle at 45% 75%,#ffe6a0 28%,transparent 30%)"></div><div style="position:absolute;inset:0;clip-path:polygon(0 0,100% 0,86% 100%,14% 100%);background:repeating-linear-gradient(90deg,#e8483f 0 7px,#f7f3ea 7px 14px);box-shadow:0 10px 16px -6px rgba(0,0,0,.6)"></div></div>
+        <div style="position:absolute;left:14px;top:134px;padding:5px 9px;border-radius:6px;background:#f4efe0;color:#4a1424;font-size:10px;font-weight:800;letter-spacing:.14em;transform:rotate(-10deg);box-shadow:0 6px 12px -6px rgba(0,0,0,.6);border-left:2px dashed rgba(74,20,36,.4);white-space:nowrap">ADMIT 4</div>
+      </div>
+      <div class="fade"></div>
+      <div class="tag" [style.color]="cards[1].color"><span class="n">{{ cards[1].num }}</span><i [style.background]="cards[1].color"></i><span class="l">{{ cards[1].label }}</span></div>
+      <div class="cap"><span class="t">{{ cards[1].title }}</span><span class="s">{{ cards[1].sub }}</span></div>
+    </div>
+    <ng-container *ngTemplateOutlet="row; context: { $implicit: 1, c: cards[1] }"></ng-container>
+  </div>
+
+  <!-- 03 Shopping -->
+  <div class="card c2" [style.animation-delay]="cards[2].delay">
+    <div class="pic" aria-label="Set Shopping budget">
+      <div class="art">
+        <div style="position:absolute;inset:0;background:radial-gradient(60% 60% at 70% 30%,rgba(246,196,69,.22),transparent 70%)"></div>
+        <div style="position:absolute;left:0;right:0;top:158px;height:2px;background:linear-gradient(90deg,transparent,rgba(255,226,170,.5),transparent)"></div>
+        <div style="position:absolute;left:0;right:0;top:160px;height:60px;background:linear-gradient(180deg,rgba(74,58,20,.6),transparent)"></div>
+        <div style="position:absolute;left:150px;top:68px;width:70px;height:92px;transform:rotate(-8deg)"><div style="position:absolute;left:18.2px;right:18.2px;top:-18.4px;height:25.76px;border:5px solid #7a4a10;border-bottom:0;border-radius:99px 99px 0 0"></div><div style="position:absolute;inset:0;border-radius:9px;background:#f6c445;box-shadow:inset -9.8px 0 0 rgba(0,0,0,.1),inset 0 7.36px 0 rgba(255,255,255,.14),0 16px 24px -10px rgba(0,0,0,.7)"></div><span class="bagl" style="font-size:15.4px;color:#7a4a10">Gold</span></div>
+        <div style="position:absolute;left:214px;top:86px;width:58px;height:74px;transform:rotate(5deg)"><div style="position:absolute;left:15.08px;right:15.08px;top:-14.8px;height:20.72px;border:5px solid #73467c;border-bottom:0;border-radius:99px 99px 0 0"></div><div style="position:absolute;inset:0;border-radius:9px;background:#f7f3ea;box-shadow:inset -8.12px 0 0 rgba(0,0,0,.1),inset 0 5.92px 0 rgba(255,255,255,.14),0 16px 24px -10px rgba(0,0,0,.7)"></div><span class="bagl" style="font-size:12.76px;color:#73467c">Saree</span></div>
+        <div style="position:absolute;left:262px;top:56px;width:80px;height:104px;transform:rotate(-4deg)"><div style="position:absolute;left:20.8px;right:20.8px;top:-20.8px;height:29.12px;border:5px solid #244a18;border-bottom:0;border-radius:99px 99px 0 0"></div><div style="position:absolute;inset:0;border-radius:9px;background:#8fd65a;box-shadow:inset -11.2px 0 0 rgba(0,0,0,.1),inset 0 8.32px 0 rgba(255,255,255,.14),0 16px 24px -10px rgba(0,0,0,.7)"></div><span class="bagl" style="font-size:17.6px;color:#244a18">Gifts</span></div>
+        <div style="position:absolute;left:336px;top:98px;width:48px;height:62px;transform:rotate(9deg)"><div style="position:absolute;left:12.48px;right:12.48px;top:-12.4px;height:17.36px;border:5px solid #4a1424;border-bottom:0;border-radius:99px 99px 0 0"></div><div style="position:absolute;inset:0;border-radius:9px;background:#d9814f;box-shadow:inset -6.72px 0 0 rgba(0,0,0,.1),inset 0 4.96px 0 rgba(255,255,255,.14),0 16px 24px -10px rgba(0,0,0,.7)"></div></div>
+        <div style="position:absolute;left:40px;top:92px;width:60px;height:50px;border-radius:7px;background:linear-gradient(90deg,#7f72e0 0 42%,#f6c445 42% 58%,#7f72e0 58%);box-shadow:0 14px 20px -8px rgba(0,0,0,.6)"><div style="position:absolute;left:0;right:0;top:18px;height:9px;background:#f6c445"></div><div style="position:absolute;left:16px;top:-14px;width:14px;height:14px;border:4px solid #f6c445;border-radius:50% 50% 0 50%;transform:rotate(20deg)"></div><div style="position:absolute;left:30px;top:-14px;width:14px;height:14px;border:4px solid #f6c445;border-radius:50% 50% 50% 0;transform:rotate(-20deg)"></div></div>
+        <div style="position:absolute;left:18px;top:146px;width:84px;height:16px;border-radius:50%;background:rgba(0,0,0,.35);filter:blur(5px)"></div>
+        <span style="position:absolute;left:120px;top:40px;width:8px;height:8px;border-radius:50%;background:#fbdb81;box-shadow:0 0 14px 4px rgba(251,219,129,.7)"></span><span style="position:absolute;right:30px;top:30px;width:5px;height:5px;border-radius:50%;background:#fff3cf;box-shadow:0 0 10px 3px rgba(255,243,207,.7)"></span><span style="position:absolute;right:120px;top:20px;width:4px;height:4px;border-radius:50%;background:#fff3cf;box-shadow:0 0 8px 2px rgba(255,243,207,.7)"></span>
+      </div>
+      <div class="fade"></div>
+      <div class="tag" [style.color]="cards[2].color"><span class="n">{{ cards[2].num }}</span><i [style.background]="cards[2].color"></i><span class="l">{{ cards[2].label }}</span></div>
+      <div class="cap"><span class="t">{{ cards[2].title }}</span><span class="s">{{ cards[2].sub }}</span></div>
+    </div>
+    <ng-container *ngTemplateOutlet="row; context: { $implicit: 2, c: cards[2] }"></ng-container>
+  </div>
+
+  <!-- 04 Vacation -->
+  <div class="card c3" [style.animation-delay]="cards[3].delay">
+    <div class="pic" aria-label="Set Vacation budget">
+      <div class="art">
+        <div style="position:absolute;inset:0;background:radial-gradient(70% 60% at 30% 20%,rgba(143,214,90,.16),transparent 70%)"></div>
+        <div style="position:absolute;left:18px;right:18px;top:120px;height:2px;background:repeating-linear-gradient(90deg,rgba(247,243,234,.55) 0 8px,transparent 8px 14px)"></div>
+        <div style="position:absolute;left:12px;top:150px;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e8483f;box-shadow:0 8px 12px -4px rgba(0,0,0,.6)"><span style="position:absolute;left:8px;top:8px;width:10px;height:10px;border-radius:50%;background:#f7f3ea"></span></div>
+        <div class="photo" style="left:30px;top:54px;transform:rotate(-7deg)"><div style="position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,#f3bd7c 0%,#f6d3a0 58%,#9fc6d4 58%,#6fa3b8 100%)"><span style="position:absolute;left:50%;top:14px;width:30px;height:26px;margin-left:-15px;border-radius:50% 50% 8% 8%;background:linear-gradient(90deg,#fffaf0,#e9e2d4)"></span><span style="position:absolute;left:50%;top:8px;width:2px;height:8px;margin-left:-1px;background:#d8c9a8"></span><span style="position:absolute;left:14px;right:14px;top:36px;height:14px;background:#f7f3ea"></span><span style="position:absolute;left:50%;top:38px;width:10px;height:12px;margin-left:-5px;border-radius:5px 5px 0 0;background:#c9bda6"></span><span style="position:absolute;left:6px;top:22px;width:4px;height:28px;background:#f7f3ea"></span><span style="position:absolute;right:6px;top:22px;width:4px;height:28px;background:#f7f3ea"></span><span style="position:absolute;left:20px;top:30px;width:8px;height:6px;border-radius:50% 50% 0 0;background:#efe8da"></span><span style="position:absolute;right:20px;top:30px;width:8px;height:6px;border-radius:50% 50% 0 0;background:#efe8da"></span><span style="position:absolute;left:50%;top:52px;width:30px;height:14px;margin-left:-15px;border-radius:0 0 50% 50%;background:rgba(255,250,240,.35)"></span></div><span class="pl">Agra</span></div>
+        <div class="photo" style="left:142px;top:46px;transform:rotate(4deg)"><div style="position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,#73467c 0%,#d9814f 55%,#f3bd7c 78%,#7a8a5a 78%,#5a6a40 100%)"><span style="position:absolute;left:16px;right:16px;top:18px;height:6px;background:#e6b98a"></span><span style="position:absolute;left:20px;right:20px;top:13px;height:5px;background:#d9a574"></span><span style="position:absolute;left:18px;right:18px;top:24px;height:40px;background:linear-gradient(90deg,#c98e5c,#e6b98a 50%,#c98e5c)"></span><span style="position:absolute;left:50%;top:34px;width:16px;height:30px;margin-left:-8px;border-radius:8px 8px 0 0;background:#3a2a52"></span><span style="position:absolute;right:8px;top:8px;width:9px;height:9px;border-radius:50%;background:#fff3cf;box-shadow:0 0 8px rgba(255,243,207,.9)"></span></div><span class="pl">Delhi</span></div>
+        <div class="photo" style="left:254px;top:52px;transform:rotate(9deg)"><div style="position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,#fbdb81 0%,#f3a06a 44%,#2c6f8a 45%,#2c6f8a 66%,#f1d9a8 67%,#e6c48a 100%)"><span style="position:absolute;left:14px;top:12px;width:16px;height:16px;border-radius:50%;background:#fff3cf;box-shadow:0 0 10px rgba(255,243,207,.9)"></span><span style="position:absolute;right:10px;top:30px;width:3px;height:36px;background:#5a3a1a;transform:rotate(8deg)"></span><span style="position:absolute;right:2px;top:22px;width:22px;height:12px;border-radius:50% 50% 0 0;background:#2f6b3a;transform:rotate(-20deg)"></span><span style="position:absolute;right:12px;top:20px;width:22px;height:12px;border-radius:50% 50% 0 0;background:#3f8a4a;transform:rotate(30deg)"></span></div><span class="pl">Goa</span></div>
+        <div class="stamp">INDIA<br>2026</div>
+      </div>
+      <div class="fade"></div>
+      <div class="tag" [style.color]="cards[3].color"><span class="n">{{ cards[3].num }}</span><i [style.background]="cards[3].color"></i><span class="l">{{ cards[3].label }}</span></div>
+      <div class="cap"><span class="t">{{ cards[3].title }}</span><span class="s">{{ cards[3].sub }}</span></div>
+    </div>
+    <ng-container *ngTemplateOutlet="row; context: { $implicit: 3, c: cards[3] }"></ng-container>
+  </div>
+</div>
+
+<!-- sticky footer: the trip total + Save -->
+<div class="foot">
+  <div class="tot">
+    <span class="k">Trip total</span>
+    <b>{{ goals.inr(total()) }}</b>
+  </div>
+  <button type="button" class="save" (click)="showPlan()" [disabled]="!goals.data()">Fund it every year</button>
+</div>
+
+<!-- "Fund it every year" sheet -->
+@if (plan()) {
+  <div class="overlay">
+    <div class="dim" (click)="hidePlan()"></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="body">
+        <span class="stitle">Fund it <i>every year</i></span>
+        <div class="hero">
+          <span class="once">Invest once</span>
+          <span class="big">{{ investTxt() }}</span>
+          <span class="vrow">
+            <span class="icons">
+              @for (d of villaIcons(); track $index) {
+                <img src="assets/goals/villa.svg" alt="" [style.animation-delay]="d">
+              }
+            </span>
+            <span class="vl">{{ villaLbl() }}</span>
+          </span>
+        </div>
+        <div class="rows">
+          <div><span>Your trip</span><span class="w">{{ goals.inr(total()) }}</span></div>
+          <div><span>Villas pay you</span><span class="g">{{ goals.inr(pay()) }} a year</span></div>
+          <div><span>Left over</span><span class="w">{{ goals.inr(spare()) }}</span></div>
+        </div>
+      </div>
+      <div class="acts">
+        <button type="button" class="ghost" (click)="hidePlan()">Edit trip</button>
+        <button type="button" class="gold" (click)="fund.emit()">Invest {{ goals.lakhShort(invest()) }}</button>
+      </div>
+    </div>
+  </div>
+}
