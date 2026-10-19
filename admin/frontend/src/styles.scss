@@ -1,40 +1,47 @@
 /* ============================================================
-   Digivilla Admin — matches the client app's "estate document"
-   palette: warm document-white background, deep estate-green ink,
-   brass accent. All-Inter type system.
+   Digivilla Admin — the "Markets today" language: white cards on a cool grey page,
+   #1a1c2e ink, blue accent, teal / red for moves, as little text as the numbers allow.
+   The legacy brand tokens (--ink, --paper, --brass …) are remapped here so every page
+   picks the palette up without touching its own styles.
    ============================================================ */
 :root {
-  /* Brand palette (shared with the client app) */
-  --ink: #16302B;          /* deep estate green — text, brand */
-  --paper: #FAF8F3;        /* warm document white — background */
-  --survey: #DDD6C7;       /* faint khaki — borders, hairlines */
-  --brass: #A67C2E;        /* accent — CTAs, active states */
-  --terracotta: #8C4A32;   /* emphasis / errors */
-  --positive: #2E6B4F;     /* confirmed / gains */
-  --negative: #9B3B2E;     /* declined / losses */
+  /* the palette */
+  --nw-bg: #f2f4fb; --nw-card: #ffffff; --nw-card2: #f5f7fb; --nw-border: #e0e4f0;
+  --nw-text: #1a1c2e; --nw-muted: #6b7190; --nw-accent: #387ed1; --nw-accent-2: #2d6db8;
+  --nw-pos: #16a085; --nw-neg: #e53935; --nw-warn: #d97706;
+  --nw-shadow: 0 2px 12px rgba(26, 28, 46, 0.05);
+  --nw-radius: 16px;
 
-  /* Neutral surface tokens derived from the palette */
-  --bg:        var(--paper);
-  --surface:   #ffffff;
-  --surface-2: #F3EFE6;    /* subtle inset (inputs, chips) */
-  --border:    var(--survey);
-  --text:      var(--ink);
-  --muted:     color-mix(in srgb, var(--ink) 52%, var(--paper));
+  /* legacy brand tokens, remapped */
+  --ink: var(--nw-text);
+  --paper: var(--nw-bg);
+  --survey: var(--nw-border);
+  --brass: var(--nw-accent);
+  --terracotta: var(--nw-neg);
+  --positive: var(--nw-pos);
+  --negative: var(--nw-neg);
 
-  /* Legacy aliases used across the dashboard styles (remapped to brand) */
-  --accent:    var(--brass);
-  --accent-2:  color-mix(in srgb, var(--brass) 70%, var(--ink));
-  --purple:    var(--brass);
-  --orange:    var(--terracotta);
-  --good:      var(--positive);
-  --warn:      var(--brass);
-  --low:       var(--negative);
+  --bg:        var(--nw-bg);
+  --surface:   var(--nw-card);
+  --surface-2: var(--nw-card2);
+  --border:    var(--nw-border);
+  --text:      var(--nw-text);
+  --muted:     var(--nw-muted);
 
-  --font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --accent:    var(--nw-accent);
+  --accent-2:  var(--nw-accent-2);
+  --purple:    var(--nw-accent);
+  --orange:    var(--nw-warn);
+  --good:      var(--nw-pos);
+  --warn:      var(--nw-warn);
+  --low:       var(--nw-neg);
+
+  --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
 }
 
 * { box-sizing: border-box; }
+html { font-size: 14px; }
 html, body {
   margin: 0;
   padding: 0;
@@ -60,6 +67,7 @@ $side-w: 232px;
   display: flex; flex-direction: column; gap: 1.4rem; padding: 1.25rem 0.85rem 1rem;
   background: var(--surface); border-right: 1px solid var(--border);
 }
+.side-nav button { font-size: 13px; }
 .side .brand { padding: 0 0.6rem; }
 .side-nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
 .side-nav button {
@@ -68,8 +76,8 @@ $side-w: 232px;
   transition: background 0.15s, color 0.15s;
   svg { flex: none; opacity: 0.85; }
   &:hover { background: var(--surface-2); color: var(--ink); }
-  &.on { background: color-mix(in srgb, var(--brass) 12%, var(--surface)); color: var(--ink);
-    svg { color: var(--brass); opacity: 1; } }
+  &.on { background: color-mix(in srgb, var(--nw-accent) 10%, var(--surface)); color: var(--nw-accent);
+    svg { color: var(--nw-accent); opacity: 1; } }
 }
 .side-sep { margin: 0.9rem 0.7rem 0.3rem; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.9rem; border-top: 1px solid var(--border); }
