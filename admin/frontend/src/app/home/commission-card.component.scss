@@ -72,3 +72,10 @@
   .cw-sum { grid-template-columns: 1fr 1fr; gap: 8px; }
   .cw-cell.cost { grid-column: 1 / -1; }
 }
+
+/* this cycle (trail tracker teaser) */
+.cc-cycle { display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 2px 0 10px; padding: 10px 12px; border: 1px solid var(--nw-border); border-radius: 12px; background: var(--nw-card2); font: inherit; color: inherit; text-align: left; cursor: pointer;
+  &:hover { border-color: var(--nw-accent); }
+  .cc-cy-top { display: flex; justify-content: space-between; gap: 8px; small { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--nw-muted); } }
+  .cc-cy-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; b { font-size: 22px; font-weight: 800; letter-spacing: -.5px; } span { font-size: 12px; font-weight: 700; color: var(--nw-muted); } }
+  .cc-cy-bar { display: block; height: 5px; border-radius: 999px; background: #e8ebf2; overflow: hidden; i { display: block; height: 100%; background: var(--nw-accent); border-radius: 999px; } } }

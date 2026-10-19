@@ -29,6 +29,8 @@ export class PlacementsComponent implements OnInit {
   readonly justPlaced = signal<string>('');              // a one-line confirmation
   readonly autoCount = signal(0);                        // placed by the matcher on this load
   readonly flash = signal(false);
+  /** the list is folded by default — the head line says how much is waiting */
+  readonly open = signal(false);
   private flashT?: ReturnType<typeof setTimeout>;
 
   readonly SLEEVE_COLOUR: Record<string, string> = { arbitrage: '#98a0b8', gold: '#eda100', large: '#387ed1', mid: '#eb6834', small: '#1baf7a', other: '#6250d6' };

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, OnInit, Output, computed, inject, signal } from '@angular/core';
 
-import { AdminService, CommissionOverview, VillaBucket, VillaSummary } from '../admin.service';
+import { AdminService, CommissionLedger, CommissionOverview, VillaBucket, VillaSummary } from '../admin.service';
 import { VillaComm, villaComm } from './commission-villas';
 
 const LS_KEY = 'dv_admin_comm_sell';
@@ -30,9 +30,11 @@ export class CommissionCardComponent implements OnInit {
   readonly villas = signal<{ key: string; name: string }[]>([]);
   readonly villaCost = signal(DEFAULT_VILLA_COST);
   readonly sold = signal<VillaSummary | null>(null);
+  readonly ledger = signal<CommissionLedger | null>(null);
 
   /** how many of each type the admin plans to sell */
   readonly sell = signal<Record<string, number>>({});
+  payDay(iso: string): string { const d = new Date(iso + 'T12:00:00Z'); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
   readonly picks = [1, 10, 100];
   /** the "if you sell more villas" popup */
   readonly whatIf = signal(false);
@@ -54,6 +56,7 @@ export class CommissionCardComponent implements OnInit {
       error: () => {},
     });
     this.api.villasSummary().subscribe({ next: (s) => this.sold.set(s), error: () => {} });
+    this.api.commissionLedger().subscribe({ next: (l) => this.ledger.set(l), error: () => {} });
   }
   load(): void {
     this.error.set(false);

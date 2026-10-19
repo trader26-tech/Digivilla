@@ -449,6 +449,10 @@ export class AdminService {
     return this.http.delete<{ status: string }>(`${this.base}/admin/meetings/${id}`, this.opts);
   }
   // ── commission ──────────────────────────────────────────────────────────────
+  /** trail accrued day by day: the current 21st→20th cycle and the last closed ones */
+  commissionLedger(): Observable<CommissionLedger> {
+    return this.http.get<CommissionLedger>(`${this.base}/admin/commission/ledger`, this.opts);
+  }
   commission(): Observable<CommissionOverview> {
     return this.http.get<CommissionOverview>(`${this.base}/admin/commission`, this.opts);
   }
@@ -820,4 +824,19 @@ export interface IndiaBoard {
   nse: { open?: boolean; status?: string; day?: string | null; time?: string | null };
   session: string | null; window: { start: string; end: string } | null; max_years: number; sources?: { intraday: string; daily: string };
   items: IItem[]; villas: IVilla[]; default_villa: string | null; parts: Record<string, string>;
+}
+
+/** Trail commission ledger — what has built up since the last payout, from real holdings × NAV × rate. */
+export interface LedgerCycle { start: string; payout: string; total: number; days: number; }
+export interface CommissionLedger {
+  as_of: string; payout_day: number;
+  current: {
+    start: string; payout: string; days_total: number; days_done: number; days_left: number;
+    accrued: number; per_day: number; expected: number;
+    series: { d: string; v: number }[];
+    by_fund: { scheme_code: number; scheme_name: string; accrued: number; share: number; rate_pct: number }[];
+  };
+  past: LedgerCycle[];
+  last_payout: LedgerCycle | null;
+  funds_without_rate: string[];
 }

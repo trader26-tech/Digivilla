@@ -912,6 +912,14 @@ def admin_commission(authorization: Optional[str] = Header(default=None)) -> dic
     return commission_svc.overview()
 
 
+@app.get("/admin/commission/ledger")
+def admin_commission_ledger(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Trail commission accrued day by day: the current 21st→20th cycle so far, what the
+    20th should pay, and the last six cycles (cached 15 min)."""
+    _require_admin(authorization)
+    return commission_svc.ledger()
+
+
 @app.put("/admin/commission/rates")
 def admin_commission_rates(body: dict, authorization: Optional[str] = Header(default=None)) -> dict:
     """body = {"rates": {fund_key: rate_pct | null}} — merged into the saved rates."""

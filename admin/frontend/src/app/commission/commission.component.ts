@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
-import { AdminService, CommissionFund, CommissionOverview, VillaBucket } from '../admin.service';
+import { AdminService, CommissionFund, CommissionLedger, CommissionOverview, VillaBucket } from '../admin.service';
 import { fundKey } from '../home/commission-whatif';
 
 const DEFAULT_VILLA_COST = 500000;
@@ -44,9 +44,40 @@ export class CommissionComponent implements OnInit {
   /** buckets whose fund list is folded away (all open by default) */
   readonly closed = signal<Set<string>>(new Set());
   /** the (i) popovers */
-  readonly help = signal<'villa' | 'funds' | null>(null);
+  readonly help = signal<'villa' | 'funds' | 'trail' | null>(null);
 
-  ngOnInit(): void { this.load(); }
+  // ── the trail tracker: accrued since the last 20th, day by day ──
+  readonly ledger = signal<CommissionLedger | null>(null);
+  readonly ledgerErr = signal(false);
+  loadLedger(): void { this.api.commissionLedger().subscribe({ next: (l) => this.ledger.set(l), error: () => this.ledgerErr.set(true) }); }
+  /** chart geometry in a fixed 640×220 box: the cycle's days along x, ₹ along y */
+  readonly W = 640; readonly H = 220; readonly PL = 8; readonly PR = 8; readonly PT = 26; readonly PB = 26;
+  readonly tr = computed(() => {
+    const L = this.ledger(); if (!L) return null;
+    const c = L.current, n = Math.max(1, c.days_total - 1);
+    const top = Math.max(c.expected, c.accrued, 1) * 1.08;
+    const x = (i: number) => this.PL + (i / n) * (this.W - this.PL - this.PR);
+    const y = (v: number) => this.PT + (1 - v / top) * (this.H - this.PT - this.PB);
+    const pts = c.series.map((p, i) => [x(i), y(p.v)] as [number, number]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+    const last = pts[pts.length - 1] ?? [x(0), y(0)];
+    const area = pts.length ? line + `L${last[0].toFixed(1)} ${y(0).toFixed(1)}L${pts[0][0].toFixed(1)} ${y(0).toFixed(1)}Z` : '';
+    const endX = x(c.days_total - 1), endY = y(c.expected);
+    const proj = c.days_left > 0 ? `M${last[0].toFixed(1)} ${last[1].toFixed(1)}L${endX.toFixed(1)} ${endY.toFixed(1)}` : '';
+    const grid = [0.25, 0.5, 0.75, 1].map((f) => ({ y: y(top * f), label: this.compact(top * f) }));
+    return { line, area, proj, last, endX, endY, grid, y0: y(0), todayX: last[0] };
+  });
+  /** past cycles as bars (the tallest = 100 %) */
+  readonly bars = computed(() => {
+    const L = this.ledger(); if (!L) return [];
+    const max = Math.max(1, ...L.past.map((p) => p.total), L.current.expected);
+    const row = (label: string, total: number, now: boolean) => ({ label, total, hp: Math.max(3, total / max * 100), now });
+    return [...L.past.map((p) => row(this.monthOf(p.payout), p.total, false)), row(this.monthOf(L.current.payout), L.current.expected, true)];
+  });
+  monthOf(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }); }
+  dayOf(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+
+  ngOnInit(): void { this.load(); this.loadLedger(); }
 
   load(): void {
     this.loading.set(true);

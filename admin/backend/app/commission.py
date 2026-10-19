@@ -171,3 +171,127 @@ def _overview() -> dict:
             "clients": len(clients),
         },
     }
+
+
+# ── the trail ledger: what has built up since the last payout, day by day ────
+PAYOUT_DAY = 20                    # the AMCs pay the trail on the 20th; a cycle runs 21st → 20th
+
+
+def _cycle_bounds(today: date, back: int = 0) -> tuple[date, date]:
+    """(first day, payout day) of the cycle `back` cycles before the one holding `today`."""
+    y, m = today.year, today.month
+    if today.day > PAYOUT_DAY:                                   # already past this month's 20th → next month's cycle
+        m += 1
+        if m > 12:
+            y, m = y + 1, 1
+    m -= back
+    while m < 1:
+        y, m = y - 1, m + 12
+    end = date(y, m, PAYOUT_DAY)
+    pm, py = (m - 1, y) if m > 1 else (12, y - 1)
+    start = date(py, pm, PAYOUT_DAY + 1)
+    return start, end
+
+
+def _nav_lookup(code: int):
+    """day → the last NAV on or before it (weekends and holidays carry the previous NAV)."""
+    from bisect import bisect_right
+    from app.market import _fund_hist
+    hist = _fund_hist(int(code))
+    days = sorted(hist)
+    vals = [hist[d] for d in days]
+
+    def at(day: str) -> float | None:
+        i = bisect_right(days, day)
+        return vals[i - 1] if i else None
+    return at
+
+
+def ledger(cycles: int = 6) -> dict:
+    """Trail commission accrued day by day from the real holdings: every day each
+    fund's units held × that day's NAV × its trail rate ÷ 365. The current cycle
+    (21st → 20th) with its running total and what the 20th should bring, and the
+    last `cycles` closed cycles. The demo client is left out. An estimate at your
+    saved rates — the AMC statement is the final word."""
+    hit = _CACHE.get("ledger")
+    if hit and time.time() - hit[0] < 900:
+        return hit[1]
+    rates = {k: float(v) for k, v in (get_rates().get("rates") or {}).items()}
+    txns = [t for t in reports_svc._all_rows("client_transactions", "client_code,scheme_code,scheme_name,units,amount,kind,txn_date")
+            if t.get("client_code") != reports_svc.DEMO_CODE and t.get("scheme_code") and str(t["scheme_code"]) in rates]
+    from app.shared_alloc import villa_alloc
+    today = date.today()
+    first_start, _ = _cycle_bounds(today, cycles)
+    _, cur_end = _cycle_bounds(today)
+    cur_start, _ = _cycle_bounds(today)
+    # per fund: dated signed unit flows, sorted
+    flows: dict[int, list[tuple[str, float]]] = {}
+    names: dict[int, str] = {}
+    for t in txns:
+        code = int(t["scheme_code"])
+        d = str(t.get("txn_date") or "")[:10]
+        if not d:
+            continue
+        u = abs(reports_svc._to_float(t.get("units"))) * villa_alloc.txn_sign(t.get("kind"))
+        flows.setdefault(code, []).append((d, u))
+        names.setdefault(code, t.get("scheme_name") or str(code))
+    for code in flows:
+        flows[code].sort()
+    navs = {code: _nav_lookup(code) for code in flows}
+    # walk every calendar day from the oldest cycle to today
+    span_days = (today - first_start).days + 1
+    day_total: list[float] = []
+    day_list: list[str] = []
+    per_fund_cycle: dict[int, float] = {c: 0.0 for c in flows}
+    units = {c: 0.0 for c in flows}
+    idx = {c: 0 for c in flows}
+    for k in range(span_days):
+        d = first_start.fromordinal(first_start.toordinal() + k)
+        ds = d.isoformat()
+        tot = 0.0
+        for code, fl in flows.items():
+            while idx[code] < len(fl) and fl[idx[code]][0] <= ds:
+                units[code] += fl[idx[code]][1]
+                idx[code] += 1
+            if units[code] <= 1e-9:
+                continue
+            nav = navs[code](ds)
+            if not nav:
+                continue
+            a = units[code] * nav * rates[str(code)] / 100 / 365
+            tot += a
+            if d >= cur_start:
+                per_fund_cycle[code] += a
+        day_total.append(tot)
+        day_list.append(ds)
+    by_day = dict(zip(day_list, day_total))
+    # cycles
+    past = []
+    for back in range(cycles, 0, -1):
+        s, e = _cycle_bounds(today, back)
+        total = sum(v for d, v in by_day.items() if s.isoformat() <= d <= e.isoformat())
+        past.append({"start": s.isoformat(), "payout": e.isoformat(), "total": round(total, 2), "days": (e - s).days + 1})
+    cur_days = [(d, v) for d, v in by_day.items() if d >= cur_start.isoformat()]
+    accrued = sum(v for _, v in cur_days)
+    rate_now = day_total[-1] if day_total else 0.0
+    remaining = (cur_end - today).days
+    series, run = [], 0.0
+    for d, v in cur_days:
+        run += v
+        series.append({"d": d, "v": round(run, 2)})
+    by_fund = sorted([{"scheme_code": c, "scheme_name": names[c], "accrued": round(a, 2),
+                       "share": round(a / accrued, 4) if accrued else 0.0, "rate_pct": rates[str(c)]}
+                      for c, a in per_fund_cycle.items() if a > 0], key=lambda r: -r["accrued"])
+    out = {
+        "as_of": today.isoformat(), "payout_day": PAYOUT_DAY,
+        "current": {"start": cur_start.isoformat(), "payout": cur_end.isoformat(), "days_total": (cur_end - cur_start).days + 1,
+                    "days_done": (today - cur_start).days + 1, "days_left": remaining,
+                    "accrued": round(accrued, 2), "per_day": round(rate_now, 2),
+                    "expected": round(accrued + rate_now * remaining, 2), "series": series, "by_fund": by_fund},
+        "past": past,
+        "last_payout": past[-1] if past else None,
+        "funds_without_rate": sorted({t.get("scheme_name") for t in reports_svc._all_rows("client_transactions", "client_code,scheme_code,scheme_name")
+                                      if t.get("client_code") != reports_svc.DEMO_CODE and t.get("scheme_code") and str(t["scheme_code"]) not in rates and t.get("scheme_name")}),
+    }
+    _CACHE["ledger"] = (time.time(), out)
+    return out
