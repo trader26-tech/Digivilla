@@ -1,7 +1,7 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=40c21fa4';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2ff5d5b4';
 /* ── logic, verbatim from the design file ── */
-import * as E from './engine.js?v=40c21fa4';
-import { loadCalc } from './calc-data.js?v=40c21fa4';
+import * as E from './engine.js?v=2ff5d5b4';
+import { loadCalc } from './calc-data.js?v=2ff5d5b4';
 /* Every figure here is computed by the app's calculator engine (dc/engine.js) on real benchmark-index
    history with the live settings (GET /calc/config). Nothing in this file assumes a rate. */
 const YEAR_OPTS = [5, 8, 10, 15, 20];
