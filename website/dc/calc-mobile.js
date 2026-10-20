@@ -1,7 +1,7 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=8e604a27';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2db49674';
 /* ── logic, verbatim from the design file ── */
-import * as E from './engine.js?v=8e604a27';
-import { loadCalc } from './calc-data.js?v=8e604a27';
+import * as E from './engine.js?v=2db49674';
+import { loadCalc } from './calc-data.js?v=2db49674';
 /* Every figure here is computed by the app's calculator engine (dc/engine.js) on real benchmark-index
    history with the live settings (GET /calc/config). Nothing in this file assumes a rate. */
 const YEAR_OPTS = [5, 8, 10, 15, 20];
@@ -132,9 +132,9 @@ class Component extends DCLogic {
         : { paid: r.fdPaid, val: r.fdValue, paidLabel: 'Interest paid out', valLabel: 'Principal back', lbl: 'Fixed deposit · ' + S.fd + '%' }, R: { paid: r.dvPaid, val: r.dvValue } };
     } else {
       // the app's Flat screen: your numbers (bought for, worth today, rent) from the year you bought it; the same cash
-      // all-in (stamp duty + registration) in the villa from that month, on real index history
+      // in the villa from that month, on real index history — the price alone, no stamp duty / registration / brokerage
       const held = this.endYear(vf) - this.boughtYear(S), w = E.windowFor(E.withVilla(vf, villa), held);
-      const f = E.simulateFlat(w, { price: S.price, value: S.value, rent: S.rent, slabPct: cfg.tax.default_slab, swp: S.swp }, cfg);
+      const f = E.simulateFlat(w, { price: S.price, value: S.value, rent: S.rent, slabPct: cfg.tax.default_slab, swp: S.swp }, { ...cfg, flat: { ...cfg.flat, stamp_pct: 0, registration_pct: 0, sell_brokerage_pct: 0 } });
       out = { villa, w, r: f.dv, f, held, L: { paid: f.rentKept, val: S.value, paidLabel: 'Rent kept', valLabel: 'Worth today', lbl: 'Flat · ' + f.appPct.toFixed(1) + '% a yr' }, R: { paid: f.dv.dvPaid, val: f.dv.dvValue } };
     }
     this.memo = { key, out }; return out;
@@ -194,10 +194,10 @@ class Component extends DCLogic {
     }
     const f = out.f, yrs = out.held, rentThen = S.rent / Math.pow(1 + F.rent_rise_pct / 100, Math.max(0, yrs - 1));
     const steps = [
-      step('1', `In ${m0}`, 'You bought the flat:', fmt(f.outlay), ' all-in', `${fmt(S.price)} for the flat + ${fmt(f.stamp)} stamp duty (${F.stamp_pct}%) and registration (${F.registration_pct}%). That ${fmt(f.outlay)} is the money we compare.`),
+      step('1', `In ${m0}`, 'You bought the flat for', fmt(f.outlay), '', `That ${fmt(f.outlay)} is the money we compare.`),
       step('2', 'Every year', 'It earned rent: you kept', fmt(f.rentKept), '', `Rent is ${inr(S.rent)} a month today; we assume it rose ${F.rent_rise_pct}% a year to get there (about ${inr(rentThen)} in year 1), with ${F.vacant_months} empty month${F.vacant_months === 1 ? '' : 's'} a year.`,
         { rows: [{ t: 'Rent collected', v: fmt(f.rentGross), cls: '', bcls: '' }, { t: `Tax (${T.default_slab}% slab on ${Math.round(100 - F.std_deduction * 100)}% of it)`, v: '−' + fmt(f.rentTax), cls: '', bcls: 'neg' }, { t: `Upkeep (${F.upkeep_pct}% of value a year)`, v: '−' + fmt(f.upkeep), cls: '', bcls: 'neg' }, { t: 'Rent you kept', v: fmt(f.rentKept), cls: 'sum', bcls: '' }] }),
-      step('3', 'Today', 'The flat is worth', fmt(S.value), '', `From ${fmt(S.price)} — that's ${f.appPct.toFixed(1)}% a year. Selling it would also cost about ${F.sell_brokerage_pct}% in brokerage (not taken off here).`),
+      step('3', 'Today', 'The flat is worth', fmt(S.value), '', `From ${fmt(S.price)} — that's ${f.appPct.toFixed(1)}% a year.`),
       dvStep(f.outlay, '4'),
       result('Flat', f.flTotal, `${fmt(f.rentKept)} rent + ${fmt(S.value)}`, `${fmt(r.dvPaid)} rent + ${fmt(r.dvValue)}`, yrs),
     ];
@@ -208,7 +208,6 @@ class Component extends DCLogic {
       { k: 'Rent', a: f.yieldPct.toFixed(1) + '%', as: `${inr(S.rent)} a month · ${F.vacant_months} month${F.vacant_months === 1 ? '' : 's'} empty`, ac: N, b: r.swp ? swpPct + '%' : 'None', bs: r.swp ? `${inr(r.dvMonthly)} a month · every month` : 'SWP off — it all compounds', bc: r.swp ? G : N },
       { k: 'Risk', a: 'Medium', as: 'one building, one city', ac: Y, b: 'High', bs: r.worstYearPct == null ? 'can fall' : `worst 12 months: ${r.worstYearPct < 0 ? '−' : '+'}${Math.abs(r.worstYearPct).toFixed(0)}%`, bc: R },
       { k: 'Liquidity', a: 'Months', as: 'find a buyer, register', ac: R, b: '3 days', bs: 'redeem any business day', bc: G },
-      { k: 'Entry & exit', a: fmt(f.flFriction), as: `${F.stamp_pct}% stamp duty, ${F.registration_pct}% + ${F.sell_brokerage_pct}% brokerage`, ac: R, b: fmt(f.dvFriction), bs: '0.005% stamp duty on units', bc: G },
       { k: 'Effort', a: 'Yours', as: 'tenants, repairs, society', ac: N, b: 'None', bs: 'we look after it', bc: G },
       { k: 'Live in it', a: 'Yes', as: 'a home if you need one', ac: A, b: 'No', bs: 'it only pays you', bc: N },
     ];

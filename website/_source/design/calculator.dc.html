@@ -385,7 +385,7 @@ class Component extends DCLogic {
       out = { villa, w, r: E.simulatePayout(w, { amount, fdRate: S.fdRate, slabPct: S.tax, swp: S.income && !cmp, fdMode: cmp ? 'cumulative' : 'payout' }, cfg) };
     } else {
       const held = Math.max(1, this.endYear(vf) - bought), w = E.windowFor(d, held);
-      const f = E.simulateFlat(w, { price, value, rent, slabPct: S.tax, swp: S.income }, cfg);
+      const f = E.simulateFlat(w, { price, value, rent, slabPct: S.tax, swp: S.income }, { ...cfg, flat: { ...cfg.flat, stamp_pct: 0, registration_pct: 0, sell_brokerage_pct: 0 } });   // plain: the price alone, no stamp duty / registration / brokerage
       out = { villa, w, f, r: f.dv, held };
     }
     this.memo = { key, out };
@@ -423,7 +423,7 @@ class Component extends DCLogic {
       years = f.years; start = f.outlay;
       L = { a: f.rentKept, b: snapped('value'), la: 'Rent kept', lb: 'Worth today' }; R = { a: r.dvPaid, b: r.dvValue, la: 'Rent paid', lb: 'Value', solo: !S.income };
       lName = 'FLAT · ' + f.appPct.toFixed(1) + '% A YEAR'; lCap = this.fmt(f.rentKept) + ' rent kept + ' + this.fmt(snapped('value')) + ' worth';
-      rCap = this.fmt(f.outlay) + ' in (incl. stamp duty) → ' + (S.income ? this.fmt(r.dvPaid) + ' rent paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ', nothing drawn'); lArt = 'assets/art/flat.svg';
+      rCap = this.fmt(f.outlay) + ' in → ' + (S.income ? this.fmt(r.dvPaid) + ' rent paid + ' + this.fmt(r.dvValue) + ' value' : this.fmt(r.dvValue) + ', nothing drawn'); lArt = 'assets/art/flat.svg';
     }
     const lTot = Math.max(0, L.a) + L.b, rTot = (R.solo ? 0 : R.a) + R.b;
     const SH = S.sh || 460, maxH = Math.max(100, SH - (30 + 26 + 14 + 62 + 120 + 24) - 48), scale = maxH / Math.max(lTot, rTot), minSeg = 48, D = 26, W = 120, base = 30;
@@ -463,7 +463,7 @@ class Component extends DCLogic {
       ? (cmp
         ? `FD that compounds: ${S.fdRate}% a year, interest added every quarter and nothing paid out; each year's interest is taxed at your ${S.tax}% slab + ${cessPct}% cess as it is earned, and that tax is taken from the deposit. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}, nothing withdrawn so it compounds too; ${taxLine}. The villa's value is before tax on gains not yet sold. Indices are before any fund's expense ratio.`
         : `FD: ${S.fdRate}% interest paid out monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back at the end. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${r.swp ? `; ${swpPct}% a year paid monthly (${this.inr(start * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`)
-      : `Flat: price + ${F.stamp_pct}% stamp duty + ${F.registration_pct}% registration all-in; rent grew ${F.rent_rise_pct}% a year, ${12 - F.vacant_months} months let, taxed at ${S.tax}% after a ${Math.round(F.std_deduction * 100)}% deduction, ${F.upkeep_pct}% upkeep a year. DigiVilla: the same all-in amount in the ${pfName} villa on real benchmark indices, ${span}, ${S.income ? `paying ${swpPct}% a year as rent (SWP) from the arbitrage part first` : 'nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`;
+      : `Flat: the price you paid, nothing added; rent grew ${F.rent_rise_pct}% a year, ${12 - F.vacant_months} months let, taxed at ${S.tax}% after a ${Math.round(F.std_deduction * 100)}% deduction, ${F.upkeep_pct}% upkeep a year. DigiVilla: the same amount in the ${pfName} villa on real benchmark indices, ${span}, ${S.income ? `paying ${swpPct}% a year as rent (SWP) from the arbitrage part first` : 'nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`;
     return {
       ...base_,
       stageS: `position:absolute;left:50%;bottom:0;width:560px;height:${SH}px;margin-left:-280px;transform-origin:50% 100%;transform:scale(${S.k || 1})`, sh: SH, svgVB: '0 0 560 ' + SH,
@@ -519,7 +519,7 @@ class Component extends DCLogic {
       rulerValue: this.show(S, act, snapped(act.key)), rulerRef: this.rulerRef,
       rulerRow: `position:absolute;top:0;bottom:0;left:50%;display:flex;align-items:center;transition:${this.dragging || this.fling ? 'none' : 'transform .12s ease-out'};transform:translateX(${-(idx - i0) * 10}px)`, ticks,
       rMin: act.min, rMax: act.max, rStep: act.step, rVal: snapped(act.key), onRange: e => setA(+e.target.value), inc: () => setA(snapped(act.key) + act.big), dec: () => setA(snapped(act.key) - act.big),
-      chartHead: isFd ? `${this.inr(start)} · ${span}` : `${this.inr(start)} all-in · ${span}`,   // exact rupees — a typed ₹1,25,000 must not read ₹1.3 L
+      chartHead: isFd ? `${this.inr(start)} · ${span}` : `${this.inr(start)} · ${span}`,   // exact rupees — a typed ₹1,25,000 must not read ₹1.3 L
       pfPos: (vi + 1) + ' / ' + villas.length,
       pfPrev: () => this.setState({ villa: villas[Math.max(0, vi - 1)].key }), pfNext: () => this.setState({ villa: villas[Math.min(villas.length - 1, vi + 1)].key }),
       pfPrevS: arw(vi > 0), pfNextS: arw(vi < villas.length - 1),
