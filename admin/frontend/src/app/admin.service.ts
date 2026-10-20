@@ -448,6 +448,10 @@ export class AdminService {
   deleteMeeting(id: string): Observable<{ status: string }> {
     return this.http.delete<{ status: string }>(`${this.base}/admin/meetings/${id}`, this.opts);
   }
+  // ── website metrics (thedigiciti.com) ──
+  siteMetrics(days: number): Observable<SiteMetrics> {
+    return this.http.get<SiteMetrics>(`${this.base}/admin/site/metrics`, { ...this.opts, params: { days } });
+  }
   // ── commission ──────────────────────────────────────────────────────────────
   /** trail accrued day by day: the current 21st→20th cycle and the last closed ones */
   commissionLedger(): Observable<CommissionLedger> {
@@ -841,4 +845,13 @@ export interface CommissionLedger {
   /** last month's trail, to be paid on this month's 20th (null once paid) */
   due: LedgerCycle | null;
   funds_without_rate: string[];
+}
+
+/** thedigiciti.com: distinct people per event (anonymous id), counts, by day, pages and sources. */
+export interface SiteMetrics {
+  days: number; from: string; to: string; visitors: number;
+  people: { view: number; explore: number; whatsapp: number }; counts: { view: number; explore: number; whatsapp: number };
+  explore_pct: number; whatsapp_pct: number; whatsapp_of_explore_pct: number;
+  series: { day: string; view: number; explore: number; whatsapp: number }[];
+  pages: { page: string; views: number }[]; refs: { source: string; visits: number }[];
 }

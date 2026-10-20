@@ -1104,6 +1104,29 @@ def admin_india_board(range: str = "1d", start: Optional[str] = None, end: Optio
     return india_svc.board(range, start, end)
 
 
+from app import site_metrics as site_metrics_svc  # noqa: E402
+
+
+@app.post("/site/t")
+async def site_track(request: Request) -> dict:
+    """Beacon from thedigiciti.com (public, no cookies): view / explore / whatsapp."""
+    import json as _json
+    try:
+        raw = await request.body()
+        body = _json.loads(raw.decode("utf-8")[:2000] or "{}")
+    except Exception:
+        return {"ok": False}
+    site_metrics_svc.record(body if isinstance(body, dict) else {}, request.headers.get("user-agent", ""))
+    return {"ok": True}
+
+
+@app.get("/admin/site/metrics")
+def admin_site_metrics(days: int = 30, authorization: Optional[str] = Header(default=None)) -> dict:
+    """Website funnel: people who saw thedigiciti.com, opened Explore, tapped WhatsApp."""
+    _require_admin(authorization)
+    return site_metrics_svc.summary(days)
+
+
 from app import inflation as inflation_svc  # noqa: E402
 
 
