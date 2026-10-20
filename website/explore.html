@@ -143,15 +143,15 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 @media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv,.xinv [data-r]{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xinv-art .ring,.xinv-art .coin,.xinv-join::after,.xinv-badge i{animation:none}}
 </style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=874c5ae6">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=874c5ae6">
-<link rel="modulepreload" href="dc/explore-mobile.js?v=874c5ae6">
+<link rel="modulepreload" href="dc/rt.js?v=c9a3d58d">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=c9a3d58d">
+<link rel="modulepreload" href="dc/explore-mobile.js?v=c9a3d58d">
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=874c5ae6';
-import Root from './dc/explore-mobile.js?v=874c5ae6';
+import { mount } from './dc/rt.js?v=c9a3d58d';
+import Root from './dc/explore-mobile.js?v=c9a3d58d';
 mount(Root);
 </script>
 <script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){var u=performance.getEntriesByType("resource").map(function(e){return e.name});if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>

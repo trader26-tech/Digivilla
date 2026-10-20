@@ -23,6 +23,10 @@
 	header X-Content-Type-Options nosniff
 	header Referrer-Policy strict-origin-when-cross-origin
 
+	# the WhatsApp group page: /whatsapp (whatsapp.html), /join is the short link to it
+	redir /join /whatsapp 302
+	redir /join/ /whatsapp 302
+
 	# /story → story.html
 	try_files {path} {path}.html
 	file_server {
