@@ -1,4 +1,4 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=c9a3d58d';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=fef18a60';
 /* ── logic, verbatim from the design file ── */
 /* The narration: one recording, one segment per step (seconds into assets/voice/lesson.mp3, cut at the silences). */
 const VOICE_URL = 'assets/voice/lesson.mp3';

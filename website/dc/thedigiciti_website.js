@@ -1,14 +1,14 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=c9a3d58d';
-import C_calc_mobile from './calc-mobile.js?v=c9a3d58d';
-import C_calculator from './calculator.js?v=c9a3d58d';
-import C_landing_mobile from './landing-mobile.js?v=c9a3d58d';
-import C_part_footer from './part-footer.js?v=c9a3d58d';
-import C_part_stage_foundation from './part-stage-foundation.js?v=c9a3d58d';
-import C_part_stage_grading from './part-stage-grading.js?v=c9a3d58d';
-import C_part_stage_plot from './part-stage-plot.js?v=c9a3d58d';
-import C_part_stage_steel from './part-stage-steel.js?v=c9a3d58d';
-import C_part_stage_villa from './part-stage-villa.js?v=c9a3d58d';
-import C_showcase_mobile from './showcase-mobile.js?v=c9a3d58d';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=fef18a60';
+import C_calc_mobile from './calc-mobile.js?v=fef18a60';
+import C_calculator from './calculator.js?v=fef18a60';
+import C_landing_mobile from './landing-mobile.js?v=fef18a60';
+import C_part_footer from './part-footer.js?v=fef18a60';
+import C_part_stage_foundation from './part-stage-foundation.js?v=fef18a60';
+import C_part_stage_grading from './part-stage-grading.js?v=fef18a60';
+import C_part_stage_plot from './part-stage-plot.js?v=fef18a60';
+import C_part_stage_steel from './part-stage-steel.js?v=fef18a60';
+import C_part_stage_villa from './part-stage-villa.js?v=fef18a60';
+import C_showcase_mobile from './showcase-mobile.js?v=fef18a60';
 addCSS(".p-thedigicitiwebsite-1:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-2:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-3:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-4:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-5:hover{color:#E1E0CC !important}\n.p-thedigicitiwebsite-6:hover{gap:clamp(24px,2.6vw,48px) !important;color:#fff !important}");
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {

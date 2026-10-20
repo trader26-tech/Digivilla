@@ -388,6 +388,7 @@ PAGE = '''<!DOCTYPE html>
 {preload}
 <style>{fonts_css}</style>
 <script>window.__dcStaticHelmet = {root_js};</script>
+{track}
 {head}
 <style>html,body{{height:100%;margin:0}}html{{touch-action:manipulation;-webkit-tap-highlight-color:transparent}}#dc-root,#dc-root>.sc-host{{height:100%}}</style>
 {modules}{warm}
@@ -410,6 +411,21 @@ WARM = ('<link rel="preconnect" href="' + API + '" crossorigin>\n'
         'var A=window.__TDC_API||"' + API + '",j=function(r){if(!r.ok)throw new Error(r.status);return r.json()},q=function(p){var f=fetch(A+p,{priority:"high"}).then(j);f.catch(function(){});return f};'
         'window.__tdcCalc={cfg:q("/calc/config"),vf:q("/calc/villa-funds")}})();</script>')
 
+
+# Site metrics (admin → Website): a beacon per page view, per Explore opened (phone lesson / explore.html /
+# the Story from the desktop button) and per tap on a WhatsApp link. An anonymous id in localStorage, no
+# cookies; only on the live domains. Collector: the admin backend's POST /site/t (text/plain → no preflight).
+TRACK = ('<script>(function(){var h=location.hostname;if(!/(^|\\.)thedigiciti\\.com$|\\.up\\.railway\\.app$/.test(h))return;'
+         'var E="https://admin-digivilla-production.up.railway.app/site/t",id="anon";'
+         'try{id=localStorage.getItem("tdc.vid");if(!id){id=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("tdc.vid",id)}}catch(e){}'
+         'var s=function(k){try{var b=JSON.stringify({e:k,v:id,p:location.pathname,r:document.referrer});'
+         'if(navigator.sendBeacon&&navigator.sendBeacon(E,new Blob([b],{type:"text/plain"})))return;fetch(E,{method:"POST",body:b,keepalive:true,mode:"no-cors"})}catch(e){}};'
+         's("view");var ex=0,x=function(){if(!ex){ex=1;s("explore")}};'
+         'if(/\\/(explore|story)(\\.html)?$/.test(location.pathname)||location.hash==="#explore")x();'
+         'var ps=history.pushState;history.pushState=function(a,b,u){var r=ps.apply(this,arguments);if(u&&String(u).indexOf("#explore")>-1)x();return r};'
+         'addEventListener("hashchange",function(){if(location.hash==="#explore")x()});'
+         'document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");'
+         'if(a&&/chat\\.whatsapp\\.com|wa\\.me|api\\.whatsapp\\.com|whatsapp:/i.test(a.getAttribute("href")))s("whatsapp")},true)})();</script>')
 
 # Service worker (sw.js, hand-written, at the root): registered once the page has loaded and the
 # main thread is idle, https only (localhost for tests). The page then hands the worker the URLs it
@@ -513,7 +529,7 @@ def main():
         mods = module_closure(root)
         modules = '\n'.join(f'<link rel="modulepreload" href="dc/{m}?v={ver}">' for m in mods)
         warm = ('\n' + WARM) if ('calculator.js' in mods or 'calc-mobile.js' in mods) else ''
-        (OUT / page).write_text(PAGE.format(title=TITLES[root], root=root, root_js=js(root), preload=preload, fonts_css=fonts_css,
+        (OUT / page).write_text(PAGE.format(track=TRACK, title=TITLES[root], root=root, root_js=js(root), preload=preload, fonts_css=fonts_css,
                                             head=head_html(info[root]['helmet']), ver=ver, modules=modules, warm=warm, sw=SW_REGISTER))
     swv = stamp_sw(ver)
     print(f'built {len(info)} components, {len(PAGES)} pages · v={ver} · sw={swv}')

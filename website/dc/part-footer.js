@@ -1,4 +1,4 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=c9a3d58d';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=fef18a60';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   renderVals() { return { year: new Date().getFullYear() }; }

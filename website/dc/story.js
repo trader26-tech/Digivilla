@@ -1,6 +1,6 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=c9a3d58d';
-import C_story_1_journey from './story-1-journey.js?v=c9a3d58d';
-import C_story_2_map from './story-2-map.js?v=c9a3d58d';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=fef18a60';
+import C_story_1_journey from './story-1-journey.js?v=fef18a60';
+import C_story_2_map from './story-2-map.js?v=fef18a60';
 addCSS(".p-story-1:hover{gap:16px !important;color:#fff !important;box-shadow:inset 0 0 0 1px rgba(255,236,200,.5), inset 0 1px 0 rgba(255,255,255,.2), 0 0 34px rgba(255,200,130,.25), 0 10px 30px -12px rgba(0,0,0,.7) !important}");
 /* ── logic, verbatim from the design file ── */
 // Laptops start the story at "Reading the map" — the flight (chapter 0) is a phone-only opening.
