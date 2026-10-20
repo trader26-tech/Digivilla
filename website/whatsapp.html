@@ -27,6 +27,8 @@
 <link rel="preload" href="assets/fonts/InstrumentSerif-400-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/whatsapp/villa.png" as="image">
 <link rel="stylesheet" href="assets/fonts/fonts.css">
+<!-- site metrics (admin → Website): the same anonymous beacon build.py puts on every page — a view, and a tap on the WhatsApp link -->
+<script>(function(){var h=location.hostname;if(!/(^|\.)thedigiciti\.com$|\.up\.railway\.app$/.test(h))return;var E="https://admin-digivilla-production.up.railway.app/site/t",id="anon";try{id=localStorage.getItem("tdc.vid");if(!id){id=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("tdc.vid",id)}}catch(e){}var s=function(k){try{var b=JSON.stringify({e:k,v:id,p:location.pathname,r:document.referrer});if(navigator.sendBeacon&&navigator.sendBeacon(E,new Blob([b],{type:"text/plain"})))return;fetch(E,{method:"POST",body:b,keepalive:true,mode:"no-cors"})}catch(e){}};s("view");var ex=0,x=function(){if(!ex){ex=1;s("explore")}};if(/\/(explore|story)(\.html)?$/.test(location.pathname)||location.hash==="#explore")x();var ps=history.pushState;history.pushState=function(a,b,u){var r=ps.apply(this,arguments);if(u&&String(u).indexOf("#explore")>-1)x();return r};addEventListener("hashchange",function(){if(location.hash==="#explore")x()});document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a&&/chat\.whatsapp\.com|wa\.me|api\.whatsapp\.com|whatsapp:/i.test(a.getAttribute("href")))s("whatsapp")},true)})();</script>
 <style>
   :root{
     --ink:#fff6ea; --cream:#E1E0CC; --gold:#fbdb81; --gold-deep:#f6c445; --green:#8fd65a;

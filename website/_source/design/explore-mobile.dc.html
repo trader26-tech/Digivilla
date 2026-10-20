@@ -85,59 +85,51 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 @keyframes xplBar{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
 @keyframes xplAsk{0%,100%{box-shadow:inset 0 0 0 1px rgba(246,196,69,.75),0 0 0 0 rgba(246,196,69,0)}50%{box-shadow:inset 0 0 0 1px rgba(246,196,69,.95),0 0 22px 2px rgba(246,196,69,.35)}}
 @media (max-width:359px){.xpl-back{padding-right:5px}.xpl-back>span{display:none}.xpl-voice{padding:0 12px 0 11px}.xpl-skip{padding:0 13px}}
-/* ── the invite: our private WhatsApp group ── */
-.xinv{position:fixed;inset:0;z-index:30;overflow:hidden;color:#fff6ea;background:radial-gradient(ellipse 85% 42% at 50% 22%,rgba(37,211,102,.16),transparent 70%),radial-gradient(ellipse 70% 30% at 50% 26%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 90% 30% at 50% 100%,rgba(42,43,107,.5),transparent 70%),linear-gradient(180deg,#0f1530 0%,#0c0e24 45%,#0a0b16 100%);visibility:hidden;opacity:0;transition:opacity .45s ease,visibility 0s linear .45s}
+/* ── the invite = the WhatsApp poster (TheDigiCiti-whatsapp-poster.zip, same as /whatsapp): a 1080×1920 stage scaled to fit ── */
+.xinv{position:fixed;inset:0;z-index:30;overflow:hidden;background:radial-gradient(ellipse 60% 120% at 50% 50%,transparent 40%,rgba(5,6,14,.75)),linear-gradient(180deg,#0c0f2c 0%,#2a2862 24%,#73467c 42%,#c8794f 54%,#3a2a4e 63%,#0c0e24 74%,#0a0b16 100%);visibility:hidden;opacity:0;transition:opacity .45s ease,visibility 0s linear .45s}
+@media (max-aspect-ratio:9/16){.xinv{background:linear-gradient(180deg,#0c0f2c 0 50%,#0a0b16 50% 100%)}}
 .xinv.open{visibility:visible;opacity:1;transition:opacity .45s ease,visibility 0s}
-.xinv-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,236,190,.15) 1px,transparent 1.3px);background-size:24px 24px;-webkit-mask-image:radial-gradient(ellipse 70% 34% at 50% 22%,#000 20%,transparent 100%);mask-image:radial-gradient(ellipse 70% 34% at 50% 22%,#000 20%,transparent 100%)}
-.xinv-col{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 20px max(16px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
-.xinv-col::-webkit-scrollbar{display:none}
-.xinv-head{flex:none;display:flex;justify-content:space-between;align-items:center}
-.xinv-badge{display:flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#fbdb81;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.3)}
-.xinv-badge i{width:6px;height:6px;border-radius:50%;background:#25d366;box-shadow:0 0 8px #25d366;animation:xinvLive 2s ease-in-out infinite}
-@keyframes xinvLive{50%{opacity:.35}}
-.xinv-main{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,3svh,26px);padding:clamp(8px,3svh,28px) 0 8px}
-.xinv-art{position:relative;align-self:center;width:clamp(150px,30svh,210px);aspect-ratio:1}
-.xinv-art .ring{position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(37,211,102,.28);animation:xinvRing 3.2s ease-out infinite}
-.xinv-art .ring.r2{animation-delay:1.06s}.xinv-art .ring.r3{animation-delay:2.13s}
-@keyframes xinvRing{0%{transform:scale(.55);opacity:0}25%{opacity:1}100%{transform:scale(1.18);opacity:0}}
-.xinv-art .halo{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(closest-side,rgba(246,196,69,.28),rgba(37,211,102,.12) 55%,transparent)}
-.xinv-art .villa{position:absolute;left:14%;top:20%;width:72%;filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
-.xinv-art .coin{position:absolute;left:44%;top:6%;width:13%;animation:xinvBob 3.6s ease-in-out infinite}
-@keyframes xinvBob{50%{transform:translateY(-6px)}}
-.xinv-art .wa{position:absolute;right:6%;bottom:12%;width:22%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#25d366;box-shadow:0 0 0 4px #0c0e24,0 10px 26px -6px rgba(37,211,102,.7)}
-.xinv-art .wa svg{width:58%;height:58%}
-.xinv-txt{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
-.xinv h2{margin:0;font-size:clamp(32px,9vw,40px);font-weight:600;line-height:1.02;letter-spacing:-.045em;text-wrap:balance}
-.xinv h2 em{font-family:Caveat,cursive;font-style:normal;font-weight:700;font-size:1.18em;letter-spacing:-.01em;color:#fbdb81}
-.xinv-sub{margin:0;max-width:330px;font-size:15.5px;line-height:1.45;color:rgba(255,246,234,.68);text-wrap:pretty}
-.xinv-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;border-radius:22px;background:linear-gradient(180deg,rgba(255,244,222,.06),rgba(255,226,186,.02)),rgba(18,19,32,.7);box-shadow:inset 0 0 0 1px rgba(255,236,200,.12)}
-.xinv-list li{display:flex;align-items:center;gap:13px;padding:11px 12px}
-.xinv-list li+li{border-top:1px solid rgba(255,236,200,.07)}
-.xinv-list .li{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(246,196,69,.1);color:#f6c445}
-.xinv-list li:nth-child(2) .li{background:rgba(37,211,102,.12);color:#3ee07f}.xinv-list li:nth-child(3) .li{background:rgba(143,214,90,.1);color:#8fd65a}
-.xinv-list b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
-.xinv-list span>span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:rgba(255,246,234,.58)}
-.xinv-foot{flex:none;display:flex;flex-direction:column;gap:10px;padding-top:8px}
-.xpl a.xinv-join,.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
-.xinv-join:active{transform:scale(.98)}
-.xinv-join svg{flex:none}
-.xinv-join::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:xinvShine 3.4s ease-in-out 1.2s infinite}
-@keyframes xinvShine{0%{left:-40%}35%,100%{left:130%}}
-.xinv-later{height:48px;border:0;border-radius:999px;background:transparent;font:inherit;font-size:14.5px;font-weight:500;color:rgba(225,224,204,.75);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent}
-.xinv-later:active{opacity:.6}
-.xinv-fine{margin:0;text-align:center;font-size:12px;line-height:1.45;color:rgba(225,224,204,.42)}
-.xinv-go{display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 6px 0 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;background:#E1E0CC;color:#0b0c12;box-shadow:0 0 30px rgba(255,214,150,.35)}
-.xinv-go i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
-.xpl a.xinv-again,.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
-.xinv-done{position:absolute;right:2%;bottom:8%;width:30%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#8fd65a;box-shadow:0 0 0 4px #0c0e24,0 0 26px rgba(143,214,90,.6);animation:xinvPop .55s cubic-bezier(.3,1.6,.5,1) both}
-@keyframes xinvPop{from{transform:scale(.3);opacity:0}}
-/* entrance: each block rises in turn */
-.xinv [data-r]{opacity:0;transform:translateY(18px)}
-.xinv.open [data-r]{opacity:1;transform:none;transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
-.xinv.open [data-r="1"]{transition-delay:.08s}.xinv.open [data-r="2"]{transition-delay:.16s}.xinv.open [data-r="3"]{transition-delay:.24s}.xinv.open [data-r="4"]{transition-delay:.32s}.xinv.open [data-r="5"]{transition-delay:.4s}
-@media (max-height:700px){.xinv-main{gap:12px;padding-top:2px}.xinv-art{width:124px}.xinv h2{font-size:32px}.xinv-txt{gap:8px}.xinv-list li{padding:7px 10px}.xinv-list .li{width:32px;height:32px}.xinv-list span>span{font-size:12.5px}.xinv-sub{font-size:14.5px}.xinv-join{height:56px}.xinv-foot{gap:6px}.xinv-later{height:42px}}
-@media (max-height:620px){.xinv-list span>span{display:none}.xinv-main{gap:12px;padding-top:4px}.xinv-art{width:100px}.xinv h2{font-size:27px}.xinv-sub{font-size:13.5px}.xinv-list li{padding:6px 10px}.xinv-list .li{width:30px;height:30px}.xinv-join{height:52px;font-size:16px}.xinv-later{height:42px}}
-@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv,.xinv [data-r]{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xinv-art .ring,.xinv-art .coin,.xinv-join::after,.xinv-badge i{animation:none}}
+.xwp-stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;transform-origin:0 0;cursor:pointer;font-family:Almarai,system-ui,-apple-system,sans-serif;color:#E1E0CC;background:linear-gradient(180deg,#0c0f2c 0%,#2a2862 24%,#73467c 42%,#c8794f 54%,#3a2a4e 63%,#0c0e24 74%,#0a0b16 100%)}
+.xwp-stage .abs{position:absolute}.xwp-stage .serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.xwp-stars{inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(rgba(255,236,190,.55) 1.2px,transparent 1.8px);background-size:46px 46px;-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 34%);mask-image:linear-gradient(180deg,#000 0%,transparent 34%)}
+.xwp-halo{left:60px;top:640px;width:960px;height:700px;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(37,211,102,.30),rgba(251,219,129,.14) 55%,transparent)}
+.xwp-ring{border-radius:50%;pointer-events:none}.xwp-ring.o{left:190px;top:700px;width:700px;height:700px;box-shadow:inset 0 0 0 2px rgba(37,211,102,.22)}.xwp-ring.i{left:290px;top:800px;width:500px;height:500px;box-shadow:inset 0 0 0 2px rgba(37,211,102,.30)}
+.xwp-ping{left:290px;top:800px;width:500px;height:500px;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 0 3px rgba(37,211,102,.5);opacity:0;animation:xwpPing 3.6s cubic-bezier(.2,.6,.3,1) 1.2s infinite}
+@keyframes xwpPing{0%{transform:scale(.8);opacity:0}15%{opacity:.9}100%{transform:scale(1.75);opacity:0}}
+.xwp-brand{left:72px;right:72px;top:120px;display:flex;justify-content:center}.xwp-brand>span{font-size:44px;font-weight:700;letter-spacing:-.045em;line-height:1;color:#fff6ea}.xwp-brand .serif{color:#fbdb81;letter-spacing:-.01em}
+.xwp-head{left:60px;right:60px;top:300px;display:flex;justify-content:center;text-align:center}
+.xwp-head h2{margin:0;font-size:132px;font-weight:400;line-height:.9;letter-spacing:-.065em;color:#fff6ea}.xwp-head .serif{color:#fbdb81;letter-spacing:-.02em}
+.xwp-hero{left:70px;top:640px;width:940px;height:740px;animation:xwpFloat 9s ease-in-out infinite}
+@keyframes xwpFloat{50%{transform:translateY(-7px)}}
+.xwp-hero .sh{left:10%;right:6%;bottom:2%;height:16%;border-radius:50%;background:radial-gradient(closest-side,rgba(6,7,16,.75),rgba(6,7,16,0))}
+.xwp-hero .vg{left:8%;right:8%;top:6%;bottom:14%;border-radius:50%;background:radial-gradient(closest-side,rgba(251,219,129,.34),rgba(251,219,129,.12) 55%,transparent)}
+.xwp-hero .vs{left:2%;right:16%;bottom:-2%;height:30%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.5),transparent)}
+.xwp-hero .villa{inset:0;width:100%;height:100%;object-fit:contain}
+.xwp-hero .badge{right:14%;bottom:12%;z-index:2;width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:#25d366;box-shadow:0 0 0 12px #0c0e24,0 0 80px rgba(37,211,102,.7)}
+.xwp-hero .cg{left:41%;top:-9%;width:17.4%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,rgba(255,200,90,.6),transparent)}
+.xwp-hero .coin{left:45.3%;top:-5%;width:9.4%;animation:xwpCoin 4s linear infinite}
+@keyframes xwpCoin{0%{transform:translateY(0) rotateY(0)}25%{transform:translateY(-9px) rotateY(90deg)}50%{transform:translateY(0) rotateY(180deg)}75%{transform:translateY(9px) rotateY(270deg)}100%{transform:translateY(0) rotateY(360deg)}}
+.xwp-chips{left:0;right:0;top:1372px;display:flex;justify-content:center;gap:14px}
+.xwp-chip{display:flex;align-items:center;gap:12px;height:62px;padding:0 28px;border-radius:999px;font-size:26px;font-weight:700;letter-spacing:.02em;color:#fff6ea;background:rgba(11,12,18,.62)}
+.xwp-chip i{width:12px;height:12px;border-radius:50%}
+.xwp-chip.g{box-shadow:inset 0 0 0 1.5px rgba(246,196,69,.38)}.xwp-chip.g i{background:#f6c445;box-shadow:0 0 10px #f6c445}
+.xwp-chip.n{box-shadow:inset 0 0 0 1.5px rgba(143,214,90,.38)}.xwp-chip.n i{background:#8fd65a;box-shadow:0 0 10px #8fd65a}
+.xwp-cta{left:48px;right:48px;top:1462px;display:flex;flex-direction:column;align-items:center;gap:24px}
+.xwp-cue{display:flex;align-items:flex-end;gap:18px}.xwp-cue svg{animation:xwpNudge 1.8s ease-in-out infinite}
+@keyframes xwpNudge{50%{transform:translateY(8px)}}
+.xwp-cue b{padding-bottom:30px;font-size:26px;font-weight:700;letter-spacing:.3em;color:#fff6ea}
+.xpl a.xwp-btn,.xwp-btn{position:relative;width:860px;height:150px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:26px;overflow:hidden;color:#0b2a17;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#1fbe5a);box-shadow:inset 0 3px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(0,60,20,.25),0 0 0 10px rgba(37,211,102,.16),0 0 120px 10px rgba(37,211,102,.5),0 40px 70px -24px rgba(0,0,0,.85);transition:transform .15s ease;animation:xwpBreathe 2.6s ease-in-out infinite}
+@keyframes xwpBreathe{50%{box-shadow:inset 0 3px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(0,60,20,.25),0 0 0 18px rgba(37,211,102,.12),0 0 150px 18px rgba(37,211,102,.62),0 40px 70px -24px rgba(0,0,0,.85)}}
+.xwp-btn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:38%;background:linear-gradient(100deg,rgba(255,255,255,.28),rgba(255,255,255,0))}
+.xwp-btn::after{content:"";position:absolute;top:0;bottom:0;left:-30%;width:22%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);animation:xwpShine 3.4s ease-in-out 1.6s infinite}
+@keyframes xwpShine{0%{left:-30%}35%,100%{left:130%}}
+.xwp-btn svg,.xwp-btn b{position:relative}.xwp-btn b{font-size:60px;font-weight:700;letter-spacing:-.035em;line-height:1}
+.xwp-btn.pressed{transform:scale(.97)}
+.xwp-fine{font-size:28px;letter-spacing:.02em;color:rgba(225,224,204,.6)}
+.xwp-later{margin-top:8px;height:84px;padding:0 34px;border:0;border-radius:999px;background:rgba(255,246,234,.06);box-shadow:inset 0 0 0 2px rgba(255,236,200,.14);font:inherit;font-size:32px;font-weight:700;letter-spacing:-.01em;color:#E1E0CC;cursor:pointer;display:flex;align-items:center;gap:14px}
+.xwp-later:active{opacity:.6}
+.xwp-back{position:absolute;z-index:3;left:max(16px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top))}
+@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xwp-ping,.xwp-hero,.xwp-hero .coin,.xwp-cue svg,.xwp-btn,.xwp-btn::after{animation:none}}
 </style>
 </helmet>
 <div class="xpl">
@@ -227,41 +219,21 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 </div>
 
 
-<div class="{{ invCls }}" role="dialog" aria-modal="true" aria-label="Join our private WhatsApp group" aria-hidden="{{ invHidden }}" inert="{{ invInert }}">
-<div class="xinv-dots"></div>
-<div class="xinv-col">
-<div class="xinv-head" data-r="0">
-<button type="button" onClick="{{ invBack }}" class="xpl-pill xpl-back" aria-label="Back to the lesson"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></i><span>Lesson</span></button>
-<span class="xinv-badge"><i></i>Invite only</span>
-</div>
-<div class="xinv-main">
-<div class="xinv-art" data-r="1" aria-hidden="true"><span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span><span class="halo"></span><img class="villa" src="assets/art/villa.svg" alt=""><img class="coin" src="assets/art/coin.svg" alt="">
-<sc-if value="{{ notJoined }}" hint-placeholder-val="{{ true }}"><span class="wa"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 004.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2zm5.82 14.13c-.25.69-1.44 1.32-1.98 1.37-.51.05-.99.24-3.33-.69-2.81-1.11-4.6-3.98-4.74-4.17-.14-.18-1.13-1.5-1.13-2.87 0-1.36.71-2.03.97-2.31.25-.28.55-.35.73-.35l.53.01c.17.01.4-.06.62.48.25.6.84 2.07.91 2.22.07.15.12.32.02.51-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.76 1.25 1.63 2.03 1.12 1 2.07 1.31 2.36 1.46.29.15.46.12.63-.07.17-.19.73-.85.92-1.14.19-.29.39-.24.65-.15.27.1 1.7.8 1.99.95.29.15.48.22.56.34.07.12.07.69-.18 1.38z"></path></svg></span></sc-if>
-<sc-if value="{{ joined }}" hint-placeholder-val="{{ false }}"><span class="xinv-done"><svg width="46%" height="46%" viewBox="0 0 24 24" fill="none" stroke="#0b0c12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span></sc-if>
-</div>
-<sc-if value="{{ notJoined }}" hint-placeholder-val="{{ true }}">
-<div class="xinv-txt" data-r="2"><h2>Join the <em>inner circle</em></h2><p class="xinv-sub">Our private WhatsApp group for people building their DigiVilla estate.</p></div>
-<ul class="xinv-list" data-r="3">
-<li><span class="li"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8z"></path></svg></span><span><b>First to know</b><span>New villas and what they pay, before anyone else.</span></span></li>
-<li><span class="li"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.8A8 8 0 1121 12z"></path></svg></span><span><b>Ask the team</b><span>Real answers from real people, right in the chat.</span></span></li>
-<li><span class="li"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg></span><span><b>Free, no spam</b><span>Leave any time with one tap.</span></span></li>
-</ul>
-</sc-if>
-<sc-if value="{{ joined }}" hint-placeholder-val="{{ false }}">
-<div class="xinv-txt"><h2>See you <em>inside</em></h2><p class="xinv-sub">WhatsApp opens the group — tap Join there. Meanwhile, see what a villa would do with your money.</p><a class="xinv-again" href="https://chat.whatsapp.com/CkLA7YfcfOaG1i92miDbbw?mode=gi_t" target="_blank" rel="noopener" onClick="{{ joinAgain }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1h5"></path></svg>Open the group again</a></div>
-</sc-if>
-</div>
-<div class="xinv-foot" data-r="4">
-<sc-if value="{{ notJoined }}" hint-placeholder-val="{{ true }}">
-<a class="xinv-join" href="https://chat.whatsapp.com/CkLA7YfcfOaG1i92miDbbw?mode=gi_t" target="_blank" rel="noopener" onClick="{{ join }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="#06240f" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 004.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2zm5.82 14.13c-.25.69-1.44 1.32-1.98 1.37-.51.05-.99.24-3.33-.69-2.81-1.11-4.6-3.98-4.74-4.17-.14-.18-1.13-1.5-1.13-2.87 0-1.36.71-2.03.97-2.31.25-.28.55-.35.73-.35l.53.01c.17.01.4-.06.62.48.25.6.84 2.07.91 2.22.07.15.12.32.02.51-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.76 1.25 1.63 2.03 1.12 1 2.07 1.31 2.36 1.46.29.15.46.12.63-.07.17-.19.73-.85.92-1.14.19-.29.39-.24.65-.15.27.1 1.7.8 1.99.95.29.15.48.22.56.34.07.12.07.69-.18 1.38z"></path></svg>Join on WhatsApp</a>
-<button type="button" class="xinv-later" onClick="{{ later }}">Not now — show me the calculator<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
-<p class="xinv-fine">Opens WhatsApp. Free to join.</p>
-</sc-if>
-<sc-if value="{{ joined }}" hint-placeholder-val="{{ false }}">
-<button type="button" class="xinv-go" onClick="{{ later }}">See it with your money<i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></i></button>
-</sc-if>
+<div class="{{ invCls }}" role="dialog" aria-modal="true" aria-label="Join TheDigiCiti's WhatsApp group" aria-hidden="{{ invHidden }}" inert="{{ invInert }}">
+<div ref="{{ wpRef }}" class="xwp-stage" onClick="{{ posterTap }}">
+<div class="abs xwp-stars"></div><div class="abs xwp-halo"></div><div class="abs xwp-ring o"></div><div class="abs xwp-ring i"></div><div class="abs xwp-ping" aria-hidden="true"></div>
+<div class="abs xwp-brand"><span>TheDigi<span class="serif">Citi</span></span></div>
+<div class="abs xwp-head"><h2>Join the<br><span class="serif">inner circle.</span></h2></div>
+<div class="abs xwp-hero" aria-hidden="true"><div class="abs sh"></div><div class="abs vg"></div><div class="abs vs"></div><img class="abs villa" src="assets/whatsapp/villa.png" alt="" decoding="async"><span class="abs badge"><svg width="84" height="84" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"></path></svg></span><span class="abs cg"></span><img class="abs coin" src="assets/whatsapp/coin.png" alt="" decoding="async"></div>
+<div class="abs xwp-chips"><span class="xwp-chip g"><i></i>First to know</span><span class="xwp-chip n"><i></i>Ask the team</span></div>
+<div class="abs xwp-cta">
+<div class="xwp-cue" aria-hidden="true"><svg width="120" height="84" viewBox="0 0 120 84" fill="none" stroke="#5ee08f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10 C46 4 92 18 104 66"></path><path d="M88 58 L104 70 L114 52"></path></svg><b>TAP TO JOIN</b><svg width="120" height="84" viewBox="0 0 120 84" fill="none" stroke="#5ee08f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M114 10 C74 4 28 18 16 66"></path><path d="M32 58 L16 70 L6 52"></path></svg></div>
+<a class="{{ wpBtnCls }}" href="https://chat.whatsapp.com/CkLA7YfcfOaG1i92miDbbw?mode=gi_t" onClick="{{ join }}" aria-label="Join TheDigiCiti's group on WhatsApp"><svg width="66" height="66" viewBox="0 0 24 24" fill="#0b2a17" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"></path></svg><b>{{ wpLabel }}</b></a>
+<span class="xwp-fine">Free · No spam · Leave any time</span>
+<button type="button" class="xwp-later" onClick="{{ later }}">Not now — show me the calculator<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
 </div>
 </div>
+<button type="button" onClick="{{ invBack }}" class="xpl-pill xpl-back xwp-back" aria-label="Back to the lesson"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></i><span>Lesson</span></button>
 </div>
 
 </div>
@@ -299,7 +271,7 @@ const V = window.__tdcVoice || (window.__tdcVoice = (() => {
 })());
 class Component extends DCLogic {
   state = { calcMounted: false, calcOpen: false, voiceOn: store.get(VOICE_KEY) !== '0', speaking: false, waiting: false, inv: false, joined: store.get(JOINED_KEY) === '1' };
-  root = React.createRef(); svgRef = React.createRef();
+  root = React.createRef(); svgRef = React.createRef(); wpRef = React.createRef();
   N = 9;
   /** The hand-drawn look, baked once: every pen path becomes a polyline that wanders ±1 unit off
    *  its line (two low-frequency sines, integer frequencies so closed shapes still meet). Same
@@ -419,6 +391,8 @@ class Component extends DCLogic {
     r.addEventListener('touchmove', this.onTM, { passive: true });
     r.addEventListener('touchend', this.onTE, { passive: true }); r.addEventListener('touchcancel', this.onTE, { passive: true });
     addEventListener('keydown', this.onKey);
+    this.onFit = () => this.fitPoster(); addEventListener('resize', this.onFit); this.fitPoster();
+    this.onShow = () => { if (this.state.wpOpening) this.setState({ wpOpening: false }); }; addEventListener('pageshow', this.onShow);
     // browsers keep a page silent until its first touch: that touch (anywhere) unlocks the voice and plays the waiting line
     this.onUnlock = () => this.unlock();
     ['pointerup', 'touchend', 'keydown', 'click'].forEach(ev => addEventListener(ev, this.onUnlock, true));
@@ -432,7 +406,7 @@ class Component extends DCLogic {
     this.dead = true;
     const r = this.root.current;
     if (r) { r.removeEventListener('wheel', this.onWheel); r.removeEventListener('touchstart', this.onTS); r.removeEventListener('touchmove', this.onTM); r.removeEventListener('touchend', this.onTE); r.removeEventListener('touchcancel', this.onTE); }
-    removeEventListener('keydown', this.onKey);
+    removeEventListener('keydown', this.onKey); removeEventListener('resize', this.onFit); removeEventListener('pageshow', this.onShow); clearTimeout(this.wpT);
     ['pointerup', 'touchend', 'keydown', 'click'].forEach(ev => removeEventListener(ev, this.onUnlock, true));
     document.removeEventListener('visibilitychange', this.onVis);
     clearTimeout(this.sayT); this.hush(); this.pending = null;
@@ -520,6 +494,13 @@ class Component extends DCLogic {
     this.setState({ inv: true, waiting: false });
   }
   closeInvite() { this.setState({ inv: false }); }
+  /** the poster's 1080 × 1920 stage, scaled to fit the screen and centred */
+  fitPoster() {
+    const el = this.wpRef.current; if (!el) return;
+    const W = innerWidth, H = innerHeight, k = Math.min(W / 1080, H / 1920);
+    el.style.transform = 'translate(' + ((W - 1080 * k) / 2).toFixed(1) + 'px,' + ((H - 1920 * k) / 2).toFixed(1) + 'px) scale(' + k.toFixed(5) + ')';
+  }
+  componentDidUpdate() { const on = !!this.state.inv; if (on && !this.wasInv) this.fitPoster(); this.wasInv = on; }   // (the runtime passes no previous state)
   /** Into the ONE calculator (the landing's #calculator): the calculator's ink grows as a circle from the control that was
    *  tapped, the lesson eases back underneath, and the landing opens on the calculator as the ink lifts. */
   openCalc(e) {
@@ -554,10 +535,13 @@ class Component extends DCLogic {
       // the invite
       invCls: 'xinv' + (S.inv ? ' open' : ''), invHidden: S.inv ? 'false' : 'true', invInert: !S.inv, joined: S.joined, notJoined: !S.joined,
       invBack: () => this.closeInvite(),
-      join: () => { store.set(JOINED_KEY, '1'); try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} setTimeout(() => { if (!this.dead) this.setState({ joined: true }); }, 400); },
+      // join: the link opens in this tab (that's what hands it to the WhatsApp app); remembered, so next time Skip goes straight on
+      join: e => { e && e.stopPropagation && e.stopPropagation(); store.set(JOINED_KEY, '1'); try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} this.setState({ wpOpening: true }); clearTimeout(this.wpT); this.wpT = setTimeout(() => { if (!this.dead) this.setState({ wpOpening: false, joined: true }); }, 2500); },
+      posterTap: e => { if (e.target.closest && e.target.closest('a,button')) return; const a = this.wpRef.current && this.wpRef.current.querySelector('.xwp-btn'); if (a) a.click(); },
+      wpBtnCls: 'xwp-btn' + (S.wpOpening ? ' pressed' : ''), wpLabel: S.wpOpening ? 'Opening WhatsApp…' : 'Join on WhatsApp',
       joinAgain: () => {},
-      later: e => this.openCalc(e),
-      root: this.root, svgRef: this.svgRef,
+      later: e => { e && e.stopPropagation && e.stopPropagation(); this.openCalc(e); },
+      root: this.root, svgRef: this.svgRef, wpRef: this.wpRef,
       lessonCls: 'xpl-lesson' + (open ? ' away' : ''), calcCls: 'xpl-calc' + (open ? ' open' : ''),
       calcOpen: open, calcHidden: open ? 'false' : 'true', calcMounted: this.state.calcMounted,
       // a tap moves one step on — except the tap that just woke the voice ("Tap to listen"), which only starts it

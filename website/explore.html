@@ -89,70 +89,62 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 @keyframes xplBar{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
 @keyframes xplAsk{0%,100%{box-shadow:inset 0 0 0 1px rgba(246,196,69,.75),0 0 0 0 rgba(246,196,69,0)}50%{box-shadow:inset 0 0 0 1px rgba(246,196,69,.95),0 0 22px 2px rgba(246,196,69,.35)}}
 @media (max-width:359px){.xpl-back{padding-right:5px}.xpl-back>span{display:none}.xpl-voice{padding:0 12px 0 11px}.xpl-skip{padding:0 13px}}
-/* ── the invite: our private WhatsApp group ── */
-.xinv{position:fixed;inset:0;z-index:30;overflow:hidden;color:#fff6ea;background:radial-gradient(ellipse 85% 42% at 50% 22%,rgba(37,211,102,.16),transparent 70%),radial-gradient(ellipse 70% 30% at 50% 26%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 90% 30% at 50% 100%,rgba(42,43,107,.5),transparent 70%),linear-gradient(180deg,#0f1530 0%,#0c0e24 45%,#0a0b16 100%);visibility:hidden;opacity:0;transition:opacity .45s ease,visibility 0s linear .45s}
+/* ── the invite = the WhatsApp poster (TheDigiCiti-whatsapp-poster.zip, same as /whatsapp): a 1080×1920 stage scaled to fit ── */
+.xinv{position:fixed;inset:0;z-index:30;overflow:hidden;background:radial-gradient(ellipse 60% 120% at 50% 50%,transparent 40%,rgba(5,6,14,.75)),linear-gradient(180deg,#0c0f2c 0%,#2a2862 24%,#73467c 42%,#c8794f 54%,#3a2a4e 63%,#0c0e24 74%,#0a0b16 100%);visibility:hidden;opacity:0;transition:opacity .45s ease,visibility 0s linear .45s}
+@media (max-aspect-ratio:9/16){.xinv{background:linear-gradient(180deg,#0c0f2c 0 50%,#0a0b16 50% 100%)}}
 .xinv.open{visibility:visible;opacity:1;transition:opacity .45s ease,visibility 0s}
-.xinv-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,236,190,.15) 1px,transparent 1.3px);background-size:24px 24px;-webkit-mask-image:radial-gradient(ellipse 70% 34% at 50% 22%,#000 20%,transparent 100%);mask-image:radial-gradient(ellipse 70% 34% at 50% 22%,#000 20%,transparent 100%)}
-.xinv-col{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 20px max(16px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
-.xinv-col::-webkit-scrollbar{display:none}
-.xinv-head{flex:none;display:flex;justify-content:space-between;align-items:center}
-.xinv-badge{display:flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#fbdb81;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.3)}
-.xinv-badge i{width:6px;height:6px;border-radius:50%;background:#25d366;box-shadow:0 0 8px #25d366;animation:xinvLive 2s ease-in-out infinite}
-@keyframes xinvLive{50%{opacity:.35}}
-.xinv-main{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,3svh,26px);padding:clamp(8px,3svh,28px) 0 8px}
-.xinv-art{position:relative;align-self:center;width:clamp(150px,30svh,210px);aspect-ratio:1}
-.xinv-art .ring{position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(37,211,102,.28);animation:xinvRing 3.2s ease-out infinite}
-.xinv-art .ring.r2{animation-delay:1.06s}.xinv-art .ring.r3{animation-delay:2.13s}
-@keyframes xinvRing{0%{transform:scale(.55);opacity:0}25%{opacity:1}100%{transform:scale(1.18);opacity:0}}
-.xinv-art .halo{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(closest-side,rgba(246,196,69,.28),rgba(37,211,102,.12) 55%,transparent)}
-.xinv-art .villa{position:absolute;left:14%;top:20%;width:72%;filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
-.xinv-art .coin{position:absolute;left:44%;top:6%;width:13%;animation:xinvBob 3.6s ease-in-out infinite}
-@keyframes xinvBob{50%{transform:translateY(-6px)}}
-.xinv-art .wa{position:absolute;right:6%;bottom:12%;width:22%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#25d366;box-shadow:0 0 0 4px #0c0e24,0 10px 26px -6px rgba(37,211,102,.7)}
-.xinv-art .wa svg{width:58%;height:58%}
-.xinv-txt{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
-.xinv h2{margin:0;font-size:clamp(32px,9vw,40px);font-weight:600;line-height:1.02;letter-spacing:-.045em;text-wrap:balance}
-.xinv h2 em{font-family:Caveat,cursive;font-style:normal;font-weight:700;font-size:1.18em;letter-spacing:-.01em;color:#fbdb81}
-.xinv-sub{margin:0;max-width:330px;font-size:15.5px;line-height:1.45;color:rgba(255,246,234,.68);text-wrap:pretty}
-.xinv-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;border-radius:22px;background:linear-gradient(180deg,rgba(255,244,222,.06),rgba(255,226,186,.02)),rgba(18,19,32,.7);box-shadow:inset 0 0 0 1px rgba(255,236,200,.12)}
-.xinv-list li{display:flex;align-items:center;gap:13px;padding:11px 12px}
-.xinv-list li+li{border-top:1px solid rgba(255,236,200,.07)}
-.xinv-list .li{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(246,196,69,.1);color:#f6c445}
-.xinv-list li:nth-child(2) .li{background:rgba(37,211,102,.12);color:#3ee07f}.xinv-list li:nth-child(3) .li{background:rgba(143,214,90,.1);color:#8fd65a}
-.xinv-list b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
-.xinv-list span>span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:rgba(255,246,234,.58)}
-.xinv-foot{flex:none;display:flex;flex-direction:column;gap:10px;padding-top:8px}
-.xpl a.xinv-join,.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
-.xinv-join:active{transform:scale(.98)}
-.xinv-join svg{flex:none}
-.xinv-join::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:xinvShine 3.4s ease-in-out 1.2s infinite}
-@keyframes xinvShine{0%{left:-40%}35%,100%{left:130%}}
-.xinv-later{height:48px;border:0;border-radius:999px;background:transparent;font:inherit;font-size:14.5px;font-weight:500;color:rgba(225,224,204,.75);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent}
-.xinv-later:active{opacity:.6}
-.xinv-fine{margin:0;text-align:center;font-size:12px;line-height:1.45;color:rgba(225,224,204,.42)}
-.xinv-go{display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 6px 0 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;background:#E1E0CC;color:#0b0c12;box-shadow:0 0 30px rgba(255,214,150,.35)}
-.xinv-go i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
-.xpl a.xinv-again,.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
-.xinv-done{position:absolute;right:2%;bottom:8%;width:30%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#8fd65a;box-shadow:0 0 0 4px #0c0e24,0 0 26px rgba(143,214,90,.6);animation:xinvPop .55s cubic-bezier(.3,1.6,.5,1) both}
-@keyframes xinvPop{from{transform:scale(.3);opacity:0}}
-/* entrance: each block rises in turn */
-.xinv [data-r]{opacity:0;transform:translateY(18px)}
-.xinv.open [data-r]{opacity:1;transform:none;transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
-.xinv.open [data-r="1"]{transition-delay:.08s}.xinv.open [data-r="2"]{transition-delay:.16s}.xinv.open [data-r="3"]{transition-delay:.24s}.xinv.open [data-r="4"]{transition-delay:.32s}.xinv.open [data-r="5"]{transition-delay:.4s}
-@media (max-height:700px){.xinv-main{gap:12px;padding-top:2px}.xinv-art{width:124px}.xinv h2{font-size:32px}.xinv-txt{gap:8px}.xinv-list li{padding:7px 10px}.xinv-list .li{width:32px;height:32px}.xinv-list span>span{font-size:12.5px}.xinv-sub{font-size:14.5px}.xinv-join{height:56px}.xinv-foot{gap:6px}.xinv-later{height:42px}}
-@media (max-height:620px){.xinv-list span>span{display:none}.xinv-main{gap:12px;padding-top:4px}.xinv-art{width:100px}.xinv h2{font-size:27px}.xinv-sub{font-size:13.5px}.xinv-list li{padding:6px 10px}.xinv-list .li{width:30px;height:30px}.xinv-join{height:52px;font-size:16px}.xinv-later{height:42px}}
-@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv,.xinv [data-r]{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xinv-art .ring,.xinv-art .coin,.xinv-join::after,.xinv-badge i{animation:none}}
+.xwp-stage{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;transform-origin:0 0;cursor:pointer;font-family:Almarai,system-ui,-apple-system,sans-serif;color:#E1E0CC;background:linear-gradient(180deg,#0c0f2c 0%,#2a2862 24%,#73467c 42%,#c8794f 54%,#3a2a4e 63%,#0c0e24 74%,#0a0b16 100%)}
+.xwp-stage .abs{position:absolute}.xwp-stage .serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.xwp-stars{inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(rgba(255,236,190,.55) 1.2px,transparent 1.8px);background-size:46px 46px;-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 34%);mask-image:linear-gradient(180deg,#000 0%,transparent 34%)}
+.xwp-halo{left:60px;top:640px;width:960px;height:700px;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(37,211,102,.30),rgba(251,219,129,.14) 55%,transparent)}
+.xwp-ring{border-radius:50%;pointer-events:none}.xwp-ring.o{left:190px;top:700px;width:700px;height:700px;box-shadow:inset 0 0 0 2px rgba(37,211,102,.22)}.xwp-ring.i{left:290px;top:800px;width:500px;height:500px;box-shadow:inset 0 0 0 2px rgba(37,211,102,.30)}
+.xwp-ping{left:290px;top:800px;width:500px;height:500px;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 0 3px rgba(37,211,102,.5);opacity:0;animation:xwpPing 3.6s cubic-bezier(.2,.6,.3,1) 1.2s infinite}
+@keyframes xwpPing{0%{transform:scale(.8);opacity:0}15%{opacity:.9}100%{transform:scale(1.75);opacity:0}}
+.xwp-brand{left:72px;right:72px;top:120px;display:flex;justify-content:center}.xwp-brand>span{font-size:44px;font-weight:700;letter-spacing:-.045em;line-height:1;color:#fff6ea}.xwp-brand .serif{color:#fbdb81;letter-spacing:-.01em}
+.xwp-head{left:60px;right:60px;top:300px;display:flex;justify-content:center;text-align:center}
+.xwp-head h2{margin:0;font-size:132px;font-weight:400;line-height:.9;letter-spacing:-.065em;color:#fff6ea}.xwp-head .serif{color:#fbdb81;letter-spacing:-.02em}
+.xwp-hero{left:70px;top:640px;width:940px;height:740px;animation:xwpFloat 9s ease-in-out infinite}
+@keyframes xwpFloat{50%{transform:translateY(-7px)}}
+.xwp-hero .sh{left:10%;right:6%;bottom:2%;height:16%;border-radius:50%;background:radial-gradient(closest-side,rgba(6,7,16,.75),rgba(6,7,16,0))}
+.xwp-hero .vg{left:8%;right:8%;top:6%;bottom:14%;border-radius:50%;background:radial-gradient(closest-side,rgba(251,219,129,.34),rgba(251,219,129,.12) 55%,transparent)}
+.xwp-hero .vs{left:2%;right:16%;bottom:-2%;height:30%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.5),transparent)}
+.xwp-hero .villa{inset:0;width:100%;height:100%;object-fit:contain}
+.xwp-hero .badge{right:14%;bottom:12%;z-index:2;width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:#25d366;box-shadow:0 0 0 12px #0c0e24,0 0 80px rgba(37,211,102,.7)}
+.xwp-hero .cg{left:41%;top:-9%;width:17.4%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,rgba(255,200,90,.6),transparent)}
+.xwp-hero .coin{left:45.3%;top:-5%;width:9.4%;animation:xwpCoin 4s linear infinite}
+@keyframes xwpCoin{0%{transform:translateY(0) rotateY(0)}25%{transform:translateY(-9px) rotateY(90deg)}50%{transform:translateY(0) rotateY(180deg)}75%{transform:translateY(9px) rotateY(270deg)}100%{transform:translateY(0) rotateY(360deg)}}
+.xwp-chips{left:0;right:0;top:1372px;display:flex;justify-content:center;gap:14px}
+.xwp-chip{display:flex;align-items:center;gap:12px;height:62px;padding:0 28px;border-radius:999px;font-size:26px;font-weight:700;letter-spacing:.02em;color:#fff6ea;background:rgba(11,12,18,.62)}
+.xwp-chip i{width:12px;height:12px;border-radius:50%}
+.xwp-chip.g{box-shadow:inset 0 0 0 1.5px rgba(246,196,69,.38)}.xwp-chip.g i{background:#f6c445;box-shadow:0 0 10px #f6c445}
+.xwp-chip.n{box-shadow:inset 0 0 0 1.5px rgba(143,214,90,.38)}.xwp-chip.n i{background:#8fd65a;box-shadow:0 0 10px #8fd65a}
+.xwp-cta{left:48px;right:48px;top:1462px;display:flex;flex-direction:column;align-items:center;gap:24px}
+.xwp-cue{display:flex;align-items:flex-end;gap:18px}.xwp-cue svg{animation:xwpNudge 1.8s ease-in-out infinite}
+@keyframes xwpNudge{50%{transform:translateY(8px)}}
+.xwp-cue b{padding-bottom:30px;font-size:26px;font-weight:700;letter-spacing:.3em;color:#fff6ea}
+.xpl a.xwp-btn,.xwp-btn{position:relative;width:860px;height:150px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:26px;overflow:hidden;color:#0b2a17;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#1fbe5a);box-shadow:inset 0 3px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(0,60,20,.25),0 0 0 10px rgba(37,211,102,.16),0 0 120px 10px rgba(37,211,102,.5),0 40px 70px -24px rgba(0,0,0,.85);transition:transform .15s ease;animation:xwpBreathe 2.6s ease-in-out infinite}
+@keyframes xwpBreathe{50%{box-shadow:inset 0 3px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(0,60,20,.25),0 0 0 18px rgba(37,211,102,.12),0 0 150px 18px rgba(37,211,102,.62),0 40px 70px -24px rgba(0,0,0,.85)}}
+.xwp-btn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:38%;background:linear-gradient(100deg,rgba(255,255,255,.28),rgba(255,255,255,0))}
+.xwp-btn::after{content:"";position:absolute;top:0;bottom:0;left:-30%;width:22%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);animation:xwpShine 3.4s ease-in-out 1.6s infinite}
+@keyframes xwpShine{0%{left:-30%}35%,100%{left:130%}}
+.xwp-btn svg,.xwp-btn b{position:relative}.xwp-btn b{font-size:60px;font-weight:700;letter-spacing:-.035em;line-height:1}
+.xwp-btn.pressed{transform:scale(.97)}
+.xwp-fine{font-size:28px;letter-spacing:.02em;color:rgba(225,224,204,.6)}
+.xwp-later{margin-top:8px;height:84px;padding:0 34px;border:0;border-radius:999px;background:rgba(255,246,234,.06);box-shadow:inset 0 0 0 2px rgba(255,236,200,.14);font:inherit;font-size:32px;font-weight:700;letter-spacing:-.01em;color:#E1E0CC;cursor:pointer;display:flex;align-items:center;gap:14px}
+.xwp-later:active{opacity:.6}
+.xwp-back{position:absolute;z-index:3;left:max(16px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top))}
+@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xwp-ping,.xwp-hero,.xwp-hero .coin,.xwp-cue svg,.xwp-btn,.xwp-btn::after{animation:none}}
 </style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=fef18a60">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=fef18a60">
-<link rel="modulepreload" href="dc/explore-mobile.js?v=fef18a60">
+<link rel="modulepreload" href="dc/rt.js?v=40c21fa4">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=40c21fa4">
+<link rel="modulepreload" href="dc/explore-mobile.js?v=40c21fa4">
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=fef18a60';
-import Root from './dc/explore-mobile.js?v=fef18a60';
+import { mount } from './dc/rt.js?v=40c21fa4';
+import Root from './dc/explore-mobile.js?v=40c21fa4';
 mount(Root);
 </script>
 <script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){var u=performance.getEntriesByType("resource").map(function(e){return e.name});if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>
