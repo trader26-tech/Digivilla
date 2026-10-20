@@ -1,6 +1,6 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2db49674';
-import C_calculator from './calculator.js?v=2db49674';
-import C_part_footer from './part-footer.js?v=2db49674';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=d87c385f';
+import C_calculator from './calculator.js?v=d87c385f';
+import C_part_footer from './part-footer.js?v=d87c385f';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {}
 /* ── template ── */

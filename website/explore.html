@@ -22,8 +22,11 @@
    displacement filter re-rendering while the pen draws), glows are radial gradients (no Gaussian
    blur, no drop-shadows), nothing uses backdrop-filter, every move is opacity/transform or a
    stroke-dashoffset draw. One tap or one swipe = one step; the card and the graph both advance.
-   Step 9's CTA (or Skip) opens THE calculator (the landing's #calculator — there is only one): its ink grows from the tap; the app's
-   engine on real history, every control on one screen, nothing to scroll. */
+   NARRATED: one recorded voice (assets/voice/lesson.mp3, one segment per step) — the pen leads, the voice follows 220 ms
+   later, and when a line ends the lesson moves on by itself; any touch takes over. Played through Web Audio (sample-exact
+   segments, click-free fades, and it still speaks with the iPhone's silent switch on); the Voice pill turns it off.
+   Step 9's CTA (or Skip) opens the INVITE: our private WhatsApp group, one tap to join — or straight on to THE calculator
+   (the landing's #calculator — there is only one). Someone who has tapped Join goes straight to the calculator next time. */
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#0b0c12}
 .xpl{position:fixed;inset:0;overflow:hidden;color:#fff6ea;font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:radial-gradient(ellipse 70% 40% at 50% 34%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 80% 30% at 50% 100%,rgba(42,43,107,.55),transparent 70%),linear-gradient(180deg,#0c0e24,#0a0b16)}
 .xpl *{box-sizing:border-box}
@@ -71,18 +74,82 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-calc{position:fixed;inset:0;z-index:20;--pvh:100%;background:#0b0c12;transform:translate3d(0,100%,0);visibility:hidden;will-change:transform;transition:transform .55s cubic-bezier(.2,.8,.2,1),visibility 0s linear .55s}
 .xpl-calc.open{transform:none;visibility:visible;transition:transform .55s cubic-bezier(.2,.8,.2,1),visibility 0s}
 .xpl-calc>.sc-host{height:100%}
-@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span{transition:none}.xpl-foot .sw svg,.xpl-cta{animation:none}}
+.xpl-right{display:flex;align-items:center;gap:8px}
+/* the Voice pill: gold bars while it speaks, a speaker when it's quiet, a crossed speaker when it's off */
+.xpl-voice{gap:8px;padding:0 15px 0 13px;background:rgba(11,12,18,.62);box-shadow:inset 0 0 0 1px rgba(255,236,200,.18);font-size:13px;font-weight:500;color:#fff6ea;transition:transform .15s,box-shadow .3s,color .3s}
+.xpl-voice:active{transform:scale(.96)}
+.xpl-voice.off{color:rgba(225,224,204,.6)}
+.xpl-voice.wait{box-shadow:inset 0 0 0 1px rgba(246,196,69,.75);animation:xplAsk 1.8s ease-in-out infinite}
+.xpl-voice .ic{position:relative;width:18px;height:16px;display:flex;align-items:center;justify-content:center;gap:2.5px}
+.xpl-voice .bar{width:3px;height:14px;border-radius:2px;background:#f6c445;transform:scaleY(.3);animation:xplBar .9s ease-in-out infinite}
+.xpl-voice .bar:nth-child(2){animation-delay:.15s}.xpl-voice .bar:nth-child(3){animation-delay:.3s}.xpl-voice .bar:nth-child(4){animation-delay:.45s}
+@keyframes xplBar{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes xplAsk{0%,100%{box-shadow:inset 0 0 0 1px rgba(246,196,69,.75),0 0 0 0 rgba(246,196,69,0)}50%{box-shadow:inset 0 0 0 1px rgba(246,196,69,.95),0 0 22px 2px rgba(246,196,69,.35)}}
+@media (max-width:359px){.xpl-back{padding-right:5px}.xpl-back>span{display:none}.xpl-voice{padding:0 12px 0 11px}.xpl-skip{padding:0 13px}}
+/* ── the invite: our private WhatsApp group ── */
+.xinv{position:fixed;inset:0;z-index:30;overflow:hidden;color:#fff6ea;background:radial-gradient(ellipse 85% 42% at 50% 22%,rgba(37,211,102,.16),transparent 70%),radial-gradient(ellipse 70% 30% at 50% 26%,rgba(246,196,69,.12),transparent 70%),radial-gradient(ellipse 90% 30% at 50% 100%,rgba(42,43,107,.5),transparent 70%),linear-gradient(180deg,#0f1530 0%,#0c0e24 45%,#0a0b16 100%);visibility:hidden;opacity:0;transition:opacity .45s ease,visibility 0s linear .45s}
+.xinv.open{visibility:visible;opacity:1;transition:opacity .45s ease,visibility 0s}
+.xinv-dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,236,190,.15) 1px,transparent 1.3px);background-size:24px 24px;-webkit-mask-image:radial-gradient(ellipse 70% 34% at 50% 22%,#000 20%,transparent 100%);mask-image:radial-gradient(ellipse 70% 34% at 50% 22%,#000 20%,transparent 100%)}
+.xinv-col{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 20px max(16px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.xinv-col::-webkit-scrollbar{display:none}
+.xinv-head{flex:none;display:flex;justify-content:space-between;align-items:center}
+.xinv-badge{display:flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#fbdb81;background:rgba(246,196,69,.08);box-shadow:inset 0 0 0 1px rgba(246,196,69,.3)}
+.xinv-badge i{width:6px;height:6px;border-radius:50%;background:#25d366;box-shadow:0 0 8px #25d366;animation:xinvLive 2s ease-in-out infinite}
+@keyframes xinvLive{50%{opacity:.35}}
+.xinv-main{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,3svh,26px);padding:clamp(8px,3svh,28px) 0 8px}
+.xinv-art{position:relative;align-self:center;width:clamp(150px,30svh,210px);aspect-ratio:1}
+.xinv-art .ring{position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(37,211,102,.28);animation:xinvRing 3.2s ease-out infinite}
+.xinv-art .ring.r2{animation-delay:1.06s}.xinv-art .ring.r3{animation-delay:2.13s}
+@keyframes xinvRing{0%{transform:scale(.55);opacity:0}25%{opacity:1}100%{transform:scale(1.18);opacity:0}}
+.xinv-art .halo{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(closest-side,rgba(246,196,69,.28),rgba(37,211,102,.12) 55%,transparent)}
+.xinv-art .villa{position:absolute;left:14%;top:20%;width:72%;filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
+.xinv-art .coin{position:absolute;left:44%;top:6%;width:13%;animation:xinvBob 3.6s ease-in-out infinite}
+@keyframes xinvBob{50%{transform:translateY(-6px)}}
+.xinv-art .wa{position:absolute;right:6%;bottom:12%;width:22%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#25d366;box-shadow:0 0 0 4px #0c0e24,0 10px 26px -6px rgba(37,211,102,.7)}
+.xinv-art .wa svg{width:58%;height:58%}
+.xinv-txt{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.xinv h2{margin:0;font-size:clamp(32px,9vw,40px);font-weight:600;line-height:1.02;letter-spacing:-.045em;text-wrap:balance}
+.xinv h2 em{font-family:Caveat,cursive;font-style:normal;font-weight:700;font-size:1.18em;letter-spacing:-.01em;color:#fbdb81}
+.xinv-sub{margin:0;max-width:330px;font-size:15.5px;line-height:1.45;color:rgba(255,246,234,.68);text-wrap:pretty}
+.xinv-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;border-radius:22px;background:linear-gradient(180deg,rgba(255,244,222,.06),rgba(255,226,186,.02)),rgba(18,19,32,.7);box-shadow:inset 0 0 0 1px rgba(255,236,200,.12)}
+.xinv-list li{display:flex;align-items:center;gap:13px;padding:11px 12px}
+.xinv-list li+li{border-top:1px solid rgba(255,236,200,.07)}
+.xinv-list .li{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(246,196,69,.1);color:#f6c445}
+.xinv-list li:nth-child(2) .li{background:rgba(37,211,102,.12);color:#3ee07f}.xinv-list li:nth-child(3) .li{background:rgba(143,214,90,.1);color:#8fd65a}
+.xinv-list b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.xinv-list span>span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:rgba(255,246,234,.58)}
+.xinv-foot{flex:none;display:flex;flex-direction:column;gap:10px;padding-top:8px}
+.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.xinv-join:active{transform:scale(.98)}
+.xinv-join svg{flex:none}
+.xinv-join::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:xinvShine 3.4s ease-in-out 1.2s infinite}
+@keyframes xinvShine{0%{left:-40%}35%,100%{left:130%}}
+.xinv-later{height:48px;border:0;border-radius:999px;background:transparent;font:inherit;font-size:14.5px;font-weight:500;color:rgba(225,224,204,.75);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent}
+.xinv-later:active{opacity:.6}
+.xinv-fine{margin:0;text-align:center;font-size:12px;line-height:1.45;color:rgba(225,224,204,.42)}
+.xinv-go{display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 6px 0 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;background:#E1E0CC;color:#0b0c12;box-shadow:0 0 30px rgba(255,214,150,.35)}
+.xinv-go i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
+.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
+.xinv-done{position:absolute;right:2%;bottom:8%;width:30%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#8fd65a;box-shadow:0 0 0 4px #0c0e24,0 0 26px rgba(143,214,90,.6);animation:xinvPop .55s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes xinvPop{from{transform:scale(.3);opacity:0}}
+/* entrance: each block rises in turn */
+.xinv [data-r]{opacity:0;transform:translateY(18px)}
+.xinv.open [data-r]{opacity:1;transform:none;transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.xinv.open [data-r="1"]{transition-delay:.08s}.xinv.open [data-r="2"]{transition-delay:.16s}.xinv.open [data-r="3"]{transition-delay:.24s}.xinv.open [data-r="4"]{transition-delay:.32s}.xinv.open [data-r="5"]{transition-delay:.4s}
+@media (max-height:700px){.xinv-main{gap:12px;padding-top:2px}.xinv-art{width:124px}.xinv h2{font-size:32px}.xinv-txt{gap:8px}.xinv-list li{padding:7px 10px}.xinv-list .li{width:32px;height:32px}.xinv-list span>span{font-size:12.5px}.xinv-sub{font-size:14.5px}.xinv-join{height:56px}.xinv-foot{gap:6px}.xinv-later{height:42px}}
+@media (max-height:620px){.xinv-list span>span{display:none}.xinv-main{gap:12px;padding-top:4px}.xinv-art{width:100px}.xinv h2{font-size:27px}.xinv-sub{font-size:13.5px}.xinv-list li{padding:6px 10px}.xinv-list .li{width:30px;height:30px}.xinv-join{height:52px;font-size:16px}.xinv-later{height:42px}}
+@media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv,.xinv [data-r]{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xinv-art .ring,.xinv-art .coin,.xinv-join::after,.xinv-badge i{animation:none}}
 </style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=2db49674">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=2db49674">
-<link rel="modulepreload" href="dc/explore-mobile.js?v=2db49674">
+<link rel="modulepreload" href="dc/rt.js?v=d87c385f">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=d87c385f">
+<link rel="modulepreload" href="dc/explore-mobile.js?v=d87c385f">
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=2db49674';
-import Root from './dc/explore-mobile.js?v=2db49674';
+import { mount } from './dc/rt.js?v=d87c385f';
+import Root from './dc/explore-mobile.js?v=d87c385f';
 mount(Root);
 </script>
 <script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){var u=performance.getEntriesByType("resource").map(function(e){return e.name});if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>

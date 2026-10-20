@@ -6,7 +6,7 @@
 // file into a plain ES module that renders with Preact through this file, so
 // the site behaves exactly like the prototype without its in-browser compiler
 // (React + Babel from a CDN).
-import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=2db49674';
+import { h, render, Component, createRef, Fragment } from './vendor/preact.mjs?v=d87c385f';
 
 export { h, render, Fragment };
 
