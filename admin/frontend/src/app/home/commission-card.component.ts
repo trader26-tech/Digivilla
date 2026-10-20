@@ -34,6 +34,7 @@ export class CommissionCardComponent implements OnInit {
 
   /** how many of each type the admin plans to sell */
   readonly sell = signal<Record<string, number>>({});
+  monthName(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' }); }
   payDay(iso: string): string { const d = new Date(iso + 'T12:00:00Z'); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
   readonly picks = [1, 10, 100];
   /** the "if you sell more villas" popup */

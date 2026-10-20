@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from app import reports as reports_svc
 
@@ -174,23 +174,18 @@ def _overview() -> dict:
 
 
 # ── the trail ledger: what has built up since the last payout, day by day ────
-PAYOUT_DAY = 20                    # the AMCs pay the trail on the 20th; a cycle runs 21st → 20th
+PAYOUT_DAY = 20      # each calendar month's trail is paid on the 20th of the NEXT month
 
 
-def _cycle_bounds(today: date, back: int = 0) -> tuple[date, date]:
-    """(first day, payout day) of the cycle `back` cycles before the one holding `today`."""
-    y, m = today.year, today.month
-    if today.day > PAYOUT_DAY:                                   # already past this month's 20th → next month's cycle
-        m += 1
-        if m > 12:
-            y, m = y + 1, 1
-    m -= back
+def _cycle_bounds(today: date, back: int = 0) -> tuple[date, date, date]:
+    """(first day, last day, payout day) of the calendar month `back` months before today's."""
+    y, m = today.year, today.month - back
     while m < 1:
         y, m = y - 1, m + 12
-    end = date(y, m, PAYOUT_DAY)
-    pm, py = (m - 1, y) if m > 1 else (12, y - 1)
-    start = date(py, pm, PAYOUT_DAY + 1)
-    return start, end
+    start = date(y, m, 1)
+    ny, nm = (y, m + 1) if m < 12 else (y + 1, 1)
+    end = date(ny, nm, 1) - timedelta(days=1)
+    return start, end, date(ny, nm, PAYOUT_DAY)
 
 
 def _nav_lookup(code: int):
@@ -221,9 +216,8 @@ def ledger(cycles: int = 6) -> dict:
             if t.get("client_code") != reports_svc.DEMO_CODE and t.get("scheme_code") and str(t["scheme_code"]) in rates]
     from app.shared_alloc import villa_alloc
     today = date.today()
-    first_start, _ = _cycle_bounds(today, cycles)
-    _, cur_end = _cycle_bounds(today)
-    cur_start, _ = _cycle_bounds(today)
+    first_start, _, _ = _cycle_bounds(today, cycles)
+    cur_start, cur_end, cur_pay = _cycle_bounds(today)
     # per fund: dated signed unit flows, sorted
     flows: dict[int, list[tuple[str, float]]] = {}
     names: dict[int, str] = {}
@@ -268,9 +262,10 @@ def ledger(cycles: int = 6) -> dict:
     # cycles
     past = []
     for back in range(cycles, 0, -1):
-        s, e = _cycle_bounds(today, back)
+        s, e, pay = _cycle_bounds(today, back)
         total = sum(v for d, v in by_day.items() if s.isoformat() <= d <= e.isoformat())
-        past.append({"start": s.isoformat(), "payout": e.isoformat(), "total": round(total, 2), "days": (e - s).days + 1})
+        past.append({"start": s.isoformat(), "end": e.isoformat(), "payout": pay.isoformat(), "total": round(total, 2),
+                     "days": (e - s).days + 1, "paid": pay <= today})
     cur_days = [(d, v) for d, v in by_day.items() if d >= cur_start.isoformat()]
     accrued = sum(v for _, v in cur_days)
     rate_now = day_total[-1] if day_total else 0.0
@@ -284,12 +279,14 @@ def ledger(cycles: int = 6) -> dict:
                       for c, a in per_fund_cycle.items() if a > 0], key=lambda r: -r["accrued"])
     out = {
         "as_of": today.isoformat(), "payout_day": PAYOUT_DAY,
-        "current": {"start": cur_start.isoformat(), "payout": cur_end.isoformat(), "days_total": (cur_end - cur_start).days + 1,
+        "current": {"start": cur_start.isoformat(), "end": cur_end.isoformat(), "payout": cur_pay.isoformat(), "days_total": (cur_end - cur_start).days + 1,
                     "days_done": (today - cur_start).days + 1, "days_left": remaining,
                     "accrued": round(accrued, 2), "per_day": round(rate_now, 2),
                     "expected": round(accrued + rate_now * remaining, 2), "series": series, "by_fund": by_fund},
         "past": past,
-        "last_payout": past[-1] if past else None,
+        "last_payout": next((p for p in reversed(past) if p["paid"]), None),
+        # last month's trail, still to be paid on this month's 20th (None once the 20th has passed)
+        "due": next((p for p in reversed(past) if not p["paid"]), None),
         "funds_without_rate": sorted({t.get("scheme_name") for t in reports_svc._all_rows("client_transactions", "client_code,scheme_code,scheme_name")
                                       if t.get("client_code") != reports_svc.DEMO_CODE and t.get("scheme_code") and str(t["scheme_code"]) not in rates and t.get("scheme_name")}),
     }

@@ -10,8 +10,7 @@
     <!-- this cycle: what has built up since the last 20th -->
     @if (ledger(); as L) {
       <button type="button" class="cc-cycle" (click)="open.emit()" title="Open the trail tracker">
-        <span class="cc-cy-top"><small>Since {{ payDay(L.current.start) }}</small><small class="num">{{ L.current.days_left === 0 ? 'pays today' : L.current.days_left === 1 ? 'pays tomorrow' : 'pays ' + payDay(L.current.payout) }}</small></span>
-        <span class="cc-cy-row"><b class="num pos">{{ inr(L.current.accrued) }}</b><span class="num">→ {{ inr(L.current.expected) }}</span></span>
+        <span class="cc-cy-top"><small>{{ L.due ? 'Due ' + payDay(L.due.payout) : monthName(L.current.start) + ' so far' }}</small><small class="num">{{ L.due ? monthName(L.due.start) : 'paid ' + payDay(L.current.payout) }}</small></span>
         <i class="cc-cy-bar" aria-hidden="true"><i [style.width.%]="L.current.days_total ? L.current.days_done / L.current.days_total * 100 : 0"></i></i>
       </button>
     }

@@ -72,8 +72,9 @@ export class CommissionComponent implements OnInit {
     const L = this.ledger(); if (!L) return [];
     const max = Math.max(1, ...L.past.map((p) => p.total), L.current.expected);
     const row = (label: string, total: number, now: boolean) => ({ label, total, hp: Math.max(3, total / max * 100), now });
-    return [...L.past.map((p) => row(this.monthOf(p.payout), p.total, false)), row(this.monthOf(L.current.payout), L.current.expected, true)];
+    return [...L.past.map((p) => row(this.monthOf(p.start), p.total, false)), row(this.monthOf(L.current.start), L.current.expected, true)];
   });
+  monthLong(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }); }
   monthOf(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }); }
   dayOf(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
 

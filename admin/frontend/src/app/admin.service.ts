@@ -827,16 +827,18 @@ export interface IndiaBoard {
 }
 
 /** Trail commission ledger — what has built up since the last payout, from real holdings × NAV × rate. */
-export interface LedgerCycle { start: string; payout: string; total: number; days: number; }
+export interface LedgerCycle { start: string; end: string; payout: string; total: number; days: number; paid: boolean; }
 export interface CommissionLedger {
   as_of: string; payout_day: number;
   current: {
-    start: string; payout: string; days_total: number; days_done: number; days_left: number;
+    start: string; end: string; payout: string; days_total: number; days_done: number; days_left: number;
     accrued: number; per_day: number; expected: number;
     series: { d: string; v: number }[];
     by_fund: { scheme_code: number; scheme_name: string; accrued: number; share: number; rate_pct: number }[];
   };
   past: LedgerCycle[];
   last_payout: LedgerCycle | null;
+  /** last month's trail, to be paid on this month's 20th (null once paid) */
+  due: LedgerCycle | null;
   funds_without_rate: string[];
 }

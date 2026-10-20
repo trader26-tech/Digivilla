@@ -23,14 +23,14 @@
     @if (ledger(); as L) {
       <div class="tr-head">
         <div>
-          <h2>Trail · since {{ dayOf(L.current.start) }}</h2>
-          <span class="tr-sub num">{{ L.current.days_left === 0 ? 'Pays today' : L.current.days_left === 1 ? 'Pays tomorrow' : 'Pays ' + dayOf(L.current.payout) + ' · ' + L.current.days_left + ' days' }}</span>
+          <h2>Trail · {{ monthLong(L.current.start) }}</h2>
+          <span class="tr-sub num">Paid {{ dayOf(L.current.payout) }} · {{ L.current.days_left }} day{{ L.current.days_left === 1 ? '' : 's' }} left in the month</span>
         </div>
         <span class="pf-info">
           <button type="button" class="pf-i" (click)="help.set(help() === 'trail' ? null : 'trail')" [attr.aria-expanded]="help() === 'trail'" aria-label="How this is worked out">i</button>
           @if (help() === 'trail') {
             <div class="td-pop" role="dialog">
-              <p>Every day, each fund's units held × that day's NAV × its trail rate ÷ 365, over every client. A cycle runs from the 21st to the 20th and is paid on the 20th.</p>
+              <p>Every day, each fund's units held × that day's NAV × its trail rate ÷ 365, over every client. Each calendar month's trail is paid on the 20th of the next month.</p>
               <p>An estimate at your saved rates; the AMC statement is the final word.@if (L.funds_without_rate.length) { No rate yet: {{ L.funds_without_rate.join(', ') }}. }</p>
             </div>
           }
@@ -38,8 +38,12 @@
       </div>
       <div class="tr-kpis">
         <div class="kb"><span class="kb-k">Accrued</span><span class="kb-v num pos">{{ inr(L.current.accrued) }}</span><span class="kb-c num">{{ inr(L.current.per_day) }} a day</span></div>
-        <div class="kb"><span class="kb-k">On the 20th</span><span class="kb-v num">{{ inr(L.current.expected) }}</span><span class="kb-c num">{{ L.current.days_done }} / {{ L.current.days_total }} days</span></div>
-        <div class="kb"><span class="kb-k">Last payout</span><span class="kb-v num">{{ L.last_payout ? inr(L.last_payout.total) : '—' }}</span><span class="kb-c num">{{ L.last_payout ? dayOf(L.last_payout.payout) : '' }}</span></div>
+        <div class="kb"><span class="kb-k">Month end</span><span class="kb-v num">{{ inr(L.current.expected) }}</span><span class="kb-c num">paid {{ dayOf(L.current.payout) }}</span></div>
+        @if (L.due; as D) {
+          <div class="kb"><span class="kb-k">Due {{ dayOf(D.payout) }}</span><span class="kb-v num pos">{{ inr(D.total) }}</span><span class="kb-c num">{{ monthLong(D.start) }} trail</span></div>
+        } @else {
+          <div class="kb"><span class="kb-k">Last payout</span><span class="kb-v num">{{ L.last_payout ? inr(L.last_payout.total) : '—' }}</span><span class="kb-c num">{{ L.last_payout ? dayOf(L.last_payout.payout) + ' · ' + monthLong(L.last_payout.start) : '' }}</span></div>
+        }
       </div>
       @if (tr(); as g) {
         <svg class="tr-svg" [attr.viewBox]="'0 0 ' + W + ' ' + H" role="img" aria-label="Trail accrued this cycle, day by day">
@@ -49,7 +53,7 @@
           @if (g.proj) { <path class="tr-proj" [attr.d]="g.proj"/><circle class="tr-end" [attr.cx]="g.endX" [attr.cy]="g.endY" r="4"/> }
           <circle class="tr-dot" [attr.cx]="g.last[0]" [attr.cy]="g.last[1]" r="5"/>
           <text class="tr-xl" [attr.x]="PL" [attr.y]="H - 8">{{ dayOf(L.current.start) }}</text>
-          <text class="tr-xl end" [attr.x]="W - PR" [attr.y]="H - 8" text-anchor="end">{{ dayOf(L.current.payout) }}</text>
+          <text class="tr-xl end" [attr.x]="W - PR" [attr.y]="H - 8" text-anchor="end">{{ dayOf(L.current.end) }}</text>
           <text class="tr-xl now" [attr.x]="g.todayX" [attr.y]="H - 8" [attr.text-anchor]="g.todayX > W * 0.8 ? 'end' : g.todayX < W * 0.2 ? 'start' : 'middle'">today</text>
         </svg>
       }
