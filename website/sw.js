@@ -11,7 +11,7 @@
  * Kill switch, should this file ever misbehave: deploy a sw.js whose install handler calls
  * self.skipWaiting() and whose activate handler deletes all caches and calls self.registration.unregister().
  */
-const VERSION = 'd87c385f-c97d25cb';                      // ← build.py rewrites this line
+const VERSION = '92f3228d-5e6a41eb';                      // ← build.py rewrites this line
 const CACHE = 'tdc-' + VERSION;
 const CALC = 'tdc-calc';                    // API copies outlive a deploy (they carry their own age)
 const API = 'https://client-digivilla-production.up.railway.app';

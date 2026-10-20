@@ -271,6 +271,30 @@ const SEG = [[0, 4.32], [4.94, 12.92], [13.52, 20.2], [20.8, 32.64], [33.42, 37.
 const LEAD = 220, FADE_IN = .12, FADE_OUT = .18, PAUSE = 1100;   // the pen leads the voice; fades; the beat before the lesson moves on
 const JOINED_KEY = 'tdc.circle.joined', VOICE_KEY = 'thedigiciti.voice';
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+/* ONE voice per page, shared with the landing (which imports this module): it fetches the recording as the visitor heads
+   for Explore (`prefetch`), and the tap that opens the lesson calls `unlock` — the AudioContext is created and resumed
+   inside that tap, which is what lets the lesson speak the moment it opens, with no second tap. */
+const V = window.__tdcVoice || (window.__tdcVoice = (() => {
+  const v = { ctx: null, bytes: null, buf: null, decoding: null, unlocked: false };
+  v.makeCtx = () => {
+    if (v.ctx) return v.ctx;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    try { v.ctx = new AC(); } catch (e) { v.ctx = null; }
+    return v.ctx;
+  };
+  v.prefetch = () => v.bytes || (v.bytes = fetch(VOICE_URL).then(r => { if (!r.ok) throw new Error('voice ' + r.status); return r.arrayBuffer(); }));
+  v.decode = () => v.decoding || (v.decoding = v.prefetch().then(bytes => {
+    const ctx = v.makeCtx(); if (!ctx) throw new Error('no Web Audio');
+    return new Promise((ok, no) => { const p = ctx.decodeAudioData(bytes.slice(0), ok, no); if (p && p.then) p.then(ok, no); });
+  }).then(buf => (v.buf = buf), err => { v.decoding = null; throw err; }));
+  v.unlock = () => {
+    const ctx = v.makeCtx();
+    if (ctx) { try { ctx.resume(); const b = ctx.createBuffer(1, 1, 22050), s0 = ctx.createBufferSource(); s0.buffer = b; s0.connect(ctx.destination); s0.start(0); } catch (e) {} }
+    v.unlocked = true; v.decode().catch(() => {});
+  };
+  return v;
+})());
 class Component extends DCLogic {
   state = { calcMounted: false, calcOpen: false, voiceOn: store.get(VOICE_KEY) !== '0', speaking: false, waiting: false, inv: false, joined: store.get(JOINED_KEY) === '1' };
   root = React.createRef(); svgRef = React.createRef();
@@ -398,9 +422,9 @@ class Component extends DCLogic {
     ['pointerup', 'touchend', 'keydown', 'click'].forEach(ev => addEventListener(ev, this.onUnlock, true));
     this.onVis = () => { if (document.hidden) { clearTimeout(this.sayT); this.hush(); } };
     document.addEventListener('visibilitychange', this.onVis);
-    this.voiceInit();
+    V.prefetch(); this.voiceInit();
     // the axes draw themselves as the veil lifts (fonts + first paint in)
-    ready.then(() => setTimeout(() => { if (this.s < 0 && !this.dead) this.go(1); }, 150));
+    ready.then(() => setTimeout(() => { if (this.s < 0 && !this.dead) this.go(1); }, this.props.embedded ? 0 : 150));   // opened over the landing: start at once
   }
   componentWillUnmount() {
     this.dead = true;
@@ -410,36 +434,33 @@ class Component extends DCLogic {
     ['pointerup', 'touchend', 'keydown', 'click'].forEach(ev => removeEventListener(ev, this.onUnlock, true));
     document.removeEventListener('visibilitychange', this.onVis);
     clearTimeout(this.sayT); this.hush(); this.pending = null;
-    try { this.ctx && this.ctx.close(); } catch (e) {}
+    if (this.props.embedded) delete document.documentElement.dataset.step;
   }
   // ── the voice ────────────────────────────────────────────────────────────────────────────────
   /** Web Audio: the recording is decoded once, each step plays exactly its segment with real fades (iOS ignores
    *  <audio>.volume, so fades there would click), and `audioSession = playback` keeps it audible with the iPhone's
    *  silent switch on. If Web Audio can't decode it, a plain <audio> element plays the segments instead. */
   voiceInit() {
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
-    const AC = window.AudioContext || window.webkitAudioContext;
-    const fallback = () => { if (this.dead) return; this.buf = null; const a = new Audio(VOICE_URL); a.preload = 'auto'; a.playsInline = true; this.el = a; if (this.pending != null && this.unlocked) this.say(this.pending); };
-    if (!AC) { fallback(); return; }
-    try { this.ctx = new AC(); } catch (e) { fallback(); return; }
-    fetch(VOICE_URL).then(r => { if (!r.ok) throw new Error('voice ' + r.status); return r.arrayBuffer(); })
-      .then(bytes => new Promise((ok, no) => { const p = this.ctx.decodeAudioData(bytes, ok, no); if (p && p.then) p.then(ok, no); }))
-      .then(buf => { if (this.dead) return; this.buf = buf; if (this.pending != null && (this.unlocked || this.ctx.state === 'running')) { const i = this.pending; this.pending = null; this.say(i); } })
+    const fallback = () => { if (this.dead || this.el) return; const a = new Audio(VOICE_URL); a.preload = 'auto'; a.playsInline = true; this.el = a; if (this.pending != null && this.unlocked) { const i = this.pending; this.pending = null; this.say(i); } };
+    this.ctx = V.makeCtx();
+    if (!this.ctx) { fallback(); return; }
+    // the tap that opened the lesson (on the landing) already woke the audio; otherwise try — browsers that allow sound will
+    if (V.unlocked || this.ctx.state === 'running') this.unlocked = true; else { try { this.ctx.resume().then(() => { if (this.ctx.state === 'running' && !this.unlocked) { this.unlocked = true; if (this.pending != null) { const i = this.pending; this.pending = null; this.say(i); } if (this.state.waiting) this.setState({ waiting: false }); } }, () => {}); } catch (e) {} }
+    V.decode().then(buf => { if (this.dead) return; this.buf = buf; if (this.pending != null && this.unlocked) { const i = this.pending; this.pending = null; this.say(i); } })
       .catch(err => { console.warn('voice', err); fallback(); });
   }
   /** the first touch / key: wake the audio (a silent blip is what iOS needs), then speak the line that was waiting */
   unlock() {
     if (this.unlocked) return;
     this.unlocked = true;
-    const ctx = this.ctx;
-    if (ctx) { try { ctx.resume(); const b = ctx.createBuffer(1, 1, 22050), s0 = ctx.createBufferSource(); s0.buffer = b; s0.connect(ctx.destination); s0.start(0); } catch (e) {} }
+    if (this.ctx) V.unlock();
     if (this.pending != null && this.state.voiceOn) { this.tapToListen = performance.now(); const i = this.pending; this.pending = null; this.say(i); }
     if (this.state.waiting) this.setState({ waiting: false });
   }
   say(i) {
     if (!this.state.voiceOn || this.dead || this.leaving || this.state.inv || i < 0 || i >= SEG.length || i !== this.s) return;
     const ua = navigator.userActivation;
-    if (!this.unlocked && !(ua && ua.hasBeenActive) && !(this.ctx && this.ctx.state === 'running')) { this.pending = i; if (!this.state.waiting) this.setState({ waiting: true }); return; }
+    if (!this.unlocked && !V.unlocked && !(ua && ua.hasBeenActive) && !(this.ctx && this.ctx.state === 'running')) { this.pending = i; if (!this.state.waiting) this.setState({ waiting: true }); return; }
     if (this.ctx && !this.buf && !this.el) { this.pending = i; return; }          // still decoding: speaks as soon as it's ready
     this.hush();
     const [t0, t1] = SEG[i], off = Math.max(0, t0 - .06), dur = t1 + FADE_OUT - off;
@@ -500,6 +521,7 @@ class Component extends DCLogic {
   /** Into the ONE calculator (the landing's #calculator): the calculator's ink grows as a circle from the control that was
    *  tapped, the lesson eases back underneath, and the landing opens on the calculator as the ink lifts. */
   openCalc(e) {
+    if (this.props.embedded && this.props.onCalc) { clearTimeout(this.sayT); this.hush(); this.pending = null; this.props.onCalc(); return; }
     if (this.leaving) return; this.leaving = true;
     if (this.state.inv) { const iv = document.querySelector('.xinv'); if (iv) iv.style.pointerEvents = 'none'; }
     const el = e && e.currentTarget, b = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
@@ -515,6 +537,7 @@ class Component extends DCLogic {
     delete document.documentElement.dataset.calc;
   }
   leave(url) {
+    if (this.props.embedded && url === 'index.dc.html' && this.props.onClose) { clearTimeout(this.sayT); this.hush(); this.pending = null; this.props.onClose(); return; }
     if (this.leaving) return; this.leaving = true;
     clearTimeout(this.sayT); this.hush(); this.pending = null;
     if (window.tdcVeil) window.tdcVeil.go(url, { style: 'sky', fast: true }); else location.href = url;

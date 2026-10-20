@@ -17,6 +17,12 @@
    calculator → the footer, like any page. The capsule is a button: a tap lights the five stages
    villa-first, the gold fill climbs the spine and the page leaves for the Explore lesson. Art = the app's own stage tiles
    (vector), glows are gradients (no CSS filters on anything that moves). */
+/* the Explore lesson opens IN this page (not a new one): the tap that opens it is the tap that lets it speak */
+.mfp-lesson{position:fixed;inset:0;z-index:60;background:#0a0b16;animation:mfpLessonIn .5s cubic-bezier(.2,.8,.2,1) both}
+.mfp-lesson.out{animation:mfpLessonOut .4s ease both;pointer-events:none}
+.mfp-lesson>.sc-host{height:100%}
+@keyframes mfpLessonIn{from{opacity:0;transform:scale(1.03)}}@keyframes mfpLessonOut{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){.mfp-lesson,.mfp-lesson.out{animation-duration:.01s}}
 .mfp{position:relative;max-width:480px;margin:0 auto;font-family:Almarai,-apple-system,'Segoe UI',sans-serif;color:#E1E0CC;-webkit-tap-highlight-color:transparent}
 .mfp a{color:#E1E0CC;text-decoration:none}
 .mfp .serif{font-family:'Instrument Serif',serif;font-style:italic}
@@ -169,12 +175,13 @@
 </div>
 <div class="mfp-coverEnd"></div>
 </div>
+<sc-if value="{{ lesson }}" hint-placeholder-val="{{ false }}"><div class="{{ lessonCls }}" role="dialog" aria-modal="true" aria-label="Return and risk, a narrated lesson"><dc-import name="explore-mobile" embedded="{{ true }}" on-close="{{ closeLesson }}" on-calc="{{ lessonCalc }}" hint-size="100%,100%"></dc-import></div></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 import * as _explore from './explore-mobile.js';   // the Explore page's module, warmed with the landing
 class Component extends DCLogic {
-  state = { menuOpen: false };
+  state = { menuOpen: false, lesson: false, lessonOut: false };
   frameRef = React.createRef(); farRef = React.createRef(); nearRef = React.createRef(); frontRef = React.createRef(); glowRef = React.createRef();
   spineRef = React.createRef(); fillRef = React.createRef(); heroRef = React.createRef(); coinRef = React.createRef(); coin2Ref = React.createRef();
   copyARef = React.createRef(); copyBRef = React.createRef(); capRef = React.createRef(); pulseRef = React.createRef(); shineRef = React.createRef();
@@ -214,6 +221,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this.setVH = () => { const sc = this.scroller(); if (sc && sc.clientHeight) { const v = sc.clientHeight + 'px'; if (sc.__vh !== v) { sc.style.setProperty('--pvh', v); sc.__vh = v; } } };
+    this.onPop = () => { if (this.state.lesson) { this.pushed = false; this.closeLesson(true); } }; addEventListener('popstate', this.onPop);
     this.setVH(); this.onDim = () => { this.dm = null; }; addEventListener('resize', this.onDim); addEventListener('resize', this.setVH); addEventListener('orientationchange', this.setVH);
     const paint = (ref, tex) => { const c = ref.current; if (!c) return; c.width = tex.width; c.height = tex.height; c.getContext('2d').drawImage(tex, 0, 0); };
     paint(this.farRef, this.makeClouds(240, 90, 7, { persp: 3, fx: 3.2, fy: 1.6, th: .5, topFade: 6, sx: .86, sy: 0, haze: .55 }));
@@ -226,7 +234,7 @@ class Component extends DCLogic {
     addEventListener('deviceorientation', this.onTilt);
     // swipe-up-to-explore: `hold` is the cascade (0 → 1 in .9 s) that lights the stages villa-first and fills the spine
     this.hold = 0; this.cascading = false; let litMin = 5, last = 0;
-    this.startExplore = () => { if (this.leaving || this.cascading) return; this.cascading = true; this.prefetchExplore && this.prefetchExplore(); try { navigator.vibrate && navigator.vibrate(8); } catch (_) {} };
+    this.startExplore = () => { if (this.leaving || this.cascading) return; this.cascading = true; this.wakeVoice(); this.prefetchExplore && this.prefetchExplore(); try { navigator.vibrate && navigator.vibrate(8); } catch (_) {} };
     this.atColumn = () => {   // (kept for tests / callers; scrolling no longer explores)
       const sc = this.scroller(); if (!sc) return false; const tr = sc.querySelector('[data-hero-track]'); const R = tr ? tr.clientHeight - sc.clientHeight : 0; return Math.abs(sc.scrollTop - R) < 6 && (this.p || 0) > .96; };
     const SCRUB_VH = 1.6, CX = .5, CY = .37, COOLDOWN = 320;   // COOLDOWN: ms after a page arrives before the next swipe counts
@@ -286,6 +294,7 @@ class Component extends DCLogic {
       // the Explore page (and its pen font) is fetched only once the visitor heads for it
       this.prefetchExplore = () => {
         if (this.pf) return; this.pf = true;
+        try { window.__tdcVoice && window.__tdcVoice.prefetch(); } catch (_) {}   // the lesson's voice recording, so it can speak the moment it opens
         [['explore.dc.html'], ['assets/fonts/Caveat-700-latin.woff2', 'font']].forEach(([href, as]) => {
           const l = document.createElement('link'); l.rel = 'prefetch'; l.href = href;
           if (as) { l.as = as; l.type = 'font/woff2'; l.crossOrigin = 'anonymous'; }
@@ -295,6 +304,7 @@ class Component extends DCLogic {
       if (sc0) {
         let g = null;
         this.onTS2 = e => {
+          if (this.state.lesson) return;
           g = null;
           const tg = e.target, c = (sel) => tg.closest ? tg.closest(sel) : null;
           if (this.state.menuOpen || this.leaving || c('.mfp-ruler') || c('.mcl-ruler') || c('.mcl-ystep') || c('.mcl-sheet') || c('select') || c('input') || c('textarea')) return;   // the calculator's ruler, years stepper, sheet and typing keep their own touches
@@ -312,6 +322,7 @@ class Component extends DCLogic {
           if (c('.mfp-capsule')) this.prefetchExplore();                                  // a finger on the capsule: the lesson is probably next
         };
         this.onTM2 = e => {
+          if (this.state.lesson) return;
           if (!g) return;
           if (g.lock) {
             if (e.cancelable) e.preventDefault();
@@ -352,6 +363,7 @@ class Component extends DCLogic {
           sc0.scrollTop = Math.max(lo, Math.min(hi, cur + d * gain));
         };
         this.onTE2 = () => {
+          if (this.state.lesson) return;
           this.touchOn = false; this.lastUp = performance.now();
           const gg = g; g = null; if (!gg) { if (!this.settling && !this.leaving) this.goPage(0); return; }
           if (gg.lock) { if (!this.settling && !this.leaving) this.goPage(0); return; }
@@ -390,6 +402,7 @@ class Component extends DCLogic {
         };
         const gesture = pageGestures(dir => this.request(dir));
         this.onWheel2 = e => {
+          if (this.state.lesson) return;
           const tg = e.target, c = sel => tg.closest ? tg.closest(sel) : null;
           if (c('.mcl-sheet') || c('.mfp-menu') || c('select')) return;                 // the calculator's walk-through scrolls itself
           let dy = e.deltaY, dx = e.deltaX;
@@ -400,6 +413,7 @@ class Component extends DCLogic {
         };
         sc0.addEventListener('wheel', this.onWheel2, { passive: false });
         this.onKey2 = e => {
+          if (this.state.lesson) return;
           const a = document.activeElement; if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
           if (e.altKey || e.ctrlKey || e.metaKey) return;
           const dir = { ArrowDown: 1, PageDown: 1, ' ': e.shiftKey ? -1 : 1, ArrowUp: -1, PageUp: -1 }[e.key];
@@ -417,6 +431,7 @@ class Component extends DCLogic {
     const setT = (el, v) => { if (el && el.__v !== v) { el.style.transform = v; el.__v = v; } };
     const setO = (el, v) => { v = +(+v).toFixed(3); if (el && el.__o !== v) { el.style.opacity = v; el.__o = v; } };
     const tick = t => {
+      if (this.state.lesson && !this.state.lessonOut) { last = t; this.raf = requestAnimationFrame(tick); return; }   // the cover rests under the lesson
       const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; const k = t / 1000;
       this.hold = this.cascading ? Math.min(1, this.hold + dt / .35) : Math.max(0, this.hold - dt * (reducedMotion ? 99 : 1.6));
       sm.x += ((Math.sin(k * .23) * .12 + tx) - sm.x) * .05; sm.y += ((Math.cos(k * .19) * .08 + ty) - sm.y) * .05;
@@ -488,14 +503,35 @@ class Component extends DCLogic {
     };
     this.raf = requestAnimationFrame(tick);
   }
-  componentWillUnmount() { if (this.onKey2) removeEventListener('keydown', this.onKey2); cancelAnimationFrame(this.raf); cancelAnimationFrame(this.settleRaf); this.settling = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('resize', this.onDim); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { clearTimeout(this.scT); sc.removeEventListener('scroll', this.onSc2); sc.removeEventListener('touchstart', this.onTS2); if (this.onWheel2) sc.removeEventListener('wheel', this.onWheel2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
+  componentWillUnmount() { this.dead = true; removeEventListener('popstate', this.onPop); if (this.onKey2) removeEventListener('keydown', this.onKey2); cancelAnimationFrame(this.raf); cancelAnimationFrame(this.settleRaf); this.settling = false; removeEventListener('deviceorientation', this.onTilt); removeEventListener('resize', this.setVH); removeEventListener('resize', this.onDim); removeEventListener('orientationchange', this.setVH); if (this.onVV) { removeEventListener('resize', this.onVV); window.visualViewport && visualViewport.removeEventListener('resize', this.onVV); } const sc = this.scroller(); if (sc && this.onTS2) { clearTimeout(this.scT); sc.removeEventListener('scroll', this.onSc2); sc.removeEventListener('touchstart', this.onTS2); if (this.onWheel2) sc.removeEventListener('wheel', this.onWheel2); sc.removeEventListener('touchmove', this.onTM2); sc.removeEventListener('touchend', this.onTE2); sc.removeEventListener('touchcancel', this.onTE2); } }
   explore() {
     if (this.leaving) return; this.leaving = true;
     const fr = this.frameRef.current;
     if (fr) { fr.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)'; fr.style.transformOrigin = '50% 60%'; fr.style.transform = 'scale(.97)'; }   // a small settle back as the night veil comes in
     const b = this.copyBRef.current; if (b) { b.style.transition = 'opacity .35s'; b.style.opacity = '0'; }
     try { localStorage.setItem('thedigiciti.chapter', '0'); } catch (_) {}
-    if (window.tdcVeil) window.tdcVeil.go('explore.dc.html', { style: 'night' }); else setTimeout(() => { location.href = 'explore.dc.html'; }, 280);
+    // the lesson opens over this page, so the tap that got here is the one that lets it speak (a new page would need another)
+    try { history.pushState({ tdcLesson: 1 }, '', '#explore'); this.pushed = true; } catch (_) { this.pushed = false; }
+    this.setState({ lesson: true, lessonOut: false });
+  }
+  /** the gesture heading for Explore: wake the audio now, while the browser counts it as a tap */
+  wakeVoice() { try { window.__tdcVoice && window.__tdcVoice.unlock(); } catch (_) {} }
+  /** back to the cover (the lesson's back pill, Esc, or the phone's Back) */
+  closeLesson(fromPop) {
+    if (!this.state.lesson || this.state.lessonOut) return;
+    if (!fromPop && this.pushed) { this.pushed = false; try { history.back(); } catch (_) {} }
+    this.setState({ lessonOut: true });
+    const fr = this.frameRef.current; if (fr) { fr.style.transition = 'transform .5s cubic-bezier(.2,.8,.2,1)'; fr.style.transform = ''; }
+    const b = this.copyBRef.current; if (b) { b.style.transition = 'opacity .5s'; b.style.opacity = ''; }
+    this.cascading = false; this.hold = 0;
+    setTimeout(() => { this.leaving = false; if (!this.dead) this.setState({ lesson: false, lessonOut: false }); }, 400);
+  }
+  /** the lesson's last step (or its invite) → the calculator, a page below on this same scroll */
+  lessonCalc() {
+    const sc = this.scroller(), el = document.getElementById('calculator');
+    if (sc && el) { let top = 0; for (let n = el; n && n !== sc; n = n.offsetParent) top += n.offsetTop; sc.scrollTop = top; }
+    if (this.pushed) { this.pushed = false; try { history.replaceState(null, '', location.pathname + '#calculator'); } catch (_) {} }
+    this.closeLesson(true);
   }
   glideTo(find) {
     return e => {
@@ -509,12 +545,14 @@ class Component extends DCLogic {
     const r = {};
     ['frameRef', 'farRef', 'nearRef', 'frontRef', 'glowRef', 'spineRef', 'fillRef', 'heroRef', 'coinRef', 'coin2Ref', 'copyARef', 'copyBRef', 'capRef', 'pulseRef', 'shineRef', 'holdLblRef', 'knobRef', 'ringRef', 'arrowRef', 't0', 't1', 't2', 't3', 't4'].forEach(n => r[n] = this[n]);
     r.menuOpen = this.state.menuOpen;
+    r.lesson = this.state.lesson; r.lessonCls = 'mfp-lesson' + (this.state.lessonOut ? ' out' : '');
+    r.closeLesson = () => this.closeLesson(false); r.lessonCalc = () => this.lessonCalc();
     r.openMenu = () => this.setState({ menuOpen: true }); r.closeMenu = () => this.setState({ menuOpen: false });
-    r.goStory = e => { e.preventDefault(); this.setState({ menuOpen: false }); this.explore(); };
+    r.goStory = e => { e.preventDefault(); this.wakeVoice(); this.setState({ menuOpen: false }); this.explore(); };
     r.goApp = this.glideTo(() => document.getElementById('showcase'));
     r.goCalc = this.glideTo(() => document.getElementById('calculator'));
     r.goContact = this.glideTo(() => document.querySelector('footer'));
-    r.capClick = e => { e.preventDefault(); this.startExplore(); };     // a tap (or Enter) does what the swipe does
+    r.capClick = e => { e.preventDefault(); this.wakeVoice(); this.startExplore(); };     // a tap (or Enter) does what the swipe does
     return r;
   }
 }
