@@ -61,9 +61,11 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-cap .list b{font-weight:600}.xpl-cap .g{color:#8fd65a}.xpl-cap .r{color:#e2725b}
 .xpl-cap .tick{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:#fff6ea}.xpl-cap .tick>span{display:flex;gap:10px}.xpl-cap .tick b{font-weight:600}
 .xpl-title{font-family:Caveat,cursive;font-size:34px;font-weight:700;color:#fbdb81}
-.xpl-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 20px;border-radius:999px;border:0;font:inherit;cursor:pointer;background:#E1E0CC;color:#0b0c12;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 0 30px rgba(255,214,150,.35);animation:xplGlow 2.4s ease-in-out infinite}
+.xpl a.xpl-cta,.xpl-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 20px;border-radius:999px;border:0;font:inherit;cursor:pointer;background:#E1E0CC;color:#0b0c12;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 0 30px rgba(255,214,150,.35);animation:xplGlow 2.4s ease-in-out infinite}
 .xpl-cta i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
-.xpl-foot{flex:none;display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(225,224,204,.5);transition:opacity .3s}
+.xpl-vkey{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;font-weight:500;color:rgba(255,246,234,.72)}.xpl-vkey>span{display:flex;align-items:center;gap:7px}.xpl-vkey i{width:8px;height:8px;border-radius:50%}
+.xpl-foot.gone{max-height:0;padding-top:0;opacity:0;overflow:hidden}
+.xpl-foot{flex:none;display:flex;justify-content:space-between;align-items:center;padding-top:10px;max-height:32px;transition:opacity .3s,max-height .35s ease,padding .35s ease;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(225,224,204,.5)}
 .xpl-foot .sw{display:flex;align-items:center;gap:6px}
 .xpl-foot .sw svg{animation:xplBob 2.2s ease-in-out infinite}
 @keyframes xplBob{0%,100%{transform:translateY(1px)}50%{transform:translateY(-3px)}}
@@ -116,7 +118,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xinv-list b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
 .xinv-list span>span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:rgba(255,246,234,.58)}
 .xinv-foot{flex:none;display:flex;flex-direction:column;gap:10px;padding-top:8px}
-.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.xpl a.xinv-join,.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
 .xinv-join:active{transform:scale(.98)}
 .xinv-join svg{flex:none}
 .xinv-join::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:xinvShine 3.4s ease-in-out 1.2s infinite}
@@ -126,7 +128,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xinv-fine{margin:0;text-align:center;font-size:12px;line-height:1.45;color:rgba(225,224,204,.42)}
 .xinv-go{display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 6px 0 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;background:#E1E0CC;color:#0b0c12;box-shadow:0 0 30px rgba(255,214,150,.35)}
 .xinv-go i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
-.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
+.xpl a.xinv-again,.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
 .xinv-done{position:absolute;right:2%;bottom:8%;width:30%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#8fd65a;box-shadow:0 0 0 4px #0c0e24,0 0 26px rgba(143,214,90,.6);animation:xinvPop .55s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes xinvPop{from{transform:scale(.3);opacity:0}}
 /* entrance: each block rises in turn */
@@ -156,7 +158,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 <div class="xpl-graph" onClick="{{ next }}">
 <svg ref="{{ svgRef }}" class="xpl-svg" viewBox="0 0 360 360" aria-hidden="true">
 <defs>
-<linearGradient id="xlg" gradientUnits="userSpaceOnUse" x1="112" y1="262" x2="268" y2="94"><stop offset="0" stop-color="#8fd65a"></stop><stop offset=".5" stop-color="#f6c445"></stop><stop offset="1" stop-color="#e2725b"></stop></linearGradient>
+<linearGradient id="xlg" gradientUnits="userSpaceOnUse" x1="126" y1="246" x2="252" y2="108"><stop offset="0" stop-color="#8fd65a"></stop><stop offset=".5" stop-color="#f6c445"></stop><stop offset="1" stop-color="#e2725b"></stop></linearGradient>
 <radialGradient id="xgG"><stop offset="0" stop-color="#8fd65a" stop-opacity=".6"></stop><stop offset=".5" stop-color="#8fd65a" stop-opacity=".28"></stop><stop offset="1" stop-color="#8fd65a" stop-opacity="0"></stop></radialGradient>
 <radialGradient id="xgR"><stop offset="0" stop-color="#e2725b" stop-opacity=".65"></stop><stop offset=".5" stop-color="#e2725b" stop-opacity=".3"></stop><stop offset="1" stop-color="#e2725b" stop-opacity="0"></stop></radialGradient>
 <radialGradient id="xgY"><stop offset="0" stop-color="#f6c445" stop-opacity=".42"></stop><stop offset=".55" stop-color="#f6c445" stop-opacity=".14"></stop><stop offset="1" stop-color="#f6c445" stop-opacity="0"></stop></radialGradient>
@@ -178,7 +180,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 <path class="pen" data-in="3" data-draw="2.4" data-delay=".1" d="M58 288 C44 288 42 268 58 264 C56 248 76 242 86 252 C92 238 116 238 120 254 C134 248 146 262 136 272 C148 280 138 294 124 290 C112 298 72 298 58 288 Z" pathLength="1" stroke="#8fd65a" stroke-width="2.6"></path>
 <path class="pen" data-in="3" data-draw="2.4" data-delay=".7" d="M244 94 C230 94 228 74 244 70 C242 54 262 48 272 58 C278 44 302 44 306 60 C320 54 332 68 322 78 C334 86 324 100 310 96 C298 104 258 104 244 94 Z" pathLength="1" stroke="#e2725b" stroke-width="2.6"></path>
 <path class="pen" data-in="6" data-out="7" data-draw="1.8" data-delay=".2" d="M236 124 L250 114 L262 146 L274 132 L290 198 M281 186 L290 200 L298 187" pathLength="1" stroke="#e2725b" stroke-width="2.6"></path>
-<path class="pen" data-in="7" data-draw="2.6" data-delay=".3" d="M112 262 Q170 200 268 94" pathLength="1" stroke="url(#xlg)" stroke-width="3.4"></path>
+<path class="pen" data-in="7" data-draw="2.6" data-delay=".3" d="M126 246 Q172 196 252 108" pathLength="1" stroke="url(#xlg)" stroke-width="3.4"></path>
 </g>
 <g>
 <text data-in="1" x="26" y="180" text-anchor="middle" transform="rotate(-90 26 180)" font-size="22" fill="#fff6ea">Return</text>
@@ -187,19 +189,19 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 <text data-in="1" data-out="2" x="220" y="284" text-anchor="middle" font-size="20" fill="#fbdb81">more risk</text>
 <text data-in="2" data-out="3" x="118" y="92" text-anchor="middle" font-size="28" fill="#fbdb81">Ideal spot</text>
 <text data-in="3" x="96" y="277" text-anchor="middle" font-size="20" fill="#cdeec0">Arbitrage</text>
-<text data-in="3" x="284" y="82" text-anchor="middle" font-size="18" fill="#ffd2c7">Stocks &amp; MFs</text>
+<text data-in="3" x="277" y="83" text-anchor="middle" font-size="15.5" fill="#ffd2c7">Stocks &amp; MFs</text>
 <text data-in="5" data-out="6" x="150" y="282" font-size="22" fill="#8fd65a">≈5.5% a yr</text>
 <text data-in="6" data-out="7" x="300" y="214" font-size="22" fill="#e2725b">−52%</text>
-<text data-in="8" data-pop="1" x="154" y="246" font-size="18" fill="#8fd65a">Conservative</text>
-<text data-in="8" data-pop="1" data-delay=".4" x="192" y="206" font-size="18" fill="#f6c445">Balanced</text>
-<text data-in="8" data-pop="1" data-delay=".8" x="232" y="161" font-size="18" fill="#e2725b">Aggressive</text>
+<text data-in="8" data-pop="1" x="168" y="231" font-size="18" fill="#8fd65a">Conservative</text>
+<text data-in="8" data-pop="1" data-delay=".4" x="199" y="197" font-size="18" fill="#f6c445">Balanced</text>
+<text data-in="8" data-pop="1" data-delay=".8" x="231" y="163" font-size="18" fill="#e2725b">Aggressive</text>
 </g>
-<circle data-in="8" data-pop="1" cx="143.5" cy="228.3" r="20" fill="url(#xhG)"></circle>
-<circle data-in="8" data-pop="1" data-delay=".4" cx="180" cy="189" r="20" fill="url(#xhY)"></circle>
-<circle data-in="8" data-pop="1" data-delay=".8" cx="221.5" cy="144.3" r="20" fill="url(#xhR)"></circle>
-<circle data-in="8" data-pop="1" cx="143.5" cy="228.3" r="7" fill="#8fd65a" stroke="#0b0c12" stroke-width="3"></circle>
-<circle data-in="8" data-pop="1" data-delay=".4" cx="180" cy="189" r="7" fill="#f6c445" stroke="#0b0c12" stroke-width="3"></circle>
-<circle data-in="8" data-pop="1" data-delay=".8" cx="221.5" cy="144.3" r="7" fill="#e2725b" stroke="#0b0c12" stroke-width="3"></circle>
+<circle data-in="8" data-pop="1" cx="156.7" cy="212.6" r="20" fill="url(#xhG)"></circle>
+<circle data-in="8" data-pop="1" data-delay=".4" cx="186.9" cy="179.5" r="20" fill="url(#xhY)"></circle>
+<circle data-in="8" data-pop="1" data-delay=".8" cx="218.5" cy="144.9" r="20" fill="url(#xhR)"></circle>
+<circle data-in="8" data-pop="1" cx="156.7" cy="212.6" r="7" fill="#8fd65a" stroke="#0b0c12" stroke-width="3"></circle>
+<circle data-in="8" data-pop="1" data-delay=".4" cx="186.9" cy="179.5" r="7" fill="#f6c445" stroke="#0b0c12" stroke-width="3"></circle>
+<circle data-in="8" data-pop="1" data-delay=".8" cx="218.5" cy="144.9" r="7" fill="#e2725b" stroke="#0b0c12" stroke-width="3"></circle>
 </g>
 <ellipse data-in="4" data-out="5" data-pop="1" cx="190" cy="178" rx="122" ry="58" fill="url(#xgY)"></ellipse>
 <text data-in="4" data-out="5" data-pop="1" x="190" y="200" text-anchor="middle" font-size="72" fill="#fbdb81">₹1 Cr</text>
@@ -216,7 +218,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 <div data-cap="5" class="xpl-cap"><span class="k grn">Option one</span><span class="h">All of it in arbitrage?</span><span class="tick"><span><b class="g">✓</b>Your capital stays safe.</span><span><b class="r">✕</b>≈5.5% a year. Barely beats inflation.</span></span></div>
 <div data-cap="6" class="xpl-cap"><span class="k red">Option two</span><span class="h">All of it in stocks?</span><span class="tick"><span><b class="g">✓</b>Strong growth over the long run.</span><span><b class="r">✕</b>Some years it falls 50%. Could you hold on?</span></span></div>
 <div data-cap="7" class="xpl-cap"><span class="k">How we solve it</span><span class="h">Not one or the other.</span><span class="b">The line between them.</span></div>
-<div data-cap="8" class="xpl-cap"><span class="k">Your villas</span><span class="h">Three villas on that line.</span><a href="index.dc.html#calculator" onClick="{{ goCalc }}" class="xpl-cta">See it with your money<i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></i></a></div>
+<div data-cap="8" class="xpl-cap"><span class="k">Your villas</span><span class="h">Three villas on that line.</span><span class="xpl-vkey" aria-hidden="true"><span><i style="background:#8fd65a;box-shadow:0 0 8px rgba(143,214,90,.7)"></i>Conservative</span><span><i style="background:#f6c445;box-shadow:0 0 8px rgba(246,196,69,.7)"></i>Balanced</span><span><i style="background:#e2725b;box-shadow:0 0 8px rgba(226,114,91,.7)"></i>Aggressive</span></span><a href="index.dc.html#calculator" onClick="{{ goCalc }}" class="xpl-cta">See it with your money<i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></i></a></div>
 </div>
 <div data-hint="1" class="xpl-foot"><span data-count="1">01 / 09</span><span class="sw">Tap or swipe up<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg></span></div>
 </div>
@@ -363,7 +365,7 @@ class Component extends DCLogic {
       r.querySelectorAll('[data-cap]').forEach(c => { const i = +c.dataset.cap; c.classList.toggle('on', i === s); c.classList.toggle('before', i < s); });
       r.querySelectorAll('[data-dot]').forEach(dn => { const i = +dn.dataset.dot; dn.classList.toggle('on', i === s); dn.classList.toggle('done', i < s); });
       const dim = r.querySelector('[data-dim]'); if (dim) dim.style.opacity = s === 4 ? '.22' : '1';
-      const hint = r.querySelector('[data-hint]'); if (hint) hint.style.opacity = s === this.N - 1 ? '0' : '1';
+      const hint = r.querySelector('[data-hint]'); if (hint) hint.classList.toggle('gone', s === this.N - 1);
       const cnt = r.querySelector('[data-count]'); if (cnt) cnt.textContent = String(s + 1).padStart(2, '0') + ' / ' + String(this.N).padStart(2, '0');
       return maxT;
     };

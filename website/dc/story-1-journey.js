@@ -1,5 +1,5 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures, DSButton } from './rt.js?v=92f3228d';
-import C_part_stage_villa from './part-stage-villa.js?v=92f3228d';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures, DSButton } from './rt.js?v=874c5ae6';
+import C_part_stage_villa from './part-stage-villa.js?v=874c5ae6';
 /* ── logic, verbatim from the design file ── */
 class Component extends DCLogic {
   componentDidMount() {

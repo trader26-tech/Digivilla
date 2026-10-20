@@ -64,9 +64,11 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xpl-cap .list b{font-weight:600}.xpl-cap .g{color:#8fd65a}.xpl-cap .r{color:#e2725b}
 .xpl-cap .tick{display:flex;flex-direction:column;gap:5px;font-size:14.5px;line-height:1.35;color:#fff6ea}.xpl-cap .tick>span{display:flex;gap:10px}.xpl-cap .tick b{font-weight:600}
 .xpl-title{font-family:Caveat,cursive;font-size:34px;font-weight:700;color:#fbdb81}
-.xpl-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 20px;border-radius:999px;border:0;font:inherit;cursor:pointer;background:#E1E0CC;color:#0b0c12;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 0 30px rgba(255,214,150,.35);animation:xplGlow 2.4s ease-in-out infinite}
+.xpl a.xpl-cta,.xpl-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 6px 0 20px;border-radius:999px;border:0;font:inherit;cursor:pointer;background:#E1E0CC;color:#0b0c12;font-size:15px;font-weight:600;text-decoration:none;box-shadow:0 0 30px rgba(255,214,150,.35);animation:xplGlow 2.4s ease-in-out infinite}
 .xpl-cta i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
-.xpl-foot{flex:none;display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(225,224,204,.5);transition:opacity .3s}
+.xpl-vkey{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;font-weight:500;color:rgba(255,246,234,.72)}.xpl-vkey>span{display:flex;align-items:center;gap:7px}.xpl-vkey i{width:8px;height:8px;border-radius:50%}
+.xpl-foot.gone{max-height:0;padding-top:0;opacity:0;overflow:hidden}
+.xpl-foot{flex:none;display:flex;justify-content:space-between;align-items:center;padding-top:10px;max-height:32px;transition:opacity .3s,max-height .35s ease,padding .35s ease;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(225,224,204,.5)}
 .xpl-foot .sw{display:flex;align-items:center;gap:6px}
 .xpl-foot .sw svg{animation:xplBob 2.2s ease-in-out infinite}
 @keyframes xplBob{0%,100%{transform:translateY(1px)}50%{transform:translateY(-3px)}}
@@ -119,7 +121,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xinv-list b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
 .xinv-list span>span{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:rgba(255,246,234,.58)}
 .xinv-foot{flex:none;display:flex;flex-direction:column;gap:10px;padding-top:8px}
-.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.xpl a.xinv-join,.xinv-join{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;height:60px;border-radius:999px;font-size:17px;font-weight:600;letter-spacing:-.01em;color:#06240f;text-decoration:none;background:linear-gradient(180deg,#3ee07f,#25d366);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 14px 34px -10px rgba(37,211,102,.75);overflow:hidden;transition:transform .15s;-webkit-tap-highlight-color:transparent}
 .xinv-join:active{transform:scale(.98)}
 .xinv-join svg{flex:none}
 .xinv-join::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:xinvShine 3.4s ease-in-out 1.2s infinite}
@@ -129,7 +131,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 .xinv-fine{margin:0;text-align:center;font-size:12px;line-height:1.45;color:rgba(225,224,204,.42)}
 .xinv-go{display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 6px 0 22px;border:0;border-radius:999px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;background:#E1E0CC;color:#0b0c12;box-shadow:0 0 30px rgba(255,214,150,.35)}
 .xinv-go i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#0b0c12;color:#E1E0CC}
-.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
+.xpl a.xinv-again,.xinv-again{align-self:center;height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(37,211,102,.1);font:inherit;font-size:13.5px;font-weight:600;color:#3ee07f;text-decoration:none;display:flex;align-items:center;gap:7px}
 .xinv-done{position:absolute;right:2%;bottom:8%;width:30%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#8fd65a;box-shadow:0 0 0 4px #0c0e24,0 0 26px rgba(143,214,90,.6);animation:xinvPop .55s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes xinvPop{from{transform:scale(.3);opacity:0}}
 /* entrance: each block rises in turn */
@@ -141,15 +143,15 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 @media (prefers-reduced-motion:reduce){.xpl-lesson,.xpl-cap,.xpl-calc,.xpl-prog>span,.xinv,.xinv [data-r]{transition:none!important}.xpl-foot .sw svg,.xpl-cta,.xpl-voice .bar,.xpl-voice.wait,.xinv-art .ring,.xinv-art .coin,.xinv-join::after,.xinv-badge i{animation:none}}
 </style>
 <style>html,body{height:100%;margin:0}html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#dc-root,#dc-root>.sc-host{height:100%}</style>
-<link rel="modulepreload" href="dc/rt.js?v=92f3228d">
-<link rel="modulepreload" href="dc/vendor/preact.mjs?v=92f3228d">
-<link rel="modulepreload" href="dc/explore-mobile.js?v=92f3228d">
+<link rel="modulepreload" href="dc/rt.js?v=874c5ae6">
+<link rel="modulepreload" href="dc/vendor/preact.mjs?v=874c5ae6">
+<link rel="modulepreload" href="dc/explore-mobile.js?v=874c5ae6">
 </head>
 <body>
 <div id="dc-root"></div>
 <script type="module">
-import { mount } from './dc/rt.js?v=92f3228d';
-import Root from './dc/explore-mobile.js?v=92f3228d';
+import { mount } from './dc/rt.js?v=874c5ae6';
+import Root from './dc/explore-mobile.js?v=874c5ae6';
 mount(Root);
 </script>
 <script>(function(){var n=navigator;if(!("serviceWorker"in n)||!(location.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;var go=function(){n.serviceWorker.register("/sw.js").then(function(){return n.serviceWorker.ready}).then(function(r){var u=performance.getEntriesByType("resource").map(function(e){return e.name});if(r.active)r.active.postMessage({type:"warm",page:location.pathname,urls:u})}).catch(function(){})};addEventListener("load",function(){"requestIdleCallback"in window?requestIdleCallback(go,{timeout:5000}):setTimeout(go,2000)})})();</script>
