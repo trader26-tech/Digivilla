@@ -123,8 +123,8 @@ def _sign(payload: str) -> str:
     return _b64u(hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).digest())
 
 
-def _issue_token(owner: str) -> str:
-    body = json.dumps({"owner": owner, "exp": int(time.time()) + _TOKEN_TTL_SECONDS})
+def _issue_token(owner: str, ttl: int | None = None) -> str:
+    body = json.dumps({"owner": owner, "exp": int(time.time()) + (ttl or _TOKEN_TTL_SECONDS)})
     payload = _b64u(body.encode("utf-8"))
     return f"{payload}.{_sign(payload)}"
 
@@ -277,3 +277,40 @@ def save_profile(
 
     updated = _find_by_owner(owner) or {**user, **fields}
     return _public(updated)
+
+
+# ---------------- admin "view this client's app" ----------------
+VIEW_PREFIX = "view:"
+VIEW_TTL = 2 * 3600            # a viewing session lasts two hours
+
+
+def is_view_owner(owner: str | None) -> bool:
+    return bool(owner) and str(owner).startswith(VIEW_PREFIX)
+
+
+def view_code(owner: str) -> str:
+    return str(owner)[len(VIEW_PREFIX):]
+
+
+def redeem_view_pass(ticket: str) -> str | None:
+    """A pass signed by the admin backend (shared ADMIN_VIEW_SECRET), valid ~2 minutes →
+    the client code it names, or None."""
+    secret = (get_settings().admin_view_secret or "").encode("utf-8")
+    if not secret or not ticket or "." not in ticket:
+        return None
+    payload, sig = ticket.split(".", 1)
+    good = _b64u(hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).digest())
+    if not hmac.compare_digest(sig, good):
+        return None
+    try:
+        data = json.loads(_b64u_decode(payload))
+    except Exception:
+        return None
+    if int(data.get("exp", 0)) < int(time.time()) or data.get("kind") != "view":
+        return None
+    code = str(data.get("code") or "").strip()
+    return code or None
+
+
+def issue_view_token(code: str) -> str:
+    return _issue_token(VIEW_PREFIX + code, VIEW_TTL)

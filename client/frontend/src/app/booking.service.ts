@@ -47,7 +47,7 @@ export class BookingService {
   }
 
   createBooking(payload: BookingCreate): Observable<Booking> {
-    if (this.auth.isDemo()) return this.demoBooking(payload);
+    if (this.auth.readOnly()) return this.demoBooking(payload);
     return this.http.post<Booking>(`${this.base}/bookings`, payload);
   }
 
@@ -56,7 +56,7 @@ export class BookingService {
     name: string; phone: string; kind: RequestKind;
     property: string; variant?: string; amount?: number; note?: string;
   }): Observable<Booking> {
-    if (this.auth.isDemo()) return this.demoBooking(payload);
+    if (this.auth.readOnly()) return this.demoBooking(payload);
     return this.http.post<Booking>(`${this.base}/bookings`, { plots: 1, ...payload });
   }
 

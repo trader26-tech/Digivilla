@@ -62,6 +62,8 @@ export class CommissionCardComponent implements OnInit {
   load(): void {
     this.error.set(false);
     this.api.commission().subscribe({ next: (d) => this.data.set(d), error: () => this.error.set(true) });
+    this.api.villasSummary().subscribe({ next: (x) => this.sold.set(x), error: () => {} });
+    this.api.commissionLedger().subscribe({ next: (l) => this.ledger.set(l), error: () => {} });
   }
 
   /** one villa of each type */

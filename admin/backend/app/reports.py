@@ -577,6 +577,12 @@ def upload_report(report_type: str, filename: str, content: bytes,
         touched = sorted({r["client_code"] for r in raw_txns})
         stats["holdings"] = rebuild_holdings(touched)
         stats["clients"] = touched
+        # the commission figures and the trail ledger are cached — new holdings must show at once
+        try:
+            from app import commission as _comm
+            _comm._CACHE.clear()
+        except Exception:
+            pass
         # 3 · place every new purchase into its villa bucket — or list it for a decision
         try:
             from app import placement

@@ -88,7 +88,23 @@ def _bucket_funds() -> list[dict]:
 
 def _user_row(owner: str) -> dict:
     """One read of the user's row (phone, estate_name, estate_city) instead of
-    three separate ones. Short TTL; cleared when the profile is saved."""
+    three separate ones. Short TTL; cleared when the profile is saved.
+    An admin viewing session (owner "view:<code>") reads as that client: their
+    app account's row when they have one, else their CRM phone."""
+    if str(owner).startswith("view:"):
+        code = str(owner)[5:]
+        def load_view():
+            try:
+                m = (_sb().table("client_master").select("phone").eq("client_code", code).limit(1).execute().data or [{}])[0]
+                key = _last10(m.get("phone"))
+                if len(key) >= 10:
+                    for u in _sb().table("users").select("phone,estate_name,estate_city").execute().data or []:
+                        if _last10(u.get("phone")) == key:
+                            return u
+                return {"phone": m.get("phone") or "", "estate_name": None, "estate_city": None}
+            except Exception:
+                return {}
+        return _memo_swr(f"user:{owner}", 60, load_view)
     def load():
         try:
             rows = _sb().table("users").select("phone,estate_name,estate_city").eq(
@@ -176,6 +192,8 @@ def client_code_for_owner(owner: str) -> Optional[str]:
     Returns None when the user has no phone, or no client_master row shares their
     phone's last 10 digits (i.e. the admin hasn't provisioned this client yet).
     """
+    if str(owner).startswith("view:"):
+        return str(owner)[5:]
     def resolve():
         key = _last10(_user_row(owner).get("phone"))
         if len(key) < 10:

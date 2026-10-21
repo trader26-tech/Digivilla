@@ -168,6 +168,7 @@ export class EstateHomeComponent implements OnInit {
   private readonly auth = inject(AuthService);
   /** The shared demo account: the title says it's sample data. */
   readonly isDemo = this.auth.isDemo;
+  readonly readOnly = this.auth.readOnly;
 
   // ── the setup call (empty estate): show the upcoming booked call on the map,
   //    and let a brand-new user book one right from here. ──

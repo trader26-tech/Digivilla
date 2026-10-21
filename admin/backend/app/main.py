@@ -523,6 +523,11 @@ def admin_rebuild_holdings(authorization: Optional[str] = Header(default=None)) 
     _require_admin(authorization)
     out = reports_svc.rebuild_holdings()
     out["consistency"] = reports_svc.holdings_consistency()
+    try:
+        from app import commission as _comm
+        _comm._CACHE.clear()
+    except Exception:
+        pass
     return out
 
 
@@ -1102,6 +1107,22 @@ def admin_india_board(range: str = "1d", start: Optional[str] = None, end: Optio
     villas with and without gold (cached 45 s intraday, 5 min otherwise)."""
     _require_admin(authorization)
     return india_svc.board(range, start, end)
+
+
+@app.post("/admin/clients/{code}/view-link")
+def admin_client_view_link(code: str, authorization: Optional[str] = Header(default=None)) -> dict:
+    """A link that opens the client app as this client, read-only. The pass inside it is
+    signed with ADMIN_VIEW_SECRET (shared with the client backend) and expires in 2 minutes."""
+    _require_admin(authorization)
+    import base64 as _b64, hashlib as _hl, hmac as _hm, json as _js, time as _t
+    secret = (settings.admin_view_secret or "").encode("utf-8")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Viewing a client's app isn't set up (ADMIN_VIEW_SECRET missing).")
+    b64u = lambda b: _b64.urlsafe_b64encode(b).decode("ascii").rstrip("=")
+    payload = b64u(_js.dumps({"kind": "view", "code": code, "exp": int(_t.time()) + 120}).encode("utf-8"))
+    sig = b64u(_hm.new(secret, payload.encode("utf-8"), _hl.sha256).digest())
+    base = (settings.client_app_url or "").rstrip("/")
+    return {"url": f"{base}/?viewas={payload}.{sig}", "expires_in": 120}
 
 
 from app import site_metrics as site_metrics_svc  # noqa: E402

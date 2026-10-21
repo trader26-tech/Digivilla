@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     # The client service's base URL — the "Check the maths" page reads the same
     # month-end NAVs the client app's calculators use (public /calc/villa-funds).
     client_api_url: str = "https://client-digivilla-production.up.railway.app"
+    # the client app the admin opens to view a client (same host serves the SPA + API)
+    client_app_url: str = "https://client-digivilla-production.up.railway.app"
+    # shared with the client backend: signs the one-time "view this client's app" passes
+    admin_view_secret: str = ""
 
     # --- Admin OTP → PIN sign-in ---
     # Secret used to sign admin session tokens (change in production).

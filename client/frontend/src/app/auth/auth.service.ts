@@ -164,6 +164,23 @@ export class AuthService {
 
   /** True while signed in to the shared demo account (the test phone). */
   readonly isDemo = computed(() => (this.user()?.phone || '').replace(/\D/g, '').endsWith('9999999999'));
+  /** The admin looking at a client's app (a read-only session from the admin's "open their app"). */
+  readonly viewing = computed(() => (this.user()?.owner || '').startsWith('view:'));
+  /** Look, don't touch: the shared demo, or an admin viewing session — nothing is filed or saved. */
+  readonly readOnly = computed(() => this.isDemo() || this.viewing());
+
+  /** Redeem an admin "view this client" pass: replaces any session on this device with a
+   *  read-only one as that client (two hours). */
+  async viewAs(ticket: string): Promise<AuthUser> {
+    const res = await fetch(`${environment.apiUrl}/auth/view-as`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.detail || 'This link has expired — open it again from the admin.');
+    const data = (await res.json()) as { token: string; user: AuthUser };
+    this.signOut();
+    this.persist(data.token, data.user);
+    return data.user;
+  }
 
   /** "Explore the demo": sign straight into the shared sample account — no
    *  phone, no code. It can look at everything but change nothing. */

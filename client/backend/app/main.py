@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from app import engine
 from app.config import get_settings
@@ -384,8 +385,33 @@ def _is_demo(owner: str) -> bool:
     """The public demo account ("Explore the demo" = the test phone 9999999999).
     It is shared by everyone trying the app, so it can look at everything but
     change nothing."""
+    if auth_svc.is_view_owner(owner):        # the admin looking at a client's app: read-only too
+        return True
     from app.client_portfolio import _last10, _user_row
     return _last10(_user_row(owner).get("phone")) == "9999999999"
+
+
+class ViewPassRequest(BaseModel):
+    ticket: str
+
+
+@app.post("/auth/view-as", response_model=AuthResponse)
+def auth_view_as(req: ViewPassRequest) -> dict:
+    """Redeem a one-time pass from the admin: a read-only session as that client (2 hours)."""
+    code = auth_svc.redeem_view_pass(req.ticket)
+    if not code:
+        raise HTTPException(status_code=401, detail="This link has expired — open it again from the admin.")
+    from app.supabase_client import get_supabase
+    try:
+        m = (get_supabase().table("client_master").select("client_code,name,phone,city").eq("client_code", code).limit(1).execute().data or [None])[0]
+    except Exception:
+        m = None
+    if not m:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    name = " ".join(w.capitalize() for w in str(m.get("name") or code).split())
+    return {"token": auth_svc.issue_view_token(code),
+            "user": {"owner": "view:" + code, "email": "", "name": name, "phone": m.get("phone") or "",
+                     "age": None, "city": m.get("city") or "", "profile_complete": True}}
 
 
 @app.post("/auth/demo", response_model=AuthResponse)

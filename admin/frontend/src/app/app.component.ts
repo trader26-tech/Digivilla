@@ -156,7 +156,8 @@ export class AppComponent implements OnInit {
   @ViewChild(PlacementsComponent) placements?: PlacementsComponent;
   /** purchases still waiting for a placement decision (from the placements card) */
   readonly toPlace = signal<{ count: number; amount: number } | null>(null);
-  onTodayUpdated(): void { this.loadNetWorth(); this.loadMappingOverview(); this.placements?.refresh(); }
+  @ViewChild(CommissionCardComponent) commissionCard?: CommissionCardComponent;
+  onTodayUpdated(): void { this.loadNetWorth(); this.loadMappingOverview(); this.placements?.refresh(); this.commissionCard?.load(); }
 
   view = signal<View>('clients');
   readonly NAV = NAV;
@@ -544,6 +545,7 @@ export class AppComponent implements OnInit {
     const done = () => { if (--pending <= 0) { this.refreshing.set(false); this.lastRefreshed.set(new Date()); } };
     this.loadNetWorth(done);
     this.loadMappingOverview(done);
+    this.commissionCard?.load();
     if (this.view() === 'villas') this.loadVillasLive();
     if (this.view() === 'uploads') this.loadCalendar();
     if (this.mapCode()) this.loadMapping(this.mapCode());
@@ -668,6 +670,19 @@ export class AppComponent implements OnInit {
     if (top) this.dropLayer(top);
   }
 
+  /** the client whose app is being opened (a pass is being fetched) */
+  readonly viewing = signal<string | null>(null);
+  /** Open this client's app, read-only, in a new tab. The tab opens at once (so the browser
+   *  doesn't block it) and is pointed at the signed link when the pass arrives. */
+  viewApp(code: string): void {
+    if (this.viewing()) return;
+    this.viewing.set(code);
+    const w = window.open('about:blank', '_blank');
+    this.api.clientViewLink(code).subscribe({
+      next: (r) => { this.viewing.set(null); if (w) w.location.href = r.url; else location.href = r.url; },
+      error: (e) => { this.viewing.set(null); w?.close(); alert(e?.error?.detail || 'Could not open their app.'); },
+    });
+  }
   openNwClient(code: string, tab: DrawerTab = 'overview'): void {
     this.pushLayer('drawer');
     this.nwDetailLoading.set(true);

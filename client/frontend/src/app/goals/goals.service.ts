@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, of, tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { AuthService } from '../auth/auth.service';
@@ -99,6 +99,7 @@ export class GoalsService {
   }
   /** persist the plan: this device at once, the account in the background */
   save(): void {
+    if (this.auth.viewing()) return;                        // the admin's view of a client changes nothing
     const body: SavedGoals = { homecoming: { total: this.tripTotal(), parts: this.tripParts() }, custom: this.custom() };
     try { localStorage.setItem(LS, JSON.stringify(body)); } catch { /* private mode */ }
     this.http.put<SavedGoals>(`${environment.apiUrl}/me/goals`, body, { headers: this.headers }).subscribe({ next: () => {}, error: () => {} });
@@ -115,6 +116,7 @@ export class GoalsService {
   /** "Pay": a buy request for N villas of a category, through the same booking flow the
    *  estate uses (the team completes the purchase; nothing is charged in the app). */
   requestVillas(villas: number, category: VillaCategory | null, note: string): Observable<unknown> {
+    if (this.auth.readOnly()) return of({ ok: true, preview: true });
     const p = this.est.profile();
     const name = category ? category[0].toUpperCase() + category.slice(1) : 'Balanced';
     return this.booking.createRequest({

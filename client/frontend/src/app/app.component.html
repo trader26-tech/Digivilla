@@ -1,3 +1,9 @@
+<!-- the admin viewing a client's app: always visible, read-only -->
+<div class="view-bar" *ngIf="auth.viewing() || viewMsg" role="status">
+  <span class="vb-dot"></span>
+  <span class="vb-t">{{ auth.viewing() ? 'Viewing ' + (auth.user()?.name || 'client') + ' · read-only' : viewMsg }}</span>
+  <button *ngIf="auth.viewing()" type="button" (click)="exitView()">Exit</button>
+</div>
 <!-- Opening animation: painted by index.html before any script, this decides
      when it ends (and fades it out over login / home). -->
 <app-intro *ngIf="intro" [full]="introFull" [ready]="introReady" [hold]="introHold" (done)="onIntroDone()"></app-intro>

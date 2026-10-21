@@ -231,7 +231,7 @@
       </div>
 
       <ul class="client-rows" *ngIf="nwFiltered().length">
-        <li class="client-row" *ngFor="let c of nwFiltered()" (click)="openNwClient(c.client_code)" tabindex="0" (keydown.enter)="openNwClient(c.client_code)">
+        <li class="client-row" *ngFor="let c of nwFiltered()" (click)="viewApp(c.client_code)" tabindex="0" (keydown.enter)="viewApp(c.client_code)" [class.opening]="viewing() === c.client_code" title="Open their app (read-only)">
           <span class="cr-avatar">{{ initials(c.name) }}</span>
           <span class="cr-id">
             <span class="cr-name-row"><b class="cr-name">{{ c.name }}</b><span class="cr-demo" *ngIf="c.demo" title="The public demo account — not counted in the totals">Demo</span><span class="cr-unmapped" *ngIf="unmappedOf(c.client_code) as n" title="Transactions not mapped to a villa">{{ n }} unmapped</span></span>
@@ -250,7 +250,7 @@
             <small>{{ money(c.gain) }}</small>
           </span>
           <span class="cr-funds">{{ c.holdings_count }} <em>funds</em></span>
-          <span class="cr-chev">›</span>
+          <button type="button" class="cr-chev" (click)="$event.stopPropagation(); openNwClient(c.client_code)" title="Details: villas, transactions, profile" aria-label="Details">›</button>
         </li>
       </ul>
     </section>

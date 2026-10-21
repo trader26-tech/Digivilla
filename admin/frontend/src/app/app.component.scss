@@ -349,3 +349,8 @@
 }
 @media (max-width: 760px) { .home > .home-main { height: auto; min-height: 0; } }
 @media (prefers-reduced-motion: reduce) { .wrap, .drawer, .drawer-scrim, .ap, .flash, .toast, .lock-card { animation: none; } .refresh-btn.spinning svg { animation: none !important; } }
+
+/* client rows open the client's app; the chevron opens the details drawer */
+.client-row.opening { opacity: .6; }
+button.cr-chev { border: 1px solid var(--border); background: var(--surface); width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font: inherit; font-size: 1.2rem; color: var(--muted); cursor: pointer; opacity: 1; padding: 0;
+  &:hover { border-color: var(--nw-accent); color: var(--nw-accent); background: #f3f8ff; } }

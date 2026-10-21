@@ -448,6 +448,10 @@ export class AdminService {
   deleteMeeting(id: string): Observable<{ status: string }> {
     return this.http.delete<{ status: string }>(`${this.base}/admin/meetings/${id}`, this.opts);
   }
+  /** a 2-minute link that opens the client app as this client, read-only */
+  clientViewLink(code: string): Observable<{ url: string; expires_in: number }> {
+    return this.http.post<{ url: string; expires_in: number }>(`${this.base}/admin/clients/${encodeURIComponent(code)}/view-link`, {}, this.opts);
+  }
   // ── website metrics (thedigiciti.com) ──
   siteMetrics(days: number): Observable<SiteMetrics> {
     return this.http.get<SiteMetrics>(`${this.base}/admin/site/metrics`, { ...this.opts, params: { days } });

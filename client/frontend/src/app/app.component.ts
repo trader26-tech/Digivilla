@@ -95,6 +95,16 @@ export class AppComponent {
   private readonly swUpdate = inject(SwUpdate, { optional: true });
 
   constructor() {
+    // The admin's "open their app": ?viewas=<pass> → a read-only session as that client,
+    // then reload without the pass in the address (so nothing is cached from the old session).
+    try {
+      const t = new URLSearchParams(location.search).get('viewas');
+      if (t) {
+        this.viewMsg = 'Opening the client’s app…';
+        this.auth.viewAs(t).then(() => location.replace(location.pathname),
+          (e) => { this.viewMsg = e?.message || 'This link has expired — open it again from the admin.'; history.replaceState(null, '', location.pathname); });
+      }
+    } catch {}
     // On a returning verified session, sync the profile from the auth user.
     this.syncProfileFromAuth();
     // Deep-link support: ?view=explore opens the Explore tab on load.
@@ -197,6 +207,11 @@ export class AppComponent {
     if (u.phone) patch.phone = u.phone;
     if (Object.keys(patch).length) this.est.setProfile(patch);
   }
+
+  /** shown while a ?viewas pass is being redeemed (or why it failed) */
+  viewMsg = '';
+  /** leave the admin's view of a client: drop that session and close the tab */
+  exitView(): void { this.auth.signOut(); try { window.close(); } catch {} location.replace(location.pathname); }
 
   /** Which bottom-nav tab is active. */
   view: 'home' | 'explore' | 'funds' | 'calls' | 'calc' | 'goals' | 'storefront' = 'home';
@@ -318,6 +333,7 @@ export class AppComponent {
 
   /** A returning user's first open after a release: the plain "What's new" list, once. */
   private showWhatsNew(): void {
+    if (this.auth.viewing()) return;                // the admin viewing a client: no release notes
     if (this.auth.signedIn()) this.whatsNew.showOnce();
   }
 
