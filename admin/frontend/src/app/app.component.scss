@@ -75,7 +75,8 @@
 .hero-kpi .figure { font-size: 26px; }
 .kpi-of { font-size: 14px; font-weight: 700; color: var(--nw-muted); letter-spacing: 0; }
 .kpi-link { text-decoration: none; color: var(--nw-warn); &:hover { text-decoration: underline; } }
-.home { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; margin-bottom: 12px; }
+.home { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-areas: "main side" "dir side"; grid-template-rows: auto 1fr; gap: 12px; align-items: start; margin-bottom: 12px; }
+.home > .home-main { grid-area: main; } .home > .home-side { grid-area: side; } .home > .home-dir { grid-area: dir; margin: 0; }
 .home > .home-main { min-height: 0; }
 .home-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 
@@ -340,7 +341,7 @@
 /* ── widths (phones live in app.component.phone.scss) ─────────────────── */
 @media (max-width: 1100px) { .home { grid-template-columns: minmax(0, 1fr) 300px; } }
 @media (max-width: 900px) {
-  .home { grid-template-columns: 1fr; } .home > .home-main { height: auto; }
+  .home { grid-template-columns: 1fr; grid-template-areas: "main" "side" "dir"; grid-template-rows: auto; } .home > .home-main { height: auto; }
   .home-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   .upload-slots, .builder-top { grid-template-columns: 1fr; }
   .df-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
