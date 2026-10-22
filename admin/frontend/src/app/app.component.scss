@@ -351,7 +351,20 @@
 @media (max-width: 760px) { .home > .home-main { height: auto; min-height: 0; } }
 @media (prefers-reduced-motion: reduce) { .wrap, .drawer, .drawer-scrim, .ap, .flash, .toast, .lock-card { animation: none; } .refresh-btn.spinning svg { animation: none !important; } }
 
-/* client rows open the client's app; the chevron opens the details drawer */
-.client-row.opening { opacity: .6; }
-button.cr-chev { border: 1px solid var(--border); background: var(--surface); width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font: inherit; font-size: 1.2rem; color: var(--muted); cursor: pointer; opacity: 1; padding: 0;
-  &:hover { border-color: var(--nw-accent); color: var(--nw-accent); background: #f3f8ff; } }
+/* ── the client's phone app inside the panel (Phone tab) ── */
+.ph { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ph-bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ph-note { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--nw-muted);
+  i { width: 8px; height: 8px; border-radius: 50%; background: var(--nw-pos); box-shadow: 0 0 0 3px rgba(22,160,133,.18); } }
+.ph-acts { display: flex; gap: 6px; .sm { padding: 6px 12px; font-size: 12px; } }
+.ph-frame { position: relative; width: 414px; max-width: 100%; height: min(860px, calc(100dvh - 250px)); min-height: 520px; padding: 12px; border-radius: 52px;
+  background: #0b0c12; box-shadow: 0 0 0 2px #2a2c36, 0 30px 60px -24px rgba(26,28,46,.55); }
+.ph-frame iframe { display: block; width: 100%; height: 100%; border: 0; border-radius: 40px; background: #0e1116; }
+.ph-msg { height: 100%; border-radius: 40px; background: #0e1116; color: #c9ccd8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 24px; font-size: 13px; font-weight: 600;
+  b { color: #fff; font-size: 15px; } }
+.ph-spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid rgba(255,255,255,.15); border-top-color: #8b7bf0; animation: phspin .8s linear infinite; }
+@keyframes phspin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) {
+  .ph-frame { width: 100%; height: calc(100dvh - 230px); padding: 0; border-radius: 18px; box-shadow: none; background: none; }
+  .ph-frame iframe, .ph-msg { border-radius: 18px; }
+}

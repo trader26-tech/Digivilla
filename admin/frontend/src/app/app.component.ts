@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Component, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
@@ -68,7 +69,7 @@ const NAV: { view: View; label: string; short: string; tab: boolean; group?: 'da
   { view: 'uploads', label: 'Uploads', short: 'Uploads', tab: true, group: 'data' },
   { view: 'audit', label: 'Check the maths', short: 'Maths', tab: false, group: 'data' },
 ];
-type DrawerTab = 'overview' | 'transactions' | 'mapping' | 'profile' | 'documents';
+type DrawerTab = 'phone' | 'overview' | 'transactions' | 'mapping' | 'profile' | 'documents';
 
 /** Villa colours, in fixed order by the villa's position (never by rank): the
  *  validated light categorical palette. Unmapped is NOT a colour from this list. */
@@ -670,21 +671,35 @@ export class AppComponent implements OnInit {
     if (top) this.dropLayer(top);
   }
 
-  /** the client whose app is being opened (a pass is being fetched) */
-  readonly viewing = signal<string | null>(null);
-  /** Open this client's app, read-only, in a new tab. The tab opens at once (so the browser
-   *  doesn't block it) and is pointed at the signed link when the pass arrives. */
-  viewApp(code: string): void {
-    if (this.viewing()) return;
-    this.viewing.set(code);
-    const w = window.open('about:blank', '_blank');
+  // ── the client's phone app, inside the admin (read-only) ──
+  /** the signed link the Phone tab shows (null while it's being fetched) */
+  readonly phoneUrl = signal<SafeResourceUrl | null>(null);
+  readonly phoneErr = signal('');
+  /** bumps to make the frame reload */
+  readonly phoneKey = signal(0);
+  private sanitizer = inject(DomSanitizer);
+  /** fetch a fresh 2-minute pass and point the phone frame at it */
+  loadPhone(code = this.mapCode()): void {
+    if (!code) return;
+    this.phoneUrl.set(null); this.phoneErr.set('');
     this.api.clientViewLink(code).subscribe({
-      next: (r) => { this.viewing.set(null); if (w) w.location.href = r.url; else location.href = r.url; },
-      error: (e) => { this.viewing.set(null); w?.close(); alert(e?.error?.detail || 'Could not open their app.'); },
+      next: (r) => { if (this.mapCode() !== code) return; this.phoneUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(r.url)); this.phoneKey.update((k) => k + 1); },
+      error: (e) => this.phoneErr.set(e?.error?.detail || 'Could not open their app.'),
     });
   }
-  openNwClient(code: string, tab: DrawerTab = 'overview'): void {
+  /** the same view in a new tab, full size */
+  openPhoneTab(): void {
+    const code = this.mapCode(); if (!code) return;
+    const w = window.open('about:blank', '_blank');
+    this.api.clientViewLink(code).subscribe({
+      next: (r) => { if (w) w.location.href = r.url; else location.href = r.url; },
+      error: (e) => { w?.close(); this.phoneErr.set(e?.error?.detail || 'Could not open their app.'); },
+    });
+  }
+  setDrawerTab(t: DrawerTab): void { this.drawerTab.set(t); if (t === 'phone' && !this.phoneUrl()) this.loadPhone(); }
+  openNwClient(code: string, tab: DrawerTab = 'phone'): void {
     this.pushLayer('drawer');
+    this.phoneUrl.set(null); this.phoneErr.set('');
     this.nwDetailLoading.set(true);
     this.nwDetail.set(null);
     this.drawerTab.set(tab);
@@ -702,12 +717,14 @@ export class AppComponent implements OnInit {
       error: (e) => { this.nwDetailLoading.set(false); if (e?.status === 401) this.lock(); },
     });
     this.loadMapping(code);
+    if (tab === 'phone') this.loadPhone(code);
   }
   closeNwClient(): void { this.popLayer('drawer'); }
   private resetDrawer(): void {
     this.nwDetail.set(null);
     this.nwDetailLoading.set(false);
-    this.drawerTab.set('overview');
+    this.drawerTab.set('phone');
+    this.phoneUrl.set(null);
     this.mapCode.set('');
     this.mapTxns.set([]);
     this.mapVillas.set([]);

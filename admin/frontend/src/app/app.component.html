@@ -229,7 +229,7 @@
       </div>
 
       <ul class="client-rows" *ngIf="nwFiltered().length">
-        <li class="client-row" *ngFor="let c of nwFiltered()" (click)="viewApp(c.client_code)" tabindex="0" (keydown.enter)="viewApp(c.client_code)" [class.opening]="viewing() === c.client_code" title="Open their app (read-only)">
+        <li class="client-row" *ngFor="let c of nwFiltered()" (click)="openNwClient(c.client_code)" tabindex="0" (keydown.enter)="openNwClient(c.client_code)">
           <span class="cr-avatar">{{ initials(c.name) }}</span>
           <span class="cr-id">
             <span class="cr-name-row"><b class="cr-name">{{ c.name }}</b><span class="cr-demo" *ngIf="c.demo" title="The public demo account — not counted in the totals">Demo</span><span class="cr-unmapped" *ngIf="unmappedOf(c.client_code) as n" title="Transactions not mapped to a villa">{{ n }} unmapped</span></span>
@@ -248,7 +248,7 @@
             <small>{{ money(c.gain) }}</small>
           </span>
           <span class="cr-funds">{{ c.holdings_count }} <em>funds</em></span>
-          <button type="button" class="cr-chev" (click)="$event.stopPropagation(); openNwClient(c.client_code)" title="Details: villas, transactions, profile" aria-label="Details">›</button>
+          <span class="cr-chev" aria-hidden="true">›</span>
         </li>
       </ul>
     </section>
@@ -536,18 +536,39 @@
       </div>
 
       <nav class="dr-tabs seg">
-        <button [class.active]="drawerTab()==='overview'" (click)="drawerTab.set('overview')">Holdings</button>
-        <button [class.active]="drawerTab()==='transactions'" (click)="drawerTab.set('transactions')">Transactions <em *ngIf="mapTxns().length">{{ mapTxns().length }}</em></button>
-        <button [class.active]="drawerTab()==='mapping'" (click)="drawerTab.set('mapping')">Villas <em class="warn" *ngIf="unpinnedPurchases().length" title="Purchases not in a villa">{{ unpinnedPurchases().length }}</em></button>
-        <button [class.active]="drawerTab()==='profile'" (click)="drawerTab.set('profile')">Profile</button>
-        <button [class.active]="drawerTab()==='documents'" (click)="drawerTab.set('documents')">Docs <em *ngIf="drawerDocs().length">{{ drawerDocs().length }}</em></button>
+        <button [class.active]="drawerTab()==='phone'" (click)="setDrawerTab('phone')"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>Phone</button>
+        <button [class.active]="drawerTab()==='overview'" (click)="setDrawerTab('overview')">Holdings</button>
+        <button [class.active]="drawerTab()==='transactions'" (click)="setDrawerTab('transactions')">Transactions <em *ngIf="mapTxns().length">{{ mapTxns().length }}</em></button>
+        <button [class.active]="drawerTab()==='mapping'" (click)="setDrawerTab('mapping')">Villas <em class="warn" *ngIf="unpinnedPurchases().length" title="Purchases not in a villa">{{ unpinnedPurchases().length }}</em></button>
+        <button [class.active]="drawerTab()==='profile'" (click)="setDrawerTab('profile')">Profile</button>
+        <button [class.active]="drawerTab()==='documents'" (click)="setDrawerTab('documents')">Docs <em *ngIf="drawerDocs().length">{{ drawerDocs().length }}</em></button>
       </nav>
 
-      <div class="dr-alert" *ngIf="unpinnedPurchases().length && drawerTab() !== 'mapping'" role="alert">
+      <div class="dr-alert" *ngIf="unpinnedPurchases().length && drawerTab() !== 'mapping' && drawerTab() !== 'phone'" role="alert">
         <span class="ma-ic sm" aria-hidden="true">!</span>
         <span><b>{{ unpinnedPurchases().length }} unpinned</b> · {{ money(unpinnedAmount()) }}</span>
-        <button (click)="drawerTab.set('mapping')">Pin →</button>
+        <button (click)="setDrawerTab('mapping')">Pin →</button>
       </div>
+
+      <!-- ═══ PHONE: their app as they see it, read-only ═══ -->
+      <section class="ph" *ngIf="drawerTab()==='phone'">
+        <div class="ph-bar">
+          <span class="ph-note"><i></i>Live · read-only</span>
+          <span class="ph-acts">
+            <button type="button" class="ghost sm" (click)="loadPhone()" title="Reload their app">Reload</button>
+            <button type="button" class="primary-btn sm" (click)="openPhoneTab()">Full screen ↗</button>
+          </span>
+        </div>
+        <div class="ph-frame">
+          @if (phoneUrl(); as u) {
+            @for (k of [phoneKey()]; track k) { <iframe [src]="u" title="The client's app" allow="clipboard-write"></iframe> }
+          } @else if (phoneErr()) {
+            <div class="ph-msg"><b>Couldn't open it</b><span>{{ phoneErr() }}</span><button type="button" class="ghost sm" (click)="loadPhone()">Try again</button></div>
+          } @else {
+            <div class="ph-msg"><span class="ph-spin"></span><span>Opening their app…</span></div>
+          }
+        </div>
+      </section>
 
       <!-- ═══ HOLDINGS / OVERVIEW ═══ -->
       <ng-container *ngIf="drawerTab()==='overview'">
