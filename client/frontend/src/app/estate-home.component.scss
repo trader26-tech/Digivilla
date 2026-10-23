@@ -60,7 +60,7 @@
   flex-direction: column;
   justify-content: flex-start;
   /* a little top breathing room (notch), bottom clears the floating nav */
-  padding: calc(3.4rem + env(safe-area-inset-top)) 0 calc(6rem + env(safe-area-inset-bottom));
+  padding: calc(2.6rem + env(safe-area-inset-top)) 0 calc(6rem + env(safe-area-inset-bottom));
   overflow: hidden;
 }
 .estate-top > * { position: relative; z-index: 1; }
@@ -217,7 +217,7 @@
 
 /* ===== TITLE — the handoff: avatar + (kicker over "<name>'s City"), centred as one group.
    The avatar opens Settings; tapping the name opens the rename sheet. ===== */
-.title { position: relative; z-index: 2; margin-top: 1.6rem; padding: 0 20px; min-height: 52px;
+.title { position: relative; z-index: 2; margin-top: 1.1rem; padding: 0 20px; min-height: 52px;
   display: flex; align-items: center; justify-content: center; gap: 14px; }
 .title-t { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; max-width: calc(100% - 60px); }
 .title-t > * { max-width: 100%; }
@@ -253,9 +253,9 @@
      and the portfolio block a comfortable distance below (matches reference). */
   flex: 1 1 auto; min-height: 0;
   display: flex; align-items: center; justify-content: center;
-  margin: 1.4rem 0 0.4rem;
+  margin: 0.5rem 0 0.2rem;
 }
-.board svg { position: relative; width: 100%; height: 100%; max-height: 42vh; display: block;
+.board svg { position: relative; width: 102%; height: 100%; max-height: 50vh; margin: 0 -1%; display: block; flex: none;
   transition: transform .5s cubic-bezier(.2, .8, .2, 1), opacity .3s; }
 /* more than one estate: the board is a sideways swipe surface (vertical scroll still works) */
 .board.multi { touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
@@ -267,7 +267,8 @@
 @keyframes epInL { from { transform: translateX(-40px); opacity: 0; } }
 @keyframes epInR { from { transform: translateX(40px); opacity: 0; } }
 /* one dot per estate */
-.estate-pager { display: flex; justify-content: center; gap: 5px; margin: -6px 0 6px; }
+.estate-pager { position: absolute; left: 0; right: 0; bottom: -2px; z-index: 3; display: flex; justify-content: center; gap: 5px; pointer-events: none; }
+.estate-pager .ep-dot { pointer-events: auto; }
 .ep-dot { width: 5px; height: 5px; padding: 0; border: 0; border-radius: 3px; cursor: pointer; background: var(--color-neutral-600);
   transition: width .25s, background .25s; -webkit-tap-highlight-color: transparent;
   &.on { width: 14px; background: #8fd65a; }

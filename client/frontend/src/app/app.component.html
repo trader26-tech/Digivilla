@@ -102,15 +102,15 @@
      grows to show its label. Settings lives behind the avatar on the home title. -->
 <nav class="tabbar" *ngIf="onTab" aria-label="Main">
   <div class="tabbar-pill">
-    <button class="tab" [class.active]="view === 'calc'" (click)="goCalc()" aria-label="Compare" [attr.aria-current]="view === 'calc' ? 'page' : null">
+    <button class="tab" [class.active]="view === 'calc' && !accountOpen" (click)="goCalc()" aria-label="Compare" [attr.aria-current]="view === 'calc' ? 'page' : null">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><rect x="7" y="11" width="4" height="9" rx="1"/><rect x="13.5" y="6" width="4" height="14" rx="1"/></svg>
       <span class="tab-lbl">Compare</span>
     </button>
-    <button class="tab" [class.active]="view === 'home'" (click)="goHome()" aria-label="Home" [attr.aria-current]="view === 'home' ? 'page' : null">
+    <button class="tab" [class.active]="view === 'home' && !accountOpen" (click)="goHome()" aria-label="Home" [attr.aria-current]="view === 'home' ? 'page' : null">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg>
       <span class="tab-lbl">Home</span>
     </button>
-    <button class="tab" [class.active]="view === 'goals'" (click)="goGoals()" aria-label="Goals" [attr.aria-current]="view === 'goals' ? 'page' : null">
+    <button class="tab" [class.active]="view === 'goals' && !accountOpen" (click)="goGoals()" aria-label="Goals" [attr.aria-current]="view === 'goals' ? 'page' : null">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
       <span class="tab-lbl">Goals</span>
     </button>
@@ -121,6 +121,7 @@
 @defer (when !intro && accountOpen; prefetch on idle) {
 <app-account
   *ngIf="!intro && accountOpen"
+  class="has-nav"
   (back)="closeAccount()"
   (book)="openBooking(); closeAccount()"
   (signOut)="onSignOut()"

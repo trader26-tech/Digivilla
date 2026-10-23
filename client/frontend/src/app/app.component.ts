@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, HostListener, effect, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
 import { AccountComponent } from './account/account.component';
@@ -225,7 +225,7 @@ export class AppComponent {
     return (
       !this.intro && this.auth.signedIn() &&
       this.detail === null && this.villa === null && this.land === null &&
-      this.construction === null && this.building === null && this.buildFlow === null && !this.accountOpen &&
+      this.construction === null && this.building === null && this.buildFlow === null &&
       !this.levelsOpen && !(this.view === 'calc' && this.calcOpen) && !(this.view === 'goals' && this.goalsSvc.page() !== 'hub') &&
       (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc' || this.view === 'goals')
     );
@@ -238,6 +238,7 @@ export class AppComponent {
 
   goHome(): void {
     this.view = 'home';
+    this.leaveAccount();
     this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }
@@ -253,12 +254,14 @@ export class AppComponent {
   /** The Goals tab: what the villas pay for. */
   goGoals(): void {
     this.view = 'goals';
+    this.leaveAccount();
     this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }
   /** The Calculators tab. */
   goCalc(): void {
     this.view = 'calc';
+    this.leaveAccount();
     this.callsOpen = false;
     window.scrollTo({ top: 0 });
   }
@@ -299,13 +302,26 @@ export class AppComponent {
   /** The account page is open. */
   accountOpen = false;
 
+  /** Settings opens from the home avatar. It sits in the phone's history, so the
+   *  system back gesture / button closes it; the tab bar stays, and Home leaves it. */
   openAccount(): void {
     this.accountOpen = true;
     window.scrollTo({ top: 0 });
+    try { history.pushState({ dvAccount: 1 }, ''); } catch { /* ignore */ }
   }
   closeAccount(): void {
+    if (!this.accountOpen) return;
+    try { if (history.state?.dvAccount) { history.back(); return; } } catch { /* fall through */ }
     this.accountOpen = false;
   }
+  /** a tab tap while Settings is open: drop Settings (and its history entry) without a back-jump */
+  private leaveAccount(): void {
+    if (!this.accountOpen) return;
+    this.accountOpen = false;
+    try { if (history.state?.dvAccount) history.replaceState(null, ''); } catch { /* ignore */ }
+  }
+  @HostListener('window:popstate')
+  onPop(): void { if (this.accountOpen) { this.accountOpen = false; window.scrollTo({ top: 0 }); } }
 
   /** The Estate Levels progression ladder is open. */
   levelsOpen = false;

@@ -357,19 +357,17 @@
           </g>
         </g>
       </svg>
+      <!-- one dot per estate (9 parcels each) — tap or swipe the board sideways -->
+      @if (boards() > 1) {
+        <div class="estate-pager" role="tablist" aria-label="Your estates">
+          @for (p of boardList(); track p) {
+            <button type="button" class="ep-dot" [class.on]="p === page()" (click)="goBoard(p)" role="tab"
+                    [attr.aria-selected]="p === page()" [attr.aria-label]="'Estate ' + (p + 1)"></button>
+          }
+        </div>
+      }
     </div>
 
-    <!-- one dot per estate (9 parcels each) — tap or swipe the board sideways -->
-    @if (dataReady && !isEmptyEstate && boards() > 1) {
-      <div class="estate-pager" role="tablist" aria-label="Your estates">
-        @for (p of boardList(); track p) {
-          <button type="button" class="ep-dot" [class.on]="p === page()" (click)="goBoard(p)" role="tab"
-                  [attr.aria-selected]="p === page()" [attr.aria-label]="'Estate ' + (p + 1)"></button>
-        }
-      </div>
-    }
-    <!-- quiet cue that the parcels are tappable → each opens its villa report -->
-    <p class="board-hint" *ngIf="dataReady && !isEmptyEstate" aria-hidden="true">Tap any villa for its report</p>
 
     <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
     <ng-container *ngIf="isEmptyEstate">
