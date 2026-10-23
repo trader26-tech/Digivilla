@@ -16,4 +16,4 @@ def _finished_at() -> float: return _villa_unit() * 0.99      # a lumpsum buys ~
 
 def _villa_income() -> float: return float(_cfg()["estate"]["villa_income_monthly"])
 
-def _max_houses() -> int: return int(_cfg()["estate"]["plots"])
+def _max_houses() -> int: return 99   # estates of 9 parcels, as many as the money makes

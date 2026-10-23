@@ -1143,11 +1143,9 @@ def _villa_unit() -> float:
 
 
 def _houses_max() -> int:
-    try:
-        from app.calc_settings import calc_config
-        return int(calc_config.estate()["plots"])
-    except Exception:
-        return 9
+    """Villas a client can own — no longer the board's 9 parcels: the app swipes
+    between estates of 9, so every ₹5 L is its own villa."""
+    return 99
 
 
 _VC: dict = {"at": 0.0, "codes": set()}

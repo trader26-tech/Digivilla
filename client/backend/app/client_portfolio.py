@@ -132,9 +132,14 @@ def _villa_unit() -> float:
     return float(calc_config.estate()["villa_cost"])
 
 
+# The board shows `estate.plots` (9) parcels per estate; a client with more money gets
+# more estates (the app swipes between them). The house count itself is not capped
+# at 9 any more — a ₹45 L+ client owns every villa, nothing folds into the ninth.
+MAX_HOUSES = 99
+
+
 def _houses_max() -> int:
-    from app import calc_config
-    return int(calc_config.estate()["plots"])
+    return MAX_HOUSES
 
 
 # Which bucket(s) form villas. For now the SIP bucket(s) — SIP is the

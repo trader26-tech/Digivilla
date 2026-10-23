@@ -45,29 +45,31 @@
       </div>
     </div>
 
-    <!-- ===== TITLE: kicker YOUR ESTATE over "<name>'s City", with a discreet
-         edit pencil for the estate name. Held back until data is ready so the
-         skeleton is the only thing on screen during the first load. ===== -->
+    <!-- ===== TITLE: the owner's avatar beside "YOUR ESTATE · 2 OF 3" over "<name>'s City",
+         centred as one group. The avatar opens Settings; the name opens the rename sheet. ===== -->
     <div class="title" *ngIf="dataReady">
-      <div class="kicker">{{ isDemo() ? 'DEMO ESTATE · SAMPLE DATA' : 'YOUR ESTATE' }}</div>
-      <div class="name-row">
-        <h1 class="name">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
-        <button class="name-edit" *ngIf="!readOnly()" (click)="openSettings()" aria-label="Edit estate name">
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-            <path d="M13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-          </svg>
-        </button>
+      <button type="button" class="avatar" (click)="account.emit()" aria-label="Profile and settings">
+        @if (avatarPhoto) { <img [src]="avatarPhoto" alt="" /> } @else { <b>{{ avatarInitial }}</b> }
+      </button>
+      <div class="title-t">
+        <div class="kicker">{{ kicker }}</div>
+        @if (readOnly()) {
+          <h1 class="name">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
+        } @else {
+          <h1 class="name"><button type="button" class="name-btn" (click)="openSettings()" aria-label="Rename your estate">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</button></h1>
+        }
       </div>
-      <span class="name-city" *ngIf="est.estateCity">{{ est.estateCity }}</span>
     </div>
 
     <!-- ===== ESTATE BOARD: the fixed 3x3 isometric grid (the reference
          board). A soft accent glow sits under it; owned parcels are painted
          with the reference tile symbols and empty lots recede as dashed
          diamonds. Hidden on the empty estate. ===== -->
-    <div class="board" *ngIf="dataReady && !isEmptyEstate">
-      <svg viewBox="-175 15 590 375" role="img" aria-label="Your estate board">
+    <div class="board" *ngIf="dataReady && !isEmptyEstate" [class.multi]="boards() > 1"
+         (pointerdown)="onBoardDown($event)" (pointermove)="onBoardMove($event)" (pointerup)="onBoardUp($event)"
+         (pointercancel)="onBoardUp($event)" (pointerleave)="onBoardUp($event)" (click.capture)="onBoardClickCapture($event)">
+      <svg viewBox="-175 15 590 375" role="img" [attr.aria-label]="'Your estate board' + (boards() > 1 ? ', estate ' + (page() + 1) + ' of ' + boards() : '')"
+           [ngClass]="flip()" [style.transform]="dragX() ? 'translateX(' + dragX() + 'px)' : null" [class.dragging]="!!dragX()">
         <!-- ============================================================
              Reference symbols (the "estate board" template), verbatim.
              Each parcel is painted by <use>-ing one of these three:
@@ -345,7 +347,7 @@
         <!-- ===== RENT COIN: floats over the centre villa (ORDER[0]), fixed at
              the reference's (120,124), painted LAST so it always sits on top.
              Shown only once at least one villa exists. ===== -->
-        <g *ngIf="boardCoin()" transform="translate(120,124)" aria-hidden="true">
+        <g *ngIf="boardCoin()" [attr.transform]="coinAt()" aria-hidden="true">
           <ellipse class="cf-shadow" cx="0" cy="30" rx="13" ry="4.5"></ellipse>
           <g class="coin-float">
             <circle class="cf-face" r="15"></circle>
@@ -357,6 +359,15 @@
       </svg>
     </div>
 
+    <!-- one dot per estate (9 parcels each) — tap or swipe the board sideways -->
+    @if (dataReady && !isEmptyEstate && boards() > 1) {
+      <div class="estate-pager" role="tablist" aria-label="Your estates">
+        @for (p of boardList(); track p) {
+          <button type="button" class="ep-dot" [class.on]="p === page()" (click)="goBoard(p)" role="tab"
+                  [attr.aria-selected]="p === page()" [attr.aria-label]="'Estate ' + (p + 1)"></button>
+        }
+      </div>
+    }
     <!-- quiet cue that the parcels are tappable → each opens its villa report -->
     <p class="board-hint" *ngIf="dataReady && !isEmptyEstate" aria-hidden="true">Tap any villa for its report</p>
 

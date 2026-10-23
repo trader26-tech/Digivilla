@@ -5,67 +5,37 @@
   background: var(--paper);
 }
 
-/* ===== bottom nav — a floating pill: Home & Explore ===== */
+/* ===== bottom nav — the handoff's floating bar: Compare · Home · Goals =====
+   A dark glass pill; the active tab fills violet and grows to show its label. */
 .tabbar {
-  position: fixed; left: 0; right: 0; z-index: 30;
-  bottom: calc(0.9rem + env(safe-area-inset-bottom));
+  position: fixed; left: 0; right: 0; z-index: 70;
+  bottom: calc(22px + env(safe-area-inset-bottom));
   display: flex; justify-content: center;
   pointer-events: none; /* only the pill is interactive */
 }
 .tabbar-pill {
   pointer-events: auto;
-  display: flex; gap: 0.4rem;
-  padding: 0.45rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 80%, transparent);
-  backdrop-filter: blur(18px) saturate(1.2);
-  border: 1px solid color-mix(in srgb, var(--survey) 80%, transparent);
-  box-shadow: 0 22px 46px -16px rgba(22, 48, 43, 0.42), 0 3px 10px -4px rgba(22, 48, 43, 0.22);
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px; border-radius: 34px;
+  background: rgba(30, 33, 48, .94);
+  box-shadow: 0 0 0 1px var(--color-neutral-700, #3f424d), 0 12px 30px rgba(0, 0, 0, .5);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   animation: nav-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes nav-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-
-/* one calm, professional easing shared across the morph */
-$nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
-
 .tab {
-  border: none; background: none; cursor: pointer; padding: 0; font: inherit;
-  border-radius: 999px;
-  transition: transform 0.15s ease;
-  &:active { transform: scale(0.96); }
+  display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px;
+  border: 0; border-radius: 23px; cursor: pointer; background: transparent; font: inherit;
+  color: var(--color-neutral-400, #9a9aa5); -webkit-tap-highlight-color: transparent;
+  transition: background .25s, padding .25s, color .25s, transform .15s;
+  svg { flex: none; display: block; }
+  &:hover { color: var(--color-neutral-300, #c9c6da); }
+  &:active { transform: scale(.96); }
+  &:focus-visible { outline: 2px solid var(--color-accent, #9184d9); outline-offset: 2px; }
 }
-.tab-in {
-  display: flex; align-items: center; gap: 0.55rem;
-  padding: 0.78rem 1.15rem;
-  border-radius: 999px;
-  color: var(--muted);
-  /* the pill fill, colour and padding all morph together, slowly */
-  transition:
-    background 0.55s $nav-ease,
-    color 0.45s $nav-ease,
-    padding 0.55s $nav-ease,
-    box-shadow 0.55s $nav-ease;
-  svg { display: block; transition: transform 0.55s $nav-ease; }
-}
-.tab-lbl {
-  font-size: 0.95rem; font-weight: 800; letter-spacing: -0.2px;
-  max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0;
-  transform: translateX(-4px);
-  /* label reveals a touch after the pill starts opening — feels intentional */
-  transition:
-    max-width 0.55s $nav-ease,
-    opacity 0.4s ease 0.12s,
-    transform 0.45s $nav-ease 0.1s;
-}
-/* the active tab expands into a filled green pill with its label */
-.tab.active .tab-in {
-  background: color-mix(in srgb, var(--brass) 16%, transparent);
-  color: var(--brass);
-  padding: 0.78rem 1.5rem;
-  box-shadow: none;
-}
-.tab.active .tab-in svg { transform: scale(1.06); }
-.tab.active .tab-lbl { max-width: 6rem; opacity: 1; transform: none; }
+.tab-lbl { display: none; font-size: 15px; font-weight: 500; letter-spacing: -.01em; white-space: nowrap; }
+.tab.active { color: var(--color-accent-300, #b5abfc); background: var(--color-accent-800, #2b2741); padding: 0 22px; }
+.tab.active .tab-lbl { display: inline; }
 
 /* the top-level tabs leave room for the floating nav, and each fades/rises in
    gently when its tab is selected */
@@ -80,7 +50,7 @@ $nav-ease: cubic-bezier(0.4, 0, 0.15, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .has-nav, .tabbar-pill { animation: none; }
-  .tab-in, .tab-lbl, .tab-in svg { transition: none; }
+  .tab { transition: none; }
 }
 
 /* the admin viewing a client's app */

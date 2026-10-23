@@ -114,7 +114,7 @@ def validate(cfg: dict) -> list[str]:
     e = cfg.get("estate") or {}
     num("estate.villa_cost", e.get("villa_cost"), 1, 1e9)
     num("estate.villa_income_monthly", e.get("villa_income_monthly"), 0, 1e7)
-    num("estate.plots", e.get("plots"), 1, 9)                       # the board has art for 9 parcels
+    num("estate.plots", e.get("plots"), 1, 9)                       # parcels per estate board (art for 9); more villas = more estates
     st = e.get("stages")
     if not isinstance(st, list) or len(st) != 5:
         errs.append("estate.stages: exactly 5 stages (the board has art for five build stages)")

@@ -340,9 +340,10 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
     try { this.load(); } finally { this.force = false; }
   }
 
-  /** Board fill order — the same one estate-home paints: centre, then outward. */
+  /** Board fill order — the same one estate-home paints: the front tile first, toward the back.
+   *  House i sits on its estate's board at ORDER[i % 9] (each estate = a board of 9). */
   private static readonly ORDER: [number, number][] = [
-    [1, 1], [2, 2], [1, 2], [2, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
+    [2, 2], [1, 2], [2, 1], [1, 1], [0, 2], [2, 0], [0, 1], [1, 0], [0, 0],
   ];
   /** 0..8 in reading order, so the mini-map renders row by row. */
   readonly GRID = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -366,7 +367,7 @@ export class DataFreshnessComponent implements OnInit, OnDestroy {
 
   /** The 0..8 reading-order cell this house occupies on the board. */
   cellOf(h: LiveHouse): number {
-    const rc = DataFreshnessComponent.ORDER[h.index];
+    const rc = h.index >= 0 ? DataFreshnessComponent.ORDER[h.index % 9] : undefined;
     return rc ? rc[0] * 3 + rc[1] : -1;
   }
 

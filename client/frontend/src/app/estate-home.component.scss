@@ -131,50 +131,7 @@
   color: var(--ink); opacity: 0.82; text-align: center;
 }
 
-/* ===== owner avatar — top-left; the native file input is fully hidden and
-   only reached by tapping the avatar button ===== */
-.avatar {
-  position: absolute;
-  top: calc(0.6rem + env(safe-area-inset-top));
-  left: 1rem;
-  z-index: 4;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--survey);
-  background: var(--card);
-  color: var(--muted);
-  cursor: pointer;
-  /* no overflow:hidden here — it was clipping the + badge. The photo is
-     clipped by its own border-radius instead. */
-  box-shadow: 0 4px 12px -6px rgba(22, 48, 43, 0.4);
-  transition: transform 0.12s, border-color 0.2s;
-}
-.avatar:active { transform: scale(0.94); }
-.avatar.has-photo { border-color: var(--brass); }
-.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.avatar-ph { display: block; }
-.avatar-plus {
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--brass);
-  color: #fff;
-  border: 1.5px solid var(--paper);
-  /* centre the glyph exactly */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-}
+/* ===== the hidden photo input (the avatar itself now sits in the title) ===== */
 /* the raw <input type="file"> must never show — it was overlapping the title */
 .avatar-input {
   position: absolute;
@@ -258,28 +215,34 @@
 }
 
 
-/* ===== TITLE — kicker YOUR ESTATE over "<name>'s City" (Inter 500, sizes
-   carry hierarchy — never bold), with a discreet edit pencil. ===== */
-.title { text-align: center; margin-top: 1.6rem; }
-.title .kicker { font-size: 11px; letter-spacing: .16em; color: var(--color-neutral-400); }
-.title .name-row { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
+/* ===== TITLE — the handoff: avatar + (kicker over "<name>'s City"), centred as one group.
+   The avatar opens Settings; tapping the name opens the rename sheet. ===== */
+.title { position: relative; z-index: 2; margin-top: 1.6rem; padding: 0 20px; min-height: 52px;
+  display: flex; align-items: center; justify-content: center; gap: 14px; }
+.title-t { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; max-width: calc(100% - 60px); }
+.title-t > * { max-width: 100%; }
+.title .kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); white-space: nowrap; }
+.title .kicker::before { content: ""; display: inline-block; width: 14px; height: 2px; margin: 0 8px 3px 0; border-radius: 1px;
+  background: #f3dfa8; box-shadow: 0 0 8px rgba(243, 223, 168, .7); vertical-align: middle; }
 .title .name {
-  margin: 0;
-  font-family: var(--ref-font); font-weight: var(--ref-heading);
-  font-size: 34px; line-height: 1.05; letter-spacing: -.02em; color: var(--color-text);
-  text-transform: capitalize;
+  margin: 0; min-width: 0;
+  font-family: var(--ref-font); font-weight: 500;
+  font-size: clamp(21px, 6.6vw, 26px); line-height: 1.12; letter-spacing: -.03em; color: var(--color-text);
+  text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.title .name-edit {
-  flex: none; display: grid; place-items: center;
-  width: 26px; height: 26px; padding: 0;
-  border: none; border-radius: 50%; background: none;
-  color: var(--color-neutral-500); cursor: pointer;
-  transition: color .18s, background .18s, transform .12s;
-  svg { display: block; }
-  &:hover { color: var(--color-accent-300); background: var(--color-accent-900); }
-  &:active { transform: scale(.9); }
+.title .name-btn { all: unset; cursor: pointer; display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; -webkit-tap-highlight-color: transparent;
+  &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 3px; border-radius: 6px; } }
+.avatar { position: relative; flex: none; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--color-accent-800, #2b2741); color: var(--color-accent-100, #efedfc); font: 500 16px var(--ref-font);
+  box-shadow: 0 0 0 2px var(--color-bg, #161826), 0 0 0 3px var(--color-accent-600, #796cbf), 0 0 16px -4px var(--color-accent, #9184d9);
+  transition: box-shadow .2s, transform .2s; -webkit-tap-highlight-color: transparent;
+  b { font-weight: 500; }
+  img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  &:hover { box-shadow: 0 0 0 2px var(--color-bg, #161826), 0 0 0 3px var(--color-accent-400, #b5abfc), 0 0 22px -2px var(--color-accent, #9184d9); }
+  &:active { transform: scale(.95); }
+  &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 4px; }
 }
-.title .name-city { display: block; margin-top: 3px; font-size: 12px; color: var(--color-neutral-400); }
 
 /* ===== ESTATE BOARD — the fixed 3x3 isometric grid, centred, with a soft
    accent glow rising under it. Grows to fill the leftover column height; the
@@ -292,7 +255,25 @@
   display: flex; align-items: center; justify-content: center;
   margin: 1.4rem 0 0.4rem;
 }
-.board svg { position: relative; width: 100%; height: 100%; max-height: 42vh; display: block; }
+.board svg { position: relative; width: 100%; height: 100%; max-height: 42vh; display: block;
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1), opacity .3s; }
+/* more than one estate: the board is a sideways swipe surface (vertical scroll still works) */
+.board.multi { touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.board svg.dragging { transition: none; }
+.board svg.out-l { transition: transform .17s ease-in, opacity .17s; transform: translateX(-40px); opacity: 0; }
+.board svg.out-r { transition: transform .17s ease-in, opacity .17s; transform: translateX(40px); opacity: 0; }
+.board svg.in-l { animation: epInL .32s cubic-bezier(.2, .8, .2, 1); }
+.board svg.in-r { animation: epInR .32s cubic-bezier(.2, .8, .2, 1); }
+@keyframes epInL { from { transform: translateX(-40px); opacity: 0; } }
+@keyframes epInR { from { transform: translateX(40px); opacity: 0; } }
+/* one dot per estate */
+.estate-pager { display: flex; justify-content: center; gap: 5px; margin: -6px 0 6px; }
+.ep-dot { width: 5px; height: 5px; padding: 0; border: 0; border-radius: 3px; cursor: pointer; background: var(--color-neutral-600);
+  transition: width .25s, background .25s; -webkit-tap-highlight-color: transparent;
+  &.on { width: 14px; background: #8fd65a; }
+  /* a bigger invisible hit area than the 5px dot */
+  position: relative; &::after { content: ''; position: absolute; inset: -9px -5px; } }
+@media (prefers-reduced-motion: reduce) { .board svg, .board svg.out-l, .board svg.out-r { transition: none; } .board svg.in-l, .board svg.in-r { animation: none; } }
 
 /* quiet, centred cue that the parcels open a report on tap */
 .board-hint {
