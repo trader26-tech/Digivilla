@@ -12,8 +12,7 @@ import {
   computed,
   effect,
   inject,
-  signal,
-} from '@angular/core';
+  signal, HostListener } from '@angular/core';
 
 import { AuthService } from './auth/auth.service';
 import { Booking, BookingService } from './booking.service';
@@ -247,6 +246,16 @@ export class EstateHomeComponent implements OnInit {
     if (this.taps.length === 1) this.toggleShown();          // the 2nd / 3rd quick tap only count toward the sheet
   }
   openMoves(): void { this.est.loadMoves(); this.movesOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
+  /** three quick taps ANYWHERE on the home (within ~0.9 s) open the day-vs-index sheet —
+   *  unless a sheet already owns the screen (then the taps belong to it) */
+  private screenTaps: number[] = [];
+  @HostListener('document:pointerup', ['$event'])
+  onScreenTap(e: PointerEvent): void {
+    if (this.overlayOpen || (e.pointerType === 'mouse' && e.button !== 0)) { this.screenTaps = []; return; }
+    const now = Date.now();
+    this.screenTaps = [...this.screenTaps.filter((t) => now - t < 900), now];
+    if (this.screenTaps.length >= 3) { this.screenTaps = []; this.taps = []; valueShown = true; this.shown.set(true); this.toggled.set(true); this.openMoves(); }
+  }
 
   /** The user's fund-by-fund breakdown (from GET /me/funds) — drives the
    *  PORTFOLIO VALUE allocation bar at the bottom of the home screen. Null until
