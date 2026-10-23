@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
 import { GoalsService } from './goals.service';
 import { GoalsHubComponent } from './goals-hub.component';
@@ -23,12 +23,16 @@ import { GoalsCreateComponent } from './goals-create.component';
       @default { <app-goals-hub (back)="home.emit()" (open)="go($event)"></app-goals-hub> }
     }
   `,
-  styles: [`:host { display: block; min-height: 100dvh; background: #05060c; }`],
+  // the tab scrolls inside itself, not the page: iOS Safari drags a position:fixed
+  // bottom bar along while the document scrolls under its collapsing toolbar
+  styles: [`:host { display: block; box-sizing: border-box; height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch; background: #05060c; }`],
 })
 export class GoalsComponent implements OnInit {
   readonly goals = inject(GoalsService);
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
   /** the hub's back arrow → the Home tab */
   @Output() home = new EventEmitter<void>();
   ngOnInit(): void { this.goals.load(); }
-  go(p: 'hub' | 'payout' | 'trip-builder' | 'trip-fund' | 'create'): void { this.goals.page.set(p); window.scrollTo({ top: 0 }); }
+  go(p: 'hub' | 'payout' | 'trip-builder' | 'trip-fund' | 'create'): void { this.goals.page.set(p); this.el.nativeElement.scrollTop = 0; window.scrollTo({ top: 0 }); }
 }
