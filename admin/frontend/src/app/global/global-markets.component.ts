@@ -27,6 +27,7 @@ const MAX_LINES = 8;
 const STYLE: Record<string, { c: string; dash?: string; w?: number }> = {
   'villa:balanced': { c: '#387ed1', w: 2.6 }, 'villa:conservative': { c: '#387ed1', dash: '9 5', w: 2.6 }, 'villa:aggressive': { c: '#387ed1', dash: '2 4', w: 2.6 },
   nifty50: { c: '#98a0b8', dash: '4 3', w: 1.8 }, n100: { c: '#5a5f78', w: 1.8 }, mid: { c: '#eb6834', w: 1.8 }, small: { c: '#1baf7a', w: 1.8 }, n500: { c: '#6250d6', w: 1.8 },
+  lms_eq: { c: '#0e9bb0', w: 2.1 },
   gold: { c: '#eda100', w: 1.8 }, arbitrage: { c: '#e87ba4', dash: '2 4', w: 1.8 }, rupee: { c: '#6250d6', dash: '7 5', w: 1.8 }, sp500: { c: '#e34948', w: 1.8 },
 };
 /** one-tap mixes for the editor (and the starting point of a new one) */
@@ -57,6 +58,19 @@ const DAY = 86400;
 const addYears = (iso: string, n: number) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCFullYear(d.getUTCFullYear() + n); return d.toISOString().slice(0, 10); };
 const PAD = { l: 44, t: 14, b: 26 };
 const DEFAULT_LINES = ['villa:balanced', 'nifty50', 'gold'];
+/** benchmarks built here from the board's own series (no feed of their own): key → part weights.
+ *  Replayed like a villa's growth engine — back to the weights at every year end. */
+const BLENDS: { key: string; name: string; short: string; about: string; w: Weights; from: Record<string, string> }[] = [
+  { key: 'lms_eq', name: 'Large · Mid · Small, ⅓ each', short: 'Equal L·M·S', w: { large: 1 / 3, mid: 1 / 3, small: 1 / 3 },
+    from: { large: 'n100', mid: 'mid', small: 'small' },
+    about: 'Large, mid and small cap equally: ⅓ Nifty 100 + ⅓ Midcap 150 + ⅓ Smallcap 250, back to ⅓ each every year end' },
+];
+/** the chip palette under the chart, in order — every line the chart can draw */
+const CHIP_GROUPS: { name: string; keys: string[] }[] = [
+  { name: 'Benchmarks', keys: ['lms_eq', 'nifty50', 'n100', 'mid', 'small', 'n500'] },
+  { name: 'Gold · arbitrage', keys: ['gold', 'arbitrage'] },
+  { name: 'World', keys: ['rupee', 'sp500'] },
+];
 
 /** The villa over the window: ₹1 split by the weights at the start, each part moving with its %
  *  series (carried between its points), the growth engine reset to its split at every year end
@@ -251,7 +265,20 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     return best;
   });
   readonly isIntraday = computed(() => this.range() === '1d');
-  readonly items = computed(() => new Map((this.board()?.items ?? []).map((i) => [i.key, i])));
+  private readonly rawItems = computed(() => new Map((this.board()?.items ?? []).map((i) => [i.key, i])));
+  /** the board's items plus the blends built from them (Equal L·M·S…) */
+  readonly items = computed(() => {
+    const m = new Map(this.rawItems());
+    for (const bl of BLENDS) {
+      const parts: Record<string, IItem | undefined> = {};
+      for (const [p, k] of Object.entries(bl.from)) parts[p] = m.get(k);
+      const r = replay(bl.w, parts), any = Object.values(parts)[0];
+      m.set(bl.key, { key: bl.key, name: bl.name, short: bl.short, group: 'India', kind: 'index', about: bl.about, ok: r.ok,
+        last: null, prev: null, base: null, session: any?.session ?? null, time: any?.time ?? null,
+        pct: r.pct, day_pct: r.day_pct, source: any?.source ?? 'tri', t: r.t, v: r.v });
+    }
+    return m;
+  });
   readonly villas = computed<IVilla[]>(() => {
     const none: IBasket = { ok: false, pct: null, day_pct: null, t: [], v: [] };
     return [...(this.board()?.villas ?? []),
@@ -365,9 +392,9 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   readonly groups = computed(() => {
     const b = this.board(); if (!b) return [];
     const tile = (i: IItem): Tile => ({ key: i.key, name: i.name, short: i.short, about: i.about, kind: i.kind, pct: i.pct, last: i.last, chartable: i.kind !== 'yield' && i.ok });
-    const by = (keys: string[]) => keys.map((k) => b.items.find((i) => i.key === k)).filter((i): i is IItem => !!i).map(tile);
+    const by = (keys: string[]) => keys.map((k) => this.items().get(k)).filter((i): i is IItem => !!i).map(tile);
     return [
-      { name: 'India', tiles: by(['nifty50', 'n100', 'mid', 'small', 'n500']) },
+      { name: 'India', tiles: by(['nifty50', 'n100', 'mid', 'small', 'n500', 'lms_eq']) },
       { name: 'Gold · arbitrage', tiles: by(['gold', 'arbitrage']) },
       { name: 'World', tiles: by(['rupee', 'us10y', 'sp500']) },
     ];
@@ -396,6 +423,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
   }
   level(t: Tile | IItem): string {
+    if (t.key === 'lms_eq') return '⅓ · ⅓ · ⅓';
     const v = t.last; if (v === null || v === undefined) return '—';
     switch (t.kind) {
       case 'gold': case 'fx': return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -541,6 +569,22 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IST }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: IST })
       : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
   }
+  /** every line the chart can draw, as chips: on = drawn (its colour, live value), off = one tap to add.
+   *  The same on/off state lights the villa strip and the heat tiles, so all three always agree. */
+  readonly palette = computed(() => {
+    const vals = this.chipVals(), on = new Set(this.lines$());
+    const chip = (key: string, short: string, pct: number | null, kind: IKind | 'villa') => {
+      const st = this.styleOf(key), isOn = on.has(key);
+      const v = isOn && vals[key] !== undefined ? vals[key] : pct;
+      return { key, short, on: isOn, colour: st.c, dash: !!st.dash, villa: kind === 'villa', val: v, kind };
+    };
+    const villas = this.villas().map((v) => chip('villa:' + v.key, v.name, this.basket(v).pct, 'villa'));
+    const rest = CHIP_GROUPS.map((g) => ({ name: g.name, chips: g.keys.map((k) => this.items().get(k))
+      .filter((i): i is IItem => !!i && i.ok && i.t.length > 1).map((i) => chip(i.key, i.short, i.pct, i.kind)) }));
+    return [{ name: 'Villas', chips: villas }, ...rest].filter((g) => g.chips.length);
+  });
+  readonly onCount = computed(() => this.lines().length);
+  readonly MAX_LINES = MAX_LINES;
   /** the chips: the hovered moment's values, else the latest */
   readonly chipVals = computed(() => {
     const m: Record<string, number> = {};

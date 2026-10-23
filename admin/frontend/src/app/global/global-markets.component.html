@@ -82,15 +82,21 @@
             }
           </span>
         </div>
-        <div class="pf-chips" role="list" aria-label="Lines on the chart">
-          @for (l of lines(); track l.key) {
-            <button type="button" class="chip" role="listitem" [style.--c]="l.colour" (click)="toggle(l.key)" [title]="'Take ' + l.name + ' off'">
-              <i class="lsw" [class.dashed]="!!l.dash" [class.thick]="l.villa"></i><span>{{ l.short }}</span>
-              <b [class.pos]="tone(chipVals()[l.key]) === 'up'" [class.neg]="tone(chipVals()[l.key]) === 'down'">{{ pct(chipVals()[l.key], l.villa ? 'villa' : 'index') }}</b>
-              <span class="x" aria-hidden="true">×</span>
-            </button>
+        <!-- every line the chart can draw: lit = on the chart (its own colour, its value), plain = tap to add.
+             The villa strip and the heat tiles light up from the same state. -->
+        <div class="pf-chips" role="group" aria-label="Lines on the chart">
+          @for (g of palette(); track g.name) {
+            <div class="pc-grp" role="group" [attr.aria-label]="g.name">
+              @for (c of g.chips; track c.key) {
+                <button type="button" class="chip" [class.on]="c.on" [style.--c]="c.colour" [attr.aria-pressed]="c.on" (click)="toggle(c.key)"
+                        [title]="c.on ? 'Take ' + c.short + ' off the chart' : 'Draw ' + c.short">
+                  <i class="lsw" [class.dashed]="c.dash" [class.thick]="c.villa"></i><span class="c-n">{{ c.short }}</span>
+                  <b [class.pos]="tone(c.val) === 'up'" [class.neg]="tone(c.val) === 'down'">{{ pct(c.val, c.kind) }}</b>
+                </button>
+              }
+            </div>
           }
-          @if (!lines().length) { <span class="pf-empty">Tap a villa or a tile to draw it.</span> }
+          <span class="pc-count" [class.full]="onCount() >= MAX_LINES" aria-live="polite">{{ onCount() }}/{{ MAX_LINES }}</span>
         </div>
 
         <div class="pf-chart" #plot (pointermove)="onMove($event, plot)" (pointerleave)="leave()">
