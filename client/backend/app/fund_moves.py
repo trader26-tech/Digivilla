@@ -123,6 +123,10 @@ def _bench_day(days: list[str], vals: list, nav_date: Optional[str]) -> tuple[Op
         j -= 1
     if j < 0 or vals[i] is None or not vals[j]:
         return None, None
+    # the store carries a series' last value over a day it hasn't published (gold
+    # often lands a day late): an exactly unchanged close is that, not a flat day
+    if vals[i] == vals[j]:
+        return None, None
     return round((vals[i] / vals[j] - 1) * 100, 4), days[i]
 
 

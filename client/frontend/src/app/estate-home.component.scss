@@ -9,6 +9,8 @@
    Inter here too). Accent is used for lines/glows/active only, never as a fill.
    ============================================================ */
 .estate {
+  /* the estate name and the portfolio value share ONE size */
+  --hero-size: clamp(27px, 7.6vw, 31px);
   --color-bg: #161826;
   --color-surface: #1e2130;
   --color-text: #e9e9ed;
@@ -221,13 +223,13 @@
   display: flex; align-items: center; justify-content: center; gap: 14px; }
 .title-t { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; max-width: calc(100% - 60px); }
 .title-t > * { max-width: 100%; }
-.title .kicker { font-size: 10px; letter-spacing: .14em; color: var(--color-neutral-400); white-space: nowrap; }
-.title .kicker::before { content: ""; display: inline-block; width: 14px; height: 2px; margin: 0 8px 3px 0; border-radius: 1px;
+.title .kicker, .port-k { font-size: 11px; font-weight: 400; letter-spacing: .14em; color: var(--color-neutral-400); white-space: nowrap; }
+.title .kicker::before, .port-k::before { content: ""; display: inline-block; width: 14px; height: 2px; margin: 0 8px 3px 0; border-radius: 1px;
   background: #f3dfa8; box-shadow: 0 0 8px rgba(243, 223, 168, .7); vertical-align: middle; }
 .title .name {
   margin: 0; min-width: 0;
   font-family: var(--ref-font); font-weight: 500;
-  font-size: clamp(21px, 6.6vw, 26px); line-height: 1.12; letter-spacing: -.03em; color: var(--color-text);
+  font-size: var(--hero-size); line-height: 1.1; letter-spacing: -.03em; color: var(--color-text);
   text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .title .name-btn { all: unset; cursor: pointer; display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; -webkit-tap-highlight-color: transparent;
@@ -1573,23 +1575,23 @@
 
 .port {
   flex: none;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 0 16px; margin-top: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 0 16px; margin-top: 10px;
 }
-.port-k { font-size: 10px; letter-spacing: .16em; color: var(--color-neutral-400); }
+.port-k { display: inline-flex; align-items: center; }
 /* the figure is a button (tap → live NAVs) but must read as plain type */
 .port-v {
   position: relative;
   border: 0; background: none; padding: 0 2px; cursor: pointer;
-  font-family: var(--ref-font); font-weight: var(--ref-heading);
-  font-size: 48px; line-height: 1.05; letter-spacing: -.02em;
-  font-variant-numeric: tabular-nums; color: var(--color-text);
+  font-family: var(--ref-font); font-weight: 500;
+  font-size: var(--hero-size); line-height: 1.1; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; color: var(--color-text); -webkit-tap-highlight-color: transparent;
   transition: transform .32s cubic-bezier(.22,1,.36,1), opacity .2s;
 }
 .port-v:active { transform: scale(.985); opacity: .85; }
 /* the only always-visible hint: a 5px live dot riding the last digit */
 .port-live {
-  position: absolute; top: 10px; right: -7px;
+  position: absolute; top: 6px; right: -8px;
   width: 5px; height: 5px; border-radius: 50%;
   background: #7fd398; opacity: .85;
   animation: port-live 3.2s ease-in-out infinite;
@@ -1821,10 +1823,10 @@
   &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 3px; }
   .pg-tri { width: 9px; height: 9px; fill: currentColor; flex: none; }
   b {
-    font-family: var(--ref-font); font-weight: var(--ref-heading); font-size: 17px; line-height: 1.1; letter-spacing: -.01em;
+    font-family: var(--ref-font); font-weight: 500; font-size: 15px; line-height: 1.1; letter-spacing: -.01em;
     font-variant-numeric: tabular-nums; white-space: nowrap;
   }
-  span { font-size: 14px; font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; }
+  span { font-size: 13px; font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; }
   .pg-chev { width: 15px; height: 15px; color: var(--color-neutral-500); flex: none; }
 }
 

@@ -1,201 +1,88 @@
-<!-- ============ HOW YOUR MONEY GREW — growth · today · vs index ============ -->
-<div class="scrim mix-scrim fm-scrim" [class.open]="isOpen()" (click)="close()">
-  @if (isOpen()) {
-    <div class="sheet mix-sheet fm-sheet" [class.down]="view() === 'today' ? down() : est.gain < 0" role="dialog" aria-modal="true"
-         aria-labelledby="fmTitle" (click)="$event.stopPropagation()">
-      <div class="pad">
-        <div class="head">
-          <span class="h" id="fmTitle">How your money grew</span>
-          <button class="close" (click)="close()">close ✕</button>
-        </div>
-
-        <!-- the three views -->
-        <div class="fm-tabs" role="tablist" aria-label="View">
-          <button role="tab" [attr.aria-selected]="view() === 'growth'" [class.on]="view() === 'growth'" (click)="setView('growth')">Growth</button>
-          <button role="tab" [attr.aria-selected]="view() === 'today'" [class.on]="view() === 'today'" (click)="setView('today')">Today</button>
-          <button role="tab" [attr.aria-selected]="view() === 'index'" [class.on]="view() === 'index'" (click)="setView('index')">Vs index</button>
-          <i class="fm-ink" [class.p1]="view() === 'today'" [class.p2]="view() === 'index'" aria-hidden="true"></i>
-        </div>
-
-        @if (!m()) {
-          <!-- quiet skeleton until the one call lands -->
-          <div class="fm-skel" aria-hidden="true">
-            <span class="sk w40"></span><span class="sk w70 tall"></span>
-            <span class="sk w90"></span><span class="sk w90"></span><span class="sk w90"></span><span class="sk w90"></span>
-          </div>
-        } @else if (view() === 'growth') {
-          <!-- ───────── VIEW 0 · GROWTH ───────── -->
-          @if (gread(); as r) {
-            <div class="fm-gread" [class.live]="r.scrubbing" [class.neg]="r.gain < 0">
-              <div class="fm-ghero">
-                <span class="fm-gamt">{{ signedInr(r.gain) }}</span>
-                <span class="fm-pct">
-                  <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="r.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-                  {{ signedPct(r.pct) }}
-                </span>
-              </div>
-              <p class="fm-gsub">
-                @if (r.scrubbing) { On <b>{{ dateShort(r.date) }}</b>: } @else { Today: }
-                worth <b>{{ inr(r.value) }}</b> · put in <b>{{ inr(r.invested) }}</b>
-              </p>
-            </div>
-          }
-
-          @if (m()?.portfolio; as pf) {
-            <div class="fm-wins" role="radiogroup" aria-label="Period">
-              @for (w of gwins; track w.key) {
-                <button role="radio" [attr.aria-checked]="gwin() === w.key" [class.on]="gwin() === w.key" [disabled]="!gwinOk(w.key)" (click)="setGwin(w.key)">{{ w.label }}</button>
-              }
-            </div>
-
-            @if (growth(); as g) {
-              @if (gwin() !== 'since' && gwinStat(); as st) {
-                <p class="fm-when">Over this period: <b [class.neg]="st.gain < 0">{{ signedInr(st.gain) }} ({{ signedPct(st.pct) }})</b>@if (st.added > 0) { · {{ inr(st.added) }} added }</p>
-              } @else {
-                <p class="fm-when">From {{ dateShort(g.start) }} · {{ g.n }} trading days</p>
-              }
-              <svg #gchart class="fm-chart fm-gchart" viewBox="0 0 320 150" preserveAspectRatio="none"
-                   (pointerdown)="onGscrub($event, gchart)" (pointermove)="$event.buttons ? onGscrub($event, gchart) : null"
-                   (pointerup)="endGscrub()" (pointercancel)="endGscrub()" (pointerleave)="endGscrub()" aria-hidden="true">
-                <defs>
-                  <linearGradient id="fmGFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="var(--dc)" stop-opacity=".3"/><stop offset="1" stop-color="var(--dc)" stop-opacity="0"/>
-                  </linearGradient>
-                </defs>
-                <path class="fm-area" [attr.d]="g.area" fill="url(#fmGFill)"/>
-                <path class="fm-inv" [attr.d]="g.invested" vector-effect="non-scaling-stroke"/>
-                <path class="fm-val" [attr.d]="g.value" vector-effect="non-scaling-stroke"/>
-                @if (gread(); as r) {
-                  @if (r.scrubbing) { <line class="fm-cursor" [attr.x1]="r.x" [attr.x2]="r.x" y1="0" y2="150" vector-effect="non-scaling-stroke"/> }
-                }
-              </svg>
-              <div class="fm-axis"><span>{{ dateShort(g.start) }}</span><span>{{ dateShort(g.end) }}</span></div>
-              <div class="fm-key"><span><i class="f" style="background: var(--dc)"></i>What it was worth</span><span><i class="b"></i>What you put in</span></div>
-              <p class="fine-note">Drag across the graph for any day. Worth = your units on that day × that day’s NAV; put in = every purchase up to that day, less redemptions. Today’s figures are the live ones above.</p>
-            } @else {
-              <p class="fm-soon">Your graph starts drawing from the next NAV — one point a day, from {{ dateShort(m()!.days[pf.from]) }}.</p>
-            }
-          } @else {
-            <p class="fine-note">No purchases on record yet.</p>
-          }
-        } @else if (view() === 'today') {
-          <!-- ───────── VIEW 1 · TODAY ───────── -->
-          @if (m(); as d) {
-            <p class="mx-sub">NAV of <b>{{ dayShort(d.nav_date) }}</b>@if (d.prev_date) {<span> vs {{ dayShort(d.prev_date) }}</span>}</p>
-            <div class="fm-hero">
-              <span class="fm-amt">{{ signedInr(d.total.change) }}</span>
-              <span class="fm-pct">
-                <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="down() ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-                {{ signedPct(d.total.pct) }}
-              </span>
-            </div>
-            @if (story()) { <p class="fm-story">{{ story() }}</p> }
-
-            <div class="fm-legend" aria-hidden="true">
-              <span><i class="f"></i>Your fund</span><span><i class="b"></i>Its index, same day</span>
-            </div>
-
-            <ul class="fm-rows">
-              @for (r of todayRows(); track r.key; let i = $index) {
-                <li class="fm-row" [style.--i]="i" [style.--c]="r.color" [class.neg]="(r.change ?? 0) < 0">
-                  <div class="fm-top">
-                    <i class="fm-dot" aria-hidden="true"></i>
-                    <span class="fm-nm">{{ r.name }}</span>
-                    <span class="fm-rs">{{ signedInr(r.change) }}</span>
-                  </div>
-                  <!-- two bars either side of one centre line, on one scale -->
-                  <div class="fm-trk" aria-hidden="true">
-                    <span class="fm-bar f" [class.l]="(r.pct ?? 0) < 0" [style.width.%]="r.wF"></span>
-                    <em class="fm-v f" [class.l]="(r.pct ?? 0) < 0" [style.--w.%]="r.wF">{{ signedPct(r.pct, 2) }}</em>
-                  </div>
-                  <div class="fm-trk b" aria-hidden="true">
-                    @if (r.benchPct != null) {
-                      <span class="fm-bar b" [class.l]="r.benchPct < 0" [style.width.%]="r.wB"></span>
-                      <em class="fm-v b" [class.l]="r.benchPct < 0" [style.--w.%]="r.wB">{{ signedPct(r.benchPct, 2) }}</em>
-                    } @else if (r.benchPending) {
-                      <em class="fm-v b wait">index close not in yet</em>
-                    }
-                  </div>
-                  <div class="fm-meta">
-                    <span>{{ r.bench || sleeveName(r.sleeve) }}@if (r.late) { · {{ r.when }} NAV}</span>
-                    @if (r.nav && r.prev) { <span class="fm-nav">NAV {{ r.prev | number:'1.2-4' }} → {{ r.nav | number:'1.2-4' }}</span> }
-                  </div>
-                </li>
-              }
-            </ul>
-            <p class="fine-note">Your units × the change in each fund’s NAV between its last two published days, next to the index each fund tracks. NAVs publish once a day after the market closes — this is the market’s move, not money you added or took out.</p>
-          }
-        } @else {
-          <!-- ───────── VIEW 2 · VS ITS INDEX ───────── -->
-          @if (m(); as d) {
-            <div class="fm-chips" role="tablist" aria-label="Fund">
-              @for (f of d.funds; track f.scheme_code) {
-                <button role="tab" [attr.aria-selected]="fund()?.scheme_code === f.scheme_code"
-                        [class.on]="fund()?.scheme_code === f.scheme_code" [style.--c]="color(f.sleeve)" (click)="setPick(f.scheme_code)">
-                  <i aria-hidden="true"></i>{{ f.short }}
-                </button>
-              }
-            </div>
-
-            @if (fund(); as f) {
-              <div class="fm-wins" role="radiogroup" aria-label="Period">
-                @for (w of wins; track w.key) {
-                  <button role="radio" [attr.aria-checked]="win() === w.key" [class.on]="win() === w.key" [disabled]="!winOk(w.key)" (click)="setWin(w.key)">{{ w.label }}</button>
-                }
-              </div>
-
-              @if (line(); as l) {
-                @if (read(); as r) {
-                  <div class="fm-read" [class.live]="r.scrubbing">
-                    <div><small>{{ f.short }}</small><b class="f" [class.neg]="r.fundPct < 0">{{ signedPct(r.fundPct) }}</b></div>
-                    <div><small>{{ f.bench?.name || 'Index' }}</small><b class="b">{{ r.indexPct == null ? '—' : signedPct(r.indexPct) }}</b></div>
-                    <div><small>{{ r.gap == null ? '' : (r.gap >= 0 ? 'Ahead by' : 'Behind by') }}</small>
-                      <b class="g" [class.neg]="(r.gap ?? 0) < 0">{{ r.gap == null ? '' : (r.gap >= 0 ? '+' : '−') + (r.gap < 0 ? -r.gap : r.gap).toFixed((r.gap < 0 ? -r.gap : r.gap) < 1 ? 2 : 1) + ' pts' }}</b></div>
-                  </div>
-                  <p class="fm-when">{{ r.scrubbing ? dateShort(r.date) : 'From ' + dateShort(l.start) + ' to ' + dateShort(l.end) }} · both start at 100</p>
-                }
-
-                <svg #chart class="fm-chart" viewBox="0 0 320 150" preserveAspectRatio="none" [style.--c]="color(f.sleeve)"
-                     (pointerdown)="onScrub($event, chart)" (pointermove)="$event.buttons ? onScrub($event, chart) : null"
-                     (pointerup)="endScrub()" (pointercancel)="endScrub()" (pointerleave)="endScrub()" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="fmFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0" stop-color="var(--c)" stop-opacity=".28"/><stop offset="1" stop-color="var(--c)" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <line class="fm-base" x1="0" x2="320" [attr.y1]="l.base" [attr.y2]="l.base"/>
-                  <path class="fm-area" [attr.d]="l.area" fill="url(#fmFill)"/>
-                  <path class="fm-idx" [attr.d]="l.index" vector-effect="non-scaling-stroke"/>
-                  <path class="fm-fund" [attr.d]="l.fund" vector-effect="non-scaling-stroke"/>
-                  @if (read(); as r) {
-                    @if (r.scrubbing) { <line class="fm-cursor" [attr.x1]="r.x" [attr.x2]="r.x" y1="0" y2="150" vector-effect="non-scaling-stroke"/> }
-                  }
-                </svg>
-                <div class="fm-axis"><span>{{ dateShort(l.start) }}</span><span>100 = {{ dateShort(l.start, false) }}</span><span>{{ dateShort(l.end) }}</span></div>
-                <div class="fm-key"><span><i class="f" [style.background]="color(f.sleeve)"></i>{{ f.short }}</span><span><i class="b"></i>{{ f.bench?.name || 'Index' }}</span></div>
-
-                @if (bars(); as b) {
-                  <h4 class="fm-h">Move {{ b.per === 'day' ? 'each day' : b.per === 'week' ? 'each week' : 'each month' }} <small>% change in NAV</small></h4>
-                  <svg class="fm-bars" viewBox="0 0 320 64" preserveAspectRatio="none" aria-hidden="true">
-                    <line class="fm-zero" x1="0" x2="320" [attr.y1]="b.zero" [attr.y2]="b.zero"/>
-                    @for (x of b.bars; track $index) {
-                      <rect [attr.x]="x.x" [attr.y]="x.y" [attr.width]="b.w" [attr.height]="x.h" [attr.rx]="b.w > 3 ? 1 : 0" [class.up]="x.up" [class.dn]="!x.up"/>
-                    }
-                  </svg>
-                  <div class="fm-stats">
-                    <span><small>Best day</small><b class="up">{{ signedPct(b.best, 2) }}</b></span>
-                    <span><small>Worst day</small><b class="dn">{{ signedPct(b.worst, 2) }}</b></span>
-                    <span><small>Up days</small><b>{{ b.ups }} <em>of {{ b.total }}</em></b></span>
-                  </div>
-                }
-              } @else {
-                <p class="fine-note">Not enough history for this period yet.</p>
-              }
-              <p class="fine-note">Fund = its published NAV. Index = {{ f.bench?.name || 'the broad market' }} (total return where published), from {{ d.index_as_of ? 'NSE / mfapi, as of ' + dateShort(d.index_as_of) : 'NSE' }}. Index values are before any fund’s costs. Past moves don’t predict future ones.</p>
-            }
-          }
-        }
+<!-- ============ TODAY — the day's move, and each fund against its index ============ -->
+@if (isOpen()) {
+  <div class="td-scrim" (click)="close()" aria-hidden="true"></div>
+  <section class="td" [class.down]="down()" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
+    <div class="td-grab" aria-hidden="true"></div>
+    <header class="td-head">
+      <div>
+        <span class="td-k" id="tdTitle">{{ dayWhen(m()?.nav_date) }}</span>
+        @if (m()?.nav_date; as d) { <span class="td-sub">NAV of {{ dayShort(d) }}@if (m()?.prev_date; as p) { vs {{ dayShort(p) }} }</span> }
       </div>
-    </div>
-  }
-</div>
+      <button type="button" class="td-x" (click)="close()" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    @if (!m()) {
+      <div class="td-skel" aria-hidden="true"><i class="w50"></i><i class="w80 tall"></i><i></i><i></i><i></i></div>
+    } @else {
+      <div class="td-body">
+        <!-- 1 · the day, in one number -->
+        <div class="td-hero">
+          <b class="td-amt num" [class.up]="!down()" [class.dn]="down()">{{ signedInr(change()) }}</b>
+          <span class="td-pct num" [class.up]="!down()" [class.dn]="down()">
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="down() ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+            {{ signedPct(pct()) }}
+          </span>
+        </div>
+
+        <!-- 2 · your funds vs their indices -->
+        @if (vs(); as v) {
+          <div class="td-vs">
+            <div class="td-vs-row">
+              <span class="td-vs-l">Your funds</span>
+              <span class="td-track"><i class="td-bar mine" [class.neg]="v.mine < 0" [style.width.%]="v.wM"></i></span>
+              <b class="num" [ngClass]="sign(v.mine)">{{ signedPct(v.mine) }}</b>
+            </div>
+            <div class="td-vs-row">
+              <span class="td-vs-l">Their indices</span>
+              <span class="td-track"><i class="td-bar idx" [style.width.%]="v.wT"></i></span>
+              <b class="num muted">{{ signedPct(v.theirs) }}</b>
+            </div>
+            <p class="td-verdict" [class.up]="v.gap >= 0" [class.dn]="v.gap < 0">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                @if (v.gap >= 0) { <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/> }
+                @else { <path d="M12 7v6M12 17h.01" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/> }
+              </svg>
+              {{ v.gap >= 0 ? 'Ahead of' : 'Behind' }} the indices by <b class="num">{{ pts(v.gap) }}</b>
+              @if (score().of) { <span class="td-score">{{ score().beat }} of {{ score().of }} funds beat their index</span> }
+            </p>
+          </div>
+        }
+
+        <!-- 3 · fund by fund -->
+        <h3 class="td-h">Fund by fund</h3>
+        <ul class="td-list">
+          @for (r of rows(); track r.key; let i = $index) {
+            <li class="td-f" [style.--c]="r.color" [style.--i]="i">
+              <div class="td-f-top">
+                <i class="td-dot" aria-hidden="true"></i>
+                <span class="td-f-n">{{ r.name }}<small>{{ r.sleeve }}</small></span>
+                <b class="td-f-r num" [ngClass]="sign(r.change)">{{ signedInr(r.change) }}</b>
+              </div>
+              <div class="td-pair">
+                <span class="td-pl">Fund</span>
+                <span class="td-track"><i class="td-bar fund" [class.neg]="(r.pct ?? 0) < 0" [style.width.%]="r.wF"></i></span>
+                <b class="num" [ngClass]="sign(r.pct)">{{ signedPct(r.pct) }}</b>
+              </div>
+              @if (r.bench) {
+                <div class="td-pair">
+                  <span class="td-pl" [title]="r.bench">{{ r.bench }}</span>
+                  <span class="td-track"><i class="td-bar idx" [style.width.%]="r.wB"></i></span>
+                  <b class="num muted">{{ r.benchPct == null ? '—' : signedPct(r.benchPct) }}</b>
+                </div>
+              }
+              @if (r.gap != null) {
+                <span class="td-chip" [class.up]="r.gap >= 0" [class.dn]="r.gap < 0">{{ r.gap >= 0 ? 'Beat its index by' : 'Behind its index by' }} {{ pts(r.gap) }}</span>
+              } @else if (r.bench) {
+                <span class="td-chip wait">Index close not in yet</span>
+              }
+              @if (r.late) { <span class="td-late">Latest NAV is from {{ r.late }}</span> }
+            </li>
+          }
+        </ul>
+        <p class="td-fine">Your units × the change in each fund’s NAV since the day before. Each fund is compared with the index it follows on the same day. NAVs publish once a day, after the market closes.</p>
+      </div>
+    }
+  </section>
+}

@@ -399,15 +399,15 @@
          columns. Hidden on the empty estate. ===== -->
     <div class="port" *ngIf="dataReady && !isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
-      <!-- tap the figure for the live NAVs behind it -->
-      <button type="button" class="port-v" (click)="fresh.show()"
-              aria-label="See the live NAVs behind this value">
+      <!-- tap the figure → Today: the day's move, and each fund against its index -->
+      <button type="button" class="port-v" (click)="openMoves()"
+              aria-label="See how your money moved today, fund by fund against each index">
         <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
       </button>
       <!-- how much the money has grown overall, in one line — tap for the graph,
            today's move fund by fund, and each fund against its index -->
       <button type="button" class="port-growth" [class.down]="est.gain < 0" (click)="openMoves()"
-              [attr.aria-label]="'Grown ' + signedInr(est.gain) + ', ' + signedPct(gainPct) + '. See the graph and how each fund moved'">
+              [attr.aria-label]="'Grown ' + signedInr(est.gain) + ', ' + signedPct(gainPct) + ' since you started. See today’s move against each index'">
         <svg class="pg-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
         <b>{{ signedInr(est.gain) }}</b>
         <span>({{ signedPct(gainPct) }})</span>
