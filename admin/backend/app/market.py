@@ -60,7 +60,48 @@ BENCHMARKS = [
     {"key": "next50", "label": "Nifty Next 50", "about": "Companies ranked 51–100"},
     {"key": "mid", "label": "Midcap 150", "about": "Companies ranked 101–250"},
     {"key": "small", "label": "Smallcap 250", "about": "Companies ranked 251–500"},
+    {"key": "lms_eq", "label": "Equal L·M·S",
+     "about": "Large, mid and small cap equally — ⅓ Nifty 100 + ⅓ Midcap 150 + ⅓ Smallcap 250 TRI, back to ⅓ each every 1 Jan"},
 ]
+
+# benchmarks built here from the stored indices: key → {part: weight}. Each is
+# rebalanced to its weights at every December close, like a villa's growth part.
+BLENDS = {"lms_eq": {"n100": 1 / 3, "mid": 1 / 3, "small": 1 / 3}}
+
+
+def _blend(days: list[str], series: dict, weights: dict[str, float]) -> tuple[list, dict[str, float]]:
+    """A blend's daily level (100 on the first day every part has a close; null
+    before), and its parts' weights on the last day — for today's live move."""
+    parts = list(weights)
+    cols = [(series.get(p) or {}).get("values") or [] for p in parts]
+    out: list = []
+    units: Optional[list[float]] = None
+    level = 100.0
+    for i, d in enumerate(days):
+        px = [c[i] if i < len(c) else None for c in cols]
+        if units is None:
+            if any(v is None or v <= 0 for v in px):
+                out.append(None)
+                continue
+            units = [level * weights[p] / v for p, v in zip(parts, px)]
+        else:
+            px = [v if v is not None else 0 for v in px]
+            level = sum(u * v for u, v in zip(units, px))
+        out.append(round(level, 4))
+        if i + 1 < len(days) and days[i + 1][:4] != d[:4]:          # December close → back to the weights
+            units = [level * weights[p] / v if v else 0 for p, v in zip(parts, px)]
+    last = [c[-1] if c else None for c in cols]
+    vals = [u * (v or 0) for u, v in zip(units or [0] * len(parts), last)]
+    tot = sum(vals) or 1
+    return out, {p: v / tot for p, v in zip(parts, vals)}
+
+
+def _with_blends(days: list[str], series: dict) -> tuple[dict, dict[str, dict[str, float]]]:
+    out, drift = dict(series), {}
+    for key, w in BLENDS.items():
+        vals, drift[key] = _blend(days, series, w)
+        out[key] = {"name": next(b["label"] for b in BENCHMARKS if b["key"] == key), "values": vals}
+    return out, drift
 
 _SNAPSHOT = Path(__file__).resolve().parent / "market_data" / "index_daily.json"
 _BUCKET, _OBJECT = "calc-data", "index_daily.json"
@@ -399,7 +440,7 @@ def performance() -> dict:
     return {
         "as_of": days[-1] if days else None,
         "days": days,
-        "series": h.get("series", {}),
+        "series": _with_blends(days, h.get("series", {}))[0],
         "villas": villas,
         "default_villa": cfg.get("default_villa"),
         "rebalance": cfg.get("rebalance"),
@@ -459,6 +500,19 @@ def _nse_live() -> dict:
     }
 
 
+def _blend_quotes(quotes: dict) -> None:
+    """Today's move of each blend = its parts' live moves, weighted as the blend stands now."""
+    try:
+        h = history()
+        drift = _with_blends(h.get("days", []), h.get("series", {}))[1]
+    except Exception:
+        return
+    for key, w in drift.items():
+        if all(quotes.get(p, {}).get("pct") is not None for p in w):
+            quotes[key] = {"last": None, "prev": None, "pct": round(sum(quotes[p]["pct"] * x for p, x in w.items()), 4),
+                           "adv": None, "dec": None, "high": None, "low": None}
+
+
 def _int(v) -> Optional[int]:
     try:
         return int(v)
@@ -473,6 +527,7 @@ def live() -> dict:
             return _LIVE["data"]
     try:
         d = _nse_live()
+        _blend_quotes(d["quotes"])
         if d["quotes"]:
             with _LOCK:
                 _LIVE.update(at=time.time(), data=d)
