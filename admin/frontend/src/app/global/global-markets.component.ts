@@ -127,6 +127,7 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   /** your own mixes (Quadrant…), kept on this device */
   readonly customs = signal<{ key: string; name: string; weights: Weights }[]>([]);
   readonly PRESETS = PRESETS;
+  private readonly host = inject(ElementRef<HTMLElement>);
   readonly busy = signal(false);
   readonly error = signal('');
   readonly now = signal(Date.now());
@@ -219,6 +220,18 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     this.remember();
   }
   isOn(key: string): boolean { return this.lines$().includes(key); }
+  /** a heat tile tapped: toggle its line; on a phone the chart is off-screen, so say what happened and bring the chart up */
+  tapTile(t: { key: string; short: string; chartable: boolean }): void {
+    if (!t.chartable) { this.say(`${t.short} is shown here only`); return; }
+    const was = this.isOn(t.key);
+    this.toggle(t.key);
+    const now = this.isOn(t.key);
+    if (now === was) return;                                   // hit the line limit — toggle() already said so
+    if (window.innerWidth <= 900) {
+      this.say(now ? `${t.short} on the chart` : `${t.short} off the chart`);
+      if (now) this.host.nativeElement.querySelector('.pf-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
   private say(msg: string): void { this.note.set(msg); clearTimeout(this.noteT); this.noteT = setTimeout(() => this.note.set(''), 2600); }
 
   // ── what the page shows ────────────────────────────────────────────────────

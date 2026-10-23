@@ -129,10 +129,11 @@
           <div class="th-grid" [class.two]="g.tiles.length === 2" [class.three]="g.tiles.length === 3">
             @for (t of g.tiles; track t.key) {
               <button type="button" class="tile" [class.on]="isOn(t.key)" [class.static]="!t.chartable" [class.deep]="deep(t.pct, t.kind)" [style.background]="heat(t.pct, t.kind)" [style.--c]="styleOf(t.key).c"
-                      (click)="t.chartable && toggle(t.key)" [attr.aria-pressed]="t.chartable ? isOn(t.key) : null" [attr.aria-disabled]="!t.chartable" [title]="t.about">
+                      (click)="tapTile(t)" [attr.aria-pressed]="t.chartable ? isOn(t.key) : null" [attr.aria-disabled]="!t.chartable" [title]="t.about">
                 <span class="t-name">{{ t.short }}</span>
                 <span class="t-pct" [class.pos]="tone(t.pct) === 'up'" [class.neg]="tone(t.pct) === 'down'">{{ pct(t.pct, t.kind) }}</span>
                 <span class="t-level">{{ level(t) }}</span>
+                @if (isOn(t.key)) { <span class="t-on" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> }
               </button>
             }
           </div>
