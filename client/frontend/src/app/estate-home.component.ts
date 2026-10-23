@@ -225,6 +225,13 @@ export class EstateHomeComponent implements OnInit {
   /** "Day's change" — the fund-by-fund sheet behind the day chip. */
   /** "How your funds moved" (today fund by fund · each fund vs its index). */
   movesOpen = signal(false);
+  /** three quick taps on the value (within ~0.8 s) open the day-vs-index sheet */
+  private taps: number[] = [];
+  valueTap(): void {
+    const now = Date.now();
+    this.taps = [...this.taps.filter((t) => now - t < 800), now];
+    if (this.taps.length >= 3) { this.taps = []; this.openMoves(); }
+  }
   openMoves(): void { this.est.loadMoves(); this.movesOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
 
   /** The user's fund-by-fund breakdown (from GET /me/funds) — drives the

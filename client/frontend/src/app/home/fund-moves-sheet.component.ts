@@ -4,37 +4,23 @@ import { Component, EventEmitter, HostListener, Input, Output, computed, inject,
 import { EstateService, FundMove, FundMoves } from '../estate.service';
 import { inr } from '../shared/format.util';
 
-/** Sleeve → colour (the same palette as the home allocation bar). */
-const SLEEVE_COLOR: Record<string, string> = {
-  arbitrage: '#8aa89b', debt: '#7fa9c9', hybrid: '#a99be6', gold: '#f6c445', large: '#4a9d47',
-  multi: '#3f9a86', mid: '#5cb85c', small: '#8fd48a', other: '#9fb3ab',
-};
-const SLEEVE_NAME: Record<string, string> = {
-  arbitrage: 'Arbitrage', debt: 'Debt', hybrid: 'Hybrid', gold: 'Gold', large: 'Large cap',
-  multi: 'Multi cap', mid: 'Mid cap', small: 'Small cap', other: 'Other',
-};
+type Range = '1m' | '3m' | 'all';
+const RANGES: { k: Range; l: string; n: number }[] = [
+  { k: '1m', l: '1M', n: 22 }, { k: '3m', l: '3M', n: 66 }, { k: 'all', l: 'Since start', n: 1e9 },
+];
+const W = 320, H = 120, BH = 92;
 
-/** One fund's day, next to its index's day. */
-interface Row {
-  key: number; name: string; sleeve: string; color: string;
-  change: number | null;            // ₹ moved today (units × ΔNAV)
-  pct: number | null;               // the fund's NAV move, %
-  bench: string | null;             // the index it is measured against
-  benchPct: number | null;          // the index's move the same day, %
-  gap: number | null;               // fund − index, percentage points
-  wF: number; wB: number;           // bar widths on one shared scale (% of the track)
-  late: string | null;              // the fund's NAV is an older day than the rest
-}
+/** one trading day of the estate: its ₹ move (cash flows taken out), its %, and the indices' % */
+interface Day { d: string; chg: number; pct: number; idx: number | null; }
 
 /**
- * "Today" — opened by tapping the portfolio value (or the growth line under it).
- * One question, answered plainly: how did my money move today, and how did each
- * fund do against the index it follows?
- *   1. the day's ₹ and % for the whole estate
- *   2. your funds vs their indices (value-weighted), with a one-line verdict
- *   3. each fund: its move and its index's move as two bars on one scale, and
- *      "beat by / behind by" in plain words
- * Data: GET /me/funds/moves (loaded once, cached by EstateService).
+ * "Your day vs the index" — a hidden sheet (three quick taps on the portfolio value).
+ *   1. the day: −₹5,071 (−0.52%), and the same day for your funds' indices, as two bars
+ *   2. history: your funds vs their indices, growth since the window's start (two lines),
+ *      and every day's gain / loss as bars with the index's day as a tick — tap any day
+ *   3. fund by fund, compact: −₹1,855 (−0.82%) · index −0.81%
+ * The indices are each fund's own index, weighted by what the client holds today.
+ * Data: GET /me/funds/moves (cached by EstateService).
  */
 @Component({
   selector: 'app-fund-moves',
@@ -45,71 +31,135 @@ interface Row {
 })
 export class FundMovesSheetComponent {
   readonly est = inject(EstateService);
+  readonly RANGES = RANGES;
+  readonly W = W; readonly H = H; readonly BH = BH;
 
   private readonly _open = signal(false);
-  @Input() set open(v: boolean) { this._open.set(!!v); if (v) this.est.loadMoves(); }
+  @Input() set open(v: boolean) { this._open.set(!!v); if (v) { this.est.loadMoves(); this.pick.set(null); } }
   get open(): boolean { return this._open(); }
   @Output() closed = new EventEmitter<void>();
   readonly isOpen = computed(() => this._open());
-
-  readonly m = computed<FundMoves | null>(() => this.est.moves());
-  readonly change = computed(() => this.m()?.total.change ?? null);
-  readonly pct = computed(() => this.m()?.total.pct ?? null);
-  readonly down = computed(() => (this.change() ?? 0) < 0);
-
   close(): void { this._open.set(false); this.closed.emit(); }
   @HostListener('document:keydown.escape') onEsc(): void { if (this._open()) this.close(); }
 
-  /** every fund, biggest ₹ move first, with its index beside it */
-  readonly rows = computed<Row[]>(() => {
-    const m = this.m(); if (!m) return [];
-    const fs = m.funds.filter((f) => f.day_change != null || f.day_pct != null);
-    const scale = Math.max(0.1, ...fs.map((f) => Math.abs(f.day_pct ?? 0)), ...fs.map((f) => Math.abs(f.bench?.day_pct ?? 0)));
-    return fs.map((f: FundMove) => {
-      const b = f.bench?.day_pct ?? null;
-      return {
-        key: f.scheme_code, name: f.short, sleeve: SLEEVE_NAME[f.sleeve] ?? 'Other', color: SLEEVE_COLOR[f.sleeve] ?? SLEEVE_COLOR['other'],
-        change: f.day_change, pct: f.day_pct, bench: f.bench?.name ?? null, benchPct: b,
-        gap: f.day_pct != null && b != null ? f.day_pct - b : null,
-        wF: Math.abs(f.day_pct ?? 0) / scale * 100, wB: Math.abs(b ?? 0) / scale * 100,
-        late: m.nav_date && f.nav_date && f.nav_date < m.nav_date ? this.dayShort(f.nav_date) : null,
-      };
-    }).sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
+  readonly m = computed<FundMoves | null>(() => this.est.moves());
+  readonly range = signal<Range>('1m');
+  /** the day tapped on the history chart (index into days()), null = the latest */
+  readonly pick = signal<number | null>(null);
+
+  // ── the day ──
+  readonly change = computed(() => this.m()?.total.change ?? null);
+  readonly pct = computed(() => this.m()?.total.pct ?? null);
+  /** the funds' indices that day, weighted by value held */
+  readonly idxToday = computed(() => {
+    const m = this.m(); if (!m) return null;
+    let w = 0, s = 0;
+    for (const f of m.funds) { const b = f.bench?.day_pct; if (b == null || !f.value) continue; w += f.value; s += f.value * b; }
+    return w ? s / w : null;
+  });
+  readonly todayBars = computed(() => {
+    const a = this.pct(), b = this.idxToday();
+    const sc = Math.max(0.1, Math.abs(a ?? 0), Math.abs(b ?? 0));
+    return { mine: Math.abs(a ?? 0) / sc * 100, idx: Math.abs(b ?? 0) / sc * 100 };
   });
 
-  /** your funds vs their indices, each weighted by what you hold in it */
-  readonly vs = computed(() => {
-    const m = this.m(); if (!m) return null;
-    let w = 0, idx = 0;
-    for (const f of m.funds) {
-      const b = f.bench?.day_pct;
-      if (b == null || !f.value) continue;
-      w += f.value; idx += f.value * b;
+  // ── history: every trading day since the first purchase ──
+  readonly allDays = computed<Day[]>(() => {
+    const m = this.m(); const p = m?.portfolio; if (!m || !p) return [];
+    const out: Day[] = [];
+    for (let k = 1; k < p.value.length; k++) {
+      const v0 = p.value[k - 1], v1 = p.value[k];
+      if (!v0) continue;
+      const chg = (v1 - v0) - (p.invested[k] - p.invested[k - 1]);       // money added that day is not a gain
+      const g = p.from + k;
+      out.push({ d: m.days[g], chg, pct: chg / v0 * 100, idx: this.idxOn(m, g) });
     }
-    const mine = this.pct();
-    if (!w || mine == null) return null;
-    const theirs = idx / w, gap = mine - theirs;
-    const scale = Math.max(0.1, Math.abs(mine), Math.abs(theirs));
-    return { mine, theirs, gap, wM: Math.abs(mine) / scale * 100, wT: Math.abs(theirs) / scale * 100 };
+    return out;
   });
-  /** how many funds beat their index today */
-  readonly score = computed(() => {
-    const r = this.rows().filter((x) => x.gap != null);
-    return { beat: r.filter((x) => (x.gap ?? 0) >= 0).length, of: r.length };
+  private idxOn(m: FundMoves, g: number): number | null {
+    let w = 0, s = 0;
+    for (const f of m.funds as FundMove[]) {
+      const i = g - f.from, a = f.index_series[i - 1], b = f.index_series[i];
+      if (i < 1 || a == null || b == null || !a || a === b || !f.weight) continue;   // an unchanged close = not published yet
+      w += f.weight; s += f.weight * (b / a - 1) * 100;
+    }
+    return w ? s / w : null;
+  }
+  readonly days = computed<Day[]>(() => {
+    const n = RANGES.find((r) => r.k === this.range())!.n, all = this.allDays();
+    return all.slice(Math.max(0, all.length - n));
+  });
+  setRange(r: Range): void { this.range.set(r); this.pick.set(null); }
+
+  /** the window's totals: ₹ gained, your %, the indices' % */
+  readonly win = computed(() => {
+    const ds = this.days(); if (!ds.length) return null;
+    let mine = 1, idx = 1, chg = 0;
+    for (const d of ds) { mine *= 1 + d.pct / 100; if (d.idx != null) idx *= 1 + d.idx / 100; chg += d.chg; }
+    return { chg, mine: (mine - 1) * 100, idx: (idx - 1) * 100, from: ds[0].d, to: ds[ds.length - 1].d, n: ds.length };
+  });
+  /** two lines: growth since the window opened, yours and the indices' */
+  readonly lines = computed(() => {
+    const ds = this.days(); if (ds.length < 2) return null;
+    let a = 1, b = 1; const A = [0], B = [0];
+    for (const d of ds) { a *= 1 + d.pct / 100; b *= 1 + (d.idx ?? 0) / 100; A.push((a - 1) * 100); B.push((b - 1) * 100); }
+    const lo = Math.min(0, ...A, ...B), hi = Math.max(0, ...A, ...B), pad = (hi - lo) * 0.1 || 0.5;
+    const y = (v: number) => H - 8 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 16);
+    const x = (i: number) => (i / (A.length - 1)) * W;
+    const path = (vs: number[]) => vs.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+    return { mine: path(A), idx: path(B), zero: y(0), endMine: y(A[A.length - 1]), endIdx: y(B[B.length - 1]) };
+  });
+  /** the daily bars: your day (green / red) with the index's day as a tick */
+  readonly bars = computed(() => {
+    const ds = this.days(); if (!ds.length) return null;
+    const sc = Math.max(0.05, ...ds.map((d) => Math.abs(d.pct)), ...ds.map((d) => Math.abs(d.idx ?? 0)));
+    const n = ds.length, slot = W / n, bw = Math.max(1.2, Math.min(9, slot * 0.62)), mid = BH / 2;
+    const yOf = (v: number) => mid - (v / sc) * (mid - 4);
+    return { mid, bw, items: ds.map((d, i) => {
+      const cx = (i + 0.5) * slot, h = Math.max(1, Math.abs(yOf(d.pct) - mid));
+      return { x: cx - bw / 2, cx, y: d.pct >= 0 ? mid - h : mid, h, up: d.pct >= 0, tick: d.idx == null ? null : yOf(d.idx) };
+    }) };
+  });
+  readonly upDays = computed(() => this.days().filter((d) => d.chg > 0).length);
+  /** the readout above the history: the tapped day, else the latest */
+  readonly sel = computed(() => {
+    const ds = this.days(); if (!ds.length) return null;
+    const i = this.pick() ?? ds.length - 1;
+    return { ...ds[Math.min(i, ds.length - 1)], i: Math.min(i, ds.length - 1) };
+  });
+  onPick(ev: PointerEvent, el: Element): void {
+    const n = this.days().length; if (!n) return;
+    const r = el.getBoundingClientRect();
+    this.pick.set(Math.max(0, Math.min(n - 1, Math.floor(((ev.clientX - r.left) / r.width) * n))));
+  }
+
+  // ── fund by fund ──
+  readonly funds = computed(() => {
+    const m = this.m(); if (!m) return [];
+    return m.funds.filter((f) => f.day_change != null).map((f) => {
+      const b = f.bench?.day_pct ?? null;
+      return { key: f.scheme_code, name: f.short, chg: f.day_change, pct: f.day_pct, bench: f.bench?.name ?? null, bpct: b,
+               gap: f.day_pct != null && b != null ? f.day_pct - b : null };
+    }).sort((a, b) => Math.abs(b.chg ?? 0) - Math.abs(a.chg ?? 0));
   });
 
   // ── words ──
-  signedInr(v: number | null | undefined): string { return v == null ? '—' : (v < 0 ? '−' : '+') + inr(Math.abs(v)); }
-  signedPct(v: number | null | undefined, dp = 2): string {
-    if (v == null || !isFinite(v)) return '—';
-    return (v < 0 ? '−' : '+') + Math.abs(v).toFixed(dp) + '%';
+  /** "−₹5,071 (−0.52%)" */
+  amt(chg: number | null | undefined, pct: number | null | undefined): string {
+    if (chg == null) return '—';
+    const s = (chg < 0 ? '−' : '+') + inr(Math.abs(Math.round(chg)));
+    return pct == null ? s : `${s} (${this.p(pct)})`;
   }
+  p(v: number | null | undefined, dp = 2): string { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '+') + Math.abs(v).toFixed(dp) + '%'; }
   pts(v: number): string { return Math.abs(v).toFixed(2) + ' pts'; }
   dayShort(iso: string | null | undefined): string {
     if (!iso) return '';
     return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   }
-  /** "Today" / "Yesterday" / "Fri 16 Oct" — NAV dates are Indian dates */
+  date(iso: string | null | undefined): string {
+    if (!iso) return '';
+    return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  }
   dayWhen(iso: string | null | undefined): string {
     if (!iso) return 'Today';
     const ist = (ms: number) => new Date(ms + 330 * 60_000).toISOString().slice(0, 10);
@@ -117,6 +167,5 @@ export class FundMovesSheetComponent {
     if (iso === ist(Date.now() - 86_400_000)) return 'Yesterday';
     return this.dayShort(iso);
   }
-  sign(v: number | null | undefined): 'up' | 'dn' | '' { return v == null ? '' : v > 0.0001 ? 'up' : v < -0.0001 ? 'dn' : ''; }
-  trackRow(_: number, r: Row): number { return r.key; }
+  tone(v: number | null | undefined): 'up' | 'dn' | '' { return v == null ? '' : v > 0.0001 ? 'up' : v < -0.0001 ? 'dn' : ''; }
 }

@@ -400,16 +400,16 @@
     <div class="port" *ngIf="dataReady && !isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
       <!-- tap the figure → Today: the day's move, and each fund against its index -->
-      <button type="button" class="port-v" (click)="openMoves()"
-              aria-label="See how your money moved today, fund by fund against each index">
+      <!-- three quick taps open the day-vs-index sheet (kept out of the way for everyday use) -->
+      <button type="button" class="port-v" (click)="valueTap()" aria-label="Portfolio value">
         <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
       </button>
       <!-- how far the money is up or down, in rupees only — tap for the graph and today's move -->
-      <button type="button" class="port-d" [class.down]="est.gain < 0" (click)="openMoves()"
-              [attr.aria-label]="(est.gain < 0 ? 'Down ' : 'Up ') + inr(est.gain < 0 ? -est.gain : est.gain) + ' since you started. See how your money moved'">
+      <p class="port-d" [class.down]="est.gain < 0"
+         [attr.aria-label]="(est.gain < 0 ? 'Down ' : 'Up ') + inr(est.gain < 0 ? -est.gain : est.gain) + ' (' + signedPct(gainPct) + ') since you started'">
         <svg class="pd-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-        <b>{{ signedInr(est.gain) }}</b>
-      </button>
+        <b>{{ signedInr(est.gain) }}</b><span class="pd-pct">({{ signedPct(gainPct) }})</span>
+      </p>
       <!-- the live-values sheet (renders nothing until the figure is tapped) -->
       <app-data-freshness></app-data-freshness>
 

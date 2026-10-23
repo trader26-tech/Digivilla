@@ -1588,7 +1588,8 @@
   font-variant-numeric: tabular-nums; color: var(--color-text); -webkit-tap-highlight-color: transparent;
   transition: transform .32s cubic-bezier(.22,1,.36,1), opacity .2s;
 }
-.port-v:active { transform: scale(.985); opacity: .85; }
+/* the value takes taps without a zoom or selection flash (three taps open the day sheet) */
+.port-v { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 /* the only always-visible hint: a 5px live dot riding the last digit */
 .port-live {
   position: absolute; top: 6px; right: -8px;
@@ -1601,12 +1602,11 @@
 /* up / down in rupees — one coloured line under the value */
 .port-d {
   --c: #8fd65a; display: inline-flex; align-items: center; gap: 7px; margin-top: 4px; padding: 4px 10px; border: 0; border-radius: 999px;
-  background: none; cursor: pointer; font: inherit; color: var(--c); -webkit-tap-highlight-color: transparent; transition: transform .2s, background .2s;
+  margin-bottom: 0; background: none; font: inherit; color: var(--c);
   &.down { --c: #e08f8f; }
-  &:active { transform: scale(.97); background: color-mix(in srgb, var(--c) 12%, transparent); }
-  &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 3px; }
   .pd-tri { width: 9px; height: 9px; fill: currentColor; flex: none; }
   b { font-family: var(--ref-font); font-weight: 500; font-size: 16px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pd-pct { font-size: 14px; font-variant-numeric: tabular-nums; opacity: .85; white-space: nowrap; }
 }
 .port-m {
   border: 0; background: none; cursor: pointer; font: inherit; padding: 2px 8px; margin-top: 2px; -webkit-tap-highlight-color: transparent;

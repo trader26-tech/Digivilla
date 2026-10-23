@@ -1,7 +1,7 @@
-<!-- ============ TODAY — the day's move, and each fund against its index ============ -->
+<!-- ============ YOUR DAY VS THE INDEX — three taps on the portfolio value ============ -->
 @if (isOpen()) {
   <div class="td-scrim" (click)="close()" aria-hidden="true"></div>
-  <section class="td" [class.down]="down()" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
+  <section class="td" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
     <div class="td-grab" aria-hidden="true"></div>
     <header class="td-head">
       <div>
@@ -14,74 +14,90 @@
     </header>
 
     @if (!m()) {
-      <div class="td-skel" aria-hidden="true"><i class="w50"></i><i class="w80 tall"></i><i></i><i></i><i></i></div>
+      <div class="td-skel" aria-hidden="true"><i class="w60"></i><i class="tall"></i><i class="tall"></i></div>
     } @else {
       <div class="td-body">
-        <!-- 1 · the day, in one number -->
-        <div class="td-hero">
-          <b class="td-amt num" [class.up]="!down()" [class.dn]="down()">{{ signedInr(change()) }}</b>
-          <span class="td-pct num" [class.up]="!down()" [class.dn]="down()">
-            <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="down() ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-            {{ signedPct(pct()) }}
-          </span>
+        <!-- 1 · the day -->
+        <p class="td-hero num" [ngClass]="tone(change())">{{ amt(change(), pct()) }}</p>
+        <div class="td-cmp">
+          <div class="td-row">
+            <span class="td-l">You</span>
+            <span class="td-track"><i class="td-bar" [ngClass]="tone(pct())" [style.width.%]="todayBars().mine"></i></span>
+            <b class="num" [ngClass]="tone(pct())">{{ p(pct()) }}</b>
+          </div>
+          <div class="td-row">
+            <span class="td-l">Index</span>
+            <span class="td-track"><i class="td-bar idx" [style.width.%]="todayBars().idx"></i></span>
+            <b class="num muted">{{ p(idxToday()) }}</b>
+          </div>
+          @if (pct() != null && idxToday() != null) {
+            @let g = pct()! - idxToday()!;
+            <p class="td-say" [ngClass]="g >= 0 ? 'up' : 'dn'">{{ g >= 0 ? 'Better than the index' : 'Worse than the index' }} by {{ pts(g) }}</p>
+          }
         </div>
 
-        <!-- 2 · your funds vs their indices -->
-        @if (vs(); as v) {
-          <div class="td-vs">
-            <div class="td-vs-row">
-              <span class="td-vs-l">Your funds</span>
-              <span class="td-track"><i class="td-bar mine" [class.neg]="v.mine < 0" [style.width.%]="v.wM"></i></span>
-              <b class="num" [ngClass]="sign(v.mine)">{{ signedPct(v.mine) }}</b>
+        <!-- 2 · history -->
+        @if (win(); as w) {
+          <div class="td-hist">
+            <div class="td-hist-h">
+              <h3>History</h3>
+              <div class="td-seg" role="radiogroup" aria-label="Period">
+                @for (r of RANGES; track r.k) {
+                  <button type="button" role="radio" [attr.aria-checked]="range() === r.k" [class.on]="range() === r.k" (click)="setRange(r.k)">{{ r.l }}</button>
+                }
+              </div>
             </div>
-            <div class="td-vs-row">
-              <span class="td-vs-l">Their indices</span>
-              <span class="td-track"><i class="td-bar idx" [style.width.%]="v.wT"></i></span>
-              <b class="num muted">{{ signedPct(v.theirs) }}</b>
+            <div class="td-sum">
+              <div><small>You</small><b class="num" [ngClass]="tone(w.chg)">{{ amt(w.chg, w.mine) }}</b></div>
+              <div><small>Index</small><b class="num muted">{{ p(w.idx) }}</b></div>
             </div>
-            <p class="td-verdict" [class.up]="v.gap >= 0" [class.dn]="v.gap < 0">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                @if (v.gap >= 0) { <path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/> }
-                @else { <path d="M12 7v6M12 17h.01" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/> }
+
+            <!-- growth since the window opened: you vs the index -->
+            @if (lines(); as l) {
+              <svg class="td-lines" [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none" aria-hidden="true">
+                <line class="zero" x1="0" [attr.x2]="W" [attr.y1]="l.zero" [attr.y2]="l.zero"/>
+                <path class="ln idx" [attr.d]="l.idx"/>
+                <path class="ln mine" [ngClass]="tone(w.mine)" [attr.d]="l.mine"/>
               </svg>
-              {{ v.gap >= 0 ? 'Ahead of' : 'Behind' }} the indices by <b class="num">{{ pts(v.gap) }}</b>
-              @if (score().of) { <span class="td-score">{{ score().beat }} of {{ score().of }} funds beat their index</span> }
-            </p>
+              <div class="td-key"><span><i class="mine" [ngClass]="tone(w.mine)"></i>You</span><span><i class="idx"></i>Index</span><span class="td-dates">{{ date(w.from) }} – {{ date(w.to) }}</span></div>
+            }
+
+            <!-- every day's gain / loss, the index's day as a tick — tap a day -->
+            @if (sel(); as s) {
+              <p class="td-day num">
+                <span>{{ dayShort(s.d) }}</span>
+                <b [ngClass]="tone(s.chg)">{{ amt(s.chg, s.pct) }}</b>
+                <span class="muted">Index {{ p(s.idx) }}</span>
+              </p>
+            }
+            @if (bars(); as b) {
+              <svg #bars class="td-bars" [attr.viewBox]="'0 0 ' + W + ' ' + BH" preserveAspectRatio="none" role="img"
+                   [attr.aria-label]="upDays() + ' up days of ' + days().length" (pointerdown)="onPick($event, bars)" (pointermove)="$event.buttons ? onPick($event, bars) : null">
+                <line class="zero" x1="0" [attr.x2]="W" [attr.y1]="b.mid" [attr.y2]="b.mid"/>
+                @for (x of b.items; track $index) {
+                  <rect [attr.x]="x.x" [attr.y]="x.y" [attr.width]="b.bw" [attr.height]="x.h" rx="1" [class.up]="x.up" [class.dn]="!x.up" [class.on]="sel()?.i === $index"/>
+                  @if (x.tick != null) { <line class="tick" [attr.x1]="x.cx - b.bw / 2 - 1" [attr.x2]="x.cx + b.bw / 2 + 1" [attr.y1]="x.tick" [attr.y2]="x.tick"/> }
+                }
+              </svg>
+              <div class="td-key"><span><i class="bar"></i>Your day</span><span><i class="tick"></i>Index that day</span><span class="td-dates">{{ upDays() }} up days of {{ days().length }}</span></div>
+            }
           </div>
         }
 
         <!-- 3 · fund by fund -->
-        <h3 class="td-h">Fund by fund</h3>
+        <h3 class="td-h">Fund by fund · {{ dayWhen(m()?.nav_date).toLowerCase() }}</h3>
         <ul class="td-list">
-          @for (r of rows(); track r.key; let i = $index) {
-            <li class="td-f" [style.--c]="r.color" [style.--i]="i">
-              <div class="td-f-top">
-                <i class="td-dot" aria-hidden="true"></i>
-                <span class="td-f-n">{{ r.name }}<small>{{ r.sleeve }}</small></span>
-                <b class="td-f-r num" [ngClass]="sign(r.change)">{{ signedInr(r.change) }}</b>
+          @for (f of funds(); track f.key) {
+            <li class="td-f">
+              <div class="td-f-1"><span class="td-f-n">{{ f.name }}</span><b class="num" [ngClass]="tone(f.chg)">{{ amt(f.chg, f.pct) }}</b></div>
+              <div class="td-f-2">
+                <span class="muted">{{ f.bench || 'Index' }} {{ f.bpct == null ? '— not in yet' : p(f.bpct) }}</span>
+                @if (f.gap != null) { <span class="td-tag" [ngClass]="f.gap >= 0 ? 'up' : 'dn'">{{ f.gap >= 0 ? '▲' : '▼' }} {{ pts(f.gap) }}</span> }
               </div>
-              <div class="td-pair">
-                <span class="td-pl">Fund</span>
-                <span class="td-track"><i class="td-bar fund" [class.neg]="(r.pct ?? 0) < 0" [style.width.%]="r.wF"></i></span>
-                <b class="num" [ngClass]="sign(r.pct)">{{ signedPct(r.pct) }}</b>
-              </div>
-              @if (r.bench) {
-                <div class="td-pair">
-                  <span class="td-pl" [title]="r.bench">{{ r.bench }}</span>
-                  <span class="td-track"><i class="td-bar idx" [style.width.%]="r.wB"></i></span>
-                  <b class="num muted">{{ r.benchPct == null ? '—' : signedPct(r.benchPct) }}</b>
-                </div>
-              }
-              @if (r.gap != null) {
-                <span class="td-chip" [class.up]="r.gap >= 0" [class.dn]="r.gap < 0">{{ r.gap >= 0 ? 'Beat its index by' : 'Behind its index by' }} {{ pts(r.gap) }}</span>
-              } @else if (r.bench) {
-                <span class="td-chip wait">Index close not in yet</span>
-              }
-              @if (r.late) { <span class="td-late">Latest NAV is from {{ r.late }}</span> }
             </li>
           }
         </ul>
-        <p class="td-fine">Your units × the change in each fund’s NAV since the day before. Each fund is compared with the index it follows on the same day. NAVs publish once a day, after the market closes.</p>
+        <p class="td-fine">Index = the index each fund follows, weighted by what you hold. Money you add is not counted as a gain. NAVs publish once a day, after the market closes.</p>
       </div>
     }
   </section>
