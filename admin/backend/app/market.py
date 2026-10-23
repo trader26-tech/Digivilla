@@ -479,8 +479,10 @@ def _nse_live() -> dict:
             st = {}
     finally:
         c.close()
-    quotes = {}
+    quotes, every = {}, {}
     for x in d.get("data") or []:
+        if x.get("index") and x.get("last") is not None:     # every NSE index, by its name (Markets today's own mixes)
+            every[str(x["index"]).upper()] = {"last": x.get("last"), "prev": x.get("previousClose"), "pct": x.get("percentChange")}
         k = _NSE_NAMES.get(x.get("index"))
         if k:
             quotes[k] = {"last": x.get("last"), "prev": x.get("previousClose"), "pct": x.get("percentChange"),
@@ -497,6 +499,7 @@ def _nse_live() -> dict:
         "day": when.date().isoformat() if when else None,
         "time": when.strftime("%H:%M") if when else None,
         "quotes": quotes,
+        "all": every,
     }
 
 

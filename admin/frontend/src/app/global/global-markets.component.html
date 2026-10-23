@@ -166,6 +166,61 @@
         } @else { <h3 class="ms-title">{{ v.name }}</h3> }
         <span class="ms-val" [class.pos]="tone(basket(v).pct) === 'up'" [class.neg]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}<small>{{ rangeLong() }}</small></span>
       </div>
+      @if (isYours(v)) {
+        <!-- ── your own mix: any indices; every change keeps the total at 100% ── -->
+        <div class="ms-presets" role="group" aria-label="Start from">
+          @for (t of TEMPLATES; track t.k) {
+            <button type="button" [class.on]="templateOf(v) === t.k" (click)="applyTemplate(v, t.k)">{{ t.name }}</button>
+          }
+        </div>
+        <div class="ms-bar" aria-hidden="true">@for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c">@if (w.w >= 0.09) { <b>{{ w.w * 100 | number:'1.0-0' }}</b> }</i> }</div>
+        <div class="ms-rows yours">
+          @for (r of yourRows(v); track r.key) {
+            <div class="ms-row y" [style.--c]="r.colour" [class.zero]="r.pct === 0">
+              <span class="ms-n" [title]="r.full"><i></i><span class="ms-nn">{{ r.name }}@if (!r.ok && extraBusy()) { <em class="ms-ld" aria-label="loading"></em> }</span></span>
+              <button type="button" class="ms-step" (click)="stepShare(v, r.key, -2.5)" [disabled]="r.pct <= 0" [attr.aria-label]="'Less ' + r.name">−</button>
+              <span class="ms-pct">{{ r.pct | number:'1.0-1' }}<small>%</small></span>
+              <button type="button" class="ms-step" (click)="stepShare(v, r.key, 2.5)" [disabled]="r.pct >= 100" [attr.aria-label]="'More ' + r.name">+</button>
+              <button type="button" class="ms-x" (click)="removeIndex(v, r.key)" [attr.aria-label]="'Remove ' + r.name" title="Remove">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7m0-7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
+              <input type="range" min="0" max="100" step="2.5" [value]="r.pct" (input)="setShare(v, r.key, $any($event.target).value)" [attr.aria-label]="r.name + ' percent'" [style.--f]="r.pct + '%'">
+            </div>
+          }
+        </div>
+        <div class="ms-tools">
+          <button type="button" class="ms-add" (click)="pickOpen() ? pickOpen.set(false) : openPicker()" [attr.aria-expanded]="pickOpen()">
+            <span aria-hidden="true">{{ pickOpen() ? '−' : '+' }}</span>{{ pickOpen() ? 'Done adding' : 'Add an index' }}
+          </button>
+          @if (yourRows(v).length > 1) { <button type="button" class="ms-even" (click)="evenSplit(v)">Split evenly</button> }
+          <span class="ms-total">Total <b>100%</b></span>
+        </div>
+        @if (pickOpen()) {
+          <!-- the index picker: search, a group, tap to add (tap again to take it out) -->
+          <div class="pk" role="group" aria-label="Add an index">
+            <div class="pk-search">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <input class="pk-q" type="search" placeholder="Search — Nifty 100, Bank, Nasdaq, silver…" [value]="pickQ()" (input)="pickQ.set($any($event.target).value)" aria-label="Search indices">
+            </div>
+            <div class="pk-groups" role="radiogroup" aria-label="Group">
+              @for (g of PICK_GROUPS; track g) { <button type="button" role="radio" [attr.aria-checked]="pickGroup() === g" [class.on]="pickGroup() === g" (click)="pickGroup.set(g)">{{ g }}</button> }
+            </div>
+            <div class="pk-list">
+              @for (g of pickList(); track g.name) {
+                <div class="pk-gh">{{ g.name }}</div>
+                @for (c of g.items; track c.key) {
+                  <button type="button" class="pk-row" [class.in]="inMix(v, c.key)" [style.--c]="colourOf(c.key)" (click)="addIndex(v, c.key)" [attr.aria-pressed]="inMix(v, c.key)" [title]="c.about">
+                    <i class="pk-dot" aria-hidden="true"></i>
+                    <span class="pk-n">{{ c.name }}</span>
+                    @if (c.source === 'price' && c.kind !== 'gold' && c.kind !== 'fx') { <span class="pk-tag" title="Price index (no dividends)">price</span> }
+                    <span class="pk-ic" aria-hidden="true">@if (inMix(v, c.key)) { <svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> } @else { + }</span>
+                  </button>
+                }
+              } @empty { <p class="pk-empty">Nothing matches “{{ pickQ() }}”.</p> }
+            </div>
+          </div>
+        }
+      } @else {
       <div class="ms-presets" role="group" aria-label="Start from">
         @for (pr of PRESETS; track pr.k) {
           <button type="button" [class.on]="presetOf(v) === pr.k" (click)="applyPreset(v, pr.k)">{{ pr.name }}</button>
@@ -188,6 +243,7 @@
           <span class="ms-pct">{{ partPct(v, 'arbitrage') | number:'1.0-1' }}<small>%</small></span>
         </div>
       </div>
+      }
       <div class="ms-acts">
         @if (isYours(v)) { <button type="button" class="btn ghost danger" (click)="removeCustom(v)">Delete</button> }
         @else if (isCustom(v)) { <button type="button" class="btn ghost" (click)="resetMix(v)">Reset</button> }

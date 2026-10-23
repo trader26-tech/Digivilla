@@ -1109,6 +1109,23 @@ def admin_india_board(range: str = "1d", start: Optional[str] = None, end: Optio
     return india_svc.board(range, start, end)
 
 
+@app.get("/admin/india/catalogue")
+def admin_india_catalogue(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Every index a mix of your own can use on Markets today (NSE total-return indices, BSE,
+    world, commodities), grouped for the picker."""
+    _require_admin(authorization)
+    from app import index_catalog
+    return {"items": index_catalog.catalogue()}
+
+
+@app.get("/admin/india/extra")
+def admin_india_extra(keys: str = "", range: str = "1d", start: Optional[str] = None, end: Optional[str] = None,
+                      authorization: Optional[str] = Header(default=None)) -> dict:
+    """Catalogue indices (comma-separated keys) over the board's range — same item shape as the board."""
+    _require_admin(authorization)
+    return india_svc.extra([k for k in keys.split(",") if k], range, start, end)
+
+
 @app.post("/admin/clients/{code}/view-link")
 def admin_client_view_link(code: str, authorization: Optional[str] = Header(default=None)) -> dict:
     """A link that opens the client app as this client, read-only. The pass inside it is

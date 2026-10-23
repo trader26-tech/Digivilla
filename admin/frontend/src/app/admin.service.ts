@@ -555,6 +555,16 @@ export class AdminService {
     if (range === 'custom') { if (start) params['start'] = start; if (end) params['end'] = end; }
     return this.http.get<IndiaBoard>(`${this.base}/admin/india/board`, { ...this.opts, params });
   }
+  /** every index a mix of your own can use (grouped for the picker) */
+  indiaCatalogue(): Observable<{ items: ICatalogItem[] }> {
+    return this.http.get<{ items: ICatalogItem[] }>(`${this.base}/admin/india/catalogue`, this.opts);
+  }
+  /** catalogue indices over the board's range, same item shape as the board */
+  indiaExtra(keys: string[], range: IRange, start?: string, end?: string): Observable<{ items: IItem[] }> {
+    const params: Record<string, string> = { range, keys: keys.join(',') };
+    if (range === 'custom') { if (start) params['start'] = start; if (end) params['end'] = end; }
+    return this.http.get<{ items: IItem[] }>(`${this.base}/admin/india/extra`, { ...this.opts, params });
+  }
   // ── global markets (MSCI world, 47 countries, commodities, currencies) ─────────
   globalSnapshot(): Observable<GlobalSnapshot> {
     return this.http.get<GlobalSnapshot>(`${this.base}/admin/global/snapshot`, this.opts);
@@ -821,6 +831,7 @@ export interface IItem {
   /** the series over the range: unix seconds, % from the range's base */
   t: number[]; v: number[];
 }
+export interface ICatalogItem { key: string; name: string; short: string; group: string; kind: IKind; about: string; source: 'tri' | 'price'; }
 export interface IBasket { ok: boolean; pct: number | null; day_pct: number | null; resets?: number; t: number[]; v: number[]; }
 export interface IVilla {
   key: string; name: string; risk: number; risk_name: string;

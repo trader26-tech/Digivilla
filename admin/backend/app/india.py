@@ -447,3 +447,101 @@ def board(rng: str = "1d", start: Optional[str] = None, end: Optional[str] = Non
     return _cached(f"in:board:{rng}:{start or ''}:{end or ''}", ttl, load) or {
         "as_of": None, "range": rng, "ranges": RANGES, "nse": {}, "session": None, "window": None, "max_years": MAX_YEARS,
         "items": [], "villas": [], "default_villa": None, "parts": {}}
+
+
+# ─────────────────────────────── any index, on demand ("Your mix") ───────────────────────────────
+def _live_day(q: Optional[dict], live: dict) -> Optional[str]:
+    return live.get("day") if q and q.get("last") is not None and q.get("prev") else None
+
+
+def _extra_one(c: dict, rng: str, w_start: str, w_end: str, session: Optional[str], span: tuple[int, int], live: dict) -> Optional[dict]:
+    from app import index_catalog as cat
+    i = {**c, "group": c["group"]}
+    q = (live.get("all") or {}).get(c["nifty"].upper()) if c.get("nifty") else None
+    q_day = _live_day(q, live)
+    base_row = {"key": c["key"], "name": c["name"], "short": c["short"], "group": c["group"], "kind": c["kind"], "about": c["about"]}
+    if rng in INTRADAY and c.get("symbol"):
+        daily = _cached(f"in:x:d:{c['symbol']}", 90, lambda: _chart(c["symbol"], "2y", "1d"))
+        intra = _cached(f"in:x:i:{c['symbol']}:{rng}", 45,
+                        lambda: _chart(c["symbol"], "1d" if rng == "1d" else "5d", "5m" if rng == "1d" else "30m"))
+        if not daily:
+            return None
+        row = _item_yahoo(i, rng, daily, intra)
+        if q and row.get("ok") and row["session"] == q_day:             # NSE's official numbers for the same session
+            row.update(last=q["last"], prev=q["prev"], day_pct=(q["last"] / q["prev"] - 1) * 100)
+            if rng == "1d":
+                row["pct"] = row["day_pct"]
+                if row["v"]:
+                    row["v"][-1] = round(row["pct"], 4)
+        return {**row, **base_row}
+    if c.get("nifty"):
+        h = cat.nse_history(c["key"])
+        pairs = sorted(h.items())
+        if len(pairs) < 2:
+            return None
+        last_day, last_close = pairs[-1]
+        prev_close = pairs[-2][1]
+        # NSE's live board is ahead of the stored closes during the day
+        live_last, live_prev = (q["last"], q["prev"]) if q_day and q_day > last_day else (None, None)
+        day_pct = ((live_last / live_prev - 1) * 100) if live_last else ((last_close / prev_close - 1) * 100)
+        sess = q_day if live_last else last_day
+        if rng == "1d":
+            pct = day_pct if sess == session else 0.0
+            pts = [(span[0], 0.0), (span[1], round(pct, 4))]                 # no bars: a straight line to the live move
+            return {**base_row, "ok": True, "last": live_last or last_close, "prev": live_prev or prev_close, "base": live_prev or prev_close,
+                    "session": sess, "time": span[1], "source": "close", "day_pct": day_pct, "pct": pct,
+                    "t": [t for t, _ in pts], "v": [v for _, v in pts]}
+        got = _pct_points(pairs, w_start if rng != "1w" else _range_start(sess, "1w"), w_end if rng != "1w" else sess)
+        if not got:
+            return None
+        pts = got["pts"]
+        if live_last and sess <= (w_end if rng != "1w" else sess):
+            p_end = pts[-1][1]
+            pts.append((_epoch(sess), round(((1 + p_end / 100) * (live_last / last_close) - 1) * 100, 4)))
+        return {**base_row, "ok": True, "last": live_last or last_close, "prev": live_prev or prev_close, "base": got["base"],
+                "session": sess, "time": _epoch(sess), "source": "tri", "day_pct": day_pct, "pct": pts[-1][1], "from": got["start"],
+                "t": [t for t, _ in pts], "v": [v for _, v in pts]}
+    # Yahoo-only (BSE, world, commodities): the board's own long / short paths
+    daily = _cached(f"in:x:d:{c['symbol']}", 90, lambda: _chart(c["symbol"], "2y", "1d"))
+    s_live = _day_series(daily) if daily else None
+    two_years = (date.fromisoformat(_range_start(session or date.today().isoformat(), "1y")) - timedelta(days=360)).isoformat()
+    row = None
+    if w_start < two_years or rng == "custom":
+        row = _item_world_long(i, w_start, w_end, s_live)
+    if not row and daily:
+        row = _item_yahoo(i, rng if rng not in ("custom",) else "1y", daily, None)
+    if row and c["key"] == "rupee" and row.get("ok"):                     # + = the rupee stronger, as on the board
+        inv = lambda x: None if x is None else (1 / (1 + x / 100) - 1) * 100
+        row["pct"], row["day_pct"], row["v"] = inv(row["pct"]), inv(row["day_pct"]), [round(inv(x), 4) for x in row["v"]]
+    return {**row, **base_row} if row else None
+
+
+def extra(keys: list[str], rng: str = "1d", start: Optional[str] = None, end: Optional[str] = None) -> dict:
+    """Catalogue indices over the same range as the board — for the admin's own mixes."""
+    from app import index_catalog as cat
+    rng = rng if rng in RANGES else "1d"
+    if rng != "custom":
+        start = end = None
+    keys = sorted({k for k in keys if k in cat.BY_KEY and k not in cat.BOARD_KEYS})[:24]
+    if not keys:
+        return {"items": []}
+
+    def load():
+        b = board(rng, start, end)
+        w = b.get("window") or {}
+        session = b.get("session")
+        n50 = next((it for it in b.get("items") or [] if it["key"] == "nifty50"), None) or {}
+        span = (n50["t"][0], n50["t"][-1]) if n50.get("t") else (int(time.time()) - 21600, int(time.time()))
+        live = market_svc.live()
+        w_start, w_end = w.get("start") or _range_start(session or date.today().isoformat(), "1y"), w.get("end") or session
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            rows = list(ex.map(lambda k: _safe(lambda: _extra_one(cat.BY_KEY[k], rng, w_start, w_end, session, span, live)), keys))
+        return {"items": [r for r in rows if r]}
+    return _cached(f"in:extra:{rng}:{start or ''}:{end or ''}:{','.join(keys)}", 45 if rng in INTRADAY else 300, load) or {"items": []}
+
+
+def _safe(fn):
+    try:
+        return fn()
+    except Exception:
+        return None
