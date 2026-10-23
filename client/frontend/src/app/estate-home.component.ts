@@ -133,6 +133,9 @@ const PLOT_TICKET = 10_00_000;
  * cell is now a single <use> plus, for a build in progress, one construction
  * group. The board is a FIXED 3x3 (the reference "estate board") — no pan/zoom.
  */
+/** the portfolio value shows only after a tap — remembered until the app reloads */
+let valueShown = false;
+
 @Component({
   selector: 'app-estate-home',
   standalone: true,
@@ -227,10 +230,21 @@ export class EstateHomeComponent implements OnInit {
   movesOpen = signal(false);
   /** three quick taps on the value (within ~0.8 s) open the day-vs-index sheet */
   private taps: number[] = [];
+  /** the value + gain are masked until tapped; kept for the session (a reload masks again) */
+  readonly shown = signal(valueShown);
+  readonly MASK = [0, 1, 2, 3, 4, 5];
+  /** set after the first tap: what appears next comes in at once, not on the page's entrance delays */
+  readonly toggled = signal(false);
+  valueChars(): string[] { return [...this.inr(this.est.estateValue)]; }
+  toggleShown(): void {
+    valueShown = !this.shown(); this.shown.set(valueShown); this.toggled.set(true);
+    if (navigator.vibrate) navigator.vibrate(6);
+  }
   valueTap(): void {
     const now = Date.now();
     this.taps = [...this.taps.filter((t) => now - t < 800), now];
-    if (this.taps.length >= 3) { this.taps = []; this.openMoves(); }
+    if (this.taps.length >= 3) { this.taps = []; valueShown = true; this.shown.set(true); this.toggled.set(true); this.openMoves(); return; }
+    if (this.taps.length === 1) this.toggleShown();          // the 2nd / 3rd quick tap only count toward the sheet
   }
   openMoves(): void { this.est.loadMoves(); this.movesOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
 

@@ -399,17 +399,29 @@
          columns. Hidden on the empty estate. ===== -->
     <div class="port" *ngIf="dataReady && !isEmptyEstate">
       <span class="port-k">PORTFOLIO VALUE</span>
-      <!-- tap the figure → Today: the day's move, and each fund against its index -->
-      <!-- three quick taps open the day-vs-index sheet (kept out of the way for everyday use) -->
-      <button type="button" class="port-v" (click)="valueTap()" aria-label="Portfolio value">
-        <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
+      <!-- the figure and the gain stay masked until tapped (privacy in public); tap again to
+           mask. Three quick taps still open the day-vs-index sheet. -->
+      <button type="button" class="port-v" [class.masked]="!shown()" (click)="valueTap()"
+              [attr.aria-pressed]="shown()" [attr.aria-label]="shown() ? 'Portfolio value ' + inr(est.estateValue) + ', tap to hide' : 'Show portfolio value'">
+        @if (shown()) {
+          <span class="pv-txt" aria-hidden="true">@for (c of valueChars(); track $index) {<span class="pv-c" [style.--i]="$index">{{ c }}</span>}</span><i class="port-live" aria-hidden="true"></i>
+        } @else {
+          <span class="pv-txt pv-mask" aria-hidden="true">₹@for (d of MASK; track $index) {<i class="pv-dot" [style.--i]="$index"></i>}</span>
+        }
       </button>
-      <!-- how far the money is up or down, in rupees only — tap for the graph and today's move -->
-      <p class="port-d" [class.down]="est.gain < 0"
-         [attr.aria-label]="(est.gain < 0 ? 'Down ' : 'Up ') + inr(est.gain < 0 ? -est.gain : est.gain) + ' (' + signedPct(gainPct) + ') since you started'">
-        <svg class="pd-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-        <b>{{ signedInr(est.gain) }}</b><span class="pd-pct">({{ signedPct(gainPct) }})</span>
-      </p>
+      @if (shown()) {
+        <!-- how far the money is up or down — tap to mask again -->
+        <button type="button" class="port-d" [class.down]="est.gain < 0" [class.again]="toggled()" (click)="toggleShown()"
+           [attr.aria-label]="(est.gain < 0 ? 'Down ' : 'Up ') + inr(est.gain < 0 ? -est.gain : est.gain) + ' (' + signedPct(gainPct) + ') since you started, tap to hide'">
+          <svg class="pd-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+          <b>{{ signedInr(est.gain) }}</b><span class="pd-pct">({{ signedPct(gainPct) }})</span>
+        </button>
+      } @else {
+        <button type="button" class="port-peek" [class.again]="toggled()" (click)="toggleShown()" aria-hidden="true" tabindex="-1">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Tap to view
+        </button>
+      }
       <!-- the live-values sheet (renders nothing until the figure is tapped) -->
       <app-data-freshness></app-data-freshness>
 
