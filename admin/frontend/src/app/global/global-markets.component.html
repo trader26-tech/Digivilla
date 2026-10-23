@@ -43,46 +43,27 @@
       }
     </section>
 
-    <!-- ═════════ the three villas ═════════ -->
-    <section class="pcards" aria-label="The villas">
+    <!-- ═════════ the villas: one compact strip, tap = on the chart, ✎ = the mix sheet ═════════ -->
+    <section class="vstrip" aria-label="Villas and your mixes">
       @for (v of villas(); track v.key) {
-        <div class="pcard" [class.on]="isOn('villa:' + v.key)" [class.editing]="editing() === v.key" role="button" tabindex="0" [attr.aria-pressed]="isOn('villa:' + v.key)"
-             (click)="toggle('villa:' + v.key)" (keydown.enter)="toggle('villa:' + v.key)" [title]="isOn('villa:' + v.key) ? 'Take off the chart' : 'Draw on the chart'">
-          <span class="pc-h">
-            <span class="pc-name"><i class="pc-sw" [class.dashed]="!!styleOf('villa:' + v.key).dash" [class.show]="isOn('villa:' + v.key)"></i>{{ v.name }}</span>
-            <span class="pc-risk">{{ v.risk_name }}@if (isCustom(v)) { · edited }</span>
-          </span>
-          <span class="pc-val" [class.pos]="tone(basket(v).pct) === 'up'" [class.neg]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}</span>
-          <span class="pc-sub">{{ rangeLong() }}@if (!isIntraday()) { · today <b [class.pos]="tone(basket(v).day_pct) === 'up'" [class.neg]="tone(basket(v).day_pct) === 'down'">{{ pct(basket(v).day_pct, 'villa', 2) }}</b> }</span>
-          <span class="pc-row">
-            <span class="pc-inv">{{ gold() === 'with' ? 'Without gold' : 'With gold' }}</span>
-            <span class="pc-pnl" [class.pos]="tone(other(v).pct) === 'up'" [class.neg]="tone(other(v).pct) === 'down'">{{ pct(other(v).pct, 'villa') }}</span>
-          </span>
-          <span class="pc-mix">
-            <span class="pcm-bar" aria-hidden="true">@for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c" [title]="w.name + ' ' + (w.w * 100 | number:'1.0-1') + '%'"></i> }</span>
-            <span class="pcm-leg">
-              @for (w of weights(v); track w.p) { <span [title]="w.name"><i [style.background]="w.c"></i>{{ w.w * 100 | number:'1.0-0' }}</span> }
-              <button type="button" class="pc-edit" (click)="openEdit(v, $event)" [attr.aria-expanded]="editing() === v.key" title="Change the mix">Mix</button>
+        <div class="vchip" [class.on]="isOn('villa:' + v.key)" [style.--lc]="styleOf('villa:' + v.key).c">
+          <button type="button" class="vc-main" [attr.aria-pressed]="isOn('villa:' + v.key)" (click)="toggle('villa:' + v.key)" [title]="isOn('villa:' + v.key) ? 'Take off the chart' : 'Draw on the chart'">
+            <span class="vc-top">
+              <i class="vc-sw" [class.dashed]="styleOf('villa:' + v.key).dash === '9 5'" [class.dotted]="styleOf('villa:' + v.key).dash === '2 4'"></i>
+              <span class="vc-name">{{ v.name }}</span>
+              @if (isCustom(v)) { <span class="vc-dot" title="Mix changed on this page"></span> }
             </span>
-          </span>
-          @if (editing() === v.key) {
-            <div class="mix-pop" role="dialog" [attr.aria-label]="v.name + ' mix'" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
-              @for (p of GROWTH; track p) {
-                <label class="mx-row" [style.--c]="PART_COLOUR[p]">
-                  <i></i><span class="mx-n">{{ PART_NAME[p] }}</span>
-                  <input type="range" min="0" max="60" step="0.5" [value]="partPct(v, p)" (input)="setPart(v, p, $any($event.target).value)">
-                  <input class="mx-v" type="number" min="0" max="100" step="0.5" [value]="partPct(v, p)" (change)="setPart(v, p, $any($event.target).value)" aria-label="percent">
-                </label>
-              }
-              <div class="mx-row rest" [style.--c]="PART_COLOUR['arbitrage']"><i></i><span class="mx-n">Arbitrage</span><span class="mx-rest">{{ partPct(v, 'arbitrage') }}%</span></div>
-              <div class="mx-acts">
-                @if (isCustom(v)) { <button type="button" class="btn ghost" (click)="resetMix(v, $event)">Reset</button> }
-                <button type="button" class="btn primary" (click)="closeEdit($event)">Done</button>
-              </div>
-            </div>
-          }
+            <span class="vc-val" [class.pos]="tone(basket(v).pct) === 'up'" [class.neg]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}</span>
+            <span class="vc-bar" aria-hidden="true">@for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c"></i> }</span>
+          </button>
+          <button type="button" class="vc-edit" (click)="openEdit(v, $event)" [attr.aria-label]="'Change the ' + v.name + ' mix'" title="Change the mix">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5h2.6l7.3-7.3-2.6-2.6-7.3 7.3v2.6Zm8.4-11.3 2.6 2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </button>
         </div>
       }
+      <button type="button" class="vchip add" (click)="addCustom()" title="Make your own mix — Quadrant, equity only…">
+        <span class="vc-plus" aria-hidden="true">+</span><span class="vc-add-l">Your mix</span>
+      </button>
     </section>
 
     <div class="td-main">
@@ -167,4 +148,44 @@
   }
 
   @if (note()) { <div class="td-toast" role="status">{{ note() }}</div> }
+  <!-- ═════════ the mix sheet (bottom sheet on phones, a panel on laptops) ═════════ -->
+  @if (editVilla(); as v) {
+    <div class="msheet-bg" (click)="closeEdit()" aria-hidden="true"></div>
+    <div class="msheet" role="dialog" aria-modal="true" [attr.aria-label]="v.name + ' mix'">
+      <span class="ms-grab" aria-hidden="true"></span>
+      <div class="ms-head">
+        @if (isYours(v)) {
+          <input class="ms-name" [value]="v.name" (change)="rename(v, $any($event.target).value)" maxlength="24" aria-label="Name">
+        } @else { <h3 class="ms-title">{{ v.name }}</h3> }
+        <span class="ms-val" [class.pos]="tone(basket(v).pct) === 'up'" [class.neg]="tone(basket(v).pct) === 'down'">{{ pct(basket(v).pct, 'villa') }}<small>{{ rangeLong() }}</small></span>
+      </div>
+      <div class="ms-presets" role="group" aria-label="Start from">
+        @for (pr of PRESETS; track pr.k) {
+          <button type="button" [class.on]="presetOf(v) === pr.k" (click)="applyPreset(v, pr.k)">{{ pr.name }}</button>
+        }
+      </div>
+      <div class="ms-bar" aria-hidden="true">@for (w of weights(v); track w.p) { <i [style.flex]="w.w" [style.background]="w.c">@if (w.w >= 0.09) { <b>{{ w.w * 100 | number:'1.0-0' }}</b> }</i> }</div>
+      <div class="ms-rows">
+        @for (p of GROWTH; track p) {
+          <div class="ms-row" [style.--c]="PART_COLOUR[p]">
+            <span class="ms-n"><i></i>{{ PART_NAME[p] }}</span>
+            <button type="button" class="ms-step" (click)="stepPart(v, p, -2.5)" [disabled]="partPct(v, p) <= 0" [attr.aria-label]="'Less ' + PART_NAME[p]">−</button>
+            <span class="ms-pct">{{ partPct(v, p) | number:'1.0-1' }}<small>%</small></span>
+            <button type="button" class="ms-step" (click)="stepPart(v, p, 2.5)" [disabled]="partPct(v, 'arbitrage') <= 0" [attr.aria-label]="'More ' + PART_NAME[p]">+</button>
+            <input type="range" min="0" max="100" step="2.5" [value]="partPct(v, p)" (input)="setPart(v, p, $any($event.target).value)" [attr.aria-label]="PART_NAME[p] + ' percent'" [style.--f]="partPct(v, p) + '%'">
+          </div>
+        }
+        <div class="ms-row rest" [style.--c]="PART_COLOUR['arbitrage']">
+          <span class="ms-n"><i></i>Arbitrage</span>
+          <span class="ms-rest-l">the rest</span>
+          <span class="ms-pct">{{ partPct(v, 'arbitrage') | number:'1.0-1' }}<small>%</small></span>
+        </div>
+      </div>
+      <div class="ms-acts">
+        @if (isYours(v)) { <button type="button" class="btn ghost danger" (click)="removeCustom(v)">Delete</button> }
+        @else if (isCustom(v)) { <button type="button" class="btn ghost" (click)="resetMix(v)">Reset</button> }
+        <button type="button" class="btn primary" (click)="closeEdit()">Done</button>
+      </div>
+    </div>
+  }
 </div>

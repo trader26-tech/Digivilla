@@ -29,6 +29,16 @@ const STYLE: Record<string, { c: string; dash?: string; w?: number }> = {
   nifty50: { c: '#98a0b8', dash: '4 3', w: 1.8 }, n100: { c: '#5a5f78', w: 1.8 }, mid: { c: '#eb6834', w: 1.8 }, small: { c: '#1baf7a', w: 1.8 }, n500: { c: '#6250d6', w: 1.8 },
   gold: { c: '#eda100', w: 1.8 }, arbitrage: { c: '#e87ba4', dash: '2 4', w: 1.8 }, rupee: { c: '#6250d6', dash: '7 5', w: 1.8 }, sp500: { c: '#e34948', w: 1.8 },
 };
+/** one-tap mixes for the editor (and the starting point of a new one) */
+const PRESETS: { k: string; name: string; w: Weights }[] = [
+  { k: 'conservative', name: 'Conservative', w: { arbitrage: 0.7, gold: 0.075, large: 0.075, mid: 0.075, small: 0.075 } },
+  { k: 'balanced', name: 'Balanced', w: { arbitrage: 0.36, gold: 0.16, large: 0.16, mid: 0.16, small: 0.16 } },
+  { k: 'aggressive', name: 'Aggressive', w: { arbitrage: 0.2, gold: 0.2, large: 0.2, mid: 0.2, small: 0.2 } },
+  { k: 'quadrant', name: 'Quadrant', w: { arbitrage: 0, gold: 0.25, large: 0.25, mid: 0.25, small: 0.25 } },
+  { k: 'equity', name: 'Equity only', w: { arbitrage: 0, gold: 0, large: 0.333, mid: 0.333, small: 0.334 } },
+];
+/** your own mixes get these line colours, in order (never reused while on the chart) */
+const CUSTOM_COLOURS = ['#6250d6', '#e34948', '#1baf7a', '#eda100', '#e87ba4', '#5a5f78'];
 const PART_COLOUR: Record<string, string> = { arbitrage: '#98a0b8', gold: '#eda100', large: '#387ed1', mid: '#eb6834', small: '#1baf7a' };
 const PART_NAME: Record<string, string> = { arbitrage: 'Arbitrage', gold: 'Gold', large: 'Nifty 50', mid: 'Mid cap', small: 'Small cap' };
 const PARTS = ['arbitrage', 'gold', 'large', 'mid', 'small'];
@@ -114,6 +124,9 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   /** the admin's own mixes, by villa key — absent = the configured villa */
   readonly mixes = signal<Record<string, Weights>>({});
   readonly editing = signal<string | null>(null);
+  /** your own mixes (Quadrant…), kept on this device */
+  readonly customs = signal<{ key: string; name: string; weights: Weights }[]>([]);
+  readonly PRESETS = PRESETS;
   readonly busy = signal(false);
   readonly error = signal('');
   readonly now = signal(Date.now());
@@ -145,10 +158,11 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       const s = JSON.parse(localStorage.getItem(STORE) || '{}');
       if (RANGES.some((r) => r.k === s.range)) this.range.set(s.range);
       if (s.gold === 'with' || s.gold === 'without') this.gold.set(s.gold);
-      if (Array.isArray(s.lines) && s.lines.length) this.lines$.set(s.lines.filter((k: unknown) => typeof k === 'string' && k in STYLE));
+      if (Array.isArray(s.lines) && s.lines.length) this.lines$.set(s.lines.filter((k: unknown) => typeof k === 'string' && (k in STYLE || k.startsWith('villa:c'))));
       if (typeof s.from === 'string') this.customFrom.set(s.from);
       if (typeof s.to === 'string') this.customTo.set(s.to);
       if (s.mixes && typeof s.mixes === 'object') this.mixes.set(s.mixes);
+      if (Array.isArray(s.customs)) this.customs.set(s.customs.filter((c: { key?: unknown; weights?: unknown }) => typeof c?.key === 'string' && c.weights && typeof c.weights === 'object'));
     } catch { /* first visit */ }
     this.load();
     this.timer = setInterval(() => this.load(true), 60_000);
@@ -163,12 +177,11 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   onDoc(e: PointerEvent): void {
     const t = e.target as HTMLElement;
     if (this.infoOpen() && !t?.closest?.('.pf-info')) this.infoOpen.set(false);
-    if (this.editing() && !t?.closest?.('.mix-pop, .pc-edit')) this.editing.set(null);
   }
 
   private remember(): void {
     try {
-      localStorage.setItem(STORE, JSON.stringify({ range: this.range(), gold: this.gold(), lines: this.lines$(), from: this.customFrom(), to: this.customTo(), mixes: this.mixes() }));
+      localStorage.setItem(STORE, JSON.stringify({ range: this.range(), gold: this.gold(), lines: this.lines$(), from: this.customFrom(), to: this.customTo(), mixes: this.mixes(), customs: this.customs() }));
     } catch { /* private mode */ }
   }
   load(quiet = false): void {
@@ -226,7 +239,11 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
   });
   readonly isIntraday = computed(() => this.range() === '1d');
   readonly items = computed(() => new Map((this.board()?.items ?? []).map((i) => [i.key, i])));
-  readonly villas = computed(() => this.board()?.villas ?? []);
+  readonly villas = computed<IVilla[]>(() => {
+    const none: IBasket = { ok: false, pct: null, day_pct: null, t: [], v: [] };
+    return [...(this.board()?.villas ?? []),
+      ...this.customs().map((c) => ({ key: c.key, name: c.name, risk: 0, risk_name: 'Yours', weights: c.weights, weights_no_gold: c.weights, with_gold: none, no_gold: none }))];
+  });
   readonly sessionLabel = computed(() => {
     const s = this.board()?.session; if (!s) return '';
     return new Date(s + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -275,21 +292,61 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
     const w = this.withGold(this.mixOf(v), this.gold() === 'with');
     return PARTS.filter((p) => (w[p] ?? 0) > 0.0001).map((p) => ({ p, w: w[p], c: PART_COLOUR[p], name: PART_NAME[p] }));
   }
-  /** the editor: growth parts on sliders, arbitrage is what is left */
-  openEdit(v: IVilla, ev: Event): void { ev.stopPropagation(); this.editing.set(this.editing() === v.key ? null : v.key); }
+  /** ── the mix sheet: growth parts in 2.5-point steps, arbitrage takes whatever is left ── */
+  readonly editVilla = computed(() => this.villas().find((v) => v.key === this.editing()) ?? null);
+  isYours(v: IVilla): boolean { return v.key.startsWith('c'); }
+  openEdit(v: IVilla, ev?: Event): void { ev?.stopPropagation(); this.editing.set(v.key); }
+  closeEdit(): void { this.editing.set(null); }
   partPct(v: IVilla, p: string): number { return Math.round((this.mixOf(v)[p] ?? 0) * 1000) / 10; }
+  private writeMix(v: IVilla, w: Weights): void {
+    const clean: Weights = {};
+    for (const p of GROWTH) clean[p] = Math.round(Math.max(0, w[p] ?? 0) * 1000) / 1000;
+    clean['arbitrage'] = Math.max(0, Math.round((1 - GROWTH.reduce((a, q) => a + clean[q], 0)) * 1000) / 1000);
+    if (this.isYours(v)) this.customs.set(this.customs().map((c) => c.key === v.key ? { ...c, weights: clean } : c));
+    else this.mixes.set({ ...this.mixes(), [v.key]: clean });
+    this.remember();
+  }
   setPart(v: IVilla, p: string, raw: string | number): void {
     const cur = { ...this.mixOf(v) };
     let val = Math.max(0, Math.min(100, Number(raw) || 0)) / 100;
     const others = GROWTH.filter((q) => q !== p).reduce((a, q) => a + (cur[q] ?? 0), 0);
     if (others + val > 1) val = 1 - others;                 // the growth engine can't exceed the whole
-    cur[p] = Math.round(val * 1000) / 1000;
-    cur['arbitrage'] = Math.round((1 - GROWTH.reduce((a, q) => a + (cur[q] ?? 0), 0)) * 1000) / 1000;
-    this.mixes.set({ ...this.mixes(), [v.key]: cur });
-    this.remember();
+    cur[p] = val;
+    this.writeMix(v, cur);
   }
-  resetMix(v: IVilla, ev: Event): void { ev.stopPropagation(); const m = { ...this.mixes() }; delete m[v.key]; this.mixes.set(m); this.remember(); }
-  closeEdit(ev: Event): void { ev.stopPropagation(); this.editing.set(null); }
+  stepPart(v: IVilla, p: string, d: number): void { this.setPart(v, p, Math.round((this.partPct(v, p) + d) / 2.5) * 2.5); }
+  applyPreset(v: IVilla, k: string): void { const pr = PRESETS.find((x) => x.k === k); if (pr) this.writeMix(v, pr.w); }
+  /** which preset the current mix is (to light its chip) */
+  presetOf(v: IVilla): string | null {
+    const w = this.mixOf(v);
+    return PRESETS.find((pr) => PARTS.every((p) => Math.abs((pr.w[p] ?? 0) - (w[p] ?? 0)) < 0.002))?.k ?? null;
+  }
+  resetMix(v: IVilla): void { const m = { ...this.mixes() }; delete m[v.key]; this.mixes.set(m); this.remember(); }
+  rename(v: IVilla, name: string): void {
+    const n = name.trim().slice(0, 24) || 'My mix';
+    this.customs.set(this.customs().map((c) => c.key === v.key ? { ...c, name: n } : c)); this.remember();
+  }
+  /** + Add: a new mix of your own (starts as Quadrant), drawn on the chart, editor open */
+  addCustom(): void {
+    if (this.customs().length >= CUSTOM_COLOURS.length) { this.say('Up to 6 of your own'); return; }
+    const key = 'c' + Date.now().toString(36);
+    const n = this.customs().filter((c) => c.name.startsWith('Quadrant')).length;
+    this.customs.set([...this.customs(), { key, name: n ? `Quadrant ${n + 1}` : 'Quadrant', weights: { ...PRESETS[3].w } }]);
+    if (!this.isOn('villa:' + key)) this.toggle('villa:' + key);
+    this.remember();
+    this.editing.set(key);
+  }
+  removeCustom(v: IVilla): void {
+    this.customs.set(this.customs().filter((c) => c.key !== v.key));
+    this.lines$.set(this.lines$().filter((k) => k !== 'villa:' + v.key));
+    this.editing.set(null); this.remember();
+  }
+  /** a line style for any villa: the configured three are fixed, yours take the next free colour */
+  lineStyle(key: string): { c: string; dash?: string; w?: number } {
+    if (STYLE[key]) return STYLE[key];
+    const i = this.customs().findIndex((c) => 'villa:' + c.key === key);
+    return { c: CUSTOM_COLOURS[(i < 0 ? 0 : i) % CUSTOM_COLOURS.length], w: 2.4 };
+  }
 
   // ── heat ──────────────────────────────────────────────────────────────────
   readonly groups = computed(() => {
@@ -334,18 +391,18 @@ export class GlobalMarketsComponent implements OnInit, OnDestroy {
       default: return v.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     }
   }
-  styleOf(key: string) { return STYLE[key] ?? { c: 'var(--nw-muted)' }; }
+  styleOf(key: string) { return key.startsWith('villa:') ? this.lineStyle(key) : (STYLE[key] ?? { c: 'var(--nw-muted)' }); }
 
   // ── the chart ─────────────────────────────────────────────────────────────
   readonly lines = computed<Line[]>(() => {
     const b = this.board(); if (!b) return [];
     const out: Line[] = [];
     for (const key of this.lines$()) {
-      const st = STYLE[key]; if (!st) continue;
+      const st = key.startsWith('villa:') ? this.lineStyle(key) : STYLE[key]; if (!st) continue;
       if (key.startsWith('villa:')) {
-        const v = b.villas.find((x) => 'villa:' + x.key === key); if (!v) continue;
+        const v = this.villas().find((x) => 'villa:' + x.key === key); if (!v) continue;
         const bk = this.basket(v); if (!bk.ok || bk.t.length < 2) continue;
-        out.push({ key, name: `${v.name} villa`, short: v.name, colour: st.c, dash: st.dash ?? null, width: st.w ?? 2, t: bk.t, v: bk.v, villa: true });
+        out.push({ key, name: this.isYours(v) ? v.name : `${v.name} villa`, short: v.name, colour: st.c, dash: st.dash ?? null, width: st.w ?? 2, t: bk.t, v: bk.v, villa: true });
       } else {
         const i = this.items().get(key); if (!i || !i.ok || i.t.length < 2 || i.kind === 'yield') continue;
         out.push({ key, name: i.name, short: i.short, colour: st.c, dash: st.dash ?? null, width: st.w ?? 2, t: i.t, v: i.v, villa: false });
