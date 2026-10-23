@@ -404,11 +404,11 @@
               aria-label="See how your money moved today, fund by fund against each index">
         <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
       </button>
-      <!-- "Invested ₹X • +Y% returns" — tap for the graph and today's move against each index -->
-      <button type="button" class="port-m" (click)="openMoves()"
-              [attr.aria-label]="'Invested ' + inr(est.estateValue - est.gain) + ', ' + signedPct(gainPct) + ' returns. See how your money moved'">
-        <span>Invested {{ inr(est.estateValue - est.gain) }}</span><i aria-hidden="true"></i>
-        <b [class.pos]="est.gain >= 0" [class.neg]="est.gain < 0">{{ signedPct(gainPct) }} returns</b>
+      <!-- how far the money is up or down, in rupees only — tap for the graph and today's move -->
+      <button type="button" class="port-d" [class.down]="est.gain < 0" (click)="openMoves()"
+              [attr.aria-label]="(est.gain < 0 ? 'Down ' : 'Up ') + inr(est.gain < 0 ? -est.gain : est.gain) + ' since you started. See how your money moved'">
+        <svg class="pd-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+        <b>{{ signedInr(est.gain) }}</b>
       </button>
       <!-- the live-values sheet (renders nothing until the figure is tapped) -->
       <app-data-freshness></app-data-freshness>
@@ -439,15 +439,9 @@
       </ng-container>
     </div>
 
-    <!-- the two sheets, as the design shows them: Next villa (pull down) · what a villa / plot means (pull up) -->
+    <!-- what a villa / plot means (the compliance sheet); the Next villa sheet stays a pull-down -->
     @if (dataReady && !isEmptyEstate) {
       <div class="fine">
-        @if (nextInfo; as n) {
-          <button type="button" class="fine-pill" (click)="setNext(true)" aria-label="Your next villa">
-            Next villa <span class="fp-when">{{ n.done ? 'all built' : (n.when || compact(n.toGo) + ' to go') }}</span>
-            <svg class="fp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-        }
         <button type="button" class="fine-link" (click)="toggleKey()">What do Villa and Plot mean? <span>›</span></button>
       </div>
     }

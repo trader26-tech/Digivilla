@@ -1487,7 +1487,7 @@
 }
 .flow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 /* entrance: the two flows rise first (left, then right), the title after them */
-.flow, .title, .port-k, .port-v, .port-m, .fine {
+.flow, .title, .port-k, .port-v, .port-d, .fine {
   animation: riseIn .6s cubic-bezier(.22, 1, .36, 1) both;
 }
 .flow.in  { animation-delay: .05s; }
@@ -1495,7 +1495,7 @@
 .title    { animation-delay: .22s; }
 .port-k   { animation-delay: .55s; }
 .port-v   { animation-delay: .62s; }
-.port-m   { animation-delay: .78s; }
+.port-d   { animation-delay: .78s; }
 .fine     { animation-delay: 1.05s; }
 /* the allocation bar + fund labels already wipe in; push them after the value */
 .port-bar .port-seg { animation-delay: calc(.85s + var(--i, 0) * .09s); }
@@ -1505,10 +1505,10 @@
   to   { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .flow, .title, .port-k, .port-v, .port-m, .fine { animation: none; }
+  .flow, .title, .port-k, .port-v, .port-d, .fine { animation: none; }
 }
 /* Home re-shown after a tab switch: everything is simply there. */
-.no-enter .flow, .no-enter .title, .no-enter .port-k, .no-enter .port-v, .no-enter .port-m, .no-enter .fine,
+.no-enter .flow, .no-enter .title, .no-enter .port-k, .no-enter .port-v, .no-enter .port-d, .no-enter .fine,
 .no-enter .cell-in, .no-enter .port-bar .port-seg, .no-enter .port-funds .port-fund, .no-enter .port-cue {
   animation: none !important; opacity: 1; transform: none;
 }
@@ -1576,7 +1576,7 @@
 .port {
   flex: none;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 0 16px; margin-top: 10px;
+  padding: 0 16px; margin-top: 16px;
 }
 .port-k { display: inline-flex; align-items: center; }
 /* the figure is a button (tap → live NAVs) but must read as plain type */
@@ -1598,6 +1598,16 @@
 }
 @keyframes port-live { 0%, 100% { opacity: .85; transform: scale(1); } 50% { opacity: .35; transform: scale(.82); } }
 @media (prefers-reduced-motion: reduce) { .port-live { animation: none; } }
+/* up / down in rupees — one coloured line under the value */
+.port-d {
+  --c: #8fd65a; display: inline-flex; align-items: center; gap: 7px; margin-top: 4px; padding: 4px 10px; border: 0; border-radius: 999px;
+  background: none; cursor: pointer; font: inherit; color: var(--c); -webkit-tap-highlight-color: transparent; transition: transform .2s, background .2s;
+  &.down { --c: #e08f8f; }
+  &:active { transform: scale(.97); background: color-mix(in srgb, var(--c) 12%, transparent); }
+  &:focus-visible { outline: 2px solid var(--color-accent-300); outline-offset: 3px; }
+  .pd-tri { width: 9px; height: 9px; fill: currentColor; flex: none; }
+  b { font-family: var(--ref-font); font-weight: 500; font-size: 16px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+}
 .port-m {
   border: 0; background: none; cursor: pointer; font: inherit; padding: 2px 8px; margin-top: 2px; -webkit-tap-highlight-color: transparent;
   display: flex; align-items: center; gap: 8px;
@@ -1638,7 +1648,7 @@
 }
 .port-own + .port-mix .port-bar { margin-top: 4px; }
 .port-funds {
-  width: 100%; display: flex; justify-content: space-between; gap: 4px; margin-top: 10px;
+  width: 100%; display: flex; justify-content: space-between; gap: 4px; margin-top: 12px;
 }
 .port-cue {
   display: inline-flex; align-items: center; gap: 3px; margin-top: 10px;
@@ -1671,7 +1681,7 @@
 /* ===== "What do Villa and Plot mean?" link ===== */
 .fine {
   flex: none;
-  padding: 12px 22px 0;
+  padding: 18px 22px 0;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
 /* "What you own" — the compliance sheet, as a quiet link right above the allocation bar */
