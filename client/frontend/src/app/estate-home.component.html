@@ -9,57 +9,43 @@
          the true numbers. It mirrors the real layout (two flows, a board, the
          portfolio figure + bar) so the swap-in is seamless. ===== -->
     <div class="home-skel" *ngIf="!dataReady" aria-hidden="true">
-      <div class="sk-flows">
-        <div class="sk-flow"><span class="sk sk-lbl"></span><span class="sk sk-fig"></span><span class="sk sk-sub"></span></div>
-        <div class="sk-flow"><span class="sk sk-lbl"></span><span class="sk sk-fig"></span><span class="sk sk-sub"></span></div>
-      </div>
-      <div class="sk sk-title"></div>
+      <div class="sk-hd"><span class="sk sk-av"></span><span class="sk-hdt"><span class="sk sk-name"></span><span class="sk sk-kick"></span></span></div>
+      <div class="sk-hero"><span class="sk sk-k"></span><span class="sk sk-v"></span><span class="sk sk-g"></span></div>
       <div class="sk sk-board"></div>
-      <div class="sk-port">
-        <span class="sk sk-portk"></span>
-        <span class="sk sk-portv"></span>
-        <span class="sk sk-bar"></span>
-      </div>
+      <div class="sk sk-panel"></div>
     </div>
 
-    <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder) · INVESTED (real,
-         from live NAV), split by a thin vertical divider that fades at its
-         ends. Hidden on the empty estate, which keeps its onboarding. ===== -->
-    <div class="flows" *ngIf="dataReady && !isEmptyEstate">
-      <div class="flow in">
-        <div class="flow-head">
-          <span class="flow-arrow" aria-hidden="true">↓</span>
-          <span class="flow-lbl">WITHDRAWALS</span>
-        </div>
-        <div class="flow-fig gold"><span>{{ inr(withdrawAmt) }}</span><span class="unit">/mo</span></div>
-        <div class="flow-sub">{{ withdrawSub }}</div>
-      </div>
-      <div class="flow-div" aria-hidden="true"></div>
-      <div class="flow out">
-        <div class="flow-head">
-          <span class="flow-lbl">INVESTED</span>
-          <span class="flow-arrow" aria-hidden="true">↑</span>
-        </div>
-        <div class="flow-fig violet"><span>{{ inr(investedAmt) }}</span></div>
-        <div class="flow-sub">{{ investedSub }}</div>
-      </div>
-    </div>
-
-    <!-- ===== TITLE: the owner's avatar beside "YOUR ESTATE · 2 OF 3" over "<name>'s City",
-         centred as one group. The avatar opens Settings; the name opens the rename sheet. ===== -->
-    <div class="title" *ngIf="dataReady">
+    <!-- ===== HEADER: avatar · "<name>'s City" over the estate line, left-aligned like a real
+         app header. The avatar opens Settings; the name opens the rename sheet. ===== -->
+    <header class="hd" *ngIf="dataReady">
       <button type="button" class="avatar" (click)="account.emit()" aria-label="Profile and settings">
         @if (avatarPhoto) { <img [src]="avatarPhoto" alt="" /> } @else { <b>{{ avatarInitial }}</b> }
       </button>
-      <div class="title-t">
-        <div class="kicker">{{ kicker }}</div>
+      <div class="hd-t">
         @if (readOnly()) {
           <h1 class="name">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</h1>
         } @else {
-          <h1 class="name"><button type="button" class="name-btn" (click)="openSettings()" aria-label="Rename your estate">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}</button></h1>
+          <h1 class="name"><button type="button" class="name-btn" (click)="openSettings()" aria-label="Rename your estate">{{ est.estateName ? est.estateName + '&rsquo;s City' : 'Your City' }}<svg class="name-pen" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5h2.6l7.3-7.3-2.6-2.6-7.3 7.3v2.6Zm8.4-11.3 2.6 2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg></button></h1>
         }
+        <span class="kicker">{{ kicker }}</span>
       </div>
-    </div>
+    </header>
+
+    <!-- ===== HERO: the portfolio value, then how far it has grown. Tap either → how your money moved. ===== -->
+    <section class="hero" *ngIf="dataReady && !isEmptyEstate">
+      <span class="hero-k">Portfolio value</span>
+      <button type="button" class="hero-v" (click)="openMoves()"
+              aria-label="See how your money moved today, fund by fund against each index">
+        <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="hero-g" [class.down]="est.gain < 0" (click)="openMoves()"
+              [attr.aria-label]="'Grown ' + signedInr(est.gain) + ', ' + signedPct(gainPct) + ' since you started. See today’s move against each index'">
+        <svg class="pg-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+        <b>{{ signedInr(est.gain) }}</b><span>{{ signedPct(gainPct) }}</span>
+      </button>
+      <!-- the live-values sheet (renders nothing until the figure is tapped) -->
+      <app-data-freshness></app-data-freshness>
+    </section>
 
     <!-- ===== ESTATE BOARD: the fixed 3x3 isometric grid (the reference
          board). A soft accent glow sits under it; owned parcels are painted
@@ -394,62 +380,46 @@
       </ng-container>
     </ng-container>
 
-    <!-- ===== PORTFOLIO VALUE: the headline figure (full ₹ grouping), the
-         invested + returns line, a 5-segment allocation bar and the five fund
-         columns. Hidden on the empty estate. ===== -->
-    <div class="port" *ngIf="dataReady && !isEmptyEstate">
-      <span class="port-k">PORTFOLIO VALUE</span>
-      <!-- tap the figure → Today: the day's move, and each fund against its index -->
-      <button type="button" class="port-v" (click)="openMoves()"
-              aria-label="See how your money moved today, fund by fund against each index">
-        <span>{{ inr(est.estateValue) }}</span><i class="port-live" aria-hidden="true"></i>
-      </button>
-      <!-- how much the money has grown overall, in one line — tap for the graph,
-           today's move fund by fund, and each fund against its index -->
-      <button type="button" class="port-growth" [class.down]="est.gain < 0" (click)="openMoves()"
-              [attr.aria-label]="'Grown ' + signedInr(est.gain) + ', ' + signedPct(gainPct) + ' since you started. See today’s move against each index'">
-        <svg class="pg-tri" viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="est.gain < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
-        <b>{{ signedInr(est.gain) }}</b>
-        <span>({{ signedPct(gainPct) }})</span>
-        <svg class="pg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <!-- the live-values sheet (renders nothing until the figure is tapped) -->
-      <app-data-freshness></app-data-freshness>
-
-      <!-- the allocation bar + fund columns only once the fund breakdown loads.
-           Each segment WIPES IN from the left, one after another (staggered),
-           and each label fades up under its segment as it lands — the mix reads
-           left → right. `--i` carries the position so the CSS can stagger. -->
+    <!-- ===== PANEL: one card — Withdrawals | Invested, then the client's REAL mix
+         (units × live NAV, by sleeve; never the model weights). The bar + legend open
+         the fund-by-fund sheet; "What you own" opens the compliance sheet. ===== -->
+    <section class="panel" *ngIf="dataReady && !isEmptyEstate">
+      <div class="stats">
+        <div class="stat">
+          <span class="s-k"><i class="s-dot gold" aria-hidden="true"></i>Withdrawals</span>
+          <b class="s-v gold">{{ inr(withdrawAmt) }}<small>/mo</small></b>
+          <span class="s-s">{{ withdrawSub }}</span>
+        </div>
+        <div class="stat">
+          <span class="s-k"><i class="s-dot violet" aria-hidden="true"></i>Invested</span>
+          <b class="s-v violet">{{ inr(investedAmt) }}</b>
+          <span class="s-s">{{ investedSub }}</span>
+        </div>
+      </div>
       <ng-container *ngIf="fundRows.length">
-        <!-- "What you own" sits right on top of the mix it explains (the compliance sheet) -->
-        <button class="fine-own port-own" (click)="toggleKey()" aria-label="What you actually own">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
-          What you own
-        </button>
-        <!-- The client's REAL mix (their units × live NAV, by sleeve). The whole
-             bar + legend is one tap target → the fund-by-fund "Your mix" sheet. -->
-        <button type="button" class="port-mix" (click)="openMix()"
-                [attr.aria-label]="'Your mix: ' + mixSummary + '. See every fund'">
-          <span class="port-bar" aria-hidden="true">
-            <span *ngFor="let f of fundRows; let i = index; trackBy: trackSleeve"
-                  class="port-seg"
-                  [style.--i]="i"
-                  [style.flex-grow]="f.allocation"
-                  [style.background]="fundColor(i, f)"></span>
+        <button type="button" class="mix" (click)="openMix()" [attr.aria-label]="'Your mix: ' + mixSummary + '. See every fund'">
+          <span class="mix-bar" aria-hidden="true">
+            <span *ngFor="let f of fundRows; let i = index; trackBy: trackSleeve" class="port-seg" [style.--i]="i"
+                  [style.flex-grow]="f.allocation" [style.background]="fundColor(i, f)"></span>
           </span>
-          <span class="port-funds" aria-hidden="true">
-            <span *ngFor="let c of legend; let i = index; trackBy: trackSleeve" class="port-fund" [style.--i]="i">
-              <span class="a">{{ c.pct }}</span>
-              <span class="n" [style.color]="c.color">{{ c.label }}</span>
+          <span class="mix-leg" aria-hidden="true">
+            <span *ngFor="let c of legend; let i = index; trackBy: trackSleeve" class="mix-f" [style.--i]="i">
+              <b>{{ c.pct }}</b><span class="n" [style.color]="c.color">{{ c.label }}</span>
             </span>
           </span>
-          <span class="port-cue" aria-hidden="true">
-            Your {{ fundCount }} fund{{ fundCount === 1 ? '' : 's' }}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-          </span>
         </button>
+        <div class="panel-foot">
+          <button type="button" class="pf-own" (click)="toggleKey()" aria-label="What you actually own">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+            What you own
+          </button>
+          <button type="button" class="pf-funds" (click)="openMix()">
+            Your {{ fundCount }} fund{{ fundCount === 1 ? '' : 's' }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
       </ng-container>
-    </div>
+    </section>
 
     <!-- swipe hint, shown once: there are no buttons for the two sheets, only the gestures -->
     @if (swipeHint() && dataReady && !isEmptyEstate) {

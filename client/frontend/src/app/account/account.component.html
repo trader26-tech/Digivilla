@@ -58,14 +58,15 @@
 
 <!-- ============================ SETTINGS ============================ -->
 <div class="st">
-  <!-- back to the home screen -->
+  <!-- top: a proper Home button (left) and Log off (right); the page title sits below, large -->
   <div class="st-top">
-    <button type="button" class="st-back" (click)="onBack()" aria-label="Back to home">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    <button type="button" class="st-home" (click)="onBack()" aria-label="Back to home">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg>
       Home
     </button>
-    <span class="st-title">Settings</span>
+    <button type="button" class="id-out" (click)="onSignOut()">Log off</button>
   </div>
+  <h1 class="st-h1">Settings</h1>
   <!-- 1 · identity (no box) -->
   <div class="id">
     <label class="id-av" title="Add a photo" (click)="pickTop()">
@@ -78,7 +79,6 @@
       <div class="id-name">{{ idName }}</div>
       <div class="id-meta">{{ idPhone }}</div>
     </div>
-    <button type="button" class="id-out" (click)="onSignOut()">Log off</button>
   </div>
 
   <!-- 2 · presentation poster -->
@@ -91,7 +91,7 @@
   </a>
 
   <!-- 3 · Account card -->
-  <div class="st-k" style="padding-top:4px">Account</div>
+  <div class="st-k">Account</div>
   <div class="st-card acc">
     <button type="button" class="ar" (click)="openPanel('tx')">
       <span class="ar-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m7 15 4-5 4 3 5-7"></path></svg></span>
