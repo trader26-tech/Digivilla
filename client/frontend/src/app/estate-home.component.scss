@@ -1584,7 +1584,8 @@
   position: relative;
   border: 0; background: none; padding: 0 2px; cursor: pointer;
   font-family: var(--ref-font); font-weight: 500;
-  font-size: var(--hero-size); line-height: 1.1; letter-spacing: -.03em;
+  /* the headline figure — bigger than the estate name, as the mock shows */
+  font-size: clamp(38px, 10.5vw, 44px); line-height: 1.08; letter-spacing: -.035em;
   font-variant-numeric: tabular-nums; color: var(--color-text); -webkit-tap-highlight-color: transparent;
   transition: transform .32s cubic-bezier(.22,1,.36,1), opacity .2s;
 }
@@ -1592,7 +1593,7 @@
 .port-v { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 /* the only always-visible hint: a 5px live dot riding the last digit */
 .port-live {
-  position: absolute; top: 6px; right: -8px;
+  position: absolute; top: 8px; right: -9px;
   width: 5px; height: 5px; border-radius: 50%;
   background: #7fd398; opacity: .85;
   animation: port-live 3.2s ease-in-out infinite;
