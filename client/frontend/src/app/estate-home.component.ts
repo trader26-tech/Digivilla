@@ -457,7 +457,7 @@ export class EstateHomeComponent implements OnInit {
       }
       const nextIdx = villas + (building ? 1 : 0);
       return {
-        ...base, st: 'locked', href: '#tOpen', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
+        ...base, st: 'locked', href: '#tLocked', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
         next: i === nextIdx && nextIdx < this.E.HOUSES,
       };
     });
@@ -487,7 +487,7 @@ export class EstateHomeComponent implements OnInit {
                  note: `${stage === 0 ? 'Breaking ground' : STAGE_NAME[stage]} · ${inr(h.invested)} of ${inr(this.E.HOUSE)}`,
                  paid: Math.round(h.invested / 25000), tile: null } as BoardCell;
       }
-      return { ...base, st: 'locked', href: '#tOpen', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
+      return { ...base, st: 'locked', href: '#tLocked', name: `Plot ${n}`, note: 'open', paid: null, tile: null,
                next: k === nextIdx } as BoardCell;
     });
     return cells.sort((a, b) => a.d - b.d || a.col - b.col);
