@@ -38,11 +38,11 @@ export class FundMovesSheetComponent {
   readonly W = W; readonly H = H; readonly BH = BH;
 
   private readonly _open = signal(false);
-  @Input() set open(v: boolean) { this._open.set(!!v); if (v) { this.est.loadMoves(); this.pick.set(null); } }
+  @Input() set open(v: boolean) { this._open.set(!!v); if (v) { this.est.loadMoves(); this.pick.set(null); } document.body.classList.toggle('dv-sheet-open', !!v); }
   get open(): boolean { return this._open(); }
   @Output() closed = new EventEmitter<void>();
   readonly isOpen = computed(() => this._open());
-  close(): void { this._open.set(false); this.closed.emit(); }
+  close(): void { this._open.set(false); document.body.classList.remove('dv-sheet-open'); this.closed.emit(); }
   @HostListener('document:keydown.escape') onEsc(): void { if (this._open()) this.close(); }
 
   readonly m = computed<FundMoves | null>(() => this.est.moves());
@@ -159,12 +159,14 @@ export class FundMovesSheetComponent {
       const i = s.g - f.from;
       let chg: number | null = null, pct: number | null = null, bpct: number | null = null;
       const a = i >= 1 ? f.nav_series[i - 1] : null, b = i >= 1 ? f.nav_series[i] : null;
-      if (a && b != null) { pct = (b / a - 1) * 100; chg = f.units * (b - a); }
-      else if (latest && f.nav_date === m.nav_date) { chg = f.day_change; pct = f.day_pct; }
+      // the newest day: the server's own figures (the series may still carry the previous NAV forward)
+      if (latest && f.nav_date === m.nav_date && f.day_change != null) { chg = f.day_change; pct = f.day_pct; }
+      else if (a && b != null && a !== b) { pct = (b / a - 1) * 100; chg = f.units * (b - a); }
+      else if (a && b != null && !latest) { pct = 0; chg = 0; }                 // a flat day (an arbitrage fund can sit still)
       const ia = i >= 1 ? f.index_series[i - 1] : null, ib = i >= 1 ? f.index_series[i] : null;
       if (ia && ib != null && ia !== ib) bpct = (ib / ia - 1) * 100;
       else if (latest && f.bench?.day_pct != null) bpct = f.bench.day_pct;
-      if (chg == null && pct == null) continue;                             // not held yet that day
+      if (chg == null && pct == null && !(latest && f.units)) continue;    // not held yet that day (the newest day keeps a held fund, shown as '—' until its NAV is in)
       rows.push({ key: f.scheme_code, name: f.short, chg, pct, bench: f.bench?.name ?? null, bpct,
                   gap: pct != null && bpct != null ? pct - bpct : null });
     }

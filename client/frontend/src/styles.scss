@@ -171,3 +171,7 @@ body.tv-sheet-open .tabbar {
   pointer-events: none;
   transform: translateY(24px);
 }
+
+/* a full sheet owns the screen: the floating tab bar steps out of the way */
+body.dv-sheet-open nav.tabbar { opacity: 0; pointer-events: none; transform: translateY(24px); transition: opacity .2s, transform .25s; }
+nav.tabbar { transition: opacity .2s, transform .25s; }

@@ -21,7 +21,7 @@
 .td-k::before { content: ''; width: 14px; height: 2px; border-radius: 1px; background: #f3dfa8; box-shadow: 0 0 8px rgba(243, 223, 168, .7); }
 .td-x { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer;
   background: rgba(255, 255, 255, .06); color: #c9c6da; -webkit-tap-highlight-color: transparent; &:active { transform: scale(.94); } }
-.td-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 20px calc(112px + env(safe-area-inset-bottom)); }
+.td-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 20px calc(28px + env(safe-area-inset-bottom)); }
 
 /* 1 · the picked day */
 .td-daynav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
