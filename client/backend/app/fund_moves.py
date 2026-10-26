@@ -30,8 +30,11 @@ Payload (one call, gzip'd by the app, memoised 15 min per client):
 from __future__ import annotations
 
 import re
-from datetime import date, timedelta
+import time
+from datetime import date, datetime, timedelta
 from typing import Optional
+
+import httpx
 
 from app import client_portfolio as cp
 from app import market_daily
@@ -139,6 +142,63 @@ def _iso(d) -> Optional[str]:
     return f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
 
 
+# the store's index closes (NSE total-return files) land a day late; tonight's index MOVE comes from
+# NSE's live board (price index — for one day the same as the TRI bar dividends) and Gold from AMFI
+_NSE_NAMES = {"large": "NIFTY 50", "mid": "NIFTY MIDCAP 150", "small": "NIFTY SMALLCAP 250", "n500": "NIFTY 500",
+              "n100": "NIFTY 100", "next50": "NIFTY NEXT 50"}
+_LIVE: dict = {"at": 0.0, "day": None, "moves": {}}
+
+
+def _live_index_moves() -> tuple[Optional[str], dict[str, float]]:
+    """(session day ISO, {store key: % move that day}) from NSE's live board, cached 10 min."""
+    if time.time() - _LIVE["at"] < 600:
+        return _LIVE["day"], _LIVE["moves"]
+    day, moves = None, {}
+    try:
+        h = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+             "Accept": "application/json", "Referer": "https://www.nseindia.com/"}
+        with httpx.Client(headers=h, timeout=12, follow_redirects=True) as c:
+            c.get("https://www.nseindia.com/")
+            j = c.get("https://www.nseindia.com/api/allIndices").json()
+        ts = str(j.get("timestamp") or "")
+        try:
+            day = datetime.strptime(ts.split(" ")[0], "%d-%b-%Y").date().isoformat()
+        except ValueError:
+            day = None
+        by = {str(x.get("index") or "").upper(): x for x in j.get("data") or []}
+        for key, name in _NSE_NAMES.items():
+            x = by.get(name)
+            if x and x.get("percentChange") is not None:
+                moves[key] = float(x["percentChange"])
+    except Exception:
+        pass
+    _LIVE.update(at=time.time(), day=day, moves=moves)
+    return day, moves
+
+
+def _extend_today(key: str, vmap: dict[str, float], idx_days: list[str], newest: str, live_day: Optional[str], live: dict) -> None:
+    """Put `newest`'s close into an index map when the store doesn't have it yet."""
+    if not newest or newest in vmap:
+        return
+    last = next((vmap[d] for d in reversed(idx_days) if vmap.get(d)), None)
+    if not last:
+        return
+    if key == "gold":
+        try:
+            from app import nav_cache
+            snap = nav_cache._amfi_snapshot()
+            for code in (105085, 115744, 140088):
+                hit = snap.get(code)
+                if hit and hit[1] == newest:
+                    vmap[newest] = hit[0]
+                    return
+        except Exception:
+            return
+        return
+    if live_day == newest and key in live:
+        vmap[newest] = last * (1 + live[key] / 100)
+
+
 def _build(client_code: str) -> dict:
     hs = cp._valued_holdings(client_code)
     hs = [h for h in hs if h.get("scheme_code") and (h.get("units") or 0) > 0]
@@ -167,6 +227,7 @@ def _build(client_code: str) -> dict:
     # the newest NAV of each fund, from the live cache, on top of the history
     live_nav: dict[int, tuple[str, float]] = {h["scheme_code"]: (_iso(h["nav_date"]) or "", float(h["nav"])) for h in hs if _iso(h.get("nav_date")) and h.get("nav")}
     pos = {d: i for i, d in enumerate(days)}
+    live_day, live = _live_index_moves() if days and days[-1] > (idx_days[-1] if idx_days else "") else (None, {})
 
     funds = []
     value_total = sum(h.get("current_value") or 0 for h in hs)
@@ -176,6 +237,8 @@ def _build(client_code: str) -> dict:
         bkey = market_daily.BENCH_BY_SLEEVE.get(sleeve, "n500")
         bvals = (store.get("series", {}).get(bkey) or {}).get("values") if bkey else None
         bmap = {d: v for d, v in zip(idx_days, bvals)} if bvals else {}
+        if bkey and bmap:
+            _extend_today(bkey, bmap, idx_days, days[-1] if days else "", live_day, live)
 
         pts = navfull.get(code) or []
         navmap = {p.date: p.nav for p in pts if p.nav}
@@ -232,6 +295,7 @@ def _build(client_code: str) -> dict:
         if not any(vals):
             continue
         vmap = {d: v for d, v in zip(idx_days, vals)}
+        _extend_today(key, vmap, idx_days, days[-1] if days else "", live_day, live)
         indices.append({"key": key, "name": ser.get("name") or key, "short": market_daily.SHORT.get(key, ser.get("name") or key),
                         "series": [round(vmap[d], 4) if vmap.get(d) else None for d in days]})
     return {

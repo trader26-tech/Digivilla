@@ -66,7 +66,11 @@
         @if (range() === '1d') {
           <div class="day1">
             <div class="d1-row"><span class="d1-l">You</span><span class="d1-track"><i class="d1-bar" [ngClass]="tone(g.mine)" [style.width.%]="dayW(g.mine, g.idxPct)"></i></span><b class="num" [ngClass]="tone(g.mine)">{{ p2(g.mine) }}</b></div>
-            <div class="d1-row"><span class="d1-l">Index</span><span class="d1-track"><i class="d1-bar idx" [style.width.%]="dayW(g.idxPct, g.mine)"></i></span><b class="num muted">{{ p2(g.idxPct) }}</b></div>
+            @if (lastIdx() != null) {
+              <div class="d1-row"><span class="d1-l">Index</span><span class="d1-track"><i class="d1-bar idx" [style.width.%]="dayW(g.idxPct, g.mine)"></i></span><b class="num muted">{{ p2(g.idxPct) }}</b></div>
+            } @else {
+              <div class="d1-row"><span class="d1-l">Index</span><span class="d1-track"></span><b class="num muted small-note">tomorrow</b></div>
+            }
           </div>
         } @else {
           @if (chart(); as c) {

@@ -136,13 +136,17 @@ export class InvestmentsComponent {
   });
   /** the funds' indices on day g (each fund's chosen index), weighted by what the client holds */
   private idxOn(m: FundMoves, g: number): number | null {
-    let w = 0, s = 0;
+    let w = 0, s = 0, real = 0;
     for (const f of m.funds as FundMove[]) {
+      if (!f.weight) continue;
       const ser = this.idxSeriesFor(f);
       const i = g - f.from, a = ser[i - 1], b = ser[i];
-      if (i < 1 || a == null || b == null || !a || a === b || !f.weight) continue;
-      w += f.weight; s += f.weight * (b / a - 1) * 100;
+      if (i >= 1 && a && b != null && a !== b) { w += f.weight; s += f.weight * (b / a - 1) * 100; real += f.weight; continue; }
+      // this fund's index hasn't published the day yet: count the fund's own move (no alpha from it that day)
+      const na = i >= 1 ? f.nav_series[i - 1] : null, nb = i >= 0 ? f.nav_series[i] : null;
+      if (na && nb != null && i >= 1) { w += f.weight; s += f.weight * (nb / na - 1) * 100; }
     }
+    if (!real) w = 0;
     if (!w && m.days[g] === m.nav_date) {                                   // the newest day: the live index moves
       let wv = 0, sv = 0;
       for (const f of m.funds) { if (this.isChanged(f)) continue; const b = f.bench?.day_pct; if (b == null || !f.value) continue; wv += f.value; sv += f.value * b; }
@@ -360,6 +364,8 @@ export class InvestmentsComponent {
     return { d, chg: f.day_change, pct: f.day_pct, idx };
   }
 
+  /** the newest day's index move (null when no index has published it yet) */
+  readonly lastIdx = computed(() => { const ds = this.days(); return ds.length ? ds[ds.length - 1].idx : null; });
   /** the 1D bars share one scale */
   dayW(v: number | null, other: number | null): number { const sc = Math.max(0.05, Math.abs(v ?? 0), Math.abs(other ?? 0)); return Math.abs(v ?? 0) / sc * 100; }
 
