@@ -131,7 +131,11 @@ export class InvestmentsComponent {
     const mine = path(g.A), idx = path(g.B);
     const ds = this.days(), n = ds.length;
     const ticks = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1].map((i) => ({ x: x(i + 1), label: this.day(ds[i].d) })) : [];
-    return { mine, idx, area: `${mine} L${W} ${H} L0 ${H} Z`, zero: y(1), endMine: y(g.A[g.A.length - 1]), endIdx: y(g.B[g.B.length - 1]), x, y, ticks,
+    // the alpha band: the space between your line and the index's, green when you are ahead, red when behind
+    const topP: [number, number][] = g.A.map((v, i) => [x(i), y(Math.max(v, g.B[i]))]);
+    const botP: [number, number][] = g.A.map((v, i) => [x(i), y(Math.min(v, g.B[i]))]);
+    const band = `M${topP.map(([px, py]) => `${px.toFixed(1)} ${py.toFixed(1)}`).join(' L')} L${botP.slice().reverse().map(([px, py]) => `${px.toFixed(1)} ${py.toFixed(1)}`).join(' L')} Z`;
+    return { mine, idx, band, area: `${mine} L${W} ${H} L0 ${H} Z`, zero: y(1), endMine: y(g.A[g.A.length - 1]), endIdx: y(g.B[g.B.length - 1]), x, y, ticks,
              grid: [0.25, 0.5, 0.75].map((f) => 8 + f * (H - 16)) };
   });
   /** finger on the chart: the day under it */
@@ -207,6 +211,37 @@ export class InvestmentsComponent {
   private sleeveName(s: string): string {
     return ({ arbitrage: 'Arbitrage', gold: 'Gold', large: 'Large cap', mid: 'Mid cap', small: 'Small cap', flexi: 'Flexi cap', hybrid: 'Hybrid', debt: 'Debt' } as Record<string, string>)[s] || s || 'Fund';
   }
+
+  /** the fund whose comparison is open (tap a card) */
+  readonly openKey = signal<number | null>(null);
+  toggleFund(key: number): void { this.openKey.set(this.openKey() === key ? null : key); if (navigator.vibrate) navigator.vibrate(3); }
+  readonly FW = 280; readonly FH = 90;
+  /** a small fund-vs-index chart for the open card: both as the growth of ₹1 over the window */
+  readonly fundChart = computed(() => {
+    const m = this.m(), ds = this.days(), key = this.openKey(); if (!m || !ds.length || key == null) return null;
+    const f = (m.funds as FundMove[]).find((x) => x.scheme_code === key); if (!f) return null;
+    const g0 = ds[0].g - 1, gEnd = ds[ds.length - 1].g;
+    let i0 = Math.max(0, g0 - f.from); while (i0 < f.nav_series.length - 1 && f.nav_series[i0] == null) i0++;
+    const iEnd = Math.min(f.nav_series.length - 1, gEnd - f.from);
+    if (iEnd - i0 < 1) return null;
+    const n0 = f.nav_series[i0]; let j0 = i0; while (j0 <= iEnd && !f.index_series[j0]) j0++;
+    const x0 = f.index_series[j0] ?? null;
+    const A: number[] = [], B: (number | null)[] = [];
+    let lastIdx: number | null = null;
+    for (let i = i0; i <= iEnd; i++) {
+      const nv = f.nav_series[i]; A.push(nv && n0 ? nv / n0 : (A[A.length - 1] ?? 1));
+      const iv = f.index_series[i]; if (iv && x0) lastIdx = iv / x0; B.push(x0 ? lastIdx : null);
+    }
+    const Bv = B.map((v) => v ?? 1);
+    const lo = Math.min(1, ...A, ...Bv), hi = Math.max(1, ...A, ...Bv), pad = (hi - lo) * 0.12 || 0.01;
+    const W = this.FW, H = this.FH;
+    const y = (v: number) => H - 6 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 12);
+    const x = (i: number) => (i / (A.length - 1)) * W;
+    const pts = (vs: number[]) => vs.map((v, i) => [x(i), y(v)] as [number, number]);
+    const fundRet = (A[A.length - 1] - 1) * 100, idxRet = lastIdx == null ? null : (lastIdx - 1) * 100;
+    return { fund: smooth(pts(A)), idx: x0 ? smooth(pts(Bv)) : null, zero: y(1), fundRet, idxRet, alpha: idxRet == null ? null : fundRet - idxRet,
+             from: m.days[f.from + i0], to: m.days[f.from + iEnd] };
+  });
 
   /** the fund rows' bars share one scale */
   readonly fundScale = computed(() => Math.max(0.5, ...this.funds().flatMap((f) => [Math.abs(f.ret ?? 0), Math.abs(f.iret ?? 0)])));

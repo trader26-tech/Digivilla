@@ -25,19 +25,24 @@
     <!-- you vs your indices: both lines = the growth of ₹1,00,000 over the range -->
     @if (growth(); as g) {
       <section class="card compare">
-        <div class="head">
+        <div class="head three">
           <div class="col">
             <span class="label"><i class="swatch"></i>YOU</span>
             <span class="big num" [ngClass]="tone(g.mine)">{{ p(g.mine) }}</span>
             <span class="small num" [ngClass]="tone(g.chg)">{{ signed(g.chg) }}</span>
           </div>
-          <div class="col right">
+          <div class="col mid">
             <button type="button" class="label idx-l" (click)="infoOpen.set(true)" aria-label="About the index">
-              {{ indexName() === 'Your indices' ? 'INDEX' : (indexName() | uppercase) }}<i class="swatch idx"></i>
+              <i class="swatch idx"></i>INDEX
               <svg class="info" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </button>
             <span class="big num idx-big">{{ p(g.idx) }}</span>
             <span class="small muted">{{ rangeWords() }}</span>
+          </div>
+          <div class="col right">
+            <span class="label">ALPHA</span>
+            <span class="big num alpha" [ngClass]="tone(g.lead)">{{ p(g.lead) }}</span>
+            <span class="small muted">you − index</span>
           </div>
         </div>
         @if (chart(); as c) {
@@ -47,6 +52,7 @@
               @for (gy of c.grid; track gy) { <line class="grid" x1="0" [attr.y1]="gy" [attr.x2]="W" [attr.y2]="gy"/> }
               <line class="base" x1="0" [attr.y1]="c.zero" [attr.x2]="W" [attr.y2]="c.zero"/>
               <path class="area" [attr.d]="c.area"/>
+              <path class="band" [class.loss]="g.lead < 0" [attr.d]="c.band"/>
               <path class="ln idx" [attr.d]="c.idx"/>
               <path class="ln you" [attr.d]="c.mine"/>
               @for (t of c.ticks; track t.x) { <text class="tick" [attr.x]="t.x" [attr.y]="H + 14" [attr.text-anchor]="t.x < 20 ? 'start' : t.x > W - 20 ? 'end' : 'middle'">{{ t.label }}</text> }
@@ -79,19 +85,37 @@
     <section class="funds">
       <div class="hd"><b>Your funds</b><span>{{ rangeWords().toLowerCase() }}</span></div>
       @for (f of funds(); track f.key) {
-        <div class="fund">
-          <div class="top">
-            <div class="name"><b>{{ f.name }}</b><span>{{ f.sleeve }} · {{ f.share | number:'1.0-0' }}%</span></div>
-            <span class="num pnl" [ngClass]="tone(f.pnl)">{{ signed(f.pnl) }}</span>
-          </div>
-          <div class="duo num">
-            <div class="d you"><small>FUND</small><b [ngClass]="tone(f.ret)">{{ p(f.ret) }}</b></div>
-            <div class="d idx"><small>{{ f.bench || 'INDEX' }}</small><b>{{ p(f.iret) }}</b></div>
-          </div>
-          <div class="bars" aria-hidden="true">
-            <i class="you" [ngClass]="tone(f.ret)" [style.width.%]="barW(f.ret)"></i>
-            <i class="idx" [style.width.%]="barW(f.iret)"></i>
-          </div>
+        <div class="fund" [class.open]="openKey() === f.key">
+          <button type="button" class="fund-btn" (click)="toggleFund(f.key)" [attr.aria-expanded]="openKey() === f.key">
+            <div class="top">
+              <div class="name"><b>{{ f.name }}</b><span>{{ f.sleeve }} · {{ f.share | number:'1.0-0' }}%</span></div>
+              <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="money num">
+              <div><small>INVESTED</small><span>{{ inr(f.invested) }}</span></div>
+              <div><small>CURRENT</small><span class="strong">{{ inr(f.value) }}</span></div>
+            </div>
+            <div class="pl num" [ngClass]="tone(f.pnl)"><b>{{ signed(f.pnl) }}</b><span>{{ p(f.invested ? f.pnl / f.invested * 100 : null) }}</span></div>
+          </button>
+          @if (openKey() === f.key) {
+            <div class="cmp">
+              @if (fundChart(); as fc) {
+                <div class="duo num">
+                  <div class="d you"><small>FUND</small><b [ngClass]="tone(fc.fundRet)">{{ p(fc.fundRet) }}</b></div>
+                  <div class="d idx"><small>{{ f.bench || 'INDEX' }}</small><b>{{ p(fc.idxRet) }}</b></div>
+                  <div class="d al"><small>ALPHA</small><b [ngClass]="tone(fc.alpha)">{{ p(fc.alpha) }}</b></div>
+                </div>
+                <svg class="fchart" [attr.viewBox]="'-2 0 ' + (FW + 4) + ' ' + FH" aria-hidden="true">
+                  <line class="base" x1="0" [attr.y1]="fc.zero" [attr.x2]="FW" [attr.y2]="fc.zero"/>
+                  @if (fc.idx) { <path class="ln idx" [attr.d]="fc.idx"/> }
+                  <path class="ln you" [attr.d]="fc.fund"/>
+                </svg>
+                <div class="fkey"><span>{{ day(fc.from) }} – {{ day(fc.to) }}</span><span class="you">fund</span><span class="idx">{{ f.bench || 'index' }}</span></div>
+              } @else {
+                <p class="cmp-none">Too new to compare for this period.</p>
+              }
+            </div>
+          }
         </div>
       } @empty {
         <p class="empty">Your funds will appear here once your first purchase settles.</p>
