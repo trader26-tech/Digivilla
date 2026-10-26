@@ -163,8 +163,12 @@ export class InvestmentsComponent {
 
   // ── your money vs the same money in the index, in rupees over the window ──
   /** your value day by day, and what the same rupees (each addition on its day) would be worth in the index */
-  readonly growth = computed(() => {
-    const m = this.m(), ds = this.days(); const p = m?.portfolio; if (!m || !p || !ds.length) return null;
+  readonly growth = computed(() => this.growthOf(this.days()));
+  /** the days the charts draw: the period, or on 1D the last month so the graph is always there */
+  readonly chartDays = computed<Day[]>(() => { if (this.range() !== '1d') return this.days(); const all = this.allDays(); return all.slice(Math.max(0, all.length - 22)); });
+  readonly chartGrowth = computed(() => this.growthOf(this.chartDays()));
+  private growthOf(ds: Day[]) {
+    const m = this.m(); const p = m?.portfolio; if (!m || !p || !ds.length) return null;
     const k0 = ds[0].g - p.from - 1;                                        // the close the window starts from
     let idxV = p.value[k0], base = p.value[k0];                             // the index starts with what you had
     const A = [p.value[k0]], B = [idxV], Ag = [0], Bg = [0];                 // values, and the gain so far (money added taken out)
@@ -176,16 +180,16 @@ export class InvestmentsComponent {
     const you = A[A.length - 1], idx = B[B.length - 1];
     return { you, idx, lead: you - idx, mine: base ? (you / base - 1) * 100 : 0, idxPct: base ? (idx / base - 1) * 100 : 0, leadPct: base ? (you - idx) / base * 100 : 0,
              chg: you - base, A, B, Ag, Bg, from: ds[0].d, to: ds[ds.length - 1].d };
-  });
+  }
   readonly chart = computed(() => {
-    const g = this.growth(); if (!g || g.A.length < 2) return null;
+    const g = this.chartGrowth(); if (!g || g.A.length < 2) return null;
     const vals = [0, ...g.Ag, ...g.Bg];
     const lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * 0.12 || 1;
     const y = (v: number) => H - 8 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 16);
     const x = (i: number) => (i / (g.A.length - 1)) * W;
     const path = (vs: number[]) => smooth(vs.map((v, i) => [x(i), y(v)] as [number, number]));
     const mine = path(g.Ag), idx = path(g.Bg);
-    const ds = this.days(), n = ds.length;
+    const ds = this.chartDays(), n = ds.length;
     const ticks = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1].map((i) => ({ x: x(i + 1), label: this.day(ds[i].d) })) : [];
     const topP: [number, number][] = g.Ag.map((v, i) => [x(i), y(Math.max(v, g.Bg[i]))]);
     const botP: [number, number][] = g.Ag.map((v, i) => [x(i), y(Math.min(v, g.Bg[i]))]);
@@ -195,13 +199,13 @@ export class InvestmentsComponent {
   });
   readonly scrub = signal<number | null>(null);
   onScrub(ev: PointerEvent, el: Element): void {
-    const g = this.growth(); if (!g) return;
+    const g = this.chartGrowth(); if (!g) return;
     const r = el.getBoundingClientRect();
     this.scrub.set(Math.max(0, Math.min(g.A.length - 1, Math.round(((ev.clientX - r.left) / r.width) * (g.A.length - 1)))));
   }
   readonly scrubAt = computed(() => {
-    const g = this.growth(), c = this.chart(), i = this.scrub(); if (!g || !c || i == null) return null;
-    const ds = this.days();
+    const g = this.chartGrowth(), c = this.chart(), i = this.scrub(); if (!g || !c || i == null) return null;
+    const ds = this.chartDays();
     return { d: i === 0 ? ds[0].d : ds[i - 1].d, mine: g.A[i], idx: g.B[i], gMine: g.Ag[i], gIdx: g.Bg[i], x: c.x(i), yMine: c.y(g.Ag[i]), yIdx: c.y(g.Bg[i]) };
   });
   /** the index's name on the card: the one chosen for everything, one fund's own, or "Index" when they differ */
@@ -291,7 +295,7 @@ export class InvestmentsComponent {
   private openFund(): FundMove | null { const key = this.openKey(), m = this.m(); return key == null || !m ? null : (m.funds as FundMove[]).find((x) => x.scheme_code === key) ?? null; }
   /** the open fund's window inside its own series: [i0, iEnd] */
   private fundWindow(f: FundMove): [number, number] | null {
-    const ds = this.days(); if (!ds.length) return null;
+    const ds = this.chartDays(); if (!ds.length) return null;
     const g0 = ds[0].g - 1, gEnd = ds[ds.length - 1].g;
     let i0 = Math.max(0, g0 - f.from); while (i0 < f.nav_series.length - 1 && f.nav_series[i0] == null) i0++;
     const iEnd = Math.min(f.nav_series.length - 1, gEnd - f.from);

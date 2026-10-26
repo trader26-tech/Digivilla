@@ -72,7 +72,9 @@
               <div class="d1-row"><span class="d1-l">Index</span><span class="d1-track"></span><b class="num muted small-note">tomorrow</b></div>
             }
           </div>
-        } @else {
+        }
+        @if (range() === '1d') { <div class="d1-cap">Last month</div> }
+        @if (true) {
           @if (chart(); as c) {
           <div class="chart">
             <svg #plot [attr.viewBox]="'-2 0 ' + (W + 4) + ' ' + (H + 18)" (pointerdown)="onScrub($event, plot)" (pointermove)="$event.buttons ? onScrub($event, plot) : null" (pointerup)="scrub.set(null)" (pointercancel)="scrub.set(null)" (pointerleave)="scrub.set(null)">
@@ -98,7 +100,7 @@
               @else { <span class="when">Gain so far</span><span class="you">you</span><span class="idx">same money in {{ indexName() === 'Index' ? 'the index' : indexName() }}</span> }
             </div>
           </div>
-          @if (drawdown(); as dd) {
+          @if (range() !== '1d' && drawdown(); as dd) {
             <div class="dd num">
               <div class="dd-top"><span class="dd-k">INDEX'S BIGGEST FALL</span><span class="dd-when">@if (dd.idx.pct < -0.05) { {{ day(dd.idx.from) }} – {{ day(dd.idx.to) }} } @else { none this period }</span></div>
               @if (dd.idx.pct < -0.05) {
@@ -158,7 +160,7 @@
                   <div class="r"><small>{{ f.bench }}</small><b>{{ p2(fd.idx) }}</b><span class="muted">{{ fd.idx == null ? 'comes tomorrow' : 'that day' }}</span></div>
                 </div>
               </div>
-              @if (range() !== '1d') {
+              @if (true) {
               @if (fundChart(); as fc) {
                 @if (fscrubAt(); as s) {
                   <div class="fread num" [class.live]="s.live">
