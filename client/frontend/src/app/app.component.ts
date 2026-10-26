@@ -14,6 +14,8 @@ import { VillaBuyComponent } from './build/villa-buy.component';
 import { NextVillaComponent } from './build/next-villa.component';
 import { CallsComponent } from './calls.component';
 import { GoalsComponent } from './goals/goals.component';
+import { InvestmentsComponent } from './invest/investments.component';
+import { InstallService } from './shared/install.service';
 import { GoalsService } from './goals/goals.service';
 import { CalculatorsComponent } from './calc/calculators.component';
 import { IntroComponent } from './intro.component';
@@ -39,6 +41,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
   standalone: true,
   imports: [
     GoalsComponent,
+    InvestmentsComponent,
     CommonModule,
     IntroComponent,
     EstateHomeComponent,
@@ -63,6 +66,7 @@ type RiskVariant = 'conservative' | 'balanced' | 'aggressive';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
+  readonly install = inject(InstallService);
   /** the Goals flow: its sub-pages hide the tab bar */
   private readonly goalsSvc = inject(GoalsService);
   readonly auth = inject(AuthService);
@@ -95,6 +99,7 @@ export class AppComponent {
   private readonly swUpdate = inject(SwUpdate, { optional: true });
 
   constructor() {
+    this.install;   // created now, so the browser's install prompt is caught early
     // The admin's "open their app": ?viewas=<pass> → a read-only session as that client,
     // then reload without the pass in the address (so nothing is cached from the old session).
     try {
@@ -110,7 +115,7 @@ export class AppComponent {
     // Deep-link support: ?view=explore opens the Explore tab on load.
     try {
       const v = new URLSearchParams(location.search).get('view');
-      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc' || v === 'goals') { this.view = v; this.intro = false; }
+      if (v === 'explore' || v === 'home' || v === 'calls' || v === 'funds' || v === 'calc' || v === 'goals' || v === 'invest') { this.view = v; this.intro = false; }
     } catch {}
     // A returning user whose home figures are already in hand (EstateService
     // restored this NAV day's snapshot) skips the splash — the home is the
@@ -214,7 +219,7 @@ export class AppComponent {
   exitView(): void { this.auth.signOut(); try { window.close(); } catch {} location.replace(location.pathname); }
 
   /** Which bottom-nav tab is active. */
-  view: 'home' | 'explore' | 'funds' | 'calls' | 'calc' | 'goals' | 'storefront' = 'home';
+  view: 'home' | 'explore' | 'funds' | 'calls' | 'calc' | 'goals' | 'invest' | 'storefront' = 'home';
 
   /** True when a top-level tab (home/funds/calls) is showing — the bottom nav
    *  is only visible then, not on detail / buy / account pages. */
@@ -227,7 +232,7 @@ export class AppComponent {
       this.detail === null && this.villa === null && this.land === null &&
       this.construction === null && this.building === null && this.buildFlow === null &&
       !this.levelsOpen && !(this.view === 'calc' && this.calcOpen) && !(this.view === 'goals' && this.goalsSvc.page() !== 'hub') &&
-      (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc' || this.view === 'goals')
+      (this.view === 'home' || this.view === 'funds' || this.view === 'calls' || this.view === 'calc' || this.view === 'goals' || this.view === 'invest')
     );
   }
 
@@ -259,6 +264,13 @@ export class AppComponent {
     window.scrollTo({ top: 0 });
   }
   /** The Calculators tab. */
+  /** the Investments page: a tab, and where a tap on the home's value lands */
+  goInvest(): void {
+    this.view = 'invest';
+    this.leaveAccount();
+    this.callsOpen = false;
+    window.scrollTo({ top: 0 });
+  }
   goCalc(): void {
     this.view = 'calc';
     this.leaveAccount();

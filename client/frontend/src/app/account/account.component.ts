@@ -1,3 +1,4 @@
+import { InstallCtaComponent } from '../shared/install-cta.component';
 import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component, ElementRef, EventEmitter, Output, ViewChild,
@@ -40,7 +41,7 @@ interface OrderGroup { head: string; rows: AccountOrder[]; }
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [InstallCtaComponent, CommonModule, FormsModule],
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss',
 })

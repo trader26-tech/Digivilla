@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { InstallCtaComponent } from './shared/install-cta.component';
 import { FormsModule } from '@angular/forms';
 import {
   Component,
@@ -138,7 +139,7 @@ let valueShown = false;
 @Component({
   selector: 'app-estate-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, PlotUnlockComponent, FundMovesSheetComponent],
+  imports: [InstallCtaComponent, CommonModule, FormsModule, CallScheduleComponent, DataFreshnessComponent, PlotUnlockComponent, FundMovesSheetComponent],
   templateUrl: './estate-home.component.html',
   styleUrl: './estate-home.component.scss',
 })
@@ -161,6 +162,8 @@ export class EstateHomeComponent implements OnInit {
   @Output() build = new EventEmitter<void>();
   /** The corner avatar -> open the account page. */
   @Output() account = new EventEmitter<void>();
+  /** a tap on the (unmasked) value → the Investments page */
+  @Output() invest = new EventEmitter<void>();
   /** Ask the shell to re-sync the estate (advisor may have assigned a villa). */
   @Output() refresh = new EventEmitter<void>();
 
@@ -239,11 +242,27 @@ export class EstateHomeComponent implements OnInit {
     valueShown = !this.shown(); this.shown.set(valueShown); this.toggled.set(true);
     if (navigator.vibrate) navigator.vibrate(6);
   }
+  private investT: ReturnType<typeof setTimeout> | null = null;
   valueTap(): void {
     const now = Date.now();
     this.taps = [...this.taps.filter((t) => now - t < 800), now];
+    if (this.investT) { clearTimeout(this.investT); this.investT = null; }
     if (this.taps.length >= 3) { this.taps = []; valueShown = true; this.shown.set(true); this.toggled.set(true); this.openMoves(); return; }
-    if (this.taps.length === 1) this.toggleShown();          // the 2nd / 3rd quick tap only count toward the sheet
+    if (this.taps.length > 1) return;                        // the 2nd / 3rd quick tap only count toward the sheet
+    if (!this.shown()) { this.toggleShown(); this.taps = []; return; }   // masked: this tap reveals the figures; the next one starts fresh
+    // shown: one tap opens Investments — after a beat, so a quick second tap can still turn into the sheet
+    this.investT = setTimeout(() => { this.investT = null; if (this.taps.length <= 1) this.invest.emit(); }, 320);
+  }
+  /** "GOOD MORNING" by the clock in India (the empty screen's kicker) */
+  get ehGreeting(): string {
+    const h = new Date(Date.now() + 330 * 60_000).getUTCHours();
+    return h < 12 ? 'GOOD MORNING' : h < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  }
+  /** the signed-in phone, prettied: "+91 89251 88870" */
+  get phoneLine(): string {
+    const raw = (this.est.profile().phone || this.auth.user()?.phone || '').trim();
+    const m = raw.replace(/\s+/g, '').match(/^\+91(\d{5})(\d{5})$/);
+    return m ? `+91 ${m[1]} ${m[2]}` : raw;
   }
   openMoves(): void { this.est.loadMoves(); this.movesOpen.set(true); if (navigator.vibrate) navigator.vibrate(4); }
   /** three quick taps ANYWHERE on the home (within ~0.9 s) open the day-vs-index sheet —

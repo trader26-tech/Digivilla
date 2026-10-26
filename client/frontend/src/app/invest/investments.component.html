@@ -1,0 +1,111 @@
+<!-- ============ INVESTMENTS — the handoff's second screen ============ -->
+<div class="invest">
+  <header>
+    <button type="button" class="icon-btn" (click)="back.emit()" aria-label="Back">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <h1>Investments</h1>
+  </header>
+
+  <section class="total">
+    <span class="kicker">CURRENT VALUE</span>
+    <span class="value num">{{ inr(value) }}</span>
+    <span class="sub num">Invested {{ inr(invested) }}</span>
+  </section>
+
+  @if (!m()) {
+    <div class="skel" aria-hidden="true"><i class="w40"></i><i class="tall"></i><i class="row"></i><i class="tall"></i></div>
+  } @else {
+    <div class="ranges" role="radiogroup" aria-label="Period">
+      @for (r of ranges(); track r.k) {
+        <button type="button" role="radio" [attr.aria-checked]="range() === r.k" [class.on]="range() === r.k" (click)="setRange(r.k)">{{ r.l }}</button>
+      }
+    </div>
+
+    <!-- Portfolio vs index: both lines = growth of ₹1,00,000 over the chosen range -->
+    @if (growth(); as g) {
+      <section class="card compare">
+        <div class="head">
+          <div class="col">
+            <span class="label"><i class="swatch"></i>YOUR PORTFOLIO</span>
+            <span class="big num" [ngClass]="tone(g.mine)">{{ p(g.mine) }}</span>
+            <span class="small num">{{ signed(g.chg) }}@if (g.mwr != null) { · {{ p(g.mwr) }} on money put in }</span>
+          </div>
+          <i class="divider"></i>
+          <div class="col right">
+            <span class="label">{{ indexName() | uppercase }}<i class="swatch idx"></i></span>
+            <span class="big num idx-big">{{ p(g.idx) }}</span>
+            <span class="small muted">{{ rangeWords() }}</span>
+          </div>
+        </div>
+        @if (chart(); as c) {
+          <div class="chart">
+            <svg #plot [attr.viewBox]="'0 0 ' + W + ' ' + H" (pointerdown)="onScrub($event, plot)" (pointermove)="$event.buttons ? onScrub($event, plot) : null" (pointerup)="scrub.set(null)" (pointercancel)="scrub.set(null)" (pointerleave)="scrub.set(null)">
+              <defs><linearGradient id="youFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9184d9" stop-opacity=".28"/><stop offset="1" stop-color="#9184d9" stop-opacity="0"/></linearGradient></defs>
+              <line class="base" x1="0" [attr.y1]="c.zero" [attr.x2]="W" [attr.y2]="c.zero"/>
+              <path class="area" [attr.d]="c.area"/>
+              <path class="ln idx" [attr.d]="c.idx"/>
+              <path class="ln you" [attr.d]="c.mine"/>
+              @if (scrubAt(); as s) {
+                <line class="cursor" [attr.x1]="s.x" [attr.x2]="s.x" y1="0" [attr.y2]="H"/>
+                <circle class="pt idx" [attr.cx]="s.x" [attr.cy]="s.yIdx" r="3.5"/>
+                <circle class="pt you" [attr.cx]="s.x" [attr.cy]="s.yMine" r="4.5"/>
+              } @else {
+                <line class="gap" [class.loss]="g.lead < 0" [attr.x1]="W" [attr.y1]="c.endMine" [attr.x2]="W" [attr.y2]="c.endIdx"/>
+                <circle class="pt idx" [attr.cx]="W" [attr.cy]="c.endIdx" r="3.5"/>
+                <circle class="pt you" [attr.cx]="W" [attr.cy]="c.endMine" r="4.5"/>
+                <circle class="end-glow" [attr.cx]="W" [attr.cy]="c.endMine" r="9" [style.transform-origin]="W + 'px ' + c.endMine + 'px'"/>
+              }
+            </svg>
+            @if (scrubAt(); as s) {
+              <div class="legend num"><span>{{ day(s.d) }}</span><span class="pair"><span class="you">You {{ inr(s.mine) }}</span><span>{{ indexName() }} {{ inr(s.idx) }}</span></span></div>
+            } @else {
+              <div class="legend num"><span>{{ inr(BASE) }} invested</span><span class="pair"><span class="you">You {{ inr(BASE * (1 + g.mine / 100)) }}</span><span>{{ indexName() }} {{ inr(BASE * (1 + g.idx / 100)) }}</span></span></div>
+            }
+          </div>
+        }
+        <p class="verdict">
+          @if (g.lead >= 0) { You beat {{ indexName() === 'Your indices' ? 'your indices' : indexName() }} by {{ pts(g.lead) }} over this period. }
+          @else { You trailed {{ indexName() === 'Your indices' ? 'your indices' : indexName() }} by {{ pts(g.lead) }} over this period. }
+          @if (indexNote()) { <span class="note">Index = {{ indexNote() }}.</span> }
+        </p>
+      </section>
+    }
+
+    @if (timing(); as t) {
+      <section class="timing">
+        <div><span class="label"><i class="dot live"></i>UPDATED</span><span class="v">{{ t.when }}</span><span class="s">NAV of {{ t.nav }}</span></div>
+        <div><span class="label"><i class="dot next"></i>NEXT UPDATE</span><span class="v">{{ t.late ? 'Soon' : t.nextWhen }}</span><span class="s">{{ t.late ? 'NAV of ' + t.next + ' is due' : 'after the market closes' }}</span></div>
+      </section>
+    }
+
+    <section class="funds">
+      <div class="hd"><b>Your funds</b><span>{{ funds().length }} fund{{ funds().length === 1 ? '' : 's' }} · {{ rangeWords().toLowerCase() }}</span></div>
+      @for (f of funds(); track f.key) {
+        <div class="fund">
+          <div class="top">
+            <div class="name"><b>{{ f.name }}</b><span>{{ f.sleeve }} · {{ f.share | number:'1.0-0' }}% of portfolio</span></div>
+            <span class="pill num" [ngClass]="tone(f.ret) || 'flat'">{{ p(f.ret) }}</span>
+          </div>
+          <div class="share"><i [style.width.%]="f.share"></i></div>
+          <!-- the fund against its OWN index over the same window -->
+          <div class="vs num">
+            <span class="vs-k">{{ f.bench || 'Index' }}</span>
+            <span class="vs-v">{{ p(f.iret) }}</span>
+            @if (f.gap != null) { <span class="tag" [ngClass]="f.gap >= 0 ? 'gain' : 'loss'">{{ f.gap >= 0 ? '▲' : '▼' }} {{ pts(f.gap) }}</span> }
+            @if (f.since) { <span class="since">from {{ day(f.since) }}</span> }
+          </div>
+          <div class="stats num">
+            <div><small>INVESTED</small><span>{{ inr(f.invested) }}</span></div>
+            <div><small>CURRENT</small><span class="strong">{{ inr(f.value) }}</span></div>
+            <div><small>P&amp;L</small><span class="strong" [ngClass]="tone(f.pnl)">{{ signed(f.pnl) }}</span></div>
+          </div>
+        </div>
+      } @empty {
+        <p class="empty">Your funds will appear here once your first purchase settles.</p>
+      }
+    </section>
+
+    <p class="foot">Values use the latest published NAV. Each fund is compared with the index it follows; returns are absolute, not annualised. Money added inside a period is not counted as a gain.</p>
+  }
+</div>

@@ -25,6 +25,7 @@
     <!-- ===== TWO-COLUMN FLOWS: WITHDRAWALS (placeholder) · INVESTED (real,
          from live NAV), split by a thin vertical divider that fades at its
          ends. Hidden on the empty estate, which keeps its onboarding. ===== -->
+    <div class="home-install" *ngIf="dataReady && !isEmptyEstate"><app-install-cta mode="banner"></app-install-cta></div>
     <div class="flows" *ngIf="dataReady && !isEmptyEstate">
       <div class="flow in">
         <div class="flow-head">
@@ -47,7 +48,7 @@
 
     <!-- ===== TITLE: the owner's avatar beside "YOUR ESTATE · 2 OF 3" over "<name>'s City",
          centred as one group. The avatar opens Settings; the name opens the rename sheet. ===== -->
-    <div class="title" *ngIf="dataReady">
+    <div class="title" *ngIf="dataReady && !isEmptyEstate">
       <button type="button" class="avatar" (click)="account.emit()" aria-label="Profile and settings">
         @if (avatarPhoto) { <img [src]="avatarPhoto" alt="" /> } @else { <b>{{ avatarInitial }}</b> }
       </button>
@@ -369,29 +370,52 @@
     </div>
 
 
-    <!-- ===== EMPTY ESTATE: the setup call takes the place of the numbers ===== -->
+    <!-- ===== EMPTY ESTATE — the handoff's first screen: greeting, the number that signed in,
+         Settings, a ₹0 orb, one line; the setup call and "add to home screen" under it. ===== -->
     <ng-container *ngIf="isEmptyEstate">
-      <!-- already booked → show the upcoming call -->
-      <button class="call-card" *ngIf="upcomingCall() && callWhen as w" (click)="openCallSheet()">
-        <span class="call-ico" [class.confirmed]="callConfirmed" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </span>
-        <span class="call-txt">
-          <span class="call-k">Setup call · {{ callConfirmed ? 'confirmed' : 'requested' }}</span>
-          <b class="call-day">{{ w.day }} · {{ w.time }}</b>
-          <span class="call-sub">Your fund manager will call &amp; assign your first villa</span>
-        </span>
-        <span class="call-go" aria-hidden="true">›</span>
-      </button>
+      <header class="eh">
+        <div class="eh-who">
+          <span class="eh-kicker">{{ ehGreeting }}</span>
+          <span class="eh-phone num">{{ phoneLine || (est.estateName || 'Welcome') }}
+            <svg viewBox="0 0 256 256" width="14" height="14" fill="#8fd65a" aria-label="Verified"><path d="M225.9 102.8c-3.8-3.9-7.7-8-9.2-11.5-1.4-3.4-1.5-8.8-1.6-14.1-.2-9.7-.3-20.8-8-28.5s-18.8-7.8-28.5-8c-5.3-.1-10.7-.2-14.1-1.6-3.5-1.5-7.6-5.4-11.5-9.2C146.1 23.5 138.3 16 128 16s-18.1 7.5-24.9 13.9c-3.9 3.8-8 7.7-11.5 9.2-3.4 1.4-8.8 1.5-14.1 1.6-9.7.2-20.8.3-28.5 8s-7.8 18.8-8 28.5c-.1 5.3-.2 10.7-1.6 14.1-1.5 3.5-5.4 7.6-9.2 11.5C23.5 109.9 16 117.7 16 128s7.5 18.1 13.9 24.9c3.8 3.9 7.7 8 9.2 11.5 1.4 3.4 1.5 8.8 1.6 14.1.2 9.7.3 20.8 8 28.5s18.8 7.8 28.5 8c5.3.1 10.7.2 14.1 1.6 3.5 1.5 7.6 5.4 11.5 9.2 6.8 6.5 14.6 14 24.9 14s18.1-7.5 24.9-13.9c3.9-3.8 8-7.7 11.5-9.2 3.4-1.4 8.8-1.5 14.1-1.6 9.7-.2 20.8-.3 28.5-8s7.8-18.8 8-28.5c.1-5.3.2-10.7 1.6-14.1 1.5-3.5 5.4-7.6 9.2-11.5 6.4-6.8 13.9-14.6 13.9-24.9s-7.5-18.1-13.9-24.9ZM173.7 109.7l-56 56a8 8 0 0 1-11.4 0l-24-24a8 8 0 0 1 11.4-11.4L112 148.7l50.3-50.4a8 8 0 0 1 11.4 11.4Z"/></svg>
+          </span>
+        </div>
+        <button type="button" class="eh-gear" (click)="account.emit()" aria-label="Settings">
+          <svg viewBox="0 0 256 256" width="20" height="20" fill="currentColor"><path d="M230.1 108.8l-22.3-18.6a94 94 0 0 0-7.3-17.7l3.4-28.5a8 8 0 0 0-2.3-6.6 111.4 111.4 0 0 0-40.6-23.6 8 8 0 0 0-6.9.9L130.2 32a95 95 0 0 0-18.4 0L88 14.7a8 8 0 0 0-6.9-.9A111.4 111.4 0 0 0 40.5 37.4a8 8 0 0 0-2.3 6.6l3.4 28.5a94 94 0 0 0-7.3 17.7L12 108.8a8 8 0 0 0-2.9 6.3 111.6 111.6 0 0 0 0 25.8 8 8 0 0 0 2.9 6.3l22.3 18.6a94 94 0 0 0 7.3 17.7l-3.4 28.5a8 8 0 0 0 2.3 6.6 111.4 111.4 0 0 0 40.6 23.6 8 8 0 0 0 6.9-.9l23.9-17.3a95 95 0 0 0 18.4 0l23.9 17.3a8 8 0 0 0 6.9.9 111.4 111.4 0 0 0 40.6-23.6 8 8 0 0 0 2.3-6.6l-3.4-28.5a94 94 0 0 0 7.3-17.7l22.3-18.6a8 8 0 0 0 2.9-6.3 111.6 111.6 0 0 0 0-25.8 8 8 0 0 0-2.9-6.3ZM128 168a40 40 0 1 1 40-40 40 40 0 0 1-40 40Z"/></svg>
+        </button>
+      </header>
 
-      <!-- not booked yet → the single CTA -->
-      <ng-container *ngIf="!upcomingCall()">
-        <p class="call-lead">Book one quick call — your fund manager sets up your account and hands you your first villa.</p>
-        <button class="call-cta" (click)="openCallSheet()">
-          <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M8 14h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      <div class="ec">
+        <div class="orb" aria-hidden="true">
+          <i class="orb-glow"></i>
+          <svg viewBox="0 0 196 196" width="196" height="196" fill="none">
+            <circle cx="98" cy="98" r="92" stroke="#2b2e3a" stroke-width="1" stroke-dasharray="2 6"/>
+            <circle cx="98" cy="98" r="70" stroke="#2b2e3a" stroke-width="1"/>
+            <g class="ring-slow"><circle cx="98" cy="6" r="3" fill="#9184d9"/><circle cx="98" cy="6" r="8" fill="#9184d9" opacity=".18"/></g>
+            <g class="ring-fast"><circle cx="98" cy="28" r="2" fill="#b5abfc"/></g>
+          </svg>
+          <div class="orb-disc"><span>₹0</span></div>
+        </div>
+        <p class="ec-line">Your investments will appear here once funds are received.</p>
+
+        <!-- already booked → the upcoming call; else one quiet button for it -->
+        <button class="call-card" *ngIf="upcomingCall() && callWhen as w" (click)="openCallSheet()">
+          <span class="call-ico" [class.confirmed]="callConfirmed" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <span class="call-txt">
+            <span class="call-k">Setup call · {{ callConfirmed ? 'confirmed' : 'requested' }}</span>
+            <b class="call-day">{{ w.day }} · {{ w.time }}</b>
+            <span class="call-sub">Your fund manager will call &amp; assign your first villa</span>
+          </span>
+          <span class="call-go" aria-hidden="true">›</span>
+        </button>
+        <button class="ec-call" *ngIf="!upcomingCall()" (click)="openCallSheet()">
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M8 14h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
           Book your setup call
         </button>
-      </ng-container>
+      </div>
+      <div class="ec-install"><app-install-cta mode="card"></app-install-cta></div>
     </ng-container>
 
     <!-- ===== PORTFOLIO VALUE: the headline figure (full ₹ grouping), the
