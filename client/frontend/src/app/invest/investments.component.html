@@ -99,23 +99,24 @@
     </section>
   }
 
-  <!-- the (i): about the indices in the comparison -->
-  @if (infoOpen()) {
-    <div class="sh-scrim" (click)="infoOpen.set(false)" aria-hidden="true"></div>
-    <section class="sh" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
-      <span class="sh-grab" aria-hidden="true"></span>
-      <h3 id="ixTitle">The index you’re compared with</h3>
-      <p class="sh-lead">Each fund is measured against the index it follows. Together they make your index, weighted by what you hold.</p>
-      <ul class="ix">
-        @for (x of indexInfo(); track x.name) {
-          <li>
-            <div class="ix-h"><b>{{ x.name }}</b><span class="num">{{ x.weight < 0.5 ? '<1' : (x.weight | number:'1.0-0') }}%</span></div>
-            <p>{{ x.about }}</p>
-            <span class="ix-f">{{ x.funds.join(' · ') }}</span>
-          </li>
-        }
-      </ul>
-      <button type="button" class="sh-ok" (click)="infoOpen.set(false)">Done</button>
-    </section>
-  }
 </div>
+
+  <!-- the (i): about the indices in the comparison -->
+@if (infoOpen()) {
+  <div class="sh-scrim" (click)="infoOpen.set(false)" aria-hidden="true"></div>
+  <section class="sh" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
+    <span class="sh-grab" aria-hidden="true"></span>
+    <h3 id="ixTitle">The index you’re compared with</h3>
+    <p class="sh-lead">Each fund is measured against the index it follows. Together they make your index, weighted by what you hold.</p>
+    <ul class="ix">
+      @for (x of indexInfo(); track x.name) {
+        <li>
+          <div class="ix-h"><b>{{ x.name }}</b><span class="num">{{ x.weight < 0.5 ? '<1' : (x.weight | number:'1.0-0') }}%</span></div>
+          <p>{{ x.about }}</p>
+          <span class="ix-f">{{ x.funds.join(' · ') }}</span>
+        </li>
+      }
+    </ul>
+    <button type="button" class="sh-ok" (click)="infoOpen.set(false)">Done</button>
+  </section>
+}
