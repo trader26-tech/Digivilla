@@ -129,10 +129,13 @@ header { display: flex; align-items: center; gap: 12px; padding: 0 20px; animati
   b { font-size: 18px; font-weight: 500; letter-spacing: -.01em; } span { font-size: 14px; font-weight: 500; } }
 .fund .cmp { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; margin-top: 2px; border-top: 1px dashed var(--n800); animation: up .3s both; }
 .fund .duo { grid-template-columns: 1fr 1fr 1fr; .d.al { text-align: right; } .d.idx { text-align: center; } .d b { font-size: 16px; } }
-.fund .fchart { display: block; width: 100%; height: 90px; overflow: visible;
+.fund .fchart { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; cursor: crosshair;
+  .tick { font-size: 9.5px; fill: var(--n600); font-family: Inter, system-ui, sans-serif; } .cursor { stroke: rgba(181, 171, 252, .5); stroke-width: 1; }
+  .pt.idx { fill: var(--surface); stroke: var(--n400); stroke-width: 1.5; } .pt.you { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
   .base { stroke: var(--n700); stroke-width: 1; stroke-dasharray: 3 5; }
   .ln { fill: none; stroke-linecap: round; stroke-linejoin: round; } .ln.idx { stroke: #8b8e9c; stroke-width: 1.4; stroke-dasharray: 4 3; } .ln.you { stroke: var(--accent); stroke-width: 2; } }
-.fund .fkey { display: flex; gap: 12px; font-size: 11px; color: var(--n500); span:first-child { flex: 1; }
+.fund .fkey { display: flex; align-items: center; gap: 12px; font-size: 11.5px; color: var(--n400); .you { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ixpick { height: 28px; padding: 0 8px 0 10px; font-size: 12px; }
   .you::before, .idx::before { content: ''; display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin: 0 5px 2px 0; }
   .you::before { background: var(--accent); } .idx::before { background: repeating-linear-gradient(90deg, #8b8e9c 0 4px, transparent 4px 7px); } }
 .cmp-none { margin: 0; font-size: 12.5px; color: var(--n400); }
@@ -174,3 +177,9 @@ header { display: flex; align-items: center; gap: 12px; padding: 0 20px; animati
 .sh-all { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
   button { height: 32px; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, .06); color: var(--n300); font-size: 12.5px; font-weight: 500; -webkit-tap-highlight-color: transparent;
     &.on { background: var(--a100); color: var(--a800); } } }
+
+/* the open fund's readout: the day under the finger, else the period's end */
+.fread { display: flex; align-items: baseline; gap: 12px; font-size: 13px; color: var(--n300); margin-bottom: 2px;
+  .when { flex: 1; } .you { font-size: 16px; font-weight: 500; } .idx { font-size: 16px; color: var(--n200); }
+  .idx::before { content: ''; display: inline-block; width: 10px; height: 2px; background: repeating-linear-gradient(90deg, #8b8e9c 0 4px, transparent 4px 7px); margin: 0 6px 4px 0; } }
+.head.three .big { font-size: 17px; letter-spacing: -.02em; }

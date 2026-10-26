@@ -10,7 +10,7 @@ const RANGES: { k: Range; l: string; n: number; words: string }[] = [
   { k: '1y', l: '1Y', n: 252, words: 'Last 12 months' }, { k: '3y', l: '3Y', n: 756, words: 'Last 3 years' }, { k: 'all', l: 'All', n: 1e9, words: 'Since you started' },
   { k: 'custom', l: 'Custom', n: 1e9, words: 'Your dates' },
 ];
-const W = 320, H = 150, BASE = 100_000;
+const W = 320, H = 150;
 const CHOICE_KEY = 'tdc.invest.index';
 
 /** what each index is, in one line — shown behind the (i) and in the picker */
@@ -65,8 +65,8 @@ interface IndexChoice { all: string | null; per: Record<string, string>; }
 export class InvestmentsComponent {
   readonly est = inject(EstateService);
   readonly RANGES = RANGES;
-  readonly W = W; readonly H = H; readonly BASE = BASE;
-  readonly FW = 280; readonly FH = 90; readonly BH = 72;
+  readonly W = W; readonly H = H;
+  readonly FW = 300; readonly FH = 110;
   @Output() back = new EventEmitter<void>();
 
   constructor() { this.est.loadMoves(); }
@@ -114,10 +114,10 @@ export class InvestmentsComponent {
     return RANGES.find((r) => r.k === this.range())!.words;
   });
   setRange(r: Range): void {
-    this.wanted.set(r); this.scrub.set(null); this.fpick.set(null); if (navigator.vibrate) navigator.vibrate(3);
+    this.wanted.set(r); this.scrub.set(null); this.fscrub.set(null); if (navigator.vibrate) navigator.vibrate(3);
     if (r === 'custom' && !this.custom().from) { const all = this.allDays(); if (all.length) this.custom.set({ from: all[Math.max(0, all.length - 66)].d, to: all[all.length - 1].d }); }
   }
-  setCustom(which: 'from' | 'to', v: string): void { this.custom.set({ ...this.custom(), [which]: v }); this.scrub.set(null); this.fpick.set(null); }
+  setCustom(which: 'from' | 'to', v: string): void { this.custom.set({ ...this.custom(), [which]: v }); this.scrub.set(null); this.fscrub.set(null); }
   readonly minDay = computed(() => this.allDays()[0]?.d ?? '');
   readonly maxDay = computed(() => { const a = this.allDays(); return a[a.length - 1]?.d ?? ''; });
 
@@ -156,27 +156,36 @@ export class InvestmentsComponent {
     return all.slice(Math.max(0, all.length - n));
   });
 
-  // ── you vs the index over the window ──
+  // ── your money vs the same money in the index, in rupees over the window ──
+  /** your value day by day, and what the same rupees (each addition on its day) would be worth in the index */
   readonly growth = computed(() => {
-    const ds = this.days(); if (!ds.length) return null;
-    let a = 1, b = 1, chg = 0; const A = [1], B = [1];
-    for (const d of ds) { a *= 1 + d.pct / 100; b *= 1 + (d.idx ?? 0) / 100; chg += d.chg; A.push(a); B.push(b); }
-    return { mine: (a - 1) * 100, idx: (b - 1) * 100, chg, A, B, from: ds[0].d, to: ds[ds.length - 1].d, lead: (a - b) * 100 };
+    const m = this.m(), ds = this.days(); const p = m?.portfolio; if (!m || !p || !ds.length) return null;
+    const k0 = ds[0].g - p.from - 1;                                        // the close the window starts from
+    let idxV = p.value[k0], base = p.value[k0];                             // the index starts with what you had
+    const A = [p.value[k0]], B = [idxV], Ag = [0], Bg = [0];                 // values, and the gain so far (money added taken out)
+    for (const d of ds) {
+      const k = d.g - p.from, flow = p.invested[k] - p.invested[k - 1];
+      idxV = idxV * (1 + (d.idx ?? 0) / 100) + flow; base += Math.max(0, flow);
+      A.push(p.value[k]); B.push(idxV); Ag.push(p.value[k] - base); Bg.push(idxV - base);
+    }
+    const you = A[A.length - 1], idx = B[B.length - 1];
+    return { you, idx, lead: you - idx, mine: base ? (you / base - 1) * 100 : 0, idxPct: base ? (idx / base - 1) * 100 : 0, leadPct: base ? (you - idx) / base * 100 : 0,
+             chg: you - base, A, B, Ag, Bg, from: ds[0].d, to: ds[ds.length - 1].d };
   });
   readonly chart = computed(() => {
     const g = this.growth(); if (!g || g.A.length < 2) return null;
-    const vals = [...g.A, ...g.B];
-    const lo = Math.min(1, ...vals), hi = Math.max(1, ...vals), pad = (hi - lo) * 0.12 || 0.01;
+    const vals = [0, ...g.Ag, ...g.Bg];
+    const lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * 0.12 || 1;
     const y = (v: number) => H - 8 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 16);
     const x = (i: number) => (i / (g.A.length - 1)) * W;
     const path = (vs: number[]) => smooth(vs.map((v, i) => [x(i), y(v)] as [number, number]));
-    const mine = path(g.A), idx = path(g.B);
+    const mine = path(g.Ag), idx = path(g.Bg);
     const ds = this.days(), n = ds.length;
     const ticks = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1].map((i) => ({ x: x(i + 1), label: this.day(ds[i].d) })) : [];
-    const topP: [number, number][] = g.A.map((v, i) => [x(i), y(Math.max(v, g.B[i]))]);
-    const botP: [number, number][] = g.A.map((v, i) => [x(i), y(Math.min(v, g.B[i]))]);
+    const topP: [number, number][] = g.Ag.map((v, i) => [x(i), y(Math.max(v, g.Bg[i]))]);
+    const botP: [number, number][] = g.Ag.map((v, i) => [x(i), y(Math.min(v, g.Bg[i]))]);
     const band = `M${topP.map(([px, py]) => `${px.toFixed(1)} ${py.toFixed(1)}`).join(' L')} L${botP.slice().reverse().map(([px, py]) => `${px.toFixed(1)} ${py.toFixed(1)}`).join(' L')} Z`;
-    return { mine, idx, band, area: `${mine} L${W} ${H} L0 ${H} Z`, zero: y(1), endMine: y(g.A[g.A.length - 1]), endIdx: y(g.B[g.B.length - 1]), x, y, ticks,
+    return { mine, idx, band, area: `${mine} L${W} ${y(0).toFixed(1)} L0 ${y(0).toFixed(1)} Z`, zero: y(0), endMine: y(g.Ag[g.Ag.length - 1]), endIdx: y(g.Bg[g.Bg.length - 1]), x, y, ticks,
              grid: [0.25, 0.5, 0.75].map((f) => 8 + f * (H - 16)) };
   });
   readonly scrub = signal<number | null>(null);
@@ -188,7 +197,7 @@ export class InvestmentsComponent {
   readonly scrubAt = computed(() => {
     const g = this.growth(), c = this.chart(), i = this.scrub(); if (!g || !c || i == null) return null;
     const ds = this.days();
-    return { d: i === 0 ? ds[0].d : ds[i - 1].d, mine: g.A[i] * BASE, idx: g.B[i] * BASE, x: c.x(i), yMine: c.y(g.A[i]), yIdx: c.y(g.B[i]) };
+    return { d: i === 0 ? ds[0].d : ds[i - 1].d, mine: g.A[i], idx: g.B[i], gMine: g.Ag[i], gIdx: g.Bg[i], x: c.x(i), yMine: c.y(g.Ag[i]), yIdx: c.y(g.Bg[i]) };
   });
   /** the index's name on the card: the one chosen for everything, one fund's own, or "Index" when they differ */
   readonly indexName = computed(() => {
@@ -257,7 +266,7 @@ export class InvestmentsComponent {
   /** the fund whose comparison is open (tap a card) */
   readonly openKey = signal<number | null>(null);
   readonly pickOpen = signal(false);
-  toggleFund(key: number): void { this.openKey.set(this.openKey() === key ? null : key); this.fpick.set(null); this.pickOpen.set(false); if (navigator.vibrate) navigator.vibrate(3); }
+  toggleFund(key: number): void { this.openKey.set(this.openKey() === key ? null : key); this.fscrub.set(null); this.pickOpen.set(false); if (navigator.vibrate) navigator.vibrate(3); }
   private openFund(): FundMove | null { const key = this.openKey(), m = this.m(); return key == null || !m ? null : (m.funds as FundMove[]).find((x) => x.scheme_code === key) ?? null; }
   /** the open fund's window inside its own series: [i0, iEnd] */
   private fundWindow(f: FundMove): [number, number] | null {
@@ -267,17 +276,17 @@ export class InvestmentsComponent {
     const iEnd = Math.min(f.nav_series.length - 1, gEnd - f.from);
     return iEnd - i0 < 1 ? null : [i0, iEnd];
   }
-  /** a small fund-vs-index chart for the open card: both as the growth of ₹1 over the window */
+  /** the open fund against its index — the only thing an open card shows; both as the growth of ₹1 over the window */
   readonly fundChart = computed(() => {
     const m = this.m(), f = this.openFund(); if (!m || !f) return null;
     const win = this.fundWindow(f); if (!win) return null; const [i0, iEnd] = win;
     const ser = this.idxSeriesFor(f);
     const n0 = f.nav_series[i0]; let j0 = i0; while (j0 <= iEnd && !ser[j0]) j0++;
     const x0 = ser[j0] ?? null;
-    const A: number[] = [], B: (number | null)[] = []; let lastIdx: number | null = null;
+    const A: number[] = [], B: (number | null)[] = [], D: string[] = []; let lastIdx: number | null = null;
     for (let i = i0; i <= iEnd; i++) {
       const nv = f.nav_series[i]; A.push(nv && n0 ? nv / n0 : (A[A.length - 1] ?? 1));
-      const iv = ser[i]; if (iv && x0) lastIdx = iv / x0; B.push(x0 ? lastIdx : null);
+      const iv = ser[i]; if (iv && x0) lastIdx = iv / x0; B.push(x0 ? lastIdx : null); D.push(m.days[f.from + i]);
     }
     const Bv = B.map((v) => v ?? 1);
     const lo = Math.min(1, ...A, ...Bv), hi = Math.max(1, ...A, ...Bv), pad = (hi - lo) * 0.12 || 0.01;
@@ -285,45 +294,22 @@ export class InvestmentsComponent {
     const y = (v: number) => Hf - 6 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (Hf - 12);
     const x = (i: number) => (i / (A.length - 1)) * Wf;
     const pts = (vs: number[]) => vs.map((v, i) => [x(i), y(v)] as [number, number]);
-    const fundRet = (A[A.length - 1] - 1) * 100, idxRet = lastIdx == null ? null : (lastIdx - 1) * 100;
-    return { fund: smooth(pts(A)), idx: x0 ? smooth(pts(Bv)) : null, zero: y(1), fundRet, idxRet, alpha: idxRet == null ? null : fundRet - idxRet,
-             from: m.days[f.from + i0], to: m.days[f.from + iEnd] };
+    const ticks = [0, Math.floor((D.length - 1) / 2), D.length - 1].map((i) => ({ x: x(i), label: this.day(D[i]) }));
+    return { fund: smooth(pts(A)), idx: x0 ? smooth(pts(Bv)) : null, zero: y(1), A, B, D, x, y, ticks,
+             fundRet: (A[A.length - 1] - 1) * 100, idxRet: lastIdx == null ? null : (lastIdx - 1) * 100 };
   });
-  /** day by day for the open fund: its move and the index's move on each trading day of the window */
-  readonly fundDays = computed(() => {
-    const m = this.m(), f = this.openFund(); if (!m || !f) return [];
-    const win = this.fundWindow(f); if (!win) return []; const [i0, iEnd] = win;
-    const ser = this.idxSeriesFor(f);
-    const out: { d: string; fund: number | null; idx: number | null }[] = [];
-    for (let i = i0 + 1; i <= iEnd; i++) {
-      const a = f.nav_series[i - 1], b = f.nav_series[i];
-      const ia = ser[i - 1], ib = ser[i];
-      const fund = a && b != null && a !== b ? (b / a - 1) * 100 : a && b != null ? 0 : null;
-      const idx = ia && ib != null && ia !== ib ? (ib / ia - 1) * 100 : null;
-      if (fund == null && idx == null) continue;
-      out.push({ d: m.days[f.from + i], fund, idx });
-    }
-    return out;
-  });
-  readonly fundBars = computed(() => {
-    const ds = this.fundDays(); if (!ds.length) return null;
-    const sc = Math.max(0.05, ...ds.map((d) => Math.abs(d.fund ?? 0)), ...ds.map((d) => Math.abs(d.idx ?? 0)));
-    const n = ds.length, slot = this.FW / n, bw = Math.max(1.2, Math.min(9, slot * 0.62)), mid = this.BH / 2;
-    const yOf = (v: number) => mid - (v / sc) * (mid - 4);
-    return { mid, bw, slot, items: ds.map((d, i) => {
-      const cx = (i + 0.5) * slot, h = Math.max(1, Math.abs(yOf(d.fund ?? 0) - mid));
-      return { x: cx - bw / 2, cx, y: (d.fund ?? 0) >= 0 ? mid - h : mid, h, up: (d.fund ?? 0) >= 0, tick: d.idx == null ? null : yOf(d.idx) };
-    }) };
-  });
-  readonly fpick = signal<number | null>(null);
-  onFundPick(ev: PointerEvent, el: Element): void {
-    const n = this.fundDays().length; if (!n) return;
+  /** finger on the fund chart */
+  readonly fscrub = signal<number | null>(null);
+  onFundScrub(ev: PointerEvent, el: Element): void {
+    const fc = this.fundChart(); if (!fc) return;
     const r = el.getBoundingClientRect();
-    this.fpick.set(Math.max(0, Math.min(n - 1, Math.floor(((ev.clientX - r.left) / r.width) * n))));
+    this.fscrub.set(Math.max(0, Math.min(fc.A.length - 1, Math.round(((ev.clientX - r.left) / r.width) * (fc.A.length - 1)))));
   }
-  readonly fsel = computed(() => { const ds = this.fundDays(); if (!ds.length) return null; const i = Math.min(this.fpick() ?? ds.length - 1, ds.length - 1); return { ...ds[i], i }; });
-  readonly fundBeat = computed(() => this.fundDays().filter((d) => d.fund != null && d.idx != null && d.fund > d.idx).length);
-  readonly fundDaysDesc = computed(() => this.fundDays().slice().reverse());
+  readonly fscrubAt = computed(() => {
+    const fc = this.fundChart(), i = this.fscrub() ?? (fc ? fc.A.length - 1 : null); if (!fc || i == null) return null;
+    const b = fc.B[i];
+    return { d: fc.D[i], fund: (fc.A[i] - 1) * 100, idx: b == null ? null : (b - 1) * 100, x: fc.x(i), yFund: fc.y(fc.A[i]), yIdx: b == null ? null : fc.y(b), live: this.fscrub() != null };
+  });
 
   // ── words ──
   p(v: number | null | undefined, dp = 1): string { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '+') + Math.abs(v).toFixed(dp) + '%'; }
