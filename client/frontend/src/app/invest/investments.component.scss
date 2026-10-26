@@ -222,3 +222,7 @@ header { display: flex; align-items: center; gap: 12px; padding: 0 20px; animati
 .head.three .big { font-size: 18px; white-space: nowrap; }
 
 .small-note { font-size: 12px !important; font-weight: 400 !important; }
+
+.dd { flex-direction: column; align-items: stretch; gap: 6px; }
+.dd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; .dd-when { margin-left: 0; white-space: nowrap; } }
+.dd-vals { display: flex; gap: 18px; font-size: 15px; }

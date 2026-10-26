@@ -100,12 +100,13 @@
           </div>
           @if (drawdown(); as dd) {
             <div class="dd num">
-              <span class="dd-k">INDEX'S BIGGEST FALL</span>
+              <div class="dd-top"><span class="dd-k">INDEX'S BIGGEST FALL</span><span class="dd-when">@if (dd.idx.pct < -0.05) { {{ day(dd.idx.from) }} – {{ day(dd.idx.to) }} } @else { none this period }</span></div>
               @if (dd.idx.pct < -0.05) {
-                <span class="dd-v idx"><i></i>{{ p(dd.idx.pct) }}</span>
-                @if (dd.you) { <span class="dd-v you" [class.up]="dd.you.chg >= 0"><i></i>{{ p(dd.you.pct) }}</span> }
-                <span class="dd-when">{{ day(dd.idx.from) }} – {{ day(dd.idx.to) }}</span>
-              } @else { <span class="dd-when">none this period</span> }
+                <div class="dd-vals">
+                  <span class="dd-v idx"><i></i>Index {{ p(dd.idx.pct) }}</span>
+                  @if (dd.you) { <span class="dd-v you" [class.up]="dd.you.chg >= 0"><i></i>You {{ p(dd.you.pct) }}</span> }
+                </div>
+              }
             </div>
           }
           } @else {

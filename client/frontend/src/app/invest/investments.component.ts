@@ -393,7 +393,7 @@ export class InvestmentsComponent {
   signedMoney(v: number | null | undefined): string { return v == null ? '—' : (v < 0 ? '−' : '+') + this.money(Math.abs(v)); }
 
   // ── words ──
-  p(v: number | null | undefined, dp = 1): string { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '+') + Math.abs(v).toFixed(dp) + '%'; }
+  p(v: number | null | undefined, dp = 1): string { if (v == null || !isFinite(v)) return '—'; const t = Math.abs(v).toFixed(dp); return (Number(t) === 0 ? '' : v < 0 ? '−' : '+') + t + '%'; }
   p2(v: number | null | undefined): string { return this.p(v, 2); }
   signed(v: number | null | undefined): string { return v == null ? '—' : (v < 0 ? '−' : '+') + inr(Math.abs(Math.round(v))); }
   day(iso: string | null | undefined): string { return iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : ''; }
