@@ -207,7 +207,7 @@ header { display: flex; align-items: center; gap: 12px; padding: 0 20px; animati
 .dd { display: flex; align-items: center; gap: 12px; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--n800); font-size: 13px;
   .dd-k { font-size: 10px; letter-spacing: .1em; color: var(--n400); }
   .dd-v { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--loss); i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; } }
-  .dd-v.you i { background: var(--accent); } .dd-v.idx i { background: repeating-linear-gradient(90deg, #8b8e9c 0 4px, transparent 4px 7px); }
+  .dd-v.you i { background: var(--accent); } .dd-v.up { color: var(--gain); } .dd-v.idx i { background: repeating-linear-gradient(90deg, #8b8e9c 0 4px, transparent 4px 7px); }
   .dd-when { margin-left: auto; font-size: 11px; color: var(--n500); } }
 
 /* an open fund: its day first */

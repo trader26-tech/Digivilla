@@ -345,7 +345,20 @@ export class InvestmentsComponent {
       }
       return { pct: worst * 100, from, to };
     };
-    return { you: dd((d) => d.pct), idx: dd((d) => d.idx) };
+    const idx = dd((d) => d.idx);
+    // you over the SAME days, in rupees, against the money you actually had in then (not a tiny early SIP's %)
+    const g = this.growth(); let you: { pct: number; chg: number } | null = null;
+    if (g) {
+      const i0 = ds.findIndex((d) => d.d === idx.from), i1 = ds.findIndex((d) => d.d === idx.to);
+      if (i0 >= 0 && i1 > i0) {
+        const a = i0 + 1, b = i1 + 1;                                      // growth arrays start one day earlier
+        const inflow = (g.A[b] - g.Ag[b]) - (g.A[a] - g.Ag[a]);              // money added between the two days
+        const cap = g.A[a] + Math.max(0, inflow);
+        const chg = g.Ag[b] - g.Ag[a];
+        you = { pct: cap ? chg / cap * 100 : 0, chg };
+      }
+    }
+    return { idx, you };
   });
 
   /** an open fund's move on its newest NAV day, and its index's move that day */
