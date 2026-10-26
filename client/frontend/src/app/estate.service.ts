@@ -297,6 +297,8 @@ export interface FundMoves {
   funds: FundMove[];
   /** what was put in vs what it was worth, day by day since the first purchase */
   portfolio: { from: number; invested: number[]; value: number[] } | null;
+  /** every index the store has, aligned to `days` — for comparing with an index of the client's choice */
+  indices?: { key: string; name: string; short: string; series: (number | null)[] }[];
 }
 
 /** The portfolio's move between the last two published NAVs (Σ units × ΔNAV). */

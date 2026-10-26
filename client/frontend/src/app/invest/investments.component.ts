@@ -4,23 +4,25 @@ import { Component, EventEmitter, Output, computed, inject, signal } from '@angu
 import { EstateService, FundMove, FundMoves } from '../estate.service';
 import { inr } from '../shared/format.util';
 
-type Range = '1m' | '3m' | '6m' | '1y' | 'all';
+type Range = '1m' | '3m' | '6m' | '1y' | '3y' | 'all' | 'custom';
 const RANGES: { k: Range; l: string; n: number; words: string }[] = [
   { k: '1m', l: '1M', n: 22, words: 'Last month' }, { k: '3m', l: '3M', n: 66, words: 'Last 3 months' }, { k: '6m', l: '6M', n: 132, words: 'Last 6 months' },
-  { k: '1y', l: '1Y', n: 252, words: 'Last 12 months' }, { k: 'all', l: 'All', n: 1e9, words: 'Since you started' },
+  { k: '1y', l: '1Y', n: 252, words: 'Last 12 months' }, { k: '3y', l: '3Y', n: 756, words: 'Last 3 years' }, { k: 'all', l: 'All', n: 1e9, words: 'Since you started' },
+  { k: 'custom', l: 'Custom', n: 1e9, words: 'Your dates' },
 ];
 const W = 320, H = 150, BASE = 100_000;
+const CHOICE_KEY = 'tdc.invest.index';
 
-/** what each index is, in one line — shown behind the (i) on the compare card */
+/** what each index is, in one line — shown behind the (i) and in the picker */
 const INDEX_ABOUT: [RegExp, string][] = [
-  [/arbitrage/i, 'Nifty 50 Arbitrage — the return from buying shares and selling their futures; the income part of a villa'],
-  [/gold/i, 'Gold — the domestic price of gold'],
-  [/smallcap|small cap/i, 'Nifty Smallcap 250 — the 250 small companies after the top 250'],
-  [/midcap|mid cap/i, 'Nifty Midcap 150 — the 150 mid-sized companies after the top 100'],
-  [/nifty ?500/i, 'Nifty 500 — the 500 largest listed companies'],
-  [/nifty ?100/i, 'Nifty 100 — the 100 largest listed companies'],
-  [/nifty ?50\b/i, 'Nifty 50 — the 50 largest listed companies'],
-  [/next ?50/i, 'Nifty Next 50 — the 50 companies after the top 50'],
+  [/arbitrage/i, 'The return from buying shares and selling their futures — the income part of a villa'],
+  [/gold/i, 'The domestic price of gold'],
+  [/smallcap|small cap/i, 'The 250 small companies after the top 250'],
+  [/midcap|mid cap/i, 'The 150 mid-sized companies after the top 100'],
+  [/nifty ?500/i, 'The 500 largest listed companies'],
+  [/next ?50/i, 'The 50 companies after the top 50'],
+  [/nifty ?100/i, 'The 100 largest listed companies'],
+  [/nifty ?50\b/i, 'The 50 largest listed companies'],
 ];
 
 /** a smooth (monotone cubic) path through points — no overshoot between days */
@@ -40,13 +42,16 @@ function smooth(p: [number, number][]): string {
 
 /** one trading day inside the window: your % (cash flows taken out) and the indices' % */
 interface Day { d: string; g: number; pct: number; idx: number | null; chg: number; }
+interface IndexChoice { all: string | null; per: Record<string, string>; }
 
 /**
- * Investments — the handoff's second screen. Current value, then your portfolio against
- * the right index over a range (both drawn as the growth of ₹1,00,000), when the figures
- * were last published, and every fund with its own index beside it.
- *   · "the index" = each fund's own benchmark (Nifty 50 / Midcap 150 / Smallcap 250 / Gold /
- *     Nifty 50 Arbitrage…) weighted by what the client holds — not one index for everything.
+ * Investments — opened by a tap on the home's portfolio value (nowhere else). Current value; your
+ * portfolio against the index over a period (both drawn as the growth of ₹1,00,000, the gap shaded =
+ * alpha); every fund with its money first, and on a tap its comparison with its index: over the
+ * period, and day by day.
+ *   · "the index" = each fund's own benchmark weighted by what the client holds — unless the client
+ *     picks another index for a fund, or one index for everything (kept on this phone).
+ *   · periods: 1M 3M 6M 1Y 3Y All, or any two dates.
  *   · Money added inside the window is not counted as a gain.
  * Data: GET /me/funds/moves (cached by EstateService) + the home's own value / invested.
  */
@@ -60,21 +65,61 @@ interface Day { d: string; g: number; pct: number; idx: number | null; chg: numb
 export class InvestmentsComponent {
   readonly est = inject(EstateService);
   readonly RANGES = RANGES;
-  readonly W = W; readonly H = H;
+  readonly W = W; readonly H = H; readonly BASE = BASE;
+  readonly FW = 280; readonly FH = 90; readonly BH = 72;
   @Output() back = new EventEmitter<void>();
 
   constructor() { this.est.loadMoves(); }
 
   readonly m = computed<FundMoves | null>(() => this.est.moves());
-  readonly wanted = signal<Range>('1y');
-  /** the range in use: what was tapped, else the longest the history can fill */
-  readonly range = computed<Range>(() => { const rs = this.ranges(); return rs.some((r) => r.k === this.wanted()) ? this.wanted() : rs[rs.length - 1].k; });
-  readonly rangeWords = computed(() => RANGES.find((r) => r.k === this.range())!.words);
-  setRange(r: Range): void { this.wanted.set(r); this.scrub.set(null); if (navigator.vibrate) navigator.vibrate(3); }
+  inr = inr;
 
   // ── the headline ──
   get value(): number { return this.est.estateValue; }
   get invested(): number { return this.est.invested; }
+
+  // ── which index: the fund's own, one the client picked for it, or one for everything ──
+  readonly choice = signal<IndexChoice>(this.loadChoice());
+  private loadChoice(): IndexChoice {
+    try { const c = JSON.parse(localStorage.getItem(CHOICE_KEY) || ''); return { all: c.all ?? null, per: c.per ?? {} }; } catch { return { all: null, per: {} }; }
+  }
+  private saveChoice(c: IndexChoice): void { this.choice.set(c); try { localStorage.setItem(CHOICE_KEY, JSON.stringify(c)); } catch { /* private mode */ } }
+  setAll(key: string | null): void { this.saveChoice({ all: key, per: key ? {} : this.choice().per }); if (navigator.vibrate) navigator.vibrate(3); }
+  setFor(code: number, key: string | null): void {
+    const per = { ...this.choice().per }; if (key) per[code] = key; else delete per[code];
+    this.saveChoice({ ...this.choice(), per }); if (navigator.vibrate) navigator.vibrate(3);
+  }
+  /** every index on offer */
+  readonly indices = computed(() => (this.m()?.indices ?? []).map((x) => ({ ...x, about: INDEX_ABOUT.find(([re]) => re.test(x.short) || re.test(x.name))?.[1] ?? '' })));
+  indexKeyFor(f: FundMove): string | null { return this.choice().all ?? this.choice().per[f.scheme_code] ?? f.bench?.key ?? null; }
+  ownKey(f: FundMove): string | null { return f.bench?.key ?? null; }
+  indexShort(key: string | null): string { return key ? (this.indices().find((x) => x.key === key)?.short ?? key) : 'Index'; }
+  /** the index series for a fund, aligned to its nav_series (the chosen index, else the one it came with) */
+  private idxSeriesFor(f: FundMove): (number | null)[] {
+    const key = this.indexKeyFor(f);
+    const ix = key ? this.m()?.indices?.find((x) => x.key === key) : null;
+    if (!ix) return f.index_series;
+    return ix.series.slice(f.from, f.from + f.nav_series.length);
+  }
+  private isChanged(f: FundMove): boolean { return this.indexKeyFor(f) !== (f.bench?.key ?? null); }
+
+  // ── the period ──
+  readonly wanted = signal<Range>('1y');
+  readonly custom = signal<{ from: string; to: string }>({ from: '', to: '' });
+  /** ranges the history can actually fill (a 2-month-old estate has no 1Y), always + Custom */
+  readonly ranges = computed(() => { const n = this.allDays().length; return RANGES.filter((r, i) => i === 0 || r.k === 'all' || r.k === 'custom' || n > RANGES[i - 1].n); });
+  readonly range = computed<Range>(() => { const rs = this.ranges(); return rs.some((r) => r.k === this.wanted()) ? this.wanted() : 'all'; });
+  readonly rangeWords = computed(() => {
+    if (this.range() === 'custom') { const ds = this.days(); return ds.length ? `${this.day(ds[0].d)} – ${this.day(ds[ds.length - 1].d)}` : 'Pick two dates'; }
+    return RANGES.find((r) => r.k === this.range())!.words;
+  });
+  setRange(r: Range): void {
+    this.wanted.set(r); this.scrub.set(null); this.fpick.set(null); if (navigator.vibrate) navigator.vibrate(3);
+    if (r === 'custom' && !this.custom().from) { const all = this.allDays(); if (all.length) this.custom.set({ from: all[Math.max(0, all.length - 66)].d, to: all[all.length - 1].d }); }
+  }
+  setCustom(which: 'from' | 'to', v: string): void { this.custom.set({ ...this.custom(), [which]: v }); this.scrub.set(null); this.fpick.set(null); }
+  readonly minDay = computed(() => this.allDays()[0]?.d ?? '');
+  readonly maxDay = computed(() => { const a = this.allDays(); return a[a.length - 1]?.d ?? ''; });
 
   // ── every trading day since the first purchase ──
   readonly allDays = computed<Day[]>(() => {
@@ -88,39 +133,36 @@ export class InvestmentsComponent {
     }
     return out;
   });
+  /** the funds' indices on day g (each fund's chosen index), weighted by what the client holds */
   private idxOn(m: FundMoves, g: number): number | null {
     let w = 0, s = 0;
     for (const f of m.funds as FundMove[]) {
-      const i = g - f.from, a = f.index_series[i - 1], b = f.index_series[i];
+      const ser = this.idxSeriesFor(f);
+      const i = g - f.from, a = ser[i - 1], b = ser[i];
       if (i < 1 || a == null || b == null || !a || a === b || !f.weight) continue;
       w += f.weight; s += f.weight * (b / a - 1) * 100;
     }
     if (!w && m.days[g] === m.nav_date) {                                   // the newest day: the live index moves
       let wv = 0, sv = 0;
-      for (const f of m.funds) { const b = f.bench?.day_pct; if (b == null || !f.value) continue; wv += f.value; sv += f.value * b; }
+      for (const f of m.funds) { if (this.isChanged(f)) continue; const b = f.bench?.day_pct; if (b == null || !f.value) continue; wv += f.value; sv += f.value * b; }
       return wv ? sv / wv : null;
     }
     return w ? s / w : null;
   }
   readonly days = computed<Day[]>(() => {
-    const n = RANGES.find((r) => r.k === this.range())!.n, all = this.allDays();
+    const all = this.allDays(), r = this.range();
+    if (r === 'custom') { const { from, to } = this.custom(); return all.filter((d) => (!from || d.d >= from) && (!to || d.d <= to)); }
+    const n = RANGES.find((x) => x.k === r)!.n;
     return all.slice(Math.max(0, all.length - n));
   });
-  /** ranges the history can actually fill (a 2-month-old estate has no 1Y) */
-  readonly ranges = computed(() => { const n = this.allDays().length; return RANGES.filter((r, i) => i === 0 || r.k === 'all' || n > RANGES[i - 1].n); });
 
   // ── you vs the index over the window ──
   readonly growth = computed(() => {
     const ds = this.days(); if (!ds.length) return null;
     let a = 1, b = 1, chg = 0; const A = [1], B = [1];
     for (const d of ds) { a *= 1 + d.pct / 100; b *= 1 + (d.idx ?? 0) / 100; chg += d.chg; A.push(a); B.push(b); }
-    // the % on the money actually in (differs from the time-weighted line when money came in mid-window)
-    const m = this.m()!, p = m.portfolio!, k1 = ds[ds.length - 1].g - p.from, k0 = ds[0].g - p.from - 1;
-    const base = Math.max(p.value[k0] ?? 0, 0) + Math.max(0, (p.invested[k1] ?? 0) - (p.invested[k0] ?? 0));
-    const mwr = base > 0 ? chg / base * 100 : null;
-    return { mine: (a - 1) * 100, idx: (b - 1) * 100, chg, mwr: Math.abs((mwr ?? 0) - (a - 1) * 100) < 0.05 ? null : mwr, A, B, from: ds[0].d, to: ds[ds.length - 1].d, lead: (a - b) * 100 };
+    return { mine: (a - 1) * 100, idx: (b - 1) * 100, chg, A, B, from: ds[0].d, to: ds[ds.length - 1].d, lead: (a - b) * 100 };
   });
-  /** the two lines + the area under yours, as the growth of ₹1,00,000 */
   readonly chart = computed(() => {
     const g = this.growth(); if (!g || g.A.length < 2) return null;
     const vals = [...g.A, ...g.B];
@@ -131,14 +173,12 @@ export class InvestmentsComponent {
     const mine = path(g.A), idx = path(g.B);
     const ds = this.days(), n = ds.length;
     const ticks = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1].map((i) => ({ x: x(i + 1), label: this.day(ds[i].d) })) : [];
-    // the alpha band: the space between your line and the index's, green when you are ahead, red when behind
     const topP: [number, number][] = g.A.map((v, i) => [x(i), y(Math.max(v, g.B[i]))]);
     const botP: [number, number][] = g.A.map((v, i) => [x(i), y(Math.min(v, g.B[i]))]);
     const band = `M${topP.map(([px, py]) => `${px.toFixed(1)} ${py.toFixed(1)}`).join(' L')} L${botP.slice().reverse().map(([px, py]) => `${px.toFixed(1)} ${py.toFixed(1)}`).join(' L')} Z`;
     return { mine, idx, band, area: `${mine} L${W} ${H} L0 ${H} Z`, zero: y(1), endMine: y(g.A[g.A.length - 1]), endIdx: y(g.B[g.B.length - 1]), x, y, ticks,
              grid: [0.25, 0.5, 0.75].map((f) => 8 + f * (H - 16)) };
   });
-  /** finger on the chart: the day under it */
   readonly scrub = signal<number | null>(null);
   onScrub(ev: PointerEvent, el: Element): void {
     const g = this.growth(); if (!g) return;
@@ -150,23 +190,23 @@ export class InvestmentsComponent {
     const ds = this.days();
     return { d: i === 0 ? ds[0].d : ds[i - 1].d, mine: g.A[i] * BASE, idx: g.B[i] * BASE, x: c.x(i), yMine: c.y(g.A[i]), yIdx: c.y(g.B[i]) };
   });
-  /** the index's name: one fund's own, or "your indices" when they differ */
+  /** the index's name on the card: the one chosen for everything, one fund's own, or "Index" when they differ */
   readonly indexName = computed(() => {
-    const names = [...new Set((this.m()?.funds ?? []).filter((f) => f.value > 0 && f.bench).map((f) => f.bench!.name))];
-    return names.length === 1 ? names[0] : 'Your indices';
+    if (this.choice().all) return this.indexShort(this.choice().all);
+    const names = [...new Set((this.m()?.funds ?? []).filter((f) => f.value > 0).map((f) => this.indexShort(this.indexKeyFor(f))))];
+    return names.length === 1 ? names[0] : 'Index';
   });
-  readonly indexNote = computed(() => this.indexName() === 'Your indices' ? 'each fund’s own index, weighted by what you hold' : null);
-  readonly BASE = BASE;
-  /** the (i): every index in the comparison — what it is, which of your funds follow it, its weight */
   readonly infoOpen = signal(false);
+  /** the (i): every index in the comparison — what it is, which of your funds follow it, its weight */
   readonly indexInfo = computed(() => {
     const m = this.m(); if (!m) return [];
     const total = m.funds.reduce((s, f) => s + (f.value || 0), 0) || 1;
-    const by = new Map<string, { name: string; about: string; funds: string[]; weight: number }>();
+    const by = new Map<string, { key: string; name: string; about: string; funds: string[]; weight: number }>();
     for (const f of m.funds) {
-      if (!f.bench || !f.value) continue;
-      const e = by.get(f.bench.name) ?? { name: f.bench.name, about: INDEX_ABOUT.find(([re]) => re.test(f.bench!.name))?.[1] ?? f.bench.name, funds: [], weight: 0 };
-      e.funds.push(f.short || f.name); e.weight += f.value / total * 100; by.set(f.bench.name, e);
+      if (!f.value) continue;
+      const key = this.indexKeyFor(f) ?? 'n500', name = this.indexShort(key);
+      const e = by.get(key) ?? { key, name, about: this.indices().find((x) => x.key === key)?.about ?? '', funds: [], weight: 0 };
+      e.funds.push(f.short || f.name); e.weight += f.value / total * 100; by.set(key, e);
     }
     return [...by.values()].sort((a, b) => b.weight - a.weight);
   });
@@ -178,80 +218,118 @@ export class InvestmentsComponent {
     const today = ist(Date.now()).toISOString().slice(0, 10);
     const nav = m.nav_date;
     const when = nav === today ? 'Today' : nav === ist(Date.now() - 86_400_000).toISOString().slice(0, 10) ? 'Yesterday' : this.day(nav);
-    // the next NAV day: the next weekday after the published one
     const d = new Date(nav + 'T00:00:00Z'); do { d.setUTCDate(d.getUTCDate() + 1); } while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
     const next = d.toISOString().slice(0, 10);
     const nextWhen = next === today ? 'Tonight' : next === ist(Date.now() + 86_400_000).toISOString().slice(0, 10) ? 'Tomorrow' : this.day(next);
     return { when, nav: this.day(nav), nextWhen, next: this.day(next), late: next < today };
   });
 
-  // ── fund by fund over the window ──
+  // ── fund by fund ──
   readonly funds = computed(() => {
     const m = this.m(), ds = this.days(); if (!m) return [];
     const total = m.funds.reduce((s, f) => s + (f.value || 0), 0) || 1;
-    const g0 = ds.length ? ds[0].g - 1 : null;                          // the close the window starts from
+    const g0 = ds.length ? ds[0].g - 1 : null;
     return (m.funds as FundMove[]).filter((f) => f.value > 0 || f.invested > 0).map((f) => {
+      const ser = this.idxSeriesFor(f);
       let ret: number | null = null, iret: number | null = null, since: string | null = null;
       if (g0 != null && f.nav_series.length > 1) {
-        let i0 = Math.max(0, g0 - f.from);                                 // the fund may have started inside the window
+        let i0 = Math.max(0, g0 - f.from);
         while (i0 < f.nav_series.length - 1 && f.nav_series[i0] == null) i0++;
-        const n0 = f.nav_series[i0], n1 = f.nav_series[f.nav_series.length - 1] ?? f.nav;
-        if (n0 && n1) ret = (n1 / n0 - 1) * 100;
+        const iEnd = Math.min(f.nav_series.length - 1, ds[ds.length - 1].g - f.from);
+        const n0 = f.nav_series[i0], n1 = f.nav_series[iEnd] ?? f.nav;
+        if (n0 && n1 && iEnd > i0) ret = (n1 / n0 - 1) * 100;
         if (g0 - f.from < 0) since = m.days[f.from + i0];
-        let j0 = i0; while (j0 < f.index_series.length - 1 && f.index_series[j0] == null) j0++;
-        let j1 = f.index_series.length - 1; while (j1 > j0 && f.index_series[j1] == null) j1--;
-        const x0 = f.index_series[j0], x1 = f.index_series[j1];
+        let j0 = i0; while (j0 < iEnd && ser[j0] == null) j0++;
+        let j1 = iEnd; while (j1 > j0 && ser[j1] == null) j1--;
+        const x0 = ser[j0], x1 = ser[j1];
         if (x0 && x1 && j1 > j0) iret = (x1 / x0 - 1) * 100;
       }
-      return { key: f.scheme_code, name: f.short || f.name, sleeve: this.sleeveName(f.sleeve), bench: f.bench?.name ?? null,
+      const key = this.indexKeyFor(f);
+      return { key: f.scheme_code, f, name: f.short || f.name, sleeve: this.sleeveName(f.sleeve), bench: this.indexShort(key), benchKey: key, changed: this.isChanged(f),
                share: f.value / total * 100, invested: f.invested, value: f.value, pnl: f.value - f.invested, ret, iret,
                gap: ret != null && iret != null ? ret - iret : null, since };
     }).sort((a, b) => b.value - a.value);
   });
   private sleeveName(s: string): string {
-    return ({ arbitrage: 'Arbitrage', gold: 'Gold', large: 'Large cap', mid: 'Mid cap', small: 'Small cap', flexi: 'Flexi cap', hybrid: 'Hybrid', debt: 'Debt' } as Record<string, string>)[s] || s || 'Fund';
+    return ({ arbitrage: 'Arbitrage', gold: 'Gold', large: 'Large cap', mid: 'Mid cap', small: 'Small cap', flexi: 'Flexi cap', hybrid: 'Hybrid', debt: 'Debt', multi: 'Multi cap' } as Record<string, string>)[s] || s || 'Fund';
   }
 
   /** the fund whose comparison is open (tap a card) */
   readonly openKey = signal<number | null>(null);
-  toggleFund(key: number): void { this.openKey.set(this.openKey() === key ? null : key); if (navigator.vibrate) navigator.vibrate(3); }
-  readonly FW = 280; readonly FH = 90;
-  /** a small fund-vs-index chart for the open card: both as the growth of ₹1 over the window */
-  readonly fundChart = computed(() => {
-    const m = this.m(), ds = this.days(), key = this.openKey(); if (!m || !ds.length || key == null) return null;
-    const f = (m.funds as FundMove[]).find((x) => x.scheme_code === key); if (!f) return null;
+  readonly pickOpen = signal(false);
+  toggleFund(key: number): void { this.openKey.set(this.openKey() === key ? null : key); this.fpick.set(null); this.pickOpen.set(false); if (navigator.vibrate) navigator.vibrate(3); }
+  private openFund(): FundMove | null { const key = this.openKey(), m = this.m(); return key == null || !m ? null : (m.funds as FundMove[]).find((x) => x.scheme_code === key) ?? null; }
+  /** the open fund's window inside its own series: [i0, iEnd] */
+  private fundWindow(f: FundMove): [number, number] | null {
+    const ds = this.days(); if (!ds.length) return null;
     const g0 = ds[0].g - 1, gEnd = ds[ds.length - 1].g;
     let i0 = Math.max(0, g0 - f.from); while (i0 < f.nav_series.length - 1 && f.nav_series[i0] == null) i0++;
     const iEnd = Math.min(f.nav_series.length - 1, gEnd - f.from);
-    if (iEnd - i0 < 1) return null;
-    const n0 = f.nav_series[i0]; let j0 = i0; while (j0 <= iEnd && !f.index_series[j0]) j0++;
-    const x0 = f.index_series[j0] ?? null;
-    const A: number[] = [], B: (number | null)[] = [];
-    let lastIdx: number | null = null;
+    return iEnd - i0 < 1 ? null : [i0, iEnd];
+  }
+  /** a small fund-vs-index chart for the open card: both as the growth of ₹1 over the window */
+  readonly fundChart = computed(() => {
+    const m = this.m(), f = this.openFund(); if (!m || !f) return null;
+    const win = this.fundWindow(f); if (!win) return null; const [i0, iEnd] = win;
+    const ser = this.idxSeriesFor(f);
+    const n0 = f.nav_series[i0]; let j0 = i0; while (j0 <= iEnd && !ser[j0]) j0++;
+    const x0 = ser[j0] ?? null;
+    const A: number[] = [], B: (number | null)[] = []; let lastIdx: number | null = null;
     for (let i = i0; i <= iEnd; i++) {
       const nv = f.nav_series[i]; A.push(nv && n0 ? nv / n0 : (A[A.length - 1] ?? 1));
-      const iv = f.index_series[i]; if (iv && x0) lastIdx = iv / x0; B.push(x0 ? lastIdx : null);
+      const iv = ser[i]; if (iv && x0) lastIdx = iv / x0; B.push(x0 ? lastIdx : null);
     }
     const Bv = B.map((v) => v ?? 1);
     const lo = Math.min(1, ...A, ...Bv), hi = Math.max(1, ...A, ...Bv), pad = (hi - lo) * 0.12 || 0.01;
-    const W = this.FW, H = this.FH;
-    const y = (v: number) => H - 6 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 12);
-    const x = (i: number) => (i / (A.length - 1)) * W;
+    const Wf = this.FW, Hf = this.FH;
+    const y = (v: number) => Hf - 6 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (Hf - 12);
+    const x = (i: number) => (i / (A.length - 1)) * Wf;
     const pts = (vs: number[]) => vs.map((v, i) => [x(i), y(v)] as [number, number]);
     const fundRet = (A[A.length - 1] - 1) * 100, idxRet = lastIdx == null ? null : (lastIdx - 1) * 100;
     return { fund: smooth(pts(A)), idx: x0 ? smooth(pts(Bv)) : null, zero: y(1), fundRet, idxRet, alpha: idxRet == null ? null : fundRet - idxRet,
              from: m.days[f.from + i0], to: m.days[f.from + iEnd] };
   });
-
-  /** the fund rows' bars share one scale */
-  readonly fundScale = computed(() => Math.max(0.5, ...this.funds().flatMap((f) => [Math.abs(f.ret ?? 0), Math.abs(f.iret ?? 0)])));
-  barW(v: number | null): number { return v == null ? 0 : Math.abs(v) / this.fundScale() * 100; }
+  /** day by day for the open fund: its move and the index's move on each trading day of the window */
+  readonly fundDays = computed(() => {
+    const m = this.m(), f = this.openFund(); if (!m || !f) return [];
+    const win = this.fundWindow(f); if (!win) return []; const [i0, iEnd] = win;
+    const ser = this.idxSeriesFor(f);
+    const out: { d: string; fund: number | null; idx: number | null }[] = [];
+    for (let i = i0 + 1; i <= iEnd; i++) {
+      const a = f.nav_series[i - 1], b = f.nav_series[i];
+      const ia = ser[i - 1], ib = ser[i];
+      const fund = a && b != null && a !== b ? (b / a - 1) * 100 : a && b != null ? 0 : null;
+      const idx = ia && ib != null && ia !== ib ? (ib / ia - 1) * 100 : null;
+      if (fund == null && idx == null) continue;
+      out.push({ d: m.days[f.from + i], fund, idx });
+    }
+    return out;
+  });
+  readonly fundBars = computed(() => {
+    const ds = this.fundDays(); if (!ds.length) return null;
+    const sc = Math.max(0.05, ...ds.map((d) => Math.abs(d.fund ?? 0)), ...ds.map((d) => Math.abs(d.idx ?? 0)));
+    const n = ds.length, slot = this.FW / n, bw = Math.max(1.2, Math.min(9, slot * 0.62)), mid = this.BH / 2;
+    const yOf = (v: number) => mid - (v / sc) * (mid - 4);
+    return { mid, bw, slot, items: ds.map((d, i) => {
+      const cx = (i + 0.5) * slot, h = Math.max(1, Math.abs(yOf(d.fund ?? 0) - mid));
+      return { x: cx - bw / 2, cx, y: (d.fund ?? 0) >= 0 ? mid - h : mid, h, up: (d.fund ?? 0) >= 0, tick: d.idx == null ? null : yOf(d.idx) };
+    }) };
+  });
+  readonly fpick = signal<number | null>(null);
+  onFundPick(ev: PointerEvent, el: Element): void {
+    const n = this.fundDays().length; if (!n) return;
+    const r = el.getBoundingClientRect();
+    this.fpick.set(Math.max(0, Math.min(n - 1, Math.floor(((ev.clientX - r.left) / r.width) * n))));
+  }
+  readonly fsel = computed(() => { const ds = this.fundDays(); if (!ds.length) return null; const i = Math.min(this.fpick() ?? ds.length - 1, ds.length - 1); return { ...ds[i], i }; });
+  readonly fundBeat = computed(() => this.fundDays().filter((d) => d.fund != null && d.idx != null && d.fund > d.idx).length);
+  readonly fundDaysDesc = computed(() => this.fundDays().slice().reverse());
 
   // ── words ──
-  inr = inr;
   p(v: number | null | undefined, dp = 1): string { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '+') + Math.abs(v).toFixed(dp) + '%'; }
+  p2(v: number | null | undefined): string { return this.p(v, 2); }
   signed(v: number | null | undefined): string { return v == null ? '—' : (v < 0 ? '−' : '+') + inr(Math.abs(Math.round(v))); }
-  pts(v: number): string { return Math.abs(v).toFixed(1) + ' points'; }
   day(iso: string | null | undefined): string { return iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : ''; }
+  dayLong(iso: string | null | undefined): string { return iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) : ''; }
   tone(v: number | null | undefined): 'gain' | 'loss' | '' { return v == null ? '' : v > 0.0001 ? 'gain' : v < -0.0001 ? 'loss' : ''; }
 }

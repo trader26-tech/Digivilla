@@ -1,4 +1,4 @@
-<!-- ============ INVESTMENTS — few words: the value, you vs your indices, every fund beside its index ============ -->
+<!-- ============ INVESTMENTS — opened by a tap on the home's value: the value, you vs your index, every fund with its money; tap a fund for its comparison ============ -->
 <div class="invest">
   <header>
     <button type="button" class="icon-btn" (click)="back.emit()" aria-label="Back">
@@ -21,8 +21,15 @@
         <button type="button" role="radio" [attr.aria-checked]="range() === r.k" [class.on]="range() === r.k" (click)="setRange(r.k)">{{ r.l }}</button>
       }
     </div>
+    @if (range() === 'custom') {
+      <div class="dates">
+        <label><span>From</span><input type="date" [value]="custom().from" [min]="minDay()" [max]="custom().to || maxDay()" (change)="setCustom('from', $any($event.target).value)"></label>
+        <i aria-hidden="true">→</i>
+        <label><span>To</span><input type="date" [value]="custom().to" [min]="custom().from || minDay()" [max]="maxDay()" (change)="setCustom('to', $any($event.target).value)"></label>
+      </div>
+    }
 
-    <!-- you vs your indices: both lines = the growth of ₹1,00,000 over the range -->
+    <!-- you vs the index: both lines = the growth of ₹1,00,000 over the period; the shaded gap = alpha -->
     @if (growth(); as g) {
       <section class="card compare">
         <div class="head three">
@@ -32,8 +39,8 @@
             <span class="small num" [ngClass]="tone(g.chg)">{{ signed(g.chg) }}</span>
           </div>
           <div class="col mid">
-            <button type="button" class="label idx-l" (click)="infoOpen.set(true)" aria-label="About the index">
-              <i class="swatch idx"></i>INDEX
+            <button type="button" class="label idx-l" (click)="infoOpen.set(true)" aria-label="About the index — tap to change it">
+              <i class="swatch idx"></i>{{ indexName() | uppercase }}
               <svg class="info" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </button>
             <span class="big num idx-big">{{ p(g.idx) }}</span>
@@ -70,6 +77,8 @@
               @else { <span class="when">{{ inr(BASE) }} →</span><span class="you">{{ inr(BASE * (1 + g.mine / 100)) }}</span><span class="idx">{{ inr(BASE * (1 + g.idx / 100)) }}</span> }
             </div>
           </div>
+        } @else {
+          <p class="cmp-none">Pick a period with at least two trading days.</p>
         }
       </section>
     }
@@ -81,9 +90,9 @@
       </section>
     }
 
-    <!-- every fund beside its own index, same period -->
+    <!-- every fund: its money; tap for the comparison -->
     <section class="funds">
-      <div class="hd"><b>Your funds</b><span>{{ rangeWords().toLowerCase() }}</span></div>
+      <div class="hd"><b>Your funds</b><span>{{ rangeWords() }}</span></div>
       @for (f of funds(); track f.key) {
         <div class="fund" [class.open]="openKey() === f.key">
           <button type="button" class="fund-btn" (click)="toggleFund(f.key)" [attr.aria-expanded]="openKey() === f.key">
@@ -97,12 +106,31 @@
             </div>
             <div class="pl num" [ngClass]="tone(f.pnl)"><b>{{ signed(f.pnl) }}</b><span>{{ p(f.invested ? f.pnl / f.invested * 100 : null) }}</span></div>
           </button>
+
           @if (openKey() === f.key) {
             <div class="cmp">
+              <!-- which index: this fund's own, or one the client picks -->
+              <div class="ixrow">
+                <span class="ixk">Compared with</span>
+                <button type="button" class="ixpick" (click)="pickOpen.set(!pickOpen())" [attr.aria-expanded]="pickOpen()">
+                  {{ f.bench }}@if (f.changed) { <em>changed</em> }
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+              @if (pickOpen()) {
+                <div class="ixlist" role="radiogroup" aria-label="Index for this fund">
+                  @for (x of indices(); track x.key) {
+                    <button type="button" role="radio" [attr.aria-checked]="f.benchKey === x.key" [class.on]="f.benchKey === x.key" (click)="setFor(f.key, x.key === ownKey(f.f) ? null : x.key); pickOpen.set(false)">
+                      <b>{{ x.short }}</b>@if (x.key === ownKey(f.f)) { <small>its own</small> }
+                    </button>
+                  }
+                </div>
+              }
+
               @if (fundChart(); as fc) {
                 <div class="duo num">
                   <div class="d you"><small>FUND</small><b [ngClass]="tone(fc.fundRet)">{{ p(fc.fundRet) }}</b></div>
-                  <div class="d idx"><small>{{ f.bench || 'INDEX' }}</small><b>{{ p(fc.idxRet) }}</b></div>
+                  <div class="d idx"><small>{{ f.bench }}</small><b>{{ p(fc.idxRet) }}</b></div>
                   <div class="d al"><small>ALPHA</small><b [ngClass]="tone(fc.alpha)">{{ p(fc.alpha) }}</b></div>
                 </div>
                 <svg class="fchart" [attr.viewBox]="'-2 0 ' + (FW + 4) + ' ' + FH" aria-hidden="true">
@@ -110,7 +138,30 @@
                   @if (fc.idx) { <path class="ln idx" [attr.d]="fc.idx"/> }
                   <path class="ln you" [attr.d]="fc.fund"/>
                 </svg>
-                <div class="fkey"><span>{{ day(fc.from) }} – {{ day(fc.to) }}</span><span class="you">fund</span><span class="idx">{{ f.bench || 'index' }}</span></div>
+                <div class="fkey"><span>{{ day(fc.from) }} – {{ day(fc.to) }}</span><span class="you">fund</span><span class="idx">{{ f.bench }}</span></div>
+
+                <!-- day by day: the fund's day as a bar, the index's day as a tick — tap a day -->
+                @if (fundBars(); as b) {
+                  <div class="dd-h"><b>Day by day</b><span>Beat it {{ fundBeat() }} of {{ fundDays().length }} days</span></div>
+                  @if (fsel(); as s) {
+                    <div class="dd-sel num"><span class="dd-d">{{ dayLong(s.d) }}</span><span class="you" [ngClass]="tone(s.fund)">{{ p2(s.fund) }}</span><span class="idx">{{ p2(s.idx) }}</span></div>
+                  }
+                  <svg #fbars class="dbars" [attr.viewBox]="'0 0 ' + FW + ' ' + BH" preserveAspectRatio="none" role="img" aria-label="Day by day — tap a day"
+                       (pointerdown)="onFundPick($event, fbars)" (pointermove)="$event.buttons ? onFundPick($event, fbars) : null">
+                    @if (fsel(); as s) { <rect class="sel" [attr.x]="s.i * b.slot" y="0" [attr.width]="b.slot" [attr.height]="BH" rx="2"/> }
+                    <line class="zero" x1="0" [attr.x2]="FW" [attr.y1]="b.mid" [attr.y2]="b.mid"/>
+                    @for (x of b.items; track $index) {
+                      <rect [attr.x]="x.x" [attr.y]="x.y" [attr.width]="b.bw" [attr.height]="x.h" rx="1" [class.up]="x.up" [class.dn]="!x.up" [class.on]="fsel()?.i === $index"/>
+                      @if (x.tick != null) { <line class="tick" [attr.x1]="x.cx - b.bw / 2 - 1" [attr.x2]="x.cx + b.bw / 2 + 1" [attr.y1]="x.tick" [attr.y2]="x.tick"/> }
+                    }
+                  </svg>
+                  <ul class="dd-list num">
+                    <li class="dd-head"><span>Day</span><span>Fund</span><span>{{ f.bench }}</span></li>
+                    @for (d of fundDaysDesc(); track d.d) {
+                      <li><span>{{ dayLong(d.d) }}</span><span [ngClass]="tone(d.fund)">{{ p2(d.fund) }}</span><span class="muted">{{ p2(d.idx) }}</span></li>
+                    }
+                  </ul>
+                }
               } @else {
                 <p class="cmp-none">Too new to compare for this period.</p>
               }
@@ -122,21 +173,26 @@
       }
     </section>
   }
-
 </div>
 
-  <!-- the (i): about the indices in the comparison -->
+<!-- the (i): about the index, and one index for everything -->
 @if (infoOpen()) {
   <div class="sh-scrim" (click)="infoOpen.set(false)" aria-hidden="true"></div>
   <section class="sh" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
     <span class="sh-grab" aria-hidden="true"></span>
     <h3 id="ixTitle">The index you’re compared with</h3>
-    <p class="sh-lead">Each fund is measured against the index it follows. Together they make your index, weighted by what you hold.</p>
+    <p class="sh-lead">Each fund is measured against the index it follows; together they make your index, weighted by what you hold. Or compare everything with one index.</p>
+    <div class="sh-all" role="radiogroup" aria-label="Compare everything with">
+      <button type="button" role="radio" [attr.aria-checked]="!choice().all" [class.on]="!choice().all" (click)="setAll(null)">Each fund’s own</button>
+      @for (x of indices(); track x.key) {
+        <button type="button" role="radio" [attr.aria-checked]="choice().all === x.key" [class.on]="choice().all === x.key" (click)="setAll(x.key)">{{ x.short }}</button>
+      }
+    </div>
     <ul class="ix">
-      @for (x of indexInfo(); track x.name) {
+      @for (x of indexInfo(); track x.key) {
         <li>
           <div class="ix-h"><b>{{ x.name }}</b><span class="num">{{ x.weight < 0.5 ? '<1' : (x.weight | number:'1.0-0') }}%</span></div>
-          <p>{{ x.about }}</p>
+          @if (x.about) { <p>{{ x.about }}</p> }
           <span class="ix-f">{{ x.funds.join(' · ') }}</span>
         </li>
       }

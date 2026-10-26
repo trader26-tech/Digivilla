@@ -205,8 +205,18 @@ def _build(client_code: str) -> dict:
     funds.sort(key=lambda f: -(f["value"] or 0))
     navmaps = {c: {p.date: p.nav for p in (pts or []) if p.nav} for c, pts in navfull.items()}
     portfolio = _portfolio_series(txns, days, navmaps)
+    # every index the store has, aligned to `days` — the app lets a client compare any fund
+    # (or everything) with the index they choose, not only the one its sleeve follows
+    indices = []
+    for key, ser in (store.get("series") or {}).items():
+        vals = ser.get("values") or []
+        if not any(vals):
+            continue
+        vmap = {d: v for d, v in zip(idx_days, vals)}
+        indices.append({"key": key, "name": ser.get("name") or key, "short": market_daily.SHORT.get(key, ser.get("name") or key),
+                        "series": [round(vmap[d], 4) if vmap.get(d) else None for d in days]})
     return {
-        "portfolio": portfolio,
+        "portfolio": portfolio, "indices": indices,
         "nav_date": day.get("nav_date"), "prev_date": day.get("prev_date"),
         "total": {"change": day.get("change"), "pct": day.get("pct"), "value": round(value_total, 2)},
         "index_as_of": idx_days[-1] if idx_days else None,
