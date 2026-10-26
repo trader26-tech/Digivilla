@@ -129,7 +129,7 @@ def client_audit(code: str) -> dict:
         ls = sorted(lines_by_villa.get(v["id"], []), key=lambda x: x["date"])
         if not ls:
             continue
-        inv = sum(x["amount"] for x in ls)
+        inv = sum(x["amount"] for x in ls if x["amount"] > 0)     # money put in — a withdrawal never lowers it
         val = sum(x["value"] for x in ls)
         finished = v.get("status") == "constructed" or inv >= _finished_at()
         houses.append({

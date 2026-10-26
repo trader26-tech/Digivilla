@@ -843,13 +843,18 @@ def rebuild_holdings(client_codes: list[str] | None = None) -> dict:
 def holdings_consistency() -> dict:
     """Does every client's holdings total equal their transactions total? The
     system's own tie-out — the admin home shows it and the audit page lists it."""
-    txns = _all_rows("client_transactions", "client_code,kind,amount,units") if _use_supabase() else _load_local().get("transactions", [])
+    txns = _all_rows("client_transactions", "order_id,client_code,txn_date,scheme_name,scheme_code,folio_no,kind,amount,nav,units") if _use_supabase() else _load_local().get("transactions", [])
     holds = _all_rows("client_holdings", "client_code,invested,units") if _use_supabase() else _load_local().get("holdings", [])
     names = {c["client_code"]: (c.get("name") or "").strip() for c in _all_clients()}
     per: dict[str, dict] = {}
     for t in txns:
         c = per.setdefault(t["client_code"], {"txn_amount": 0.0, "txn_units": 0.0, "hold_amount": 0.0, "hold_units": 0.0, "txns": 0})
-        c["txn_amount"] += _signed(t, "amount"); c["txn_units"] += _signed(t, "units"); c["txns"] += 1
+        c["txns"] += 1
+    # what the holdings SHOULD be is exactly the roll-up rule (money in only for ₹ — a withdrawal
+    # takes units, never invested; a fully withdrawn fund leaves no row), so compare with that
+    for e in _holdings_from_txns([t for t in txns if t.get("scheme_name")]):
+        c = per.setdefault(e["client_code"], {"txn_amount": 0.0, "txn_units": 0.0, "hold_amount": 0.0, "hold_units": 0.0, "txns": 0})
+        c["txn_amount"] += e["invested"]; c["txn_units"] += e["units"]
     for h in holds:
         c = per.setdefault(h["client_code"], {"txn_amount": 0.0, "txn_units": 0.0, "hold_amount": 0.0, "hold_units": 0.0, "txns": 0})
         c["hold_amount"] += _to_float(h.get("invested")); c["hold_units"] += _to_float(h.get("units"))
