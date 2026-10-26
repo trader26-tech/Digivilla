@@ -717,9 +717,11 @@ def _fund_key(t: dict) -> str:
 
 
 def _holdings_from_txns(txns: list[dict], orphans: list | None = None) -> list[dict]:
-    """Roll transactions up into holdings rows: one per (client, scheme, folio),
-    units and ₹ signed (money out — redemption, SWP, switch-out — takes away),
-    last NAV = the latest line's.
+    """Roll transactions up into holdings rows: one per (client, scheme, folio).
+    Units are signed (money out — redemption, SWP, switch-out — takes units
+    away); `invested` is the money PUT IN only — a withdrawal never lowers it
+    (the user's rule, 2026-10-26: what was invested stays what was invested;
+    withdrawals are counted separately). Last NAV = the latest line's.
 
     A withdrawal ALWAYS comes off the fund it belongs to: when its folio or the
     scheme's spelling differs from the purchase lines (AMC reports vary:
@@ -738,7 +740,9 @@ def _holdings_from_txns(txns: list[dict], orphans: list | None = None) -> list[d
             "units": 0.0, "invested": 0.0, "last_nav": None, "report_date": None, "_fund": _fund_key(t),
         })
         e["units"] += _signed(t, "units")
-        e["invested"] += _signed(t, "amount")
+        # invested = money PUT IN: a withdrawal (SWP · redemption) takes units off, never the invested ₹
+        if _signed(t, "amount") > 0:
+            e["invested"] += _signed(t, "amount")
         if t.get("scheme_code") and not e["scheme_code"]:
             e["scheme_code"] = t["scheme_code"]
             e["_fund"] = _fund_key(e)
@@ -755,16 +759,13 @@ def _holdings_from_txns(txns: list[dict], orphans: list | None = None) -> list[d
             if e["units"] >= -1e-4:
                 break
             take = min(x["units"], -e["units"])
-            share = take / -e["units"]
             x["units"] -= take
-            x["invested"] += e["invested"] * share
             e["units"] += take
-            e["invested"] -= e["invested"] * share
         if e["units"] < -1e-4 and orphans is not None:
             orphans.append({"client_code": e["client_code"], "scheme_name": e["scheme_name"], "folio_no": e["folio_no"],
-                            "units": round(e["units"], 4), "amount": round(e["invested"], 2)})
-    # a folio emptied by a withdrawal can be left holding a ₹ figure (sold for more than it cost):
-    # that belongs to the fund, so it moves onto the folios still held, by units
+                            "units": round(e["units"], 4)})
+    # a folio emptied by a withdrawal still carries the money put into it: that belongs to the
+    # fund, so it moves onto the folios of it still held (by units) — the fund's invested stays whole
     funds: dict[tuple, list] = {}
     for e in agg.values():
         funds.setdefault((e["client_code"], e["_fund"]), []).append(e)
@@ -784,8 +785,8 @@ def _holdings_from_txns(txns: list[dict], orphans: list | None = None) -> list[d
         e.pop("_fund", None)
         e["units"] = round(e["units"], 4)
         e["invested"] = round(e["invested"], 2)
-        if e["units"] <= 1e-4 and e["invested"] <= 1:
-            continue                                   # fully redeemed → no holding
+        if e["units"] <= 1e-4:
+            continue                                   # fully redeemed → no holding (its money in still counts via the transactions)
         e["updated_at"] = _now_iso()
         out.append(e)
     return out

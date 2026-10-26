@@ -287,7 +287,7 @@ def _valued_holdings(client_code: str) -> list[dict]:
         units = _num(h.get("units"))
         invested = _num(h.get("invested"))
         nav = meta.get("nav")
-        worth = round(units * nav, 2) if (nav and units) else round(invested, 2)
+        worth = round(units * nav, 2) if (nav and units) else (0.0 if units <= 1e-6 else round(invested, 2))
         prev = nav_cache.prev_nav(sc, meta.get("nav_date")) if (nav and units) else None
         out.append({
             "scheme_name": h.get("scheme_name"),
@@ -344,7 +344,7 @@ def live_navs(owner: str) -> dict:
         units = _num(h.get("units"))
         nav = meta.get("nav")
         invested = round(_num(h.get("invested")), 2)
-        value = round(units * nav, 2) if (nav and units) else invested
+        value = round(units * nav, 2) if (nav and units) else (0.0 if units <= 1e-6 else invested)
         funds.append({
             "name": h.get("scheme_name") or "Fund",
             "scheme_code": sc,
@@ -522,7 +522,7 @@ def live_houses(owner: str) -> dict:
             f_units = h["units"] * share
             f_inv = h["invested"] * share
             nav = meta.get("nav")
-            f_val = f_units * nav if (nav and f_units) else f_inv
+            f_val = f_units * nav if (nav and f_units) else (0.0 if f_units <= 1e-6 else f_inv)
             value += f_val
             invested += f_inv
             funds.append({
@@ -551,6 +551,39 @@ def live_houses(owner: str) -> dict:
     return {"houses": houses, **nav_cache.freshness([h.get("scheme_code") for h in hs])}
 
 
+def _flows_load(client_code: str) -> Optional[dict]:
+    """Money PUT IN (every purchase, gross) and TAKEN OUT (SWP · redemption ·
+    switch-out) to date, from the transactions — the user's rule (2026-10-26):
+    a withdrawal never lowers what was invested; it is counted on its own.
+    None when the client has no transactions (→ the holdings' figures)."""
+    try:
+        rows = _sb().table("client_transactions").select("kind,amount,txn_date").eq(
+            "client_code", client_code).execute().data or []
+    except Exception:
+        return None
+    if not rows:
+        return None
+    put_in = taken = 0.0
+    since = last_out = None
+    for r in rows:
+        a = abs(_num(r.get("amount")))
+        d = str(r.get("txn_date") or "")[:10] or None
+        if _txn_sign(r.get("kind")) < 0:
+            taken += a
+            if d and (not last_out or d > last_out):
+                last_out = d
+        else:
+            put_in += a
+            if d and (not since or d < since):
+                since = d
+    return {"invested": round(put_in, 2), "withdrawn": round(taken, 2), "since": since, "last_withdrawal": last_out}
+
+
+def _flows(client_code: str) -> Optional[dict]:
+    # short and plain (not stale-while-revalidate): an upload shows on the next open
+    return _memo(f"flows:{client_code}", 15, lambda: _flows_load(client_code))
+
+
 def portfolio_summary(owner: str) -> dict:
     """Real net-worth summary for the logged-in user (empty when unmatched).
 
@@ -569,9 +602,11 @@ def portfolio_summary(owner: str) -> dict:
         # …and the holdings + board pins as soon as the client code is known
         f_hs = ex.submit(_valued_holdings, code) if code else None
         f_layout = ex.submit(houses_layout, code) if code else None
+        f_flows = ex.submit(_flows, code) if code else None
         swp, name, city = f_swp.result(), f_name.result(), f_city.result()
         hs = f_hs.result() if f_hs else []
         layout = f_layout.result() if f_layout else None
+        flows = f_flows.result() if f_flows else None
     if not code:
         return {"worth": 0, "invested": 0, "gain": 0, "gain_pct": 0,
                 "total_swp": swp, "estate_name": name, "estate_city": city,
@@ -579,14 +614,20 @@ def portfolio_summary(owner: str) -> dict:
                 "day": None, "allocation": {"funds": [], "worth": 0},
                 **nav_cache.freshness([])}
     worth = round(sum(h["current_value"] for h in hs), 2)
-    invested = round(sum(h["invested"] for h in hs), 2)
-    gain = round(worth - invested, 2)
+    # invested = every rupee put in (a withdrawal never lowers it); withdrawn = taken out to date;
+    # so the return is what it is worth now PLUS what was taken out, against what was put in
+    invested = flows["invested"] if flows else round(sum(h["invested"] for h in hs), 2)
+    withdrawn = flows["withdrawn"] if flows else 0.0
+    gain = round(worth + withdrawn - invested, 2)
     return {
         "worth": worth,
         "invested": invested,
         "gain": gain,
         "gain_pct": round(gain / invested * 100, 2) if invested else 0,
         "total_swp": swp,
+        "withdrawn": withdrawn,
+        "invested_since": flows["since"] if flows else None,
+        "last_withdrawal": flows["last_withdrawal"] if flows else None,
         "estate_name": name,
         "estate_city": city,
         "holdings_count": len(hs),

@@ -1421,6 +1421,8 @@
 .flow-fig.gold { color: #f3dfa8; }
 .flow-fig.violet { color: var(--color-accent-200); }
 .flow-sub { font-size: 10px; color: var(--color-neutral-500); white-space: nowrap; }
+/* the withdrawn-to-date figure: the same gold as WITHDRAWALS, a touch brighter than the words */
+.fs-out b { font-weight: 600; color: #e9d29a; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 
 /* ===== PORTFOLIO VALUE — headline figure, invested + returns, allocation bar
    and the five fund columns. ===== */

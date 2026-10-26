@@ -331,6 +331,11 @@ export interface PortfolioSummary {
   gain: number;
   gain_pct: number;
   total_swp: number;
+  /** ₹ taken out to date (SWP · redemption) — never taken off `invested`, which is every rupee put in */
+  withdrawn?: number;
+  /** the first purchase / the latest withdrawal (YYYY-MM-DD) */
+  invested_since?: string | null;
+  last_withdrawal?: string | null;
   holdings_count: number;
   has_holdings: boolean;
   client_code: string | null;
@@ -765,6 +770,11 @@ export class EstateService {
     if (p) return p.gain;
     return this.estateValue - this.invested;
   }
+
+  /** Money taken out to date (SWP · redemption), from the real transactions. */
+  get withdrawn(): number { return this.portfolio()?.withdrawn ?? 0; }
+  get investedSince(): string | null { return this.portfolio()?.invested_since ?? null; }
+  get lastWithdrawal(): string | null { return this.portfolio()?.last_withdrawal ?? null; }
 
   /** Total SWP paid out to the user so far (Σ paid income/rent), from server. */
   get totalSwp(): number { return this.portfolio()?.total_swp ?? 0; }

@@ -47,7 +47,7 @@ def txn_sign(kind) -> float:
 
 
 class _House:
-    __slots__ = ("id", "name", "status", "coin", "lines", "dates", "auto", "order", "placements", "bucket")
+    __slots__ = ("id", "name", "status", "coin", "lines", "dates", "auto", "order", "placements", "bucket", "withdrawn")
 
     def __init__(self, hid: str, name: str, status: str, coin: bool, auto: bool, order: int, bucket=None):
         self.id, self.name, self.status, self.coin, self.auto, self.order = hid, name, status, coin, auto, order
@@ -55,6 +55,7 @@ class _House:
         self.lines: dict[int, dict] = {}       # scheme_code → {units, invested, scheme_name}
         self.dates: list[str] = []
         self.placements: list[dict] = []       # [{order_id, amount, units, fraction}]
+        self.withdrawn = 0.0                   # ₹ taken out of this villa (SWP · redemption) — never off its invested
 
     def invested(self) -> float:
         return sum(l["invested"] for l in self.lines.values())
@@ -208,9 +209,14 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
                 u = min(l["units"], units_left)
                 if u <= 1e-9:
                     continue
-                share = u / l["units"] if l["units"] else 0.0
-                a = min(l["invested"] * share, amt_left) if amt_left > 0 else l["invested"] * share
-                h.add(r["code"], r["name"], -u, -a, None, r["order_id"], -(u / -r["units"]) if r["units"] else -1.0)
+                # the units come off; the invested ₹ stays (a finished villa stays finished) — the
+                # sale's ₹ is this villa's withdrawal, in proportion to the units it gave
+                frac = u / -r["units"] if r["units"] else 1.0
+                a = amt_left * (u / units_left) if units_left > 0 else 0.0
+                l["units"] -= u
+                h.withdrawn += a
+                if r.get("order_id"):
+                    h.placements.append({"order_id": r["order_id"], "amount": -round(a, 2), "units": -round(u, 4), "fraction": -round(frac, 6)})
                 units_left -= u
                 amt_left -= a
                 if units_left <= 1e-9:
@@ -232,6 +238,7 @@ def allocate(txns: Iterable[dict], villas: Iterable[dict], *, unit: float, max_h
             "coin": h.coin or finished, "auto": h.auto, "order": h.order, "bucket": h.bucket,
             "building": not finished, "since": min(h.dates) if h.dates else "",
             "invested": round(inv, 2),
+            "withdrawn": round(h.withdrawn, 2),
             "pct": 100.0 if finished else round(min(99.0, inv / unit * 100), 1),
             "holdings": sorted(hold, key=lambda l: -l["invested"]),
             "placements": h.placements,

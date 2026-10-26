@@ -1088,6 +1088,11 @@ export class EstateHomeComponent implements OnInit {
     const v = this.villaCount;
     return v ? `${v} villa${v === 1 ? '' : 's'} · SWP on the 1st` : 'Starts with your first villa';
   }
+  /** "Sep 2026" — the month of the first purchase, for the INVESTED sub-line. */
+  get investedSince(): string {
+    const d = this.est.investedSince;
+    return d ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
+  }
   /** INVESTED (violet) figure: the board worth (clamped invested ₹). */
   get investedAmt(): number { return this.boardWorth; }
   /** INVESTED sub-line: reflects the plot in progress / estate completion. */

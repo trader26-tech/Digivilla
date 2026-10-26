@@ -33,7 +33,14 @@
           <span class="flow-lbl">WITHDRAWALS</span>
         </div>
         <div class="flow-fig gold"><span>{{ inr(withdrawAmt) }}</span><span class="unit">/mo</span></div>
-        <div class="flow-sub">{{ withdrawSub }}</div>
+        <!-- what has actually been taken out, to date (never taken off the invested) -->
+        <div class="flow-sub">
+          @if (est.withdrawn > 0) {
+            <span class="fs-out"><b>{{ inr(est.withdrawn) }}</b> withdrawn to date</span>
+          } @else {
+            {{ villaCount ? 'Nothing withdrawn yet' : 'Starts with your first villa' }}
+          }
+        </div>
       </div>
       <div class="flow-div" aria-hidden="true"></div>
       <div class="flow out">
@@ -42,7 +49,8 @@
           <span class="flow-arrow" aria-hidden="true">↑</span>
         </div>
         <div class="flow-fig violet"><span>{{ inr(investedAmt) }}</span></div>
-        <div class="flow-sub">{{ investedSub }}</div>
+        <!-- every rupee put in — a withdrawal never lowers it -->
+        <div class="flow-sub">{{ investedSince ? 'Put in since ' + investedSince : 'Put in to date' }}</div>
       </div>
     </div>
 
