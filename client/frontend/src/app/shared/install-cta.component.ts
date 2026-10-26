@@ -28,8 +28,8 @@ import { InstallService } from './install.service';
         <div class="ic">
           <img class="ic-mark" src="icons/tdc2/mark-96.webp" alt="" width="44" height="44" />
           <div class="ic-t">
-            <b>Add to your home screen</b>
-            <span>Opens like an app — full screen, one tap away.</span>
+            <b>Get the app on your phone</b>
+            <span>Full screen, one tap from your home screen.</span>
           </div>
           <button type="button" class="ic-go" (click)="go()">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
