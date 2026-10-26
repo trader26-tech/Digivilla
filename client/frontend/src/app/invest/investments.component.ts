@@ -221,16 +221,32 @@ export class InvestmentsComponent {
   });
 
   // ── when the figures were published, and when the next ones come ──
+  /** the day's move: the home's own figure (same numbers everywhere), else the comparison data's */
+  readonly today = computed(() => {
+    const d = this.est.portfolio()?.day, m = this.m();
+    if (d && d.change != null) return { change: d.change, pct: d.pct, nav: d.nav_date, prev: d.prev_date, lagging: d.lagging || 0, funds: d.funds || 0 };
+    if (m?.total?.change != null) return { change: m.total.change, pct: m.total.pct, nav: m.nav_date, prev: m.prev_date, lagging: 0, funds: 0 };
+    return null;
+  });
+  /** which NAV the page shows, when it was pulled, and when the next one comes (AMCs publish ~9–11 PM IST on weekdays) */
   readonly timing = computed(() => {
-    const m = this.m(); if (!m?.nav_date) return null;
-    const ist = (ms: number) => new Date(ms + 330 * 60_000);
-    const today = ist(Date.now()).toISOString().slice(0, 10);
-    const nav = m.nav_date;
-    const when = nav === today ? 'Today' : nav === ist(Date.now() - 86_400_000).toISOString().slice(0, 10) ? 'Yesterday' : this.day(nav);
+    const p = this.est.portfolio(), m = this.m();
+    const nav = this.today()?.nav || p?.nav_date || m?.nav_date; if (!nav) return null;
+    const istNow = new Date(Date.now() + 330 * 60_000);
+    const todayIso = istNow.toISOString().slice(0, 10), hour = istNow.getUTCHours();
+    const tomorrowIso = new Date(Date.now() + 330 * 60_000 + 86_400_000).toISOString().slice(0, 10);
     const d = new Date(nav + 'T00:00:00Z'); do { d.setUTCDate(d.getUTCDate() + 1); } while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
     const next = d.toISOString().slice(0, 10);
-    const nextWhen = next === today ? 'Tonight' : next === ist(Date.now() + 86_400_000).toISOString().slice(0, 10) ? 'Tomorrow' : this.day(next);
-    return { when, nav: this.day(nav), nextWhen, next: this.day(next), late: next < today };
+    let nextV: string, nextS: string;
+    if (next < todayIso || (next === todayIso && hour >= 21)) { nextV = 'Any minute'; nextS = 'AMCs are publishing · we check every 10 min'; }
+    else if (next === todayIso) { nextV = 'Tonight'; nextS = this.dayLong(next) + ' · from 9 PM'; }
+    else if (next === tomorrowIso) { nextV = 'Tomorrow'; nextS = this.dayLong(next) + ' · from 9 PM'; }
+    else { nextV = this.dayLong(next); nextS = 'from 9 PM'; }
+    const fa = p?.fetched_at ? new Date(p.fetched_at) : null;
+    const pulled = fa && !isNaN(fa.getTime())
+      ? fa.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }).replace(/\s?(am|pm)/i, (x) => ' ' + x.trim().toUpperCase())
+      : null;
+    return { nav: this.dayLong(nav), isToday: nav === todayIso, pulled, nextV, nextS };
   });
 
   // ── fund by fund ──

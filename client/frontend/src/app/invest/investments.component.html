@@ -11,6 +11,17 @@
     <span class="kicker">CURRENT VALUE</span>
     <span class="value num">{{ inr(value) }}</span>
     <span class="sub num">Invested {{ inr(invested) }}</span>
+    <!-- the day: how much it moved, and exactly which NAVs that compares -->
+    @if (today(); as d) {
+      <div class="today">
+        <span class="today-chip num" [ngClass]="tone(d.change)">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path [attr.d]="d.change < 0 ? 'M1 2.5h8L5 8.5z' : 'M1 7.5h8L5 1.5z'"/></svg>
+          {{ signed(d.change) }} <i>·</i> {{ p2(d.pct) }}
+        </span>
+        <span class="today-when">{{ dayLong(d.nav) }}@if (d.prev) { <i>vs</i> {{ dayLong(d.prev) }} }</span>
+        @if (d.lagging > 0) { <span class="today-lag">{{ d.lagging }} fund{{ d.lagging === 1 ? '' : 's' }} still on {{ dayLong(d.prev) }} — updates tonight</span> }
+      </div>
+    }
   </section>
 
   @if (!m()) {
@@ -85,8 +96,16 @@
 
     @if (timing(); as t) {
       <section class="timing">
-        <div><span class="label"><i class="dot live"></i>NAV OF</span><span class="v">{{ t.nav }}</span></div>
-        <div><span class="label"><i class="dot next"></i>NEXT</span><span class="v">{{ t.late ? 'Soon' : t.nextWhen }}</span></div>
+        <div>
+          <span class="label"><i class="dot live"></i>NAV OF</span>
+          <span class="v">{{ t.nav }}</span>
+          <span class="s">@if (t.pulled) { Updated {{ t.pulled }} } @else { Latest published }</span>
+        </div>
+        <div>
+          <span class="label"><i class="dot next"></i>NEXT NAV</span>
+          <span class="v">{{ t.nextV }}</span>
+          <span class="s">{{ t.nextS }}</span>
+        </div>
       </section>
     }
 
