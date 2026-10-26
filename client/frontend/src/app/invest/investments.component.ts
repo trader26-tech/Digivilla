@@ -4,9 +4,9 @@ import { Component, EventEmitter, Output, computed, inject, signal } from '@angu
 import { EstateService, FundMove, FundMoves } from '../estate.service';
 import { inr } from '../shared/format.util';
 
-type Range = '1m' | '3m' | '6m' | '1y' | '3y' | 'all' | 'custom';
+type Range = '1d' | '1m' | '3m' | '6m' | '1y' | '3y' | 'all' | 'custom';
 const RANGES: { k: Range; l: string; n: number; words: string }[] = [
-  { k: '1m', l: '1M', n: 22, words: 'Last month' }, { k: '3m', l: '3M', n: 66, words: 'Last 3 months' }, { k: '6m', l: '6M', n: 132, words: 'Last 6 months' },
+  { k: '1d', l: '1D', n: 1, words: 'Today' }, { k: '1m', l: '1M', n: 22, words: 'Last month' }, { k: '3m', l: '3M', n: 66, words: 'Last 3 months' }, { k: '6m', l: '6M', n: 132, words: 'Last 6 months' },
   { k: '1y', l: '1Y', n: 252, words: 'Last 12 months' }, { k: '3y', l: '3Y', n: 756, words: 'Last 3 years' }, { k: 'all', l: 'All', n: 1e9, words: 'Since you started' },
   { k: 'custom', l: 'Custom', n: 1e9, words: 'Your dates' },
 ];
@@ -104,12 +104,13 @@ export class InvestmentsComponent {
   private isChanged(f: FundMove): boolean { return this.indexKeyFor(f) !== (f.bench?.key ?? null); }
 
   // ── the period ──
-  readonly wanted = signal<Range>('1y');
+  readonly wanted = signal<Range>('1d');
   readonly custom = signal<{ from: string; to: string }>({ from: '', to: '' });
   /** ranges the history can actually fill (a 2-month-old estate has no 1Y), always + Custom */
   readonly ranges = computed(() => { const n = this.allDays().length; return RANGES.filter((r, i) => i === 0 || r.k === 'all' || r.k === 'custom' || n > RANGES[i - 1].n); });
   readonly range = computed<Range>(() => { const rs = this.ranges(); return rs.some((r) => r.k === this.wanted()) ? this.wanted() : 'all'; });
   readonly rangeWords = computed(() => {
+    if (this.range() === '1d') { const ds = this.days(); return ds.length ? this.dayLong(ds[ds.length - 1].d) : 'Today'; }
     if (this.range() === 'custom') { const ds = this.days(); return ds.length ? `${this.day(ds[0].d)} – ${this.day(ds[ds.length - 1].d)}` : 'Pick two dates'; }
     return RANGES.find((r) => r.k === this.range())!.words;
   });
@@ -326,6 +327,51 @@ export class InvestmentsComponent {
     const b = fc.B[i];
     return { d: fc.D[i], fund: (fc.A[i] - 1) * 100, idx: b == null ? null : (b - 1) * 100, x: fc.x(i), yFund: fc.y(fc.A[i]), yIdx: b == null ? null : fc.y(b), live: this.fscrub() != null };
   });
+
+  /** the biggest peak-to-trough fall inside the window, for you and for the index (time-weighted, money added taken out) */
+  readonly drawdown = computed(() => {
+    const ds = this.days(); if (ds.length < 2) return null;
+    const dd = (pick: (d: Day) => number | null) => {
+      let v = 1, peak = 1, worst = 0, pd = ds[0].d, from = ds[0].d, to = ds[0].d, cur = ds[0].d;
+      for (const d of ds) {
+        v *= 1 + (pick(d) ?? 0) / 100;
+        if (v > peak) { peak = v; cur = d.d; }
+        const fall = v / peak - 1;
+        if (fall < worst) { worst = fall; from = cur; to = d.d; pd = d.d; }
+      }
+      return { pct: worst * 100, from, to };
+    };
+    return { you: dd((d) => d.pct), idx: dd((d) => d.idx) };
+  });
+
+  /** an open fund's move on its newest NAV day, and its index's move that day */
+  fundDay(f: FundMove): { d: string | null; chg: number | null; pct: number | null; idx: number | null } {
+    const m = this.m(); if (!m) return { d: null, chg: null, pct: null, idx: null };
+    const d = f.nav_date;
+    let idx: number | null = null;
+    const g = d ? m.days.indexOf(d) : -1;
+    if (g > 0) {
+      const ser = this.idxSeriesFor(f), i = g - f.from;
+      let j = i - 1; while (j >= 0 && ser[j] == null) j--;
+      const a = j >= 0 ? ser[j] : null, b = i >= 0 ? ser[i] : null;
+      if (a && b != null && a !== b) idx = (b / a - 1) * 100;
+    }
+    if (idx == null && !this.isChanged(f) && f.bench?.day_pct != null && f.bench.day_date === d) idx = f.bench.day_pct;
+    return { d, chg: f.day_change, pct: f.day_pct, idx };
+  }
+
+  /** the 1D bars share one scale */
+  dayW(v: number | null, other: number | null): number { const sc = Math.max(0.05, Math.abs(v ?? 0), Math.abs(other ?? 0)); return Math.abs(v ?? 0) / sc * 100; }
+
+  /** ₹99.12 L / ₹1.02 Cr for the big figures (full ₹ below 10 L) */
+  money(v: number | null | undefined): string {
+    if (v == null) return '—';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e7) return `${s}₹${(a / 1e7).toFixed(2)} Cr`;
+    if (a >= 1e6) return `${s}₹${(a / 1e5).toFixed(2)} L`;
+    return s + inr(Math.round(a));
+  }
+  signedMoney(v: number | null | undefined): string { return v == null ? '—' : (v < 0 ? '−' : '+') + this.money(Math.abs(v)); }
 
   // ── words ──
   p(v: number | null | undefined, dp = 1): string { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '+') + Math.abs(v).toFixed(dp) + '%'; }

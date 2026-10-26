@@ -193,3 +193,30 @@ header { display: flex; align-items: center; gap: 12px; padding: 0 20px; animati
 .today-when { font-size: 12px; color: var(--n400); i { font-style: normal; color: var(--n600); margin: 0 3px; } }
 .today-lag { font-size: 11px; color: var(--n500); }
 .timing .s { font-size: 11.5px; color: var(--n400); }
+
+/* 1D: you vs index as two bars */
+.day1 { display: flex; flex-direction: column; gap: 10px; padding: 6px 0 2px; }
+.d1-row { display: grid; grid-template-columns: 50px 1fr 72px; align-items: center; gap: 10px;
+  b { text-align: right; font-size: 16px; font-weight: 500; } }
+.d1-l { font-size: 13px; color: var(--n300); }
+.d1-track { height: 12px; border-radius: 6px; background: rgba(255, 255, 255, .05); overflow: hidden; }
+.d1-bar { display: block; height: 100%; min-width: 3px; border-radius: 6px; background: var(--n500); transition: width .4s cubic-bezier(.22, 1, .36, 1);
+  &.gain { background: var(--gain); } &.loss { background: var(--loss); } &.idx { background: #6b6e85; } }
+
+/* the period's biggest fall */
+.dd { display: flex; align-items: center; gap: 12px; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--n800); font-size: 13px;
+  .dd-k { font-size: 10px; letter-spacing: .1em; color: var(--n400); }
+  .dd-v { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--loss); i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; } }
+  .dd-v.you i { background: var(--accent); } .dd-v.idx i { background: repeating-linear-gradient(90deg, #8b8e9c 0 4px, transparent 4px 7px); }
+  .dd-when { margin-left: auto; font-size: 11px; color: var(--n500); } }
+
+/* an open fund: its day first */
+.fday { display: flex; flex-direction: column; gap: 8px; }
+.fd-when { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--n400); }
+.fd-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  div.r { align-items: flex-end; text-align: right; }
+  small { font-size: 10px; letter-spacing: .08em; color: var(--n400); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  b { font-size: 20px; font-weight: 500; letter-spacing: -.01em; } div.r b { color: var(--n200); }
+  span { font-size: 12.5px; } }
+.head.three .big { font-size: 18px; white-space: nowrap; }

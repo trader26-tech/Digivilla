@@ -46,7 +46,7 @@
         <div class="head three">
           <div class="col">
             <span class="label"><i class="swatch"></i>YOU</span>
-            <span class="big num">{{ inr(g.you) }}</span>
+            <span class="big num">{{ money(g.you) }}</span>
             <span class="small num" [ngClass]="tone(g.mine)">{{ p(g.mine) }}</span>
           </div>
           <div class="col mid">
@@ -54,16 +54,22 @@
               <i class="swatch idx"></i>{{ indexName() | uppercase }}
               <svg class="info" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </button>
-            <span class="big num idx-big">{{ inr(g.idx) }}</span>
+            <span class="big num idx-big">{{ money(g.idx) }}</span>
             <span class="small num muted">{{ p(g.idxPct) }}</span>
           </div>
           <div class="col right">
             <span class="label">ALPHA</span>
-            <span class="big num alpha" [ngClass]="tone(g.lead)">{{ signed(g.lead) }}</span>
+            <span class="big num alpha" [ngClass]="tone(g.lead)">{{ signedMoney(g.lead) }}</span>
             <span class="small num" [ngClass]="tone(g.lead)">{{ p(g.leadPct) }}</span>
           </div>
         </div>
-        @if (chart(); as c) {
+        @if (range() === '1d') {
+          <div class="day1">
+            <div class="d1-row"><span class="d1-l">You</span><span class="d1-track"><i class="d1-bar" [ngClass]="tone(g.mine)" [style.width.%]="dayW(g.mine, g.idxPct)"></i></span><b class="num" [ngClass]="tone(g.mine)">{{ p2(g.mine) }}</b></div>
+            <div class="d1-row"><span class="d1-l">Index</span><span class="d1-track"><i class="d1-bar idx" [style.width.%]="dayW(g.idxPct, g.mine)"></i></span><b class="num muted">{{ p2(g.idxPct) }}</b></div>
+          </div>
+        } @else {
+          @if (chart(); as c) {
           <div class="chart">
             <svg #plot [attr.viewBox]="'-2 0 ' + (W + 4) + ' ' + (H + 18)" (pointerdown)="onScrub($event, plot)" (pointermove)="$event.buttons ? onScrub($event, plot) : null" (pointerup)="scrub.set(null)" (pointercancel)="scrub.set(null)" (pointerleave)="scrub.set(null)">
               <defs><linearGradient id="youFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9184d9" stop-opacity=".26"/><stop offset="1" stop-color="#9184d9" stop-opacity="0"/></linearGradient></defs>
@@ -88,8 +94,17 @@
               @else { <span class="when">Gain so far</span><span class="you">you</span><span class="idx">same money in {{ indexName() === 'Index' ? 'the index' : indexName() }}</span> }
             </div>
           </div>
-        } @else {
-          <p class="cmp-none">Pick a period with at least two trading days.</p>
+          @if (drawdown(); as dd) {
+            <div class="dd num">
+              <span class="dd-k">BIGGEST FALL</span>
+              <span class="dd-v you"><i></i>{{ p(dd.you.pct) }}</span>
+              <span class="dd-v idx"><i></i>{{ p(dd.idx.pct) }}</span>
+              @if (dd.idx.pct < -0.05) { <span class="dd-when">{{ day(dd.idx.from) }} – {{ day(dd.idx.to) }}</span> }
+            </div>
+          }
+          } @else {
+            <p class="cmp-none">Pick a period with at least two trading days.</p>
+          }
         }
       </section>
     }
@@ -128,6 +143,15 @@
 
           @if (openKey() === f.key) {
             <div class="cmp">
+              @let fd = fundDay(f.f);
+              <div class="fday num">
+                <span class="fd-when">{{ fd.d ? dayLong(fd.d) : 'Today' }}</span>
+                <div class="fd-pair">
+                  <div><small>FUND</small><b [ngClass]="tone(fd.pct)">{{ p2(fd.pct) }}</b><span [ngClass]="tone(fd.chg)">{{ signed(fd.chg) }}</span></div>
+                  <div class="r"><small>{{ f.bench }}</small><b>{{ p2(fd.idx) }}</b><span class="muted">{{ fd.idx == null ? 'comes tomorrow' : 'that day' }}</span></div>
+                </div>
+              </div>
+              @if (range() !== '1d') {
               @if (fundChart(); as fc) {
                 @if (fscrubAt(); as s) {
                   <div class="fread num" [class.live]="s.live">
@@ -162,6 +186,7 @@
                 }
               } @else {
                 <p class="cmp-none">Too new to compare for this period.</p>
+              }
               }
             </div>
           }
