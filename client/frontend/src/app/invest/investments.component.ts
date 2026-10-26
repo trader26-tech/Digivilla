@@ -9,7 +9,34 @@ const RANGES: { k: Range; l: string; n: number; words: string }[] = [
   { k: '1m', l: '1M', n: 22, words: 'Last month' }, { k: '3m', l: '3M', n: 66, words: 'Last 3 months' }, { k: '6m', l: '6M', n: 132, words: 'Last 6 months' },
   { k: '1y', l: '1Y', n: 252, words: 'Last 12 months' }, { k: 'all', l: 'All', n: 1e9, words: 'Since you started' },
 ];
-const W = 300, H = 110, BASE = 100_000;
+const W = 320, H = 150, BASE = 100_000;
+
+/** what each index is, in one line — shown behind the (i) on the compare card */
+const INDEX_ABOUT: [RegExp, string][] = [
+  [/arbitrage/i, 'Nifty 50 Arbitrage — the return from buying shares and selling their futures; the income part of a villa'],
+  [/gold/i, 'Gold — the domestic price of gold'],
+  [/smallcap|small cap/i, 'Nifty Smallcap 250 — the 250 small companies after the top 250'],
+  [/midcap|mid cap/i, 'Nifty Midcap 150 — the 150 mid-sized companies after the top 100'],
+  [/nifty ?500/i, 'Nifty 500 — the 500 largest listed companies'],
+  [/nifty ?100/i, 'Nifty 100 — the 100 largest listed companies'],
+  [/nifty ?50\b/i, 'Nifty 50 — the 50 largest listed companies'],
+  [/next ?50/i, 'Nifty Next 50 — the 50 companies after the top 50'],
+];
+
+/** a smooth (monotone cubic) path through points — no overshoot between days */
+function smooth(p: [number, number][]): string {
+  if (p.length < 3) return p.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('');
+  const n = p.length, d: number[] = [], m: number[] = [];
+  for (let i = 0; i < n - 1; i++) d.push((p[i + 1][1] - p[i][1]) / ((p[i + 1][0] - p[i][0]) || 1e-6));
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  let out = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = p[i + 1][0] - p[i][0];
+    out += `C${(p[i][0] + h / 3).toFixed(1)} ${(p[i][1] + m[i] * h / 3).toFixed(1)} ${(p[i + 1][0] - h / 3).toFixed(1)} ${(p[i + 1][1] - m[i + 1] * h / 3).toFixed(1)} ${p[i + 1][0].toFixed(1)} ${p[i + 1][1].toFixed(1)}`;
+  }
+  return out;
+}
 
 /** one trading day inside the window: your % (cash flows taken out) and the indices' % */
 interface Day { d: string; g: number; pct: number; idx: number | null; chg: number; }
@@ -100,9 +127,12 @@ export class InvestmentsComponent {
     const lo = Math.min(1, ...vals), hi = Math.max(1, ...vals), pad = (hi - lo) * 0.12 || 0.01;
     const y = (v: number) => H - 8 - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 16);
     const x = (i: number) => (i / (g.A.length - 1)) * W;
-    const path = (vs: number[]) => vs.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+    const path = (vs: number[]) => smooth(vs.map((v, i) => [x(i), y(v)] as [number, number]));
     const mine = path(g.A), idx = path(g.B);
-    return { mine, idx, area: `${mine} L${W} ${H} L0 ${H} Z`, zero: y(1), endMine: y(g.A[g.A.length - 1]), endIdx: y(g.B[g.B.length - 1]), x, y };
+    const ds = this.days(), n = ds.length;
+    const ticks = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1].map((i) => ({ x: x(i + 1), label: this.day(ds[i].d) })) : [];
+    return { mine, idx, area: `${mine} L${W} ${H} L0 ${H} Z`, zero: y(1), endMine: y(g.A[g.A.length - 1]), endIdx: y(g.B[g.B.length - 1]), x, y, ticks,
+             grid: [0.25, 0.5, 0.75].map((f) => 8 + f * (H - 16)) };
   });
   /** finger on the chart: the day under it */
   readonly scrub = signal<number | null>(null);
@@ -123,6 +153,19 @@ export class InvestmentsComponent {
   });
   readonly indexNote = computed(() => this.indexName() === 'Your indices' ? 'each fund’s own index, weighted by what you hold' : null);
   readonly BASE = BASE;
+  /** the (i): every index in the comparison — what it is, which of your funds follow it, its weight */
+  readonly infoOpen = signal(false);
+  readonly indexInfo = computed(() => {
+    const m = this.m(); if (!m) return [];
+    const total = m.funds.reduce((s, f) => s + (f.value || 0), 0) || 1;
+    const by = new Map<string, { name: string; about: string; funds: string[]; weight: number }>();
+    for (const f of m.funds) {
+      if (!f.bench || !f.value) continue;
+      const e = by.get(f.bench.name) ?? { name: f.bench.name, about: INDEX_ABOUT.find(([re]) => re.test(f.bench!.name))?.[1] ?? f.bench.name, funds: [], weight: 0 };
+      e.funds.push(f.short || f.name); e.weight += f.value / total * 100; by.set(f.bench.name, e);
+    }
+    return [...by.values()].sort((a, b) => b.weight - a.weight);
+  });
 
   // ── when the figures were published, and when the next ones come ──
   readonly timing = computed(() => {
@@ -164,6 +207,10 @@ export class InvestmentsComponent {
   private sleeveName(s: string): string {
     return ({ arbitrage: 'Arbitrage', gold: 'Gold', large: 'Large cap', mid: 'Mid cap', small: 'Small cap', flexi: 'Flexi cap', hybrid: 'Hybrid', debt: 'Debt' } as Record<string, string>)[s] || s || 'Fund';
   }
+
+  /** the fund rows' bars share one scale */
+  readonly fundScale = computed(() => Math.max(0.5, ...this.funds().flatMap((f) => [Math.abs(f.ret ?? 0), Math.abs(f.iret ?? 0)])));
+  barW(v: number | null): number { return v == null ? 0 : Math.abs(v) / this.fundScale() * 100; }
 
   // ── words ──
   inr = inr;

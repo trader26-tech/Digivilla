@@ -1,4 +1,4 @@
-<!-- ============ INVESTMENTS — the handoff's second screen ============ -->
+<!-- ============ INVESTMENTS — few words: the value, you vs your indices, every fund beside its index ============ -->
 <div class="invest">
   <header>
     <button type="button" class="icon-btn" (click)="back.emit()" aria-label="Back">
@@ -22,90 +22,100 @@
       }
     </div>
 
-    <!-- Portfolio vs index: both lines = growth of ₹1,00,000 over the chosen range -->
+    <!-- you vs your indices: both lines = the growth of ₹1,00,000 over the range -->
     @if (growth(); as g) {
       <section class="card compare">
         <div class="head">
           <div class="col">
-            <span class="label"><i class="swatch"></i>YOUR PORTFOLIO</span>
+            <span class="label"><i class="swatch"></i>YOU</span>
             <span class="big num" [ngClass]="tone(g.mine)">{{ p(g.mine) }}</span>
-            <span class="small num">{{ signed(g.chg) }}@if (g.mwr != null) { · {{ p(g.mwr) }} on money put in }</span>
+            <span class="small num" [ngClass]="tone(g.chg)">{{ signed(g.chg) }}</span>
           </div>
-          <i class="divider"></i>
           <div class="col right">
-            <span class="label">{{ indexName() | uppercase }}<i class="swatch idx"></i></span>
+            <button type="button" class="label idx-l" (click)="infoOpen.set(true)" aria-label="About the index">
+              {{ indexName() === 'Your indices' ? 'INDEX' : (indexName() | uppercase) }}<i class="swatch idx"></i>
+              <svg class="info" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8v.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
             <span class="big num idx-big">{{ p(g.idx) }}</span>
             <span class="small muted">{{ rangeWords() }}</span>
           </div>
         </div>
         @if (chart(); as c) {
           <div class="chart">
-            <svg #plot [attr.viewBox]="'0 0 ' + W + ' ' + H" (pointerdown)="onScrub($event, plot)" (pointermove)="$event.buttons ? onScrub($event, plot) : null" (pointerup)="scrub.set(null)" (pointercancel)="scrub.set(null)" (pointerleave)="scrub.set(null)">
-              <defs><linearGradient id="youFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9184d9" stop-opacity=".28"/><stop offset="1" stop-color="#9184d9" stop-opacity="0"/></linearGradient></defs>
+            <svg #plot [attr.viewBox]="'-2 0 ' + (W + 4) + ' ' + (H + 18)" (pointerdown)="onScrub($event, plot)" (pointermove)="$event.buttons ? onScrub($event, plot) : null" (pointerup)="scrub.set(null)" (pointercancel)="scrub.set(null)" (pointerleave)="scrub.set(null)">
+              <defs><linearGradient id="youFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9184d9" stop-opacity=".26"/><stop offset="1" stop-color="#9184d9" stop-opacity="0"/></linearGradient></defs>
+              @for (gy of c.grid; track gy) { <line class="grid" x1="0" [attr.y1]="gy" [attr.x2]="W" [attr.y2]="gy"/> }
               <line class="base" x1="0" [attr.y1]="c.zero" [attr.x2]="W" [attr.y2]="c.zero"/>
               <path class="area" [attr.d]="c.area"/>
               <path class="ln idx" [attr.d]="c.idx"/>
               <path class="ln you" [attr.d]="c.mine"/>
+              @for (t of c.ticks; track t.x) { <text class="tick" [attr.x]="t.x" [attr.y]="H + 14" [attr.text-anchor]="t.x < 20 ? 'start' : t.x > W - 20 ? 'end' : 'middle'">{{ t.label }}</text> }
               @if (scrubAt(); as s) {
                 <line class="cursor" [attr.x1]="s.x" [attr.x2]="s.x" y1="0" [attr.y2]="H"/>
                 <circle class="pt idx" [attr.cx]="s.x" [attr.cy]="s.yIdx" r="3.5"/>
                 <circle class="pt you" [attr.cx]="s.x" [attr.cy]="s.yMine" r="4.5"/>
               } @else {
-                <line class="gap" [class.loss]="g.lead < 0" [attr.x1]="W" [attr.y1]="c.endMine" [attr.x2]="W" [attr.y2]="c.endIdx"/>
                 <circle class="pt idx" [attr.cx]="W" [attr.cy]="c.endIdx" r="3.5"/>
                 <circle class="pt you" [attr.cx]="W" [attr.cy]="c.endMine" r="4.5"/>
-                <circle class="end-glow" [attr.cx]="W" [attr.cy]="c.endMine" r="9" [style.transform-origin]="W + 'px ' + c.endMine + 'px'"/>
               }
             </svg>
-            @if (scrubAt(); as s) {
-              <div class="legend num"><span>{{ day(s.d) }}</span><span class="pair"><span class="you">You {{ inr(s.mine) }}</span><span>{{ indexName() }} {{ inr(s.idx) }}</span></span></div>
-            } @else {
-              <div class="legend num"><span>{{ inr(BASE) }} invested</span><span class="pair"><span class="you">You {{ inr(BASE * (1 + g.mine / 100)) }}</span><span>{{ indexName() }} {{ inr(BASE * (1 + g.idx / 100)) }}</span></span></div>
-            }
+            <div class="legend num">
+              @if (scrubAt(); as s) { <span class="when">{{ day(s.d) }}</span><span class="you">{{ inr(s.mine) }}</span><span class="idx">{{ inr(s.idx) }}</span> }
+              @else { <span class="when">{{ inr(BASE) }} →</span><span class="you">{{ inr(BASE * (1 + g.mine / 100)) }}</span><span class="idx">{{ inr(BASE * (1 + g.idx / 100)) }}</span> }
+            </div>
           </div>
         }
-        <p class="verdict">
-          @if (g.lead >= 0) { You beat {{ indexName() === 'Your indices' ? 'your indices' : indexName() }} by {{ pts(g.lead) }} over this period. }
-          @else { You trailed {{ indexName() === 'Your indices' ? 'your indices' : indexName() }} by {{ pts(g.lead) }} over this period. }
-          @if (indexNote()) { <span class="note">Index = {{ indexNote() }}.</span> }
-        </p>
       </section>
     }
 
     @if (timing(); as t) {
       <section class="timing">
-        <div><span class="label"><i class="dot live"></i>UPDATED</span><span class="v">{{ t.when }}</span><span class="s">NAV of {{ t.nav }}</span></div>
-        <div><span class="label"><i class="dot next"></i>NEXT UPDATE</span><span class="v">{{ t.late ? 'Soon' : t.nextWhen }}</span><span class="s">{{ t.late ? 'NAV of ' + t.next + ' is due' : 'after the market closes' }}</span></div>
+        <div><span class="label"><i class="dot live"></i>NAV OF</span><span class="v">{{ t.nav }}</span></div>
+        <div><span class="label"><i class="dot next"></i>NEXT</span><span class="v">{{ t.late ? 'Soon' : t.nextWhen }}</span></div>
       </section>
     }
 
+    <!-- every fund beside its own index, same period -->
     <section class="funds">
-      <div class="hd"><b>Your funds</b><span>{{ funds().length }} fund{{ funds().length === 1 ? '' : 's' }} · {{ rangeWords().toLowerCase() }}</span></div>
+      <div class="hd"><b>Your funds</b><span>{{ rangeWords().toLowerCase() }}</span></div>
       @for (f of funds(); track f.key) {
         <div class="fund">
           <div class="top">
-            <div class="name"><b>{{ f.name }}</b><span>{{ f.sleeve }} · {{ f.share | number:'1.0-0' }}% of portfolio</span></div>
-            <span class="pill num" [ngClass]="tone(f.ret) || 'flat'">{{ p(f.ret) }}</span>
+            <div class="name"><b>{{ f.name }}</b><span>{{ f.sleeve }} · {{ f.share | number:'1.0-0' }}%</span></div>
+            <span class="num pnl" [ngClass]="tone(f.pnl)">{{ signed(f.pnl) }}</span>
           </div>
-          <div class="share"><i [style.width.%]="f.share"></i></div>
-          <!-- the fund against its OWN index over the same window -->
-          <div class="vs num">
-            <span class="vs-k">{{ f.bench || 'Index' }}</span>
-            <span class="vs-v">{{ p(f.iret) }}</span>
-            @if (f.gap != null) { <span class="tag" [ngClass]="f.gap >= 0 ? 'gain' : 'loss'">{{ f.gap >= 0 ? '▲' : '▼' }} {{ pts(f.gap) }}</span> }
-            @if (f.since) { <span class="since">from {{ day(f.since) }}</span> }
+          <div class="duo num">
+            <div class="d you"><small>FUND</small><b [ngClass]="tone(f.ret)">{{ p(f.ret) }}</b></div>
+            <div class="d idx"><small>{{ f.bench || 'INDEX' }}</small><b>{{ p(f.iret) }}</b></div>
           </div>
-          <div class="stats num">
-            <div><small>INVESTED</small><span>{{ inr(f.invested) }}</span></div>
-            <div><small>CURRENT</small><span class="strong">{{ inr(f.value) }}</span></div>
-            <div><small>P&amp;L</small><span class="strong" [ngClass]="tone(f.pnl)">{{ signed(f.pnl) }}</span></div>
+          <div class="bars" aria-hidden="true">
+            <i class="you" [ngClass]="tone(f.ret)" [style.width.%]="barW(f.ret)"></i>
+            <i class="idx" [style.width.%]="barW(f.iret)"></i>
           </div>
         </div>
       } @empty {
         <p class="empty">Your funds will appear here once your first purchase settles.</p>
       }
     </section>
+  }
 
-    <p class="foot">Values use the latest published NAV. Each fund is compared with the index it follows; returns are absolute, not annualised. Money added inside a period is not counted as a gain.</p>
+  <!-- the (i): about the indices in the comparison -->
+  @if (infoOpen()) {
+    <div class="sh-scrim" (click)="infoOpen.set(false)" aria-hidden="true"></div>
+    <section class="sh" role="dialog" aria-modal="true" aria-labelledby="ixTitle">
+      <span class="sh-grab" aria-hidden="true"></span>
+      <h3 id="ixTitle">The index you’re compared with</h3>
+      <p class="sh-lead">Each fund is measured against the index it follows. Together they make your index, weighted by what you hold.</p>
+      <ul class="ix">
+        @for (x of indexInfo(); track x.name) {
+          <li>
+            <div class="ix-h"><b>{{ x.name }}</b><span class="num">{{ x.weight < 0.5 ? '<1' : (x.weight | number:'1.0-0') }}%</span></div>
+            <p>{{ x.about }}</p>
+            <span class="ix-f">{{ x.funds.join(' · ') }}</span>
+          </li>
+        }
+      </ul>
+      <button type="button" class="sh-ok" (click)="infoOpen.set(false)">Done</button>
+    </section>
   }
 </div>
