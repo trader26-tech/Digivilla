@@ -27,6 +27,8 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
+import re
+
 import httpx
 
 
@@ -128,10 +130,17 @@ def _parse_utc(v) -> Optional[datetime]:
     return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
 
+_ISO_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
 def _is_fresh(row: Optional[dict]) -> bool:
     """Is this cached row the latest published NAV? Yes if it is stamped today
-    (IST), or was pulled from AMFI in the last _FRESH_FOR."""
+    (IST), or was pulled from AMFI in the last _FRESH_FOR. A row whose nav_date is
+    not an ISO date (another writer's '23-10-2026') is never fresh — the refresher
+    replaces it on its next pass, whoever wrote it."""
     if not row or row.get("nav") is None:
+        return False
+    if not _ISO_RE.fullmatch(str(row.get("nav_date") or "")):
         return False
     if row.get("nav_date") == _today_iso():
         return True
