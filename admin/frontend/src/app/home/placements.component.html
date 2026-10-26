@@ -12,6 +12,21 @@
   </button>
 
   @if (justPlaced()) { <div class="pl-done" role="status">✓ {{ justPlaced() }}</div> }
+  @if (auto().length) {
+    <div class="pl-auto" role="status">
+      <button type="button" class="pa-h" (click)="autoOpen.set(!autoOpen())" [attr.aria-expanded]="autoOpen()"><b>Placed automatically · {{ auto().length }}</b><span class="pl-chev" [class.up]="autoOpen()">▾</span></button>
+      @if (autoOpen()) { @for (a of auto(); track a.key) {
+        <div class="pa" [class.busy]="busyKey() === a.key">
+          <div class="pa-t">
+            <b>{{ title(a.client_name) }}</b>
+            <span>{{ money(a.total) }}@if (a.villas) { → {{ a.villas }} villa{{ a.villas === 1 ? '' : 's' }} }@if (a.short && a.short > 0) { <em>(₹{{ a.short | number:'1.0-0' }} short — stamp duty)</em> }</span>
+            <span class="pa-b"><i [attr.data-t]="a.bucket?.tier"></i>{{ a.bucket?.name }}@if (a.new_recipe) { · new recipe from this mix }</span>
+          </div>
+          <button type="button" class="pb ghost" (click)="undo(a)">Undo</button>
+        </div>
+      } }
+    </div>
+  }
   @if (error()) { <div class="pl-err" role="alert">{{ error() }}</div> }
 
   @if (data(); as d) {
@@ -23,7 +38,7 @@
             <b>{{ title(s.client_name) }}</b>
             <span class="ps-sub">{{ day(s.day) }} · {{ kind(s.kind) }} · {{ s.lines.length }} fund{{ s.lines.length === 1 ? '' : 's' }}</span>
           </div>
-          <b class="ps-amt">{{ money(s.total) }}</b>
+          <div class="ps-amt-w"><b class="ps-amt">{{ money(s.total) }}</b>@if (villasNote(s)) { <span class="ps-villas">{{ villasNote(s) }}</span> }</div>
         </div>
 
         <div class="ps-bar" aria-hidden="true">
@@ -47,7 +62,7 @@
           }
           <div class="pb-cats" role="group" aria-label="New recipe of a category">
             @for (c of CATS; track c.key) {
-              <button type="button" class="pb" [class.primary]="!best(s) && s.suggested?.tier === c.key" (click)="decide(s, 'category', { category: c.key })" [title]="'A new ' + c.name + ' recipe from this exact mix'">New · {{ c.name }}</button>
+              <button type="button" class="pb" [class.primary]="!best(s) && (s.tier ? s.tier === c.key : s.suggested?.tier === c.key)" (click)="decide(s, 'category', { category: c.key })" [title]="'A new ' + c.name + ' recipe from this exact mix'">New · {{ c.name }}</button>
             }
           </div>
           <div class="pb-more">

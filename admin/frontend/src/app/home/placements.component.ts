@@ -28,9 +28,12 @@ export class PlacementsComponent implements OnInit {
   readonly error = signal('');
   readonly justPlaced = signal<string>('');              // a one-line confirmation
   readonly autoCount = signal(0);                        // placed by the matcher on this load
+  /** what the engine placed by itself on this load — shown with an Undo */
+  readonly auto = signal<PlacementSet[]>([]);
   readonly flash = signal(false);
   /** the list is folded by default — the head line says how much is waiting */
   readonly open = signal(false);
+  readonly autoOpen = signal(true);
   private flashT?: ReturnType<typeof setTimeout>;
 
   readonly SLEEVE_COLOUR: Record<string, string> = { arbitrage: '#98a0b8', gold: '#eda100', large: '#387ed1', mid: '#eb6834', small: '#1baf7a', other: '#6250d6' };
@@ -41,7 +44,7 @@ export class PlacementsComponent implements OnInit {
   ngOnInit(): void { this.load(); }
   load(): void {
     this.api.placementRun().subscribe({
-      next: (d) => { this.data.set(d); this.autoCount.set(d.auto_count || 0); this.error.set(''); this.counts.emit({ count: d.count, amount: d.amount }); if (d.auto_count) this.changed.emit(); },
+      next: (d) => { this.data.set(d); this.autoCount.set(d.auto_count || 0); this.auto.set(d.recent?.length ? d.recent : (d.auto ?? [])); this.error.set(''); this.counts.emit({ count: d.count, amount: d.amount }); if (d.auto_count) this.changed.emit(); },
       error: () => this.error.set('Could not load.'),
     });
   }
@@ -49,9 +52,9 @@ export class PlacementsComponent implements OnInit {
   refresh(): void {
     this.api.placementRun().subscribe({
       next: (d) => {
-        this.data.set(d); this.autoCount.set(d.auto_count || 0); this.counts.emit({ count: d.count, amount: d.amount });
+        this.data.set(d); this.autoCount.set(d.auto_count || 0); this.auto.set(d.recent?.length ? d.recent : (d.auto ?? [])); this.counts.emit({ count: d.count, amount: d.amount });
         if (d.auto_count) this.changed.emit();
-        if (d.count) {
+        if (d.count || d.auto_count) {
           this.flash.set(true); clearTimeout(this.flashT); this.flashT = setTimeout(() => this.flash.set(false), 2400);
           this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -79,6 +82,23 @@ export class PlacementsComponent implements OnInit {
     });
   }
 
+  /** take an automatic placement back: the set returns to the decisions */
+  undo(s: PlacementSet): void {
+    if (this.busyKey()) return;
+    this.busyKey.set(s.key);
+    this.api.placementUndo(s.order_ids).subscribe({
+      next: () => { this.busyKey.set(null); this.auto.set(this.auto().filter((x) => x.key !== s.key)); this.load(); this.changed.emit(); },
+      error: (e) => { this.busyKey.set(null); this.error.set(e?.error?.detail || 'Could not undo — try again.'); },
+    });
+  }
+  dismissAuto(): void { this.auto.set([]); }
+  /** "1 villa · ₹25 short of ₹5 L (stamp duty)" / "2 villas" / "" */
+  villasNote(s: PlacementSet): string {
+    if (!s.villas) return '';
+    const n = `${s.villas} villa${s.villas === 1 ? '' : 's'}`;
+    return s.short && s.short > 0 ? `${n} · ₹${Math.round(s.short).toLocaleString('en-IN')} short of ${this.money(s.villas * (s.unit || 0))} — stamp duty, counts as full` : n;
+  }
+  tierName(t?: VillaType | null): string { return this.CATS.find((c) => c.key === t)?.name ?? ''; }
   /** the primary action: the closest recipe when it is close enough */
   best(s: PlacementSet) { const g = s.suggested; return g && g.similarity >= 0.5 ? g : null; }
   pct(v: number): string { return Math.round(v * 100) + '%'; }

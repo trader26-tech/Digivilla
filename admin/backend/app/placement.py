@@ -34,6 +34,7 @@ from app import reports as R
 from app import villa_sales
 
 PLACEMENT_KEY = "placement_map"
+AUTO_LOG_KEY = "placement_auto_log"     # what the engine placed by itself, newest first (shown with Undo for 14 days)
 VILLA_BUCKET_KEY = "villa_buckets_map"
 TOL = 0.05                     # a fund's share may sit 5 points off the recipe
 CATEGORIES = {t["key"]: t for t in villa_sales.TYPES}
@@ -44,6 +45,33 @@ def _tier(b: dict | None) -> str | None:
 
 
 _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+SLACK = 0.01                   # a villa may land this far short of ₹unit: stamp duty (0.005 %) and rupee rounding
+
+
+def whole_villas(total: float, unit: float) -> tuple[int, float]:
+    """(k, short) when `total` is k whole villas within SLACK — ₹4,99,975 is one ₹5 L villa,
+    ₹25 short (the stamp duty AssetPlus deducts); (0, 0) when it is not a round number of villas."""
+    if not unit or total <= 0:
+        return 0, 0.0
+    k = int(round(total / unit))
+    if k >= 1 and abs(k * unit - total) <= unit * SLACK:
+        return k, round(k * unit - total, 2)
+    return 0, 0.0
+
+
+def infer_tier(vec: dict[int, float], lines: list[dict], buckets: list[dict]) -> str | None:
+    """The category a fresh mix belongs to, from its arbitrage share (the income part):
+    ≥ 55 % conservative · ≥ 25 % balanced · else aggressive. None when a fund is not a villa fund."""
+    arb = 0.0
+    for l in lines:
+        code = int(l.get("scheme_code") or 0)
+        sleeve = _sleeve_for(code, l.get("scheme_name") or "", buckets)
+        if sleeve in (None, "other"):
+            return None
+        if sleeve == "arbitrage":
+            arb += vec.get(code, 0.0)
+    return "conservative" if arb >= 0.55 else "balanced" if arb >= 0.25 else "aggressive"
+
 
 
 # ───────────────────────── state in admin_config ─────────────────────────
@@ -218,6 +246,7 @@ def run(client_codes: list[str] | None = None) -> dict:
     codes = client_codes or [c for c in all_t if c != R.DEMO_CODE]
     auto, pending = [], []
     changed = False
+    unit = R._villa_unit()
     clients = {c["client_code"]: c for c in R._all_clients()}
     for code in codes:
         if code == R.DEMO_CODE:
@@ -236,17 +265,30 @@ def run(client_codes: list[str] | None = None) -> dict:
                 changed = touched = True
                 auto.append({**_public(s), "client_name": name, "bucket": _bucket_public(bmap[bid])})
             else:
-                pending.append({**_public(s), "client_name": name, "candidates": cands[:4],
-                                "suggested": _suggest(cands)})
+                k, _short = whole_villas(s["total"], unit)
+                tier = infer_tier(s["vector"], s["lines"], buckets) if k else None
+                if tier:                                    # whole villas of villa funds: a new recipe, placed now
+                    lines = [t for t in txns if t.get("order_id") in set(s["order_ids"])]
+                    made = _new_recipe(lines, tier, None, buckets)
+                    buckets = R.list_buckets(); bmap = {b["id"]: b for b in buckets}; bvecs = _bucket_vectors(buckets)
+                    for oid in s["order_ids"]:
+                        pmap[oid] = made["id"]
+                    changed = touched = True
+                    auto.append({**_public(s), "client_name": name, "bucket": _bucket_public(made), "new_recipe": True, "tier": tier})
+                else:
+                    pending.append({**_public(s), "client_name": name, "candidates": cands[:4],
+                                    "suggested": _suggest(cands), "tier": infer_tier(s["vector"], s["lines"], buckets)})
         if touched:
             _cfg_set(PLACEMENT_KEY, pmap)
             materialise(code, villas=all_v.get(code, []), txns=txns)
     if changed:
         _cfg_set(PLACEMENT_KEY, pmap)
+    if auto:
+        _log_auto(auto)
     pending.sort(key=lambda s: (s["day"], s["total"]), reverse=True)
     for s in pending:
         s["exact"] = False
-    return {"auto": auto, "auto_count": len(auto), "pending": pending, "count": len(pending),
+    return {"auto": auto, "auto_count": len(auto), "recent": recent_auto(), "pending": pending, "count": len(pending),
             "amount": round(sum(s["total"] for s in pending), 2),
             "buckets": [_bucket_public(b) for b in buckets], "categories": villa_sales.TYPES}
 
@@ -268,10 +310,37 @@ def pending(client_codes: list[str] | None = None) -> dict:
         for s in _sets(code, all_t.get(code, []), pmap, vbyid):
             cands = _candidates(s["vector"], bvecs, bmap)
             out.append({**_public(s), "client_name": name, "candidates": cands[:4], "suggested": _suggest(cands),
-                        "exact": bool(cands and cands[0]["exact"])})
+                        "exact": bool(cands and cands[0]["exact"]), "tier": infer_tier(s["vector"], s["lines"], buckets)})
     out.sort(key=lambda s: (s["day"], s["total"]), reverse=True)
-    return {"pending": out, "count": len(out), "amount": round(sum(s["total"] for s in out), 2),
+    return {"pending": out, "count": len(out), "amount": round(sum(s["total"] for s in out), 2), "recent": recent_auto(),
             "buckets": [_bucket_public(b) for b in buckets], "categories": villa_sales.TYPES}
+
+
+def _log_auto(entries: list[dict]) -> None:
+    """Remember what the engine placed by itself (newest first, 60 kept)."""
+    log = list((_cfg(AUTO_LOG_KEY) or {}).get("items") or [])
+    stamp = datetime.now(timezone.utc).isoformat()
+    for e in entries:
+        log.insert(0, {"at": stamp, **{k: v for k, v in e.items() if k in
+                       ("key", "client_code", "client_name", "day", "kind", "total", "order_ids", "lines", "villas", "short", "unit", "bucket", "new_recipe", "tier")}})
+    _cfg_set(AUTO_LOG_KEY, {"items": log[:60]})
+
+
+def recent_auto(days: int = 14) -> list[dict]:
+    """The engine's own placements of the last `days`, still in force."""
+    pmap = placement_map()
+    cutoff = datetime.now(timezone.utc).timestamp() - days * 86400
+    out = []
+    for e in (_cfg(AUTO_LOG_KEY) or {}).get("items") or []:
+        try:
+            if datetime.fromisoformat(e["at"]).timestamp() < cutoff:
+                continue
+        except Exception:
+            continue
+        if not all(oid in pmap for oid in e.get("order_ids") or []):
+            continue                                        # undone, or decided afresh
+        out.append(e)
+    return out
 
 
 def _suggest(cands: list[dict]) -> dict | None:
@@ -282,7 +351,9 @@ def _suggest(cands: list[dict]) -> dict | None:
 
 
 def _public(s: dict) -> dict:
-    return {k: v for k, v in s.items() if k != "vector"}
+    unit = R._villa_unit()
+    k, short = whole_villas(float(s.get("total") or 0), unit)
+    return {**{k2: v for k2, v in s.items() if k2 != "vector"}, "villas": k, "short": short, "unit": unit}
 
 
 def _bucket_public(b: dict) -> dict:
@@ -328,6 +399,23 @@ def _bucket_name(category: str, day: str, existing: list[dict]) -> str:
     return name
 
 
+def _new_recipe(lines: list[dict], category: str, name: str | None, buckets: list[dict]) -> dict:
+    """A bucket (recipe) made from a purchase set's own mix, named '<Category> · Oct 26'."""
+    vec = _set_vector(lines)
+    by_code: dict[int, str] = {}
+    for l in lines:
+        if l.get("scheme_code"):
+            by_code.setdefault(int(l["scheme_code"]), l.get("scheme_name") or "")
+    funds = [{"scheme_code": code, "scheme_name": nm, "target_weight": round(vec.get(code, 0) * 100, 2),
+              "sleeve": _sleeve_for(code, nm, buckets)} for code, nm in by_code.items()]
+    funds.sort(key=lambda f: -f["target_weight"])
+    kind = "lumpsum" if "lump" in (lines[0].get("kind") or "").lower() else "sip"
+    day = str(lines[0].get("txn_date") or "")[:10]
+    made = R.create_bucket((name or "").strip() or _bucket_name(category, day, buckets), category, funds, kind=kind)
+    R._VC["at"] = 0.0                     # a new bucket may add villa funds
+    return made
+
+
 def decide(order_ids: list[str], action: str, *, category: str | None = None, bucket_id: str | None = None,
            name: str | None = None) -> dict:
     """One decision for a purchase set.
@@ -350,18 +438,7 @@ def decide(order_ids: list[str], action: str, *, category: str | None = None, bu
     elif action == "category":
         if category not in CATEGORIES:
             raise ValueError("Category must be conservative, balanced or aggressive.")
-        buckets = R.list_buckets()
-        vec = _set_vector(lines)
-        by_code: dict[int, str] = {}
-        for l in lines:
-            if l.get("scheme_code"):
-                by_code.setdefault(int(l["scheme_code"]), l.get("scheme_name") or "")
-        funds = [{"scheme_code": code, "scheme_name": nm, "target_weight": round(vec.get(code, 0) * 100, 2),
-                  "sleeve": _sleeve_for(code, nm, buckets)} for code, nm in by_code.items()]
-        funds.sort(key=lambda f: -f["target_weight"])
-        kind = "lumpsum" if "lump" in (lines[0].get("kind") or "").lower() else "sip"
-        day = str(lines[0].get("txn_date") or "")[:10]
-        made = R.create_bucket((name or "").strip() or _bucket_name(category, day, buckets), category, funds, kind=kind)
+        made = _new_recipe(lines, category, name, R.list_buckets())
         target = made["id"]
     else:
         raise ValueError("Unknown action.")

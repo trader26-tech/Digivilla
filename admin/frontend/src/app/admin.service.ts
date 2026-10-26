@@ -540,6 +540,9 @@ export class AdminService {
   placementRun(): Observable<PlacementPending & { auto: PlacementSet[]; auto_count: number }> {
     return this.http.post<PlacementPending & { auto: PlacementSet[]; auto_count: number }>(`${this.base}/admin/placement/run`, {}, this.opts);
   }
+  placementUndo(order_ids: string[]): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`${this.base}/admin/placement/undo`, { order_ids }, this.opts);
+  }
   placementDecide(body: { order_ids: string[]; action: 'category' | 'bucket' | 'outside'; category?: VillaType; bucket_id?: string; name?: string }): Observable<PlacementPending> {
     return this.http.post<PlacementPending>(`${this.base}/admin/placement/decide`, body, this.opts);
   }
@@ -667,10 +670,16 @@ export interface PlacementSet {
   order_ids: string[]; lines: PlacementLine[];
   candidates?: PlacementCandidate[]; suggested?: { bucket_id: string; name: string; tier?: VillaType; similarity: number } | null;
   exact?: boolean; bucket?: PlacementBucket;
+  /** whole villas this amount makes (₹4,99,975 = 1 villa, ₹25 short — stamp duty), 0 when not a round number */
+  villas?: number; short?: number; unit?: number;
+  /** the category the engine reads from the mix (arbitrage share); placed automatically as a new recipe */
+  tier?: VillaType | null; new_recipe?: boolean;
 }
 export interface PlacementBucket { id: string; name: string; tier?: VillaType; kind?: string; funds: { scheme_code: number; scheme_name: string; sleeve?: string | null; share: number }[]; }
 export interface PlacementPending {
   pending: PlacementSet[]; count: number; amount: number; buckets: PlacementBucket[];
+  /** the engine's own placements of the last 14 days (undo-able) */
+  recent?: (PlacementSet & { at?: string })[];
   categories: { key: VillaType; name: string; risk: string }[];
   ok?: boolean; client_code?: string; bucket?: PlacementBucket | null;
 }
