@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnDestroy, OnInit, Output, computed, inject, signal } from '@angular/core';
 
-import { AdminService, ReportUpload, TodayStatus } from '../admin.service';
+import { AdminService, ReportUpload, TodayStatus, Withdrawal } from '../admin.service';
 
 type Kind = 'user' | 'transaction';
 type SlotState = 'idle' | 'uploading' | 'done' | 'error';
@@ -51,6 +51,27 @@ export class TodayUpdateComponent implements OnInit, OnDestroy {
   readonly reopened = signal(false);
   /** the (i) popover */
   readonly help = signal(false);
+  /** the withdrawals of the last transaction upload — stays until dismissed, so the admin sees each SWP come off */
+  readonly receipt = signal<Withdrawal[] | null>(null);
+  readonly receiptTotal = computed(() => (this.receipt() ?? []).reduce((a, w) => a + w.amount, 0));
+  readonly receiptMissed = computed(() => (this.receipt() ?? []).filter((w) => !w.deducted).length);
+  /** one row per client, their lines under it */
+  readonly receiptByClient = computed(() => {
+    const out: { code: string; name: string; total: number; lines: Withdrawal[] }[] = [];
+    for (const w of this.receipt() ?? []) {
+      let c = out.find((x) => x.code === w.client_code);
+      if (!c) out.push(c = { code: w.client_code, name: this.title(w.name), total: 0, lines: [] });
+      c.total += w.amount; c.lines.push(w);
+    }
+    return out;
+  });
+  private title(n: string): string { return (n || '').trim().toLowerCase().replace(/\b\w/g, (m) => m.toUpperCase()); }
+  fundShort(n: string): string {
+    return (n || '').replace(/\s*-?\s*(direct|regular)?\s*(plan)?\s*-?\s*growth.*$/i, '').replace(/\s+fund$/i, '').trim()
+      .toLowerCase().replace(/\b\w/g, (m) => m.toUpperCase()).replace(/\b(Etf|Fof|Icici|Sbi|Hdfc|Uti|Dsp)\b/g, (m) => m.toUpperCase());
+  }
+  inr(v: number): string { return '₹' + Math.round(v).toLocaleString('en-IN'); }
+  day(d: string | null): string { return d ? new Date(d + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''; }
   private timers: any[] = [];
   private dayTimer: any = null;
 
@@ -160,6 +181,7 @@ export class TodayUpdateComponent implements OnInit, OnDestroy {
     this.api.uploadReport(kind, f, this.today()).subscribe({
       next: (r) => {
         this.status.update((s) => ({ ...(s || { report_date: this.today(), user: null, transaction: null }), [kind]: r }));
+        if (kind === 'transaction') this.receipt.set(r.withdrawals?.length ? r.withdrawals : null);
         this.setSlot(kind, { state: 'done', justDone: true });
         this.later(() => this.setSlot(kind, { justDone: false }), 1400);
         this.updated.emit(kind);

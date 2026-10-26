@@ -576,6 +576,8 @@ def upload_report(report_type: str, filename: str, content: bytes,
         # 2 · holdings = roll-up of EVERY transaction of the clients in this file
         touched = sorted({r["client_code"] for r in raw_txns})
         stats["holdings"] = rebuild_holdings(touched)
+        # the money-out lines in this file (SWP · redemption · switch-out), each with what it took off
+        stats["withdrawals"] = _withdrawals_of(raw_txns, stats["holdings"].get("unmatched_out") or [])
         stats["clients"] = touched
         # the commission figures and the trail ledger are cached — new holdings must show at once
         try:
@@ -600,6 +602,27 @@ def upload_report(report_type: str, filename: str, content: bytes,
     }
     _record_upload(meta)
     return {**meta, **stats}
+
+
+def _withdrawals_of(raw_txns: list[dict], orphans: list[dict]) -> list[dict]:
+    """Every money-out line of an upload, for the portal: who, which fund, ₹ and
+    units taken off, and whether it found the fund it comes off."""
+    out = [r for r in raw_txns if _signed(r, "units") < 0 or _signed(r, "amount") < 0]
+    if not out:
+        return []
+    names = {}
+    try:
+        codes = sorted({r["client_code"] for r in out})
+        for c in _sb().table("client_master").select("client_code,name").in_("client_code", codes).execute().data or []:
+            names[c["client_code"]] = (c.get("name") or "").strip()
+    except Exception:
+        pass
+    lost = {(o["client_code"], o["scheme_name"]) for o in orphans}
+    return [{"client_code": r["client_code"], "name": names.get(r["client_code"]) or r["client_code"],
+             "scheme_name": r["scheme_name"], "kind": r.get("kind") or "Redemption", "txn_date": r.get("txn_date"),
+             "amount": round(abs(_to_float(r.get("amount"))), 2), "units": round(abs(_to_float(r.get("units"))), 4),
+             "deducted": (r["client_code"], r["scheme_name"]) not in lost}
+            for r in sorted(out, key=lambda r: (r["client_code"], str(r.get("txn_date") or "")))]
 
 
 def _record_upload(meta: dict) -> None:
@@ -636,28 +659,83 @@ def _save_clients(rows: list[dict], report_date: str) -> None:
     _save_local(store)
 
 
-def _holdings_from_txns(txns: list[dict]) -> list[dict]:
+def _fund_key(t: dict) -> str:
+    """Which fund a line is, however the report spelt it: the AMFI scheme code
+    when known, else the name without case, punctuation or plan words."""
+    if t.get("scheme_code"):
+        return f"c:{t['scheme_code']}"
+    import re
+    n = re.sub(r"[^a-z0-9]+", " ", str(t.get("scheme_name") or "").lower())
+    n = re.sub(r"\b(fund|plan|option|regular|growth|the)\b", " ", n)
+    return "n:" + " ".join(n.split())
+
+
+def _holdings_from_txns(txns: list[dict], orphans: list | None = None) -> list[dict]:
     """Roll transactions up into holdings rows: one per (client, scheme, folio),
-    units and ₹ signed (redemptions take away), last NAV = the latest line's."""
+    units and ₹ signed (money out — redemption, SWP, switch-out — takes away),
+    last NAV = the latest line's.
+
+    A withdrawal ALWAYS comes off the fund it belongs to: when its folio or the
+    scheme's spelling differs from the purchase lines (AMC reports vary:
+    "10219145/94" vs "10219145", upper vs title case), it would otherwise form a
+    group of its own with negative units — which used to be dropped as "fully
+    redeemed", so the money was never taken off. Such a group is now netted
+    against the same client's same fund (largest folio first). A withdrawal
+    with no fund to come off is never dropped silently: it is appended to
+    `orphans` for the admin to see."""
     agg: dict[tuple, dict] = {}
     for t in sorted(txns, key=lambda t: (str(t.get("txn_date") or ""), str(t.get("order_id") or ""))):
         key = (t["client_code"], t["scheme_name"], t.get("folio_no") or "")
         e = agg.setdefault(key, {
             "client_code": t["client_code"], "scheme_name": t["scheme_name"],
             "scheme_code": t.get("scheme_code"), "folio_no": t.get("folio_no") or "",
-            "units": 0.0, "invested": 0.0, "last_nav": None, "report_date": None,
+            "units": 0.0, "invested": 0.0, "last_nav": None, "report_date": None, "_fund": _fund_key(t),
         })
         e["units"] += _signed(t, "units")
         e["invested"] += _signed(t, "amount")
         if t.get("scheme_code") and not e["scheme_code"]:
             e["scheme_code"] = t["scheme_code"]
+            e["_fund"] = _fund_key(e)
         if _to_float(t.get("nav")):
             e["last_nav"] = _to_float(t.get("nav"))
         rd = str(t.get("report_date") or t.get("txn_date") or "")[:10] or None
         if rd and (not e["report_date"] or rd > e["report_date"]):
             e["report_date"] = rd
+    # net any money-out group against the same client's same fund
+    for e in [x for x in agg.values() if x["units"] < -1e-4]:
+        pool = sorted((x for x in agg.values() if x is not e and x["client_code"] == e["client_code"]
+                       and x["_fund"] == e["_fund"] and x["units"] > 1e-4), key=lambda x: -x["units"])
+        for x in pool:
+            if e["units"] >= -1e-4:
+                break
+            take = min(x["units"], -e["units"])
+            share = take / -e["units"]
+            x["units"] -= take
+            x["invested"] += e["invested"] * share
+            e["units"] += take
+            e["invested"] -= e["invested"] * share
+        if e["units"] < -1e-4 and orphans is not None:
+            orphans.append({"client_code": e["client_code"], "scheme_name": e["scheme_name"], "folio_no": e["folio_no"],
+                            "units": round(e["units"], 4), "amount": round(e["invested"], 2)})
+    # a folio emptied by a withdrawal can be left holding a ₹ figure (sold for more than it cost):
+    # that belongs to the fund, so it moves onto the folios still held, by units
+    funds: dict[tuple, list] = {}
+    for e in agg.values():
+        funds.setdefault((e["client_code"], e["_fund"]), []).append(e)
+    for grp in funds.values():
+        live = [x for x in grp if x["units"] > 1e-4]
+        dead = [x for x in grp if x["units"] <= 1e-4 and abs(x["invested"]) > 0.005]
+        if not live or not dead:
+            continue
+        extra = sum(x["invested"] for x in dead)
+        tot = sum(x["units"] for x in live)
+        for x in live:
+            x["invested"] += extra * x["units"] / tot
+        for x in dead:
+            x["invested"] = 0.0
     out = []
     for e in agg.values():
+        e.pop("_fund", None)
         e["units"] = round(e["units"], 4)
         e["invested"] = round(e["invested"], 2)
         if e["units"] <= 1e-4 and e["invested"] <= 1:
@@ -684,7 +762,8 @@ def rebuild_holdings(client_codes: list[str] | None = None) -> dict:
         codes = {t["client_code"] for t in txns}
         if client_codes is not None:
             codes |= set(client_codes)
-        rows = _holdings_from_txns(txns)
+        orphans: list = []
+        rows = _holdings_from_txns(txns, orphans)
         removed = 0
         for code in codes:
             have = _sb().table("client_holdings").select("id,scheme_name,folio_no").eq("client_code", code).execute().data or []
@@ -698,7 +777,8 @@ def rebuild_holdings(client_codes: list[str] | None = None) -> dict:
         if rows:
             _sb().table("client_holdings").upsert(rows, on_conflict="client_code,scheme_name,folio_no").execute()
         untouched = sorted(c for c in codes if not any(r["client_code"] == c for r in rows))
-        return {"clients": len(codes), "rows": len(rows), "removed": removed, "no_transactions": untouched}
+        return {"clients": len(codes), "rows": len(rows), "removed": removed, "no_transactions": untouched,
+                "unmatched_out": orphans}
     store = _load_local()
     txns = store.get("transactions", [])
     if client_codes is not None:
@@ -1487,7 +1567,7 @@ def mapping_overview() -> dict:
 # ADD A PURCHASE BY HAND — split across the DigiVilla mix (or one fund), units
 # from that day's real NAV, pinned to a villa in the same step
 # ============================================================================
-_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
+_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "switchout", "swp", "withdraw", "sell", "stp out", "stp-out", "transfer out")
 
 
 def _signed(t: dict, field: str) -> float:

@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 
-_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
+_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "switchout", "swp", "withdraw", "sell", "stp out", "stp-out", "transfer out")
 
 
 def _num(v) -> float:

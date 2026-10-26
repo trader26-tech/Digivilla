@@ -362,7 +362,7 @@ def live_navs(owner: str) -> dict:
 # ============================================================================
 # HOUSES FROM THE ADMIN'S PINS — each villa is the transactions pinned to it
 # ============================================================================
-_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
+_REDEEM_WORDS = ("redeem", "redemption", "switch out", "switch-out", "switchout", "swp", "withdraw", "sell", "stp out", "stp-out", "transfer out")
 
 
 def _txn_sign(kind) -> float:
@@ -424,7 +424,9 @@ def _mapped_houses(client_code: str):
     date, so two villas bought at different times have different values.
     `outside` = funds in no DigiVilla bucket (net worth only). Memoised briefly
     (an upload or a re-pin shows within seconds)."""
-    return _memo_swr(f"mhouses:{client_code}", 20, lambda: _mapped_houses_load(client_code))
+    # a plain short memo, NOT stale-while-revalidate: right after an upload (a purchase, an SWP)
+    # the board must show the new money on the very next open, not one open later
+    return _memo(f"mhouses:{client_code}", 15, lambda: _mapped_houses_load(client_code))
 
 
 def houses_layout(client_code: str):
@@ -1533,7 +1535,7 @@ def orders_for_owner(owner: str) -> list[dict]:
             "nav": r.get("nav"),
             "tag": _sleeve_tag("", name),
             # rent/SWP/redemption payouts flow OUT to the user
-            "direction": "out" if ("payout" in low or "swp" in low or "redemption" in low or "withdraw" in low) else "in",
+            "direction": "out" if ("payout" in low or _txn_sign(kind) < 0) else "in",
         })
     out.sort(key=lambda x: x["date"] or "", reverse=True)
     return out

@@ -658,10 +658,13 @@ export interface ReportUpload {
    *  new by order id · lines already known (refreshed in place) · hand-added
    *  purchases the report confirmed · the holdings rebuild that followed */
   added?: number; updated?: number; absorbed?: number; clients?: string[];
-  holdings?: { clients: number; rows: number; removed: number; no_transactions: string[] };
+  holdings?: { clients: number; rows: number; removed: number; no_transactions: string[]; unmatched_out?: unknown[] };
   /** placement that ran right after a transaction upload */
   placement?: { auto: PlacementSet[]; pending: PlacementSet[]; pending_count: number; auto_count: number; error?: string };
+  /** the money-out lines of this file (SWP · redemption · switch-out) and whether each came off its fund */
+  withdrawals?: Withdrawal[];
 }
+export interface Withdrawal { client_code: string; name: string; scheme_name: string; kind: string; txn_date: string | null; amount: number; units: number; deducted: boolean; }
 /** Placement: one purchase set (a client's money-in lines of one day and kind) and where it can go. */
 export interface PlacementLine { order_id: string; scheme_code: number | null; scheme_name: string; amount: number; share: number; }
 export interface PlacementCandidate { bucket_id: string; name: string; tier?: VillaType; kind?: string; similarity: number; exact: boolean; }

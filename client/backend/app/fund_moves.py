@@ -229,4 +229,11 @@ def fund_moves(owner: str) -> dict:
     if not code:
         return {"nav_date": None, "prev_date": None, "total": {"change": None, "pct": None, "value": 0},
                 "index_as_of": None, "days": [], "funds": [], "portfolio": None}
-    return cp._memo_swr(f"moves:{code}", 900, lambda: _build(code))
+    # keyed on the holdings themselves, so an upload (a purchase, an SWP) shows the moment it lands
+    try:
+        held = "|".join(sorted(f"{h.get('scheme_code')}:{round(h.get('units') or 0, 3)}" for h in cp._valued_holdings(code)))
+    except Exception:
+        held = ""
+    import hashlib
+    sig = hashlib.md5(held.encode()).hexdigest()[:10]
+    return cp._memo_swr(f"moves:{code}:{sig}", 900, lambda: _build(code))

@@ -36,7 +36,7 @@ from app.config import get_settings
 from app.calc_check import _cfg, data_used, flat_check, payout_check, sip_check, villa_funds  # noqa: F401
 from app.calc_check.settings import _finished_at, _max_houses, _villa_income, _villa_unit  # noqa: F401
 
-REDEEM = ("redeem", "redemption", "switch out", "switch-out", "swp", "withdraw", "sell")
+REDEEM = ("redeem", "redemption", "switch out", "switch-out", "switchout", "swp", "withdraw", "sell", "stp out", "stp-out", "transfer out")
 
 def _sign(kind) -> float:
     k = (kind or "").lower()
