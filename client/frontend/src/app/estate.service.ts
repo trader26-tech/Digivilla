@@ -619,6 +619,8 @@ export class EstateService {
       .subscribe({
         next: (p) => {
           this.portfolio.set(p); this.portfolioLoaded.set(true);
+          // a newer NAV day than the comparison data has → pull that again, now, not after its 15 minutes
+          const mv = this.moves(); if (mv && p.nav_date && mv.nav_date && p.nav_date > mv.nav_date) this.loadMoves(true);
           if (p.allocation) this.applyAlloc(p.allocation.funds || []);
           else this.loadAllocation();             // an older backend — ask separately
           this.lastLoadedAt.set(Date.now()); this.lastLoadOk.set(true);

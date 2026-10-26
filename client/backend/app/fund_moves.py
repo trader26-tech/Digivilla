@@ -130,6 +130,15 @@ def _bench_day(days: list[str], vals: list, nav_date: Optional[str]) -> tuple[Op
     return round((vals[i] / vals[j] - 1) * 100, 4), days[i]
 
 
+def _iso(d) -> Optional[str]:
+    """A NAV date as ISO — the cache mostly stores ISO, a few rows carry '23-10-2026'."""
+    d = str(d or "").strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        return d
+    m = re.fullmatch(r"(\d{2})-(\d{2})-(\d{4})", d)
+    return f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
+
+
 def _build(client_code: str) -> dict:
     hs = cp._valued_holdings(client_code)
     hs = [h for h in hs if h.get("scheme_code") and (h.get("units") or 0) > 0]
@@ -150,7 +159,13 @@ def _build(client_code: str) -> dict:
         for p in navfull.get(h["scheme_code"]) or []:
             if p.date > last_idx:
                 extra.add(p.date)
+        # tonight's NAV: the live cache has it hours before the history mirror does
+        nd = _iso(h.get("nav_date"))
+        if nd and h.get("nav") and nd > last_idx:
+            extra.add(nd)
     days = cal + sorted(extra)
+    # the newest NAV of each fund, from the live cache, on top of the history
+    live_nav: dict[int, tuple[str, float]] = {h["scheme_code"]: (_iso(h["nav_date"]) or "", float(h["nav"])) for h in hs if _iso(h.get("nav_date")) and h.get("nav")}
     pos = {d: i for i, d in enumerate(days)}
 
     funds = []
@@ -164,6 +179,8 @@ def _build(client_code: str) -> dict:
 
         pts = navfull.get(code) or []
         navmap = {p.date: p.nav for p in pts if p.nav}
+        if code in live_nav and live_nav[code][0] not in navmap:
+            navmap[live_nav[code][0]] = live_nav[code][1]
         first_nav = min(navmap) if navmap else None
         if not first_nav:
             continue
@@ -195,7 +212,7 @@ def _build(client_code: str) -> dict:
             "invested": round(h.get("invested") or 0, 2),
             "weight": round((h.get("current_value") or 0) / value_total * 100, 2) if value_total else 0,
             "since": since.get(code),
-            "nav": nav, "prev_nav": prev, "nav_date": h.get("nav_date"), "prev_date": h.get("prev_date"),
+            "nav": nav, "prev_nav": prev, "nav_date": _iso(h.get("nav_date")), "prev_date": _iso(h.get("prev_date")),
             "day_change": round(h["day_change"], 2) if h.get("day_change") is not None else None,
             "day_pct": day_pct,
             "bench": ({"key": bkey, "name": market_daily.SHORT.get(bkey, bkey), "day_pct": bpct, "day_date": bday}
@@ -204,6 +221,8 @@ def _build(client_code: str) -> dict:
         })
     funds.sort(key=lambda f: -(f["value"] or 0))
     navmaps = {c: {p.date: p.nav for p in (pts or []) if p.nav} for c, pts in navfull.items()}
+    for c, (d, v) in live_nav.items():
+        navmaps.setdefault(c, {}).setdefault(d, v)
     portfolio = _portfolio_series(txns, days, navmaps)
     # every index the store has, aligned to `days` — the app lets a client compare any fund
     # (or everything) with the index they choose, not only the one its sleeve follows
@@ -229,11 +248,14 @@ def fund_moves(owner: str) -> dict:
     if not code:
         return {"nav_date": None, "prev_date": None, "total": {"change": None, "pct": None, "value": 0},
                 "index_as_of": None, "days": [], "funds": [], "portfolio": None}
-    # keyed on the holdings themselves, so an upload (a purchase, an SWP) shows the moment it lands
+    # keyed on the newest NAV day in hand, so tonight's NAVs show the moment the cache has them
+    # …and on the holdings themselves, so an upload (a purchase, an SWP) shows the moment it lands
     try:
-        held = "|".join(sorted(f"{h.get('scheme_code')}:{round(h.get('units') or 0, 3)}" for h in cp._valued_holdings(code)))
+        hs = cp._valued_holdings(code)
+        newest = max((h.get("nav_date") or "" for h in hs), default="")
+        held = "|".join(sorted(f"{h.get('scheme_code')}:{round(h.get('units') or 0, 3)}" for h in hs))
     except Exception:
-        held = ""
+        newest, held = "", ""
     import hashlib
     sig = hashlib.md5(held.encode()).hexdigest()[:10]
-    return cp._memo_swr(f"moves:{code}:{sig}", 900, lambda: _build(code))
+    return cp._memo_swr(f"moves:{code}:{newest}:{sig}", 900, lambda: _build(code))

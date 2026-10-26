@@ -456,16 +456,58 @@ def live_nav(scheme_code: int, max_age_hours: int = 6) -> tuple[float | None, st
     return nav, ndate
 
 
+# AMFI's own NAV file — the same primary source the client app uses. It carries tonight's NAVs
+# hours before the mfapi mirror does; one snapshot per worker, re-read every 15 minutes.
+_AMFI_URL = "https://www.amfiindia.com/spages/NAVAll.txt"
+_AMFI_SNAP: tuple[float, dict] = (0.0, {})
+
+
+def _amfi_snapshot() -> dict:
+    """{scheme_code: (nav, nav_date_iso)} from AMFI, or the last good copy ({} if never)."""
+    global _AMFI_SNAP
+    if _AMFI_SNAP[1] and _time.time() - _AMFI_SNAP[0] < 900:
+        return _AMFI_SNAP[1]
+    try:
+        r = httpx.get(_AMFI_URL, timeout=30, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        out: dict = {}
+        for line in r.text.splitlines():
+            parts = line.split(";")
+            if len(parts) < 8 or not parts[0].strip().isdigit():
+                continue
+            try:
+                out[int(parts[0])] = (float(parts[-2]), datetime.strptime(parts[-1].strip(), "%d-%b-%Y").date().isoformat())
+            except ValueError:
+                continue
+        if out:
+            _AMFI_SNAP = (_time.time(), out)
+    except Exception:
+        pass
+    return _AMFI_SNAP[1]
+
+
+def _nav_iso(d) -> str | None:
+    """A NAV date as ISO: AMFI gives ISO (above), mfapi gives '23-10-2026'."""
+    d = str(d or "").strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        return d
+    m = re.fullmatch(r"(\d{2})-(\d{2})-(\d{4})", d)
+    return f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
+
+
 def _live_nav(scheme_code: int, max_age_hours: int = 6) -> tuple[float | None, str | None]:
     now = datetime.now(timezone.utc)
 
     def _fetch() -> tuple[float | None, str | None, str | None]:
+        hit = _amfi_snapshot().get(int(scheme_code))         # AMFI first — authoritative and fresher
+        if hit:
+            return hit[0], hit[1], None
         try:
             r = httpx.get(f"{MFAPI}/mf/{scheme_code}/latest", timeout=12)
             j = r.json()
             data = (j.get("data") or [{}])[0]
             nm = (j.get("meta") or {}).get("scheme_name")
-            return _to_float(data.get("nav")) or None, data.get("date"), nm
+            return _to_float(data.get("nav")) or None, _nav_iso(data.get("date")), nm
         except Exception:
             return None, None, None
 
@@ -477,15 +519,19 @@ def _live_nav(scheme_code: int, max_age_hours: int = 6) -> tuple[float | None, s
                 fetched = row.get("fetched_at")
                 if fetched:
                     age = (now - datetime.fromisoformat(fetched.replace("Z", "+00:00"))).total_seconds() / 3600
-                    if age < max_age_hours and row.get("nav"):
-                        return float(row["nav"]), row.get("nav_date")
+                    if age < max_age_hours and row.get("nav") and _nav_iso(row.get("nav_date")):
+                        return float(row["nav"]), _nav_iso(row.get("nav_date"))
         except Exception:
-            pass
+            row = None
         nav, ndate, nm = _fetch()
-        if nav:
+        if nav and ndate:
+            # never put an older NAV over a newer one (the client app's refresher may have tonight's already)
+            have = _nav_iso((row or {}).get("nav_date")) if row else None
+            if have and have > ndate and row.get("nav"):
+                return float(row["nav"]), have
             try:
                 _sb().table("scheme_nav_cache").upsert({
-                    "scheme_code": scheme_code, "scheme_name": nm, "nav": nav,
+                    "scheme_code": scheme_code, "scheme_name": nm or (row or {}).get("scheme_name"), "nav": nav,
                     "nav_date": ndate, "fetched_at": _now_iso(),
                 }).execute()
             except Exception:
