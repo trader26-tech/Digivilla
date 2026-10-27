@@ -14,7 +14,7 @@
         <button class="pick" [class.on]="picker() === 'amt'" (click)="togglePicker('amt')" aria-label="Change monthly amount" [attr.aria-expanded]="picker() === 'amt'">{{ fmt(monthly()) }}<i></i></button>
         <span>stepping up</span>
         <button class="pick" [class.on]="picker() === 'step'" (click)="togglePicker('step')" aria-label="Change yearly step-up" [attr.aria-expanded]="picker() === 'step'">{{ step() }}%<i></i></button>
-        <span>a year.</span>
+        <span>a year@if (dw.custom()) {, {{ ym(dw.custom()!.from) }} → {{ ym(dw.custom()!.to) }}}.</span>
       </p>
     </div>
 
@@ -43,7 +43,7 @@
     <div class="hero">
       <div class="hero-txt">
         <div class="hero-main">
-          <span class="k">Worth today</span>
+          <span class="k">{{ dw.endsToday() ? 'Worth today' : 'Worth in ' + ym(dw.endMonth()) }}</span>
           <b class="big">{{ fmt(res.value) }}</b>
         </div>
         <div class="hero-sub">
@@ -73,13 +73,49 @@
   }
 
   <!-- ── years ── -->
-  <div class="years" role="tablist" aria-label="Started this many years ago">
-    @for (y of yearOpts(); track y) {
-      <button role="tab" [class.on]="y === years()" [attr.aria-selected]="y === years()" (click)="pickYears(y)">
-        <b>{{ y }}</b><span>yrs ago</span><i></i>
+  @if (!dw.custom()) {
+    <div class="years" role="tablist" aria-label="Started this many years ago">
+      @for (y of yearOpts(); track y) {
+        <button role="tab" [class.on]="y === years()" [attr.aria-selected]="y === years()" (click)="pickYears(y)">
+          <b>{{ y }}</b><span>yrs ago</span><i></i>
+        </button>
+      }
+      <button class="yr-dates" (click)="dw.use()" aria-label="Pick any start and end month">
+        <b><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></b><span>dates</span><i></i>
       </button>
-    }
-  </div>
+    </div>
+  } @else {
+    <div class="years range">
+      <button class="rg-x" (click)="dw.clear()" aria-label="Back to years ago">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <button [class.on]="dw.mp()?.which === 'from'" (click)="dw.open('from')" [attr.aria-expanded]="dw.mp()?.which === 'from'" aria-label="Start month">
+        <b>{{ ym(dw.custom()!.from) }}</b><span>from</span><i></i>
+      </button>
+      <em aria-hidden="true">→</em>
+      <button [class.on]="dw.mp()?.which === 'to'" (click)="dw.open('to')" [attr.aria-expanded]="dw.mp()?.which === 'to'" aria-label="End month">
+        <b>{{ ym(dw.custom()!.to) }}</b><span>to</span><i></i>
+      </button>
+      <small class="rg-span">{{ dw.spanLabel() }}</small>
+
+      @if (dw.mp(); as m) {
+        <div class="mscrim" (click)="dw.mp.set(null)" aria-hidden="true"></div>
+        <div class="mpop" role="dialog" [attr.aria-label]="m.which === 'from' ? 'Start month' : 'End month'">
+          <div class="mp-h">
+            <button (click)="dw.stepYear(-1)" [disabled]="m.year <= dw.minYear()" aria-label="Previous year"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <b>{{ m.year }}</b>
+            <button (click)="dw.stepYear(1)" [disabled]="m.year >= dw.maxYear()" aria-label="Next year"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="mp-g">
+            @for (c of dw.monthCells(); track c.ym) {
+              <button [class.on]="c.on" [disabled]="!c.ok" (click)="dw.pick(c.ym)">{{ c.label }}</button>
+            }
+          </div>
+          <span class="mp-hint">{{ m.which === 'from' ? 'Start' : 'End' }} · at least a year apart</span>
+        </div>
+      }
+    </div>
+  }
 
   <app-amount-dial label="Monthly SIP" [value]="monthly()" (valueChange)="monthly.set($event)"
                    [min]="5000" [max]="500000" [step]="1000" [nudgeBy]="10000" [major]="50000" [mid]="10000"></app-amount-dial>
@@ -102,7 +138,7 @@
     <button class="round" (click)="go('calc')" aria-label="Back to calculator">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
     </button>
-    <div><b>How this is worked out</b><span>{{ inr(monthly()) }} a month · {{ ym(res.months[0]) }} → today, step by step</span></div>
+    <div><b>How this is worked out</b><span>{{ inr(monthly()) }} a month · {{ ym(res.months[0]) }} → {{ dw.endWord() }}, step by step</span></div>
   </div>
 
   <ol class="steps">
@@ -113,7 +149,7 @@
         <h3>You put in <em>{{ inr(monthly()) }}</em></h3>
         <p>
           @if (step() > 0) { Raised {{ step() }}% every year — <b>{{ inr(res.lastMonthly) }}</b> a month by the last year. }
-          {{ res.years * 12 }} months — <b>{{ fmt(res.invested) }}</b> in all. Each month's money is split the same way:
+          {{ res.months.length - 1 }} months — <b>{{ fmt(res.invested) }}</b> in all. Each month's money is split the same way:
         </p>
         <div class="mixbar" aria-hidden="true">
           @for (m of x.mix; track m.key) { <i [style.flex-basis.%]="m.pct" [style.background]="m.color"></i> }
@@ -140,7 +176,7 @@
       <div class="step-card">
         <span class="step-k">Every year end</span>
         <h3>You got <em class="gold">{{ t().sipIncomePct }}%</em> as income</h3>
-        <p>{{ t().sipIncomePct }}% of what it was worth is paid to you, mostly from the <b>Arbitrage</b> part (the steady one). It grew from {{ fmt(x.firstIncome) }} in year 1 to {{ fmt(x.lastIncome) }} in year {{ res.years }} — <b>{{ fmt(res.income) }}</b> in all, after {{ inr(res.incomeTax) }} tax.</p>
+        <p>{{ t().sipIncomePct }}% of what it was worth is paid to you, mostly from the <b>Arbitrage</b> part (the steady one). It grew from {{ fmt(x.firstIncome) }} in year 1 to {{ fmt(x.lastIncome) }} in year {{ res.yearly.length }} — <b>{{ fmt(res.income) }}</b> in all, after {{ inr(res.incomeTax) }} tax.</p>
       </div>
     </li>
 
@@ -149,11 +185,11 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
       </span>
       <div class="step-card">
-        <span class="step-k">Today</span>
+        <span class="step-k">{{ dw.endsToday() ? 'Today' : ym(dw.endMonth()) }}</span>
         <h3>It's worth <em>{{ fmt(res.value) }}</em></h3>
-        <p>It's worth <b>{{ fmt(res.value) }}</b> today — the tax on every {{ t().rebalanceMonth }} rebalance ({{ inr(res.rebalanceTax) }}) was already paid along the way — on top of the {{ fmt(res.income) }} income. That's about <b>{{ rate(res.xirr) }} a year</b> on your money.</p>
+        <p>It's worth <b>{{ fmt(res.value) }}</b> {{ dw.endWord() }} — the tax on every {{ t().rebalanceMonth }} rebalance ({{ inr(res.rebalanceTax) }}) was already paid along the way — on top of the {{ fmt(res.income) }} income. That's about <b>{{ rate(res.xirr) }} a year</b> on your money.</p>
         <div class="result">
-          <div><span>You put in</span><b>{{ fmt(res.invested) }}</b><small>{{ res.years * 12 }} months</small></div>
+          <div><span>You put in</span><b>{{ fmt(res.invested) }}</b><small>{{ res.months.length - 1 }} months</small></div>
           <div class="dv"><span>You have</span><b>{{ fmt(res.value + res.income) }}</b><small>{{ fmt(res.value) }} + {{ fmt(res.income) }} income</small></div>
         </div>
       </div>
@@ -166,7 +202,7 @@
       Good to know
     </h4>
     <ul>
-      <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ years() }} years can be better or worse — funds can fall.</li>
+      <li><b>This is the past, not a promise.</b> Real index values from {{ ym(res.months[0]) }} to {{ ym(res.months[res.months.length - 1]) }}. The next {{ dw.spanLabel() }} can be better or worse — funds can fall.</li>
       <li><b>Indices, not funds.</b> Each part follows a benchmark — NIFTY 50 Arbitrage, NIFTY 50 TRI, NIFTY Midcap 150 TRI, NIFTY Smallcap 250 TRI, and Gold BeES for gold — so no fund manager's picks are in these numbers. The indices are before any fund's costs; Gold BeES is the ETF's own NAV.</li>
       <li><b>The villas.</b> Growth parts plus arbitrage — {{ t().villasLine }} (growth / arbitrage). You're looking at {{ villa().name }}.</li>
       <li><b>Rebalanced every {{ t().rebalanceMonth }}.</b> The {{ t().payFirst }} part is left alone; {{ t().rebalanceParts }} go back to the split they started with. The tax on what that sells is paid from the proceeds.</li>

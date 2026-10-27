@@ -2,10 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, EventEmitter, HostListener, Output, computed, effect, inject, signal } from '@angular/core';
 
 import { AmountDialComponent } from './amount-dial.component';
-import { fmtInr, simulateSip, windowFor, ymLabel } from './engine';
+import { Window, fmtInr, simulateSip, windowBetween, windowFor, ymLabel } from './engine';
 import { inr, rate, terms } from './view/common';
 import { sipView } from './view/sip.view';
 import { CalcDataService } from './calc-data.service';
+import { DateWindow } from './date-window';
 import { yearsAvailable } from './fd-vs-dv.component';
 import { VillaPickComponent } from './villa-pick.component';
 import { YearCol, YearColsComponent } from './year-cols.component';
@@ -56,7 +57,15 @@ export class SipCalcComponent {
 
   readonly failed = this.store.failed;
   readonly yearOpts = computed(() => yearsAvailable(this.store.data()?.months.length ?? null));
-  readonly win = computed(() => { const d = this.store.villaData(); return d ? windowFor(d, this.years()) : null; });
+  readonly firstMonth = computed(() => this.store.data()?.months[0] ?? '');
+  readonly lastMonth = computed(() => { const m = this.store.data()?.months; return m ? m[m.length - 1] : ''; });
+  readonly win = computed<Window | null>(() => {
+    const d = this.store.villaData(); if (!d) return null;
+    const c = this.dw.custom();
+    return c ? windowBetween(d, c.from, c.to) : windowFor(d, this.years());
+  });
+  /** "dates": any start and end month in place of the presets */
+  readonly dw: DateWindow = new DateWindow(this.firstMonth, this.lastMonth, this.win);
   readonly r = computed(() => {
     const w = this.win();
     return w ? simulateSip(w, { monthly: this.monthly(), stepPct: this.step(), slabPct: this.t().defaultSlab, swp: this.swp() }, this.store.config()) : null;
@@ -71,12 +80,12 @@ export class SipCalcComponent {
   constructor() {
     this.store.load();
     // the villa picker shows this screen's figure, so the two can't disagree
-    effect(() => { const r = this.r(); this.store.shown.set(r ? { rate: r.xirr ?? null, years: this.years() } : null); }, { allowSignalWrites: true });
+    effect(() => { const r = this.r(); this.store.shown.set(r ? { rate: r.xirr ?? null, years: this.dw.custom() ? Math.round(r.years * 10) / 10 : this.years() } : null); }, { allowSignalWrites: true });
     inject(DestroyRef).onDestroy(() => this.store.shown.set(null));
   }
   retry(): void { this.store.load(); }
 
-  pickYears(y: number): void { this.years.set(y); }
+  pickYears(y: number): void { this.dw.clear(); this.years.set(y); }
   togglePicker(p: 'amt' | 'step'): void { this.picker.set(this.picker() === p ? null : p); }
   pickAmount(v: number): void { this.monthly.set(v); this.picker.set(null); }
   pickStep(v: number): void { this.step.set(v); this.picker.set(null); }
@@ -84,7 +93,8 @@ export class SipCalcComponent {
 
   @HostListener('document:keydown.escape')
   onEsc(): void {
-    if (this.picker()) this.picker.set(null);
+    if (this.dw.mp()) this.dw.mp.set(null);
+    else if (this.picker()) this.picker.set(null);
     else if (this.page() !== 'calc') this.go('calc');
   }
 }
