@@ -8,19 +8,43 @@
     </span>
   </div>
 
+  <!-- ═══ the heat map: the whole world in one look ═══ -->
+  <section class="wt-card wt-heat" aria-label="Heat map">
+    <header class="wt-heat-h">
+      <h2>Heat map</h2>
+      <div class="seg" role="tablist" aria-label="Period">
+        <button *ngFor="let p of HEAT_PERIODS" role="tab" [class.on]="hp() === p.k" (click)="setHp(p.k)">{{ p.l }}</button>
+      </div>
+      <span class="wt-legend num" aria-hidden="true"><em>−{{ heatCap() }}%</em><i></i><em>+{{ heatCap() }}%</em></span>
+    </header>
+    <div class="wt-hm" [class.dim]="heatLoading()">
+      <div class="wt-hb" *ngFor="let g of heatGroups()" [style.--n]="g.items.length">
+        <div class="wt-hb-h"><b>{{ g.name }}</b><em *ngIf="g.avg !== null" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }}</em></div>
+        <div class="wt-hb-t">
+          <button class="wt-ht" *ngFor="let q of g.items" [style.background]="heatBg(q)" [class.deep]="heatDeep(q)" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
+                  (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="q.name + ' · ' + status(q).label + ' · ' + status(q).at + ' · tap to ' + (selected().includes(q.key) ? 'remove from' : 'add to') + ' the chart'">
+            <span class="wt-ht-n"><em aria-hidden="true" *ngIf="g.region !== 'India' && g.region !== 'US' && g.region !== 'Funds'">{{ flagOf(q) }}</em>{{ shortName(q) }}</span>
+            <b class="num">{{ heatText(q) }}</b>
+            <i class="dot" *ngIf="status(q).s === 'open'" aria-label="open"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══ the clock board: every exchange — open or closed, when it closes / opens; tap = only its markets ═══ -->
   <section class="wt-clock" aria-label="Exchanges now">
     <button class="wt-ex" *ngIf="fundTile() as f" data-s="nav" [class.on]="region() === 'Funds'" (click)="pickFunds()" [attr.aria-pressed]="region() === 'Funds'"
             [title]="FUNDS_ABOUT + (f.updated ? ' · AMFI file read ' + ist(f.updated) + ' IST' : '')">
-      <span class="wt-ex-h"><em aria-hidden="true">◆</em><b>Our funds</b><i class="dot"></i></span>
-      <span class="wt-ex-s">{{ f.st.label }}</span>
-      <span class="wt-ex-f"><small>{{ f.st.at }}</small><em class="num" *ngIf="f.move !== null" [class.pos]="f.move > 0" [class.neg]="f.move < 0">{{ pct(f.move) }}</em></span>
+      <span class="wt-ex-h"><em aria-hidden="true">◆</em><b>Our funds</b></span>
+      <span class="wt-ex-s"><i class="dot"></i><span>{{ f.st.label }}</span><small class="num" *ngIf="f.move !== null" [class.pos]="f.move > 0" [class.neg]="f.move < 0">{{ pct(f.move) }}</small></span>
+      <span class="wt-ex-f">{{ f.st.at }}</span>
     </button>
     <button class="wt-ex" *ngFor="let e of exchanges()" [attr.data-s]="e.st.s" [class.on]="exOn(e.tz)" (click)="pickTz(e.tz)" [attr.aria-pressed]="exOn(e.tz)"
             [title]="e.city + ' · ' + e.local + ' local · ' + e.n + ' market' + (e.n > 1 ? 's' : '')">
-      <span class="wt-ex-h"><em aria-hidden="true">{{ e.flag }}</em><b>{{ e.city }}</b><i class="dot"></i></span>
-      <span class="wt-ex-s">{{ e.st.label }}</span>
-      <span class="wt-ex-f"><small>{{ e.st.at }}</small><em class="num" *ngIf="e.move !== null" [class.pos]="e.move > 0" [class.neg]="e.move < 0">{{ pct(e.move) }}</em></span>
+      <span class="wt-ex-h"><em aria-hidden="true">{{ e.flag }}</em><b>{{ e.city }}</b></span>
+      <span class="wt-ex-s"><i class="dot"></i><span>{{ e.st.label }}</span><small class="num" *ngIf="e.move !== null" [class.pos]="e.move > 0" [class.neg]="e.move < 0">{{ pct(e.move) }}</small></span>
+      <span class="wt-ex-f">{{ e.st.at }}</span>
     </button>
   </section>
 

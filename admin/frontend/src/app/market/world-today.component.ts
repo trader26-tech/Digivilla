@@ -24,6 +24,18 @@ const CITY: Record<string, string> = { Kolkata: 'Mumbai', Calcutta: 'Mumbai', Be
 const IST = 'Asia/Kolkata';
 /** YYYY-MM-DD of an instant on India's clock */
 const istDay = (ts: number) => new Date(ts * 1000).toLocaleDateString('en-CA', { timeZone: IST });
+/** the heat map's periods, and how big a move paints the deepest colour (% — or bp for a yield) */
+const HEAT_PERIODS = [{ k: '1d', l: '1D' }, { k: '1w', l: '1W' }, { k: '1m', l: '1M' }, { k: '3m', l: '3M' }, { k: 'ytd', l: 'YTD' }, { k: '1y', l: '1Y' }];
+const HEAT_CAP: Record<string, number> = { '1d': 2, '1w': 4, '1m': 8, '3m': 12, ytd: 20, '1y': 25 };
+const HEAT_CAP_BP: Record<string, number> = { '1d': 8, '1w': 20, '1m': 40, '3m': 60, ytd: 100, '1y': 100 };
+/** names that fit a heat tile (the full name is in its tooltip) */
+const TILE_NAME: Record<string, string> = {
+  nifty100: 'Nifty 100', midcap150: 'Midcap 150', smallcap250: 'Smallcap 250', midcap50: 'Midcap 50', banknifty: 'Bank Nifty', next50: 'Next 50',
+  goldbees: 'Gold BeES', nasdaq: 'Nasdaq', nasdaq100: 'Nasdaq 100', dow: 'Dow', russell: 'Russell 2K', stoxx50: 'Stoxx 50',
+  sti: 'Singapore', jakarta: 'Jakarta', shanghai: 'Shanghai', taiwan: 'Taiwan', hangseng: 'Hang Seng', kospi: 'KOSPI', nikkei: 'Nikkei', asx: 'ASX 200',
+  ftse: 'FTSE 100', ftsemib: 'FTSE MIB', msciworld: 'MSCI World', tsx: 'TSX', usdinr: '$ in ₹', dxy: 'Dollar idx', eurusd: '€ in $', gbpusd: '£ in $', usdjpy: '$ in ¥',
+  wti: 'WTI oil', brent: 'Brent', natgas: 'Nat gas', us3m: 'US 3M', us5y: 'US 5Y', us10y: 'US 10Y', us30y: 'US 30Y',
+};
 export type Session = { s: 'open' | 'pre' | 'closed' | 'nav'; label: string; at: string };
 
 /**
@@ -72,6 +84,10 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly tzOnly = signal<string | null>(null);
   /** the list's right-hand columns: today's session, or the last year */
   readonly cols = signal<'today' | 'year'>('today');
+  /** the heat map: the period it paints, and every market's moves (1W … 1Y; 1D comes from the quotes) */
+  readonly HEAT_PERIODS = HEAT_PERIODS;
+  readonly hp = signal('1d');
+  readonly moves = signal<Record<string, Record<string, number | null>>>({});
   /** now, ticking — every status ("open · closes 21:30") is worked out from it */
   readonly now = signal(Math.floor(Date.now() / 1000));
   private tick?: ReturnType<typeof setInterval>;
@@ -110,6 +126,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
       if (s.range === 'custom' && s.from && s.to) { this.from.set(s.from); this.to.set(s.to); }
       if (['periods', 'years', 'risk'].includes(s.view)) this.view.set(s.view);
       if (s.cols === 'year') this.cols.set('year');
+      if (HEAT_PERIODS.some((p) => p.k === s.hp)) this.hp.set(s.hp);
     } catch { /* defaults */ }
     if (this.range() === 'custom' && (this.from() === null || this.to() === null)) this.range.set('1y');
     this.loadQuotes();
@@ -117,12 +134,13 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadHistory();
     this.api.worldInflation().pipe(catchError(() => of(null))).subscribe((c) => this.cpi.set(c));
     this.loadFunds();
+    this.loadMoves();
     this.timer = setInterval(() => { this.loadQuotes(); this.loadFunds(); if (this.range() === '1d') this.loadCharts(); }, 60_000);
     this.tick = setInterval(() => this.now.set(Math.floor(Date.now() / 1000)), 20_000);
   }
   private remember(): void {
     try {
-      localStorage.setItem(LS, JSON.stringify({ selected: this.selected(), range: this.range(), ccy: this.ccy(), real: this.real(), cpiOff: this.cpiOff(), from: this.from(), to: this.to(), view: this.view(), cols: this.cols() }));
+      localStorage.setItem(LS, JSON.stringify({ selected: this.selected(), range: this.range(), ccy: this.ccy(), real: this.real(), cpiOff: this.cpiOff(), from: this.from(), to: this.to(), view: this.view(), cols: this.cols(), hp: this.hp() }));
     } catch { /* ignore */ }
   }
   ngAfterViewInit(): void {
@@ -160,6 +178,9 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** the villa buckets' funds: latest NAV from AMFI, its date, the move vs the NAV before */
+  private loadMoves(): void {
+    this.api.worldMoves().pipe(catchError(() => of(null))).subscribe((m) => { if (m?.moves) this.moves.set(m.moves); });
+  }
   private loadFunds(): void {
     this.api.worldFunds().pipe(catchError(() => of(null))).subscribe((f) => { if (f?.indices?.length) this.fundQuotes.set(f.indices); });
   }
@@ -585,12 +606,32 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
       if (n >= o && n < c) {
         if (t && n - t < 1800) return { s: 'open', label: 'Open', at: 'Closes ' + this.ist(c) };
         // inside its hours but no fresh price: paused (a rate between sessions) — or a holiday when nothing came all day
-        return t && n - t < 20 * 3600 ? { s: 'closed', label: 'Paused', at: 'Last ' + this.ist(t) } : { s: 'closed', label: 'Closed', at: 'Holiday today' };
+        if (t && n - t < 20 * 3600) return { s: 'closed', label: 'Paused', at: 'Last ' + this.ist(t) };
+        return { s: 'closed', label: 'Holiday', at: 'Opens ' + this.ist(this.nextOpen(q)) };
       }
       if (n < o) return { s: 'pre', label: 'Opens ' + this.ist(o), at: 'Closes ' + this.ist(c) };
-      return { s: 'closed', label: 'Closed', at: this.ist(c) };
+      return { s: 'closed', label: 'Closed', at: 'Opens ' + this.ist(this.nextOpen(q)) };
     }
     return { s: 'closed', label: 'Closed', at: t ? this.ist(t) : '' };
+  }
+  /** when the market next opens: its session moved on day by day (the same wall-clock time on the
+   *  exchange's own clock — daylight-saving changes kept), skipping sessions that end on a weekend.
+   *  Exchange holidays aren't known, so a holiday shows the day after. */
+  nextOpen(q: WorldQuote): number | null {
+    const o = q.open_at, c = q.close_at, tz = q.tz || 'UTC', n = this.now();
+    if (!o || !c) return null;
+    if (n < o) return o;
+    const hm = (ts: number) => { const [h, m] = new Date(ts * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).split(':').map(Number); return (h % 24) * 60 + m; };
+    const wd = (ts: number) => new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', timeZone: tz });
+    for (let k = 1; k <= 8; k++) {
+      const cc = c + k * 86400;
+      if (wd(cc) === 'Sat' || wd(cc) === 'Sun') continue;
+      let t = o + k * 86400;
+      let d = hm(o) - hm(t); if (d > 720) d -= 1440; if (d < -720) d += 1440;   // DST: keep the local opening time
+      t += d * 60;
+      if (t > n) return t;
+    }
+    return null;
   }
   /** the row's tooltip: the exchange, the session on its own clock, the comparison */
   rowTitle(q: WorldQuote): string {
@@ -618,7 +659,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
       const avg = qs.map((x) => x.change_pct).filter((v): v is number => v !== null);
       const eu = tz === 'Europe';
       return { tz, city: eu ? 'Europe' : this.cityOf(tz), flag: eu ? '🇪🇺' : q.flag || '', st, n: qs.length, move: avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : null,
-               local: new Date(this.now() * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: eu ? q.tz! : tz }), sortAt: st.s === 'open' ? (q.close_at ?? 0) : (q.open_at ?? 0) };
+               local: new Date(this.now() * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: eu ? q.tz! : tz }), sortAt: st.s === 'open' ? (q.close_at ?? 0) : (this.nextOpen(q) ?? q.open_at ?? 0) };
     });
     // home first (India), then open ones, then by when they open
     return tiles.sort((a, b) => +(b.tz === IST) - +(a.tz === IST) || rank[a.st.s] - rank[b.st.s] || a.sortAt - b.sortAt);
@@ -639,6 +680,45 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   pickFunds(): void { this.tzOnly.set(null); this.region.set(this.region() === 'Funds' ? 'All' : 'Funds'); }
   setCols(c: 'today' | 'year'): void { this.cols.set(c); this.remember(); }
   openCount = computed(() => this.exchanges().filter((e) => e.st.s === 'open').length);
+
+  // ── the heat map: every market at once, painted by its move over the chosen period ──
+  setHp(p: string): void { this.hp.set(p); this.remember(); }
+  /** a market's move over the heat map's period: % (bp for a yield) */
+  heatMove(q: WorldQuote): number | null {
+    const p = this.hp();
+    if (p === '1d') return (q.kind === 'yield' ? q.change_bp : q.change_pct) ?? null;
+    return this.moves()[q.key]?.[p] ?? null;
+  }
+  heatText(q: WorldQuote): string { const v = this.heatMove(q); return q.kind === 'yield' ? this.bps(v) : this.pct(v); }
+  /** how strongly a move paints (0–1): moves up to the period's cap; currencies move less, so half the cap */
+  heatStrength(q: WorldQuote): number {
+    const v = this.heatMove(q), p = this.hp();
+    if (v === null || !isFinite(v)) return 0;
+    const cap = q.kind === 'yield' ? HEAT_CAP_BP[p] : HEAT_CAP[p] * (q.kind === 'fx' || q.unit === 'arbitrage' ? 0.5 : 1);
+    return Math.min(1, Math.abs(v) / cap);
+  }
+  heatBg(q: WorldQuote): string {
+    const v = this.heatMove(q);
+    if (v === null || v === 0 || !isFinite(v)) return 'var(--nw-card2)';
+    const a = 10 + this.heatStrength(q) * 78;
+    return `color-mix(in srgb, ${v > 0 ? '#16a085' : '#e53935'} ${a.toFixed(0)}%, #ffffff)`;
+  }
+  heatDeep(q: WorldQuote): boolean { return this.heatStrength(q) > 0.5; }
+  /** the tile's name: no "(Japan)" — the flag says it */
+  shortName(q: WorldQuote): string {
+    if (TILE_NAME[q.key]) return TILE_NAME[q.key];
+    let n = q.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+    if (q.kind === 'fund') n = n.replace(/^Nippon India /, 'Nippon ').replace(/^ICICI Prudential /, 'ICICI ').replace(/ ETF FOF$/, '').replace(/ Growth Mid Cap$/, ' Growth').replace(/ Cap$/, '').replace(/Arbitrage$/, 'Arb');
+    return n;
+  }
+  /** the heat map's blocks: every region, all its markets (the region / clock filters don't apply here) */
+  readonly heatGroups = computed(() => this.regions().map((r) => {
+    const items = this.quotes().filter((q) => q.region === r);
+    const vs = items.filter((q) => q.kind !== 'yield' && q.kind !== 'fx' && q.key !== 'vix').map((q) => this.heatMove(q)).filter((v): v is number => v !== null);
+    return { region: r, name: this.REGION_NAME[r] ?? r, items, avg: vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null };
+  }).filter((g) => g.items.length));
+  readonly heatLoading = computed(() => this.hp() !== '1d' && !Object.keys(this.moves()).length);
+  readonly heatCap = computed(() => HEAT_CAP[this.hp()]);
 
   num(v: number | null, dp = 2): string { return v === null || v === undefined ? '—' : v.toLocaleString('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
   pct(v: number | null): string { return v === null || v === undefined ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; }

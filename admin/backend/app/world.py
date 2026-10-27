@@ -30,6 +30,10 @@ INDICES = [
     # India
     {"key": "nifty50", "flag": "🇮🇳", "symbol": "^NSEI", "name": "Nifty 50", "region": "India"},
     {"key": "nifty500", "flag": "🇮🇳", "symbol": "^CRSLDX", "name": "Nifty 500", "region": "India"},
+    {"key": "nifty100", "flag": "🇮🇳", "symbol": "^CNX100", "name": "Nifty 100 (large cap)", "region": "India"},
+    {"key": "next50", "flag": "🇮🇳", "symbol": "^NSMIDCP", "name": "Nifty Next 50", "region": "India"},
+    {"key": "midcap150", "flag": "🇮🇳", "symbol": "NIFTYMIDCAP150.NS", "name": "Nifty Midcap 150", "region": "India"},
+    {"key": "smallcap250", "flag": "🇮🇳", "symbol": "NIFTYSMLCAP250.NS", "name": "Nifty Smallcap 250", "region": "India"},
     {"key": "sensex", "flag": "🇮🇳", "symbol": "^BSESN", "name": "Sensex", "region": "India"},
     {"key": "banknifty", "flag": "🇮🇳", "symbol": "^NSEBANK", "name": "Nifty Bank", "region": "India"},
     {"key": "midcap50", "flag": "🇮🇳", "symbol": "^NSEMDCP50", "name": "Nifty Midcap 50", "region": "India"},
@@ -529,3 +533,52 @@ def fund_history(key: str) -> Optional[dict]:
             u.append(round(nav / r, 6) if r else None)
         return {"key": key, "name": name, "region": "Funds", "kind": "fund", "currency": "INR", "d": d, "v": v, "u": u}
     return _cached(f"h:{key}", 900, load)
+
+
+# ─────────────────────────── the heat map: every market over 1W … 1Y ───────────────────────────
+MOVE_DAYS = {"1w": 7, "1m": 30, "3m": 91, "1y": 365}
+
+
+def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
+    """{period: move} from (epoch, close) oldest → newest — % (bp for a yield) from the last close
+    on or before the period's start to the latest close; YTD from the last close of last year."""
+    if len(pts) < 2:
+        return {}
+    t_end, v_end = pts[-1]
+    def from_(t0):
+        base = None
+        for t, v in pts:
+            if t <= t0:
+                base = v
+            else:
+                break
+        if base is None:
+            return None
+        return round((v_end - base) * 100, 1) if kind == "yield" else round((v_end / base - 1) * 100, 3)
+    out = {k: from_(t_end - d * 86400) for k, d in MOVE_DAYS.items()}
+    y0 = int(datetime(datetime.utcfromtimestamp(t_end).year, 1, 1, tzinfo=ZoneInfo("UTC")).timestamp()) - 1
+    out["ytd"] = from_(y0)
+    return out
+
+
+def moves() -> dict:
+    """Every market's (and fund's) move over 1W, 1M, 3M, YTD and 1Y in its own currency — the heat map."""
+    def load():
+        syms = [x["symbol"] for x in INDICES]
+        chunks = [syms[i:i + 10] for i in range(0, len(syms), 10)]
+        got: dict[str, dict] = {}
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            for g in ex.map(lambda c: _spark(c, "2y", "1d"), chunks):
+                got.update(g)
+        out = {}
+        for ix in INDICES:
+            res = got.get(ix["symbol"])
+            if res:
+                out[ix["key"]] = _moves_from([(t, v) for t, v in _points(res)], ix.get("kind"))
+        fl = _fund_list()
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            series = list(ex.map(lambda f: _fund_series(f["code"])[0], fl))
+        for f, pts in zip(fl, series):
+            out[f"{FUND_PREFIX}{f['code']}"] = _moves_from([(_close_epoch(d), v) for d, v in pts], None)
+        return out or None
+    return {"moves": _cached("moves", 900, load) or {}}

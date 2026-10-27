@@ -1062,6 +1062,13 @@ def admin_world_funds(authorization: Optional[str] = Header(default=None)) -> di
     return world_svc.funds()
 
 
+@app.get("/admin/world/moves")
+def admin_world_moves(authorization: Optional[str] = Header(default=None)) -> dict:
+    """Every market's move over 1W, 1M, 3M, YTD, 1Y — the heat map."""
+    _require_admin(authorization)
+    return world_svc.moves()
+
+
 @app.get("/admin/world/chart")
 def admin_world_chart(key: str, range: str = "1d", ccy: str = "usd",
                       authorization: Optional[str] = Header(default=None)) -> dict:

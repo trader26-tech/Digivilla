@@ -19,8 +19,8 @@
 @keyframes wt-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(22,160,133,.45); } 50% { box-shadow: 0 0 0 5px rgba(22,160,133,0); } }
 
 /* ── the clock board: one tile per exchange ── */
-.wt-clock { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
-.wt-ex { --s: #9aa1b8; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 9px 11px 8px; border-radius: 14px; text-align: left; cursor: pointer; font: inherit; color: var(--nw-text);
+.wt-clock { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+.wt-ex { --s: #9aa1b8; display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 7px 10px 6px; border-radius: 14px; text-align: left; cursor: pointer; font: inherit; color: var(--nw-text);
   background: var(--nw-card); border: 1px solid var(--nw-border); box-shadow: var(--nw-shadow); transition: border-color .15s, box-shadow .15s, transform .1s; touch-action: manipulation;
   &[data-s='open'] { --s: var(--nw-pos); } &[data-s='pre'] { --s: #e0a400; } &[data-s='nav'] { --s: var(--nw-accent); }
   &:active { transform: scale(.98); }
@@ -30,13 +30,13 @@
 .wt-ex-h { display: flex; align-items: center; gap: 6px; min-width: 0;
   em { font-style: normal; font-size: 14px; line-height: 1; flex: none; color: var(--nw-accent); }
   b { font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .dot { margin-left: auto; } }
+  small { margin-left: auto; font-size: 11px; font-weight: 800; white-space: nowrap; color: var(--nw-muted); } }
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--s, #9aa1b8); }
-[data-s='open'] > .dot, [data-s='open'] .wt-ex-h .dot { animation: wt-pulse 2s ease-in-out infinite; }
-.wt-ex-s { font-size: 15px; font-weight: 800; letter-spacing: -.2px; color: var(--s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wt-ex-f { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0;
-  small { font-size: 11px; font-weight: 600; color: var(--nw-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  em { font-style: normal; font-size: 11px; font-weight: 800; white-space: nowrap; color: var(--nw-muted); } }
+[data-s='open'] > .dot, [data-s='open'] .wt-ex-s .dot { animation: wt-pulse 2s ease-in-out infinite; }
+.wt-ex-s { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; font-weight: 800; letter-spacing: -.2px; color: var(--s); white-space: nowrap;
+  > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  small { margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: 0; color: var(--nw-muted); } }
+.wt-ex-f { font-size: 11px; font-weight: 600; color: var(--nw-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wt-asof { display: inline-flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; color: var(--nw-muted); white-space: nowrap; b { font-weight: 800; } }
 
 /* segmented controls */
@@ -105,6 +105,30 @@
 /* the chart hint: mouse wording by default, touch wording on touch screens */
 .wt-touch { display: none; }
 @media (hover: none) and (pointer: coarse) { .wt-mouse { display: none; } .wt-touch { display: inline; } }
+
+/* ── the heat map: region blocks that share each row by size, tiles painted by the move ── */
+.wt-heat { padding: 12px 14px 14px; }
+.wt-heat-h { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+  h2 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.3px; } }
+.wt-legend { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: var(--nw-muted);
+  em { font-style: normal; } i { width: 90px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #e53935, #fbe3e2 45%, #eef1f8 50%, #d6f0ea 55%, #16a085); } }
+.wt-hm { display: flex; flex-wrap: wrap; gap: 8px 14px; transition: opacity .2s; &.dim { opacity: .45; } }
+.wt-hb { flex: var(--n) 1 calc(var(--n) * 66px + 34px); min-width: 0; max-width: 100%; }
+.wt-hb-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;
+  b { font-size: 10.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--nw-muted); }
+  em { font-style: normal; font-size: 11px; font-weight: 800; } }
+.wt-hb-t { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 3px; }
+.wt-ht { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; min-height: 46px; padding: 5px 7px 4px; border: 0; border-radius: 8px;
+  cursor: pointer; text-align: left; font: inherit; color: var(--nw-text); touch-action: manipulation; transition: transform .1s, box-shadow .12s;
+  b { font-size: 13px; font-weight: 800; letter-spacing: -.2px; white-space: nowrap; line-height: 1.1; }
+  &.deep { color: #fff; .wt-ht-n { color: rgba(255,255,255,.9); } }
+  &.on { box-shadow: inset 0 0 0 2px var(--c), 0 0 0 2px #fff inset; }
+  &:active { transform: scale(.97); }
+  .dot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; background: #fff; box-shadow: 0 0 0 1.5px #16a085; } }
+.wt-ht:not(.deep) .dot { background: #16a085; box-shadow: none; }
+@media (hover: hover) { .wt-ht:hover { box-shadow: 0 0 0 1.5px rgba(26,28,46,.25) inset; } .wt-ht.on:hover { box-shadow: inset 0 0 0 2px var(--c); } }
+.wt-ht-n { display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--nw-text); padding-right: 8px;
+  em { font-style: normal; margin-right: 4px; } }
 
 /* ── the markets table ── */
 .wt-list { padding: 12px 6px 8px; overflow: hidden; }
@@ -220,7 +244,7 @@
   /* the board: a strip that scrolls sideways */
   .wt-clock { display: flex; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -12px; padding: 2px 12px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
     &::-webkit-scrollbar { display: none; } }
-  .wt-ex { flex: 0 0 140px; scroll-snap-align: start; box-shadow: none; }
+  .wt-ex { flex: 0 0 184px; scroll-snap-align: start; box-shadow: none; }
   .wt-sec h1 { font-size: 22px; }
 
   /* the markets list: name over level on the left, today's move on the right, the session under both */
@@ -244,6 +268,13 @@
   .wt-name { gap: 6px; b { font-size: 13px; flex: 0 1 auto; min-width: 0; } small { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; } }
   .wt-gh { padding: 12px 10px 3px 42px; flex-wrap: wrap; row-gap: 2px; }
   .wt-name small { display: none; }
+  .wt-heat { padding: 12px 10px 12px; }
+  .wt-heat-h { gap: 8px; .seg { order: 3; } }
+  .wt-legend i { width: 60px; }
+  .wt-hm { gap: 12px; }
+  .wt-hb { flex: 1 1 100%; }
+  .wt-hb-t { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .wt-ht { min-height: 48px; }
   .wt-lh .wt-regions { flex: none; }
   .wt-pill { min-width: 66px; padding: 3px 8px; font-size: 11.5px; }
 }
