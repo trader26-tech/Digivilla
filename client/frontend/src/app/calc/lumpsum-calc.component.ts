@@ -11,6 +11,11 @@ import { VillaPickComponent } from './villa-pick.component';
 import { YearCol, YearColsComponent } from './year-cols.component';
 
 const AMOUNTS = [25_00_000, 50_00_000, 1_00_00_000, 2_50_00_000, 5_00_00_000];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** the shortest window the dates allow, in months */
+const MIN_SPAN = 12;
+/** 'YYYY-MM' → a month count, so months compare and subtract */
+const mi = (ym: string) => +ym.slice(0, 4) * 12 + +ym.slice(5, 7) - 1;
 
 /**
  * Lumpsum into DigiVilla — "had you put this amount into today's mix N years ago,
@@ -62,17 +67,32 @@ export class LumpsumCalcComponent {
     const c = this.custom();
     return c && c.from && c.to ? windowBetween(d, c.from, c.to) : windowFor(d, this.years());
   });
-  /** the withdrawals, year by year (plus the part-year at the end of a custom window) */
-  readonly payouts = computed(() => {
-    const r = this.r(); if (!r || !r.swp) return [];
-    const rows = r.yearly.map((y, i) => ({ label: `Year ${i + 1}`, month: y.month, paid: y.payout, value: y.value }));
-    const listed = rows.reduce((s, x) => s + x.paid, 0);
-    const rest = r.dvPaidGross - listed;
-    if (rest > 1) rows.push({ label: 'To date', month: r.months[r.months.length - 1], paid: rest, value: r.dvValue });
-    return rows;
+  /** the window's last month; "today" when it is the latest month there is */
+  readonly endMonth = computed(() => { const w = this.win(); return w ? w.months[w.months.length - 1] : ''; });
+  readonly endsToday = computed(() => this.endMonth() === this.lastMonth());
+  readonly endWord = computed(() => (this.endsToday() ? 'today' : 'in ' + ymLabel(this.endMonth())));
+  /** "2 yrs 4 mos" — the length of the window actually used */
+  readonly spanLabel = computed(() => {
+    const n = Math.max(0, (this.win()?.months.length ?? 1) - 1), y = Math.floor(n / 12), m = n % 12;
+    return [y ? `${y} yr${y > 1 ? 's' : ''}` : '', m ? `${m} mo${m > 1 ? 's' : ''}` : ''].filter(Boolean).join(' ') || '0 mos';
   });
-  readonly payoutMax = computed(() => Math.max(1, ...this.payouts().map((x) => x.paid)));
-  readonly payments = computed(() => { const r = this.r(); return r ? Math.max(0, r.months.length - 1) : 0; });
+
+  // ── the month picker in the years row ──
+  readonly mp = signal<{ which: 'from' | 'to'; year: number } | null>(null);
+  readonly minYear = computed(() => +this.firstMonth().slice(0, 4));
+  readonly maxYear = computed(() => +this.lastMonth().slice(0, 4));
+  readonly monthCells = computed(() => {
+    const m = this.mp(), c = this.custom(); if (!m || !c) return [];
+    const first = mi(this.firstMonth()), last = mi(this.lastMonth());
+    // a window is at least a year: from ≤ to − 12, to ≥ from + 12
+    const lo = m.which === 'from' ? first : mi(c.from) + MIN_SPAN;
+    const hi = m.which === 'from' ? mi(c.to) - MIN_SPAN : last;
+    const cur = m.which === 'from' ? c.from : c.to;
+    return MONTHS.map((label, k) => {
+      const ym = `${m.year}-${String(k + 1).padStart(2, '0')}`, i = mi(ym);
+      return { ym, label, ok: i >= lo && i <= hi, on: ym === cur };
+    });
+  });
   readonly r = computed(() => {
     const w = this.win();
     return w ? simulatePayout(w, { amount: this.amount(), fdRate: 0, slabPct: this.t().defaultSlab, swp: this.swp() }, this.store.config()) : null;
@@ -86,17 +106,31 @@ export class LumpsumCalcComponent {
   constructor() {
     this.store.load();
     // the villa picker shows this screen's figure, so the two can't disagree
-    effect(() => { const r = this.r(); this.store.shown.set(r ? { rate: r.dvIrr ?? null, years: this.years() } : null); }, { allowSignalWrites: true });
+    effect(() => { const r = this.r(); this.store.shown.set(r ? { rate: r.dvIrr ?? null, years: this.custom() ? Math.round(r.years * 10) / 10 : this.years() } : null); }, { allowSignalWrites: true });
     inject(DestroyRef).onDestroy(() => this.store.shown.set(null));
   }
   retry(): void { this.store.load(); }
   togglePicker(p: 'amt' | 'yrs'): void { this.picker.set(this.picker() === p ? null : p); }
   pickAmount(v: number): void { this.amount.set(v); this.picker.set(null); }
   pickYears(y: number): void { this.custom.set(null); this.years.set(y); this.picker.set(null); }
-  /** open the custom dates, seeded from the current window */
-  useCustom(): void { const w = this.win(); if (w && !this.custom()) this.custom.set({ from: w.months[0], to: w.months[w.months.length - 1] }); }
-  setCustom(which: 'from' | 'to', v: string): void { if (!v) return; const c = this.custom() ?? { from: this.firstMonth(), to: this.lastMonth() }; this.custom.set({ ...c, [which]: v }); }
-  toggleSwp(): void { this.store.setSwp(!this.swp()); if (navigator.vibrate) navigator.vibrate(4); }
+  /** dates: start from the window on screen, then ask for the start month */
+  useCustom(): void {
+    const w = this.win(); if (!w) return;
+    this.custom.set({ from: w.months[0], to: w.months[w.months.length - 1] });
+    this.openMonths('from');
+  }
+  clearCustom(): void { this.mp.set(null); this.custom.set(null); }
+  openMonths(which: 'from' | 'to'): void {
+    const c = this.custom(); if (!c) return;
+    this.mp.set(this.mp()?.which === which ? null : { which, year: +(which === 'from' ? c.from : c.to).slice(0, 4) });
+  }
+  stepYear(d: number): void { const m = this.mp(); if (m) this.mp.set({ ...m, year: Math.min(this.maxYear(), Math.max(this.minYear(), m.year + d)) }); }
+  pickMonth(ym: string): void {
+    const m = this.mp(), c = this.custom(); if (!m || !c) return;
+    this.custom.set({ ...c, [m.which]: ym });
+    this.mp.set(null);
+    if (navigator.vibrate) navigator.vibrate(4);
+  }
   go(p: 'calc' | 'notes'): void { this.picker.set(null); this.page.set(p); window.scrollTo({ top: 0 }); }
   units(v: number): string { return v.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
   /** an index level (not ₹) */
@@ -104,7 +138,8 @@ export class LumpsumCalcComponent {
 
   @HostListener('document:keydown.escape')
   onEsc(): void {
-    if (this.picker()) this.picker.set(null);
+    if (this.mp()) this.mp.set(null);
+    else if (this.picker()) this.picker.set(null);
     else if (this.page() !== 'calc') this.go('calc');
   }
 }
