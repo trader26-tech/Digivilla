@@ -51,7 +51,7 @@
     <div class="hero">
       <div class="hero-txt">
         <div class="hero-main">
-          <span class="k">Worth today</span>
+          <span class="k">{{ custom() && win() && win()!.months[win()!.months.length - 1] !== lastMonth() ? 'Worth in ' + ym(win()!.months[win()!.months.length - 1]) : 'Worth today' }}</span>
           <b class="big">{{ fmt(res.dvValue) }}</b>
         </div>
         <div class="hero-sub">
