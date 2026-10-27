@@ -49,7 +49,7 @@ export const MARKET_SIZE: Record<string, number> = {
   tsx: 3.4, bovespa: 0.9, ipc: 0.5,
   shanghai: 9, nikkei: 6.5, hangseng: 4.5, taiwan: 2.6, kospi: 2.1, asx: 2, jakarta: 0.8, sti: 0.6,
   stoxx50: 5, ftse: 3.5, cac: 3, dax: 2.6, smi: 2, aex: 1.2, ibex: 0.9, ftsemib: 0.9,
-  gold: 20, msciworld: 12, bitcoin: 2.2,
+  msciworld: 12, bitcoin: 2.2,
   wti: 2, brent: 2, silver: 1.6, copper: 1.2, natgas: 0.9,
   dxy: 1.6, eurusd: 1.5, usdjpy: 1.3, gbpusd: 1.1, usdinr: 1.1,
   us10y: 2, us30y: 1.3, us5y: 1.3, us3m: 1,

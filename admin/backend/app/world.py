@@ -70,8 +70,7 @@ INDICES = [
     {"key": "aex", "flag": "🇳🇱", "symbol": "^AEX", "name": "AEX (Netherlands)", "region": "Europe"},
     # Global & other
     {"key": "msciworld", "flag": "🌐", "symbol": "URTH", "name": "MSCI World (ETF)", "region": "Global"},
-    # gold is priced in US$; its "local" view is in RUPEES (US$ price × ₹ per US$), as an Indian investor holds it
-    {"key": "gold", "flag": "🥇", "symbol": "GC=F", "name": "Gold", "region": "Global", "local": "INR"},
+    # (no raw gold-futures row: gold is shown as the Gold BeES ETF under India — what an Indian investor holds)
     {"key": "bitcoin", "flag": "₿", "symbol": "BTC-USD", "name": "Bitcoin", "region": "Global"},
     # currencies — a RATE, shown as quoted (no US$ conversion of a US$ rate)
     {"key": "usdinr", "flag": "🇮🇳", "symbol": "INR=X", "name": "US$ in rupees", "region": "Currencies", "kind": "fx"},
@@ -188,7 +187,10 @@ def _prev_close(m: dict, bars: Optional[dict]) -> tuple[Optional[float], Optiona
     # A future (NG=F, CL=F …) rolls to the next contract on expiry day, so the continuous daily
     # bars put the OLD contract's close before the NEW one's price (natgas Nov→Dec showed +17%).
     # Yahoo's previousClose on the intraday meta is the current contract's own close — use it.
-    if m.get("instrumentType") == "FUTURE" and m.get("previousClose"):
+    # Currencies and crypto trade round the clock and their daily-bar "close" is a snapshot at an
+    # odd hour (₹/US$ bar 94.94 while the day opened at 95.18 → +0.18% on a −0.07% day); their
+    # previousClose is the rate at the day's start, where the intraday line begins.
+    if m.get("instrumentType") in ("FUTURE", "CURRENCY", "CRYPTOCURRENCY") and m.get("previousClose"):
         return m["previousClose"], (_prev_close({k: v for k, v in m.items() if k != "instrumentType"}, bars)[1] if bars else None)
     if not bars:
         return fallback
@@ -316,6 +318,45 @@ def _daily_bars(symbol: str) -> Optional[dict]:
     return _cached(f"bars:{symbol}", 600, lambda: _spark([symbol], "1mo", "1d").get(symbol))
 
 
+# ── futures: the continuous symbol (NG=F) jumps contracts on every expiry, so its history
+# carries a fake move each roll (natgas Nov 2.60 → Dec 3.06 = "+17%"). Period moves and charts
+# use the dated contract it quotes today instead (NGZ26.NYM), whose prices are all one contract.
+_MONTH_CODES = "FGHJKMNQUVXZ"
+
+
+def _contract(symbol: str) -> Optional[str]:
+    """The dated contract a continuous future is quoting now: of the next five delivery months,
+    the one whose price equals the continuous price (Brent's name carries no month). Cached 1 h."""
+    if not symbol.endswith("=F"):
+        return None
+
+    def load():
+        m = (_get(symbol, "1d", "5m") or {}).get("meta") or {}
+        px, ex = m.get("regularMarketPrice"), m.get("exchangeName")
+        if not px or not ex:
+            return None
+        today = datetime.now(ZoneInfo("UTC")).date()
+        best = None
+        for k in range(5):
+            n = today.month - 1 + k
+            c = f"{symbol[:-2]}{_MONTH_CODES[n % 12]}{(today.year + n // 12) % 100:02d}.{ex}"
+            cp = ((_get(c, "1d", "5m") or {}).get("meta") or {}).get("regularMarketPrice")
+            if cp and (best is None or abs(cp / px - 1) < best[0]):
+                best = (abs(cp / px - 1), c)
+        return best[1] if best and best[0] < 0.002 else None
+    return _cached(f"contract:{symbol}", 3600, load)
+
+
+def _splice(cont: list, own: list) -> list:
+    """The contract's own closes, and before its first day the continuous series scaled to meet it."""
+    if not own:
+        return cont
+    t0, v0 = own[0]
+    base = _at(cont, t0)
+    k = v0 / base if base else 1.0
+    return [[t, v * k] for t, v in cont if t < t0] + [list(p) for p in own]
+
+
 def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
     """One index over the range, in US DOLLARS (local value ÷ that day's/minute's FX rate),
     or in its own currency with ccy='local'."""
@@ -326,7 +367,10 @@ def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
     want = "local" if ccy == "local" else "usd"
 
     def load():
-        res = _get(ix["symbol"], yr, iv)
+        res = None
+        if rng != "1d" and (c := _contract(ix["symbol"])):   # a future: one contract's prices, no roll jump
+            res = _get(c, yr, iv)
+        res = res or _get(ix["symbol"], yr, iv)
         if not res:
             return None
         m = res.get("meta") or {}
@@ -392,6 +436,8 @@ def history(key: str) -> Optional[dict]:
             return None
         ccy = (res.get("meta") or {}).get("currency")
         pts = _points(res)
+        if c := _contract(ix["symbol"]):        # a future: the current contract's own closes
+            pts = _splice(pts, _points(_daily(c) or {}))
         fx_pts = None
         to_local = ix.get("local") if ccy == "USD" and ix.get("local") in FX else None
         if to_local:                            # e.g. gold: u = the US$ price, v = US$ × ₹ per US$
@@ -582,7 +628,10 @@ def moves() -> dict:
         for ix in INDICES:
             res = got.get(ix["symbol"])
             if res:
-                out[ix["key"]] = _moves_from([(t, v) for t, v in _points(res)], ix.get("kind"))
+                pts = _points(res)
+                if c := _contract(ix["symbol"]):    # a future: the current contract's own closes
+                    pts = _splice(pts, _points(_get(c, "5y", "1d") or {}))
+                out[ix["key"]] = _moves_from([(t, v) for t, v in pts], ix.get("kind"))
         fl = _fund_list()
         with ThreadPoolExecutor(max_workers=8) as ex:
             series = list(ex.map(lambda f: _fund_series(f["code"])[0], fl))
