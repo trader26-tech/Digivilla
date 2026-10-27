@@ -1,7 +1,7 @@
 import { Book, Rebalance } from './book';
 import { Fund, VillaFunds, Window, fy, irrPct, villaOf, windowFor, withVilla, worstYearPct } from './history';
 import { TaxRules } from './tax';
-import { CalcConfig } from './types';
+import { CalcConfig, sipYearly, swpMonthly } from './types';
 
 /** Stamp duty on mutual-fund units (statutory, 0.005%). */
 const MF_STAMP = 0.00005;
@@ -101,7 +101,7 @@ export function simulatePayout(w: Window, inp: PayoutInput, cfg: CalcConfig): Pa
   const first = book.firstPayers;
   funds.forEach((f, k) => book.buy(k, amount * f.weight, 0));
   const unitsStart = funds.map((_, k) => book.units(k));
-  const W = inp.swp ? amount * cfg.withdrawals.lumpsum_monthly_rate : 0;
+  const W = inp.swp ? amount * swpMonthly(cfg, w.villa) : 0;
   let paidGross = 0, payTax = 0, rebalTax = 0, curFy = fy(w.months[0]), paidThisYear = 0;
   let arbEmptyMonth: string | null = null;
   const flows: number[] = [-amount];
@@ -209,7 +209,7 @@ export function simulateSip(w: Window, inp: SipInput, cfg: CalcConfig): SipIncom
     if (fy(w.months[i]) !== curFy) { book.closeYear(i); curFy = fy(w.months[i]); }
     let pay = 0;
     if (inp.swp && i > 0 && i % 12 === 0) {
-      pay = book.total(i) * cfg.withdrawals.sip_yearly_rate;
+      pay = book.total(i) * sipYearly(cfg, w.villa);
       book.pay(pay, i);
       const tax = book.charge();
       incomeGross += pay; incomeTax += tax; flows[i] += pay - tax;

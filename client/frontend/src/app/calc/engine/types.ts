@@ -13,6 +13,20 @@ export interface Villa {
   risk_name: string;
   /** share of the money in each series; adds up to 1 */
   weights: Partial<Record<SeriesKey, number>>;
+  /** this villa's SWP: ₹ a month as a share of the amount put in (0.005 = ₹50,000 per ₹1 Cr).
+   *  Absent → withdrawals.lumpsum_monthly_rate. The SIP calculator pays 12× this a year. */
+  swp_monthly_rate?: number;
+}
+
+/** A villa's SWP a month, as a share of the amount put in (its own rate, else the general one). */
+export function swpMonthly(cfg: CalcConfig, key?: string | null): number {
+  const v = cfg.villas.find((x) => x.key === key) ?? cfg.villas.find((x) => x.key === cfg.default_villa);
+  return v?.swp_monthly_rate ?? cfg.withdrawals.lumpsum_monthly_rate;
+}
+/** A villa's SIP income a year, as a share of the value (12 × its monthly SWP, else the general one). */
+export function sipYearly(cfg: CalcConfig, key?: string | null): number {
+  const v = cfg.villas.find((x) => x.key === key) ?? cfg.villas.find((x) => x.key === cfg.default_villa);
+  return v?.swp_monthly_rate != null ? v.swp_monthly_rate * 12 : cfg.withdrawals.sip_yearly_rate;
 }
 
 export interface CalcConfig {

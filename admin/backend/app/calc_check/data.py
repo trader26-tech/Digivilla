@@ -65,9 +65,11 @@ def _rules_text(c: dict) -> list[str]:
         "Villas (growth / " + nm(first) + "): " + ", ".join(f"{v['name']} {mix(v)}" for v in c["villas"])
         + f". The weights shown are the default villa's ({c['default_villa']}).",
         "Month-end closes; only complete months.",
-        f"SWP (FD / Lumpsum / Flat): {w['lumpsum_monthly_rate'] * 100:g}% of the amount a month (₹{1e7 * w['lumpsum_monthly_rate']:,.0f} per ₹1 Cr), "
+        "SWP (FD / Lumpsum / Flat), a month per ₹1 Cr: " + ", ".join(
+            f"{v['name']} ₹{1e7 * (v.get('swp_monthly_rate') if v.get('swp_monthly_rate') is not None else w['lumpsum_monthly_rate']):,.0f}" for v in c["villas"]) + ", "
         f"sold from {nm(first)} first, then the rest pro-rata. The tax on that sale comes out of the payout.",
-        f"SIP: each month's amount buys every part by weight; with SWP on, {w['sip_yearly_rate'] * 100:g}% of the value is paid at each year end ({nm(first)} first).",
+        "SIP: each month's amount buys every part by weight; with SWP on, 12× the villa's monthly rate of the value is paid at each year end ("
+        + ", ".join(f"{v['name']} {(v['swp_monthly_rate'] * 1200 if v.get('swp_monthly_rate') is not None else w['sip_yearly_rate'] * 100):g}%" for v in c["villas"]) + f"; {nm(first)} first).",
         f"Every 1 {months[c['rebalance']['month'] % 12]} (at the month-end close before it): {nm(first)} is left alone; "
         f"{nm(c['rebalance']['parts'])} go back to their starting split of (value − the tax on what that sells).",
         f"Sales take the oldest units first; each sale is charged the tax it adds to its financial year. Equity {t['equity_st_rate'] * 100:g}% ≤ {t['equity_lt_months']} months, "

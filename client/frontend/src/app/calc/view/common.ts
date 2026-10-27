@@ -1,4 +1,4 @@
-import { CalcConfig, Villa, fmtInr } from '../engine';
+import { CalcConfig, Villa, fmtInr, sipYearly, swpMonthly } from '../engine';
 
 /**
  * The settings, turned into the figures screens quote in words ("3.6% a year",
@@ -28,14 +28,15 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const list = (xs: string[]) => xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1];
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-export function terms(cfg: CalcConfig): Terms {
-  const w = cfg.withdrawals, t = cfg.tax;
+/** the settings in words — for the chosen villa (each villa may have its own SWP) */
+export function terms(cfg: CalcConfig, villaKey?: string | null): Terms {
+  const t = cfg.tax, m = swpMonthly(cfg, villaKey), y = sipYearly(cfg, villaKey);
   const pay = cfg.income.pay_first;
   return {
-    swpMonthlyRate: w.lumpsum_monthly_rate,
-    swpYearPct: r1(w.lumpsum_monthly_rate * 1200),
-    perCroreMonthly: Math.round(1e7 * w.lumpsum_monthly_rate),
-    sipIncomePct: r1(w.sip_yearly_rate * 100),
+    swpMonthlyRate: m,
+    swpYearPct: r1(m * 1200),
+    perCroreMonthly: Math.round(1e7 * m),
+    sipIncomePct: r1(y * 100),
     cessPct: r1(t.cess * 100),
     exempt: t.equity_exempt,
     eqStPct: r1(t.equity_st_rate * 100), eqLtPct: r1(t.equity_lt_rate * 100), eqLtMonths: t.equity_lt_months,

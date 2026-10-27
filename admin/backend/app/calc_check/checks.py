@@ -11,8 +11,19 @@ from app.calc_check.settings import _cfg
 from app.calc_check.tax import _Tax, _fy, _fy_label, _irr
 
 
+def _swp_m(cfg: dict, key: str) -> float:
+    """The villa's own SWP a month (share of the amount), else the general one — as the app."""
+    v = next((x for x in cfg["villas"] if x["key"] == key), None)
+    return float(v["swp_monthly_rate"]) if v and v.get("swp_monthly_rate") is not None else float(cfg["withdrawals"]["lumpsum_monthly_rate"])
+
+
+def _sip_y(cfg: dict, key: str) -> float:
+    v = next((x for x in cfg["villas"] if x["key"] == key), None)
+    return float(v["swp_monthly_rate"]) * 12 if v and v.get("swp_monthly_rate") is not None else float(cfg["withdrawals"]["sip_yearly_rate"])
+
+
 def payout_check(years: int, amount: float, fd_rate: float, slab: float, pf: str = "balanced", swp: bool = True) -> dict:
-    """A lumpsum in one villa; with SWP on, ₹30,000/month per ₹1 Cr sold from
+    """A lumpsum in one villa; with SWP on, the villa's own ₹/month per ₹1 Cr sold from
     arbitrage first (FD vs DigiVilla, Lumpsum, and the DigiVilla side of Flat);
     the quadrant reset to 25% each every 1 January, its tax paid from the proceeds."""
     w = _window(_villa(pf), years)
@@ -29,7 +40,7 @@ def payout_check(years: int, amount: float, fd_rate: float, slab: float, pf: str
     detail = [_month_detail(book, 0, months, [0.0] * len(funds))]
     yearly, year_paid = [], 0.0
     cfg = _cfg()
-    pay = amount * cfg["withdrawals"]["lumpsum_monthly_rate"] if swp else 0.0
+    pay = amount * _swp_m(cfg, pf) if swp else 0.0
     fy, paid, pay_tax, rebal_tax = _fy(months[0]), 0.0, 0.0, 0.0
     flows = [-amount]
     rebalances = []
@@ -119,7 +130,7 @@ def sip_check(years: int, monthly: float, step: float, slab: float, pf: str = "b
             fy = _fy(months[i])
         pay = t_pay = 0.0
         if swp and i > 0 and i % 12 == 0:
-            pay = book.total(i) * _cfg()["withdrawals"]["sip_yearly_rate"]
+            pay = book.total(i) * _sip_y(_cfg(), pf)
             book.pay(pay, i, a)
             t_pay = book.charge()
             book.ev.append({"op": "pay_tax", "tax": round(t_pay, 2), "net": round(pay - t_pay, 2)})

@@ -4,8 +4,8 @@
 import { CalcConfig } from './types';
 
 export const DEFAULT_CONFIG: CalcConfig = {
-  "version": 2,
-  "updated_at": "2026-10-19T17:06:26+00:00",
+  "version": 3,
+  "updated_at": "2026-10-27T08:01:15+00:00",
   "updated_by": "claude (scripts/calc_config.py)",
   "note": "Today's values. The live copy is calc-data/calc_config.json in Supabase Storage; this file is the fallback.",
   "villas": [
@@ -20,7 +20,8 @@ export const DEFAULT_CONFIG: CalcConfig = {
         "large": 0.075,
         "mid": 0.075,
         "small": 0.075
-      }
+      },
+      "swp_monthly_rate": 0.005
     },
     {
       "key": "balanced",
@@ -33,7 +34,8 @@ export const DEFAULT_CONFIG: CalcConfig = {
         "large": 0.16,
         "mid": 0.16,
         "small": 0.16
-      }
+      },
+      "swp_monthly_rate": 0.003
     },
     {
       "key": "aggressive",
@@ -46,7 +48,8 @@ export const DEFAULT_CONFIG: CalcConfig = {
         "large": 0.2,
         "mid": 0.2,
         "small": 0.2
-      }
+      },
+      "swp_monthly_rate": 0.001
     }
   ],
   "default_villa": "balanced",

@@ -37,7 +37,7 @@ export class FlatCalcComponent {
   readonly inr = inr;
   readonly rate = rate;
   /** the settings, in the words screens quote; F = the flat's assumptions */
-  readonly t = computed(() => terms(this.store.config()));
+  readonly t = computed(() => terms(this.store.config(), this.store.villa().key));
   readonly F = computed(() => this.store.config().flat);
 
   // ── answers ──

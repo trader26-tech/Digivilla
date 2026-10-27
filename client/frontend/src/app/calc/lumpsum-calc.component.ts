@@ -37,7 +37,7 @@ export class LumpsumCalcComponent {
   readonly inr = inr;
   readonly rate = rate;
   /** the settings, in the words screens quote */
-  readonly t = computed(() => terms(this.store.config()));
+  readonly t = computed(() => terms(this.store.config(), this.store.villa().key));
 
   readonly amount = signal(1_00_00_000);
   readonly years = signal(15);

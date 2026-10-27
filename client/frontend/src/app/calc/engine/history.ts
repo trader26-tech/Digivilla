@@ -3,6 +3,8 @@ import { CalcConfig, Villa } from './types';
 /** GET /calc/villa-funds: every benchmark series, month-end, on one window. */
 export interface VillaFunds {
   ok: boolean;
+  /** set by withVilla — the villa these weights are */
+  villa?: string;
   detail?: string;
   start: string;
   end: string;
@@ -24,6 +26,8 @@ export interface Fund { sleeve: string; name: string; source?: string; weight: n
 
 /** The last `years` of history (12 × years monthly steps), or all of it if shorter. */
 export interface Window {
+  /** the villa this window is weighted for (its SWP rate comes from the settings) */
+  villa?: string;
   months: string[];
   funds: Fund[];
   years: number;
@@ -35,6 +39,7 @@ export function windowFor(f: VillaFunds, years: number): Window {
   const from = Math.max(0, f.months.length - 1 - want);
   const months = f.months.slice(from);
   return {
+    villa: f.villa,
     months,
     funds: f.funds.map((x) => ({
       sleeve: x.sleeve, name: x.name, source: x.source, weight: x.weight, plan: x.plan,
@@ -53,7 +58,7 @@ export function villaOf(cfg: CalcConfig, key?: string | null): Villa {
 
 /** The same history, weighted for one villa (series it doesn't hold get 0). */
 export function withVilla(vf: VillaFunds, villa: Villa): VillaFunds {
-  return { ...vf, funds: vf.funds.map((f) => ({ ...f, weight: (villa.weights as Record<string, number>)[f.sleeve] ?? 0 })) };
+  return { ...vf, villa: villa.key, funds: vf.funds.map((f) => ({ ...f, weight: (villa.weights as Record<string, number>)[f.sleeve] ?? 0 })) };
 }
 
 /** Indian financial year (April–March) a 'YYYY-MM' falls in. */

@@ -110,6 +110,12 @@ export class CalcSettingsComponent implements OnInit {
   }
 
   // ── % ↔ fraction fields ──
+  /** a villa's own SWP shown as ₹ a month per ₹1 Cr; empty clears it (→ the general rate) */
+  villaSwp(v: any): number | null { return v.swp_monthly_rate != null ? Math.round(v.swp_monthly_rate * 1e7) : null; }
+  setVillaSwp(v: any, x: number | string | null): void {
+    if (x === null || x === '' || isNaN(+x)) delete v.swp_monthly_rate; else v.swp_monthly_rate = Math.max(0, +x) / 1e7;
+    this.touch();
+  }
   getPct(obj: any, k: string): number { return Math.round((obj[k] ?? 0) * 100 * 10000) / 10000; }
   setPctField(obj: any, k: string, x: number): void { obj[k] = (+x || 0) / 100; this.touch(); }
 

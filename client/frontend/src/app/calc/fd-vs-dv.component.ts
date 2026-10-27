@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, EventEmitter, HostListener, Output, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { AmountDialComponent } from './amount-dial.component';
-import { fmtInr, simulatePayout, windowFor, worstYearPct, ymLabel } from './engine';
+import { fmtInr, simulatePayout, swpMonthly, windowFor, worstYearPct, ymLabel } from './engine';
 import { Bars3dComponent, Col3d } from './bars-3d.component';
 import { CalcDataService } from './calc-data.service';
 import { inr, pct, rate, terms } from './view/common';
@@ -45,7 +45,7 @@ export class FdVsDvComponent {
   readonly pct = pct;
   readonly rate = rate;
   /** the settings, in the words screens quote ("3.6%", "₹1,25,000"…) */
-  readonly t = computed(() => terms(this.store.config()));
+  readonly t = computed(() => terms(this.store.config(), this.store.villa().key));
 
   // ── answers ──
   readonly amount = signal(1_00_00_000);
@@ -81,7 +81,7 @@ export class FdVsDvComponent {
   /** Risk is a property of the villa, so it's measured over all the history there is. */
   readonly worstEver = computed(() => { const d = this.store.villaData(); return d ? worstYearPct(windowFor(d, 100)) : null; });
   readonly historyYear = computed(() => (this.store.data()?.months[0] ?? '').slice(0, 4));
-  readonly payout = computed(() => this.amount() * this.store.config().withdrawals.lumpsum_monthly_rate);
+  readonly payout = computed(() => this.amount() * swpMonthly(this.store.config(), this.store.villa().key));
   readonly yearOpts = computed(() => yearsAvailable(this.store.data()?.months.length ?? null));
   readonly view = computed(() => {
     const r = this.r();

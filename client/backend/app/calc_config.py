@@ -79,6 +79,8 @@ def validate(cfg: dict) -> list[str]:
             if s not in SERIES:
                 errs.append(f"{p}.weights.{s}: unknown series (use {', '.join(SERIES)})")
             num(f"{p}.weights.{s}", x, 0, 1)
+        if v.get("swp_monthly_rate") is not None:
+            num(f"{p}.swp_monthly_rate", v.get("swp_monthly_rate"), 0, 0.05)
         tot = sum(x for x in w.values() if isinstance(x, (int, float)))
         if abs(tot - 1) > 1e-6:
             errs.append(f"{p}: the mix adds up to {tot * 100:.4g}% — it must add up to 100%")
@@ -252,3 +254,19 @@ def villa(key: Optional[str] = None) -> dict:
 
 def estate() -> dict:
     return get()["estate"]
+
+
+def swp_monthly(cfg: dict, key: str | None) -> float:
+    """A villa's SWP a month as a share of the amount put in — its own rate, else the general one."""
+    v = next((x for x in cfg.get("villas") or [] if x.get("key") == key), None)
+    if v and v.get("swp_monthly_rate") is not None:
+        return float(v["swp_monthly_rate"])
+    return float(cfg["withdrawals"]["lumpsum_monthly_rate"])
+
+
+def sip_yearly(cfg: dict, key: str | None) -> float:
+    """A villa's SIP income a year as a share of the value: 12 × its monthly SWP, else the general one."""
+    v = next((x for x in cfg.get("villas") or [] if x.get("key") == key), None)
+    if v and v.get("swp_monthly_rate") is not None:
+        return float(v["swp_monthly_rate"]) * 12
+    return float(cfg["withdrawals"]["sip_yearly_rate"])

@@ -43,7 +43,7 @@ export class SipCalcComponent {
   readonly inr = inr;
   readonly rate = rate;
   /** the settings, in the words screens quote */
-  readonly t = computed(() => terms(this.store.config()));
+  readonly t = computed(() => terms(this.store.config(), this.store.villa().key));
 
   // ── answers ──
   readonly monthly = signal(25_000);

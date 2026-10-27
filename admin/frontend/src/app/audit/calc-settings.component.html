@@ -81,6 +81,15 @@
           <span class="in"><input type="number" step="0.1" [ngModel]="getPct(d.withdrawals, 'sip_yearly_rate')" (ngModelChange)="setPctField(d.withdrawals, 'sip_yearly_rate', $event)" /><i>% of value</i></span>
         </label>
       </div>
+      <!-- each villa's own SWP (₹ a month per ₹1 Cr); empty = the general rate above. SIP pays 12× it a year, of the value -->
+      <div class="grid">
+        @for (v of d.villas; track $index) {
+          <label class="fld"><span class="lbl">{{ v.name || v.key }} · a month</span>
+            <span class="in"><i class="pre">₹</i><input type="number" step="5000" min="0" placeholder="general" [ngModel]="villaSwp(v)" (ngModelChange)="setVillaSwp(v, $event)" /><i>per ₹1 Cr</i></span>
+            <small>{{ v.swp_monthly_rate != null ? ((v.swp_monthly_rate * 1200).toFixed(1) + '% a year · SIP ' + (v.swp_monthly_rate * 1200).toFixed(1) + '% of value') : 'uses the general rate' }}</small>
+          </label>
+        }
+      </div>
     </section>
 
     <!-- ── tax ── -->

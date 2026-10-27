@@ -85,7 +85,8 @@ def presets(cfg: dict = SETTINGS) -> dict:
     for v in cfg["villas"]:
         arb = float(v["weights"].get("arbitrage", 0.0))
         mix = dict(quadrant_ratio=round(1 - arb, 10), arbitrage_ratio=arb)
-        out[f"{v['key']}_income"] = dict(mix, monthly_income=cfg["withdrawals"]["lumpsum_monthly_rate"])
+        rate = v.get("swp_monthly_rate")
+        out[f"{v['key']}_income"] = dict(mix, monthly_income=rate if rate is not None else cfg["withdrawals"]["lumpsum_monthly_rate"])
         out[v["key"]] = dict(mix, monthly_income=0.0)
     return out
 
