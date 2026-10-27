@@ -536,7 +536,7 @@ def fund_history(key: str) -> Optional[dict]:
 
 
 # ─────────────────────────── the heat map: every market over 1W … 1Y ───────────────────────────
-MOVE_DAYS = {"1w": 7, "1m": 30, "3m": 91, "1y": 365}
+MOVE_DAYS = {"1w": 7, "1m": 30, "3m": 91, "6m": 182, "1y": 365, "3y": 1096, "5y": 1826}
 
 
 def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
@@ -552,6 +552,9 @@ def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
                 base = v
             else:
                 break
+        # the history can start a day or two after the period's start (5Y on a 5-year fetch)
+        if base is None and pts[0][0] - t0 < 7 * 86400:
+            base = pts[0][1]
         if base is None:
             return None
         return round((v_end - base) * 100, 1) if kind == "yield" else round((v_end / base - 1) * 100, 3)
@@ -562,13 +565,13 @@ def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
 
 
 def moves() -> dict:
-    """Every market's (and fund's) move over 1W, 1M, 3M, YTD and 1Y in its own currency — the heat map."""
+    """Every market's (and fund's) move over 1W … 5Y and YTD in its own currency — the heat map."""
     def load():
         syms = [x["symbol"] for x in INDICES]
         chunks = [syms[i:i + 10] for i in range(0, len(syms), 10)]
         got: dict[str, dict] = {}
         with ThreadPoolExecutor(max_workers=8) as ex:
-            for g in ex.map(lambda c: _spark(c, "2y", "1d"), chunks):
+            for g in ex.map(lambda c: _spark(c, "5y", "1d"), chunks):
                 got.update(g)
         out = {}
         for ix in INDICES:
@@ -581,4 +584,4 @@ def moves() -> dict:
         for f, pts in zip(fl, series):
             out[f"{FUND_PREFIX}{f['code']}"] = _moves_from([(_close_epoch(d), v) for d, v in pts], None)
         return out or None
-    return {"moves": _cached("moves", 900, load) or {}}
+    return {"moves": _cached("moves5", 900, load) or {}}
