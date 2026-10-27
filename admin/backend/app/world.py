@@ -185,6 +185,11 @@ def _prev_close(m: dict, bars: Optional[dict]) -> tuple[Optional[float], Optiona
     """The last close of a session BEFORE the one the latest price belongs to, from the
     daily bars (→ (close, date)); Yahoo's previousClose fields are the fallback."""
     fallback = (m.get("chartPreviousClose") or m.get("previousClose"), None)
+    # A future (NG=F, CL=F …) rolls to the next contract on expiry day, so the continuous daily
+    # bars put the OLD contract's close before the NEW one's price (natgas Nov→Dec showed +17%).
+    # Yahoo's previousClose on the intraday meta is the current contract's own close — use it.
+    if m.get("instrumentType") == "FUTURE" and m.get("previousClose"):
+        return m["previousClose"], (_prev_close({k: v for k, v in m.items() if k != "instrumentType"}, bars)[1] if bars else None)
     if not bars:
         return fallback
     session = _session_date(m)
