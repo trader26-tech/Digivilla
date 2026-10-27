@@ -51,6 +51,25 @@ export function windowFor(f: VillaFunds, years: number): Window {
   };
 }
 
+/** The history between two months ('YYYY-MM', inclusive) — any start and end the client picks. */
+export function windowBetween(f: VillaFunds, fromYm: string, toYm: string): Window {
+  let a = f.months.findIndex((m) => m >= fromYm); if (a < 0) a = 0;
+  let b = f.months.length - 1; while (b > a && f.months[b] > toYm) b--;
+  if (b - a < 1) b = Math.min(f.months.length - 1, a + 1);
+  const months = f.months.slice(a, b + 1);
+  return {
+    villa: f.villa,
+    months,
+    funds: f.funds.map((x) => ({
+      sleeve: x.sleeve, name: x.name, source: x.source, weight: x.weight, plan: x.plan,
+      nav: x.nav.slice(a, b + 1),
+      proxy: (x.proxy || []).filter((p) => p.until > months[0]),
+    })),
+    years: (months.length - 1) / 12,
+    clamped: false,
+  };
+}
+
 /** A villa from the settings (falls back to the default villa). */
 export function villaOf(cfg: CalcConfig, key?: string | null): Villa {
   return cfg.villas.find((v) => v.key === key) ?? cfg.villas.find((v) => v.key === cfg.default_villa) ?? cfg.villas[0];

@@ -13,7 +13,7 @@
         <span>Invest</span>
         <button class="pick" [class.on]="picker() === 'amt'" (click)="togglePicker('amt')" aria-label="Change amount" [attr.aria-expanded]="picker() === 'amt'">{{ fmt(amount()) }}<i></i></button>
         <span>in</span>
-        <button class="pick" [class.on]="picker() === 'yrs'" (click)="togglePicker('yrs')" aria-label="Change when you invested" [attr.aria-expanded]="picker() === 'yrs'">{{ win() ? ym(win()!.months[0]) : years() + ' yrs ago' }}<i></i></button>
+        <button class="pick" [class.on]="picker() === 'yrs'" (click)="togglePicker('yrs')" aria-label="Change when you invested" [attr.aria-expanded]="picker() === 'yrs'">{{ win() ? ym(win()!.months[0]) : years() + ' yrs ago' }}@if (custom() && win()) { → {{ ym(win()!.months[win()!.months.length - 1]) }} }<i></i></button>
         <span>{{ swp() ? 'with monthly income.' : 'and let it grow.' }}</span>
       </p>
     </div>
@@ -31,9 +31,16 @@
           <span class="pop-k">Invested in</span>
           <div class="chips four">
             @for (o of startOpts(); track o.y) {
-              <button [class.on]="o.y === years()" (click)="pickYears(o.y)">{{ o.label }}<small>{{ o.y }} yrs ago</small></button>
+              <button [class.on]="!custom() && o.y === years()" (click)="pickYears(o.y)">{{ o.label }}<small>{{ o.y }} yrs ago</small></button>
             }
           </div>
+          <span class="pop-k pop-k2">Or any dates</span>
+          <div class="months" (click)="useCustom()">
+            <label><span>From</span><input type="month" [min]="firstMonth()" [max]="custom()?.to || lastMonth()" [value]="custom()?.from || win()?.months?.[0] || ''" (change)="setCustom('from', $any($event.target).value)"></label>
+            <i aria-hidden="true">→</i>
+            <label><span>To</span><input type="month" [min]="custom()?.from || firstMonth()" [max]="lastMonth()" [value]="custom()?.to || lastMonth()" (change)="setCustom('to', $any($event.target).value)"></label>
+          </div>
+          @if (custom()) { <button class="pop-done" (click)="picker.set(null)">Show {{ ym(custom()!.from) }} → {{ ym(custom()!.to) }}</button> }
         }
       </div>
     }
@@ -49,11 +56,10 @@
         </div>
         <div class="hero-sub">
           <div><span>You put in</span><b>{{ fmt(amount()) }}</b></div>
-          @if (res.swp) {
-            <div class="gold"><span>Income you got</span><b>{{ fmt(res.dvPaid) }}</b></div>
-          } @else {
-            <div><span>Monthly income</span><b class="off">SWP off</b></div>
-          }
+          <button type="button" class="inc" [class.gold]="res.swp" (click)="toggleSwp()" role="switch" [attr.aria-checked]="res.swp">
+            <span>Withdrawals <i class="sw" [class.on]="res.swp"><i></i></i></span>
+            <b>{{ res.swp ? fmt(res.dvPaid) : 'Off' }}</b>
+          </button>
         </div>
       </div>
       <app-villa-pick size="hero" class="hero-pick"></app-villa-pick>
@@ -71,6 +77,36 @@
     <div class="fail">Couldn't load the index data.<button (click)="retry()">Try again</button></div>
   } @else {
     <div class="skel" aria-busy="true" aria-label="Loading index data"><i></i><i></i></div>
+  }
+
+  <!-- ── the withdrawals, year by year ── -->
+  @if (r(); as res) {
+    <section class="wd">
+      <div class="wd-h">
+        <b>Withdrawals</b>
+        <button type="button" class="wd-sw" (click)="toggleSwp()" role="switch" [attr.aria-checked]="res.swp"><i class="sw" [class.on]="res.swp"><i></i></i>{{ res.swp ? 'On' : 'Off' }}</button>
+      </div>
+      @if (res.swp) {
+        <div class="wd-sum">
+          <div><small>Every month</small><b>{{ inr(res.dvMonthly) }}</b></div>
+          <div><small>Payments</small><b>{{ payments() }}</b></div>
+          <div><small>In all</small><b class="g">{{ fmt(res.dvPaidGross) }}</b></div>
+        </div>
+        <ul class="wd-list">
+          @for (y of payouts(); track y.label) {
+            <li>
+              <span class="wd-y">{{ y.label }}<small>{{ ym(y.month) }}</small></span>
+              <span class="wd-bar"><i [style.width.%]="y.paid / payoutMax() * 100"></i></span>
+              <b>{{ fmt(y.paid) }}</b>
+              <span class="wd-v">{{ fmt(y.value) }}</span>
+            </li>
+          }
+        </ul>
+        <p class="wd-note">Paid before tax · last column = what's left, invested</p>
+      } @else {
+        <p class="wd-note">Turn withdrawals on to take {{ inr(t().perCroreMonthly) }} a month per ₹1 Cr.</p>
+      }
+    </section>
   }
 
   <!-- ── years ── -->
