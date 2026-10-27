@@ -12,7 +12,7 @@ const RANGES = [{ k: '1d', l: '1D' }, { k: '5d', l: '5D' }, { k: '1m', l: '1M' }
   { k: '1y', l: '1Y' }, { k: '3y', l: '3Y' }, { k: '5y', l: '5Y' }, { k: '10y', l: '10Y' }, { k: 'max', l: 'Max' }];
 /** the returns table: total for short periods, a year (CAGR) from 3 years on */
 const PERIODS = [{ k: '1m', l: '1M' }, { k: '3m', l: '3M' }, { k: '6m', l: '6M' }, { k: 'ytd', l: 'YTD' }, { k: '1y', l: '1Y' },
-  { k: '3y', l: '3Y', ann: true }, { k: '5y', l: '5Y', ann: true }, { k: '10y', l: '10Y', ann: true }];
+  { k: '3y', l: '3Y', ann: true }, { k: '5y', l: '5Y', ann: true }, { k: '10y', l: '10Y', ann: true }, { k: '15y', l: '15Y', ann: true }, { k: '20y', l: '20Y', ann: true }];
 const INTRADAY = new Set(['1d', '5d']);
 const LS = 'dv_admin_world';
 const CPI_COLOUR: Record<string, string> = { 'cpi:IN': '#98a0b8', 'cpi:US': '#c9a0a0' };
@@ -25,9 +25,9 @@ const IST = 'Asia/Kolkata';
 const istDay = (ts: number) => new Date(ts * 1000).toLocaleDateString('en-CA', { timeZone: IST });
 /** the heat map's periods, and how big a move paints the deepest colour (% — or bp for a yield) */
 const HEAT_PERIODS = [{ k: '1d', l: '1D' }, { k: '1w', l: '1W' }, { k: '1m', l: '1M' }, { k: '3m', l: '3M' }, { k: '6m', l: '6M' }, { k: 'ytd', l: 'YTD' },
-  { k: '1y', l: '1Y' }, { k: '3y', l: '3Y' }, { k: '5y', l: '5Y' }];
-const HEAT_CAP: Record<string, number> = { '1d': 2, '1w': 4, '1m': 8, '3m': 12, '6m': 16, ytd: 20, '1y': 25, '3y': 45, '5y': 70 };
-const HEAT_CAP_BP: Record<string, number> = { '1d': 8, '1w': 20, '1m': 40, '3m': 60, '6m': 80, ytd: 100, '1y': 100, '3y': 150, '5y': 200 };
+  { k: '1y', l: '1Y' }, { k: '3y', l: '3Y' }, { k: '5y', l: '5Y' }, { k: '10y', l: '10Y' }, { k: '15y', l: '15Y' }, { k: '20y', l: '20Y' }, { k: 'max', l: 'Max' }];
+const HEAT_CAP: Record<string, number> = { '1d': 2, '1w': 4, '1m': 8, '3m': 12, '6m': 16, ytd: 20, '1y': 25, '3y': 45, '5y': 70, '10y': 150, '15y': 250, '20y': 400, max: 600 };
+const HEAT_CAP_BP: Record<string, number> = { '1d': 8, '1w': 20, '1m': 40, '3m': 60, '6m': 80, ytd: 100, '1y': 100, '3y': 150, '5y': 200, '10y': 300, '15y': 350, '20y': 400, max: 500 };
 /** names that fit a heat tile (the full name is in its tooltip) */
 const TILE_NAME: Record<string, string> = {
   nifty100: 'Nifty 100', midcap150: 'Midcap 150', smallcap250: 'Smallcap 250', midcap50: 'Midcap 50', banknifty: 'Bank Nifty', next50: 'Next 50',
@@ -114,6 +114,9 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   private hro?: ResizeObserver;
   readonly moves = signal<Record<string, Record<string, number | null>>>({});
   readonly movesUsd = signal<Record<string, Record<string, number | null>>>({});
+  /** the first close each market's "Max" is measured from (ISO), in its own currency and in US$ */
+  readonly since = signal<Record<string, string>>({});
+  readonly sinceUsd = signal<Record<string, string>>({});
   /** the heat map's money: each market in its own currency, or in US$ — so a currency's fall shows (Nifty +10%, rupee −5% → ≈ +4.8%) */
   readonly hc = signal<'local' | 'usd'>('local');
   /** now, ticking — every status ("open · closes 21:30") is worked out from it */
@@ -221,7 +224,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** the villa buckets' funds: latest NAV from AMFI, its date, the move vs the NAV before */
   private loadMoves(): void {
-    this.api.worldMoves().pipe(catchError(() => of(null))).subscribe((m) => { if (m?.moves) this.moves.set(m.moves); if (m?.usd) this.movesUsd.set(m.usd); });
+    this.api.worldMoves().pipe(catchError(() => of(null))).subscribe((m) => { if (m?.moves) this.moves.set(m.moves); if (m?.usd) this.movesUsd.set(m.usd); if (m?.since) this.since.set(m.since); if (m?.since_usd) this.sinceUsd.set(m.since_usd); });
   }
   private loadFunds(): void {
     this.api.worldFunds().pipe(catchError(() => of(null))).subscribe((f) => { if (f?.indices?.length) this.fundQuotes.set(f.indices); });
@@ -787,6 +790,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly heatGroups = computed(() => {
     const pool = this.heatPool(), hs = this.hs();
     const avgOf = (items: WorldQuote[]) => {
+      if (this.hp() === 'max') return null;   // Max moves start in different years — their average means nothing
       const vs = items.filter((q) => q.kind !== 'yield' && q.kind !== 'fx' && q.key !== 'vix').map((q) => this.heatMove(q)).filter((v): v is number => v !== null);
       return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
     };
@@ -899,6 +903,8 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   heatFoot(q: WorldQuote, compact: boolean | number = this.hmNarrow()): string {
     const tight = compact === 2;
     if (this.hs() === 'next') return (tight ? '' : 'Opens ') + this.ist(this.nextOpen(q));
+    // Max: the year its history starts — markets start in different years
+    if (this.hp() === 'max') { const d = this.sinceOf(q); return d ? (compact ? d.slice(0, 4) : 'since ' + this.sinceText(d)) : ''; }
     // a currency says which way it went, and where it stands
     const b = this.heatBadge(q);
     if (this.isFx(q)) { const word = this.fxWord(q).replace(/ vs .*/, ''); return b ? (compact ? '' : word) : compact ? word : `${word} · ${this.fxLevel(q)}`; }
@@ -917,6 +923,13 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     if (st.s === 'open') { const a = this.agoShort(q.time); return compact ? (a === 'now' ? 'Live now' : a) : 'Live · ' + (a === 'now' ? 'just now' : a); }
     return this.ist(q.time);
   }
+  /** the first close a tile's "Max" is measured from (the US$ series can start later — it needs the currency's rate) */
+  sinceOf(q: WorldQuote): string | null {
+    const usd = this.hc() === 'usd' && q.kind !== 'yield' && q.kind !== 'fx';
+    return (usd ? this.sinceUsd() : this.since())[q.key] ?? null;
+  }
+  /** "Sep 2007" */
+  sinceText(d: string): string { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }); }
   /** everything about a tile, for its tooltip */
   heatTitle(q: WorldQuote): string {
     const st = this.status(q);
@@ -926,7 +939,10 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const what = !b ? '' : b.k === 'live'
       ? `LIVE: ${mv} since ${this.prevDay(q)} — still trading, will keep changing · `
       : `CLOSED: ${mv} was the final move on ${this.sessionDate(q, true)} (against ${this.prevDay(q)}) · `;
-    return `${q.name} · ${fx}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap to ${this.selected().includes(q.key) ? 'remove from' : 'add to'} the chart`;
+    const hp = this.hp(), first = this.sinceOf(q);
+    const span = hp === 'max' && first ? `Max = since ${this.sinceText(first)} (its first price) · `
+      : hp !== '1d' && this.heatMove(q) === null && first ? `— = history only from ${this.sinceText(first)} · ` : '';
+    return `${q.name} · ${fx}${span}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap to ${this.selected().includes(q.key) ? 'remove from' : 'add to'} the chart`;
   }
   /** "now", "4m", "3h", "2d" */
   agoShort(ts: number | null | undefined): string {
@@ -943,9 +959,11 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const p = this.hp();
     if (p === '1d') return '';
     if (p === 'ytd') return `From each market’s last close of ${new Date().getFullYear() - 1} to its latest price.`;
+    if (p === 'max') return 'From each market’s first price (the year is on the tile — they start in different years) to its latest price.';
+    if (p === '10y' || p === '15y' || p === '20y') return `From each market’s close ${this.heatPeriodName()} ago to its latest price. — = its history is shorter than that.`;
     return `From each market’s close ${this.heatPeriodName()} ago to its latest price.`;
   });
-  readonly heatPeriodName = computed(() => ({ '1d': 'today', '1w': 'a week', '1m': '1 month', '3m': '3 months', '6m': '6 months', ytd: 'this year', '1y': '1 year', '3y': '3 years', '5y': '5 years' } as Record<string, string>)[this.hp()]);
+  readonly heatPeriodName = computed(() => ({ '1d': 'today', '1w': 'a week', '1m': '1 month', '3m': '3 months', '6m': '6 months', ytd: 'this year', '1y': '1 year', '3y': '3 years', '5y': '5 years', '10y': '10 years', '15y': '15 years', '20y': '20 years', max: 'all its history' } as Record<string, string>)[this.hp()]);
   readonly heatCap = computed(() => HEAT_CAP[this.hp()]);
 
   num(v: number | null, dp = 2): string { return v === null || v === undefined ? '—' : v.toLocaleString('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }

@@ -400,7 +400,8 @@ def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
     return _cached(f"c:{key}:{rng}:{want}", ttl, load)
 
 
-HISTORY_FROM = 946684800      # 1 Jan 2000 — Yahoo returns DAILY closes for a period1/period2 window
+HISTORY_FROM = 0              # as far back as Yahoo has (S&P 500 1970, Sensex 1997, Nifty 500 2005) — DAILY closes for a period1/period2 window
+FX_GRACE = 7 * 86400          # a close more than a week before a currency's first rate has no US$ value (never the first rate reused)
 
 
 def _daily(symbol: str) -> Optional[dict]:
@@ -447,7 +448,7 @@ def history(key: str) -> Optional[dict]:
             d, v, u, seen, j = [], [], [], set(), 0
             for t, c in pts:
                 day = int(t // 86400)
-                if day in seen:
+                if day in seen or t < fx_pts[0][0] - FX_GRACE:
                     continue
                 seen.add(day)
                 while j + 1 < len(fx_pts) and fx_pts[j + 1][0] <= t:
@@ -474,10 +475,8 @@ def history(key: str) -> Optional[dict]:
             if fx_pts is not None:
                 while j + 1 < len(fx_pts) and fx_pts[j + 1][0] <= t:
                     j += 1
-                r = fx_pts[j][1]
-                if not r:
-                    continue
-                usd = c / r
+                r = fx_pts[j][1] if t >= fx_pts[0][0] - FX_GRACE else None
+                usd = c / r if r else None
             elif ccy == "USD" or is_fx:
                 usd = c
             else:
@@ -587,7 +586,8 @@ def fund_history(key: str) -> Optional[dict]:
 
 
 # ─────────────────────────── the heat map: every market over 1W … 1Y ───────────────────────────
-MOVE_DAYS = {"1w": 7, "1m": 30, "3m": 91, "6m": 182, "1y": 365, "3y": 1096, "5y": 1826}
+MOVE_DAYS = {"1w": 7, "1m": 30, "3m": 91, "6m": 182, "1y": 365, "3y": 1096, "5y": 1826,
+             "10y": 3652, "15y": 5479, "20y": 7305}
 
 
 def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
@@ -612,13 +612,22 @@ def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
     out = {k: from_(t_end - d * 86400) for k, d in MOVE_DAYS.items()}
     y0 = int(datetime(datetime.utcfromtimestamp(t_end).year, 1, 1, tzinfo=ZoneInfo("UTC")).timestamp()) - 1
     out["ytd"] = from_(y0)
+    v0 = pts[0][1]                                   # "max": from the first close there is
+    out["max"] = round((v_end - v0) * 100, 1) if kind == "yield" else (round((v_end / v0 - 1) * 100, 3) if v0 else None)
     return out
+
+
+def _long(symbol: str) -> list:
+    """A market's whole daily history, [(epoch, close)] — cached 6 h (old closes don't change)."""
+    return _cached(f"long:{symbol}", 6 * 3600, lambda: (lambda r: _points(r) if r else None)(_daily(symbol))) or []
 
 
 def _fx_walk(pts: list, fx: list, mul: bool = False) -> list:
     """Closes converted at each day's rate (÷ local-per-US$ → US$; × with mul) — one pass, both series in time order."""
     out, j = [], 0
     for t, v in pts:
+        if not fx or t < fx[0][0] - FX_GRACE:          # before the currency's data: no rate, no point
+            continue
         while j + 1 < len(fx) and fx[j + 1][0] <= t:
             j += 1
         r = fx[j][1] if fx else None
@@ -628,7 +637,7 @@ def _fx_walk(pts: list, fx: list, mul: bool = False) -> list:
 
 
 def moves() -> dict:
-    """Every market's (and fund's) move over 1W … 5Y and YTD — the heat map. `moves` in its own
+    """Every market's (and fund's) move over 1W … 20Y, YTD and Max (from its first close) — the heat map. `moves` in its own
     currency (rupees for the ₹-viewed commodities, as their 1D is), `usd` in US DOLLARS: each close
     ÷ that day's rate, so a currency's fall shows in the move (Nifty +10% with the rupee −5% ≈ +4.8%).
     Currencies (already vs US$) and yields (bp) are the same in both."""
@@ -639,33 +648,53 @@ def moves() -> dict:
         with ThreadPoolExecutor(max_workers=8) as ex:
             for g in ex.map(lambda c: _spark(c, "5y", "1d"), chunks):
                 got.update(g)
-        out, usd = {}, {}
+        with ThreadPoolExecutor(max_workers=8) as ex:     # every market's whole daily history (6 h cache)
+            longs = dict(zip(syms, ex.map(_long, syms)))
+        out, usd, since, since_usd = {}, {}, {}, {}
+        day = lambda t: datetime.utcfromtimestamp(t).date().isoformat()
         for ix in INDICES:
             res = got.get(ix["symbol"])
             if not res:
                 continue
             pts = _points(res)
+            if pts and longs.get(ix["symbol"]):           # older closes from the long history, the last 5 years fresh
+                pts = [p for p in longs[ix["symbol"]] if p[0] < pts[0][0]] + pts
             if c := _contract(ix["symbol"]):    # a future: the current contract's own closes
                 pts = _splice(pts, _points(_get(c, "5y", "1d") or {}))
             pts = [(t, v) for t, v in pts]
             kind, ccy = ix.get("kind"), (res.get("meta") or {}).get("currency")
             own = mv = _moves_from(pts, kind)
+            upts = pts
             if kind not in ("fx", "yield"):
                 if ccy in FX:                     # a local-currency market → US$
                     fx = _fx_history(ccy)
-                    mv = _moves_from(_fx_walk(pts, fx), kind) if fx else {}
+                    upts = _fx_walk(pts, fx) if fx else []
+                    mv = _moves_from(upts, kind) if fx else {}
                 elif ccy == "USD" and ix.get("local") in FX:   # a US$ commodity viewed in rupees
                     fx = _fx_history(ix["local"])
-                    own = _moves_from(_fx_walk(pts, fx, mul=True), kind) if fx else own
+                    lpts = _fx_walk(pts, fx, mul=True) if fx else []
+                    own = _moves_from(lpts, kind) if fx else own
+                    if lpts:
+                        since[ix["key"]] = day(lpts[0][0])
             out[ix["key"]], usd[ix["key"]] = own, mv
+            since.setdefault(ix["key"], day(pts[0][0]))
+            if upts:
+                since_usd[ix["key"]] = day(upts[0][0])
         fl = _fund_list()
         with ThreadPoolExecutor(max_workers=8) as ex:
             series = list(ex.map(lambda f: _fund_series(f["code"])[0], fl))
         inr = _fx_history("INR") or []
         for f, pts in zip(fl, series):
-            p = [(_close_epoch(d), v) for d, v in pts]
-            out[f"{FUND_PREFIX}{f['code']}"] = _moves_from(p, None)
-            usd[f"{FUND_PREFIX}{f['code']}"] = _moves_from(_fx_walk(p, inr), None) if inr else {}
-        return {"local": out, "usd": usd} if out else None
-    got = _cached("moves6", 900, load) or {}
-    return {"moves": got.get("local") or {}, "usd": got.get("usd") or {}}
+            if not pts:
+                continue
+            k, p = f"{FUND_PREFIX}{f['code']}", [(_close_epoch(d), v) for d, v in pts]
+            up = _fx_walk(p, inr) if inr else []
+            out[k], usd[k] = _moves_from(p, None), _moves_from(up, None)
+            since[k] = pts[0][0]
+            if up:
+                since_usd[k] = day(up[0][0])
+        return {"local": out, "usd": usd, "since": since, "since_usd": since_usd} if out else None
+    got = _cached("moves7", 900, load) or {}
+    # since = the first close each market's "Max" (and any too-long period) is measured from
+    return {"moves": got.get("local") or {}, "usd": got.get("usd") or {},
+            "since": got.get("since") or {}, "since_usd": got.get("since_usd") or {}}

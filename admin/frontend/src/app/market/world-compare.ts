@@ -36,8 +36,8 @@ export function startOf(range: string, end: number, first: number): number {
     case '1y': return end - 365;
     case '3y': return end - 3 * 365;
     case '5y': return end - 5 * 365;
-    case '10y': return end - 10 * 365;
-    default: return first;   // 'max'
+    case 'max': return first;
+    default: { const n = /^(\d+)y$/.exec(range); return n ? end - Math.round(+n[1] * 365.25) : first; }   // 10y, 15y, 20y
   }
 }
 
