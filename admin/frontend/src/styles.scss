@@ -158,6 +158,9 @@ button, a, label, select, input, [role='button'] { touch-action: manipulation; }
   /* (fields already larger — the PIN/code boxes, the purchase amount — keep their own size) */
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not(.code-input):not(.big), select, textarea { font-size: 16px !important; }
 }
+/* phones: no rubber-band past the page — iOS drags the fixed tab bar and top bar along with the
+   bounce, so they looked "pulled up"; inner scrollers keep their own momentum */
+@media (max-width: 900px) { html, body { overscroll-behavior-y: none; } }
 /* installed app (home-screen PWA): no rubber-band past the page, no text-select on chrome */
 @media (display-mode: standalone) {
   html, body { overscroll-behavior-y: none; }

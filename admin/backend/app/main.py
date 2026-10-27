@@ -1055,6 +1055,13 @@ def admin_world_quotes(authorization: Optional[str] = Header(default=None)) -> d
     return world_svc.quotes()
 
 
+@app.get("/admin/world/funds")
+def admin_world_funds(authorization: Optional[str] = Header(default=None)) -> dict:
+    """The villa buckets' funds as market rows: latest NAV (AMFI), its date, the move vs the NAV before."""
+    _require_admin(authorization)
+    return world_svc.funds()
+
+
 @app.get("/admin/world/chart")
 def admin_world_chart(key: str, range: str = "1d", ccy: str = "usd",
                       authorization: Optional[str] = Header(default=None)) -> dict:

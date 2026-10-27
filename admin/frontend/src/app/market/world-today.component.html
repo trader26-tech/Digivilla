@@ -1,40 +1,78 @@
 <div class="wt">
   <!-- ═══ heading ═══ -->
   <div class="wt-sec">
-    <h2>World markets</h2>
+    <h1>World markets</h1>
     <span class="wt-asof" *ngIf="asOf()">
-      <b class="pos num">{{ breadth().up }}↑</b><b class="neg num">{{ breadth().down }}↓</b><span class="num">{{ clock(asOf()) }}</span>
+      <span class="wt-live" *ngIf="openCount() as n"><i></i>{{ n }} open</span>
+      <b class="pos num">{{ breadth().up }}↑</b><b class="neg num">{{ breadth().down }}↓</b><span class="num" title="When these prices were fetched">{{ ist(asOf()) }} IST</span>
     </span>
   </div>
+
+  <!-- ═══ the clock board: every exchange — open or closed, when it closes / opens; tap = only its markets ═══ -->
+  <section class="wt-clock" aria-label="Exchanges now">
+    <button class="wt-ex" *ngIf="fundTile() as f" data-s="nav" [class.on]="region() === 'Funds'" (click)="pickFunds()" [attr.aria-pressed]="region() === 'Funds'"
+            [title]="FUNDS_ABOUT + (f.updated ? ' · AMFI file read ' + ist(f.updated) + ' IST' : '')">
+      <span class="wt-ex-h"><em aria-hidden="true">◆</em><b>Our funds</b><i class="dot"></i></span>
+      <span class="wt-ex-s">{{ f.st.label }}</span>
+      <span class="wt-ex-f"><small>{{ f.st.at }}</small><em class="num" *ngIf="f.move !== null" [class.pos]="f.move > 0" [class.neg]="f.move < 0">{{ pct(f.move) }}</em></span>
+    </button>
+    <button class="wt-ex" *ngFor="let e of exchanges()" [attr.data-s]="e.st.s" [class.on]="exOn(e.tz)" (click)="pickTz(e.tz)" [attr.aria-pressed]="exOn(e.tz)"
+            [title]="e.city + ' · ' + e.local + ' local · ' + e.n + ' market' + (e.n > 1 ? 's' : '')">
+      <span class="wt-ex-h"><em aria-hidden="true">{{ e.flag }}</em><b>{{ e.city }}</b><i class="dot"></i></span>
+      <span class="wt-ex-s">{{ e.st.label }}</span>
+      <span class="wt-ex-f"><small>{{ e.st.at }}</small><em class="num" *ngIf="e.move !== null" [class.pos]="e.move > 0" [class.neg]="e.move < 0">{{ pct(e.move) }}</em></span>
+    </button>
+  </section>
 
   <div class="wt-grid">
   <!-- ═══ LEFT · the markets ═══ -->
   <section class="wt-card wt-list">
     <header class="wt-lh">
-      <div class="seg" role="tablist">
+      <div class="seg wt-regions" role="tablist">
         <button role="tab" [class.on]="region() === 'All'" (click)="region.set('All')">All</button>
-        <button role="tab" *ngFor="let r of regions()" [class.on]="region() === r" (click)="region.set(r)">{{ r }}</button>
+        <button role="tab" *ngFor="let r of regions()" [class.on]="region() === r" (click)="region.set(r)">{{ r === 'Funds' ? 'Our funds' : r }}</button>
+      </div>
+      <div class="wt-lh-r">
+        <button class="wt-tz" *ngIf="tzOnly() as tz" (click)="tzOnly.set(null)" aria-label="Show every market">{{ cityOf(tz) }} only <span aria-hidden="true">×</span></button>
+        <div class="seg" role="tablist" aria-label="Columns">
+          <button role="tab" [class.on]="cols() === 'today'" (click)="setCols('today')">Session</button>
+          <button role="tab" [class.on]="cols() === 'year'" (click)="setCols('year')">52 weeks</button>
+        </div>
       </div>
     </header>
     <p class="wt-err" *ngIf="error()">{{ error() }}</p>
 
-    <div class="wt-th"><span></span><span>Index</span><span class="r">Last</span><span class="r hl">High</span><span class="r hl">Low</span><span class="r cg">Chg.</span><span class="r">Day</span><span class="r tm">Time</span></div>
+    <div class="wt-th" [class.yr]="cols() === 'year'"><span></span><span>Market</span><span class="r">Last</span><span class="r">Day</span>
+      <ng-container *ngIf="cols() === 'today'"><span class="ses">Session · IST</span><span class="r upd">Updated</span></ng-container>
+      <ng-container *ngIf="cols() === 'year'"><span class="r sp">Month</span><span class="w52">52 weeks</span></ng-container>
+    </div>
     <ng-container *ngFor="let g of groups()">
-      <div class="wt-gh" [attr.title]="g.region === 'DigiVilla' ? VILLA_ABOUT : null"><b>{{ g.name }}</b><em *ngIf="g.avg !== null" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }} avg</em></div>
-      <button class="wt-tr" *ngFor="let q of g.items" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
-              (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="(selected().includes(q.key) ? 'Remove from the chart' : 'Add to the chart') + ' · ' + sessionNote(q)">
+      <div class="wt-gh" [attr.title]="g.region === 'Funds' ? FUNDS_ABOUT : null"><b>{{ g.name }}</b><em *ngIf="g.avg !== null" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }} avg</em></div>
+      <button class="wt-tr" *ngFor="let q of g.items" [class.on]="selected().includes(q.key)" [class.yr]="cols() === 'year'" [style.--c]="colour(q.key)"
+              (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="rowTitle(q)">
         <span class="wt-tick"><i></i></span>
-        <span class="wt-name"><em class="wt-flag" [class.villa]="q.kind === 'villa'" aria-hidden="true">{{ flagOf(q) }}</em><b>{{ q.name }}</b><small>{{ sub(q) }}</small></span>
-        <span class="r wt-price num">{{ num(q.last) }}{{ q.kind === 'yield' ? '%' : '' }}</span>
-        <span class="r hl wt-hl num">{{ q.day_high === null ? '—' : num(q.day_high) }}</span>
-        <span class="r hl wt-hl num">{{ q.day_low === null ? '—' : num(q.day_low) }}</span>
-        <span class="r cg wt-chg num" [class.pos]="(q.change ?? 0) > 0" [class.neg]="(q.change ?? 0) < 0">{{ chgText(q) }}</span>
+        <span class="wt-name"><em class="wt-flag" [class.fund]="q.kind === 'fund'" aria-hidden="true">{{ flagOf(q) }}</em><b>{{ q.name }}</b><small *ngIf="sub(q)">{{ sub(q) }}</small></span>
+        <span class="r wt-price num">{{ num(q.last, q.kind === 'fx' && (q.last ?? 0) < 10 ? 4 : 2) }}{{ q.kind === 'yield' ? '%' : '' }}</span>
         <span class="r wt-day"><em class="wt-pill num" [class.pos]="((q.kind === 'yield' ? q.change_bp : q.change_pct) ?? 0) > 0"
               [class.neg]="((q.kind === 'yield' ? q.change_bp : q.change_pct) ?? 0) < 0">{{ q.kind === 'yield' ? bps(q.change_bp) : pct(q.change_pct) }}</em>
-          <small class="wt-abs num" *ngIf="q.currency !== 'USD' && q.kind !== 'yield' && q.usd_change_pct !== null">{{ pct(q.usd_change_pct) }} in $</small></span>
-        <span class="r tm wt-time num">{{ localClock(q) }}</span>
+          <small class="wt-abs num" *ngIf="q.currency !== 'USD' && !q.kind && q.usd_change_pct !== null">{{ pct(q.usd_change_pct) }} in $</small></span>
+        <ng-container *ngIf="cols() === 'today'">
+          <span class="wt-ses" *ngIf="status(q) as st" [attr.data-s]="st.s"><i class="dot"></i><b>{{ st.label }}</b><small>{{ st.at }}</small></span>
+          <span class="r wt-upd num"><b>{{ ist(q.time) }}</b><small>{{ ago(q.time) }}</small></span>
+        </ng-container>
+        <ng-container *ngIf="cols() === 'year'">
+          <span class="r sp"><svg class="wt-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" x2="100" [attr.y1]="baseY(q)" [attr.y2]="baseY(q)" class="base" />
+            <path [attr.d]="spark(q)" [class.pos]="(q.change_pct ?? 0) >= 0" [class.neg]="(q.change_pct ?? 0) < 0" />
+          </svg></span>
+          <span class="wt-52 w52">
+            <span class="wt-rng"><i *ngIf="pos52(q) !== null" [style.left.%]="pos52(q)"></i></span>
+            <small class="num" *ngIf="pos52(q) !== null">{{ num(q.low_52w, q.kind === 'yield' ? 2 : 0) }}<span>{{ num(q.high_52w, q.kind === 'yield' ? 2 : 0) }}</span></small>
+          </span>
+        </ng-container>
       </button>
     </ng-container>
+    <div class="wt-empty sm" *ngIf="!groups().length && !error()">{{ apiQuotes().length ? 'Nothing here.' : 'Loading markets…' }}</div>
   </section>
 
   <!-- ═══ RIGHT · the chart of whatever is ticked ═══ -->
@@ -96,7 +134,7 @@
           <circle *ngFor="let r of h.rows" [attr.cx]="h.x" [attr.cy]="r.y" r="4" [attr.fill]="r.colour" stroke="#fff" stroke-width="2" />
         </g>
       </svg>
-      <ng-template #empty><div class="wt-empty">{{ selected().length ? 'Loading…' : 'Nothing drawn yet.' }}</div></ng-template>
+      <ng-template #empty><div class="wt-empty">{{ !selected().length ? 'Nothing drawn yet.' : intraday() && fundsOnly() ? 'Funds have one NAV a day — pick 1M or longer.' : 'Loading…' }}</div></ng-template>
       <div class="wt-tip" *ngIf="hoverRows() as h" [class.right]="!h.left">
         <b>{{ h.label }}</b>
         <span *ngFor="let r of h.rows"><i [style.background]="r.colour"></i>{{ r.name }}<em class="num" [class.pos]="r.v > 0" [class.neg]="r.v < 0">{{ r.text }}</em></span>
@@ -194,41 +232,4 @@
     </div>
   </section>
 
-  <!-- ═══ the markets in dollars: level · today in $ · sparkline · 52-week range ═══ -->
-  <section class="wt-card wt-list wt-list2">
-    <header class="wt-lh">
-      <div class="seg" role="tablist">
-        <button role="tab" [class.on]="region() === 'All'" (click)="region.set('All')">All</button>
-        <button role="tab" *ngFor="let r of regions()" [class.on]="region() === r" (click)="region.set(r)">{{ r }}</button>
-      </div>
-      <span class="wt-asof" *ngIf="asOf()">
-        <b class="pos num">{{ breadth().up }}↑</b><b class="neg num">{{ breadth().down }}↓</b><span class="num">{{ clock(asOf()) }}</span>
-      </span>
-    </header>
-    <p class="wt-err" *ngIf="error()">{{ error() }}</p>
-
-    <div class="wt-th"><span></span><span>Index</span><span class="r">Level</span><span class="r">Day in $</span><span class="sp"></span><span class="w52">52 weeks</span></div>
-    <ng-container *ngFor="let g of groups()">
-      <div class="wt-gh" [attr.title]="g.region === 'DigiVilla' ? VILLA_ABOUT : null"><b>{{ g.name }}</b><em *ngIf="g.avg !== null" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }} avg</em></div>
-      <button class="wt-tr" *ngFor="let q of g.items" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
-              (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="selected().includes(q.key) ? 'Remove from chart' : 'Add to chart'">
-        <span class="wt-tick"><i></i></span>
-        <span class="wt-name"><b>{{ q.name }}</b><small>{{ q.kind === 'yield' ? '% a year' : q.kind === 'villa' ? q.unit + ' mix' : q.unit ? q.currency + ' · ' + q.unit.replace('$', '') : q.currency }}</small></span>
-        <span class="r wt-price num">{{ num(q.last) }}{{ q.kind === 'yield' ? '%' : '' }}</span>
-        <span class="r wt-day"><em class="wt-pill num" [class.pos]="((q.kind === 'yield' ? q.change_bp : q.usd_change_pct) ?? 0) > 0"
-              [class.neg]="((q.kind === 'yield' ? q.change_bp : q.usd_change_pct) ?? 0) < 0">{{ q.kind === 'yield' ? bps(q.change_bp) : pct(q.usd_change_pct) }}</em>
-          <small class="wt-abs num" *ngIf="q.kind === 'yield'">{{ pct(q.change_pct) }} of the yield</small>
-          <small class="wt-abs num" *ngIf="q.currency !== 'USD' && q.kind !== 'yield'">{{ pct(q.change_pct) }} in {{ q.currency }}</small></span>
-        <span class="r sp"><svg class="wt-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-          <line x1="0" x2="100" [attr.y1]="baseY(q)" [attr.y2]="baseY(q)" class="base" />
-          <path [attr.d]="spark(q)" [class.pos]="(q.usd_change_pct ?? 0) >= 0" [class.neg]="(q.usd_change_pct ?? 0) < 0" />
-        </svg></span>
-        <span class="wt-52 w52">
-          <span class="wt-rng"><i *ngIf="pos52(q) !== null" [style.left.%]="pos52(q)"></i></span>
-          <small class="num" *ngIf="q.kind !== 'yield'">{{ num(q.low_52w, 0) }}<span>{{ num(q.high_52w, 0) }}</span></small>
-          <small class="num" *ngIf="q.kind === 'yield'">{{ pos52(q) === null ? '—' : num(q.low_52w) + '%' }}<span *ngIf="pos52(q) !== null">{{ num(q.high_52w) }}%</span></small>
-        </span>
-      </button>
-    </ng-container>
-  </section>
 </div>

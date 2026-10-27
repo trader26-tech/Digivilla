@@ -40,21 +40,41 @@ INDICES = [
     {"key": "nasdaq", "flag": "🇺🇸", "symbol": "^IXIC", "name": "Nasdaq Composite", "region": "US"},
     {"key": "nasdaq100", "flag": "🇺🇸", "symbol": "^NDX", "name": "Nasdaq-100", "region": "US"},
     {"key": "dow", "flag": "🇺🇸", "symbol": "^DJI", "name": "Dow Jones", "region": "US"},
+    {"key": "russell", "flag": "🇺🇸", "symbol": "^RUT", "name": "Russell 2000", "region": "US"},
+    {"key": "vix", "flag": "🇺🇸", "symbol": "^VIX", "name": "VIX (fear gauge)", "region": "US"},
+    # the rest of the Americas
+    {"key": "tsx", "flag": "🇨🇦", "symbol": "^GSPTSE", "name": "S&P/TSX (Canada)", "region": "Americas"},
+    {"key": "bovespa", "flag": "🇧🇷", "symbol": "^BVSP", "name": "Bovespa (Brazil)", "region": "Americas"},
+    {"key": "ipc", "flag": "🇲🇽", "symbol": "^MXX", "name": "IPC (Mexico)", "region": "Americas"},
     # Asia
     {"key": "kospi", "flag": "🇰🇷", "symbol": "^KS11", "name": "KOSPI (South Korea)", "region": "Asia"},
     {"key": "nikkei", "flag": "🇯🇵", "symbol": "^N225", "name": "Nikkei 225 (Japan)", "region": "Asia"},
     {"key": "hangseng", "flag": "🇭🇰", "symbol": "^HSI", "name": "Hang Seng (Hong Kong)", "region": "Asia"},
     {"key": "shanghai", "flag": "🇨🇳", "symbol": "000001.SS", "name": "Shanghai Composite", "region": "Asia"},
     {"key": "taiwan", "flag": "🇹🇼", "symbol": "^TWII", "name": "Taiwan Weighted", "region": "Asia"},
+    {"key": "asx", "flag": "🇦🇺", "symbol": "^AXJO", "name": "ASX 200 (Australia)", "region": "Asia"},
+    {"key": "sti", "flag": "🇸🇬", "symbol": "^STI", "name": "Straits Times (Singapore)", "region": "Asia"},
+    {"key": "jakarta", "flag": "🇮🇩", "symbol": "^JKSE", "name": "Jakarta Composite", "region": "Asia"},
     # Europe
     {"key": "ftse", "flag": "🇬🇧", "symbol": "^FTSE", "name": "FTSE 100 (UK)", "region": "Europe"},
     {"key": "dax", "flag": "🇩🇪", "symbol": "^GDAXI", "name": "DAX (Germany)", "region": "Europe"},
     {"key": "cac", "flag": "🇫🇷", "symbol": "^FCHI", "name": "CAC 40 (France)", "region": "Europe"},
     {"key": "stoxx50", "flag": "🇪🇺", "symbol": "^STOXX50E", "name": "Euro Stoxx 50", "region": "Europe"},
+    {"key": "ibex", "flag": "🇪🇸", "symbol": "^IBEX", "name": "IBEX 35 (Spain)", "region": "Europe"},
+    {"key": "ftsemib", "flag": "🇮🇹", "symbol": "FTSEMIB.MI", "name": "FTSE MIB (Italy)", "region": "Europe"},
+    {"key": "smi", "flag": "🇨🇭", "symbol": "^SSMI", "name": "SMI (Switzerland)", "region": "Europe"},
+    {"key": "aex", "flag": "🇳🇱", "symbol": "^AEX", "name": "AEX (Netherlands)", "region": "Europe"},
     # Global & other
     {"key": "msciworld", "flag": "🌐", "symbol": "URTH", "name": "MSCI World (ETF)", "region": "Global"},
     # gold is priced in US$; its "local" view is in RUPEES (US$ price × ₹ per US$), as an Indian investor holds it
     {"key": "gold", "flag": "🥇", "symbol": "GC=F", "name": "Gold", "region": "Global", "local": "INR"},
+    {"key": "bitcoin", "flag": "₿", "symbol": "BTC-USD", "name": "Bitcoin", "region": "Global"},
+    # currencies — a RATE, shown as quoted (no US$ conversion of a US$ rate)
+    {"key": "usdinr", "flag": "🇮🇳", "symbol": "INR=X", "name": "US$ in rupees", "region": "Currencies", "kind": "fx"},
+    {"key": "dxy", "flag": "🇺🇸", "symbol": "DX-Y.NYB", "name": "US Dollar Index", "region": "Currencies", "kind": "fx"},
+    {"key": "eurusd", "flag": "🇪🇺", "symbol": "EURUSD=X", "name": "Euro in US$", "region": "Currencies", "kind": "fx"},
+    {"key": "gbpusd", "flag": "🇬🇧", "symbol": "GBPUSD=X", "name": "Pound in US$", "region": "Currencies", "kind": "fx"},
+    {"key": "usdjpy", "flag": "🇯🇵", "symbol": "JPY=X", "name": "US$ in yen", "region": "Currencies", "kind": "fx"},
     # US Treasury yields — a YIELD in % a year, not a price: shown as its level and moves in
     # basis points (1 bp = 0.01 percentage point); no currency conversion
     {"key": "us3m", "flag": "🇺🇸", "symbol": "^IRX", "name": "US 3-month T-bill", "region": "Bonds", "kind": "yield"},
@@ -64,11 +84,15 @@ INDICES = [
     # crude oil, US$ a barrel (front-month futures); "local" = in rupees, like gold
     {"key": "wti", "flag": "🛢️", "symbol": "CL=F", "name": "Crude oil · WTI", "region": "Commodities", "local": "INR", "unit": "$/bbl"},
     {"key": "brent", "flag": "🛢️", "symbol": "BZ=F", "name": "Crude oil · Brent", "region": "Commodities", "local": "INR", "unit": "$/bbl"},
+    {"key": "silver", "flag": "🥈", "symbol": "SI=F", "name": "Silver", "region": "Commodities", "unit": "$/oz"},
+    {"key": "copper", "flag": "🟠", "symbol": "HG=F", "name": "Copper", "region": "Commodities", "unit": "$/lb"},
+    {"key": "natgas", "flag": "🔥", "symbol": "NG=F", "name": "Natural gas", "region": "Commodities", "unit": "$/MMBtu"},
 ]
-REGIONS = ["India", "US", "Asia", "Europe", "Global", "Bonds", "Commodities"]
+REGIONS = ["India", "US", "Americas", "Europe", "Asia", "Global", "Currencies", "Commodities", "Bonds"]
 # every index is also shown in US DOLLARS: local value ÷ (local currency per USD)
 FX = {"INR": "INR=X", "KRW": "KRW=X", "JPY": "JPY=X", "HKD": "HKD=X", "CNY": "CNY=X",
-      "TWD": "TWD=X", "GBP": "GBP=X", "EUR": "EUR=X"}
+      "TWD": "TWD=X", "GBP": "GBP=X", "EUR": "EUR=X", "CAD": "CAD=X", "BRL": "BRL=X", "MXN": "MXN=X",
+      "AUD": "AUD=X", "SGD": "SGD=X", "IDR": "IDR=X", "CHF": "CHF=X"}
 RANGES = {  # range → (yahoo range, interval, cache seconds)
     "1d": ("1d", "5m", 60), "5d": ("5d", "15m", 60), "1m": ("1mo", "1d", 900),
     "6m": ("6mo", "1d", 900), "1y": ("1y", "1d", 900), "5y": ("5y", "1wk", 900),
@@ -181,7 +205,9 @@ def _row(ix: dict, res: dict, fx: Optional[dict], bars: Optional[dict] = None, f
     pts = _points(res)
     ccy = m.get("currency")
     # US-dollar terms: divide by the currency's rate now and at the previous close
-    if fx and ccy in FX:
+    if ix.get("kind") == "fx":                          # a currency rate is shown as quoted
+        usd_last, usd_prev, usd_pts, fx_pct = last, prev, pts, None
+    elif fx and ccy in FX:
         fm = fx.get("meta") or {}
         fx_now, fx_prev = fm.get("regularMarketPrice"), _prev_close(fm, fx_bars)[0]
         fx_pts = _points(fx)
@@ -205,6 +231,10 @@ def _row(ix: dict, res: dict, fx: Optional[dict], bars: Optional[dict] = None, f
         "day_high": m.get("regularMarketDayHigh"), "day_low": m.get("regularMarketDayLow"),
         "high_52w": m.get("fiftyTwoWeekHigh"), "low_52w": m.get("fiftyTwoWeekLow"),
         "time": m.get("regularMarketTime"), "tz": m.get("exchangeTimezoneName"),
+        # today's (or the next) regular session on the exchange: open → close, epoch seconds
+        "exchange": m.get("fullExchangeName") or m.get("exchangeName"),
+        "open_at": ((m.get("currentTradingPeriod") or {}).get("regular") or {}).get("start"),
+        "close_at": ((m.get("currentTradingPeriod") or {}).get("regular") or {}).get("end"),
         "session": _session_date(m), "prev_date": prev_date,
         "spark": [p[1] for p in (usd_pts or pts)[::step]],
         "change_bp": round((last - prev) * 100, 1) if ix.get("kind") == "yield" and last is not None and prev else None,
@@ -268,7 +298,8 @@ def quotes() -> dict:
             rows.append(row)
         return rows or None
     rows = _cached("quotes", 60, load) or []
-    return {"regions": REGIONS, "indices": rows, "as_of": int(time.time()), "basis": "USD"}
+    hit = _CACHE.get("quotes")
+    return {"regions": REGIONS, "indices": rows, "as_of": int(hit[0]) if hit else int(time.time()), "basis": "USD"}
 
 
 def _daily_bars(symbol: str) -> Optional[dict]:
@@ -293,7 +324,7 @@ def chart(key: str, rng: str = "1d", ccy: str = "usd") -> Optional[dict]:
         ccy = m.get("currency")
         pts = _points(res)
         prev = _prev_close(m, _daily_bars(ix["symbol"]))[0] if rng == "1d" else m.get("chartPreviousClose")
-        if ccy in FX and want == "usd":
+        if ccy in FX and want == "usd" and ix.get("kind") != "fx":
             fx = _get(FX[ccy], yr, iv)
             if not fx:
                 return None
@@ -340,6 +371,8 @@ def _fx_history(ccy: str) -> Optional[list]:
 def history(key: str) -> Optional[dict]:
     """One index's daily closes since 2000: d = day number (days since 1970-01-01, UTC),
     v = close in its own currency, u = close in US dollars (v ÷ that day's FX rate)."""
+    if key.startswith(FUND_PREFIX):
+        return fund_history(key)
     ix = _BY_KEY.get(key)
     if not ix:
         return None
@@ -371,7 +404,8 @@ def history(key: str) -> Optional[dict]:
                 v.append(round(c * r, 4))
                 u.append(round(c, 6))
             return {"key": key, "name": ix["name"], "region": ix["region"], "kind": ix.get("kind"), "currency": to_local, "d": d, "v": v, "u": u}
-        if ccy in FX:
+        is_fx = ix.get("kind") == "fx"
+        if ccy in FX and not is_fx:
             fx_pts = _fx_history(ccy)
             if not fx_pts:
                 return None
@@ -389,7 +423,7 @@ def history(key: str) -> Optional[dict]:
                 if not r:
                     continue
                 usd = c / r
-            elif ccy == "USD":
+            elif ccy == "USD" or is_fx:
                 usd = c
             else:
                 usd = None
@@ -398,3 +432,100 @@ def history(key: str) -> Optional[dict]:
             u.append(round(usd, 6) if usd is not None else None)
         return {"key": key, "name": ix["name"], "region": ix["region"], "kind": ix.get("kind"), "currency": ccy, "d": d, "v": v, "u": u}
     return _cached(f"h:{key}", 6 * 3600, load)
+
+
+# ─────────────────────────── our funds (the villa buckets) ───────────────────────────
+# Mutual funds have no intraday price: one NAV a business day, published by AMFI in the
+# evening (usually 9–11 pm IST) for that day's 3:30 pm close. Latest NAV from AMFI's own
+# file (re-read every 15 min), history from mfapi (6 h memo) — the same sources the rest
+# of the admin uses.
+FUND_PREFIX = "fund:"
+_SLEEVE_ORDER = {"arbitrage": 0, "gold": 1, "large": 2, "mid": 3, "small": 4}
+_IST = ZoneInfo("Asia/Kolkata")
+
+
+def _fund_list() -> list[dict]:
+    from app import market
+    _, rows = market._bucket_funds()
+    out: dict[int, dict] = {}
+    for r in rows:
+        code = r.get("scheme_code")
+        if code and int(code) not in out:
+            out[int(code)] = {"code": int(code), "name": market._short(r.get("scheme_name") or ""),
+                              "sleeve": (r.get("sleeve") or "other").lower()}
+    return sorted(out.values(), key=lambda f: (_SLEEVE_ORDER.get(f["sleeve"], 9), f["name"]))
+
+
+def _fund_series(code: int) -> tuple[list[tuple[str, float]], Optional[float]]:
+    """[(iso date, nav)] oldest → newest (mfapi history + AMFI's newer NAV, if any), and when AMFI was read."""
+    from app import market, reports as R
+    hist = market._fund_hist(code)
+    pts = sorted(hist.items())
+    amfi = R._amfi_snapshot().get(code)
+    if amfi and amfi[0] and (not pts or amfi[1] > pts[-1][0]):
+        pts.append((amfi[1], float(amfi[0])))
+    return pts, (R._AMFI_SNAP[0] or None)
+
+
+def _close_epoch(iso: str) -> int:
+    """3:30 pm IST on a NAV's date — the market close the NAV is struck at."""
+    y, m, d = map(int, iso.split("-"))
+    return int(datetime(y, m, d, 15, 30, tzinfo=_IST).timestamp())
+
+
+def funds() -> dict:
+    def load():
+        fl = _fund_list()
+        if not fl:
+            return None
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            series = list(ex.map(lambda f: _fund_series(f["code"]), fl))
+        fxs = _fx_history("INR") or []
+        rate = lambda iso: _at(fxs, _close_epoch(iso)) if fxs else None
+        rows = []
+        for f, (pts, amfi_at) in zip(fl, series):
+            if not pts:
+                continue
+            (ld, last), (pd, prev) = pts[-1], (pts[-2] if len(pts) > 1 else pts[-1])
+            rl, rp = rate(ld), rate(pd)
+            ul, up = (last / rl if rl else None), (prev / rp if rp else None)
+            yr = [v for _, v in pts[-250:]]
+            rows.append({
+                "key": f"{FUND_PREFIX}{f['code']}", "symbol": str(f["code"]), "name": f["name"], "region": "Funds",
+                "flag": "", "kind": "fund", "unit": f["sleeve"], "currency": "INR",
+                "last": last, "prev_close": prev, "change": last - prev,
+                "change_pct": (last / prev - 1) * 100 if prev else None,
+                "usd_last": ul, "usd_prev": up, "usd_change_pct": (ul / up - 1) * 100 if ul and up else None, "fx_pct": None,
+                "day_high": None, "day_low": None, "high_52w": max(yr), "low_52w": min(yr),
+                "time": _close_epoch(ld), "tz": "Asia/Kolkata", "session": ld, "prev_date": pd,
+                "exchange": "AMFI", "open_at": None, "close_at": None,
+                "nav_date": ld, "updated": int(amfi_at) if amfi_at else None,
+                "spark": [v for _, v in pts[-30:]],
+            })
+        return rows or None
+    rows = _cached("funds", 300, load) or []
+    hit = _CACHE.get("funds")
+    return {"indices": rows, "as_of": int(hit[0]) if hit else int(time.time())}
+
+
+def fund_history(key: str) -> Optional[dict]:
+    try:
+        code = int(key[len(FUND_PREFIX):])
+    except ValueError:
+        return None
+
+    def load():
+        pts, _ = _fund_series(code)
+        if not pts:
+            return None
+        name = next((f["name"] for f in _fund_list() if f["code"] == code), str(code))
+        fxs = _fx_history("INR") or []
+        d, v, u = [], [], []
+        for iso, nav in pts:
+            t = _close_epoch(iso)
+            r = _at(fxs, t) if fxs else None
+            d.append(int(datetime.fromisoformat(iso).replace(tzinfo=ZoneInfo("UTC")).timestamp() // 86400))
+            v.append(round(nav, 4))
+            u.append(round(nav / r, 6) if r else None)
+        return {"key": key, "name": name, "region": "Funds", "kind": "fund", "currency": "INR", "d": d, "v": v, "u": u}
+    return _cached(f"h:{key}", 900, load)

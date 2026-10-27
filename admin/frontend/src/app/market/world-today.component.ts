@@ -3,8 +3,7 @@ import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, 
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-import { AdminService, MarketData, WorldChart, WorldCpi, WorldHistory, WorldQuote } from '../admin.service';
-import { isVillaKey, villaHistories, villaQuote } from './villa-series';
+import { AdminService, WorldChart, WorldCpi, WorldHistory, WorldQuote } from '../admin.service';
 import { Ccy, Daily, bp, cagr, change, cpiDaily, daily, dayOf, deflate, idxAt, isoOf, line, startOf, stats, today, yieldStats, years } from './world-compare';
 
 const COLOURS = ['#387ed1', '#eb6834', '#1baf7a', '#eda100', '#6250d6', '#e87ba4', '#e34948', '#5a5f78'];
@@ -17,6 +16,15 @@ const INTRADAY = new Set(['1d', '5d']);
 const LS = 'dv_admin_world';
 const CPI_COLOUR: Record<string, string> = { 'cpi:IN': '#98a0b8', 'cpi:US': '#c9a0a0' };
 const W0 = 900, H0 = 300, PAD = { l: 40, r: 72, t: 14, b: 26 };
+/** a fund: one NAV a day, no intraday line */
+const isFundKey = (k: string) => k.startsWith('fund:');
+/** the regions whose markets are exchanges with opening hours (for the clock board) */
+const EXCHANGE_REGIONS = new Set(['India', 'US', 'Americas', 'Europe', 'Asia']);
+const CITY: Record<string, string> = { Kolkata: 'Mumbai', Calcutta: 'Mumbai', Berlin: 'Frankfurt', Sao_Paulo: 'São Paulo', Mexico_City: 'Mexico City', New_York: 'New York' };
+const IST = 'Asia/Kolkata';
+/** YYYY-MM-DD of an instant on India's clock */
+const istDay = (ts: number) => new Date(ts * 1000).toLocaleDateString('en-CA', { timeZone: IST });
+export type Session = { s: 'open' | 'pre' | 'closed' | 'nav'; label: string; at: string };
 
 /**
  * World markets: Indian and global indices, compared like-for-like.
@@ -47,16 +55,26 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   get W(): number { return this.box().w; }
   get H(): number { return this.box().h; }
 
-  /** the markets from Yahoo, and our three villa baskets (worked out here) on top */
+  /** the markets from Yahoo, and the funds in our villa buckets (AMFI NAVs) */
   readonly apiQuotes = signal<WorldQuote[]>([]);
-  readonly villaQuotes = signal<WorldQuote[]>([]);
-  readonly quotes = computed(() => [...this.villaQuotes(), ...this.apiQuotes()]);
+  readonly fundQuotes = signal<WorldQuote[]>([]);
+  readonly quotes = computed(() => [...this.apiQuotes(), ...this.fundQuotes()]);
   readonly apiRegions = signal<string[]>([]);
-  readonly regions = computed(() => (this.villaQuotes().length ? ['DigiVilla', ...this.apiRegions()] : this.apiRegions()));
-  /** the villa replay's inputs: the benchmark-index days, and the rupee rate (from Nifty 50's ₹ vs US$ closes) */
-  private readonly market = signal<MarketData | null>(null);
-  private readonly fxHist = signal<WorldHistory | null>(null);
+  /** our funds sit right after India */
+  readonly regions = computed(() => {
+    const r = this.apiRegions().filter((x) => x !== 'Funds');
+    if (!this.fundQuotes().length) return r;
+    const i = r.indexOf('India');
+    return [...r.slice(0, i + 1), 'Funds', ...r.slice(i + 1)];
+  });
   readonly region = signal<string>('All');
+  /** the clock board's pick: only the markets on that exchange's clock (null = all) */
+  readonly tzOnly = signal<string | null>(null);
+  /** the list's right-hand columns: today's session, or the last year */
+  readonly cols = signal<'today' | 'year'>('today');
+  /** now, ticking — every status ("open · closes 21:30") is worked out from it */
+  readonly now = signal(Math.floor(Date.now() / 1000));
+  private tick?: ReturnType<typeof setInterval>;
   readonly asOf = signal<number>(0);
   readonly error = signal('');
   readonly PERIODS = PERIODS;
@@ -91,18 +109,20 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
       if (Array.isArray(s.cpiOff)) this.cpiOff.set(s.cpiOff.filter((k: string) => k === 'IN' || k === 'US'));
       if (s.range === 'custom' && s.from && s.to) { this.from.set(s.from); this.to.set(s.to); }
       if (['periods', 'years', 'risk'].includes(s.view)) this.view.set(s.view);
+      if (s.cols === 'year') this.cols.set('year');
     } catch { /* defaults */ }
     if (this.range() === 'custom' && (this.from() === null || this.to() === null)) this.range.set('1y');
     this.loadQuotes();
     this.loadCharts();
     this.loadHistory();
     this.api.worldInflation().pipe(catchError(() => of(null))).subscribe((c) => this.cpi.set(c));
-    this.loadVillas();
-    this.timer = setInterval(() => { this.loadQuotes(); if (this.range() === '1d') this.loadCharts(); }, 60_000);
+    this.loadFunds();
+    this.timer = setInterval(() => { this.loadQuotes(); this.loadFunds(); if (this.range() === '1d') this.loadCharts(); }, 60_000);
+    this.tick = setInterval(() => this.now.set(Math.floor(Date.now() / 1000)), 20_000);
   }
   private remember(): void {
     try {
-      localStorage.setItem(LS, JSON.stringify({ selected: this.selected(), range: this.range(), ccy: this.ccy(), real: this.real(), cpiOff: this.cpiOff(), from: this.from(), to: this.to(), view: this.view() }));
+      localStorage.setItem(LS, JSON.stringify({ selected: this.selected(), range: this.range(), ccy: this.ccy(), real: this.real(), cpiOff: this.cpiOff(), from: this.from(), to: this.to(), view: this.view(), cols: this.cols() }));
     } catch { /* ignore */ }
   }
   ngAfterViewInit(): void {
@@ -117,7 +137,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.ro.observe(el);
   }
-  ngOnDestroy(): void { clearInterval(this.timer); this.ro?.disconnect(); }
+  ngOnDestroy(): void { clearInterval(this.timer); clearInterval(this.tick); this.ro?.disconnect(); }
 
   loadQuotes(): void {
     this.api.worldQuotes().subscribe({
@@ -127,7 +147,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   /** intraday lines (1D / 5D) come from the chart endpoint; everything longer from the daily history */
   loadCharts(): void {
-    const keys = this.selected().filter((k) => !isVillaKey(k)), r = this.range();   // villas have no intraday line
+    const keys = this.selected().filter((k) => !isFundKey(k)), r = this.range();   // a fund has one NAV a day — no intraday line
     if (!INTRADAY.has(r)) return;
     if (!keys.length) { this.charts.set({}); return; }
     this.loadingChart.set(true);
@@ -139,39 +159,15 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /** the three villa baskets: replayed on the benchmark indices (the same maths as the
-   *  "Villas vs the market" chart), in ₹, and in US$ at each day's rupee rate */
-  private loadVillas(): void {
-    this.api.marketPerformance().pipe(catchError(() => of(null))).subscribe((m) => { this.market.set(m); this.buildVillas(); });
-    this.api.worldHistory('nifty50').pipe(catchError(() => of(null))).subscribe((h) => { this.fxHist.set(h); this.buildVillas(); });
-  }
-  private buildVillas(): void {
-    const m = this.market(), fx = this.fxHist();
-    if (!m || !fx) return;
-    const hs = villaHistories(m, fx);
-    if (!hs.length) return;
-    const growth = m.rebalance?.parts ?? ['gold', 'large', 'mid', 'small'];
-    this.villaQuotes.set(hs.map((h) => {
-      const v = m.villas.find((x) => 'villa_' + x.key === h.key)!;
-      const g = Math.round(growth.reduce((a, p) => a + (v.weights[p] || 0), 0) * 100);
-      return villaQuote(h, `${g}/${100 - g}`);
-    }));
-    this.hist.set({ ...this.hist(), ...Object.fromEntries(hs.map((h) => [h.key, h])) });
-    // the first time, put the three baskets on the chart
-    try {
-      if (!localStorage.getItem(LS + '_villas')) {
-        localStorage.setItem(LS + '_villas', '1');
-        const keys = hs.map((h) => h.key).filter((k) => !this.selected().includes(k));
-        this.selected.set([...keys, ...this.selected()].slice(0, 8));
-        this.remember();
-      }
-    } catch { /* ignore */ }
+  /** the villa buckets' funds: latest NAV from AMFI, its date, the move vs the NAV before */
+  private loadFunds(): void {
+    this.api.worldFunds().pipe(catchError(() => of(null))).subscribe((f) => { if (f?.indices?.length) this.fundQuotes.set(f.indices); });
   }
 
-  /** each selected index's daily history, fetched once (the villas are built here, not fetched) */
+  /** each selected market's (or fund's) daily history, fetched once */
   loadHistory(): void {
     for (const k of this.selected()) {
-      if (isVillaKey(k) || k in this.hist() || this.histLoading.has(k)) continue;
+      if (k in this.hist() || this.histLoading.has(k)) continue;
       this.histLoading.add(k);
       this.api.worldHistory(k).pipe(catchError(() => of(null))).subscribe((h) => {
         this.histLoading.delete(k);
@@ -179,6 +175,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
+  readonly fundsOnly = computed(() => this.selected().length > 0 && this.selected().every(isFundKey));
   readonly histPending = computed(() => { this.hist(); return this.selected().some((k) => !(k in this.hist())); });
 
   toggle(key: string): void {
@@ -285,16 +282,17 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   colour(key: string): string { if (CPI_COLOUR[key]) return CPI_COLOUR[key]; const i = this.selected().indexOf(key); return i >= 0 ? COLOURS[i % COLOURS.length] : 'transparent'; }
   quote(key: string): WorldQuote | undefined { return this.quotes().find((q) => q.key === key); }
 
-  readonly shown = computed(() => (this.region() === 'All' ? this.quotes() : this.quotes().filter((q) => q.region === this.region())));
-  readonly REGION_NAME: Record<string, string> = { India: 'India', US: 'United States', Asia: 'Asia', Europe: 'Europe', Global: 'Global & currencies', Bonds: 'US Treasury yields', Commodities: 'Crude oil', DigiVilla: 'Our villas' };
-  readonly VILLA_ABOUT = '₹100 in Apr 2010, replayed on the indices, before tax and fund costs';
+  readonly REGION_NAME: Record<string, string> = { India: 'India', Funds: 'Our funds', US: 'United States', Americas: 'Americas', Asia: 'Asia-Pacific', Europe: 'Europe',
+    Global: 'Global', Currencies: 'Currencies', Bonds: 'US Treasury yields', Commodities: 'Commodities' };
+  readonly FUNDS_ABOUT = 'One NAV a business day, struck at the 3:30 pm close and published by AMFI in the evening';
   readonly PAD = PAD;
   /** the table, one block per region */
   readonly groups = computed(() => {
     const rs = this.region() === 'All' ? this.regions() : [this.region()];
     return rs.map((r) => {
-      const items = this.quotes().filter((q) => q.region === r);
-      const moves = items.filter((q) => !this.isYield(q.key)).map((q) => q.change_pct).filter((v): v is number => v !== null);
+      const tz = this.tzOnly();
+      const items = this.quotes().filter((q) => q.region === r && (!tz || q.tz === tz));
+      const moves = items.filter((q) => !this.isYield(q.key) && q.kind !== 'fx' && q.key !== 'vix').map((q) => q.change_pct).filter((v): v is number => v !== null);
       return { region: r, name: this.REGION_NAME[r] ?? r, items, avg: moves.length ? moves.reduce((a, b) => a + b, 0) / moves.length : null };
     }).filter((g) => g.items.length);
   });
@@ -306,7 +304,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   readonly breadth = computed(() => {
     // yields aren't "up" or "down" markets — count the priced ones only
-    const qs = this.apiQuotes().filter((q) => q.change_pct !== null && q.kind !== 'yield');
+    const qs = this.apiQuotes().filter((q) => q.change_pct !== null && !q.kind && q.key !== 'vix');
     return { up: qs.filter((q) => q.change_pct! > 0).length, down: qs.filter((q) => q.change_pct! < 0).length };
   });
   readonly hasYield = computed(() => this.selected().some((k) => this.isYield(k)));
@@ -504,10 +502,11 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** the table shows each market in ITS OWN currency (what the news reports); the chart's currency switch is separate */
-  flagOf(q: WorldQuote): string { return q.flag || (q.kind === 'villa' ? '◆' : ''); }
+  flagOf(q: WorldQuote): string { return q.flag || (q.kind === 'fund' ? '◆' : ''); }
   sub(q: WorldQuote): string {
     if (q.kind === 'yield') return '% a year';
-    if (q.kind === 'villa') return q.unit + ' mix';
+    if (q.kind === 'fund') return q.unit === 'large' || q.unit === 'mid' || q.unit === 'small' ? q.unit + ' cap' : (q.unit || 'fund');
+    if (q.kind === 'fx') return '';
     return q.unit ? (q.currency || '') + ' · ' + q.unit.replace('$', '') : (q.currency || '');
   }
   /** the day's move in the market's own units: points for an index, bp for a yield */
@@ -521,13 +520,12 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   localClock(q: WorldQuote): string {
     if (!q.time) return '—';
     const d = new Date(q.time * 1000);
-    if (q.kind === 'villa') return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
     try { return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: q.tz || undefined }); } catch { return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }); }
   }
   /** "Session of 14 Oct · vs the 13 Oct close" — which sessions a day's move compares */
   sessionNote(q: WorldQuote): string {
     const f = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-    if (q.kind === 'villa') return 'Last close vs the close before it';
+    if (q.kind === 'fund') return (q.nav_date ? 'NAV of ' + f(q.nav_date) : 'Latest NAV') + (q.prev_date ? ' · vs ' + f(q.prev_date) : '');
     return (q.session ? 'Session of ' + f(q.session) : 'Latest price') + (q.prev_date ? ' · vs the ' + f(q.prev_date) + ' close' : '');
   }
   /** a chart row's level in the chart's currency */
@@ -549,6 +547,99 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const all = [...v, base], lo = Math.min(...all), hi = Math.max(...all);
     return 28 - ((base - lo) / (hi - lo || 1)) * 26;
   }
+  // ── sessions: open / closed, closing time, last update — all on India's clock ──
+  /** "15:30" today, "Fri 15:30" within a week, "26 Oct 15:30" beyond */
+  ist(ts: number | null | undefined): string {
+    if (!ts) return '—';
+    const d = new Date(ts * 1000), hm = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: IST });
+    const day = istDay(ts), today = istDay(this.now());
+    if (day === today) return hm;
+    const gap = Math.abs(Date.parse(day) - Date.parse(today)) / 86400000;
+    return (gap <= 6 ? d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: IST }) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: IST })) + ' ' + hm;
+  }
+  /** a date in words: "today", "yesterday", "Fri", "26 Oct" */
+  dayWord(iso: string): string {
+    const gap = Math.round((Date.parse(istDay(this.now())) - Date.parse(iso)) / 86400000);
+    if (gap === 0) return 'today';
+    if (gap === 1) return 'yesterday';
+    const d = new Date(iso + 'T12:00:00Z');
+    return gap > 1 && gap <= 6 ? d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  }
+  /** "4 min ago", "3 h ago", "2 d ago" */
+  ago(ts: number | null | undefined): string {
+    if (!ts) return '';
+    const s = Math.max(0, this.now() - ts);
+    return s < 90 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`;
+  }
+  /** a market's session right now: open (and when it closes), not yet open, or closed (and when) */
+  status(q: WorldQuote): Session {
+    const n = this.now();
+    if (q.kind === 'fund') {
+      const today = istDay(n), wd = new Date(n * 1000).toLocaleDateString('en-GB', { weekday: 'short', timeZone: IST });
+      const weekday = !['Sat', 'Sun'].includes(wd);
+      const next = q.nav_date === today || !weekday ? 'Next: ' + (wd === 'Fri' || wd === 'Sat' || wd === 'Sun' ? 'Mon' : 'tomorrow') + ' eve' : 'Next: tonight';
+      return { s: 'nav', label: 'NAV ' + (q.nav_date ? this.dayWord(q.nav_date) : '—'), at: next };
+    }
+    const o = q.open_at, c = q.close_at, t = q.time;
+    if (o && c) {
+      if (n >= o && n < c) {
+        if (t && n - t < 1800) return { s: 'open', label: 'Open', at: 'Closes ' + this.ist(c) };
+        // inside its hours but no fresh price: paused (a rate between sessions) — or a holiday when nothing came all day
+        return t && n - t < 20 * 3600 ? { s: 'closed', label: 'Paused', at: 'Last ' + this.ist(t) } : { s: 'closed', label: 'Closed', at: 'Holiday today' };
+      }
+      if (n < o) return { s: 'pre', label: 'Opens ' + this.ist(o), at: 'Closes ' + this.ist(c) };
+      return { s: 'closed', label: 'Closed', at: this.ist(c) };
+    }
+    return { s: 'closed', label: 'Closed', at: t ? this.ist(t) : '' };
+  }
+  /** the row's tooltip: the exchange, the session on its own clock, the comparison */
+  rowTitle(q: WorldQuote): string {
+    const own = (ts?: number | null) => ts && q.tz ? new Date(ts * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: q.tz }) : '';
+    const city = this.cityOf(q.tz);
+    const hours = q.open_at && q.close_at && q.kind !== 'fund' ? ` · ${own(q.open_at)}–${own(q.close_at)} ${city} time` : '';
+    const add = this.selected().includes(q.key) ? 'Remove from the chart' : 'Add to the chart';
+    return `${add} · ${q.exchange || ''}${hours} · ${this.sessionNote(q)}`;
+  }
+  cityOf(tz?: string | null): string { const c = (tz || '').split('/').pop() || ''; return CITY[c] ?? c.replace(/_/g, ' '); }
+
+  /** the clock board: one tile per exchange clock, open ones first */
+  readonly exchanges = computed(() => {
+    const by = new Map<string, WorldQuote[]>();
+    for (const q of this.apiQuotes()) {
+      if (q.kind || !q.tz || !EXCHANGE_REGIONS.has(q.region) || q.key === 'goldbees' || q.key === 'vix') continue;
+      const k = q.region === 'Europe' ? 'Europe' : q.tz;   // Europe's exchanges keep the same hours — one tile
+      by.set(k, [...(by.get(k) || []), q]);
+    }
+    const rank = { open: 0, pre: 1, nav: 2, closed: 3 } as const;
+    const tiles = [...by.entries()].map(([tz, qs]) => {
+      // the freshest market on that clock speaks for it
+      const q = [...qs].sort((a, b) => (b.time ?? 0) - (a.time ?? 0))[0];
+      const st = this.status(q);
+      const avg = qs.map((x) => x.change_pct).filter((v): v is number => v !== null);
+      const eu = tz === 'Europe';
+      return { tz, city: eu ? 'Europe' : this.cityOf(tz), flag: eu ? '🇪🇺' : q.flag || '', st, n: qs.length, move: avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : null,
+               local: new Date(this.now() * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: eu ? q.tz! : tz }), sortAt: st.s === 'open' ? (q.close_at ?? 0) : (q.open_at ?? 0) };
+    });
+    // home first (India), then open ones, then by when they open
+    return tiles.sort((a, b) => +(b.tz === IST) - +(a.tz === IST) || rank[a.st.s] - rank[b.st.s] || a.sortAt - b.sortAt);
+  });
+  /** the funds' tile on the board: the latest NAV date across our funds */
+  readonly fundTile = computed(() => {
+    const fs = this.fundQuotes();
+    if (!fs.length) return null;
+    const q = [...fs].sort((a, b) => (b.nav_date || '').localeCompare(a.nav_date || ''))[0];
+    const avg = fs.map((x) => x.change_pct).filter((v): v is number => v !== null);
+    return { st: this.status(q), n: fs.length, move: avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : null, updated: q.updated ?? null };
+  });
+  pickTz(tz: string): void {
+    if (tz === 'Europe') { this.tzOnly.set(null); this.region.set(this.region() === 'Europe' ? 'All' : 'Europe'); return; }
+    this.tzOnly.set(this.tzOnly() === tz ? null : tz); this.region.set('All');
+  }
+  exOn(tz: string): boolean { return tz === 'Europe' ? this.region() === 'Europe' && !this.tzOnly() : this.tzOnly() === tz; }
+  pickFunds(): void { this.tzOnly.set(null); this.region.set(this.region() === 'Funds' ? 'All' : 'Funds'); }
+  setCols(c: 'today' | 'year'): void { this.cols.set(c); this.remember(); }
+  openCount = computed(() => this.exchanges().filter((e) => e.st.s === 'open').length);
+
   num(v: number | null, dp = 2): string { return v === null || v === undefined ? '—' : v.toLocaleString('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
   pct(v: number | null): string { return v === null || v === undefined ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; }
   clock(ts: number): string { return ts ? new Date(ts * 1000).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : ''; }

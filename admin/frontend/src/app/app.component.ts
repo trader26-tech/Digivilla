@@ -63,7 +63,7 @@ const NAV: { view: View; label: string; short: string; tab: boolean; group?: 'da
   { view: 'clients', label: 'Clients', short: 'Home', tab: true },
   { view: 'global', label: 'Markets today', short: 'Today', tab: true },
   { view: 'site', label: 'Website', short: 'Website', tab: false },
-  { view: 'market', label: 'Villas vs market', short: 'Markets', tab: true },
+  { view: 'market', label: 'World markets', short: 'World', tab: true },
   { view: 'villas', label: 'Live NAVs', short: 'NAVs', tab: false, group: 'data' },
   { view: 'buckets', label: 'Villa buckets', short: 'Buckets', tab: false, group: 'data' },
   { view: 'uploads', label: 'Uploads', short: 'Uploads', tab: true, group: 'data' },

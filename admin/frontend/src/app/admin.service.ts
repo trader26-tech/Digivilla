@@ -246,6 +246,10 @@ export interface WorldQuote {
   time: number | null; tz: string | null; spark: number[];
   /** an emoji flag for the table; the exchange-local date of the latest price and of the close it is compared with */
   flag?: string; session?: string | null; prev_date?: string | null;
+  /** the exchange and today's (or the next) regular session: open → close, epoch seconds */
+  exchange?: string | null; open_at?: number | null; close_at?: number | null;
+  /** a fund (kind 'fund'): the NAV's date, and when AMFI's file was last read */
+  nav_date?: string | null; updated?: number | null;
 }
 export interface WorldQuotes { regions: string[]; indices: WorldQuote[]; as_of: number; }
 /** /admin/world/history — d = day number since 1970-01-01 (UTC), v = close (own currency), u = close in US$ */
@@ -578,6 +582,10 @@ export class AdminService {
   // ── world markets ───────────────────────────────────────────────────────────
   worldQuotes(): Observable<WorldQuotes> {
     return this.http.get<WorldQuotes>(`${this.base}/admin/world/quotes`, this.opts);
+  }
+  /** the villa buckets' funds as rows: latest NAV (AMFI), its date, the move vs the NAV before */
+  worldFunds(): Observable<{ indices: WorldQuote[]; as_of: number }> {
+    return this.http.get<{ indices: WorldQuote[]; as_of: number }>(`${this.base}/admin/world/funds`, this.opts);
   }
   worldChart(key: string, range: string, ccy: 'usd' | 'local' = 'usd'): Observable<WorldChart> {
     return this.http.get<WorldChart>(`${this.base}/admin/world/chart`, { ...this.opts, params: { key, range, ccy } });

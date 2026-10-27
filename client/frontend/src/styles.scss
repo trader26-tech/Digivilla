@@ -42,7 +42,8 @@
    double-tap-to-zoom; elements that need their own gestures (the ruler) set a
    narrower touch-action of their own. */
 * { touch-action: manipulation; }
-html, body { overflow-x: hidden; overscroll-behavior-x: none; -webkit-text-size-adjust: 100%; }
+/* no rubber-band past the page: iOS drags the floating tab bar along with the bounce ("pulled up") */
+html, body { overflow-x: hidden; overscroll-behavior-x: none; overscroll-behavior-y: none; -webkit-text-size-adjust: 100%; }
 
 html, body {
   margin: 0;
