@@ -57,5 +57,5 @@ export const MARKET_SIZE: Record<string, number> = {
 
 /** each region's share of the map — the regions' reading order and how much room each gets */
 export const REGION_SIZE: Record<string, number> = {
-  India: 1.7, Funds: 0.95, US: 1.45, Europe: 1.2, Asia: 1.3, Americas: 0.55, Global: 0.55, Commodities: 0.62, Currencies: 0.6, Bonds: 0.5,
+  India: 1.7, Funds: 0.95, US: 1.45, Europe: 1.2, Asia: 1.3, Americas: 0.55, Global: 0.55, Commodities: 0.62, Currencies: 0.78, Bonds: 0.5,
 };

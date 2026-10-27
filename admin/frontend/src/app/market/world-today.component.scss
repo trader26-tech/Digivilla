@@ -121,6 +121,9 @@
     &.on { color: var(--nw-accent); background: rgba(56,126,209,.1); }
     &:focus-visible { outline: 2px solid var(--nw-accent); outline-offset: -2px; } } }
 .wt-hsort { flex: none; }
+/* what the period means — one quiet line above the map */
+.wt-hcap { display: flex; align-items: baseline; gap: 8px; margin: -4px 0 10px; font-size: 12px; font-weight: 600; line-height: 1.45; color: var(--nw-muted);
+  b { flex: none; padding: 1px 7px; border-radius: 6px; background: var(--nw-accent); color: #fff; font-size: 11px; font-weight: 800; } }
 .wt-hs .mb { display: none; }
 
 .wt-hm { position: relative; transition: opacity .2s; &.dim { opacity: .45; } }
@@ -140,6 +143,7 @@
 .wt-ht.wt-tt .wt-ht-n { line-height: 1.22; }
 .wt-ht.wt-tt .wt-ht-n.two { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .wt-ht.on .wt-ht-n { padding-right: 12px; }
+.wt-fxa { font-style: normal; font-size: .85em; } .wt-ht.deep .wt-fxa { color: #fff !important; }
 .wt-ht.wt-tt[data-z='m'] { padding: 6px 7px 5px; }
 .wt-ht.wt-tt[data-z='s'] { padding: 3px 5px; gap: 0; justify-content: center;
   .wt-ht-n { font-size: 10px; } }

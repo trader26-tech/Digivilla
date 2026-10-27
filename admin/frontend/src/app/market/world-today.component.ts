@@ -33,8 +33,20 @@ const TILE_NAME: Record<string, string> = {
   nifty100: 'Nifty 100', midcap150: 'Midcap 150', smallcap250: 'Smallcap 250', midcap50: 'Midcap 50', banknifty: 'Bank Nifty', next50: 'Next 50',
   goldbees: 'Gold BeES', nasdaq: 'Nasdaq', nasdaq100: 'Nasdaq 100', dow: 'Dow', russell: 'Russell 2K', stoxx50: 'Stoxx 50',
   sti: 'S’pore', jakarta: 'Jakarta', shanghai: 'Shanghai', taiwan: 'Taiwan', hangseng: 'Hang Seng', kospi: 'KOSPI', nikkei: 'Nikkei', asx: 'ASX 200',
-  ftse: 'FTSE 100', ftsemib: 'FTSE MIB', msciworld: 'MSCI World', tsx: 'TSX', usdinr: '$ in ₹', dxy: 'Dollar idx', eurusd: '€ in $', gbpusd: '£ in $', usdjpy: '$ in ¥',
+  ftse: 'FTSE 100', ftsemib: 'FTSE MIB', msciworld: 'MSCI World', tsx: 'TSX', usdinr: 'Rupee', dxy: 'US dollar', eurusd: 'Euro', gbpusd: 'Pound', usdjpy: 'Yen',
   wti: 'WTI oil', brent: 'Brent', natgas: 'Nat gas', us3m: 'US 3M', us5y: 'US 5Y', us10y: 'US 10Y', us30y: 'US 30Y',
+};
+/**
+ * Currencies, read from the currency's own side: "the rupee got 0.18% weaker against the dollar".
+ * inv = the quote is US$ in that currency (₹ per $), so a rise means the currency weakened.
+ * level: how the price reads in words.
+ */
+const FX_VIEW: Record<string, { name: string; inv: boolean; vs: string; level: (v: number) => string }> = {
+  usdinr: { name: 'Rupee', inv: true, vs: '$', level: (v) => `₹${v.toFixed(2)}/$` },
+  usdjpy: { name: 'Yen', inv: true, vs: '$', level: (v) => `¥${v.toFixed(2)}/$` },
+  eurusd: { name: 'Euro', inv: false, vs: '$', level: (v) => `$${v.toFixed(4)}/€` },
+  gbpusd: { name: 'Pound', inv: false, vs: '$', level: (v) => `$${v.toFixed(4)}/£` },
+  dxy: { name: 'US dollar', inv: false, vs: '6 majors', level: (v) => `idx ${v.toFixed(2)}` },
 };
 export type Session = { s: 'open' | 'pre' | 'closed' | 'nav'; label: string; at: string };
 
@@ -325,7 +337,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   quote(key: string): WorldQuote | undefined { return this.quotes().find((q) => q.key === key); }
 
   readonly REGION_NAME: Record<string, string> = { India: 'India', Funds: 'Our funds', US: 'United States', Americas: 'Americas', Asia: 'Asia-Pacific', Europe: 'Europe',
-    Global: 'Global', Currencies: 'Currencies', Bonds: 'US Treasury yields', Commodities: 'Commodities' };
+    Global: 'Global', Currencies: 'Currencies vs US$', Bonds: 'US Treasury yields', Commodities: 'Commodities' };
   readonly FUNDS_ABOUT = 'One NAV a business day, struck at the 3:30 pm close and published by AMFI in the evening';
   readonly PAD = PAD;
   /** the table, one block per region */
@@ -676,8 +688,35 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   /** a market's move over the heat map's period: % (bp for a yield) */
   heatMove(q: WorldQuote): number | null {
     const p = this.hp();
-    if (p === '1d') return (q.kind === 'yield' ? q.change_bp : q.change_pct) ?? null;
-    return this.moves()[q.key]?.[p] ?? null;
+    const v = (p === '1d' ? (q.kind === 'yield' ? q.change_bp : q.change_pct) : this.moves()[q.key]?.[p]) ?? null;
+    return q.kind === 'fx' ? this.fxMove(q, v) : v;
+  }
+  /** a currency's own move: for "₹ per $" quotes the rupee's value is the inverse — +0.18% ₹/$ = the rupee 0.18% weaker */
+  fxMove(q: WorldQuote, v: number | null): number | null {
+    if (v === null || !isFinite(v)) return null;
+    return FX_VIEW[q.key]?.inv ? (1 / (1 + v / 100) - 1) * 100 : v;
+  }
+  /** "weaker vs $" / "stronger vs $" */
+  fxWord(q: WorldQuote, v: number | null = this.heatMove(q)): string {
+    const f = FX_VIEW[q.key]; if (!f || v === null) return '';
+    return (Math.abs(v) < 0.005 ? 'flat' : v > 0 ? 'stronger' : 'weaker') + ' vs ' + f.vs;
+  }
+  fxLevel(q: WorldQuote): string { const f = FX_VIEW[q.key]; return f && q.last !== null ? f.level(q.last) : ''; }
+  fxName(q: WorldQuote): string { const f = FX_VIEW[q.key]; return f ? `${f.name} vs ${f.vs === '$' ? 'US$' : f.vs}` : q.name; }
+  /** today's move as the list shows it: bp for a yield, the currency's own side for a currency */
+  dayMove(q: WorldQuote): number | null { return q.kind === 'yield' ? q.change_bp ?? null : q.kind === 'fx' ? this.fxMove(q, q.change_pct) : q.change_pct; }
+  isFx(q: WorldQuote): boolean { return q.kind === 'fx' && !!FX_VIEW[q.key]; }
+  /** the session a 1D move belongs to, on the exchange's own calendar: "Tue" (or "27 Oct" if older) */
+  sessionDay(q: WorldQuote): string {
+    const d = q.session || (q.time ? new Date(q.time * 1000).toLocaleDateString('en-CA', { timeZone: q.tz || IST }) : null);
+    if (!d) return '';
+    const n = new Date(d + 'T12:00:00Z'), gap = (Date.now() - n.getTime()) / 86400000;
+    return gap < 6.5 ? n.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) : n.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  }
+  /** the close a 1D move is measured from: "Mon close" */
+  prevDay(q: WorldQuote): string {
+    if (!q.prev_date) return 'the previous close';
+    return new Date(q.prev_date + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) + ' close';
   }
   heatText(q: WorldQuote): string { const v = this.heatMove(q); return q.kind === 'yield' ? this.bps(v) : this.pct(v); }
   /** how strongly a move paints (0–1): moves up to the period's cap; currencies move less, so half the cap */
@@ -797,7 +836,10 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     if (foot && avail < 15) { foot = false; avail += footH; }
     // heavy digits, sign and % run ≈ 0.68 em each
     const fs = Math.round(Math.max(z === 's' || z === 'xs' ? 9 : 10.5, Math.min(24, avail / 1.14, (w - padX - 2) / (moveLen * 0.68))) * 2) / 2;
-    return { z, fs, lines, flag, foot, compact: w < 124 };
+    // a currency with no room for "weaker / stronger" still says it: ▲ stronger, ▼ weaker, by its name
+    const mv = this.heatMove(q);
+    const tag = this.isFx(q) && !foot && mv !== null && Math.abs(mv) >= 0.005 ? (mv > 0 ? ' ▲' : ' ▼') : '';
+    return { z, fs, lines, flag, foot, tag, compact: w < 96 ? 2 : w < 142 ? 1 : 0 };
   }
   trackRegion = (_: number, g: { region: string }) => g.region;
   trackKey = (_: number, q: WorldQuote) => q.key;
@@ -806,14 +848,23 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   /** the flag only where a block mixes countries */
   heatFlag(region: string): boolean { return !['India', 'US', 'Funds'].includes(region); }
   /** the tile's last line: when its price last moved (IST) — or, on "Opening next", when it opens */
-  heatFoot(q: WorldQuote, compact = this.hmNarrow()): string {
+  heatFoot(q: WorldQuote, compact: boolean | number = this.hmNarrow()): string {
+    const tight = compact === 2;
+    if (this.hs() === 'next') return (tight ? '' : 'Opens ') + this.ist(this.nextOpen(q));
+    // a currency says which way it went, and where it stands
+    if (this.isFx(q)) { const word = this.fxWord(q).replace(/ vs .*/, ''); return compact ? word : `${word} · ${this.fxLevel(q)}`; }
+    // 1D: say WHICH session the move is — "Tue so far" while trading, "Tue session" once closed
+    if (this.hp() === '1d' && q.kind !== 'fund') {
+      const day = this.sessionDay(q), open = this.status(q).s === 'open';
+      if (open) { const a = this.agoShort(q.time); return tight ? `${day} · live` : compact ? `${day} so far` : `${day} so far · ${a === 'now' ? 'live' : a}`; }
+      return tight ? day : compact ? `${day} session` : `${day} session · ${this.hm(q.time ?? 0)}`;
+    }
     if (q.kind === 'fund') {
       if (!q.nav_date) return 'NAV —';
       if (compact) return new Date(q.nav_date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-      return 'NAV ' + (compact ? new Date(q.nav_date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : this.dayWord(q.nav_date));
+      return 'NAV ' + this.dayWord(q.nav_date);
     }
     const st = this.status(q);
-    if (this.hs() === 'next') return 'Opens ' + this.ist(this.nextOpen(q));
     // live: how fresh the price is (the closing time is in the tooltip and on "Opening next")
     if (st.s === 'open') { const a = this.agoShort(q.time); return compact ? (a === 'now' ? 'Live now' : a) : 'Live · ' + (a === 'now' ? 'just now' : a); }
     return this.ist(q.time);
@@ -822,7 +873,10 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   heatTitle(q: WorldQuote): string {
     const st = this.status(q);
     const upd = q.kind === 'fund' ? `NAV of ${q.nav_date ?? '—'}` : `Last price ${this.ist(q.time)} IST (${this.ago(q.time)})`;
-    return `${q.name} · ${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap to ${this.selected().includes(q.key) ? 'remove from' : 'add to'} the chart`;
+    const fx = this.isFx(q) ? `${FX_VIEW[q.key].name} ${this.fxWord(q)} by ${Math.abs(this.heatMove(q) ?? 0).toFixed(2)}% (${this.fxLevel(q)}) · ` : '';
+    const what = this.hp() === '1d' && q.kind !== 'fund'
+      ? `1D = ${this.sessionDay(q)}'s session${st.s === 'open' ? ' so far' : ''}, against ${this.prevDay(q)} · ` : '';
+    return `${q.name} · ${fx}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap to ${this.selected().includes(q.key) ? 'remove from' : 'add to'} the chart`;
   }
   /** "now", "4m", "3h", "2d" */
   agoShort(ts: number | null | undefined): string {
@@ -833,7 +887,15 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   /** "21:30" on India's clock */
   hm(ts: number): string { return new Date(ts * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: IST }); }
   readonly heatLoading = computed(() => this.hp() !== '1d' && !Object.keys(this.moves()).length);
-  readonly heatPeriodName = computed(() => ({ '1d': 'today', '1w': 'this week', '1m': '1 month', '3m': '3 months', '6m': '6 months', ytd: 'this year', '1y': '1 year', '3y': '3 years', '5y': '5 years' } as Record<string, string>)[this.hp()]);
+  readonly hpLabel = computed(() => HEAT_PERIODS.find((x) => x.k === this.hp())?.l ?? '');
+  /** what the chosen period means, in one line under the filters */
+  readonly heatCaption = computed(() => {
+    const p = this.hp();
+    if (p === '1d') return 'Each market’s latest session against the close before it — “so far” = still trading. Days are the exchange’s own.';
+    if (p === 'ytd') return `From each market’s last close of ${new Date().getFullYear() - 1} to its latest price.`;
+    return `From each market’s close ${this.heatPeriodName()} ago to its latest price.`;
+  });
+  readonly heatPeriodName = computed(() => ({ '1d': 'today', '1w': 'a week', '1m': '1 month', '3m': '3 months', '6m': '6 months', ytd: 'this year', '1y': '1 year', '3y': '3 years', '5y': '5 years' } as Record<string, string>)[this.hp()]);
   readonly heatCap = computed(() => HEAT_CAP[this.hp()]);
 
   num(v: number | null, dp = 2): string { return v === null || v === undefined ? '—' : v.toLocaleString('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }

@@ -35,6 +35,8 @@
       </div>
     </div>
 
+    <p class="wt-hcap"><b>{{ hpLabel() }}</b>{{ heatCaption() }}</p>
+
     <!-- by region: every region its own block, its markets sized by how big they are; ranked / opening next: an ordered grid -->
     <div class="wt-hm" [class.dim]="heatLoading()">
       <div class="wt-tm" *ngIf="treemap() as tm; else flat" [style.height.px]="tm.h">
@@ -47,7 +49,7 @@
                   [style.left.px]="t.x" [style.top.px]="t.y" [style.width.px]="t.w" [style.height.px]="t.h" [style.--fs.px]="t.fs"
                   [style.background]="heatBg(t.q)" [class.deep]="heatDeep(t.q)" [class.on]="selected().includes(t.q.key)" [style.--c]="colour(t.q.key)"
                   (click)="toggle(t.q.key)" [attr.aria-pressed]="selected().includes(t.q.key)" [title]="heatTitle(t.q)">
-            <span class="wt-ht-n" *ngIf="t.lines" [class.two]="t.lines === 2"><em aria-hidden="true" *ngIf="t.flag">{{ flagOf(t.q) }}</em>{{ shortName(t.q) }}</span>
+            <span class="wt-ht-n" *ngIf="t.lines" [class.two]="t.lines === 2"><em aria-hidden="true" *ngIf="t.flag">{{ flagOf(t.q) }}</em>{{ shortName(t.q) }}<i class="wt-fxa" *ngIf="t.tag" [class.neg]="t.tag === ' ▼'" [class.pos]="t.tag === ' ▲'">{{ t.tag }}</i></span>
             <b class="num">{{ heatText(t.q) }}</b>
             <span class="wt-ht-f num" *ngIf="t.foot"><i class="dot"></i>{{ heatFoot(t.q, t.compact) }}</span>
             <i class="wt-pin" *ngIf="selected().includes(t.q.key)" aria-hidden="true"></i>
@@ -71,7 +73,7 @@
     </div>
     <footer class="wt-hk">
       <span><i class="dot" data-k="open"></i>Live</span><span><i class="dot" data-k="pre"></i>Opens soon</span><span><i class="dot" data-k="closed"></i>Closed</span><span><i class="dot" data-k="nav"></i>Fund NAV</span>
-      <span class="wt-hk-t"><ng-container *ngIf="treemap()">Size = how big the market is · </ng-container>Times are the last price, IST · {{ heatPeriodName() }}<ng-container *ngIf="asOf()"> · fetched {{ ist(asOf()) }}</ng-container></span>
+      <span class="wt-hk-t"><ng-container *ngIf="treemap()">Size = how big the market is · </ng-container>Times are IST<ng-container *ngIf="asOf()"> · fetched {{ ist(asOf()) }}</ng-container></span>
     </footer>
   </section>
 
@@ -101,10 +103,10 @@
       <button class="wt-tr" *ngFor="let q of g.items" [class.on]="selected().includes(q.key)" [class.yr]="cols() === 'year'" [style.--c]="colour(q.key)"
               (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="rowTitle(q)">
         <span class="wt-tick"><i></i></span>
-        <span class="wt-name"><em class="wt-flag" [class.fund]="q.kind === 'fund'" aria-hidden="true">{{ flagOf(q) }}</em><b>{{ q.name }}</b><small *ngIf="sub(q)">{{ sub(q) }}</small></span>
-        <span class="r wt-price num">{{ num(q.last, q.kind === 'fx' && (q.last ?? 0) < 10 ? 4 : 2) }}{{ q.kind === 'yield' ? '%' : '' }}</span>
-        <span class="r wt-day"><em class="wt-pill num" [class.pos]="((q.kind === 'yield' ? q.change_bp : q.change_pct) ?? 0) > 0"
-              [class.neg]="((q.kind === 'yield' ? q.change_bp : q.change_pct) ?? 0) < 0">{{ q.kind === 'yield' ? bps(q.change_bp) : pct(q.change_pct) }}</em>
+        <span class="wt-name"><em class="wt-flag" [class.fund]="q.kind === 'fund'" aria-hidden="true">{{ flagOf(q) }}</em><b>{{ isFx(q) ? fxName(q) : q.name }}</b><small *ngIf="sub(q) && !isFx(q)">{{ sub(q) }}</small></span>
+        <span class="r wt-price num">{{ isFx(q) ? fxLevel(q) : num(q.last, 2) + (q.kind === 'yield' ? '%' : '') }}</span>
+        <span class="r wt-day"><em class="wt-pill num" [class.pos]="(dayMove(q) ?? 0) > 0" [class.neg]="(dayMove(q) ?? 0) < 0">{{ q.kind === 'yield' ? bps(q.change_bp) : pct(dayMove(q)) }}</em>
+          <small class="wt-abs" *ngIf="isFx(q)">{{ fxWord(q, dayMove(q)) }}</small>
           <small class="wt-abs num" *ngIf="q.currency !== 'USD' && !q.kind && q.usd_change_pct !== null">{{ pct(q.usd_change_pct) }} in $</small></span>
         <ng-container *ngIf="cols() === 'today'">
           <span class="wt-ses" *ngIf="status(q) as st" [attr.data-s]="st.s"><i class="dot"></i><b>{{ st.label }}</b><small>{{ st.at }}</small></span>
