@@ -17,7 +17,11 @@
       </div>
       <div class="seg wt-hsort" role="tablist" aria-label="Layout" *ngIf="hs() !== 'next'">
         <button role="tab" [class.on]="hsort() === 'region'" (click)="setHsort('region')" title="One block per region">By region</button>
-        <button role="tab" [class.on]="hsort() === 'rank'" (click)="setHsort('rank')" title="Every market on one board, biggest rise first">Ranked</button>
+        <button role="tab" [class.on]="hsort() === 'rank'" (click)="setHsort('rank')" title="Best to worst within each kind of asset — stock markets, funds, currencies, commodities, yields">Ranked</button>
+      </div>
+      <div class="seg wt-hc" role="tablist" aria-label="Currency">
+        <button role="tab" [class.on]="hc() === 'local'" [attr.aria-selected]="hc() === 'local'" (click)="setHc('local')" title="Each market in its own currency — Nifty in ₹, Nikkei in ¥">Local</button>
+        <button role="tab" [class.on]="hc() === 'usd'" [attr.aria-selected]="hc() === 'usd'" (click)="setHc('usd')" title="Every market in US dollars — its currency's rise or fall is included">In US$</button>
       </div>
       <span class="wt-legend num" aria-hidden="true"><em>−{{ heatCap() }}%</em><i></i><em>+{{ heatCap() }}%</em></span>
     </header>
@@ -35,7 +39,14 @@
       </div>
     </div>
 
-    <p class="wt-hcap"><b>{{ hpLabel() }}</b>{{ heatCaption() }}</p>
+    <p class="wt-hcap" *ngIf="hp() !== '1d'"><b>{{ hpLabel() }}</b>{{ heatCaption() }}</p>
+    <!-- 1D: the two kinds of tile, explained with the same badges the tiles wear -->
+    <p class="wt-hcap wt-1d" *ngIf="hp() === '1d'">
+      <span><em class="wt-bdg" data-k="live">Live</em>trading now — change since its last close, still moving</span>
+      <span><em class="wt-bdg" data-k="closed">{{ sampleDay() }}</em>closed — that day’s final change</span>
+    </p>
+
+    <p class="wt-hcap wt-usd" *ngIf="hc() === 'usd'"><b>US$</b>Every move in US dollars — a market’s own move plus its currency’s against the $ (Nifty +10% with the rupee −5% ≈ +4.8%). FX and yields read the same.</p>
 
     <!-- by region: every region its own block, its markets sized by how big they are; ranked / opening next: an ordered grid -->
     <div class="wt-hm" [class.dim]="heatLoading()">
@@ -51,22 +62,29 @@
                   (click)="toggle(t.q.key)" [attr.aria-pressed]="selected().includes(t.q.key)" [title]="heatTitle(t.q)">
             <span class="wt-ht-n" *ngIf="t.lines" [class.two]="t.lines === 2"><em aria-hidden="true" *ngIf="t.flag">{{ flagOf(t.q) }}</em>{{ shortName(t.q) }}<i class="wt-fxa" *ngIf="t.tag" [class.neg]="t.tag === ' ▼'" [class.pos]="t.tag === ' ▲'">{{ t.tag }}</i></span>
             <b class="num">{{ heatText(t.q) }}</b>
-            <span class="wt-ht-f num" *ngIf="t.foot"><i class="dot"></i>{{ heatFoot(t.q, t.compact) }}</span>
+            <span class="wt-ht-f num" *ngIf="t.foot"><ng-container *ngIf="heatBadge(t.q, t.compact !== 0) as bd; else plainFoot"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot><i class="dot"></i></ng-template>{{ heatFoot(t.q, t.compact) }}</span>
             <i class="wt-pin" *ngIf="selected().includes(t.q.key)" aria-hidden="true"></i>
           </button>
         </section>
       </div>
       <ng-template #flat>
+        <!-- ranked: one block per kind of asset (small ones share a row), best first; opening next: one block, soonest first -->
         <div class="wt-flat">
-          <ng-container *ngFor="let g of heatGroups(); trackBy: trackRegion">
-            <button class="wt-ht" *ngFor="let q of g.items; trackBy: trackKey" [style.background]="heatBg(q)" [class.deep]="heatDeep(q)" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
-                    [attr.data-s]="status(q).s" (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="heatTitle(q)">
-              <span class="wt-ht-n"><em aria-hidden="true" *ngIf="heatFlag(q.region)">{{ flagOf(q) }}</em>{{ shortName(q) }}</span>
-              <b class="num">{{ heatText(q) }}</b>
-              <span class="wt-ht-f num"><i class="dot"></i>{{ heatFoot(q) }}</span>
-              <i class="wt-pin" *ngIf="selected().includes(q.key)" aria-hidden="true"></i>
-            </button>
-          </ng-container>
+          <section class="wt-fb" *ngFor="let g of heatGroups(); trackBy: trackRegion" [style.--n]="g.items.length" [class.full]="!g.region.startsWith('rank:')" [class.tiny]="g.items.length <= 2">
+            <header class="wt-fh" *ngIf="g.region.startsWith('rank:')">
+              <b>{{ g.name }}</b><small>{{ g.items.length > 1 ? g.items.length + ' · best → worst' : '' }}</small>
+              <em *ngIf="g.avg !== null && g.items.length > 1" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }} avg</em>
+            </header>
+            <div class="wt-fg">
+              <button class="wt-ht" *ngFor="let q of g.items; trackBy: trackKey" [style.background]="heatBg(q)" [class.deep]="heatDeep(q)" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
+                      [attr.data-s]="status(q).s" (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="heatTitle(q)">
+                <span class="wt-ht-n"><em aria-hidden="true" *ngIf="heatFlag(q.region)">{{ flagOf(q) }}</em>{{ shortName(q) }}<i class="wt-fxa" *ngIf="isFx(q) && (heatMove(q) ?? 0) !== 0" [class.pos]="(heatMove(q) ?? 0) > 0" [class.neg]="(heatMove(q) ?? 0) < 0">{{ (heatMove(q) ?? 0) > 0 ? ' ▲' : ' ▼' }}</i></span>
+                <b class="num">{{ heatText(q) }}</b>
+                <span class="wt-ht-f num"><ng-container *ngIf="heatBadge(q, true) as bd; else plainFoot2"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot2><i class="dot"></i></ng-template>{{ heatFoot(q, hmNarrow() ? 2 : 1) }}</span>
+                <i class="wt-pin" *ngIf="selected().includes(q.key)" aria-hidden="true"></i>
+              </button>
+            </div>
+          </section>
         </div>
       </ng-template>
       <div class="wt-empty sm" *ngIf="!heatGroups().length">{{ !quotes().length ? 'Loading markets…' : hs() === 'live' ? 'Nothing is trading here right now.' : 'Nothing here.' }}</div>

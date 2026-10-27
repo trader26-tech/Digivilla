@@ -121,6 +121,16 @@
     &.on { color: var(--nw-accent); background: rgba(56,126,209,.1); }
     &:focus-visible { outline: 2px solid var(--nw-accent); outline-offset: -2px; } } }
 .wt-hsort { flex: none; }
+.wt-hc { flex: none; }
+.wt-usd b { background: #0f8a72; }
+/* 1D badges: LIVE (green, pulsing dot) · CLOSED (grey) — on tiles and in the key above the map */
+.wt-bdg { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 5px; border-radius: 5px; font-style: normal; font-size: 9px; font-weight: 800;
+  letter-spacing: .5px; text-transform: uppercase; line-height: 14px; background: rgba(26,28,46,.1); color: #3d4257;
+  &[data-k='live'] { background: #0f8a72; color: #fff;
+    &::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff; animation: wt-pulse 2s ease-in-out infinite; } } }
+.wt-ht.deep .wt-bdg[data-k='closed'] { background: rgba(255,255,255,.28); color: #fff; }
+.wt-ht.deep .wt-bdg[data-k='live'] { background: #fff; color: #0f8a72; &::before { background: #0f8a72; } }
+.wt-1d { flex-wrap: wrap; gap: 6px 18px; span { display: inline-flex; align-items: center; gap: 7px; } .wt-bdg { font-size: 9.5px; } }
 /* what the period means — one quiet line above the map */
 .wt-hcap { display: flex; align-items: baseline; gap: 8px; margin: -4px 0 10px; font-size: 12px; font-weight: 600; line-height: 1.45; color: var(--nw-muted);
   b { flex: none; padding: 1px 7px; border-radius: 6px; background: var(--nw-accent); color: #fff; font-size: 11px; font-weight: 800; } }
@@ -128,7 +138,15 @@
 
 .wt-hm { position: relative; transition: opacity .2s; &.dim { opacity: .45; } }
 /* ranked / opening next: an ordered grid */
-.wt-flat { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 3px; }
+.wt-flat { display: flex; flex-wrap: wrap; gap: 14px 12px; }
+/* a block per kind of asset: as wide as its tiles want, so small kinds share a row */
+.wt-fb { flex: var(--n) 1 calc(var(--n) * 104px); min-width: min(100%, 212px); max-width: 100%;
+  &.full { flex-basis: 100%; } &.tiny { flex-grow: 0; } }
+.wt-fg { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 3px; }
+.wt-fh { display: flex; align-items: baseline; gap: 8px; padding: 0 2px 5px; min-width: 0;
+  b { font-size: 10.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4a5068; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  small { font-size: 11px; font-weight: 600; color: var(--nw-muted); white-space: nowrap; }
+  em { margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 800; white-space: nowrap; } }
 
 /* by region: each region a soft panel — its name and average on top, its markets sized by how big they are */
 .wt-tm { position: relative; width: 100%; }
@@ -311,7 +329,9 @@
     &::after { content: ''; flex: 0 0 24px; } button { height: 34px; } }
   .wt-flat .wt-ht-n em { display: none; }
   .wt-hsort { width: auto; button { min-height: 34px; padding: 0 9px; } }
-  .wt-flat { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  .wt-fg { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  .wt-fb { min-width: 100%; }
+  .wt-fh small { display: none; }
   .wt-flat .wt-ht { min-height: 54px; padding: 5px 6px 5px; border-radius: 8px; b { font-size: 13.5px; } }
   /* a long name may take two lines on a phone rather than be cut */
   .wt-flat .wt-ht-n { font-size: 10.5px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; overflow-wrap: anywhere; }

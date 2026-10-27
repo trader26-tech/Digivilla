@@ -588,8 +588,9 @@ export class AdminService {
     return this.http.get<{ indices: WorldQuote[]; as_of: number }>(`${this.base}/admin/world/funds`, this.opts);
   }
   /** every market's (and fund's) move over 1W, 1M, 3M, YTD, 1Y — the heat map */
-  worldMoves(): Observable<{ moves: Record<string, Record<string, number | null>> }> {
-    return this.http.get<{ moves: Record<string, Record<string, number | null>> }>(`${this.base}/admin/world/moves`, this.opts);
+  /** moves = each market in its own currency; usd = the same in US dollars (its currency's move included) */
+  worldMoves(): Observable<{ moves: Record<string, Record<string, number | null>>; usd?: Record<string, Record<string, number | null>> }> {
+    return this.http.get<{ moves: Record<string, Record<string, number | null>>; usd?: Record<string, Record<string, number | null>> }>(`${this.base}/admin/world/moves`, this.opts);
   }
   worldChart(key: string, range: string, ccy: 'usd' | 'local' = 'usd'): Observable<WorldChart> {
     return this.http.get<WorldChart>(`${this.base}/admin/world/chart`, { ...this.opts, params: { key, range, ccy } });

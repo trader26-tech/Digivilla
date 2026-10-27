@@ -615,8 +615,23 @@ def _moves_from(pts: list[tuple[int, float]], kind: Optional[str]) -> dict:
     return out
 
 
+def _fx_walk(pts: list, fx: list, mul: bool = False) -> list:
+    """Closes converted at each day's rate (÷ local-per-US$ → US$; × with mul) — one pass, both series in time order."""
+    out, j = [], 0
+    for t, v in pts:
+        while j + 1 < len(fx) and fx[j + 1][0] <= t:
+            j += 1
+        r = fx[j][1] if fx else None
+        if r:
+            out.append((t, v * r if mul else v / r))
+    return out
+
+
 def moves() -> dict:
-    """Every market's (and fund's) move over 1W … 5Y and YTD in its own currency — the heat map."""
+    """Every market's (and fund's) move over 1W … 5Y and YTD — the heat map. `moves` in its own
+    currency (rupees for the ₹-viewed commodities, as their 1D is), `usd` in US DOLLARS: each close
+    ÷ that day's rate, so a currency's fall shows in the move (Nifty +10% with the rupee −5% ≈ +4.8%).
+    Currencies (already vs US$) and yields (bp) are the same in both."""
     def load():
         syms = [x["symbol"] for x in INDICES]
         chunks = [syms[i:i + 10] for i in range(0, len(syms), 10)]
@@ -624,18 +639,33 @@ def moves() -> dict:
         with ThreadPoolExecutor(max_workers=8) as ex:
             for g in ex.map(lambda c: _spark(c, "5y", "1d"), chunks):
                 got.update(g)
-        out = {}
+        out, usd = {}, {}
         for ix in INDICES:
             res = got.get(ix["symbol"])
-            if res:
-                pts = _points(res)
-                if c := _contract(ix["symbol"]):    # a future: the current contract's own closes
-                    pts = _splice(pts, _points(_get(c, "5y", "1d") or {}))
-                out[ix["key"]] = _moves_from([(t, v) for t, v in pts], ix.get("kind"))
+            if not res:
+                continue
+            pts = _points(res)
+            if c := _contract(ix["symbol"]):    # a future: the current contract's own closes
+                pts = _splice(pts, _points(_get(c, "5y", "1d") or {}))
+            pts = [(t, v) for t, v in pts]
+            kind, ccy = ix.get("kind"), (res.get("meta") or {}).get("currency")
+            own = mv = _moves_from(pts, kind)
+            if kind not in ("fx", "yield"):
+                if ccy in FX:                     # a local-currency market → US$
+                    fx = _fx_history(ccy)
+                    mv = _moves_from(_fx_walk(pts, fx), kind) if fx else {}
+                elif ccy == "USD" and ix.get("local") in FX:   # a US$ commodity viewed in rupees
+                    fx = _fx_history(ix["local"])
+                    own = _moves_from(_fx_walk(pts, fx, mul=True), kind) if fx else own
+            out[ix["key"]], usd[ix["key"]] = own, mv
         fl = _fund_list()
         with ThreadPoolExecutor(max_workers=8) as ex:
             series = list(ex.map(lambda f: _fund_series(f["code"])[0], fl))
+        inr = _fx_history("INR") or []
         for f, pts in zip(fl, series):
-            out[f"{FUND_PREFIX}{f['code']}"] = _moves_from([(_close_epoch(d), v) for d, v in pts], None)
-        return out or None
-    return {"moves": _cached("moves5", 900, load) or {}}
+            p = [(_close_epoch(d), v) for d, v in pts]
+            out[f"{FUND_PREFIX}{f['code']}"] = _moves_from(p, None)
+            usd[f"{FUND_PREFIX}{f['code']}"] = _moves_from(_fx_walk(p, inr), None) if inr else {}
+        return {"local": out, "usd": usd} if out else None
+    got = _cached("moves6", 900, load) or {}
+    return {"moves": got.get("local") or {}, "usd": got.get("usd") or {}}
