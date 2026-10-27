@@ -1,9 +1,9 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2ff5d5b4';
-import C_part_footer from './part-footer.js?v=2ff5d5b4';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=4bdc6f8e';
+import C_part_footer from './part-footer.js?v=4bdc6f8e';
 addCSS(".p-calculator-1:hover{box-shadow:inset 0 0 0 1px #8fd65a !important;color:#fff !important}\n.p-calculator-2:hover{color:#e9e9ed !important;background:#1a1c28 !important}\n.p-calculator-3:hover{background:rgba(143,214,90,.06) !important;box-shadow:inset 0 0 0 1px rgba(143,214,90,.35) !important}\n.p-calculator-4:hover{box-shadow:inset 0 0 0 1px #8fd65a !important}\n.p-calculator-5:hover{box-shadow:inset 0 0 0 1px #8fd65a !important}\n.p-calculator-6:hover{color:#e9e9ed !important;background:#1f2233 !important}");
 /* ── logic, verbatim from the design file ── */
-import * as E from './engine.js?v=2ff5d5b4';
-import { loadCalc } from './calc-data.js?v=2ff5d5b4';
+import * as E from './engine.js?v=4bdc6f8e';
+import { loadCalc } from './calc-data.js?v=4bdc6f8e';
 /* Every figure here is computed by the app's own calculator engine (dc/engine.js, built from
    client/frontend/src/app/calc/engine) on the real benchmark-index history and the live settings
    (GET /calc/config) — no rate is assumed or typed in this file. */
@@ -188,7 +188,7 @@ class Component extends DCLogic {
     if (!S.data) return base_;
     const { cfg, vf } = S.data, { villa, w, r, f } = this.sim(S), villas = cfg.villas, vi = villas.indexOf(villa);
     const cmp = isFd && !!S.fdCompound;                       // "FD that compounds" (the villa's SWP is off with it)
-    const T = cfg.tax, F = cfg.flat, swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(2), cessPct = +(T.cess * 100).toFixed(1);
+    const T = cfg.tax, F = cfg.flat, swpRate = E.swpMonthly(cfg, villa.key), swpPct = +(swpRate * 1200).toFixed(2), cessPct = +(T.cess * 100).toFixed(1);
     const first = this.ym(w.months[0]), last = this.ym(w.months[w.months.length - 1]), span = `${first} → ${last}`;
     const endYear = this.endYear(vf), maxYears = this.maxYears(vf);
     const vRate = this.villaRate(villa.key), irr = r.dvIrr;
@@ -247,7 +247,7 @@ class Component extends DCLogic {
     const foot = isFd
       ? (cmp
         ? `FD that compounds: ${S.fdRate}% a year, interest added every quarter and nothing paid out; each year's interest is taxed at your ${S.tax}% slab + ${cessPct}% cess as it is earned, and that tax is taken from the deposit. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}, nothing withdrawn so it compounds too; ${taxLine}. The villa's value is before tax on gains not yet sold. Indices are before any fund's expense ratio.`
-        : `FD: ${S.fdRate}% interest paid out monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back at the end. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${r.swp ? `; ${swpPct}% a year paid monthly (${this.inr(start * cfg.withdrawals.lumpsum_monthly_rate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`)
+        : `FD: ${S.fdRate}% interest paid out monthly, taxed at your ${S.tax}% slab + ${cessPct}% cess; the principal comes back at the end. DigiVilla: the ${pfName} villa (${this.mix(villa, cfg)} growth/arbitrage) on real benchmark indices, ${span}${r.swp ? `; ${swpPct}% a year paid monthly (${this.inr(start * swpRate)}) from the arbitrage part first` : '; nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`)
       : `Flat: the price you paid, nothing added; rent grew ${F.rent_rise_pct}% a year, ${12 - F.vacant_months} months let, taxed at ${S.tax}% after a ${Math.round(F.std_deduction * 100)}% deduction, ${F.upkeep_pct}% upkeep a year. DigiVilla: the same amount in the ${pfName} villa on real benchmark indices, ${span}, ${S.income ? `paying ${swpPct}% a year as rent (SWP) from the arbitrage part first` : 'nothing withdrawn'}; ${taxLine}. Indices are before any fund's expense ratio.`;
     return {
       ...base_,
@@ -282,7 +282,7 @@ class Component extends DCLogic {
       editBox: `display:flex;align-items:center;gap:8px;padding:6px 12px;margin:-6px -12px;border-radius:12px;background:rgba(143,214,90,.06);box-shadow:inset 0 0 0 1.5px ${S.edit && S.edit.bad ? '#e58a6b' : '#8fd65a'},0 0 0 4px ${S.edit && S.edit.bad ? 'rgba(229,138,107,.12)' : 'rgba(143,214,90,.1)'};cursor:text`,
       toggleIncome: () => this.toggleIncome(), swpTitle: isFd ? 'Take a monthly income (SWP)' : 'Take the rent as a monthly SWP',
       swpNote: S.swpRaised && S.income ? `Raised to ${this.words(SWP_MIN)} — the smallest amount that pays a monthly income` + (S.link === 'fdOff' && isFd ? ' · the FD pays out monthly again' : '')
-        : S.income ? this.inr(start * cfg.withdrawals.lumpsum_monthly_rate) + ' a month, ' + swpPct + '% a year of what you put in' + (S.link === 'fdOff' && isFd ? ' · the FD pays out monthly again, to match' : '')
+        : S.income ? this.inr(start * swpRate) + ' a month, ' + swpPct + '% a year of what you put in' + (S.link === 'fdOff' && isFd ? ' · the FD pays out monthly again, to match' : '')
         : isFd && S.fdCompound ? 'Off while the FD compounds — the villa reinvests everything too, so both sides grow the same way'
         : 'Off · everything stays invested and compounds',
       toggleCompound: () => this.toggleCompound(), cmpOn: S.fdCompound ? 'true' : 'false', swpOn: S.income ? 'true' : 'false',

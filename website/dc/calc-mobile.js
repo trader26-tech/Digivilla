@@ -1,7 +1,7 @@
-import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=2ff5d5b4';
+import { h, R, J, T, S, React, DCLogic, defineDC, addCSS, hostStyle, wheelStepper, bakeFilter, reducedMotion, ready, smoothScroll, scrubber, pageGestures } from './rt.js?v=4bdc6f8e';
 /* ── logic, verbatim from the design file ── */
-import * as E from './engine.js?v=2ff5d5b4';
-import { loadCalc } from './calc-data.js?v=2ff5d5b4';
+import * as E from './engine.js?v=4bdc6f8e';
+import { loadCalc } from './calc-data.js?v=4bdc6f8e';
 /* Every figure here is computed by the app's calculator engine (dc/engine.js) on real benchmark-index
    history with the live settings (GET /calc/config). Nothing in this file assumes a rate. */
 const YEAR_OPTS = [5, 8, 10, 15, 20];
@@ -164,7 +164,7 @@ class Component extends DCLogic {
   }
   // ── "How this is worked out": the app's walk-through, from the same result ──
   sheet(S, out) {
-    const { cfg } = S.data, F = cfg.flat, T = cfg.tax, swpPct = +(cfg.withdrawals.lumpsum_monthly_rate * 1200).toFixed(1), villa = out.villa, r = out.r, m0 = E.ymLabel(r.months[0]), mN = E.ymLabel(r.months[r.months.length - 1]);
+    const { cfg } = S.data, F = cfg.flat, T = cfg.tax, villa = out.villa, swpPct = +(E.swpMonthly(cfg, villa.key) * 1200).toFixed(1), r = out.r, m0 = E.ymLabel(r.months[0]), mN = E.ymLabel(r.months[r.months.length - 1]);
     const fmt = n => this.fmt(n), inr = n => this.inr(n);
     const step = (n, k, h, em, h2, p, extra = {}) => ({ n, k, h, em, h2, p, dotCls: 'dot' + (n === '✓' ? ' ok' : ''), hasH: !!h, hasRows: !!extra.rows, rows: extra.rows || [], hasRes: !!extra.res, res: extra.res || {} });
     const dvStep = (amount, n) => step(n, 'The other path', 'The same', fmt(amount), ' in DigiVilla',
