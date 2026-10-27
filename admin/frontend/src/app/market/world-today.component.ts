@@ -4,6 +4,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { AdminService, WorldChart, WorldCpi, WorldHistory, WorldQuote } from '../admin.service';
+import { MARKET_SIZE, REGION_SIZE, Rect, squarify } from './treemap';
 import { Ccy, Daily, bp, cagr, change, cpiDaily, daily, dayOf, deflate, idxAt, isoOf, line, startOf, stats, today, yieldStats, years } from './world-compare';
 
 const COLOURS = ['#387ed1', '#eb6834', '#1baf7a', '#eda100', '#6250d6', '#e87ba4', '#e34948', '#5a5f78'];
@@ -31,7 +32,7 @@ const HEAT_CAP_BP: Record<string, number> = { '1d': 8, '1w': 20, '1m': 40, '3m':
 const TILE_NAME: Record<string, string> = {
   nifty100: 'Nifty 100', midcap150: 'Midcap 150', smallcap250: 'Smallcap 250', midcap50: 'Midcap 50', banknifty: 'Bank Nifty', next50: 'Next 50',
   goldbees: 'Gold BeES', nasdaq: 'Nasdaq', nasdaq100: 'Nasdaq 100', dow: 'Dow', russell: 'Russell 2K', stoxx50: 'Stoxx 50',
-  sti: 'Singapore', jakarta: 'Jakarta', shanghai: 'Shanghai', taiwan: 'Taiwan', hangseng: 'Hang Seng', kospi: 'KOSPI', nikkei: 'Nikkei', asx: 'ASX 200',
+  sti: 'S’pore', jakarta: 'Jakarta', shanghai: 'Shanghai', taiwan: 'Taiwan', hangseng: 'Hang Seng', kospi: 'KOSPI', nikkei: 'Nikkei', asx: 'ASX 200',
   ftse: 'FTSE 100', ftsemib: 'FTSE MIB', msciworld: 'MSCI World', tsx: 'TSX', usdinr: '$ in ₹', dxy: 'Dollar idx', eurusd: '€ in $', gbpusd: '£ in $', usdjpy: '$ in ¥',
   wti: 'WTI oil', brent: 'Brent', natgas: 'Nat gas', us3m: 'US 3M', us5y: 'US 5Y', us10y: 'US 10Y', us30y: 'US 30Y',
 };
@@ -91,6 +92,8 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly hsort = signal<'region' | 'rank'>('region');
   /** a phone-width heat grid: shorter tile feet */
   readonly hmNarrow = signal(false);
+  /** the heat map's width in px — the treemap is laid out for it */
+  readonly hmW = signal(0);
   private hro?: ResizeObserver;
   readonly moves = signal<Record<string, Record<string, number | null>>>({});
   /** now, ticking — every status ("open · closes 21:30") is worked out from it */
@@ -158,6 +161,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
         const w = es[0]?.contentRect.width;
         if (!w) return;
         this.hmNarrow.set(w < 560);
+        if (Math.abs(w - this.hmW()) >= 1) this.hmW.set(Math.floor(w));
       });
       this.hro.observe(hm);
     }
@@ -322,8 +326,6 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly REGION_NAME: Record<string, string> = { India: 'India', Funds: 'Our funds', US: 'United States', Americas: 'Americas', Asia: 'Asia-Pacific', Europe: 'Europe',
     Global: 'Global', Currencies: 'Currencies', Bonds: 'US Treasury yields', Commodities: 'Commodities' };
-  /** the heat map's label cells: names that fit one */
-  readonly HEAT_LABEL: Record<string, string> = { US: 'US', Funds: 'Our funds', Bonds: 'US yields', Asia: 'Asia-Pac', Commodities: 'Commodity', Currencies: 'Currency' };
   readonly FUNDS_ABOUT = 'One NAV a business day, struck at the 3:30 pm close and published by AMFI in the evening';
   readonly PAD = PAD;
   /** the table, one block per region */
@@ -725,6 +727,78 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     return this.regions().map((r) => block(r, this.REGION_NAME[r] ?? r, pool.filter((q) => q.region === r))).filter((g) => g.items.length);
   });
+  /**
+   * The map: each region a block of its own (name + average on top), its markets inside drawn as a
+   * treemap — area ∝ the size of the market (treemap.ts), colour = the move. A laptop gets one
+   * rectangle split region by region; a phone gets the regions stacked, each full width.
+   * Ranked and "Opening next" stay plain ordered grids (their order is the point).
+   */
+  readonly treemap = computed(() => {
+    const W = this.hmW();
+    if (!W || this.hs() === 'next' || this.hsort() === 'rank') return null;
+    const groups = this.heatGroups();
+    if (!groups.length) return null;
+    const narrow = this.hmNarrow(), HEAD = 26, GAP = 8, TG = 3, P = 4;
+    const all = this.quotes();
+    const regionW = (g: { region: string; items: WorldQuote[] }) => {
+      const n = all.filter((q) => q.region === g.region).length || 1;
+      return (REGION_SIZE[g.region] ?? 0.6) * Math.sqrt(g.items.length / n);
+    };
+    const tiles = (items: WorldQuote[], box: Rect) => {
+      const ws = items.map((q) => ({ q, w: q.kind === 'fund' ? 1 : Math.pow(MARKET_SIZE[q.key] ?? 1, 0.45) })).sort((a, b) => b.w - a.w);
+      const rs = squarify(ws.map((x) => x.w), box);
+      return ws.map((x, i) => {
+        const r = rs[i], w = Math.max(0, r.w - TG), h = Math.max(0, r.h - TG);
+        return { q: x.q, x: r.x + TG / 2, y: r.y + TG / 2, w, h, ...this.fitTile(x.q, w, h) };
+      });
+    };
+    const block = (g: (typeof groups)[number], r: Rect) => {
+      const w = r.w - GAP, h = r.h - GAP;
+      const short: Record<string, string> = { Commodities: 'Commod.', Bonds: 'US yields', US: 'US', Asia: 'Asia-Pac', Currencies: 'FX', Funds: 'Funds' };
+      return { region: g.region, name: w < 170 && short[g.region] ? short[g.region] : g.name, avg: g.avg, x: r.x + GAP / 2, y: r.y + GAP / 2, w, h,
+               tiles: tiles(g.items, { x: P - TG / 2, y: HEAD - TG / 2, w: w - 2 * P + TG, h: Math.max(0, h - HEAD - P + TG) }) };
+    };
+    if (narrow) {
+      // phones: one region under the next, each as tall as its share
+      let y = 0;
+      const regions = groups.map((g) => {
+        const h = Math.round(HEAD + Math.max(96, W * 0.4 * regionW(g) * (groups.length === 1 ? 2.2 : 1))) + GAP;
+        const b = block(g, { x: 0, y, w: W + GAP, h }); y += h; return { ...b, x: 0, w: W };
+      });
+      return { h: y, regions };
+    }
+    const H = groups.length === 1 ? Math.round(Math.max(300, Math.min(520, W * 0.4))) : Math.round(Math.max(440, Math.min(640, W * 0.52)));
+    const order = [...groups].sort((a, b) => regionW(b) - regionW(a));
+    const rs = squarify(order.map(regionW), { x: -GAP / 2, y: -GAP / 2, w: W + GAP, h: H + GAP });
+    return { h: H, regions: order.map((g, i) => block(g, rs[i])) };
+  });
+  trackTile = (_: number, t: { q: WorldQuote }) => t.q.key;
+  /**
+   * What a tile of w × h px can show, and how big: the name (one line, or two when it's too long
+   * and there's height), the move as large as fits, and the "when" line if there's room.
+   * Widths are estimated from character counts (bold Inter ≈ 0.6 em a character).
+   */
+  private fitTile(q: WorldQuote, w: number, h: number) {
+    // a thin but tall tile still gets its name (small)
+    const z = w >= 112 && h >= 64 ? 'l' : w >= 76 && h >= 44 ? 'm' : (w >= 50 && h >= 30) || (w >= 36 && h >= 40) ? 's' : 'xs';
+    const padX = z === 'l' ? 20 : z === 'm' ? 14 : 10, padY = z === 'l' ? 15 : z === 'm' ? 11 : 6;
+    const nfs = z === 'l' ? 12.5 : z === 's' ? (w < 50 ? 9 : 10) : 11, lh = nfs * 1.22;
+    const name = this.shortName(q), room = w - padX - 4;
+    const wide = (n: number) => n * nfs * 0.62;
+    let flag = this.heatFlag(q.region) && !!this.flagOf(q) && z !== 's' && z !== 'xs';
+    if (flag && wide(name.length) + 18 > room && wide(name.length) <= room) flag = false;   // the flag goes before the name wraps
+    // a second line only where the name has a space to break at
+    let lines = z === 'xs' ? 0 : wide(name.length) + (flag ? 18 : 0) <= room || !name.includes(' ') ? 1 : 2;
+    const moveLen = this.heatText(q).length;
+    const footH = 14;
+    let foot = (z === 'l' || z === 'm') && h - padY - lines * lh - footH - 16 >= 0;
+    let avail = h - padY - lines * lh - (foot ? footH : 0) - 3;
+    if (lines === 2 && avail < 13) { lines = 1; avail += lh; }                // keep the move readable: one line of name
+    if (foot && avail < 15) { foot = false; avail += footH; }
+    // heavy digits, sign and % run ≈ 0.68 em each
+    const fs = Math.round(Math.max(z === 's' || z === 'xs' ? 9 : 10.5, Math.min(24, avail / 1.14, (w - padX - 2) / (moveLen * 0.68))) * 2) / 2;
+    return { z, fs, lines, flag, foot, compact: w < 124 };
+  }
   trackRegion = (_: number, g: { region: string }) => g.region;
   trackKey = (_: number, q: WorldQuote) => q.key;
   readonly heatCount = computed(() => this.heatPool().length);
@@ -732,15 +806,16 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   /** the flag only where a block mixes countries */
   heatFlag(region: string): boolean { return !['India', 'US', 'Funds'].includes(region); }
   /** the tile's last line: when its price last moved (IST) — or, on "Opening next", when it opens */
-  heatFoot(q: WorldQuote): string {
+  heatFoot(q: WorldQuote, compact = this.hmNarrow()): string {
     if (q.kind === 'fund') {
       if (!q.nav_date) return 'NAV —';
-      return 'NAV ' + (this.hmNarrow() ? new Date(q.nav_date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : this.dayWord(q.nav_date));
+      if (compact) return new Date(q.nav_date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+      return 'NAV ' + (compact ? new Date(q.nav_date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : this.dayWord(q.nav_date));
     }
     const st = this.status(q);
     if (this.hs() === 'next') return 'Opens ' + this.ist(this.nextOpen(q));
     // live: how fresh the price is (the closing time is in the tooltip and on "Opening next")
-    if (st.s === 'open') { const a = this.agoShort(q.time); return this.hmNarrow() ? a : 'Live · ' + (a === 'now' ? 'just now' : a); }
+    if (st.s === 'open') { const a = this.agoShort(q.time); return compact ? (a === 'now' ? 'Live now' : a) : 'Live · ' + (a === 'now' ? 'just now' : a); }
     return this.ist(q.time);
   }
   /** everything about a tile, for its tooltip */

@@ -123,22 +123,39 @@
 .wt-hsort { flex: none; }
 .wt-hs .mb { display: none; }
 
-.wt-hm { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; transition: opacity .2s;
-  &.dim { opacity: .45; } > .wt-empty { grid-column: 1 / -1; } }
-/* a region's label: a quiet cell in the flow, the region's average under its name */
-.wt-hl { display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; min-height: 58px; padding: 6px 8px 6px 10px; border-radius: 9px;
-  background: var(--nw-card); box-shadow: inset 3px 0 0 var(--nw-text), inset 0 0 0 1px var(--nw-border);
-  b { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--nw-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  em { font-style: normal; font-size: 14px; font-weight: 800; letter-spacing: -.2px; line-height: 1.2; color: var(--nw-muted); }
-  small { font-size: 10px; font-weight: 600; color: var(--nw-muted); } }
+.wt-hm { position: relative; transition: opacity .2s; &.dim { opacity: .45; } }
+/* ranked / opening next: an ordered grid */
+.wt-flat { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 3px; }
+
+/* by region: each region a soft panel — its name and average on top, its markets sized by how big they are */
+.wt-tm { position: relative; width: 100%; }
+.wt-rg { position: absolute; border-radius: 12px; background: #f1f3f9; overflow: hidden; }
+.wt-rg-h { position: absolute; left: 0; right: 0; top: 0; height: 26px; display: flex; align-items: center; gap: 7px; padding: 1px 9px 0; min-width: 0;
+  b { font-size: 10.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4a5068; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  em { flex: none; font-style: normal; font-size: 11.5px; font-weight: 800; } }
+.wt-ht.wt-tt { position: absolute; min-height: 0; border-radius: 6px; overflow: hidden; }
+.wt-ht.wt-tt[data-z='l'] { padding: 8px 10px 7px; gap: 2px;
+  .wt-ht-n { font-size: 12.5px; } .wt-ht-f { font-size: 10.5px; } }
+.wt-ht.wt-tt b { font-size: var(--fs, 15px); line-height: 1.12; }
+.wt-ht.wt-tt .wt-ht-n { line-height: 1.22; }
+.wt-ht.wt-tt .wt-ht-n.two { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.wt-ht.on .wt-ht-n { padding-right: 12px; }
+.wt-ht.wt-tt[data-z='m'] { padding: 6px 7px 5px; }
+.wt-ht.wt-tt[data-z='s'] { padding: 3px 5px; gap: 0; justify-content: center;
+  .wt-ht-n { font-size: 10px; } }
+.wt-ht.wt-tt[data-z='s'][style*='width: 3'], .wt-ht.wt-tt[data-z='s'][style*='width: 4'] { padding: 3px; .wt-ht-n { font-size: 9px; } }
+.wt-ht.wt-tt[data-z='xs'] { padding: 2px; align-items: center; justify-content: center;
+  b { letter-spacing: -.3px; } }
+/* picked for the chart: a dot in the chart line's colour, top right */
+.wt-pin { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(26,28,46,.3); }
+.wt-ht.wt-tt[data-z='s'] .wt-pin, .wt-ht.wt-tt[data-z='xs'] .wt-pin { top: 3px; right: 3px; width: 7px; height: 7px; box-shadow: 0 0 0 1.5px #fff; }
 .wt-ht { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; min-height: 58px; padding: 6px 8px 6px; border: 0; border-radius: 9px;
   cursor: pointer; text-align: left; font: inherit; color: var(--nw-text); touch-action: manipulation; transition: transform .1s, box-shadow .12s, background-color .3s;
   b { font-size: 15px; font-weight: 800; letter-spacing: -.3px; white-space: nowrap; line-height: 1.1; }
   &.deep { color: #fff; .wt-ht-n, .wt-ht-f { color: rgba(255,255,255,.88); } .dot { box-shadow: 0 0 0 1.5px rgba(255,255,255,.9); } }
-  &.on { box-shadow: inset 0 0 0 2px var(--c), inset 0 0 0 4px rgba(255,255,255,.85); }
   &:active { transform: scale(.97); }
   &:focus-visible { outline: 2px solid var(--nw-accent); outline-offset: 1px; } }
-@media (hover: hover) { .wt-ht:hover { box-shadow: inset 0 0 0 1.5px rgba(26,28,46,.28); } .wt-ht.on:hover { box-shadow: inset 0 0 0 2px var(--c), inset 0 0 0 4px rgba(255,255,255,.85); } }
+@media (hover: hover) { .wt-ht:hover { filter: brightness(.96) saturate(1.08); box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 4px 14px rgba(26,28,46,.18); z-index: 2; } }
 .wt-ht-n { display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-size: 11px; font-weight: 700; line-height: 1.25; color: var(--nw-text);
   em { font-style: normal; margin-right: 4px; } }
 .wt-ht-f { display: flex; align-items: center; gap: 5px; margin-top: auto; min-width: 0; font-size: 10px; font-weight: 600; line-height: 1.2; color: rgba(26,28,46,.62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -288,13 +305,12 @@
   .wt-hr { flex-wrap: nowrap; overflow-x: auto; margin: 0 -10px; padding: 0 10px;
     -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
     &::after { content: ''; flex: 0 0 24px; } button { height: 34px; } }
-  .wt-ht-n em { display: none; }
+  .wt-flat .wt-ht-n em { display: none; }
   .wt-hsort { width: auto; button { min-height: 34px; padding: 0 9px; } }
-  .wt-hm { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 3px; }
-  .wt-hl { min-height: 54px; padding: 5px 6px 5px 8px; b { font-size: 9.5px; letter-spacing: .3px; } em { font-size: 12.5px; } small { display: none; } }
-  .wt-ht { min-height: 54px; padding: 5px 6px 5px; border-radius: 8px; b { font-size: 13.5px; } }
+  .wt-flat { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  .wt-flat .wt-ht { min-height: 54px; padding: 5px 6px 5px; border-radius: 8px; b { font-size: 13.5px; } }
   /* a long name may take two lines on a phone rather than be cut */
-  .wt-ht-n { font-size: 10.5px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; overflow-wrap: anywhere; }
+  .wt-flat .wt-ht-n { font-size: 10.5px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; overflow-wrap: anywhere; }
   .wt-ht-f { font-size: 9.5px; gap: 4px; .dot { width: 5px; height: 5px; } }
   .wt-hk { gap: 4px 10px; font-size: 10.5px; .wt-hk-t { margin-left: 0; flex: 1 0 100%; } }
   .wt-lh .wt-regions { flex: none; }
