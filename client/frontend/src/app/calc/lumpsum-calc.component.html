@@ -112,7 +112,7 @@
   <!-- ── years ── -->
   <div class="years" role="tablist" aria-label="Invested this many years ago">
     @for (y of yearOpts(); track y) {
-      <button role="tab" [class.on]="y === years()" [attr.aria-selected]="y === years()" (click)="pickYears(y)">
+      <button role="tab" [class.on]="!custom() && y === years()" [attr.aria-selected]="!custom() && y === years()" (click)="pickYears(y)">
         <b>{{ y }}</b><span>yrs ago</span><i></i>
       </button>
     }
