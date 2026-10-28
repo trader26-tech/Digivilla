@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 
 import { AdminService, WorldChart, WorldCpi, WorldHistory, WorldQuote } from '../admin.service';
 import { MARKET_SIZE, REGION_SIZE, Rect, squarify } from './treemap';
+import { MarketFacts, MarketSheetComponent } from './market-sheet.component';
 import { Ccy, Daily, bp, cagr, change, cpiDaily, daily, dayOf, deflate, idxAt, isoOf, line, startOf, stats, today, yieldStats, years } from './world-compare';
 
 const COLOURS = ['#387ed1', '#eb6834', '#1baf7a', '#eda100', '#6250d6', '#e87ba4', '#e34948', '#5a5f78'];
@@ -69,7 +70,7 @@ export type Session = { s: 'open' | 'pre' | 'closed' | 'nav'; label: string; at:
 @Component({
   selector: 'app-world-today',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MarketSheetComponent],
   templateUrl: './world-today.component.html',
   styleUrl: './world-today.component.scss',
 })
@@ -865,15 +866,17 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const nfs = z === 'l' ? 12.5 : z === 's' ? (w < 50 ? 9 : 10) : 11, lh = nfs * 1.22;
     const name = this.shortName(q), room = w - padX - 4;
     const wide = (n: number) => n * nfs * 0.62;
-    let flag = this.heatFlag(q.region) && !!this.flagOf(q) && z !== 's' && z !== 'xs';
-    if (flag && wide(name.length) + 18 > room && wide(name.length) <= room) flag = false;   // the flag goes before the name wraps
+    // every tile that can show its name shows its flag; it gives way only where it would cut the name
+    const fw = nfs * 1.55;
+    let flag = !!this.tileFlag(q) && z !== 'xs';
+    if (flag && !name.includes(' ') && wide(name.length) + fw > room) flag = false;
     // a second line only where the name has a space to break at
-    let lines = z === 'xs' ? 0 : wide(name.length) + (flag ? 18 : 0) <= room || !name.includes(' ') ? 1 : 2;
+    let lines = z === 'xs' ? 0 : wide(name.length) + (flag ? fw : 0) <= room || !name.includes(' ') ? 1 : 2;
     const moveLen = this.heatText(q).length;
     const footH = 14;
     let foot = (z === 'l' || z === 'm') && h - padY - lines * lh - footH - 16 >= 0;
     let avail = h - padY - lines * lh - (foot ? footH : 0) - 3;
-    if (lines === 2 && avail < 13) { lines = 1; avail += lh; }                // keep the move readable: one line of name
+    if (lines === 2 && avail < 13) { lines = 1; avail += lh; if (wide(name.length) <= room) flag = false; }   // one line of name: the flag gives way first
     if (foot && avail < 15) { foot = false; avail += footH; }
     // heavy digits, sign and % run ≈ 0.68 em each
     const fs = Math.round(Math.max(z === 's' || z === 'xs' ? 9 : 10.5, Math.min(24, avail / 1.14, (w - padX - 2) / (moveLen * 0.68))) * 2) / 2;
@@ -898,13 +901,20 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     return 'stock';
   }
   /** the flag only where a block mixes countries */
-  heatFlag(region: string): boolean { return !['India', 'US', 'Funds'].includes(region); }
+  heatFlag(_region: string): boolean { return true; }
+  /** a heat tile's flag: the country (our funds are Indian), a commodity's or crypto's own mark */
+  tileFlag(q: WorldQuote): string { return q.kind === 'fund' ? '🇮🇳' : this.flagOf(q); }
+  /** the region panels' marks */
+  readonly REGION_FLAG: Record<string, string> = { India: '🇮🇳', Funds: '🇮🇳', US: '🇺🇸', Americas: '🌎', Europe: '🇪🇺', Asia: '🌏', Global: '🌐',
+    Currencies: '💱', Commodities: '🛢️', Bonds: '🇺🇸', 'rank:stock': '📈', 'rank:fund': '🇮🇳', 'rank:fx': '💱', 'rank:cmd': '🛢️', 'rank:bond': '🇺🇸', 'rank:crypto': '₿', 'rank:vol': '😨' };
   /** the tile's last line: when its price last moved (IST) — or, on "Opening next", when it opens */
   heatFoot(q: WorldQuote, compact: boolean | number = this.hmNarrow()): string {
     const tight = compact === 2;
     if (this.hs() === 'next') return (tight ? '' : 'Opens ') + this.ist(this.nextOpen(q));
     // Max: the year its history starts — markets start in different years
     if (this.hp() === 'max') { const d = this.sinceOf(q); return d ? (compact ? d.slice(0, 4) : 'since ' + this.sinceText(d)) : ''; }
+    // a longer period: the move is the story — no clock times on the tile (tap it for the session)
+    if (this.hp() !== '1d') return '';
     // a currency says which way it went, and where it stands
     const b = this.heatBadge(q);
     if (this.isFx(q)) { const word = this.fxWord(q).replace(/ vs .*/, ''); return b ? (compact ? '' : word) : compact ? word : `${word} · ${this.fxLevel(q)}`; }
@@ -930,6 +940,85 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   /** "Sep 2007" */
   sinceText(d: string): string { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }); }
+  // ── tap a tile → the market's card: its session in IST, last close, next open, chart ──
+  readonly sheetKey = signal<string | null>(null);
+  readonly sheetFacts = computed(() => { const k = this.sheetKey(); const q = k ? this.quotes().find((x) => x.key === k) : null; return q ? this.facts(q) : null; });
+  openSheet(q: WorldQuote): void { this.sheetKey.set(q.key); }
+  /** "9:15 am" on a clock (IST unless told) */
+  t12(ts: number, tz = IST): string { return new Date(ts * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz }).replace(' AM', ' am').replace(' PM', ' pm'); }
+  /** "Wed 28 Oct" on India's clock */
+  dayT(ts: number): string { return new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IST }); }
+  /** "9:15 am" today, "Thu 9:15 am" another day — IST */
+  whenIst(ts: number, short = false): string {
+    const d = istDay(ts), t = istDay(this.now());
+    const tm = d === t ? '' : !short && Date.parse(t) + 86400000 === Date.parse(d) ? 'tomorrow ' : new Date(ts * 1000).toLocaleDateString('en-GB', { weekday: 'short', timeZone: IST }) + ' ';
+    return tm + this.t12(ts);
+  }
+  /** "in 2h 05m", "in 3d 4h" */
+  inDur(ts: number): string {
+    const s = Math.max(0, ts - this.now()), m = Math.round(s / 60);
+    if (m < 60) return `in ${m}m`;
+    const h = Math.floor(m / 60);
+    return h < 48 ? `in ${h}h ${String(m % 60).padStart(2, '0')}m` : `in ${Math.floor(h / 24)}d ${h % 24}h`;
+  }
+  /** the instant a session dated `iso` (exchange calendar) closed, at its usual closing time on its own clock */
+  private closeOn(iso: string, q: WorldQuote): number | null {
+    if (!q.close_at || !q.tz) return null;
+    const [h, mi] = new Date(q.close_at * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: q.tz }).split(':').map(Number);
+    const [y, mo, d] = iso.split('-').map(Number);
+    const guess = Date.UTC(y, mo - 1, d, h % 24, mi);
+    const off = Date.parse(new Date(guess).toLocaleString('en-US', { timeZone: q.tz })) - Date.parse(new Date(guess).toLocaleString('en-US', { timeZone: 'UTC' }));
+    return Math.round((guess - off) / 1000);
+  }
+  private isoLabel(iso: string): string { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+  facts(q: WorldQuote): MarketFacts {
+    const st = this.status(q), n = this.now();
+    const dm = this.dayMove(q), move = q.kind === 'yield' ? this.bps(dm) : this.pct(dm);
+    const price = this.isFx(q) ? this.fxLevel(q) : q.last === null ? '—' : q.kind === 'yield' ? q.last.toFixed(3) + '%' : (q.kind === 'fund' ? '₹' : '') + this.num(q.last, Math.abs(q.last) < 10 ? 4 : 2);
+    const base = { q, move, moveSign: dm ?? 0, price, hoursIst: '', hoursOwn: '', lastClose: '', nextOpen: '' };
+    if (q.kind === 'fund') {
+      return { ...base, state: 'nav', headline: 'Daily NAV', sub: 'priced at the 3:30 pm close, published the same evening',
+        lastClose: q.nav_date ? this.isoLabel(q.nav_date) : '—', nextOpen: st.at.replace(/^Next: /, '').replace(/^tonight$/, 'tonight, after 9 pm IST'),
+        moveNote: q.nav_date ? `NAV of ${this.isoLabel(q.nav_date)}${q.prev_date ? ' vs ' + this.isoLabel(q.prev_date) : ''}` : '' };
+    }
+    const live = st.s === 'open';
+    const moveNote = live ? `Live — since the ${this.prevDay(q)}, still moving` : q.session ? `Final move of ${this.isoLabel(q.session)}${q.prev_date ? ' (vs ' + this.isoLabel(q.prev_date) + ')' : ''}` : '';
+    const o = q.open_at, c = q.close_at;
+    if (!o || !c) {
+      const crypto = q.key === 'bitcoin';
+      return { ...base, state: 'always', headline: crypto ? 'Trades 24 × 7' : 'Trades round the clock', sub: crypto ? 'never closes' : 'Monday to Friday', moveNote: crypto || this.isFx(q) ? 'Change over the last 24 hours' : moveNote };
+    }
+    const nextDay = istDay(c) !== istDay(o);
+    const hoursIst = `${this.t12(o)} – ${this.t12(c)}${nextDay ? ' (next day)' : ''} IST`;
+    const own = q.tz && q.tz !== IST && q.tz !== 'Asia/Calcutta' ? `${this.t12(o, q.tz)} – ${this.t12(c, q.tz)} in ${this.cityOf(q.tz)}` : '';
+    const lastIso = live ? q.prev_date : q.session;
+    const lc = lastIso ? this.closeOn(lastIso, q) : null;
+    // the exchange's date, and when that was in India: "Tue 27 Oct · 3:30 pm IST" / "Tue 27 Oct (ended Wed 1:30 am IST)"
+    const lastClose = lastIso ? (lc ? (istDay(lc) === lastIso ? `${this.isoLabel(lastIso)} · ${this.t12(lc)} IST`
+      : `${this.isoLabel(lastIso)} (ended ${new Date(lc * 1000).toLocaleDateString('en-GB', { weekday: 'short', timeZone: IST })} ${this.t12(lc)} IST)`) : this.isoLabel(lastIso)) : '';
+    const nx = this.nextOpen(q);
+    const nextOpen = nx ? `${this.dayT(nx)} · ${this.t12(nx)} IST` : '';
+    if (live) return { ...base, state: 'open', headline: 'Open now', sub: `closes ${this.whenIst(c)} IST · ${this.inDur(c)}`, hoursIst, hoursOwn: own, lastClose, nextOpen, moveNote };
+    const soon = nx && nx - n < 3 * 3600;
+    return { ...base, state: soon ? 'pre' : 'closed', headline: st.label === 'Holiday' ? 'Closed today' : st.label === 'Paused' ? 'Paused' : 'Closed',
+      sub: nx ? `opens ${this.whenIst(nx)} IST · ${this.inDur(nx)}` : '', hoursIst, hoursOwn: own, lastClose, nextOpen, moveNote };
+  }
+  /** a region's session next to its name: "Open · closes 3:30 pm" / "Closed · opens Thu 9:15 am" / "3 of 9 open" (IST) */
+  regionNote(region: string): { t: string; s: string } | null {
+    if (region === 'Funds') return { t: 'NAV each evening', s: 'nav' };
+    // the exchanges themselves — not a currency, yield, bitcoin or the VIX (they trade around the clock)
+    const qs = this.quotes().filter((q) => q.region === region && q.kind !== 'fund' && q.kind !== 'fx' && q.kind !== 'yield' && q.key !== 'bitcoin' && q.key !== 'vix' && q.open_at && q.close_at);
+    if (!qs.length) return null;
+    const open = qs.filter((q) => this.status(q).s === 'open');
+    if (open.length) {
+      const c = Math.min(...open.map((q) => q.close_at!));
+      return { t: open.length === qs.length ? `Open till ${this.whenIst(c, true)}` : `${open.length}/${qs.length} open`, s: 'open' };
+    }
+    const nx = qs.map((q) => this.nextOpen(q)).filter((x): x is number => !!x);
+    if (!nx.length) return { t: 'Closed', s: 'closed' };
+    const t = Math.min(...nx);
+    return { t: `Opens ${this.whenIst(t, true)}`, s: t - this.now() < 3 * 3600 ? 'pre' : 'closed' };
+  }
   /** everything about a tile, for its tooltip */
   heatTitle(q: WorldQuote): string {
     const st = this.status(q);
@@ -942,7 +1031,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const hp = this.hp(), first = this.sinceOf(q);
     const span = hp === 'max' && first ? `Max = since ${this.sinceText(first)} (its first price) · `
       : hp !== '1d' && this.heatMove(q) === null && first ? `— = history only from ${this.sinceText(first)} · ` : '';
-    return `${q.name} · ${fx}${span}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap to ${this.selected().includes(q.key) ? 'remove from' : 'add to'} the chart`;
+    return `${q.name} · ${fx}${span}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap for hours and chart`;
   }
   /** "now", "4m", "3h", "2d" */
   agoShort(ts: number | null | undefined): string {
@@ -958,10 +1047,12 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly heatCaption = computed(() => {
     const p = this.hp();
     if (p === '1d') return '';
-    if (p === 'ytd') return `From each market’s last close of ${new Date().getFullYear() - 1} to its latest price.`;
-    if (p === 'max') return 'From each market’s first price (the year is on the tile — they start in different years) to its latest price.';
-    if (p === '10y' || p === '15y' || p === '20y') return `From each market’s close ${this.heatPeriodName()} ago to its latest price. — = its history is shorter than that.`;
-    return `From each market’s close ${this.heatPeriodName()} ago to its latest price.`;
+    const ccy = this.hc() === 'usd' ? ' In US$ — currency moves included.' : '';
+    if (p === 'ytd') return `Since the close of 31 Dec ${new Date().getFullYear() - 1}.${ccy}`;
+    if (p === 'max') return `Since each market’s first price (year on the tile).${ccy}`;
+    const days = ({ '1w': 7, '1m': 30, '3m': 91, '6m': 182, '1y': 365, '3y': 1095, '5y': 1826, '10y': 3652, '15y': 5479, '20y': 7305 } as Record<string, number>)[p] ?? 0;
+    const d = new Date(Date.now() - days * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `Since ${d}.${['10y', '15y', '20y'].includes(p) ? ' — = shorter history.' : ''}${ccy}`;
   });
   readonly heatPeriodName = computed(() => ({ '1d': 'today', '1w': 'a week', '1m': '1 month', '3m': '3 months', '6m': '6 months', ytd: 'this year', '1y': '1 year', '3y': '3 years', '5y': '5 years', '10y': '10 years', '15y': '15 years', '20y': '20 years', max: 'all its history' } as Record<string, string>)[this.hp()]);
   readonly heatCap = computed(() => HEAT_CAP[this.hp()]);

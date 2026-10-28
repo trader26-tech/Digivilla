@@ -46,7 +46,7 @@
       <span><em class="wt-bdg" data-k="closed">{{ sampleDay() }}</em>closed — that day’s final change</span>
     </p>
 
-    <p class="wt-hcap wt-usd" *ngIf="hc() === 'usd'"><b>US$</b>Every move in US dollars — a market’s own move plus its currency’s against the $ (Nifty +10% with the rupee −5% ≈ +4.8%). FX and yields read the same.</p>
+    <p class="wt-hcap wt-usd" *ngIf="hc() === 'usd' && hp() === '1d'"><b>US$</b>Moves in US dollars — currency moves included.</p>
 
     <!-- by region: every region its own block, its markets sized by how big they are; ranked / opening next: an ordered grid -->
     <div class="wt-hm" [class.dim]="heatLoading()">
@@ -54,15 +54,16 @@
         <section class="wt-rg" *ngFor="let r of tm.regions; trackBy: trackRegion" [style.left.px]="r.x" [style.top.px]="r.y" [style.width.px]="r.w" [style.height.px]="r.h"
                  [attr.aria-label]="r.name">
           <header class="wt-rg-h" [title]="r.region === 'Funds' ? FUNDS_ABOUT : r.name">
-            <b>{{ r.name }}</b><em *ngIf="r.avg !== null" class="num" [class.pos]="r.avg > 0" [class.neg]="r.avg < 0">{{ pct(r.avg) }}</em>
+            <i class="wt-rf" aria-hidden="true" *ngIf="REGION_FLAG[r.region]">{{ REGION_FLAG[r.region] }}</i><b>{{ r.name }}</b><em *ngIf="r.avg !== null" class="num" [class.pos]="r.avg > 0" [class.neg]="r.avg < 0">{{ pct(r.avg) }}</em>
+            <small class="wt-rg-s num" *ngIf="r.w >= 150 && regionNote(r.region) as rn" [attr.data-s]="rn.s"><i></i>{{ rn.t }}</small>
           </header>
           <button class="wt-ht wt-tt" *ngFor="let t of r.tiles; trackBy: trackTile" [attr.data-z]="t.z" [attr.data-s]="status(t.q).s"
                   [style.left.px]="t.x" [style.top.px]="t.y" [style.width.px]="t.w" [style.height.px]="t.h" [style.--fs.px]="t.fs"
                   [style.background]="heatBg(t.q)" [class.deep]="heatDeep(t.q)" [class.on]="selected().includes(t.q.key)" [style.--c]="colour(t.q.key)"
-                  (click)="toggle(t.q.key)" [attr.aria-pressed]="selected().includes(t.q.key)" [title]="heatTitle(t.q)">
-            <span class="wt-ht-n" *ngIf="t.lines" [class.two]="t.lines === 2"><em aria-hidden="true" *ngIf="t.flag">{{ flagOf(t.q) }}</em>{{ shortName(t.q) }}<i class="wt-fxa" *ngIf="t.tag" [class.neg]="t.tag === ' ▼'" [class.pos]="t.tag === ' ▲'">{{ t.tag }}</i></span>
+                  (click)="openSheet(t.q)" [title]="heatTitle(t.q)">
+            <span class="wt-ht-n" *ngIf="t.lines" [class.two]="t.lines === 2"><em aria-hidden="true" *ngIf="t.flag">{{ tileFlag(t.q) }}</em>{{ shortName(t.q) }}<i class="wt-fxa" *ngIf="t.tag" [class.neg]="t.tag === ' ▼'" [class.pos]="t.tag === ' ▲'">{{ t.tag }}</i></span>
             <b class="num">{{ heatText(t.q) }}</b>
-            <span class="wt-ht-f num" *ngIf="t.foot"><ng-container *ngIf="heatBadge(t.q, t.compact !== 0) as bd; else plainFoot"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot><i class="dot"></i></ng-template>{{ heatFoot(t.q, t.compact) }}</span>
+            <span class="wt-ht-f num" *ngIf="t.foot && (heatBadge(t.q, t.compact !== 0) || heatFoot(t.q, t.compact))"><ng-container *ngIf="heatBadge(t.q, t.compact !== 0) as bd; else plainFoot"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot><i class="dot"></i></ng-template>{{ heatFoot(t.q, t.compact) }}</span>
             <i class="wt-pin" *ngIf="selected().includes(t.q.key)" aria-hidden="true"></i>
           </button>
         </section>
@@ -72,15 +73,15 @@
         <div class="wt-flat">
           <section class="wt-fb" *ngFor="let g of heatGroups(); trackBy: trackRegion" [style.--n]="g.items.length" [class.full]="!g.region.startsWith('rank:')" [class.tiny]="g.items.length <= 2">
             <header class="wt-fh" *ngIf="g.region.startsWith('rank:')">
-              <b>{{ g.name }}</b><small>{{ g.items.length > 1 ? g.items.length + ' · best → worst' : '' }}</small>
+              <i class="wt-rf" aria-hidden="true" *ngIf="REGION_FLAG[g.region]">{{ REGION_FLAG[g.region] }}</i><b>{{ g.name }}</b><small>{{ g.items.length > 1 ? g.items.length + ' · best → worst' : '' }}</small>
               <em *ngIf="g.avg !== null && g.items.length > 1" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }} avg</em>
             </header>
             <div class="wt-fg">
               <button class="wt-ht" *ngFor="let q of g.items; trackBy: trackKey" [style.background]="heatBg(q)" [class.deep]="heatDeep(q)" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
-                      [attr.data-s]="status(q).s" (click)="toggle(q.key)" [attr.aria-pressed]="selected().includes(q.key)" [title]="heatTitle(q)">
-                <span class="wt-ht-n"><em aria-hidden="true" *ngIf="heatFlag(q.region)">{{ flagOf(q) }}</em>{{ shortName(q) }}<i class="wt-fxa" *ngIf="isFx(q) && (heatMove(q) ?? 0) !== 0" [class.pos]="(heatMove(q) ?? 0) > 0" [class.neg]="(heatMove(q) ?? 0) < 0">{{ (heatMove(q) ?? 0) > 0 ? ' ▲' : ' ▼' }}</i></span>
+                      [attr.data-s]="status(q).s" (click)="openSheet(q)" [title]="heatTitle(q)">
+                <span class="wt-ht-n"><em aria-hidden="true" *ngIf="tileFlag(q)">{{ tileFlag(q) }}</em>{{ shortName(q) }}<i class="wt-fxa" *ngIf="isFx(q) && (heatMove(q) ?? 0) !== 0" [class.pos]="(heatMove(q) ?? 0) > 0" [class.neg]="(heatMove(q) ?? 0) < 0">{{ (heatMove(q) ?? 0) > 0 ? ' ▲' : ' ▼' }}</i></span>
                 <b class="num">{{ heatText(q) }}</b>
-                <span class="wt-ht-f num"><ng-container *ngIf="heatBadge(q, true) as bd; else plainFoot2"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot2><i class="dot"></i></ng-template>{{ heatFoot(q, hmNarrow() ? 2 : 1) }}</span>
+                <span class="wt-ht-f num" *ngIf="heatBadge(q, true) || heatFoot(q, hmNarrow() ? 2 : 1)"><ng-container *ngIf="heatBadge(q, true) as bd; else plainFoot2"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot2><i class="dot"></i></ng-template>{{ heatFoot(q, hmNarrow() ? 2 : 1) }}</span>
                 <i class="wt-pin" *ngIf="selected().includes(q.key)" aria-hidden="true"></i>
               </button>
             </div>
@@ -303,3 +304,6 @@
   </section>
 
 </div>
+
+<app-market-sheet *ngIf="sheetFacts() as f" [f]="f" [ccy]="hc()" [inCompare]="selected().includes(f.q.key)"
+  (close)="sheetKey.set(null)" (compare)="toggle(f.q.key)" (ccyChange)="setHc($event)"></app-market-sheet>
