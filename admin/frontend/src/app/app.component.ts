@@ -1,3 +1,4 @@
+import { timeout } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -314,7 +315,7 @@ export class AppComponent implements OnInit {
   private initAuth(attempt = 0): void {
     const now = Math.floor(Date.now() / 1000);
     const storedExp = this.api.storedExp;
-    this.api.session().subscribe({
+    this.api.session().pipe(timeout(5000)).subscribe({
       next: (s) => {
         this.hasPin.set(!!s.has_pin);
         this.devCode.set(!!(s as { dev_code?: boolean }).dev_code);
@@ -330,13 +331,16 @@ export class AppComponent implements OnInit {
         }
         this.api.clearToken();
         if (!s.device_known) this.api.clearDevice();
-        this.phase.set(s.device_known && s.has_pin ? 'pin' : this.devCode() ? 'otp' : 'email');
+        // a late retry must not yank the user out of a code/PIN they're already entering
+        if (attempt === 0 || this.phase() === 'loading' || this.phase() === 'pin' || this.phase() === 'email')
+          this.phase.set(s.device_known && s.has_pin ? 'pin' : this.devCode() ? 'otp' : 'email');
       },
       error: () => {
         // server unreachable (e.g. mid-redeploy) says nothing about the device —
         // retry rather than dropping a trusted device to the email-code screen
-        if (attempt < 5) { setTimeout(() => this.initAuth(attempt + 1), 1500 * (attempt + 1)); return; }
-        this.phase.set(this.api.deviceToken ? 'pin' : 'email');
+        // …but show the sign-in card (and World markets) straight away instead of a blank wait
+        if (this.phase() === 'loading') this.phase.set(this.api.deviceToken ? 'pin' : 'email');
+        if (attempt < 5) setTimeout(() => this.initAuth(attempt + 1), 1500 * (attempt + 1));
       },
     });
   }
