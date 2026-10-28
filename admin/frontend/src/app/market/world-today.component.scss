@@ -164,6 +164,11 @@
 .wt-ht.wt-tt .wt-ht-n { line-height: 1.22; }
 .wt-ht.wt-tt .wt-ht-n.two { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .wt-ht.on .wt-ht-n { padding-right: 12px; }
+.wt-cf { position: absolute; right: 4px; bottom: 3px; font-style: normal; font-size: 11px; line-height: 1; pointer-events: none; }
+/* ranked / opening next tiles: a long name (with its flag) takes two lines rather than being cut */
+.wt-fg .wt-ht-n { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; }
+/* a region's name never gives way: the open/closed note beside it shortens first */
+.wt-rg-h > b { flex: none; }
 .wt-rf { font-style: normal; font-size: 13px; line-height: 1; margin-right: -2px; }
 .wt-ht-n em { font-style: normal; margin-right: 4px; }
 .wt-fxa { font-style: normal; font-size: .85em; } .wt-ht.deep .wt-fxa { color: #fff !important; }

@@ -835,8 +835,11 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     const block = (g: (typeof groups)[number], r: Rect) => {
       const w = r.w - GAP, h = r.h - GAP;
-      const short: Record<string, string> = { Commodities: 'Commod.', Bonds: 'US yields', US: 'US', Asia: 'Asia-Pac', Currencies: 'FX', Funds: 'Funds' };
-      return { region: g.region, name: w < 170 && short[g.region] ? short[g.region] : g.name, avg: g.avg, x: r.x + GAP / 2, y: r.y + GAP / 2, w, h,
+      const short: Record<string, string> = { Commodities: 'Commod.', Bonds: 'US yields', US: 'US', Asia: 'Asia-Pac', Currencies: 'FX', Funds: 'Funds', Americas: 'Americas', Global: 'Global' };
+      // the header: full name if it fits beside the flag and the average, else the short one, and the flag goes last
+      const avgW = g.avg !== null ? 58 : 0, fits = (n: string, f: boolean) => n.length * 8.2 + (f ? 22 : 0) + avgW + 26 <= w;
+      const name = fits(g.name, true) || !short[g.region] ? g.name : short[g.region];
+      return { region: g.region, name, avg: g.avg, rflag: fits(name, true), x: r.x + GAP / 2, y: r.y + GAP / 2, w, h,
                tiles: tiles(g.items, { x: P - TG / 2, y: HEAD - TG / 2, w: w - 2 * P + TG, h: Math.max(0, h - HEAD - P + TG) }) };
     };
     if (narrow) {
@@ -884,7 +887,9 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const mv = this.heatMove(q);
     // a currency always shows its direction by its name: ▲ stronger, ▼ weaker
     const tag = this.isFx(q) && mv !== null && Math.abs(mv) >= 0.005 ? (mv > 0 ? ' ▲' : ' ▼') : '';
-    return { z, fs, lines, flag, foot, tag, compact: w < 96 ? 2 : w < 142 ? 1 : 0 };
+    // no room for the flag beside the name: it sits small in the bottom-right corner instead
+    const corner = !flag && z !== 'xs' && !!this.tileFlag(q);
+    return { z, fs, lines, flag, corner, foot, tag, compact: w < 96 ? 2 : w < 142 ? 1 : 0 };
   }
   trackRegion = (_: number, g: { region: string }) => g.region;
   trackKey = (_: number, q: WorldQuote) => q.key;

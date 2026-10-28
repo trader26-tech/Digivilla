@@ -54,7 +54,7 @@
         <section class="wt-rg" *ngFor="let r of tm.regions; trackBy: trackRegion" [style.left.px]="r.x" [style.top.px]="r.y" [style.width.px]="r.w" [style.height.px]="r.h"
                  [attr.aria-label]="r.name">
           <header class="wt-rg-h" [title]="r.region === 'Funds' ? FUNDS_ABOUT : r.name">
-            <i class="wt-rf" aria-hidden="true" *ngIf="REGION_FLAG[r.region]">{{ REGION_FLAG[r.region] }}</i><b>{{ r.name }}</b><em *ngIf="r.avg !== null" class="num" [class.pos]="r.avg > 0" [class.neg]="r.avg < 0">{{ pct(r.avg) }}</em>
+            <i class="wt-rf" aria-hidden="true" *ngIf="r.rflag && REGION_FLAG[r.region]">{{ REGION_FLAG[r.region] }}</i><b>{{ r.name }}</b><em *ngIf="r.avg !== null" class="num" [class.pos]="r.avg > 0" [class.neg]="r.avg < 0">{{ pct(r.avg) }}</em>
             <small class="wt-rg-s num" *ngIf="r.w >= 150 && regionNote(r.region) as rn" [attr.data-s]="rn.s"><i></i>{{ rn.t }}</small>
           </header>
           <button class="wt-ht wt-tt" *ngFor="let t of r.tiles; trackBy: trackTile" [attr.data-z]="t.z" [attr.data-s]="status(t.q).s"
@@ -65,6 +65,7 @@
             <b class="num">{{ heatText(t.q) }}</b>
             <span class="wt-ht-f num" *ngIf="t.foot && (heatBadge(t.q, t.compact !== 0) || heatFoot(t.q, t.compact))"><ng-container *ngIf="heatBadge(t.q, t.compact !== 0) as bd; else plainFoot"><em class="wt-bdg" [attr.data-k]="bd.k">{{ bd.t }}</em></ng-container><ng-template #plainFoot><i class="dot"></i></ng-template>{{ heatFoot(t.q, t.compact) }}</span>
             <i class="wt-pin" *ngIf="selected().includes(t.q.key)" aria-hidden="true"></i>
+            <i class="wt-cf" *ngIf="t.corner" aria-hidden="true">{{ tileFlag(t.q) }}</i>
           </button>
         </section>
       </div>
