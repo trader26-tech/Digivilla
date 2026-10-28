@@ -162,7 +162,8 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
       if (['all', 'live', 'next'].includes(s.hs)) this.hs.set(s.hs);
       if (typeof s.hr === 'string') this.hr.set(s.hr);
       if (s.hsort === 'rank') this.hsort.set('rank');
-      if (s.hc === 'usd') this.hc.set('usd');
+      // In US$ is not restored: the page always opens in each market's own currency (a remembered
+      // US$ view read as wrong numbers — KOSPI +5.6% in $ on a +6.6% day in won)
     } catch { /* defaults */ }
     if (this.range() === 'custom' && (this.from() === null || this.to() === null)) this.range.set('1y');
     this.loadQuotes();
@@ -875,7 +876,7 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     if (flag && !name.includes(' ') && wide(name.length) + fw > room) flag = false;
     // a second line only where the name has a space to break at
     let lines = z === 'xs' ? 0 : wide(name.length) + (flag ? fw : 0) <= room || !name.includes(' ') ? 1 : 2;
-    const moveLen = this.heatText(q).length;
+    const moveLen = this.heatText(q).length + (this.isUsd(q) ? 1.2 : 0);   // the small " $" after a US$ figure
     const footH = 14;
     let foot = (z === 'l' || z === 'm') && h - padY - lines * lh - footH - 16 >= 0;
     let avail = h - padY - lines * lh - (foot ? footH : 0) - 3;
@@ -1036,7 +1037,18 @@ export class WorldTodayComponent implements OnInit, AfterViewInit, OnDestroy {
     const hp = this.hp(), first = this.sinceOf(q);
     const span = hp === 'max' && first ? `Max = since ${this.sinceText(first)} (its first price) · `
       : hp !== '1d' && this.heatMove(q) === null && first ? `— = history only from ${this.sinceText(first)} · ` : '';
-    return `${q.name} · ${fx}${span}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap for hours and chart`;
+    const usd = this.isUsd(q) ? this.usdNote(q) : '';
+    return `${q.name} · ${usd}${fx}${span}${what}${st.label}${st.at ? ' · ' + st.at : ''} · ${upd} · tap for hours and chart`;
+  }
+  /** In US$ mode applies to this tile (a currency or a yield reads the same either way) */
+  isUsd(q: WorldQuote): boolean { return this.hc() === 'usd' && q.kind !== 'yield' && q.kind !== 'fx'; }
+  /** "+5.62% in US$ = +6.63% in its own currency (its currency −0.95% vs $)" */
+  usdNote(q: WorldQuote): string {
+    const p = this.hp(), u = this.heatMove(q);
+    const l = p === '1d' ? q.change_pct : this.moves()[q.key]?.[p] ?? null;
+    if (u === null || l === null || l === undefined) return '';
+    const fx = p === '1d' && q.fx_pct !== null && q.fx_pct !== undefined ? ` (its currency ${this.pct(q.fx_pct)} vs $)` : '';
+    return `${this.pct(u)} in US$ = ${this.pct(l)} in its own currency${fx} · `;
   }
   /** "now", "4m", "3h", "2d" */
   agoShort(ts: number | null | undefined): string {

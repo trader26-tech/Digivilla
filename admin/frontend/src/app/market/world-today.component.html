@@ -46,7 +46,10 @@
       <span><em class="wt-bdg" data-k="closed">{{ sampleDay() }}</em>closed — that day’s final change</span>
     </p>
 
-    <p class="wt-hcap wt-usd" *ngIf="hc() === 'usd' && hp() === '1d'"><b>US$</b>Moves in US dollars — currency moves included.</p>
+    <p class="wt-usdbar" *ngIf="hc() === 'usd'" role="status">
+      <b>In US$</b><span>Every move includes its currency’s change against the dollar — what a dollar investor made.</span>
+      <button type="button" (click)="setHc('local')">Back to local</button>
+    </p>
 
     <!-- by region: every region its own block, its markets sized by how big they are; ranked / opening next: an ordered grid -->
     <div class="wt-hm" [class.dim]="heatLoading()">
@@ -57,7 +60,7 @@
             <i class="wt-rf" aria-hidden="true" *ngIf="r.rflag && REGION_FLAG[r.region]">{{ REGION_FLAG[r.region] }}</i><b>{{ r.name }}</b><em *ngIf="r.avg !== null" class="num" [class.pos]="r.avg > 0" [class.neg]="r.avg < 0">{{ pct(r.avg) }}</em>
             <small class="wt-rg-s num" *ngIf="r.w >= 150 && regionNote(r.region) as rn" [attr.data-s]="rn.s"><i></i>{{ rn.t }}</small>
           </header>
-          <button class="wt-ht wt-tt" *ngFor="let t of r.tiles; trackBy: trackTile" [attr.data-z]="t.z" [attr.data-s]="status(t.q).s"
+          <button class="wt-ht wt-tt" *ngFor="let t of r.tiles; trackBy: trackTile" [class.usd]="isUsd(t.q)" [attr.data-z]="t.z" [attr.data-s]="status(t.q).s"
                   [style.left.px]="t.x" [style.top.px]="t.y" [style.width.px]="t.w" [style.height.px]="t.h" [style.--fs.px]="t.fs"
                   [style.background]="heatBg(t.q)" [class.deep]="heatDeep(t.q)" [class.on]="selected().includes(t.q.key)" [style.--c]="colour(t.q.key)"
                   (click)="openSheet(t.q)" [title]="heatTitle(t.q)">
@@ -78,7 +81,7 @@
               <em *ngIf="g.avg !== null && g.items.length > 1" class="num" [class.pos]="g.avg > 0" [class.neg]="g.avg < 0">{{ pct(g.avg) }} avg</em>
             </header>
             <div class="wt-fg">
-              <button class="wt-ht" *ngFor="let q of g.items; trackBy: trackKey" [style.background]="heatBg(q)" [class.deep]="heatDeep(q)" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
+              <button class="wt-ht" *ngFor="let q of g.items; trackBy: trackKey" [class.usd]="isUsd(q)" [style.background]="heatBg(q)" [class.deep]="heatDeep(q)" [class.on]="selected().includes(q.key)" [style.--c]="colour(q.key)"
                       [attr.data-s]="status(q).s" (click)="openSheet(q)" [title]="heatTitle(q)">
                 <span class="wt-ht-n"><em aria-hidden="true" *ngIf="tileFlag(q)">{{ tileFlag(q) }}</em>{{ shortName(q) }}<i class="wt-fxa" *ngIf="isFx(q) && (heatMove(q) ?? 0) !== 0" [class.pos]="(heatMove(q) ?? 0) > 0" [class.neg]="(heatMove(q) ?? 0) < 0">{{ (heatMove(q) ?? 0) > 0 ? ' ▲' : ' ▼' }}</i></span>
                 <b class="num">{{ heatText(q) }}</b>
