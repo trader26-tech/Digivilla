@@ -128,6 +128,8 @@ export class AppComponent implements OnInit {
 
   // ── auth state machine ─────────────────────────────────────────────────────
   phase = signal<Phase>('loading');
+  /** World markets from the sign-in screen — public market data, no login or database. */
+  peek = signal(false);
   busy = signal(false);
   authError = signal('');
   notice = signal('');
@@ -444,6 +446,7 @@ export class AppComponent implements OnInit {
   private enterUnlocked(): void {
     this.authError.set('');
     this.notice.set('');
+    this.peek.set(false);
     this.phase.set('unlocked');
     if (this.tick) clearInterval(this.tick);
     this.bindActivity();

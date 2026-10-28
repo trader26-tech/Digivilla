@@ -1,5 +1,5 @@
 <!-- ═══════════════════════ LOCK SCREEN ═══════════════════════ -->
-<div class="lock" *ngIf="phase() !== 'unlocked'">
+<div class="lock" *ngIf="phase() !== 'unlocked' && !peek()">
   <div class="lock-card" *ngIf="phase() !== 'loading'">
     <div class="brand">
       <span class="logo">◆</span>
@@ -66,7 +66,20 @@
     </ng-container>
   </div>
 
+  <button class="peek-btn" (click)="peek.set(true)">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    World markets
+  </button>
   <p class="lock-foot" *ngIf="phase() !== 'loading'">Secure access</p>
+</div>
+
+<!-- ═══ WORLD MARKETS without signing in (market data only — works while the database is down) ═══ -->
+<div class="peek" *ngIf="phase() !== 'unlocked' && peek()">
+  <header class="peek-bar">
+    <span class="logo" aria-hidden="true">◆</span><b>World markets</b>
+    <button class="peek-back" (click)="peek.set(false)">Sign in</button>
+  </header>
+  <app-markets-page></app-markets-page>
 </div>
 
 <!-- ═══════════════════════ WORKSPACE ═══════════════════════ -->

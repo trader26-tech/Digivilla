@@ -1051,28 +1051,28 @@ def admin_villa_type(villa_id: str, body: dict, authorization: Optional[str] = H
 
 @app.get("/admin/world/quotes")
 def admin_world_quotes(authorization: Optional[str] = Header(default=None)) -> dict:
-    _require_admin(authorization)
+    # public: market data only, no database — readable from the sign-in screen
     return world_svc.quotes()
 
 
 @app.get("/admin/world/funds")
 def admin_world_funds(authorization: Optional[str] = Header(default=None)) -> dict:
     """The villa buckets' funds as market rows: latest NAV (AMFI), its date, the move vs the NAV before."""
-    _require_admin(authorization)
+    # public: market data only, no database — readable from the sign-in screen
     return world_svc.funds()
 
 
 @app.get("/admin/world/moves")
 def admin_world_moves(authorization: Optional[str] = Header(default=None)) -> dict:
     """Every market's move over 1W, 1M, 3M, YTD, 1Y — the heat map."""
-    _require_admin(authorization)
+    # public: market data only, no database — readable from the sign-in screen
     return world_svc.moves()
 
 
 @app.get("/admin/world/chart")
 def admin_world_chart(key: str, range: str = "1d", ccy: str = "usd",
                       authorization: Optional[str] = Header(default=None)) -> dict:
-    _require_admin(authorization)
+    # public: market data only, no database — readable from the sign-in screen
     c = world_svc.chart(key, range, ccy)
     if not c:
         raise HTTPException(status_code=404, detail="No data for that index right now.")
@@ -1082,7 +1082,7 @@ def admin_world_chart(key: str, range: str = "1d", ccy: str = "usd",
 @app.get("/admin/world/history")
 def admin_world_history(key: str, authorization: Optional[str] = Header(default=None)) -> dict:
     """Daily closes since 2000 (own currency + US dollars) — the page cuts every time frame from it."""
-    _require_admin(authorization)
+    # public: market data only, no database — readable from the sign-in screen
     h = world_svc.history(key)
     if not h:
         raise HTTPException(status_code=404, detail="No history for that index right now.")
@@ -1185,7 +1185,7 @@ from app import inflation as inflation_svc  # noqa: E402
 @app.get("/admin/world/inflation")
 def admin_world_inflation(authorization: Optional[str] = Header(default=None)) -> dict:
     """US and India consumer prices (monthly) — the World markets chart's after-inflation view."""
-    _require_admin(authorization)
+    # public: market data only, no database — readable from the sign-in screen
     try:
         return inflation_svc.cpi()
     except Exception:

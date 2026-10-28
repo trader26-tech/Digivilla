@@ -498,16 +498,34 @@ _SLEEVE_ORDER = {"arbitrage": 0, "gold": 1, "large": 2, "mid": 3, "small": 4}
 _IST = ZoneInfo("Asia/Kolkata")
 
 
+# The bucket funds as of 2026-10-28 — shown when the database can't be read (NAVs come
+# from mfapi/AMFI, so World markets works without Supabase).
+_FALLBACK_FUNDS = [
+    (105968, "Kotak Arbitrage Fund Growth", "arbitrage"), (113345, "Nippon India Arbitrage Fund", "arbitrage"),
+    (115833, "ICICI Prudential Gold ETF FOF - Growth", "gold"), (106235, "Nippon India Large Cap Fund", "large"),
+    (140225, "Edelweiss Mid Cap Fund Growth", "mid"), (100377, "Nippon India Growth Mid Cap Fund", "mid"),
+    (113177, "Nippon India Small Cap Fund", "small"), (147944, "Bandhan Small Cap Fund", "small"),
+]
+_FUNDS_MEMO: dict = {"at": 0.0, "list": None}
+
+
 def _fund_list() -> list[dict]:
+    """The villa buckets' funds (memo 10 min); the last good list, else _FALLBACK_FUNDS, when the DB is down."""
     from app import market
+    if _FUNDS_MEMO["list"] and time.time() - _FUNDS_MEMO["at"] < 600:
+        return _FUNDS_MEMO["list"]
     _, rows = market._bucket_funds()
+    if not rows and not _FUNDS_MEMO["list"]:
+        rows = [{"scheme_code": c, "scheme_name": n, "sleeve": sl} for c, n, sl in _FALLBACK_FUNDS]
     out: dict[int, dict] = {}
     for r in rows:
         code = r.get("scheme_code")
         if code and int(code) not in out:
             out[int(code)] = {"code": int(code), "name": market._short(r.get("scheme_name") or ""),
                               "sleeve": (r.get("sleeve") or "other").lower()}
-    return sorted(out.values(), key=lambda f: (_SLEEVE_ORDER.get(f["sleeve"], 9), f["name"]))
+    if out:
+        _FUNDS_MEMO.update(at=time.time(), list=sorted(out.values(), key=lambda f: (_SLEEVE_ORDER.get(f["sleeve"], 9), f["name"])))
+    return _FUNDS_MEMO["list"] or []
 
 
 def _fund_series(code: int) -> tuple[list[tuple[str, float]], Optional[float]]:
